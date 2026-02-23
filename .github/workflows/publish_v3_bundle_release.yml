@@ -4,8 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "GitHub release tag (for example: v3-data-2026-02-24)"
-        required: true
+        description: "GitHub release tag (for example: germany-v3-data-latest)"
+        required: false
+        default: "germany-v3-data-latest"
         type: string
       bundle_dir:
         description: "Bundle directory to upload"
@@ -51,7 +52,7 @@ jobs:
             echo "Bundle directory missing or incomplete: ${requested}" >&2
             echo "Expected bundle-manifest.v3.json in one of:" >&2
             printf ' - %s\n' "${candidates[@]}" >&2
-            echo "Run workflow 'V3 Generate And Release Latest' first, then rerun this publisher." >&2
+            echo "Run workflow 'Germany V3 Bundle Build And Release' first, then rerun this publisher." >&2
             exit 1
           fi
 

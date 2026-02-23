@@ -1,14 +1,22 @@
-name: V3 Generate And Release Latest
+name: Germany V3 Bundle Build And Release
 
 on:
-  schedule:
-    - cron: "20 2 * * *"
+  workflow_run:
+    workflows:
+      - Germany PBF Diff Update And Release
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag used for app-consumed latest bundle assets"
+        description: "Release tag used for app-consumed latest v3 bundle assets"
         required: false
-        default: "v3-data-latest"
+        default: "germany-v3-data-latest"
+        type: string
+      pbf_release_tag:
+        description: "Release tag containing updated Germany PBF snapshot assets"
+        required: false
+        default: "germany-pbf-latest"
         type: string
       retention_updates:
         description: "How many incremental updates to keep in delta index"
@@ -25,21 +33,24 @@ permissions:
   contents: write
 
 concurrency:
-  group: v3-generate-release-latest
+  group: germany-v3-bundle-release-latest
   cancel-in-progress: false
 
 jobs:
   build-release:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 480
     env:
       REGION: germany
-      RELEASE_TAG: ${{ inputs.release_tag || 'v3-data-latest' }}
+      DEFAULT_RELEASE_TAG: germany-v3-data-latest
+      DEFAULT_PBF_RELEASE_TAG: germany-pbf-latest
       RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
       MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
       INPUT_PBF: mapdata/raw/germany-latest.osm.pbf
-      UPDATES_URL: https://download.geofabrik.de/europe/germany-updates/
-      LATEST_PBF_URL: https://download.geofabrik.de/europe/germany-latest.osm.pbf
+      INPUT_STATE: mapdata/raw/germany.diff_state.json
+      INPUT_REPORT: mapdata/reports/diff_update.germany.latest.json
+      INPUT_DELTA: mapdata/reports/deltas/daily/germany-latest.osc.gz
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
     steps:
       - name: Checkout
@@ -49,18 +60,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Restore Cached Germany PBF
-        id: pbf-cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            mapdata/raw/germany-latest.osm.pbf
-            mapdata/raw/germany.diff_state.json
-          key: v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-
-            v3-germany-pbf-${{ runner.os }}-
 
       - name: Install Dependencies
         run: |
@@ -74,26 +73,61 @@ jobs:
           chmod +x scripts/map/roll_v3_delta_index.py
           chmod +x scripts/map/prune_v3_release_assets.py
 
-      - name: Bootstrap Full PBF If Missing
+      - name: Resolve Release Tags
+        id: tags
         run: |
           set -euo pipefail
-          mkdir -p mapdata/raw
-          if [[ ! -f "${INPUT_PBF}" ]]; then
-            curl -L --fail "${LATEST_PBF_URL}" -o "${INPUT_PBF}"
+
+          release_tag="${{ github.event.inputs.release_tag || '' }}"
+          if [[ -z "${release_tag}" ]]; then
+            release_tag="${DEFAULT_RELEASE_TAG}"
           fi
 
-      - name: Update PBF And Export Daily Delta
+          pbf_release_tag="${{ github.event.inputs.pbf_release_tag || '' }}"
+          if [[ -z "${pbf_release_tag}" ]]; then
+            pbf_release_tag="${DEFAULT_PBF_RELEASE_TAG}"
+          fi
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "pbf_release_tag=${pbf_release_tag}"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "Using v3 release tag: ${release_tag}"
+          echo "Using PBF release tag: ${pbf_release_tag}"
+
+      - name: Download Updated Germany PBF Snapshot From Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          mkdir -p mapdata/build/germany/updates mapdata/reports
-          scripts/map/update_from_geofabrik_diffs.sh \
-            --region "${REGION}" \
-            --input-pbf "${INPUT_PBF}" \
-            --updates-url "${UPDATES_URL}" \
-            --state-file mapdata/raw/germany.diff_state.json \
-            --report-path mapdata/reports/diff_update.germany.latest.json \
-            --work-dir mapdata/build/germany/updates \
-            --emit-delta
+          mkdir -p mapdata/raw mapdata/reports mapdata/reports/deltas/daily
+
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+          gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null
+
+          gh release download "${pbf_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "germany-latest.osm.pbf" \
+            --pattern "germany.diff_state.json" \
+            --pattern "diff_update.germany.latest.json" \
+            --dir mapdata/raw \
+            --clobber
+
+          mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}"
+
+          if gh release download "${pbf_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "germany-latest.osc.gz" \
+            --dir mapdata/reports/deltas/daily \
+            --clobber; then
+            echo "Downloaded daily delta file."
+          else
+            echo "No germany-latest.osc.gz in release (delta build will be skipped)."
+          fi
+
+          test -f "${INPUT_PBF}"
+          test -f "${INPUT_REPORT}"
 
       - name: Resolve Bundle Version And Delta Path
         id: version
@@ -114,10 +148,12 @@ jobs:
               ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
           bundle_version = str(ts)[:10]
 
-          delta_export = payload.get("delta_export", {}) if isinstance(payload, dict) else {}
           delta_path = ""
-          if delta_export.get("status") == "exported":
-              delta_path = str(delta_export.get("path") or "")
+          delta_export = payload.get("delta_export", {}) if isinstance(payload, dict) else {}
+          delta_status = str(delta_export.get("status") or "")
+          release_delta = Path("mapdata/reports/deltas/daily/germany-latest.osc.gz")
+          if release_delta.exists() and delta_status == "exported":
+              delta_path = str(release_delta)
 
           out = Path(__import__("os").environ["GITHUB_OUTPUT"])
           with out.open("a", encoding="utf-8") as f:
@@ -127,23 +163,10 @@ jobs:
           print(f"delta_path={delta_path}")
           PY
 
-      - name: Build v1 + v3 Artifacts
-        run: |
-          set -euo pipefail
-          scripts/map/build_region_artifacts.sh \
-            --region "${REGION}" \
-            --input "${INPUT_PBF}" \
-            --engine pyosmium \
-            --max-geom-points "${MAX_GEOM_POINTS}"
-
-          python3 scripts/map/build_spatialite_v3.py \
-            --v1-dist "mapdata/dist/${REGION}" \
-            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
-
       - name: Fetch Previous Latest Bundle Metadata
         run: |
           set -euo pipefail
-          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}"
+          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.tags.outputs.release_tag }}"
           prev_manifest_url="${release_base}/bundle-manifest.v3.json"
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
           prev_index_tmp="/tmp/prev_delta_index.v3.json"
@@ -163,7 +186,40 @@ jobs:
             fi
           fi
 
+      - name: Check Bundle Version Change
+        id: compare
+        run: |
+          set -euo pipefail
+          prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
+          new_version="${{ steps.version.outputs.bundle_version }}"
+
+          if [[ -f "${prev_manifest_tmp}" ]]; then
+            prev_version="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(obj.get("bundle_version") or "")')"
+            if [[ -n "${prev_version}" && "${prev_version}" == "${new_version}" ]]; then
+              echo "needs_publish=0" >> "${GITHUB_OUTPUT}"
+              echo "Bundle already up to date (${new_version}); skipping build/release."
+              exit 0
+            fi
+          fi
+
+          echo "needs_publish=1" >> "${GITHUB_OUTPUT}"
+
+      - name: Build v1 Artifacts Required For v3, Then Build v3 DB
+        if: steps.compare.outputs.needs_publish == '1'
+        run: |
+          set -euo pipefail
+          scripts/map/build_region_artifacts.sh \
+            --region "${REGION}" \
+            --input "${INPUT_PBF}" \
+            --engine pyosmium \
+            --max-geom-points "${MAX_GEOM_POINTS}"
+
+          python3 scripts/map/build_spatialite_v3.py \
+            --v1-dist "mapdata/dist/${REGION}" \
+            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
+
       - name: Build New Incremental Delta (If Possible)
+        if: steps.compare.outputs.needs_publish == '1'
         id: delta
         run: |
           set -euo pipefail
@@ -196,7 +252,7 @@ jobs:
                 --manifest-name "${manifest_name}" \
                 --github-owner "${GITHUB_REPOSITORY%/*}" \
                 --github-repo "${GITHUB_REPOSITORY#*/}" \
-                --github-release-tag "${RELEASE_TAG}"
+                --github-release-tag "${{ steps.tags.outputs.release_tag }}"
 
               new_delta_manifest="${delta_dir}/${manifest_name}"
               new_delta_asset_path="${manifest_name}"
@@ -208,11 +264,12 @@ jobs:
             echo "new_delta_asset_path=${new_delta_asset_path}"
           } >> "${GITHUB_OUTPUT}"
 
-      - name: Roll Delta Index (Retain 30 Incrementals)
+      - name: Roll Delta Index (Retain Latest 30 Incrementals)
+        if: steps.compare.outputs.needs_publish == '1'
         run: |
           set -euo pipefail
           mkdir -p "${BUNDLE_DIR}"
-          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}"
+          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.tags.outputs.release_tag }}"
           existing_args=()
           if [[ -f /tmp/prev_delta_index.v3.json ]]; then
             existing_args=(--existing-index /tmp/prev_delta_index.v3.json)
@@ -234,6 +291,7 @@ jobs:
             "${new_args[@]}"
 
       - name: Publish Latest Full Bundle Manifest
+        if: steps.compare.outputs.needs_publish == '1'
         run: |
           set -euo pipefail
           python3 scripts/map/publish_v3_bundle.py \
@@ -245,34 +303,27 @@ jobs:
             --delta-index "${BUNDLE_DIR}/delta-index.v3.json" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
             --github-repo "${GITHUB_REPOSITORY#*/}" \
-            --github-release-tag "${RELEASE_TAG}"
+            --github-release-tag "${{ steps.tags.outputs.release_tag }}"
 
       - name: Upload Latest Bundle Assets To Release
+        if: steps.compare.outputs.needs_publish == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           ./scripts/map/publish_v3_release_assets.sh \
             --repo "${GITHUB_REPOSITORY}" \
-            --tag "${RELEASE_TAG}" \
+            --tag "${{ steps.tags.outputs.release_tag }}" \
             --bundle-dir "${BUNDLE_DIR}" \
-            --title "YouSpeed v3 latest data bundle"
+            --title "YouSpeed Germany v3 latest data bundle"
 
       - name: Prune Old Incremental Assets Beyond Retention
+        if: steps.compare.outputs.needs_publish == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           python3 scripts/map/prune_v3_release_assets.py \
             --repo "${GITHUB_REPOSITORY}" \
-            --release-tag "${RELEASE_TAG}" \
+            --release-tag "${{ steps.tags.outputs.release_tag }}" \
             --delta-index "${BUNDLE_DIR}/delta-index.v3.json"
-
-      - name: Save Cached Germany PBF
-        if: hashFiles('mapdata/raw/germany-latest.osm.pbf') != ''
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            mapdata/raw/germany-latest.osm.pbf
-            mapdata/raw/germany.diff_state.json
-          key: v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}

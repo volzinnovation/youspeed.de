@@ -1,4 +1,4 @@
-name: Daily Geofabrik Diff Update
+name: Germany PBF Diff Update And Release
 
 on:
   schedule:
@@ -6,6 +6,12 @@ on:
     # whether a new daily diff should be processed.
     - cron: "35 * * * *"
   workflow_dispatch:
+    inputs:
+      pbf_release_tag:
+        description: "Release tag for latest Germany PBF snapshot"
+        required: false
+        default: "germany-pbf-latest"
+        type: string
 
 permissions:
   contents: write
@@ -18,6 +24,8 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    env:
+      DEFAULT_PBF_RELEASE_TAG: germany-pbf-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,6 +63,39 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install osmium
 
+      - name: Resolve PBF Release Tag
+        id: tags
+        run: |
+          set -euo pipefail
+          pbf_tag="${{ github.event.inputs.pbf_release_tag || '' }}"
+          if [[ -z "${pbf_tag}" ]]; then
+            pbf_tag="${DEFAULT_PBF_RELEASE_TAG}"
+          fi
+          echo "pbf_release_tag=${pbf_tag}" >> "${GITHUB_OUTPUT}"
+          echo "Using pbf release tag: ${pbf_tag}"
+
+      - name: Bootstrap PBF From GitHub Release (Preferred)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p mapdata/raw mapdata/reports
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+          if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "germany-latest.osm.pbf" \
+              --pattern "germany.diff_state.json" \
+              --pattern "diff_update.germany.latest.json" \
+              --dir mapdata/raw \
+              --clobber || true
+
+            # report belongs under mapdata/reports for downstream tooling
+            if [[ -f mapdata/raw/diff_update.germany.latest.json ]]; then
+              mv mapdata/raw/diff_update.germany.latest.json mapdata/reports/diff_update.germany.latest.json
+            fi
+          fi
+
       - name: Run Daily Diff Pipeline
         id: pipeline
         run: |
@@ -72,6 +113,34 @@ jobs:
             --summary-json-out mapdata/reports/deltas/daily-diff-analysis.summary.json \
             --v3-db mapdata/dist-v3/germany/speeds_v3.sqlite \
             --v4-db mapdata/dist-v4/germany/speeds_v4.sqlite
+
+      - name: Publish Updated PBF Snapshot To Release
+        if: steps.pipeline.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+
+          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release create "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Germany latest PBF snapshot" \
+              --notes "Rolling Germany PBF/state snapshot for downstream bundle builds."
+          fi
+
+          test -f mapdata/raw/germany-latest.osm.pbf
+          test -f mapdata/raw/germany.diff_state.json
+          test -f mapdata/reports/diff_update.germany.latest.json
+
+          gh release upload "${pbf_tag}" mapdata/raw/germany-latest.osm.pbf --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" mapdata/raw/germany.diff_state.json --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" mapdata/reports/diff_update.germany.latest.json --clobber --repo "${GITHUB_REPOSITORY}"
+
+          if [[ -n "${{ steps.pipeline.outputs.daily_delta }}" && -f "${{ steps.pipeline.outputs.daily_delta }}" ]]; then
+            cp "${{ steps.pipeline.outputs.daily_delta }}" /tmp/germany-latest.osc.gz
+            gh release upload "${pbf_tag}" /tmp/germany-latest.osc.gz --clobber --repo "${GITHUB_REPOSITORY}"
+          fi
 
       - name: Save Cached Germany PBF
         if: steps.pipeline.outputs.changed == '1' && hashFiles('mapdata/raw/germany-latest.osm.pbf') != ''
