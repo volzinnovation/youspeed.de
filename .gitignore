@@ -32,6 +32,8 @@ mapdata/dist-v4/**
 mapdata/reports/deltas/**
 mapdata/reports/*.json
 !mapdata/reports/change_tracking.csv
+!mapdata/reports/deltas/
+!mapdata/reports/deltas/daily-diff-analysis.csv
 
 # Paper build artifacts
 paper/*.aux
@@ -41,10 +43,19 @@ paper/*.fdb_latexmk
 paper/*.fls
 paper/*.log
 paper/*.out
-paper/*.pdf
 paper/*.synctex.gz
 paper/.main.pdf.swp
 paper/data/.device_benchmark_report*.swp
+
+# Tech report / LaTeX build artifacts
+techreport/*.aux
+techreport/*.bbl
+techreport/*.blg
+techreport/*.fdb_latexmk
+techreport/*.fls
+techreport/*.log
+techreport/*.out
+techreport/*.synctex.gz
 
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite

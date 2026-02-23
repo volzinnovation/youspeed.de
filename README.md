@@ -135,6 +135,12 @@ Daily incremental PBF update via Geofabrik diffs (no full re-download):
   - persistent state: `mapdata/raw/germany.diff_state.json`
   - optional merged delta export (`.osc.gz`) in `mapdata/build/germany/updates/`
 
+Automated daily diff processing (GitHub Actions):
+- workflow: `.github/workflows/daily_geofabrik_diff_update.yml`
+- pipeline entrypoint: `python3 scripts/map/run_daily_diff_pipeline.py`
+- per-day CSV upsert: `python3 scripts/map/upsert_daily_diff_analysis_row.py`
+- tracked analysis CSV: `mapdata/reports/deltas/daily-diff-analysis.csv`
+
 iPhone benchmark sketch:
 - app scaffold: `iphone/SpeedDBBenchSketch/`
 - generated project: `iphone/SpeedDBBench.xcodeproj`

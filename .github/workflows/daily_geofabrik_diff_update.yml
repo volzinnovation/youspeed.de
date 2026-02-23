@@ -1,0 +1,72 @@
+name: Daily Geofabrik Diff Update
+
+on:
+  schedule:
+    # Run hourly; pipeline uses replication state.txt timestamp date to decide
+    # whether a new daily diff should be processed.
+    - cron: "35 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: geofabrik-daily-diff-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          clean: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+
+      - name: Run Daily Diff Pipeline
+        id: pipeline
+        run: |
+          set -euo pipefail
+          python3 scripts/map/run_daily_diff_pipeline.py \
+            --region germany \
+            --updates-url https://download.geofabrik.de/europe/germany-updates/ \
+            --latest-pbf-url https://download.geofabrik.de/europe/germany-latest.osm.pbf \
+            --input-pbf mapdata/raw/germany-latest.osm.pbf \
+            --state-file mapdata/raw/germany.diff_state.json \
+            --report-path mapdata/reports/diff_update.germany.latest.json \
+            --work-dir mapdata/build/germany/updates \
+            --daily-dir mapdata/reports/deltas/daily \
+            --csv-out mapdata/reports/deltas/daily-diff-analysis.csv \
+            --summary-json-out mapdata/reports/deltas/daily-diff-analysis.summary.json \
+            --v3-db mapdata/dist-v3/germany/speeds_v3.sqlite \
+            --v4-db mapdata/dist-v4/germany/speeds_v4.sqlite
+
+      - name: Commit CSV and State
+        if: steps.pipeline.outputs.changed == '1'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add mapdata/reports/deltas/daily-diff-analysis.csv
+          git add mapdata/raw/germany.diff_state.json
+
+          if git diff --cached --quiet; then
+            echo "No tracked changes to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(map): update daily diff analysis for ${{ steps.pipeline.outputs.processed_date }}"
+          git push
