@@ -476,10 +476,20 @@ else
     notes="pyosmium-up-to-date failed (rc=$updater_rc)."
     rm -f "$updated_tmp"
   else
-    mv "$updated_tmp" "$input_pbf"
-    if [[ "$updater_rc" -eq 1 ]]; then
-      status="partial"
-      notes="Updates applied partially (pyosmium rc=1: more diffs may remain)."
+    if [[ -f "$updated_tmp" ]]; then
+      mv "$updated_tmp" "$input_pbf"
+      if [[ "$updater_rc" -eq 1 ]]; then
+        status="partial"
+        notes="Updates applied partially (pyosmium rc=1: more diffs may remain)."
+      fi
+    else
+      if [[ "$updater_rc" -eq 1 ]]; then
+        status="partial"
+        notes="pyosmium rc=1 but no output file was produced; keeping existing PBF."
+      else
+        status="ok"
+        notes="No updated output file produced; keeping existing PBF unchanged."
+      fi
     fi
   fi
 fi
