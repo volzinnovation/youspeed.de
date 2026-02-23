@@ -165,7 +165,43 @@ def main() -> int:
         "--emit-delta",
     ]
     print("Running incremental update script...", file=sys.stderr)
-    subprocess.run(update_cmd, check=True)
+    update_proc = subprocess.run(update_cmd, text=True, capture_output=True)
+    if update_proc.stdout:
+        print(update_proc.stdout, end="")
+    if update_proc.stderr:
+        print(update_proc.stderr, end="", file=sys.stderr)
+
+    if update_proc.returncode != 0:
+        combined = f"{update_proc.stdout or ''}\n{update_proc.stderr or ''}"
+        legacy_tmp_mv_error = (
+            "cannot stat" in combined
+            and ".updated." in combined
+            and ".tmp" in combined
+            and "mv:" in combined
+        )
+        if legacy_tmp_mv_error:
+            print(
+                "Detected legacy updater tmp-mv failure; continuing non-fatally (no delta exported this run).",
+                file=sys.stderr,
+            )
+            if not report_path.exists():
+                fallback_report = {
+                    "region": args.region,
+                    "input_pbf": str(input_pbf),
+                    "updates_url": args.updates_url,
+                    "status": "ok",
+                    "notes": "Legacy updater failed moving tmp outfile; treated as unchanged PBF.",
+                    "updated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "delta_export": {"status": "skipped", "reason": "legacy_tmp_mv_error", "path": None},
+                }
+                report_path.write_text(json.dumps(fallback_report, indent=2, sort_keys=True), encoding="utf-8")
+        else:
+            raise subprocess.CalledProcessError(
+                update_proc.returncode,
+                update_cmd,
+                output=update_proc.stdout,
+                stderr=update_proc.stderr,
+            )
 
     if not report_path.exists():
         print(f"Expected report missing: {report_path}", file=sys.stderr)

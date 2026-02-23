@@ -30,6 +30,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Ensure Latest Pipeline Scripts
+        run: |
+          set -euo pipefail
+          git checkout -- scripts/map/update_from_geofabrik_diffs.sh
+          git checkout -- scripts/map/run_daily_diff_pipeline.py
+          git checkout -- scripts/map/upsert_daily_diff_analysis_row.py
+
       - name: Install Dependencies
         run: |
           set -euo pipefail
