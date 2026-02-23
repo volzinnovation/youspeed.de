@@ -155,14 +155,7 @@ jobs:
           fi
 
           if [[ -f "${prev_manifest_tmp}" ]]; then
-            prev_index_url="$(python3 - <<'PY'
-import json
-from pathlib import Path
-p = Path('/tmp/prev_bundle_manifest.v3.json')
-obj = json.loads(p.read_text(encoding='utf-8'))
-print(((obj.get('delta_index') or {}).get('url')) or '')
-PY
-)"
+            prev_index_url="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(((obj.get("delta_index") or {}).get("url")) or "")')"
             if [[ -n "${prev_index_url}" ]]; then
               if ! curl -L --fail --silent --show-error "${prev_index_url}" -o "${prev_index_tmp}"; then
                 rm -f "${prev_index_tmp}"
@@ -182,20 +175,8 @@ PY
           new_delta_asset_path=""
 
           if [[ -f "${prev_manifest_tmp}" && -n "${{ steps.version.outputs.delta_path }}" && -f "${{ steps.version.outputs.delta_path }}" ]]; then
-            prev_version="$(python3 - <<'PY'
-import json
-from pathlib import Path
-obj = json.loads(Path('/tmp/prev_bundle_manifest.v3.json').read_text(encoding='utf-8'))
-print(obj.get('bundle_version') or '')
-PY
-)"
-            prev_db_url="$(python3 - <<'PY'
-import json
-from pathlib import Path
-obj = json.loads(Path('/tmp/prev_bundle_manifest.v3.json').read_text(encoding='utf-8'))
-print(((obj.get('db') or {}).get('url')) or '')
-PY
-)"
+            prev_version="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(obj.get("bundle_version") or "")')"
+            prev_db_url="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(((obj.get("db") or {}).get("url")) or "")')"
 
             if [[ -n "${prev_version}" && -n "${prev_db_url}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
               curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"
