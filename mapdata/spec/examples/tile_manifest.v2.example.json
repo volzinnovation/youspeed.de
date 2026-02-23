@@ -1,0 +1,52 @@
+{
+  "schema_version": 2,
+  "tile_id": "33555/22112",
+  "content_version": 17,
+  "generated_at_utc": "2026-02-23T01:00:05Z",
+  "tile_pack_url": "https://cdn.youspeed.de/map/v2/stable/germany/tiles/33555/22112/f59095ea9f95f72e2b03a6d7710330fddc7f3f87f3fbd8d4ddf9d9ef2532bcb7.tilepack",
+  "tile_pack_bytes": 98304,
+  "tile_pack_sha256": "f59095ea9f95f72e2b03a6d7710330fddc7f3f87f3fbd8d4ddf9d9ef2532bcb7",
+  "bbox_wgs84": {
+    "min_lat": 52.5105,
+    "min_lon": 13.3920,
+    "max_lat": 52.5196,
+    "max_lon": 13.4052
+  },
+  "stats": {
+    "segment_count": 4819,
+    "node_count": 13208,
+    "area_count": 34
+  },
+  "chunks": [
+    {
+      "name": "segment_index",
+      "offset": 0,
+      "length": 4096,
+      "codec": "zstd"
+    },
+    {
+      "name": "segment_geom",
+      "offset": 4096,
+      "length": 65536,
+      "codec": "zstd"
+    },
+    {
+      "name": "speed_rules",
+      "offset": 69632,
+      "length": 16384,
+      "codec": "zstd"
+    },
+    {
+      "name": "adjacency",
+      "offset": 86016,
+      "length": 8192,
+      "codec": "zstd"
+    },
+    {
+      "name": "area_index",
+      "offset": 94208,
+      "length": 4096,
+      "codec": "zstd"
+    }
+  ]
+}

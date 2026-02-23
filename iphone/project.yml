@@ -1,0 +1,87 @@
+name: SpeedDBBench
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: "0.1.0"
+    DEVELOPMENT_TEAM: F4CT29PZS5
+targets:
+  SpeedDBBench:
+    type: application
+    platform: iOS
+    sources:
+      - path: SpeedDBBenchSketch
+        includes:
+          - "*.swift"
+        excludes:
+          - "SpeedDBBenchUITests.swift"
+          - "SpeedDBBenchTests.swift"
+          - "README.md"
+      - path: SpeedDBBenchSketch/speeds_v3.sqlite
+        buildPhase: resources
+      - path: SpeedDBBenchSketch/speeds_v4.sqlite
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedDBBench
+        PRODUCT_NAME: SpeedDBBench
+        INFOPLIST_KEY_CFBundleDisplayName: SpeedDBBench
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1,2"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "-lsqlite3"
+    scheme:
+      testTargets:
+        - SpeedDBBenchTests
+        - SpeedDBBenchUITests
+
+  SpeedDBBenchUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SpeedDBBenchSketch/SpeedDBBenchUITests.swift
+    dependencies:
+      - target: SpeedDBBench
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedDBBenchUITests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
+  SpeedDBBenchTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SpeedDBBenchSketch/SpeedDBBenchTests.swift
+    dependencies:
+      - target: SpeedDBBench
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedDBBenchTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
+schemes:
+  SpeedDBBench:
+    build:
+      targets:
+        SpeedDBBench: all
+        SpeedDBBenchTests: [test]
+        SpeedDBBenchUITests: [test]
+    test:
+      gatherCoverageData: false
+      targets:
+        - name: SpeedDBBenchTests
+        - name: SpeedDBBenchUITests

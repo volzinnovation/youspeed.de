@@ -1,0 +1,47 @@
+{
+  "schema_version": 2,
+  "region": "germany",
+  "generated_at_utc": "2026-02-23T01:00:00Z",
+  "app_compat": {
+    "min_data_runtime_version": 2,
+    "max_data_runtime_version": 3
+  },
+  "tile_grid": {
+    "crs": "EPSG:3857",
+    "tile_size_m": 1024
+  },
+  "channels": [
+    "stable",
+    "canary"
+  ],
+  "tiles": [
+    {
+      "tile_id": "33555/22112",
+      "tile_manifest_url": "https://cdn.youspeed.de/map/v2/stable/germany/tiles/33555/22112/tile_manifest.v2.json",
+      "tile_manifest_sha256": "d0c4aa3c8f2be96032820ca60fa854fb8056f0e970f406e6be7e4d4cf8670efb",
+      "content_version": 17,
+      "content_bytes": 98304,
+      "content_sha256": "f59095ea9f95f72e2b03a6d7710330fddc7f3f87f3fbd8d4ddf9d9ef2532bcb7",
+      "bbox_wgs84": {
+        "min_lat": 52.5105,
+        "min_lon": 13.3920,
+        "max_lat": 52.5196,
+        "max_lon": 13.4052
+      }
+    },
+    {
+      "tile_id": "33556/22112",
+      "tile_manifest_url": "https://cdn.youspeed.de/map/v2/stable/germany/tiles/33556/22112/tile_manifest.v2.json",
+      "tile_manifest_sha256": "1e12846697f29bc6fd9f37f4b35f18d9df4fa8a5114786f8a18f6389cc2e9bda",
+      "content_version": 19,
+      "content_bytes": 112640,
+      "content_sha256": "654f8f9d6b6898f9143c3c18f9f95dbf9162465c6f908130b14f6ec32bc4b20c",
+      "bbox_wgs84": {
+        "min_lat": 52.5108,
+        "min_lon": 13.4052,
+        "max_lat": 52.5194,
+        "max_lon": 13.4187
+      }
+    }
+  ]
+}

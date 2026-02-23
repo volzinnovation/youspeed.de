@@ -1,0 +1,563 @@
+#!/usr/bin/env python3
+"""Query speed-limit candidates from v4 SQLite/SpatiaLite + tile prefilter DB."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import re
+import sqlite3
+import sys
+import time
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Tuple
+
+DEFAULT_DE_URBAN = 50
+DEFAULT_DE_RURAL_CAR = 100
+PLACE_VALUES = {"city", "town", "village", "hamlet"}
+NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
+DRIVABLE_HIGHWAYS_CAR = {
+    "motorway",
+    "trunk",
+    "primary",
+    "secondary",
+    "tertiary",
+    "unclassified",
+    "residential",
+    "service",
+    "living_street",
+    "motorway_link",
+    "trunk_link",
+    "primary_link",
+    "secondary_link",
+    "tertiary_link",
+    "road",
+}
+EARTH_RADIUS_M = 6378137.0
+MAX_MERCATOR_LAT = 85.05112878
+
+
+def _lon_lat_to_mercator_m(lon: float, lat: float) -> Tuple[float, float]:
+    lat = min(max(lat, -MAX_MERCATOR_LAT), MAX_MERCATOR_LAT)
+    x = EARTH_RADIUS_M * math.radians(lon)
+    y = EARTH_RADIUS_M * math.log(math.tan(math.pi / 4.0 + math.radians(lat) / 2.0))
+    return x, y
+
+
+def _tile_for_lon_lat(lon: float, lat: float, tile_size_m: int) -> Tuple[int, int]:
+    x, y = _lon_lat_to_mercator_m(lon, lat)
+    return (math.floor(x / tile_size_m), math.floor(y / tile_size_m))
+
+
+def _tile_id(tx: int, ty: int) -> str:
+    return f"{tx}/{ty}"
+
+
+def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371008.8
+    p1 = math.radians(lat1)
+    p2 = math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlon / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def distance_to_bbox_m(lat: float, lon: float, row: dict) -> float:
+    clamped_lon = min(max(lon, row["min_lon"]), row["max_lon"])
+    clamped_lat = min(max(lat, row["min_lat"]), row["max_lat"])
+    return haversine_m(lat, lon, clamped_lat, clamped_lon)
+
+
+def _xy_m(lat: float, lon: float, lat0: float, lon0: float) -> Tuple[float, float]:
+    meters_per_deg_lat = 111132.0
+    meters_per_deg_lon = 111320.0 * math.cos(math.radians(lat0))
+    x = (lon - lon0) * meters_per_deg_lon
+    y = (lat - lat0) * meters_per_deg_lat
+    return x, y
+
+
+def point_to_segment_distance_m(
+    lat: float, lon: float, lat1: float, lon1: float, lat2: float, lon2: float
+) -> float:
+    px, py = _xy_m(lat, lon, lat, lon)
+    x1, y1 = _xy_m(lat1, lon1, lat, lon)
+    x2, y2 = _xy_m(lat2, lon2, lat, lon)
+    dx = x2 - x1
+    dy = y2 - y1
+    if dx == 0.0 and dy == 0.0:
+        return math.hypot(px - x1, py - y1)
+    t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)
+    t = max(0.0, min(1.0, t))
+    proj_x = x1 + t * dx
+    proj_y = y1 + t * dy
+    return math.hypot(px - proj_x, py - proj_y)
+
+
+def polyline_distance_m(lat: float, lon: float, points: List[List[float]]) -> float:
+    if not points:
+        return float("inf")
+    if len(points) == 1:
+        return haversine_m(lat, lon, points[0][0], points[0][1])
+    best = float("inf")
+    for i in range(len(points) - 1):
+        lat1, lon1 = points[i]
+        lat2, lon2 = points[i + 1]
+        d = point_to_segment_distance_m(lat, lon, lat1, lon1, lat2, lon2)
+        if d < best:
+            best = d
+    return best
+
+
+def heading_mismatch_deg(heading: float, approx_heading: Optional[float]) -> Optional[float]:
+    if approx_heading is None:
+        return None
+    raw = abs((heading - approx_heading) % 360.0)
+    raw = min(raw, 360.0 - raw)
+    return min(raw, abs(180.0 - raw))
+
+
+def parse_explicit_speed_kmh(row: dict) -> Optional[int]:
+    for key in ("maxspeed", "zone_maxspeed"):
+        value = row.get(key)
+        if isinstance(value, str):
+            m = NUMERIC_SPEED_RE.match(value.strip())
+            if m:
+                return int(m.group(1))
+    for key in ("maxspeed_type", "source_maxspeed"):
+        value = row.get(key)
+        if value == "DE:urban":
+            return 50
+        if value == "DE:rural":
+            return 100
+    return None
+
+
+def point_in_bbox(lat: float, lon: float, row: dict) -> bool:
+    return row["min_lat"] <= lat <= row["max_lat"] and row["min_lon"] <= lon <= row["max_lon"]
+
+
+def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict]) -> bool:
+    for area in area_candidates:
+        if not point_in_bbox(lat, lon, area):
+            continue
+        place = area.get("place")
+        if place in PLACE_VALUES:
+            return True
+        if area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}:
+            return True
+    return False
+
+
+def _query_way_rows(
+    conn: sqlite3.Connection,
+    lat: float,
+    lon: float,
+    radius_m: float,
+    tile_x_min: int,
+    tile_x_max: int,
+    tile_y_min: int,
+    tile_y_max: int,
+    limit_rows: int,
+) -> Tuple[List[dict], int]:
+    deg_lat = radius_m / 111132.0
+    cos_lat = max(0.173648, abs(math.cos(math.radians(lat))))
+    deg_lon = radius_m / (111320.0 * cos_lat)
+    min_lat = lat - deg_lat
+    max_lat = lat + deg_lat
+    min_lon = lon - deg_lon
+    max_lon = lon + deg_lon
+
+    tile_row_count = int(
+        conn.execute(
+            """
+            SELECT COUNT(DISTINCT row_id)
+            FROM way_tile
+            WHERE tile_x BETWEEN ? AND ?
+              AND tile_y BETWEEN ? AND ?
+            """,
+            (tile_x_min, tile_x_max, tile_y_min, tile_y_max),
+        ).fetchone()[0]
+    )
+
+    sql = """
+    WITH tile_rows AS (
+      SELECT DISTINCT row_id
+      FROM way_tile
+      WHERE tile_x BETWEEN ? AND ?
+        AND tile_y BETWEEN ? AND ?
+    )
+    SELECT
+      w.way_id,
+      w.highway,
+      w.maxspeed,
+      w.maxspeed_type,
+      w.source_maxspeed,
+      w.zone_maxspeed,
+      w.traffic_sign,
+      w.approx_heading_deg,
+      w.min_lon,
+      w.min_lat,
+      w.max_lon,
+      w.max_lat,
+      g.points_json
+    FROM tile_rows t
+    JOIN ways_rtree r ON r.row_id = t.row_id
+    JOIN ways w ON w.row_id = t.row_id
+    LEFT JOIN way_geom g ON g.row_id = t.row_id
+    WHERE r.min_lon <= ? AND r.max_lon >= ?
+      AND r.min_lat <= ? AND r.max_lat >= ?
+    ORDER BY
+      (
+        CASE
+          WHEN ? < w.min_lon THEN (w.min_lon - ?)
+          WHEN ? > w.max_lon THEN (? - w.max_lon)
+          ELSE 0
+        END
+      ) * (
+        CASE
+          WHEN ? < w.min_lon THEN (w.min_lon - ?)
+          WHEN ? > w.max_lon THEN (? - w.max_lon)
+          ELSE 0
+        END
+      ) +
+      (
+        CASE
+          WHEN ? < w.min_lat THEN (w.min_lat - ?)
+          WHEN ? > w.max_lat THEN (? - w.max_lat)
+          ELSE 0
+        END
+      ) * (
+        CASE
+          WHEN ? < w.min_lat THEN (w.min_lat - ?)
+          WHEN ? > w.max_lat THEN (? - w.max_lat)
+          ELSE 0
+        END
+      )
+    LIMIT ?
+    """
+    params = (
+        tile_x_min,
+        tile_x_max,
+        tile_y_min,
+        tile_y_max,
+        max_lon,
+        min_lon,
+        max_lat,
+        min_lat,
+        lon,
+        lon,
+        lon,
+        lon,
+        lon,
+        lon,
+        lon,
+        lon,
+        lat,
+        lat,
+        lat,
+        lat,
+        lat,
+        lat,
+        lat,
+        lat,
+        limit_rows,
+    )
+    rows: List[dict] = []
+    cur = conn.execute(sql, params)
+    for r in cur.fetchall():
+        points: List[List[float]] = []
+        if isinstance(r[12], str) and r[12]:
+            try:
+                parsed = json.loads(r[12])
+                if isinstance(parsed, list):
+                    points = parsed
+            except json.JSONDecodeError:
+                points = []
+        rows.append(
+            {
+                "way_id": str(r[0]),
+                "highway": r[1],
+                "maxspeed": r[2],
+                "maxspeed_type": r[3],
+                "source_maxspeed": r[4],
+                "zone_maxspeed": r[5],
+                "traffic_sign": r[6],
+                "approx_heading_deg": r[7],
+                "min_lon": float(r[8]),
+                "min_lat": float(r[9]),
+                "max_lon": float(r[10]),
+                "max_lat": float(r[11]),
+                "points": points,
+            }
+        )
+    return rows, tile_row_count
+
+
+def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_rows: int = 512) -> List[dict]:
+    sql = """
+    SELECT
+      a.area_id, a.geometry_type, a.name, a.place, a.boundary, a.admin_level,
+      a.min_lon, a.min_lat, a.max_lon, a.max_lat
+    FROM areas_rtree r
+    JOIN areas a ON a.row_id = r.row_id
+    WHERE r.min_lon <= ? AND r.max_lon >= ?
+      AND r.min_lat <= ? AND r.max_lat >= ?
+    LIMIT ?
+    """
+    cur = conn.execute(sql, (lon, lon, lat, lat, limit_rows))
+    out = []
+    for r in cur.fetchall():
+        out.append(
+            {
+                "area_id": str(r[0]),
+                "geometry_type": r[1],
+                "name": r[2],
+                "place": r[3],
+                "boundary": r[4],
+                "admin_level": r[5],
+                "min_lon": float(r[6]),
+                "min_lat": float(r[7]),
+                "max_lon": float(r[8]),
+                "max_lat": float(r[9]),
+            }
+        )
+    return out
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Query speed candidates from v4 SQLite/SpatiaLite tile DB")
+    parser.add_argument("--db", required=True, help="Path to speeds_v4.sqlite")
+    parser.add_argument("--lat", required=True, type=float, help="Latitude in degrees")
+    parser.add_argument("--lon", required=True, type=float, help="Longitude in degrees")
+    parser.add_argument("--heading", type=float, default=None, help="Heading in degrees (0-360)")
+    parser.add_argument("--tile-radius", type=int, default=1, help="Tile window radius")
+    parser.add_argument("--search-radius-m", type=float, default=1200.0, help="RTree search radius in meters")
+    parser.add_argument("--max-candidates", type=int, default=5000, help="SQL prefilter candidate cap")
+    parser.add_argument("--top-k", type=int, default=5, help="Number of candidates to return")
+    parser.add_argument("--heading-weight", type=float, default=2.0, help="Meters per degree heading penalty")
+    parser.add_argument(
+        "--distance-mode",
+        choices=("bbox", "polyline", "hybrid"),
+        default="hybrid",
+        help="Distance scoring mode",
+    )
+    parser.add_argument("--polyline-top-n", type=int, default=250, help="Hybrid refinement top-N rows")
+    parser.add_argument(
+        "--vehicle-profile",
+        choices=("car", "any"),
+        default="car",
+        help="Candidate filtering profile",
+    )
+    parser.add_argument("--unknown-highway-penalty", type=float, default=30.0)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    started = time.perf_counter()
+
+    if not (-90.0 <= args.lat <= 90.0 and -180.0 <= args.lon <= 180.0):
+        print("Invalid coordinate range", file=sys.stderr)
+        return 1
+    if args.heading is not None and not (0.0 <= args.heading <= 360.0):
+        print("Heading must be in range [0, 360]", file=sys.stderr)
+        return 1
+    if args.tile_radius < 0:
+        print("tile-radius must be >= 0", file=sys.stderr)
+        return 1
+    if args.search_radius_m <= 0.0:
+        print("search-radius-m must be > 0", file=sys.stderr)
+        return 1
+    if args.max_candidates <= 0:
+        print("max-candidates must be > 0", file=sys.stderr)
+        return 1
+    if args.top_k <= 0:
+        print("top-k must be > 0", file=sys.stderr)
+        return 1
+    if args.polyline_top_n <= 0:
+        print("polyline-top-n must be > 0", file=sys.stderr)
+        return 1
+
+    db_path = Path(args.db)
+    if not db_path.exists():
+        print(f"Missing artifact: {db_path}", file=sys.stderr)
+        return 1
+
+    t0 = time.perf_counter()
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+
+    schema_ok = bool(
+        conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name IN ('ways','ways_rtree','way_tile','areas','areas_rtree') LIMIT 1"
+        ).fetchone()
+    )
+    if not schema_ok:
+        print("Invalid v4 DB schema", file=sys.stderr)
+        return 1
+
+    tile_size_row = conn.execute("SELECT value FROM metadata WHERE key='tile_size_m' LIMIT 1").fetchone()
+    if not tile_size_row:
+        print("v4 metadata missing tile_size_m", file=sys.stderr)
+        return 1
+    tile_size_m = int(tile_size_row[0])
+    if tile_size_m <= 0:
+        print("v4 metadata tile_size_m must be > 0", file=sys.stderr)
+        return 1
+    index_load_ms = (time.perf_counter() - t0) * 1000.0
+
+    tx, ty = _tile_for_lon_lat(args.lon, args.lat, tile_size_m)
+    tile_x_min = tx - args.tile_radius
+    tile_x_max = tx + args.tile_radius
+    tile_y_min = ty - args.tile_radius
+    tile_y_max = ty + args.tile_radius
+
+    t1 = time.perf_counter()
+    ways, tile_prefilter_rows = _query_way_rows(
+        conn=conn,
+        lat=args.lat,
+        lon=args.lon,
+        radius_m=args.search_radius_m,
+        tile_x_min=tile_x_min,
+        tile_x_max=tile_x_max,
+        tile_y_min=tile_y_min,
+        tile_y_max=tile_y_max,
+        limit_rows=args.max_candidates,
+    )
+    area_candidates = _query_area_rows(conn=conn, lat=args.lat, lon=args.lon)
+    candidate_load_ms = (time.perf_counter() - t1) * 1000.0
+
+    t2 = time.perf_counter()
+    scored: List[dict] = []
+    filtered_non_drivable = 0
+    for row in ways:
+        parsed_speed = parse_explicit_speed_kmh(row)
+        highway = row.get("highway")
+        if args.vehicle_profile == "car":
+            if highway is not None and highway not in DRIVABLE_HIGHWAYS_CAR:
+                filtered_non_drivable += 1
+                continue
+
+        distance_m = distance_to_bbox_m(args.lat, args.lon, row)
+        heading_diff = None
+        heading_penalty = 0.0
+        if args.heading is not None:
+            heading_diff = heading_mismatch_deg(args.heading, row.get("approx_heading_deg"))
+            if heading_diff is not None:
+                heading_penalty = heading_diff * args.heading_weight
+
+        unknown_highway_penalty = 0.0
+        if args.vehicle_profile == "car" and highway is None:
+            unknown_highway_penalty = args.unknown_highway_penalty
+
+        score = distance_m + heading_penalty + unknown_highway_penalty
+        scored.append(
+            {
+                "way_id": row["way_id"],
+                "highway": highway,
+                "distance_m": round(distance_m, 2),
+                "heading_diff_deg": None if heading_diff is None else round(heading_diff, 2),
+                "score": round(score, 2),
+                "maxspeed": row.get("maxspeed"),
+                "maxspeed_type": row.get("maxspeed_type"),
+                "source_maxspeed": row.get("source_maxspeed"),
+                "zone_maxspeed": row.get("zone_maxspeed"),
+                "parsed_speed_kmh": parsed_speed,
+                "points": row.get("points", []),
+                "_heading_penalty": heading_penalty,
+                "_unknown_highway_penalty": unknown_highway_penalty,
+            }
+        )
+
+    polyline_refine_mode = "disabled"
+    refined_polyline_rows = 0
+    polyline_missing_rows = 0
+    t_poly = time.perf_counter()
+    if args.distance_mode != "bbox":
+        sorted_scored = sorted(scored, key=lambda r: (r["score"], r["distance_m"], r["way_id"]))
+        refine_rows = sorted_scored[: args.polyline_top_n] if args.distance_mode == "hybrid" else sorted_scored
+        polyline_refine_mode = "active"
+        for row in refine_rows:
+            pts = row.get("points")
+            if not isinstance(pts, list) or not pts:
+                polyline_missing_rows += 1
+                continue
+            dpoly = polyline_distance_m(args.lat, args.lon, pts)
+            score = dpoly + row["_heading_penalty"] + row["_unknown_highway_penalty"]
+            row["distance_m"] = round(dpoly, 2)
+            row["score"] = round(score, 2)
+            refined_polyline_rows += 1
+    polyline_refine_ms = (time.perf_counter() - t_poly) * 1000.0
+
+    scored.sort(key=lambda r: (r["score"], r["distance_m"], r["way_id"]))
+    for row in scored:
+        row.pop("_heading_penalty", None)
+        row.pop("_unknown_highway_penalty", None)
+        row.pop("points", None)
+    top = scored[: args.top_k]
+    scoring_ms = (time.perf_counter() - t2) * 1000.0
+
+    built_up = inside_built_up_guess(args.lat, args.lon, area_candidates)
+    default_speed = DEFAULT_DE_URBAN if built_up else DEFAULT_DE_RURAL_CAR
+    best = top[0] if top else None
+    if best and best.get("parsed_speed_kmh") is not None:
+        effective_speed = best["parsed_speed_kmh"]
+        effective_source = "map_explicit"
+    else:
+        effective_speed = default_speed
+        effective_source = "default_rule"
+
+    result = {
+        "input": {
+            "lat": args.lat,
+            "lon": args.lon,
+            "heading": args.heading,
+            "search_radius_m": args.search_radius_m,
+            "max_candidates": args.max_candidates,
+            "tile_radius": args.tile_radius,
+            "query_tile": _tile_id(tx, ty),
+            "db": str(db_path),
+        },
+        "summary": {
+            "candidate_way_ids": len({r["way_id"] for r in ways}),
+            "matched_way_rows": len(ways),
+            "tile_prefilter_way_rows": tile_prefilter_rows,
+            "candidate_tile_rows": (2 * args.tile_radius + 1) ** 2,
+            "filtered_non_drivable_rows": filtered_non_drivable,
+            "scored_rows": len(scored),
+            "distance_mode_requested": args.distance_mode,
+            "distance_mode_effective": "polyline" if polyline_refine_mode == "active" else "bbox",
+            "polyline_refine_mode": polyline_refine_mode,
+            "polyline_refined_rows": refined_polyline_rows,
+            "polyline_missing_rows": polyline_missing_rows,
+            "candidate_areas": len(area_candidates),
+            "inside_built_up_guess": built_up,
+            "default_speed_kmh": default_speed,
+            "effective_speed_kmh": effective_speed,
+            "effective_speed_source": effective_source,
+        },
+        "timing_ms": {
+            "load_index": round(index_load_ms, 2),
+            "load_candidates": round(candidate_load_ms, 2),
+            "polyline_refine": round(polyline_refine_ms, 2),
+            "score_and_rank": round(scoring_ms, 2),
+            "total": round((time.perf_counter() - started) * 1000.0, 2),
+        },
+        "top_candidates": top,
+        "notes": [
+            "v4 query combines tile prefilter (way_tile) with SQLite RTree.",
+            "Built-up inference is heuristic from area bbox candidates.",
+            "Use camera-detected signs to override map/default limits in final fusion.",
+        ],
+    }
+
+    conn.close()
+    print(f"query_time_ms={result['timing_ms']['total']}", file=sys.stderr)
+    print(json.dumps(result, sort_keys=True, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

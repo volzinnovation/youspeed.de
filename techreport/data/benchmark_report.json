@@ -1,0 +1,145 @@
+{
+  "artifacts": {
+    "v1_dist_dir": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist/germany",
+    "v1_size_bytes": 5085501049,
+    "v2_dist_dir": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v2/germany",
+    "v2_size_bytes": 4605741851,
+    "v2_tile_count": 54666,
+    "v3_db_path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/germany/speeds_v3.sqlite",
+    "v3_size_bytes": 2595708928,
+    "v4_db_path": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/germany/speeds_v4.sqlite",
+    "v4_size_bytes": 3001716736
+  },
+  "benchmark_ms": {
+    "v1": {
+      "bbox": {
+        "avg_ms": 4815.67,
+        "max_ms": 4815.67,
+        "min_ms": 4815.67,
+        "p50_ms": 4815.67
+      },
+      "hybrid": {
+        "avg_ms": 8306.77,
+        "max_ms": 8306.77,
+        "min_ms": 8306.77,
+        "p50_ms": 8306.77
+      },
+      "polyline": {
+        "avg_ms": 8367.55,
+        "max_ms": 8367.55,
+        "min_ms": 8367.55,
+        "p50_ms": 8367.55
+      }
+    },
+    "v2": {
+      "bbox": {
+        "avg_ms": 187.28,
+        "max_ms": 187.28,
+        "min_ms": 187.28,
+        "p50_ms": 187.28
+      },
+      "hybrid": {
+        "avg_ms": 179.32,
+        "max_ms": 179.32,
+        "min_ms": 179.32,
+        "p50_ms": 179.32
+      },
+      "polyline": {
+        "avg_ms": 165.19,
+        "max_ms": 165.19,
+        "min_ms": 165.19,
+        "p50_ms": 165.19
+      }
+    },
+    "v3": {
+      "bbox": {
+        "avg_ms": 84.39,
+        "max_ms": 84.39,
+        "min_ms": 84.39,
+        "p50_ms": 84.39
+      },
+      "hybrid": {
+        "avg_ms": 27.03,
+        "max_ms": 27.03,
+        "min_ms": 27.03,
+        "p50_ms": 27.03
+      },
+      "polyline": {
+        "avg_ms": 35.99,
+        "max_ms": 35.99,
+        "min_ms": 35.99,
+        "p50_ms": 35.99
+      }
+    },
+    "v4": {
+      "bbox": {
+        "avg_ms": 63.28,
+        "max_ms": 63.28,
+        "min_ms": 63.28,
+        "p50_ms": 63.28
+      },
+      "hybrid": {
+        "avg_ms": 67.77,
+        "max_ms": 67.77,
+        "min_ms": 67.77,
+        "p50_ms": 67.77
+      },
+      "polyline": {
+        "avg_ms": 76.33,
+        "max_ms": 76.33,
+        "min_ms": 76.33,
+        "p50_ms": 76.33
+      }
+    }
+  },
+  "executed_steps": [
+    "build_v3",
+    "build_v4",
+    "benchmark_v1",
+    "benchmark_v2",
+    "benchmark_v3",
+    "benchmark_v4"
+  ],
+  "generated_at_utc": "2026-02-23T02:17:47Z",
+  "input_pbf": "mapdata/raw/germany-latest.osm.pbf",
+  "params": {
+    "content_version": 1,
+    "engine": "pyosmium",
+    "heading": 90.0,
+    "lat": 52.52,
+    "lon": 13.405,
+    "max_area_tiles": 1024,
+    "max_candidates": 5000,
+    "max_geom_points": 8,
+    "max_way_tiles": 1024,
+    "polyline_top_n": 250,
+    "repeats": 1,
+    "search_radius_m": 1200.0,
+    "subgrid": 32,
+    "tile_radius": 1,
+    "tile_size_m": 4096,
+    "top_k": 5
+  },
+  "region": "germany",
+  "schema_version": 2,
+  "speedup_x_avg": {
+    "bbox": {
+      "v2_vs_v1": 25.71,
+      "v3_vs_v1": 57.06,
+      "v4_vs_v1": 76.1,
+      "v4_vs_v2": 2.96
+    },
+    "hybrid": {
+      "v2_vs_v1": 46.32,
+      "v3_vs_v1": 307.32,
+      "v4_vs_v1": 122.57,
+      "v4_vs_v2": 2.65
+    },
+    "polyline": {
+      "v2_vs_v1": 50.65,
+      "v3_vs_v1": 232.5,
+      "v4_vs_v1": 109.62,
+      "v4_vs_v2": 2.16
+    }
+  }
+}

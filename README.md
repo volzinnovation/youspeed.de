@@ -15,4 +15,131 @@ User should be able to confirm a newly detected limit in a easy way while drivin
 
 Come up with a research on German traffic rules and an implementation plan before actually generating code
 
+## Implementation Bootstrap (Osmium-First)
 
+The first implementation step in this repo is an offline OSM preprocessing pipeline without PostgreSQL/PostGIS.
+
+### Prerequisites
+- `pyosmium` (Python `osmium` package)
+- `python3`
+- `osmium-tool` (only for optional `--engine osmium-cli` fallback)
+- `jq`
+- standard Unix tools: `awk`, `sort`, `wc`
+
+### Run
+1. Put the Karlsruhe PBF into:
+   - `mapdata/raw/karlsruhe-regbez-latest.osm.pbf`
+2. Build artifacts:
+   - `./scripts/map/build_region_artifacts.sh --region karlsruhe-regbez --input mapdata/raw/karlsruhe-regbez-latest.osm.pbf`
+
+Engine options:
+- default: `pyosmium` (direct Python/Osmium processing)
+- fallback: `osmium-cli`
+  - `./scripts/map/build_region_artifacts.sh --region karlsruhe-regbez --input mapdata/raw/karlsruhe-regbez-latest.osm.pbf --engine osmium-cli`
+- for large regions, reduce geometry footprint:
+  - `./scripts/map/build_region_artifacts.sh --region germany --input mapdata/raw/germany-latest.osm.pbf --max-geom-points 8`
+
+### Output
+The pipeline writes versioned artifacts to:
+- `mapdata/build/karlsruhe-regbez/` (intermediate filtered PBF layers)
+- `mapdata/dist/karlsruhe-regbez/` (runtime artifacts)
+  - `ways.meta` (one JSON object per way with speed tags + bbox)
+  - `ways.lookup` (way_id -> byte-offset lookup for fast candidate fetch)
+  - `ways.geom` (downsampled per-way polyline points for segment-distance scoring)
+  - `ways.geom.lookup` (way_id -> byte-offset lookup for `ways.geom`)
+  - `ways.idx` (grid-cell index for way candidate lookup)
+  - `areas.idx` (grid-cell index + area metadata for built-up context lookup)
+  - `manifest.json`
+
+### Verify Artifacts
+- Validate schema + manifest hashes:
+  - `./scripts/map/check_artifacts.sh mapdata/dist/karlsruhe-regbez`
+- Verify deterministic builds (same input -> same artifact signatures):
+  - `./scripts/map/check_determinism.sh --region karlsruhe-regbez --input mapdata/raw/karlsruhe-regbez-latest.osm.pbf --runs 2`
+
+### Query Candidates
+Use the artifact matcher to query speed-limit candidates for a GPS point:
+
+- `./scripts/map/query_speed_limit.py --dist-dir mapdata/dist/karlsruhe-regbez --lat 49.009 --lon 8.404 --heading 90 --top-k 5`
+- Polyline backup scoring:
+  - `./scripts/map/query_speed_limit.py --dist-dir mapdata/dist/karlsruhe-regbez --lat 49.009 --lon 8.404 --heading 90 --distance-mode polyline`
+- Hybrid scoring (bbox prefilter + polyline refinement of top candidates):
+  - `./scripts/map/query_speed_limit.py --dist-dir mapdata/dist/karlsruhe-regbez --lat 49.009 --lon 8.404 --heading 90 --distance-mode hybrid --polyline-top-n 250`
+- Mode benchmark helper:
+  - `./scripts/map/benchmark_lookup_speed.sh mapdata/dist/karlsruhe-regbez 49.009 8.404 90 10 5 250`
+
+Output includes:
+- candidate ways from `ways.idx`
+- scored top matches (distance + optional heading penalty)
+- inferred effective limit (`map_explicit` or fallback `default_rule`)
+- query timing (`timing_ms` in JSON + `query_time_ms=...` log line on stderr)
+
+Dataset policy:
+- `ways.meta` includes only car-drivable `highway=*` types.
+- Pedestrian/cycle/foot paths and non-drivable shapes are excluded from the runtime way dataset.
+
+### Test Suite
+Run:
+- `python3 -m unittest discover -s tests -p 'test_*.py' -v`
+
+Coverage includes:
+- positive and negative checks for artifact validity
+- deterministic and hash-integrity checks
+- inside-city vs outside-city default speed behavior (`50` vs `100`)
+- explicit limit parsing (`maxspeed`, `zone:maxspeed`, `maxspeed:type`, `source:maxspeed`, unit suffixes)
+- filtering of non-car ways (pedestrian/cycle/path/building excluded)
+- query timing output (`query_time_ms` log + `timing_ms` payload)
+
+### Tile/Segment v2 Spec (Independent Data Delivery)
+- design doc: `docs/TILE_SEGMENT_ASSET_SPEC.md`
+- migration plan: `docs/TILE_ASSET_MIGRATION_PLAN.md`
+- machine-readable contracts: `mapdata/spec/catalog.v2.schema.json`, `mapdata/spec/tile_manifest.v2.schema.json`
+- concrete examples: `mapdata/spec/examples/catalog.v2.example.json`, `mapdata/spec/examples/tile_manifest.v2.example.json`
+
+Validate v2 examples:
+- `python3 scripts/map/check_tile_assets_v2.py --catalog mapdata/spec/examples/catalog.v2.example.json --tile-manifest mapdata/spec/examples/tile_manifest.v2.example.json`
+
+Build Germany v2 tiles from existing v1 artifacts:
+- `python3 scripts/map/build_tile_assets_v2.py --v1-dist mapdata/dist/germany --out-dir mapdata/dist-v2/germany --region germany --tile-size-m 4096 --subgrid 32 --content-version 1 --max-area-tiles 1024`
+
+Query v2:
+- `python3 scripts/map/query_speed_limit_v2.py --dist-dir mapdata/dist-v2/germany --lat 52.5200 --lon 13.4050 --heading 90 --distance-mode hybrid --polyline-top-n 250 --top-k 5`
+
+Benchmark v2:
+- `./scripts/map/benchmark_lookup_speed_v2.sh mapdata/dist-v2/germany 52.5200 13.4050 90 10 5 250 1`
+
+One-shot build + benchmark report:
+- `python3 scripts/map/build_and_benchmark_v2.py --region germany --input-pbf mapdata/raw/germany-latest.osm.pbf --lat 52.5200 --lon 13.4050 --heading 90 --repeats 10`
+- report output default: `mapdata/dist-v4/germany/benchmark_report.json`
+
+Build v3 (single Spatialite/SQLite DB):
+- `python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite`
+
+Query v3:
+- `python3 scripts/map/query_speed_limit_v3.py --db mapdata/dist-v3/germany/speeds_v3.sqlite --lat 52.5200 --lon 13.4050 --heading 90 --distance-mode hybrid --polyline-top-n 250`
+
+Build v4 (Spatialite/SQLite DB + tile prefilter table):
+- `python3 scripts/map/build_spatialite_v4.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v4/germany/speeds_v4.sqlite --tile-size-m 4096 --max-way-tiles 1024`
+
+Query v4:
+- `python3 scripts/map/query_speed_limit_v4.py --db mapdata/dist-v4/germany/speeds_v4.sqlite --lat 52.5200 --lon 13.4050 --heading 90 --tile-radius 1 --distance-mode hybrid --polyline-top-n 250`
+
+Weekly refresh benchmark (scheduled protocol example for 2026-03-02):
+- `./scripts/map/refresh_and_benchmark_weekly.sh 2026-03-02`
+- plan doc: `docs/WEEKLY_REFRESH_BENCHMARK_2026-03-02.md`
+
+Daily incremental PBF update via Geofabrik diffs (no full re-download):
+- `./scripts/map/update_from_geofabrik_diffs.sh --region germany --input-pbf mapdata/raw/germany-latest.osm.pbf`
+- outputs:
+  - run report: `mapdata/reports/diff_update.germany.<timestamp>.json`
+  - persistent state: `mapdata/raw/germany.diff_state.json`
+  - optional merged delta export (`.osc.gz`) in `mapdata/build/germany/updates/`
+
+iPhone benchmark sketch:
+- app scaffold: `iphone/SpeedDBBenchSketch/`
+- generated project: `iphone/SpeedDBBench.xcodeproj`
+- regenerate project from spec: `./scripts/iphone/generate_xcode_project.sh`
+- automation guide: `docs/IPHONE_BENCHMARK_AUTOMATION.md`
+- run UI benchmark on attached device:
+  - `./scripts/iphone/run_device_benchmark.sh /Users/raphaelvolz/Github/youspeed.de/iphone/SpeedDBBench.xcodeproj SpeedDBBench <DeviceUDID>`
+  - if device signing/provisioning is unavailable, the script auto-falls back to simulator benchmark execution.

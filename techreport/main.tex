@@ -1,0 +1,384 @@
+\documentclass{article}
+\usepackage{arxiv}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{lipsum}
+\usepackage{siunitx}
+\usepackage{pgfplots}
+\usepackage{float}
+\usepgfplotslibrary{statistics}
+\pgfplotsset{compat=1.18}
+
+\title{Scalable Runtime Data Architectures for Low-Latency On-Device Speed-Limit Inference}
+
+\author{
+  Raphael Volz \\
+  Pforzheim University \\
+  \texttt{raphael.volz@hs-pforzheim.de}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This paper evaluates runtime data architectures for low-latency, offline-capable smartphone speed-limit inference using country-scale OpenStreetMap (OSM) data. We identify four data processing scenarios that are compared to find an optimal query and update scenario along three typical query conditions. Hence, we identify the preferred operating point for practical deployment for on-device speed-limit inference as required for Intelligent speed assistance (ISA) applications that are mandatory for new vehicles in the EU since 2022 and open the way for a smartphone and open data based retrofitting approach for vehicles that are already in traffic. Thereby we can strongly support the EU traffic safety vision of reduced crash severity.
+\end{abstract}
+
+\keywords{Open Data \and OpenStreetMap \and map matching \and mobile GIS \and offline-first \and spatial indexing \and file-based preprocessing}
+
+\section{Introduction}
+Excessive speed remains a major factor in crash severity, making reliable speed-limit assistance a core road-safety problem. For intelligent speed assistance (ISA), this creates a practical requirement for map context retrieval that remains accurate and low-latency under storage, memory, and connectivity constraints.
+
+European regulation has made ISA deployment operationally mandatory. Article 6 of Regulation (EU) 2019/2144 requires ISA in new motor vehicles of categories M and N \cite{eu2019_2144}, and Delegated Regulation (EU) 2021/1958 specifies detailed ISA performance and test rules \cite{eu2021_1958}. The rollout is phased: the requirement applies to new vehicle types from July 2022 and to all newly registered cars, vans, trucks, and buses from July 2024 \cite{eu_mandatory_safety_2024}. The European Commission estimates that the broader General Safety Regulation package can prevent approximately 25{,}000 deaths and at least 140{,}000 serious injuries in the EU by 2038 \cite{eu_mandatory_safety_2024}.
+
+A large legacy-vehicle gap remains. Eurostat reports that EU passenger-car stock exceeded 260 million vehicles in 2024 \cite{eurostat_passenger_cars_2026}, while ACEA reports 10.6 million new EU car registrations in 2024 \cite{acea_registrations_2024}. Using registration year as a coarse proxy, even an optimistic post-2024 assumption still leaves roughly 249 million pre-2024 vehicles (about 96\% of the fleet) as potential retrofit targets.
+
+This gap motivates a broad deployment approach based on smartphone sensing and open geospatial data. Eurostat reports mobile-phone internet use of 89\% in cities and 82\% in rural areas in 2024 \cite{eurostat_mobile_internet_2024}, and OpenStreetMap (OSM) offers large-scale, continuously updated road-network attributes relevant for speed-limit inference \cite{osmwiki_highways,osmwiki_maxspeed}.
+
+Against this background, this study examines runtime data architecture as the primary systems bottleneck. We compare four scenarios built from the same national OSM extract: global country-scale indexes (S1), tiled file packs (S2), a single-file spatially indexed database (S3), and a spatially indexed database with additional tile-window prefiltering (S4). The objective is to quantify latency and update-operability trade-offs under both cloud-like and on-device conditions.
+
+\section{Related Work}
+Map matching has been studied extensively for GPS trajectories under measurement noise and sampling sparsity. A foundational survey by \citet{quddus2007} systematized geometric, topological, and probabilistic matching strategies and outlined scaling challenges that remain relevant for mobile deployment.
+
+Probabilistic sequence models became dominant for noisy and sparse data. \citet{newson2009} introduced a Hidden Markov Model (HMM) formulation that combines emission and transition probabilities, while \citet{lou2009} proposed ST-matching to jointly model spatial and temporal consistency for low-sampling trajectories. Real-time variants for streaming probe data were then explored in online HMM frameworks \citep{goh2012,he2013}.
+
+Subsequent work strengthened route-level inference in sparse regimes. \citet{rahmani2013} formulated path inference from sparse floating-car data on urban networks, and the Path Inference Filter by \citet{hunter2014} provided a model-based low-latency approach for probe vehicles. Hybrid designs combining shortest-path priors with trajectory evidence further improved low-frequency matching \citep{quddus2015}, and route-choice-aware HMM approaches improved robustness for noisy sparse traces \citep{jagadeesh2017}. Enhanced HMM models that explicitly incorporate topology and traffic constraints also reported improved accuracy and consistency on floating-car data \citep{che2018}.
+
+These studies primarily optimize candidate selection and path inference given an available road graph. In contrast, our contribution focuses on the systems layer around map data itself: physically tiled, content-addressed assets with independent update delivery and bounded local IO at query time. This targets a complementary bottleneck that is critical for country-scale, offline-first mobile speed-limit inference.
+
+Spatial access methods are central to this systems layer. The R-tree introduced by \citet{guttman1984} established the foundational dynamic index for multi-dimensional range search and remains a standard basis for geographic candidate retrieval in database systems. Here, R-tree-based indexing is evaluated not as a new algorithmic contribution, but as an architectural instrument to control candidate fan-out and improve practical query latency at country scale.
+
+\section{Methodology}
+
+\subsection{Speed regulations in Germany}
+For passenger-car inference in Germany, this study uses the legal baseline defined in \S3 StVO: \(50\) km/h in built-up areas and \(100\) km/h outside built-up areas unless traffic signs specify otherwise \cite{stvo_3}. This rule is applied only when no explicit map speed value is available for a candidate road segment.
+
+To frame practical impact, Germany also applies escalating sanctions for speeding. Public guidance aligned with the current fine catalog reports, for example, \(+21\) to \(+25\) km/h in urban areas as EUR 115 plus one point in the driving register, and from \(+31\) km/h as EUR 260 plus one point and a one-month driving ban \cite{adac_bussgeld_2025}. These enforcement consequences motivate conservative fallback design in ISA research.
+
+
+\subsection{OpenStreetMap dataset potential for speed-limit inference}
+Tables~\ref{tab:highway_distribution} and~\ref{tab:dataset_profile} summarize the Germany OSM input used throughout this study. The dataset contains 7.96 million car-drivable ways and broad coverage of context objects (administrative boundaries, area contexts, and city place tags), which is sufficient to support both direct speed-limit lookup and fallback context inference.
+
+The data also shows strong promise for practical speed-limit inference. More than 2.63 million drivable ways carry explicit \texttt{maxspeed} tagging, while high-volume road classes such as residential, secondary, and tertiary roads contribute substantial additional network coverage for rule-based inference when explicit values are absent. This combination of explicit speed tags and structured road semantics is a key enabler for scalable, offline-capable ISA research on open data.
+
+\begin{table}[!htbp]
+\centering
+\caption{Way counts by \texttt{highway} tag, with OSM-wiki interpretation and \texttt{maxspeed} tag occurrences \cite{osmwiki_highways,osmwiki_maxspeed}.}
+\label{tab:highway_distribution}
+\scriptsize
+\begin{tabular}{p{1.8cm}p{5.2cm}rr}
+\toprule
+\texttt{highway} tag & Human-readable interpretation (OSM wiki) & \texttt{maxspeed} tagged (\#) & Ways (\#) \\
+\midrule
+\texttt{service} & Access roads to premises, parking, and service areas. & 144{,}112 & 3{,}928{,}743 \\
+\texttt{residential} & Roads primarily serving housing areas. & 1{,}183{,}710 & 2{,}011{,}658 \\
+\texttt{secondary} & Secondary inter-settlement connectors in the network hierarchy. & 425{,}993 & 506{,}931 \\
+\texttt{tertiary} & Tertiary connectors between local centers. & 351{,}790 & 477{,}476 \\
+\texttt{unclassified} & Minor public through roads (not ``unknown class''). & 152{,}237 & 417{,}457 \\
+\texttt{primary} & Primary roads with high network importance below trunk/motorway. & 215{,}400 & 240{,}674 \\
+\texttt{living\_street} & Traffic-calmed shared street (Wohnstra{\ss}e / verkehrsberuhigter Bereich). & 13{,}543 & 173{,}199 \\
+\texttt{motorway} & Controlled-access motorway (Autobahn-type) corridor. & 69{,}075 & 70{,}200 \\
+\texttt{motorway\_link} & Motorway ramps/connectors. & 17{,}736 & 43{,}213 \\
+\texttt{trunk} & Major non-motorway long-distance routes. & 31{,}594 & 33{,}284 \\
+\texttt{trunk\_link} & Connector ramps between trunk and other classes. & 10{,}486 & 21{,}538 \\
+\texttt{primary\_link} & Connector ramps related to primary roads. & 8{,}861 & 17{,}140 \\
+\texttt{secondary\_link} & Connector ramps related to secondary roads. & 8{,}262 & 13{,}854 \\
+\texttt{tertiary\_link} & Connector ramps related to tertiary roads. & 4{,}207 & 7{,}839 \\
+\texttt{road} & Temporary placeholder until precise class is surveyed. & 14 & 275 \\
+\midrule
+\textbf{Total} & \textbf{All evaluated drivable \texttt{highway} categories in this study.} & \textbf{2{,}637{,}020} & \textbf{7{,}963{,}481} \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Germany dataset profile for evaluation.}
+\label{tab:dataset_profile}
+\begin{tabular}{p{7.8cm}r}
+\toprule
+Metric & Value \\
+\midrule
+Input file size (\texttt{germany-latest.osm.pbf}) & \SI{4.70}{GB} \\
+Car-drivable ways in evaluated classes & 7{,}963{,}481 \\
+Ways with \texttt{maxspeed=*} tag & 2{,}637{,}020 \\
+Ways with \texttt{zone:maxspeed=*} tag & 172{,}116 \\
+Ways with explicit speed-limit tag (\texttt{maxspeed} or \texttt{zone:maxspeed}) & 2{,}639{,}693 \\
+Administrative city-boundary candidates (\texttt{boundary=administrative}, \texttt{admin\_level} 8/9) & 44{,}621 \\
+Total area-context objects & 129{,}459 \\
+Place objects tagged \texttt{city} & 84 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The \texttt{maxspeed} counts in Table~\ref{tab:dataset_profile} refer to the base OSM key \texttt{maxspeed=*} on road ways (not derived keys such as \texttt{maxspeed:type}); they are distinct from area-context objects used for built-up-area inference.
+
+\begin{table}[!htbp]
+\centering
+\caption{Speed-limit provenance in the Germany dataset.}
+\label{tab:speed_limit_provenance}
+\begin{tabular}{lrr}
+\toprule
+Category & Ways (\#) & Share (\%) \\
+\midrule
+Explicit tagged limit (\texttt{maxspeed} or \texttt{zone:maxspeed}) & 2{,}639{,}693 & 33.15 \\
+Implicit regulatory tag (\texttt{maxspeed:type}/\texttt{source:maxspeed} = DE urban/rural) & 78{,}147 & 0.98 \\
+Default-rule fallback (context-based legal default) & 5{,}245{,}641 & 65.87 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:speed_limit_provenance} separates explicit and implicit speed-limit sources under German rule-aware inference. Beyond static snapshot downloads, OSM also supports incremental maintenance through replication diffs. In this study, daily diffs are used to quantify update feasibility and update workload for country-scale operation.
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=\linewidth,
+  height=0.34\textheight,
+  xlabel={Date (UTC)},
+  ylabel={Count per daily diff},
+  xmin=1,
+  xmax=30,
+  ymin=0,
+  ymax=27000,
+  xtick={1,4,7,10,13,16,19,22,25,28},
+  xticklabels={2026-01-22,2026-01-25,2026-01-28,2026-01-31,2026-02-03,2026-02-06,2026-02-09,2026-02-12,2026-02-15,2026-02-18},
+  xticklabel style={rotate=35,anchor=east,font=\scriptsize},
+  ymajorgrids=true,
+  grid style={gray!25},
+  legend style={at={(0.02,0.98)},anchor=north west,font=\small,fill=none,draw=none},
+  ylabel near ticks
+]
+\addplot[thick,color={rgb,255:red,27;green,158;blue,119}] coordinates {(1,18013) (2,19254) (3,18260) (4,17438) (5,21334) (6,24457) (7,23643) (8,22933) (9,21015) (10,16429) (11,14368) (12,16727) (13,19650) (14,19698) (15,16405) (16,17607) (17,16965) (18,15923) (19,19745) (20,23371) (21,21608) (22,19435) (23,19166) (24,18455) (25,18826) (26,19617) (27,17806) (28,16920) (29,17859) (30,17969)};
+\addplot[thick,color={rgb,255:red,217;green,95;blue,2}] coordinates {(1,1900) (2,1937) (3,1782) (4,1747) (5,1853) (6,2117) (7,2201) (8,1885) (9,1702) (10,1541) (11,1413) (12,1756) (13,2702) (14,2526) (15,4186) (16,4405) (17,1693) (18,1323) (19,1475) (20,1969) (21,2012) (22,1936) (23,1872) (24,1795) (25,1786) (26,1936) (27,3133) (28,2973) (29,1735) (30,2180)};
+\addplot[thick,color={rgb,255:red,117;green,112;blue,179}] coordinates {(1,4212) (2,4148) (3,4556) (4,5214) (5,5037) (6,4353) (7,4596) (8,4683) (9,4603) (10,4868) (11,5615) (12,5668) (13,4810) (14,5071) (15,4701) (16,4029) (17,4915) (18,5310) (19,4822) (20,4997) (21,4906) (22,4330) (23,4009) (24,4185) (25,4223) (26,4496) (27,4237) (28,3894) (29,4465) (30,5046)};
+\legend{ways added,ways removed,maxspeed tag changes}
+\end{axis}
+\end{tikzpicture}
+\caption{Daily update dynamics in the 30-day window: ways added, ways removed, and \texttt{maxspeed}-tag changes per daily diff.}
+\label{fig:monthly_updates}
+\end{figure}
+
+\subsection{Data processing scenarios (S1--S4)}
+
+\subsubsection{Shared preprocessing and scope}
+All four scenarios are generated from the same OSM extract (Geofabrik \texttt{germany-latest.osm.pbf}) \cite{geofabrik2026}. Preprocessing follows a file-based parsing workflow \cite{pyosmium} and does not rely on a separately deployed database server. The retained road network includes car-drivable \texttt{highway=*} categories (major roads, local roads, and connector links), ensuring that scenario differences arise from runtime data architecture and query execution rather than from differing road subsets.
+
+
+\subsection{Three query types}
+We use typical location-based queries to lookup speed limits for a vehicle in motion. All queries use the same score:
+\[
+\text{score} = d + \lambda_h \cdot \Delta\theta + p_u
+\]
+where \(d\) is the geometry term, \(\lambda_h\) heading weight (\si{m/deg}), \(\Delta\theta\) bidirectional heading mismatch, and \(p_u\) optional unknown-highway penalty.
+
+\textbf{bbox query.} \(d\) is haversine distance from the probe to the clamped point on a candidate bbox. It is the fastest approximation and is used as the coarse filter in every scenario.
+
+\textbf{polyline query.} \(d\) is minimum point-to-segment distance across the full candidate geometry. This gives the highest geometric fidelity, especially on curved and elongated ways.
+
+\textbf{hybrid query.} Candidates are first ranked with bbox distance. A limited top-\(N\) subset is then refined with polyline distance, combining near-polyline quality with lower compute cost.
+
+
+\subsubsection{Data processing architectures (S1-S4)}
+\begin{table}[!htbp]
+\centering
+\caption{Compared runtime scenarios (same input data, different runtime packaging/query path).}
+\label{tab:scenario_overview}
+\begin{tabular}{p{1.4cm}p{3.1cm}p{5.9cm}}
+\toprule
+Scenario & Runtime artifact & Query characteristics \\
+\midrule
+S1 & Global country-scale index files & Broad candidate scans with comparatively high IO per query. \\
+S2 & Content-addressed spatial tile packs & Localized reads and independently refreshable regional partitions. \\
+S3 & Single-file spatially indexed embedded database & Direct spatial-index candidate retrieval with bounded fan-out. \\
+S4 & Spatially indexed embedded database with tile-window prefiltering & Two-stage filtering (tile prefilter then spatial-index intersection) for dense-area pruning. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{itemize}
+\item  S1 is the global-index baseline: country-scale index files are queried directly without prior spatial partitioning, which makes it simple but increases broad candidate scans and IO pressure for each lookup.
+
+\item  S2 introduces explicit spatial tiling and content-addressed tile assets. This localizes reads to relevant map partitions and supports selective data refresh at tile granularity.
+
+\item  S3 uses a file-based embedded database with spatial indexing for candidate retrieval. S3 performs direct spatial-window search and then geometric ranking. 
+
+\item S4 also uses a file-based embedded database but adds a tile-membership prefilter before spatial-index intersection to reduce candidate fan-out in dense urban regions.
+
+
+
+\end{itemize}
+Because S2--S4 runtime artifacts are file-based and immutable per build, they support horizontal cloud scaling through replication across stateless workers and object storage distribution, while also remaining suitable for autonomous offline execution on mobile devices.
+
+\subsection{Measurement scenarios}
+We evaluate two deployment modes:
+\begin{itemize}
+\item \textbf{Online (cloud-like) scenario:} host-side execution on a desktop-class environment, representing server-style continuous evaluation for online queries (measured without networking overhead).
+\item \textbf{Offline (on-device) scenario:} physical smartphone execution with country-scale runtime data stored in the mobile sandbox, representing autonomous offline operation.
+\end{itemize}
+
+Both modes are assessed the same way across the four runtime scenarios and the same three query types.
+
+\section{Evaluation}
+\subsection{Experimental setup}
+The evaluated baseline was generated on 2026-02-23 from \texttt{germany-latest.osm.pbf}. Evaluation used a dual-platform setup: host-side cloud-like execution on a MacBook Pro (Mac16,5; Apple M4 Max, 16 cores; 48 GB RAM; macOS 15.5, Xcode 16.4) and offline execution on a physical iPhone 14 Pro (iPhone15,2; arm64e/A16 generation; iOS 26.2.1).
+
+The benchmark protocol uses a fixed Berlin probe point \((52.5200,13.4050)\), heading \(90^\circ\), top-\(k=5\), and the three query types (\texttt{bbox}, \texttt{hybrid}, \texttt{polyline}).
+
+Runtime footprint is strongly architecture-dependent: S1 uses 7 runtime files (\SI{5.09}{GB}), S2 uses 109{,}333 files (\SI{4.61}{GB}), S3 uses a single file (\SI{2.60}{GB}), and S4 uses a single file (\SI{3.00}{GB}). A representative country-scale on-device run completed successfully on iPhone with one executed test, \SI{30.328}{s} action elapsed time, and \SI{16758.57}{ms} test duration.
+
+\subsection{Benchmark results}
+Table~\ref{tab:bench_joint} reports the joint online (cloud-like) and offline (device) latency matrix. Figure~\ref{fig:bench_boxplot} orders the same data by scenario (S1--S4), each shown as adjacent online/offline columns.
+
+\begin{table}[!htbp]
+\centering
+\caption{Joint online/offline benchmark matrix at the benchmark coordinate (\si{\milli\second}).}
+\label{tab:bench_joint}
+\begin{tabular}{llrrrr}
+\toprule
+Execution & Mode & S1 avg (ms) & S2 avg (ms) & S3 avg (ms) & S4 avg (ms) \\
+\midrule
+online (cloud) & bbox     & 4815.67 & 187.28 & 84.39 & 63.28 \\
+online (cloud) & hybrid   & 8306.77 & 179.32 & 27.03 & 67.77 \\
+online (cloud) & polyline & 8367.55 & 165.19 & 35.99 & 76.33 \\
+\midrule
+offline (device) & bbox     & 3970.84 & 194.49 & 37.12 & 757.01 \\
+offline (device) & hybrid   & 2535.44 & 45.76 & 23.39 & 95.96 \\
+offline (device) & polyline & 2639.76 & 62.88 & 44.93 & 86.48 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To convert on-device latency into a raw location-update budget, this study uses:
+\[
+f_{\text{query}}=\frac{1000}{t_{\text{ms}}}, \qquad
+v_{\max}=3.6 \cdot f_{\text{query}} \cdot \Delta s
+\]
+where \(f_{\text{query}}\) is raw query throughput in Hz, \(t_{\text{ms}}\) is mean query latency, and \(\Delta s\) is distance between location fixes (here \(\Delta s=\SI{10}{m}\)). Table~\ref{tab:device_speed_envelope} reports per-scenario device throughput and the corresponding theoretical speed envelope without additional pipeline overheads.\footnote{From a full-system perspective, location-fix cadence rather than query runtime is the dominant upper bound. Android compatibility requirements specify that handheld devices must report GPS location and GPS clock measurements at least once per second (\(\geq\)1 Hz) \cite{android_cdd16}. The Android location framework also exposes millisecond-level request and minimum-update intervals \cite{android_locationrequest_aosp}, so higher cadences can be requested, but delivered rates remain device- and policy-dependent. With \(\Delta s=\SI{10}{m}\), a guaranteed 1 Hz fix stream corresponds to \(\SI{36}{km/h}\); a requested 5 Hz stream corresponds to \(\SI{180}{km/h}\).}
+
+\begin{table}[!htbp]
+\centering
+\caption{On-device raw query throughput and theoretical speed envelope (\(\Delta s=\SI{10}{m}\), no additional processing overhead).}
+\label{tab:device_speed_envelope}
+\begin{tabular}{lrrrr}
+\toprule
+Scenario & Mean latency (ms) & Mean throughput (Hz) & Best-mode \(v_{\max}\) (km/h) & Worst-mode \(v_{\max}\) (km/h) \\
+\midrule
+S1 & 3048.68 & 0.33 & 14.2 & 9.1 \\
+S2 & 101.04 & 9.90 & 786.7 & 185.1 \\
+S3 & 35.15 & 28.45 & 1539.1 & 801.2 \\
+S4 & 313.15 & 3.19 & 416.3 & 47.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  width=\linewidth,
+  height=0.38\textheight,
+  bar width=4pt,
+  ylabel={Latency (ms, log scale)},
+  ymode=log,
+  ymin=10,
+  ymax=10000,
+  xmin=0.5,
+  xmax=8.5,
+  xtick={1,2,3,4,5,6,7,8},
+  xticklabels={S1 online,S1 offline,S2 online,S2 offline,S3 online,S3 offline,S4 online,S4 offline},
+  xticklabel style={rotate=35,anchor=east,font=\scriptsize},
+  legend style={at={(0.5,1.04)},anchor=south,legend columns=3,font=\small},
+  ylabel near ticks,
+  grid=major
+]
+\addplot coordinates {
+  (1,4815.67) (2,3970.84) (3,187.28) (4,194.49)
+  (5,84.39) (6,37.12) (7,63.28) (8,757.01)
+};
+\addplot coordinates {
+  (1,8306.77) (2,2535.44) (3,179.32) (4,45.76)
+  (5,27.03) (6,23.39) (7,67.77) (8,95.96)
+};
+\addplot coordinates {
+  (1,8367.55) (2,2639.76) (3,165.19) (4,62.88)
+  (5,35.99) (6,44.93) (7,76.33) (8,86.48)
+};
+\draw[gray,densely dashed,thick] (axis cs:2.5,10) -- (axis cs:2.5,10000);
+\draw[gray,densely dashed,thick] (axis cs:4.5,10) -- (axis cs:4.5,10000);
+\draw[gray,densely dashed,thick] (axis cs:6.5,10) -- (axis cs:6.5,10000);
+\legend{bbox,hybrid,polyline}
+\end{axis}
+\end{tikzpicture}
+\caption{Scenario-first latency view derived from Table~\ref{tab:bench_joint}. For each scenario (S1--S4), online and offline columns are adjacent, and dashed vertical lines delimit scenario groups.}
+\label{fig:bench_boxplot}
+\end{figure}
+
+Compared to S1, host-side speedups range from \(25.7\times\) (S2 bbox) to \(307.3\times\) (S3 hybrid). On device, the same overall ordering remains for hybrid and polyline (\(S3 < S2 < S4 \ll S1\)), while bbox in S4 regresses versus S3.
+
+Based on current results, \textbf{S3} is selected as default on-device runtime: it delivers the lowest hybrid/polyline latency while keeping a single-file footprint smaller than S4.
+
+\section{Incremental Data Updates}
+Incremental update behavior was evaluated on a 30-day daily-diff window ending immediately before the baseline snapshot date (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\)). The analysis quantifies daily network churn, speed-tag churn, and scenario-specific refresh effort under a common observation period for the Germany subset of OSM.
+
+\begin{table}[!htbp]
+\centering
+\caption{Daily-diff update workload summary (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\), 30 days).}
+\label{tab:update_summary}
+\begin{tabular}{p{7.2cm}rr}
+\toprule
+Metric & Total & Mean / day \\
+\midrule
+Changed ways (\(+\), \(-\), modified) & 1{,}829{,}171 & 60{,}972 \\
+\texttt{maxspeed}-related tag changes & 139{,}999 & 4{,}667 \\
+Invalidated S1 grid cells (S1 proxy) & 201{,}355 & 6{,}712 \\
+Invalidated S2 tiles (S2 proxy) & 80{,}536 & 2{,}685 \\
+S3 simulated patch runtime (S3) & \SI{30719.38}{ms} & \SI{1023.98}{ms} \\
+S4 simulated patch runtime (S4) & \SI{40710.02}{ms} & \SI{1357.00}{ms} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across the measured window, S4 patching is \(1.33\times\) slower than S3 in mean daily patch runtime, while S2 invalidates substantially fewer partitions than S1. This indicates that tile partitioning improves refresh locality over global-index invalidation, and that S3 remains the stronger update/query compromise among database-centered variants.
+
+To translate these architectural differences into deployment-relevant transfer times, payload transmission is represented as \(T=(B_{\text{payload}}+B_{\text{overhead}})/R\), with \(B_{\text{overhead}}\) modeled as a separate 10\% transport overhead term. For Europe, a practical throughput range is \SI{104.3}{Mbps} to \SI{217.6}{Mbps} for 5G downloads (spectrum-dependent) \cite{opensignal_europe_5g_2024}, with an EU-27 mobile average of \SI{124}{Mbps} in 2025 \cite{eu_connectivity_impact_2026}. Using measured median tile-pack size (\SI{47199}{B}) and measured daily update volumes, indicative transfer times are: (i) 100 median tiles (\SI{4.72}{MB} payload): \SIrange{0.19}{0.40}{s}; (ii) 1000 median tiles (\SI{47.2}{MB}): \SIrange{1.91}{3.98}{s}; (iii) S2 mean daily invalidation volume (\(2685\) median tiles, \SI{126.73}{MB}): \SIrange{5.13}{10.69}{s}; and (iv) S3 daily SQL patch transmission (gzip estimate, \SI{5.07}{MB}): \SIrange{0.21}{0.43}{s}. These results indicate that, in practical mobile operation, compact SQL patch delivery is typically faster than broad tile-bundle refresh for equivalent daily update coverage.
+
+The daily benchmark is designed to be extended into a weekly longitudinal protocol with regular baseline checkpoints and intervening incremental updates. This will quantify whether reduced update effort is preserved over longer horizons while retaining low-latency query behavior.
+
+\section{Conclusion}
+Under a 50\%/50\% decision rule (equal weight on query latency and update effort), this study selects S3 as the preferred operating point. Query performance uses on-device mean latency, while update effort uses scenario-specific incremental-update proxies from Section 5 (partition invalidation for S1/S2, simulated patch runtime for S3/S4), normalized to a common \([0,1]\) scale before weighting. The resulting ranking is \(S3 \prec S4 \prec S2 \ll S1\) (lower is better).
+
+\begin{table}[!htbp]
+\centering
+\caption{Scenario suitability matrix (\(++\): best; \(+\): suitable).}
+\label{tab:scenario_matrix}
+\begin{tabular}{lcc}
+\toprule
+Scenario & Query time & Update time \\
+\midrule
+S1 & -- & -- \\
+S2 & + & + \\
+S3 & ++ & ++ \\
+S4 & + & + \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{Reproducibility}
+All preprocessing, scenario construction, and benchmark steps are parameterized and versioned in the accompanying research codebase available at \url{https://github.com/volzinnovation/youspeed.de}. The evaluation reported here is tied to the Germany snapshot dated 2026-02-23, with fixed probe location, heading, query modes, and scenario definitions stated in the methodology and evaluation sections. 
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,58 @@
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local build/runtime outputs
+.tmp/
+*.tmp
+*.log
+
+# Map data generated artifacts (very large)
+mapdata/raw/*.osm.pbf
+mapdata/raw/archive/
+mapdata/build/**
+mapdata/dist/**
+mapdata/dist-v2/**
+mapdata/dist-v3/**
+mapdata/dist-v4/**
+
+# Keep lightweight mapdata metadata/spec/docs
+!mapdata/build/.gitkeep
+!mapdata/dist/.gitkeep
+!mapdata/raw/.gitkeep
+!mapdata/README.md
+!mapdata/spec/**
+!mapdata/reports/change_tracking.csv
+mapdata/reports/deltas/**
+mapdata/reports/*.json
+!mapdata/reports/change_tracking.csv
+
+# Paper build artifacts
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.synctex.gz
+paper/.main.pdf.swp
+paper/data/.device_benchmark_report*.swp
+
+# iPhone generated/embedded benchmark DB artifacts
+iphone/SpeedDBBenchSketch/*.sqlite
+iphone/.derived/
+iphone/DerivedData*/
+iphone/SpeedDBBench.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# Xcode and test bundles
+*.xcresult
+DerivedData/

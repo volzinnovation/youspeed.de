@@ -1,0 +1,492 @@
+#!/usr/bin/env python3
+"""Build v1-v4 map assets and write a benchmark report JSON."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import statistics
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BUILD_V1 = REPO_ROOT / "scripts/map/build_region_artifacts.sh"
+BUILD_V2 = REPO_ROOT / "scripts/map/build_tile_assets_v2.py"
+BUILD_V3 = REPO_ROOT / "scripts/map/build_spatialite_v3.py"
+BUILD_V4 = REPO_ROOT / "scripts/map/build_spatialite_v4.py"
+QUERY_V1 = REPO_ROOT / "scripts/map/query_speed_limit.py"
+QUERY_V2 = REPO_ROOT / "scripts/map/query_speed_limit_v2.py"
+QUERY_V3 = REPO_ROOT / "scripts/map/query_speed_limit_v3.py"
+QUERY_V4 = REPO_ROOT / "scripts/map/query_speed_limit_v4.py"
+
+
+def run_cmd(args: List[str]) -> subprocess.CompletedProcess:
+    return subprocess.run(args, text=True, capture_output=True, check=True)
+
+
+def bytes_recursive(path: Path) -> int:
+    total = 0
+    if not path.exists():
+        return total
+    for p in path.rglob("*"):
+        if p.is_file():
+            total += p.stat().st_size
+    return total
+
+
+def bytes_file(path: Path) -> int:
+    if not path.exists() or not path.is_file():
+        return 0
+    return path.stat().st_size
+
+
+def summarize(values: List[float]) -> Dict[str, float]:
+    return {
+        "avg_ms": round(statistics.mean(values), 2),
+        "p50_ms": round(statistics.median(values), 2),
+        "min_ms": round(min(values), 2),
+        "max_ms": round(max(values), 2),
+    }
+
+
+def benchmark_v1(
+    dist_dir: Path,
+    lat: float,
+    lon: float,
+    heading: float,
+    repeats: int,
+    top_k: int,
+    polyline_top_n: int,
+) -> Dict[str, Dict[str, float]]:
+    out: Dict[str, Dict[str, float]] = {}
+    for mode in ("bbox", "hybrid", "polyline"):
+        totals: List[float] = []
+        for _ in range(repeats):
+            result = run_cmd(
+                [
+                    str(QUERY_V1),
+                    "--dist-dir",
+                    str(dist_dir),
+                    "--lat",
+                    str(lat),
+                    "--lon",
+                    str(lon),
+                    "--heading",
+                    str(heading),
+                    "--top-k",
+                    str(top_k),
+                    "--distance-mode",
+                    mode,
+                    "--polyline-top-n",
+                    str(polyline_top_n),
+                ]
+            )
+            payload = json.loads(result.stdout)
+            totals.append(float(payload["timing_ms"]["total"]))
+        out[mode] = summarize(totals)
+    return out
+
+
+def benchmark_v2(
+    dist_dir: Path,
+    lat: float,
+    lon: float,
+    heading: float,
+    repeats: int,
+    top_k: int,
+    polyline_top_n: int,
+    tile_radius: int,
+) -> Dict[str, Dict[str, float]]:
+    out: Dict[str, Dict[str, float]] = {}
+    for mode in ("bbox", "hybrid", "polyline"):
+        totals: List[float] = []
+        for _ in range(repeats):
+            result = run_cmd(
+                [
+                    str(QUERY_V2),
+                    "--dist-dir",
+                    str(dist_dir),
+                    "--lat",
+                    str(lat),
+                    "--lon",
+                    str(lon),
+                    "--heading",
+                    str(heading),
+                    "--tile-radius",
+                    str(tile_radius),
+                    "--top-k",
+                    str(top_k),
+                    "--distance-mode",
+                    mode,
+                    "--polyline-top-n",
+                    str(polyline_top_n),
+                ]
+            )
+            payload = json.loads(result.stdout)
+            totals.append(float(payload["timing_ms"]["total"]))
+        out[mode] = summarize(totals)
+    return out
+
+
+def benchmark_v3(
+    db_path: Path,
+    lat: float,
+    lon: float,
+    heading: float,
+    repeats: int,
+    top_k: int,
+    polyline_top_n: int,
+    search_radius_m: float,
+    max_candidates: int,
+) -> Dict[str, Dict[str, float]]:
+    out: Dict[str, Dict[str, float]] = {}
+    for mode in ("bbox", "hybrid", "polyline"):
+        totals: List[float] = []
+        for _ in range(repeats):
+            result = run_cmd(
+                [
+                    sys.executable,
+                    str(QUERY_V3),
+                    "--db",
+                    str(db_path),
+                    "--lat",
+                    str(lat),
+                    "--lon",
+                    str(lon),
+                    "--heading",
+                    str(heading),
+                    "--top-k",
+                    str(top_k),
+                    "--distance-mode",
+                    mode,
+                    "--polyline-top-n",
+                    str(polyline_top_n),
+                    "--search-radius-m",
+                    str(search_radius_m),
+                    "--max-candidates",
+                    str(max_candidates),
+                ]
+            )
+            payload = json.loads(result.stdout)
+            totals.append(float(payload["timing_ms"]["total"]))
+        out[mode] = summarize(totals)
+    return out
+
+
+def benchmark_v4(
+    db_path: Path,
+    lat: float,
+    lon: float,
+    heading: float,
+    repeats: int,
+    top_k: int,
+    polyline_top_n: int,
+    tile_radius: int,
+    search_radius_m: float,
+    max_candidates: int,
+) -> Dict[str, Dict[str, float]]:
+    out: Dict[str, Dict[str, float]] = {}
+    for mode in ("bbox", "hybrid", "polyline"):
+        totals: List[float] = []
+        for _ in range(repeats):
+            result = run_cmd(
+                [
+                    sys.executable,
+                    str(QUERY_V4),
+                    "--db",
+                    str(db_path),
+                    "--lat",
+                    str(lat),
+                    "--lon",
+                    str(lon),
+                    "--heading",
+                    str(heading),
+                    "--tile-radius",
+                    str(tile_radius),
+                    "--top-k",
+                    str(top_k),
+                    "--distance-mode",
+                    mode,
+                    "--polyline-top-n",
+                    str(polyline_top_n),
+                    "--search-radius-m",
+                    str(search_radius_m),
+                    "--max-candidates",
+                    str(max_candidates),
+                ]
+            )
+            payload = json.loads(result.stdout)
+            totals.append(float(payload["timing_ms"]["total"]))
+        out[mode] = summarize(totals)
+    return out
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Build v1-v4 map assets and benchmark query speed")
+    parser.add_argument("--region", required=True, help="Region name (e.g. germany)")
+    parser.add_argument("--input-pbf", required=True, help="Path to source PBF")
+    parser.add_argument(
+        "--v1-dist-dir",
+        help="Override v1 dist dir (default: mapdata/dist/<region>)",
+    )
+    parser.add_argument(
+        "--v2-dist-dir",
+        help="Override v2 dist dir (default: mapdata/dist-v2/<region>)",
+    )
+    parser.add_argument(
+        "--report-path",
+        help="Output benchmark report JSON path (default: <v4-db-dir>/benchmark_report.json)",
+    )
+    parser.add_argument("--engine", default="pyosmium", choices=("pyosmium", "osmium-cli"))
+    parser.add_argument("--max-geom-points", type=int, default=8)
+    parser.add_argument("--tile-size-m", type=int, default=4096)
+    parser.add_argument("--subgrid", type=int, default=32)
+    parser.add_argument("--content-version", type=int, default=1)
+    parser.add_argument("--max-area-tiles", type=int, default=1024)
+    parser.add_argument(
+        "--v3-db-path",
+        help="Override v3 db path (default: mapdata/dist-v3/<region>/speeds_v3.sqlite)",
+    )
+    parser.add_argument(
+        "--v4-db-path",
+        help="Override v4 db path (default: mapdata/dist-v4/<region>/speeds_v4.sqlite)",
+    )
+    parser.add_argument("--max-way-tiles", type=int, default=1024)
+    parser.add_argument("--lat", type=float, default=52.52)
+    parser.add_argument("--lon", type=float, default=13.405)
+    parser.add_argument("--heading", type=float, default=90.0)
+    parser.add_argument("--repeats", type=int, default=10)
+    parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--polyline-top-n", type=int, default=250)
+    parser.add_argument("--tile-radius", type=int, default=1)
+    parser.add_argument("--search-radius-m", type=float, default=1200.0)
+    parser.add_argument("--max-candidates", type=int, default=5000)
+    parser.add_argument("--skip-build-v1", action="store_true")
+    parser.add_argument("--skip-build-v2", action="store_true")
+    parser.add_argument("--skip-build-v3", action="store_true")
+    parser.add_argument("--skip-build-v4", action="store_true")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+
+    v1_dist_dir = Path(args.v1_dist_dir) if args.v1_dist_dir else REPO_ROOT / "mapdata" / "dist" / args.region
+    v2_dist_dir = Path(args.v2_dist_dir) if args.v2_dist_dir else REPO_ROOT / "mapdata" / "dist-v2" / args.region
+    v3_db_path = (
+        Path(args.v3_db_path)
+        if args.v3_db_path
+        else REPO_ROOT / "mapdata" / "dist-v3" / args.region / "speeds_v3.sqlite"
+    )
+    v4_db_path = (
+        Path(args.v4_db_path)
+        if args.v4_db_path
+        else REPO_ROOT / "mapdata" / "dist-v4" / args.region / "speeds_v4.sqlite"
+    )
+    report_path = Path(args.report_path) if args.report_path else v4_db_path.parent / "benchmark_report.json"
+
+    executed_steps: List[str] = []
+
+    if not args.skip_build_v1:
+        print("Building v1 artifacts...", file=sys.stderr)
+        run_cmd(
+            [
+                str(BUILD_V1),
+                "--region",
+                args.region,
+                "--input",
+                args.input_pbf,
+                "--engine",
+                args.engine,
+                "--max-geom-points",
+                str(args.max_geom_points),
+            ]
+        )
+        executed_steps.append("build_v1")
+
+    if not args.skip_build_v2:
+        print("Building v2 tile assets...", file=sys.stderr)
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V2),
+                "--v1-dist",
+                str(v1_dist_dir),
+                "--out-dir",
+                str(v2_dist_dir),
+                "--region",
+                args.region,
+                "--tile-size-m",
+                str(args.tile_size_m),
+                "--subgrid",
+                str(args.subgrid),
+                "--content-version",
+                str(args.content_version),
+                "--max-area-tiles",
+                str(args.max_area_tiles),
+            ]
+        )
+        executed_steps.append("build_v2")
+
+    if not args.skip_build_v3:
+        print("Building v3 spatial DB...", file=sys.stderr)
+        v3_db_path.parent.mkdir(parents=True, exist_ok=True)
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V3),
+                "--v1-dist",
+                str(v1_dist_dir),
+                "--out-db",
+                str(v3_db_path),
+            ]
+        )
+        executed_steps.append("build_v3")
+
+    if not args.skip_build_v4:
+        print("Building v4 spatial+tile DB...", file=sys.stderr)
+        v4_db_path.parent.mkdir(parents=True, exist_ok=True)
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V4),
+                "--v1-dist",
+                str(v1_dist_dir),
+                "--out-db",
+                str(v4_db_path),
+                "--tile-size-m",
+                str(args.tile_size_m),
+                "--max-way-tiles",
+                str(args.max_way_tiles),
+            ]
+        )
+        executed_steps.append("build_v4")
+
+    print("Benchmarking v1...", file=sys.stderr)
+    v1_bench = benchmark_v1(
+        dist_dir=v1_dist_dir,
+        lat=args.lat,
+        lon=args.lon,
+        heading=args.heading,
+        repeats=args.repeats,
+        top_k=args.top_k,
+        polyline_top_n=args.polyline_top_n,
+    )
+    print("Benchmarking v2...", file=sys.stderr)
+    v2_bench = benchmark_v2(
+        dist_dir=v2_dist_dir,
+        lat=args.lat,
+        lon=args.lon,
+        heading=args.heading,
+        repeats=args.repeats,
+        top_k=args.top_k,
+        polyline_top_n=args.polyline_top_n,
+        tile_radius=args.tile_radius,
+    )
+    print("Benchmarking v3...", file=sys.stderr)
+    v3_bench = benchmark_v3(
+        db_path=v3_db_path,
+        lat=args.lat,
+        lon=args.lon,
+        heading=args.heading,
+        repeats=args.repeats,
+        top_k=args.top_k,
+        polyline_top_n=args.polyline_top_n,
+        search_radius_m=args.search_radius_m,
+        max_candidates=args.max_candidates,
+    )
+    print("Benchmarking v4...", file=sys.stderr)
+    v4_bench = benchmark_v4(
+        db_path=v4_db_path,
+        lat=args.lat,
+        lon=args.lon,
+        heading=args.heading,
+        repeats=args.repeats,
+        top_k=args.top_k,
+        polyline_top_n=args.polyline_top_n,
+        tile_radius=args.tile_radius,
+        search_radius_m=args.search_radius_m,
+        max_candidates=args.max_candidates,
+    )
+    executed_steps.extend(["benchmark_v1", "benchmark_v2", "benchmark_v3", "benchmark_v4"])
+
+    speedups = {}
+    for mode in ("bbox", "hybrid", "polyline"):
+        v1 = v1_bench[mode]["avg_ms"]
+        v2 = v2_bench[mode]["avg_ms"]
+        v3 = v3_bench[mode]["avg_ms"]
+        v4 = v4_bench[mode]["avg_ms"]
+        speedups[mode] = {
+            "v2_vs_v1": round(v1 / v2, 2) if v2 > 0 else None,
+            "v3_vs_v1": round(v1 / v3, 2) if v3 > 0 else None,
+            "v4_vs_v1": round(v1 / v4, 2) if v4 > 0 else None,
+            "v4_vs_v2": round(v2 / v4, 2) if v4 > 0 else None,
+        }
+
+    v2_catalog_path = v2_dist_dir / "catalog.v2.json"
+    tile_count = None
+    if v2_catalog_path.exists():
+        try:
+            tile_count = len(json.loads(v2_catalog_path.read_text(encoding="utf-8")).get("tiles", []))
+        except Exception:
+            tile_count = None
+
+    report = {
+        "schema_version": 2,
+        "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "region": args.region,
+        "input_pbf": str(Path(args.input_pbf)),
+        "executed_steps": executed_steps,
+        "params": {
+            "engine": args.engine,
+            "max_geom_points": args.max_geom_points,
+            "tile_size_m": args.tile_size_m,
+            "subgrid": args.subgrid,
+            "content_version": args.content_version,
+            "max_area_tiles": args.max_area_tiles,
+            "max_way_tiles": args.max_way_tiles,
+            "lat": args.lat,
+            "lon": args.lon,
+            "heading": args.heading,
+            "repeats": args.repeats,
+            "top_k": args.top_k,
+            "polyline_top_n": args.polyline_top_n,
+            "tile_radius": args.tile_radius,
+            "search_radius_m": args.search_radius_m,
+            "max_candidates": args.max_candidates,
+        },
+        "artifacts": {
+            "v1_dist_dir": str(v1_dist_dir),
+            "v2_dist_dir": str(v2_dist_dir),
+            "v3_db_path": str(v3_db_path),
+            "v4_db_path": str(v4_db_path),
+            "v1_size_bytes": bytes_recursive(v1_dist_dir),
+            "v2_size_bytes": bytes_recursive(v2_dist_dir),
+            "v3_size_bytes": bytes_file(v3_db_path),
+            "v4_size_bytes": bytes_file(v4_db_path),
+            "v2_tile_count": tile_count,
+        },
+        "benchmark_ms": {
+            "v1": v1_bench,
+            "v2": v2_bench,
+            "v3": v3_bench,
+            "v4": v4_bench,
+        },
+        "speedup_x_avg": speedups,
+    }
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+
+    print(json.dumps(report["speedup_x_avg"], sort_keys=True), file=sys.stderr)
+    print(f"Wrote benchmark report: {report_path}", file=sys.stderr)
+    print(json.dumps(report, sort_keys=True, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

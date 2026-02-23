@@ -1,0 +1,111 @@
+{
+  "benchmark_report": {
+    "benchmarkMs": {
+      "v1": {
+        "bbox": {
+          "avgMs": 0.06,
+          "maxMs": 0.11,
+          "minMs": 0.05,
+          "p50Ms": 0.05
+        },
+        "hybrid": {
+          "avgMs": 0.16,
+          "maxMs": 0.54,
+          "minMs": 0.06,
+          "p50Ms": 0.06
+        },
+        "polyline": {
+          "avgMs": 0.05,
+          "maxMs": 0.06,
+          "minMs": 0.05,
+          "p50Ms": 0.05
+        }
+      },
+      "v2": {
+        "bbox": {
+          "avgMs": 0.07,
+          "maxMs": 0.09,
+          "minMs": 0.07,
+          "p50Ms": 0.07
+        },
+        "hybrid": {
+          "avgMs": 0.07,
+          "maxMs": 0.08,
+          "minMs": 0.07,
+          "p50Ms": 0.07
+        },
+        "polyline": {
+          "avgMs": 0.08,
+          "maxMs": 0.08,
+          "minMs": 0.07,
+          "p50Ms": 0.07
+        }
+      },
+      "v3": {
+        "bbox": {
+          "avgMs": 0.06,
+          "maxMs": 0.12,
+          "minMs": 0.05,
+          "p50Ms": 0.05
+        },
+        "hybrid": {
+          "avgMs": 0.06,
+          "maxMs": 0.06,
+          "minMs": 0.06,
+          "p50Ms": 0.06
+        },
+        "polyline": {
+          "avgMs": 0.06,
+          "maxMs": 0.06,
+          "minMs": 0.06,
+          "p50Ms": 0.06
+        }
+      },
+      "v4": {
+        "bbox": {
+          "avgMs": 0.08,
+          "maxMs": 0.09,
+          "minMs": 0.08,
+          "p50Ms": 0.08
+        },
+        "hybrid": {
+          "avgMs": 0.08,
+          "maxMs": 0.08,
+          "minMs": 0.08,
+          "p50Ms": 0.08
+        },
+        "polyline": {
+          "avgMs": 0.08,
+          "maxMs": 0.08,
+          "minMs": 0.08,
+          "p50Ms": 0.08
+        }
+      }
+    },
+    "dbPath": "/private/var/mobile/Containers/Data/Application/93313537-A37E-49B1-B9D5-5A39C296D520/tmp/speeddbbench-unit-FF0E3F86-A0AD-45AA-AE9C-2734CE4D671F.sqlite",
+    "dbSizeBytes": 45056,
+    "generatedAtUTC": "2026-02-23T10:13:18Z",
+    "hasRTreeSupport": true,
+    "hasWayTileTable": true,
+    "input": {
+      "heading": 90,
+      "headingWeight": 2,
+      "lat": 52.52,
+      "lon": 13.405,
+      "maxCandidates": 1000,
+      "polylineTopN": 50,
+      "repeats": 5,
+      "searchRadiusM": 1200,
+      "tileRadius": 1,
+      "topK": 5
+    }
+  },
+  "captured_at_utc": "2026-02-23T10:14:39Z",
+  "device": {
+    "model": "iPhone 14 Pro (iPhone15,2)",
+    "name": "iPhone von Raphael Volz (3)",
+    "os": "iOS 26.2.1 (23C71)",
+    "target_arch": "arm64"
+  },
+  "source_xcresult": "/tmp/speeddbbench/SpeedDBBench-20260223T101304Z.xcresult"
+}
