@@ -36,26 +36,23 @@ mapdata/reports/*.json
 !mapdata/reports/deltas/daily-diff-analysis.csv
 
 # Paper build artifacts
-paper/*.aux
-paper/*.bbl
-paper/*.blg
-paper/*.fdb_latexmk
-paper/*.fls
-paper/*.log
-paper/*.out
-paper/*.synctex.gz
-paper/.main.pdf.swp
-paper/data/.device_benchmark_report*.swp
-
-# Tech report / LaTeX build artifacts
-techreport/*.aux
-techreport/*.bbl
-techreport/*.blg
-techreport/*.fdb_latexmk
-techreport/*.fls
-techreport/*.log
-techreport/*.out
-techreport/*.synctex.gz
+paper/itsc2026/*.aux
+paper/itsc2026/*.bbl
+paper/itsc2026/*.blg
+paper/itsc2026/*.fdb_latexmk
+paper/itsc2026/*.fls
+paper/itsc2026/*.log
+paper/itsc2026/*.out
+paper/itsc2026/*.synctex.gz
+paper/techreport/*.aux
+paper/techreport/*.bbl
+paper/techreport/*.blg
+paper/techreport/*.fdb_latexmk
+paper/techreport/*.fls
+paper/techreport/*.log
+paper/techreport/*.out
+paper/techreport/*.synctex.gz
+paper/techreport/data/.device_benchmark_report*.swp
 
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite

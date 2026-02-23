@@ -13,7 +13,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 pbf_url="${PBF_URL:-https://download.geofabrik.de/europe/germany-latest.osm.pbf}"
 raw_dir="${repo_root}/mapdata/raw"
 report_dir="${repo_root}/mapdata/reports"
-techreport_data_dir="${repo_root}/techreport/data"
+techreport_data_dir="${repo_root}/paper/techreport/data"
 
 mkdir -p "${raw_dir}" "${report_dir}" "${techreport_data_dir}"
 

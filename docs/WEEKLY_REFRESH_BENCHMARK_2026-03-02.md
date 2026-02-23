@@ -11,7 +11,7 @@ Goal:
 - Source URL:
   - `https://download.geofabrik.de/europe/germany-latest.osm.pbf`
 - Baseline report:
-  - `techreport/data/benchmark_report.json` (generated 2026-02-23)
+  - `paper/techreport/data/benchmark_report.json` (generated 2026-02-23)
 
 ## Command
 ```bash
@@ -25,7 +25,7 @@ Optional:
 - Dated report:
   - `mapdata/reports/benchmark_report.2026-03-02.json`
 - Archived copy for techreport:
-  - `techreport/data/benchmark_report.2026-03-02.json`
+  - `paper/techreport/data/benchmark_report.2026-03-02.json`
 - New input snapshot:
   - `mapdata/raw/germany-latest-2026-03-02.osm.pbf`
 
