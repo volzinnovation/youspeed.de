@@ -10,7 +10,7 @@ on:
       pbf_release_tag:
         description: "Release tag for latest Germany PBF snapshot"
         required: false
-        default: "germany-pbf-latest"
+        default: "deu-pbf-latest"
         type: string
 
 permissions:
@@ -25,7 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
-      DEFAULT_PBF_RELEASE_TAG: germany-pbf-latest
+      DEFAULT_PBF_RELEASE_TAG: deu-pbf-latest
+      ISO3: DEU
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,12 +44,12 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            mapdata/raw/germany-latest.osm.pbf
-            mapdata/raw/germany.diff_state.json
-          key: germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+            mapdata/raw/DEU-latest.osm.pbf
+            mapdata/raw/DEU.diff_state.json
+          key: deu-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            germany-pbf-${{ runner.os }}-${{ github.ref_name }}-
-            germany-pbf-${{ runner.os }}-
+            deu-pbf-${{ runner.os }}-${{ github.ref_name }}-
+            deu-pbf-${{ runner.os }}-
 
       - name: Ensure Latest Pipeline Scripts
         run: |
@@ -82,17 +83,32 @@ jobs:
           mkdir -p mapdata/raw mapdata/reports
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
           if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            # Preferred ISO3 naming
             gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --pattern "germany-latest.osm.pbf" \
-              --pattern "germany.diff_state.json" \
-              --pattern "diff_update.germany.latest.json" \
+              --pattern "DEU-latest.osm.pbf" \
+              --pattern "DEU.diff_state.json" \
+              --pattern "diff_update.DEU.latest.json" \
               --dir mapdata/raw \
               --clobber || true
 
-            # report belongs under mapdata/reports for downstream tooling
-            if [[ -f mapdata/raw/diff_update.germany.latest.json ]]; then
-              mv mapdata/raw/diff_update.germany.latest.json mapdata/reports/diff_update.germany.latest.json
+            # Backward compatibility with pre-ISO naming
+            if [[ ! -f mapdata/raw/DEU-latest.osm.pbf ]]; then
+              gh release download "${pbf_tag}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --pattern "germany-latest.osm.pbf" \
+                --pattern "germany.diff_state.json" \
+                --pattern "diff_update.germany.latest.json" \
+                --dir mapdata/raw \
+                --clobber || true
+              [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf mapdata/raw/DEU-latest.osm.pbf || true
+              [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json mapdata/raw/DEU.diff_state.json || true
+              [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json mapdata/raw/diff_update.DEU.latest.json || true
+            fi
+
+            # Report belongs under mapdata/reports for downstream tooling
+            if [[ -f mapdata/raw/diff_update.DEU.latest.json ]]; then
+              mv mapdata/raw/diff_update.DEU.latest.json mapdata/reports/diff_update.DEU.latest.json
             fi
           fi
 
@@ -101,12 +117,12 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/map/run_daily_diff_pipeline.py \
-            --region germany \
+            --region DEU \
             --updates-url https://download.geofabrik.de/europe/germany-updates/ \
             --latest-pbf-url https://download.geofabrik.de/europe/germany-latest.osm.pbf \
-            --input-pbf mapdata/raw/germany-latest.osm.pbf \
-            --state-file mapdata/raw/germany.diff_state.json \
-            --report-path mapdata/reports/diff_update.germany.latest.json \
+            --input-pbf mapdata/raw/DEU-latest.osm.pbf \
+            --state-file mapdata/raw/DEU.diff_state.json \
+            --report-path mapdata/reports/diff_update.DEU.latest.json \
             --work-dir mapdata/build/germany/updates \
             --daily-dir mapdata/reports/deltas/daily \
             --csv-out mapdata/reports/deltas/daily-diff-analysis.csv \
@@ -125,31 +141,31 @@ jobs:
           if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
             gh release create "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --title "Germany latest PBF snapshot" \
-              --notes "Rolling Germany PBF/state snapshot for downstream bundle builds."
+              --title "DEU latest PBF snapshot" \
+              --notes "Rolling DEU PBF/state snapshot for downstream bundle builds."
           fi
 
-          test -f mapdata/raw/germany-latest.osm.pbf
-          test -f mapdata/raw/germany.diff_state.json
-          test -f mapdata/reports/diff_update.germany.latest.json
+          test -f mapdata/raw/DEU-latest.osm.pbf
+          test -f mapdata/raw/DEU.diff_state.json
+          test -f mapdata/reports/diff_update.DEU.latest.json
 
-          gh release upload "${pbf_tag}" mapdata/raw/germany-latest.osm.pbf --clobber --repo "${GITHUB_REPOSITORY}"
-          gh release upload "${pbf_tag}" mapdata/raw/germany.diff_state.json --clobber --repo "${GITHUB_REPOSITORY}"
-          gh release upload "${pbf_tag}" mapdata/reports/diff_update.germany.latest.json --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" mapdata/raw/DEU-latest.osm.pbf --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" mapdata/raw/DEU.diff_state.json --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" mapdata/reports/diff_update.DEU.latest.json --clobber --repo "${GITHUB_REPOSITORY}"
 
           if [[ -n "${{ steps.pipeline.outputs.daily_delta }}" && -f "${{ steps.pipeline.outputs.daily_delta }}" ]]; then
-            cp "${{ steps.pipeline.outputs.daily_delta }}" /tmp/germany-latest.osc.gz
-            gh release upload "${pbf_tag}" /tmp/germany-latest.osc.gz --clobber --repo "${GITHUB_REPOSITORY}"
+            cp "${{ steps.pipeline.outputs.daily_delta }}" /tmp/DEU-latest.osc.gz
+            gh release upload "${pbf_tag}" /tmp/DEU-latest.osc.gz --clobber --repo "${GITHUB_REPOSITORY}"
           fi
 
       - name: Save Cached Germany PBF
-        if: steps.pipeline.outputs.changed == '1' && hashFiles('mapdata/raw/germany-latest.osm.pbf') != ''
+        if: steps.pipeline.outputs.changed == '1' && hashFiles('mapdata/raw/DEU-latest.osm.pbf') != ''
         uses: actions/cache/save@v4
         with:
           path: |
-            mapdata/raw/germany-latest.osm.pbf
-            mapdata/raw/germany.diff_state.json
-          key: germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+            mapdata/raw/DEU-latest.osm.pbf
+            mapdata/raw/DEU.diff_state.json
+          key: deu-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Commit CSV and State
         if: steps.pipeline.outputs.changed == '1'
@@ -159,7 +175,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add mapdata/reports/deltas/daily-diff-analysis.csv
-          git add mapdata/raw/germany.diff_state.json
+          git add mapdata/raw/DEU.diff_state.json
 
           if git diff --cached --quiet; then
             echo "No tracked changes to commit."

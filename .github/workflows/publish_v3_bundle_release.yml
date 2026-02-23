@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "GitHub release tag (for example: germany-v3-data-latest)"
+        description: "GitHub release tag (for example: deu-v3-data-latest)"
         required: false
-        default: "germany-v3-data-latest"
+        default: "deu-v3-data-latest"
         type: string
       bundle_dir:
         description: "Bundle directory to upload"

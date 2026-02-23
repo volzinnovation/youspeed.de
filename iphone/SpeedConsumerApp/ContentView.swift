@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = DriveSessionViewModel()
-    @State private var manifestURL: String = "https://github.com/volzinnovation/youspeed.de/releases/download/germany-v3-data-latest/bundle-manifest.v3.json"
+    @State private var manifestURL: String = "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/bundle-manifest.v3.json"
 
     var body: some View {
         NavigationStack {

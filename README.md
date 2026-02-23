@@ -104,7 +104,7 @@ Goal: ship the real app with a stable `v3` runtime format and independently upda
 
 ### Consumer data model
 
-Latest bundle assets (release tag `germany-v3-data-latest`):
+Latest bundle assets (release tag `deu-v3-data-latest`):
 
 - `bundle-manifest.v3.json`
 - `speeds_v3.sqlite`
@@ -120,10 +120,10 @@ Important policy enforced in app:
 
 ```bash
 python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite
-python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/germany-YYYY-MM-DD.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24 --patch-file-name v3_patch_2026-02-23_to_2026-02-24.sql --manifest-name v3_delta_manifest_2026-02-23_to_2026-02-24.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany-v3-data-latest
-python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/v3_delta_manifest_2026-02-23_to_2026-02-24.json --new-delta-manifest-asset-path v3_delta_manifest_2026-02-23_to_2026-02-24.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/germany-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/delta-index.v3.json
-python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --delta-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany-v3-data-latest
-./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag germany-v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest
+python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-YYYY-MM-DD.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24 --patch-file-name v3_patch_2026-02-23_to_2026-02-24.sql --manifest-name v3_delta_manifest_2026-02-23_to_2026-02-24.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/v3_delta_manifest_2026-02-23_to_2026-02-24.json --new-delta-manifest-asset-path v3_delta_manifest_2026-02-23_to_2026-02-24.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/delta-index.v3.json
+python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --delta-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag deu-v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest
 ```
 
 ### Automated GitHub workflows (consumer pipeline)
@@ -135,7 +135,7 @@ python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/g
 - Geofabrik diff ingestion and delta analysis:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:
-  - `Germany PBF Diff Update And Release` publishes `germany-pbf-latest`, then `Germany V3 Bundle Build And Release` consumes that release snapshot.
+  - `Germany PBF Diff Update And Release` publishes `deu-pbf-latest`, then `Germany V3 Bundle Build And Release` consumes that release snapshot.
 
 ## Separation rule for contributors
 

@@ -11,12 +11,12 @@ on:
       release_tag:
         description: "Release tag used for app-consumed latest v3 bundle assets"
         required: false
-        default: "germany-v3-data-latest"
+        default: "deu-v3-data-latest"
         type: string
       pbf_release_tag:
         description: "Release tag containing updated Germany PBF snapshot assets"
         required: false
-        default: "germany-pbf-latest"
+        default: "deu-pbf-latest"
         type: string
       retention_updates:
         description: "How many incremental updates to keep in delta index"
@@ -43,14 +43,15 @@ jobs:
     timeout-minutes: 480
     env:
       REGION: germany
-      DEFAULT_RELEASE_TAG: germany-v3-data-latest
-      DEFAULT_PBF_RELEASE_TAG: germany-pbf-latest
+      ISO3: DEU
+      DEFAULT_RELEASE_TAG: deu-v3-data-latest
+      DEFAULT_PBF_RELEASE_TAG: deu-pbf-latest
       RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
       MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
-      INPUT_PBF: mapdata/raw/germany-latest.osm.pbf
-      INPUT_STATE: mapdata/raw/germany.diff_state.json
-      INPUT_REPORT: mapdata/reports/diff_update.germany.latest.json
-      INPUT_DELTA: mapdata/reports/deltas/daily/germany-latest.osc.gz
+      INPUT_PBF: mapdata/raw/DEU-latest.osm.pbf
+      INPUT_STATE: mapdata/raw/DEU.diff_state.json
+      INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
+      INPUT_DELTA: mapdata/reports/deltas/daily/DEU-latest.osc.gz
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
     steps:
       - name: Checkout
@@ -106,24 +107,48 @@ jobs:
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
           gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null
 
+          # Preferred ISO3 naming
           gh release download "${pbf_tag}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --pattern "germany-latest.osm.pbf" \
-            --pattern "germany.diff_state.json" \
-            --pattern "diff_update.germany.latest.json" \
+            --pattern "DEU-latest.osm.pbf" \
+            --pattern "DEU.diff_state.json" \
+            --pattern "diff_update.DEU.latest.json" \
             --dir mapdata/raw \
-            --clobber
+            --clobber || true
 
-          mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}"
+          # Backward compatibility with pre-ISO naming
+          if [[ ! -f "${INPUT_PBF}" ]]; then
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "germany-latest.osm.pbf" \
+              --pattern "germany.diff_state.json" \
+              --pattern "diff_update.germany.latest.json" \
+              --dir mapdata/raw \
+              --clobber || true
+            [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
+            [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
+            [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
+          fi
+
+          [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
 
           if gh release download "${pbf_tag}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --pattern "germany-latest.osc.gz" \
+            --pattern "DEU-latest.osc.gz" \
             --dir mapdata/reports/deltas/daily \
             --clobber; then
             echo "Downloaded daily delta file."
           else
-            echo "No germany-latest.osc.gz in release (delta build will be skipped)."
+            if gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "germany-latest.osc.gz" \
+              --dir mapdata/reports/deltas/daily \
+              --clobber; then
+              mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
+              echo "Downloaded legacy daily delta file."
+            else
+              echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
+            fi
           fi
 
           test -f "${INPUT_PBF}"
@@ -136,9 +161,10 @@ jobs:
           python3 - <<'PY'
           import json
           from datetime import datetime, timezone
+          import os
           from pathlib import Path
 
-          report_path = Path("mapdata/reports/diff_update.germany.latest.json")
+          report_path = Path(os.environ["INPUT_REPORT"])
           payload = json.loads(report_path.read_text(encoding="utf-8"))
 
           pbf_after = payload.get("pbf_after", {}) if isinstance(payload, dict) else {}
@@ -151,7 +177,7 @@ jobs:
           delta_path = ""
           delta_export = payload.get("delta_export", {}) if isinstance(payload, dict) else {}
           delta_status = str(delta_export.get("status") or "")
-          release_delta = Path("mapdata/reports/deltas/daily/germany-latest.osc.gz")
+          release_delta = Path(os.environ["INPUT_DELTA"])
           if release_delta.exists() and delta_status == "exported":
               delta_path = str(release_delta)
 
@@ -315,7 +341,7 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --tag "${{ steps.tags.outputs.release_tag }}" \
             --bundle-dir "${BUNDLE_DIR}" \
-            --title "YouSpeed Germany v3 latest data bundle"
+            --title "YouSpeed DEU v3 latest data bundle"
 
       - name: Prune Old Incremental Assets Beyond Retention
         if: steps.compare.outputs.needs_publish == '1'
