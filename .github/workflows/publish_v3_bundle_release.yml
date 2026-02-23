@@ -10,7 +10,7 @@ on:
       bundle_dir:
         description: "Bundle directory to upload"
         required: false
-        default: "mapdata/bundles/v3"
+        default: "mapdata/bundles/v3/germany/latest"
         type: string
       release_title:
         description: "Optional release title"
@@ -28,14 +28,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate bundle directory
+      - name: Resolve bundle directory
+        id: resolve_bundle
         run: |
           set -euo pipefail
-          if [[ ! -d "${{ inputs.bundle_dir }}" ]]; then
-            echo "Bundle directory missing: ${{ inputs.bundle_dir }}" >&2
+          requested="${{ inputs.bundle_dir }}"
+          candidates=(
+            "${requested}"
+            "mapdata/bundles/v3/germany/latest"
+            "mapdata/bundles/v3"
+          )
+
+          resolved=""
+          for dir in "${candidates[@]}"; do
+            if [[ -d "${dir}" ]] && [[ -f "${dir}/bundle-manifest.v3.json" ]]; then
+              resolved="${dir}"
+              break
+            fi
+          done
+
+          if [[ -z "${resolved}" ]]; then
+            echo "Bundle directory missing or incomplete: ${requested}" >&2
+            echo "Expected bundle-manifest.v3.json in one of:" >&2
+            printf ' - %s\n' "${candidates[@]}" >&2
+            echo "Run workflow 'V3 Generate And Release Latest' first, then rerun this publisher." >&2
             exit 1
           fi
-          find "${{ inputs.bundle_dir }}" -type f | head -n 20
+
+          echo "bundle_dir=${resolved}" >> "${GITHUB_OUTPUT}"
+          echo "Using bundle directory: ${resolved}"
+          find "${resolved}" -type f | head -n 40
 
       - name: Publish release assets
         env:
@@ -46,11 +68,11 @@ jobs:
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
               --tag "${{ inputs.release_tag }}" \
-              --bundle-dir "${{ inputs.bundle_dir }}" \
+              --bundle-dir "${{ steps.resolve_bundle.outputs.bundle_dir }}" \
               --title "${{ inputs.release_title }}"
           else
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
               --tag "${{ inputs.release_tag }}" \
-              --bundle-dir "${{ inputs.bundle_dir }}"
+              --bundle-dir "${{ steps.resolve_bundle.outputs.bundle_dir }}"
           fi
