@@ -21,6 +21,9 @@ mapdata/dist/**
 mapdata/dist-v2/**
 mapdata/dist-v3/**
 mapdata/dist-v4/**
+mapdata/bundles/**/*.sqlite
+mapdata/bundles/**/*.sql
+mapdata/bundles/**/*.sql.gz
 
 # Keep lightweight mapdata metadata/spec/docs
 !mapdata/build/.gitkeep

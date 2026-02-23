@@ -1,0 +1,297 @@
+name: V3 Generate And Release Latest
+
+on:
+  schedule:
+    - cron: "20 2 * * *"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag used for app-consumed latest bundle assets"
+        required: false
+        default: "v3-data-latest"
+        type: string
+      retention_updates:
+        description: "How many incremental updates to keep in delta index"
+        required: false
+        default: "30"
+        type: string
+      max_geom_points:
+        description: "Max sampled geometry points for v1 preprocessing"
+        required: false
+        default: "8"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v3-generate-release-latest
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 480
+    env:
+      REGION: germany
+      RELEASE_TAG: ${{ inputs.release_tag || 'v3-data-latest' }}
+      RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
+      MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
+      INPUT_PBF: mapdata/raw/germany-latest.osm.pbf
+      UPDATES_URL: https://download.geofabrik.de/europe/germany-updates/
+      LATEST_PBF_URL: https://download.geofabrik.de/europe/germany-latest.osm.pbf
+      BUNDLE_DIR: mapdata/bundles/v3/germany/latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Restore Cached Germany PBF
+        id: pbf-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mapdata/raw/germany-latest.osm.pbf
+            mapdata/raw/germany.diff_state.json
+          key: v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-
+            v3-germany-pbf-${{ runner.os }}-
+
+      - name: Install Dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+          chmod +x scripts/map/publish_v3_release_assets.sh
+          chmod +x scripts/map/build_v3_delta_index.py
+          chmod +x scripts/map/build_v3_delta_pack.py
+          chmod +x scripts/map/publish_v3_bundle.py
+          chmod +x scripts/map/roll_v3_delta_index.py
+          chmod +x scripts/map/prune_v3_release_assets.py
+
+      - name: Bootstrap Full PBF If Missing
+        run: |
+          set -euo pipefail
+          mkdir -p mapdata/raw
+          if [[ ! -f "${INPUT_PBF}" ]]; then
+            curl -L --fail "${LATEST_PBF_URL}" -o "${INPUT_PBF}"
+          fi
+
+      - name: Update PBF And Export Daily Delta
+        run: |
+          set -euo pipefail
+          mkdir -p mapdata/build/germany/updates mapdata/reports
+          scripts/map/update_from_geofabrik_diffs.sh \
+            --region "${REGION}" \
+            --input-pbf "${INPUT_PBF}" \
+            --updates-url "${UPDATES_URL}" \
+            --state-file mapdata/raw/germany.diff_state.json \
+            --report-path mapdata/reports/diff_update.germany.latest.json \
+            --work-dir mapdata/build/germany/updates \
+            --emit-delta
+
+      - name: Resolve Bundle Version And Delta Path
+        id: version
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          report_path = Path("mapdata/reports/diff_update.germany.latest.json")
+          payload = json.loads(report_path.read_text(encoding="utf-8"))
+
+          pbf_after = payload.get("pbf_after", {}) if isinstance(payload, dict) else {}
+          server_after = payload.get("server_state_after", {}) if isinstance(payload, dict) else {}
+          ts = pbf_after.get("timestamp") or server_after.get("timestamp")
+          if not ts:
+              ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          bundle_version = str(ts)[:10]
+
+          delta_export = payload.get("delta_export", {}) if isinstance(payload, dict) else {}
+          delta_path = ""
+          if delta_export.get("status") == "exported":
+              delta_path = str(delta_export.get("path") or "")
+
+          out = Path(__import__("os").environ["GITHUB_OUTPUT"])
+          with out.open("a", encoding="utf-8") as f:
+              f.write(f"bundle_version={bundle_version}\n")
+              f.write(f"delta_path={delta_path}\n")
+          print(f"bundle_version={bundle_version}")
+          print(f"delta_path={delta_path}")
+          PY
+
+      - name: Build v1 + v3 Artifacts
+        run: |
+          set -euo pipefail
+          scripts/map/build_region_artifacts.sh \
+            --region "${REGION}" \
+            --input "${INPUT_PBF}" \
+            --engine pyosmium \
+            --max-geom-points "${MAX_GEOM_POINTS}"
+
+          python3 scripts/map/build_spatialite_v3.py \
+            --v1-dist "mapdata/dist/${REGION}" \
+            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
+
+      - name: Fetch Previous Latest Bundle Metadata
+        run: |
+          set -euo pipefail
+          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}"
+          prev_manifest_url="${release_base}/bundle-manifest.v3.json"
+          prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
+          prev_index_tmp="/tmp/prev_delta_index.v3.json"
+
+          if curl -L --fail --silent --show-error "${prev_manifest_url}" -o "${prev_manifest_tmp}"; then
+            echo "Found previous bundle manifest"
+          else
+            rm -f "${prev_manifest_tmp}"
+          fi
+
+          if [[ -f "${prev_manifest_tmp}" ]]; then
+            prev_index_url="$(python3 - <<'PY'
+import json
+from pathlib import Path
+p = Path('/tmp/prev_bundle_manifest.v3.json')
+obj = json.loads(p.read_text(encoding='utf-8'))
+print(((obj.get('delta_index') or {}).get('url')) or '')
+PY
+)"
+            if [[ -n "${prev_index_url}" ]]; then
+              if ! curl -L --fail --silent --show-error "${prev_index_url}" -o "${prev_index_tmp}"; then
+                rm -f "${prev_index_tmp}"
+              fi
+            fi
+          fi
+
+      - name: Build New Incremental Delta (If Possible)
+        id: delta
+        run: |
+          set -euo pipefail
+          mkdir -p "${BUNDLE_DIR}"
+
+          prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
+          prev_db_tmp="/tmp/prev_speeds_v3.sqlite"
+          new_delta_manifest=""
+          new_delta_asset_path=""
+
+          if [[ -f "${prev_manifest_tmp}" && -n "${{ steps.version.outputs.delta_path }}" && -f "${{ steps.version.outputs.delta_path }}" ]]; then
+            prev_version="$(python3 - <<'PY'
+import json
+from pathlib import Path
+obj = json.loads(Path('/tmp/prev_bundle_manifest.v3.json').read_text(encoding='utf-8'))
+print(obj.get('bundle_version') or '')
+PY
+)"
+            prev_db_url="$(python3 - <<'PY'
+import json
+from pathlib import Path
+obj = json.loads(Path('/tmp/prev_bundle_manifest.v3.json').read_text(encoding='utf-8'))
+print(((obj.get('db') or {}).get('url')) or '')
+PY
+)"
+
+            if [[ -n "${prev_version}" && -n "${prev_db_url}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
+              curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"
+              delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
+              delta_suffix="${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
+              patch_name="v3_patch_${delta_suffix}.sql"
+              manifest_name="v3_delta_manifest_${delta_suffix}.json"
+
+              python3 scripts/map/build_v3_delta_pack.py \
+                --base-db "${prev_db_tmp}" \
+                --diff-file "${{ steps.version.outputs.delta_path }}" \
+                --region "${REGION}" \
+                --from-version "${prev_version}" \
+                --to-version "${{ steps.version.outputs.bundle_version }}" \
+                --out-dir "${delta_dir}" \
+                --patch-file-name "${patch_name}" \
+                --manifest-name "${manifest_name}" \
+                --github-owner "${GITHUB_REPOSITORY%/*}" \
+                --github-repo "${GITHUB_REPOSITORY#*/}" \
+                --github-release-tag "${RELEASE_TAG}"
+
+              new_delta_manifest="${delta_dir}/${manifest_name}"
+              new_delta_asset_path="${manifest_name}"
+            fi
+          fi
+
+          {
+            echo "new_delta_manifest=${new_delta_manifest}"
+            echo "new_delta_asset_path=${new_delta_asset_path}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Roll Delta Index (Retain 30 Incrementals)
+        run: |
+          set -euo pipefail
+          mkdir -p "${BUNDLE_DIR}"
+          release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}"
+          existing_args=()
+          if [[ -f /tmp/prev_delta_index.v3.json ]]; then
+            existing_args=(--existing-index /tmp/prev_delta_index.v3.json)
+          fi
+
+          new_args=()
+          if [[ -n "${{ steps.delta.outputs.new_delta_manifest }}" ]]; then
+            new_args=(
+              --new-delta-manifest "${{ steps.delta.outputs.new_delta_manifest }}"
+              --new-delta-manifest-asset-path "${{ steps.delta.outputs.new_delta_asset_path }}"
+              --release-asset-base-url "${release_base}"
+            )
+          fi
+
+          python3 scripts/map/roll_v3_delta_index.py \
+            --output "${BUNDLE_DIR}/delta-index.v3.json" \
+            --retention-count "${RETENTION_UPDATES}" \
+            "${existing_args[@]}" \
+            "${new_args[@]}"
+
+      - name: Publish Latest Full Bundle Manifest
+        run: |
+          set -euo pipefail
+          python3 scripts/map/publish_v3_bundle.py \
+            --region "${REGION}" \
+            --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --bundle-version "${{ steps.version.outputs.bundle_version }}" \
+            --bundle-dir-name latest \
+            --out-root mapdata/bundles/v3 \
+            --delta-index "${BUNDLE_DIR}/delta-index.v3.json" \
+            --github-owner "${GITHUB_REPOSITORY%/*}" \
+            --github-repo "${GITHUB_REPOSITORY#*/}" \
+            --github-release-tag "${RELEASE_TAG}"
+
+      - name: Upload Latest Bundle Assets To Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ./scripts/map/publish_v3_release_assets.sh \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${RELEASE_TAG}" \
+            --bundle-dir "${BUNDLE_DIR}" \
+            --title "YouSpeed v3 latest data bundle"
+
+      - name: Prune Old Incremental Assets Beyond Retention
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 scripts/map/prune_v3_release_assets.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --release-tag "${RELEASE_TAG}" \
+            --delta-index "${BUNDLE_DIR}/delta-index.v3.json"
+
+      - name: Save Cached Germany PBF
+        if: hashFiles('mapdata/raw/germany-latest.osm.pbf') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mapdata/raw/germany-latest.osm.pbf
+            mapdata/raw/germany.diff_state.json
+          key: v3-germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}

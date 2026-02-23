@@ -1,0 +1,56 @@
+name: Publish V3 Data Bundle Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub release tag (for example: v3-data-2026-02-24)"
+        required: true
+        type: string
+      bundle_dir:
+        description: "Bundle directory to upload"
+        required: false
+        default: "mapdata/bundles/v3"
+        type: string
+      release_title:
+        description: "Optional release title"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate bundle directory
+        run: |
+          set -euo pipefail
+          if [[ ! -d "${{ inputs.bundle_dir }}" ]]; then
+            echo "Bundle directory missing: ${{ inputs.bundle_dir }}" >&2
+            exit 1
+          fi
+          find "${{ inputs.bundle_dir }}" -type f | head -n 20
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ inputs.release_title }}" ]]; then
+            ./scripts/map/publish_v3_release_assets.sh \
+              --repo "${{ github.repository }}" \
+              --tag "${{ inputs.release_tag }}" \
+              --bundle-dir "${{ inputs.bundle_dir }}" \
+              --title "${{ inputs.release_title }}"
+          else
+            ./scripts/map/publish_v3_release_assets.sh \
+              --repo "${{ github.repository }}" \
+              --tag "${{ inputs.release_tag }}" \
+              --bundle-dir "${{ inputs.bundle_dir }}"
+          fi

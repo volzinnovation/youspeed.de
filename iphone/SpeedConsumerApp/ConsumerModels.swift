@@ -1,0 +1,130 @@
+import Foundation
+
+struct BundleArtifact: Codable {
+    let file: String
+    let bytes: Int64
+    let sha256: String
+    let url: String?
+}
+
+struct V3BundleManifest: Codable {
+    let format: String
+    let schemaVersion: Int
+    let variant: String
+    let region: String
+    let bundleVersion: String
+    let createdAtUTC: String
+    let minAppVersion: String
+    let db: BundleArtifact
+    let deltaIndex: BundleArtifact?
+
+    enum CodingKeys: String, CodingKey {
+        case format
+        case schemaVersion = "schema_version"
+        case variant
+        case region
+        case bundleVersion = "bundle_version"
+        case createdAtUTC = "created_at_utc"
+        case minAppVersion = "min_app_version"
+        case db
+        case deltaIndex = "delta_index"
+    }
+}
+
+struct V3DeltaIndex: Codable {
+    struct Entry: Codable {
+        let fromBundleVersion: String
+        let toBundleVersion: String
+        let region: String?
+        let deltaManifestFile: String
+
+        enum CodingKeys: String, CodingKey {
+            case fromBundleVersion = "from_bundle_version"
+            case toBundleVersion = "to_bundle_version"
+            case region
+            case deltaManifestFile = "delta_manifest_file"
+        }
+    }
+
+    let format: String
+    let schemaVersion: Int
+    let count: Int
+    let entries: [Entry]
+
+    enum CodingKeys: String, CodingKey {
+        case format
+        case schemaVersion = "schema_version"
+        case count
+        case entries
+    }
+}
+
+struct V3DeltaManifest: Codable {
+    let format: String
+    let schemaVersion: Int
+    let region: String
+    let fromBundleVersion: String
+    let toBundleVersion: String
+    let patch: BundleArtifact
+
+    enum CodingKeys: String, CodingKey {
+        case format
+        case schemaVersion = "schema_version"
+        case region
+        case fromBundleVersion = "from_bundle_version"
+        case toBundleVersion = "to_bundle_version"
+        case patch
+    }
+}
+
+struct ActiveBundleState: Codable {
+    let region: String
+    let bundleVersion: String
+    let dbFileName: String
+    let activatedAtUTC: String
+
+    enum CodingKeys: String, CodingKey {
+        case region
+        case bundleVersion = "bundle_version"
+        case dbFileName = "db_file_name"
+        case activatedAtUTC = "activated_at_utc"
+    }
+}
+
+struct BundleSyncResult: Codable {
+    enum Mode: String, Codable {
+        case bootstrap
+        case upToDate
+        case fullDownload
+        case deltaPatch
+    }
+
+    let mode: Mode
+    let bundleVersion: String
+    let dbPath: String
+    let details: String
+}
+
+struct SpeedLimitResult {
+    let speedLimitKmh: Int?
+    let wayID: String?
+    let queryTimeMs: Double
+}
+
+enum ConsumerAppError: Error, LocalizedError {
+    case invalidManifest(String)
+    case io(String)
+    case network(String)
+    case checksum(String)
+    case sqlite(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidManifest(let message): return message
+        case .io(let message): return message
+        case .network(let message): return message
+        case .checksum(let message): return message
+        case .sqlite(let message): return message
+        }
+    }
+}

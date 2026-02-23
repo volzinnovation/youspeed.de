@@ -141,6 +141,16 @@ Automated daily diff processing (GitHub Actions):
 - per-day CSV upsert: `python3 scripts/map/upsert_daily_diff_analysis_row.py`
 - tracked analysis CSV: `mapdata/reports/deltas/daily-diff-analysis.csv`
 
+v3 consumer data-bundle publishing (GitHub releases):
+- build one incremental patch: `python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/germany-YYYY-MM-DD.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/2026-02-24/deltas/2026-02-23_to_2026-02-24 --patch-file-name v3_patch_2026-02-23_to_2026-02-24.sql --manifest-name v3_delta_manifest_2026-02-23_to_2026-02-24.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag v3-data-2026-02-24`
+- build delta index: `python3 scripts/map/build_v3_delta_index.py --delta-manifest-dir mapdata/bundles/v3/germany/2026-02-24/deltas --output mapdata/bundles/v3/germany/2026-02-24/delta-index.v3.json`
+- publish full bundle manifest into `latest/`: `python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --delta-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag v3-data-latest`
+- roll latest-30 incremental index: `python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/v3_delta_manifest_2026-02-23_to_2026-02-24.json --new-delta-manifest-asset-path v3_delta_manifest_2026-02-23_to_2026-02-24.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/delta-index.v3.json`
+- upload bundle artifacts to release: `./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest`
+- manual workflow: `.github/workflows/publish_v3_bundle_release.yml`
+- automated daily full+incremental workflow: `.github/workflows/v3_generate_and_release_latest.yml`
+- release asset naming on GitHub is flat (e.g. `bundle-manifest.v3.json`, `speeds_v3.sqlite`, `v3_delta_manifest_<from>_to_<to>.json`, `v3_patch_<from>_to_<to>.sql`)
+
 iPhone benchmark sketch:
 - app scaffold: `iphone/SpeedDBBenchSketch/`
 - generated project: `iphone/SpeedDBBench.xcodeproj`
@@ -149,3 +159,13 @@ iPhone benchmark sketch:
 - run UI benchmark on attached device:
   - `./scripts/iphone/run_device_benchmark.sh /Users/raphaelvolz/Github/youspeed.de/iphone/SpeedDBBench.xcodeproj SpeedDBBench <DeviceUDID>`
   - if device signing/provisioning is unavailable, the script auto-falls back to simulator benchmark execution.
+
+iPhone consumer app (v3-only):
+- app scaffold: `iphone/SpeedConsumerApp/`
+- generated project target: `SpeedConsumer` in `iphone/SpeedDBBench.xcodeproj`
+- behavior:
+  - bootstrap seed `speeds_v3.sqlite`
+  - sync full/delta bundles from GitHub release asset `bundle-manifest.v3.json`
+  - atomically activate updated DB before driving mode
+  - if installed bundle is older than 30 days relative to target bundle version, skip deltas and force full-bundle reload
+  - show current speed vs matched v3 speed-limit candidate

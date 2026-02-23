@@ -47,6 +47,56 @@ targets:
         - SpeedDBBenchTests
         - SpeedDBBenchUITests
 
+  SpeedConsumer:
+    type: application
+    platform: iOS
+    sources:
+      - path: SpeedConsumerApp
+        includes:
+          - "*.swift"
+        excludes:
+          - "SpeedConsumerTests.swift"
+          - "README.md"
+      - path: SpeedConsumerApp/speeds_v3.sqlite
+        buildPhase: resources
+    settings:
+      base:
+        DEVELOPMENT_TEAM: F4CT29PZS5
+        CODE_SIGN_IDENTITY: "iPhone Developer"
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
+        PRODUCT_NAME: SpeedConsumer
+        INFOPLIST_KEY_CFBundleDisplayName: YouSpeed
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: The app needs your location to compare current speed against map speed limits.
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1,2"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "-lsqlite3"
+    scheme:
+      testTargets:
+        - SpeedConsumerTests
+
+  SpeedConsumerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SpeedConsumerApp/SpeedConsumerTests.swift
+    dependencies:
+      - target: SpeedConsumer
+    settings:
+      base:
+        DEVELOPMENT_TEAM: F4CT29PZS5
+        CODE_SIGN_IDENTITY: "iPhone Developer"
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumerTests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
   SpeedDBBenchUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -85,3 +135,13 @@ schemes:
       targets:
         - name: SpeedDBBenchTests
         - name: SpeedDBBenchUITests
+
+  SpeedConsumer:
+    build:
+      targets:
+        SpeedConsumer: all
+        SpeedConsumerTests: [test]
+    test:
+      gatherCoverageData: false
+      targets:
+        - name: SpeedConsumerTests
