@@ -30,6 +30,18 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Restore Cached Germany PBF
+        id: pbf-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mapdata/raw/germany-latest.osm.pbf
+            mapdata/raw/germany.diff_state.json
+          key: germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            germany-pbf-${{ runner.os }}-${{ github.ref_name }}-
+            germany-pbf-${{ runner.os }}-
+
       - name: Ensure Latest Pipeline Scripts
         run: |
           set -euo pipefail
@@ -60,6 +72,15 @@ jobs:
             --summary-json-out mapdata/reports/deltas/daily-diff-analysis.summary.json \
             --v3-db mapdata/dist-v3/germany/speeds_v3.sqlite \
             --v4-db mapdata/dist-v4/germany/speeds_v4.sqlite
+
+      - name: Save Cached Germany PBF
+        if: steps.pipeline.outputs.changed == '1' && hashFiles('mapdata/raw/germany-latest.osm.pbf') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mapdata/raw/germany-latest.osm.pbf
+            mapdata/raw/germany.diff_state.json
+          key: germany-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Commit CSV and State
         if: steps.pipeline.outputs.changed == '1'
