@@ -13,7 +13,7 @@ Options:
   --derived-data <path>             DerivedData path (default: iphone/.derived/SpeedConsumerBuild)
   --project <path>                  Xcode project path (default: iphone/SpeedDBBench.xcodeproj)
   --scheme <name>                   Xcode scheme (default: SpeedConsumer)
-  --token <value>                   Token value for GITHUB_RELEASE_TOKEN build setting
+  --token <value>                   Token value for YOUSPEED_RELEASE_READ_TOKEN build setting
   --use-gh-token                    Resolve token from `gh auth token`
   --allow-empty-token               Allow empty token even for GitHub-hosted manifest URL
   --skip-project-gen                Skip running scripts/iphone/generate_xcode_project.sh
@@ -22,8 +22,9 @@ Options:
   -h, --help                        Show this help text
 
 Environment:
-  GITHUB_RELEASE_TOKEN              Used if --token/--use-gh-token are not passed
-  GH_TOKEN                          Fallback token source if GITHUB_RELEASE_TOKEN is not set
+  YOUSPEED_RELEASE_READ_TOKEN       Preferred token source when --token/--use-gh-token are not passed
+  GITHUB_RELEASE_TOKEN              Legacy fallback token source
+  GH_TOKEN                          Fallback token source if release token vars are not set
 EOF
 }
 
@@ -33,7 +34,7 @@ destination="generic/platform=iOS Simulator"
 derived_data="${repo_root}/iphone/.derived/SpeedConsumerBuild"
 project_path="${repo_root}/iphone/SpeedDBBench.xcodeproj"
 scheme="SpeedConsumer"
-token="${GITHUB_RELEASE_TOKEN:-}"
+token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-}}"
 use_gh_token=0
 allow_empty_token=0
 skip_project_gen=0
@@ -141,8 +142,8 @@ PY
 
 if [[ "${allow_empty_token}" != "1" && -z "${token}" ]]; then
   if [[ "${manifest_host}" == "github.com" || "${manifest_host}" == "www.github.com" || "${manifest_host}" == "githubusercontent.com" || "${manifest_host}" == *.githubusercontent.com ]]; then
-    echo "Missing GITHUB_RELEASE_TOKEN for GitHub-hosted manifest URL: ${manifest_url}" >&2
-    echo "Set GITHUB_RELEASE_TOKEN or GH_TOKEN, or pass --token <value>. Use --allow-empty-token only for public assets." >&2
+    echo "Missing YOUSPEED_RELEASE_READ_TOKEN for GitHub-hosted manifest URL: ${manifest_url}" >&2
+    echo "Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN), or pass --token <value>. Use --allow-empty-token only for public assets." >&2
     exit 2
   fi
 fi
@@ -161,7 +162,8 @@ if [[ -n "${token}" ]]; then
   token_xcconfig="$(mktemp "${TMPDIR:-/tmp}/speedconsumer-token.XXXXXX.xcconfig")"
   chmod 600 "${token_xcconfig}"
   cat > "${token_xcconfig}" <<EOF
-GITHUB_RELEASE_TOKEN = ${token}
+YOUSPEED_RELEASE_READ_TOKEN = ${token}
+GITHUB_RELEASE_TOKEN = \$(YOUSPEED_RELEASE_READ_TOKEN)
 EOF
 fi
 
@@ -212,9 +214,9 @@ if [[ "${run_clean}" == "1" ]]; then
 fi
 
 if [[ -n "${token}" ]]; then
-  echo "Building with GITHUB_RELEASE_TOKEN (length=${#token})."
+  echo "Building with YOUSPEED_RELEASE_READ_TOKEN (length=${#token})."
 else
-  echo "Building without GITHUB_RELEASE_TOKEN."
+  echo "Building without YOUSPEED_RELEASE_READ_TOKEN."
 fi
 
 "${build_cmd[@]}"

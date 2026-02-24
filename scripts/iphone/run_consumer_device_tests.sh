@@ -17,7 +17,8 @@ Options:
   -h, --help                         Show this help text
 
 Environment:
-  GITHUB_RELEASE_TOKEN               Required token source
+  YOUSPEED_RELEASE_READ_TOKEN        Required token source
+  GITHUB_RELEASE_TOKEN               Legacy fallback token source
   GH_TOKEN                           Optional fallback token source
 EOF
 }
@@ -68,9 +69,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-token="${GITHUB_RELEASE_TOKEN:-${GH_TOKEN:-}}"
+token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-${GH_TOKEN:-}}}"
 if [[ -z "${token}" ]]; then
-  echo "Missing GitHub token. Set GITHUB_RELEASE_TOKEN (or GH_TOKEN) before running this script." >&2
+  echo "Missing GitHub token. Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN) before running this script." >&2
   exit 2
 fi
 
@@ -97,7 +98,7 @@ if [[ "${allow_provisioning_updates}" == "1" ]]; then
 fi
 
 echo "Running tests with injected token (length=${#token})."
-if ! GITHUB_RELEASE_TOKEN="${token}" "${build_cmd[@]}"; then
+if ! YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" SPEEDCONSUMER_GITHUB_TOKEN="${token}" "${build_cmd[@]}"; then
   echo "xcodebuild test failed before token verification." >&2
   exit 10
 fi
@@ -109,6 +110,9 @@ if [[ -z "${plist_path}" || ! -f "${plist_path}" ]]; then
 fi
 
 embedded_token="$(/usr/libexec/PlistBuddy -c 'Print :YouSpeedGitHubReleaseToken' "${plist_path}" 2>/dev/null || true)"
+if [[ -z "${embedded_token}" ]]; then
+  embedded_token="$(/usr/libexec/PlistBuddy -c 'Print :YOUSPEED_RELEASE_READ_TOKEN' "${plist_path}" 2>/dev/null || true)"
+fi
 if [[ -z "${embedded_token}" ]]; then
   echo "Embedded token missing in ${plist_path}" >&2
   exit 4

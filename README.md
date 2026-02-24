@@ -151,7 +151,7 @@ Use local GitHub auth token automatically:
 Or pass the token explicitly:
 
 ```bash
-GITHUB_RELEASE_TOKEN='<token>' ./scripts/iphone/build_consumer_app.sh
+YOUSPEED_RELEASE_READ_TOKEN='<token>' ./scripts/iphone/build_consumer_app.sh
 ```
 
 For device builds that need signing/profile updates:
@@ -163,7 +163,7 @@ For device builds that need signing/profile updates:
 Token-enforced on-device test run (fails fast if token is missing or not embedded):
 
 ```bash
-GITHUB_RELEASE_TOKEN="$(gh auth token --hostname github.com)" \
+YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
   ./scripts/iphone/run_consumer_device_tests.sh --allow-provisioning-updates
 ```
 
