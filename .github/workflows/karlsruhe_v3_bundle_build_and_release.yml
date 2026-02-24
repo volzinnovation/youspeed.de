@@ -1,0 +1,132 @@
+name: Karlsruhe V3 Bundle Build And Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag for Karlsruhe development bundle assets"
+        required: false
+        default: "deu-v3-data-karlsruhe-latest"
+        type: string
+      pbf_url:
+        description: "Source OSM PBF URL"
+        required: false
+        default: "https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-latest.osm.pbf"
+        type: string
+      bundle_version:
+        description: "Optional bundle version override (YYYY-MM-DD). Empty uses current UTC date."
+        required: false
+        default: ""
+        type: string
+      max_geom_points:
+        description: "Max sampled geometry points for preprocessing"
+        required: false
+        default: "8"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: karlsruhe-v3-bundle-release
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      REGION: karlsruhe-regbez
+      INPUT_PBF: mapdata/raw/karlsruhe-regbez-latest.osm.pbf
+      BUNDLE_DIR: mapdata/bundles/v3/karlsruhe-regbez/latest
+      BUNDLE_DB_ASSET: DEU-latest.speeds_v3.sqlite
+      BUNDLE_MANIFEST_ASSET: DEU-latest.bundle-manifest.v3.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+          chmod +x scripts/map/build_region_artifacts.sh
+          chmod +x scripts/map/publish_v3_release_assets.sh
+
+      - name: Resolve Parameters
+        id: params
+        run: |
+          release_tag="${{ github.event.inputs.release_tag || '' }}"
+          if [[ -z "${release_tag}" ]]; then
+            release_tag="deu-v3-data-karlsruhe-latest"
+          fi
+
+          pbf_url="${{ github.event.inputs.pbf_url || '' }}"
+          if [[ -z "${pbf_url}" ]]; then
+            pbf_url="https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-latest.osm.pbf"
+          fi
+
+          bundle_version="${{ github.event.inputs.bundle_version || '' }}"
+          if [[ -z "${bundle_version}" ]]; then
+            bundle_version="$(date -u +%Y-%m-%d)"
+          fi
+
+          max_geom_points="${{ github.event.inputs.max_geom_points || '' }}"
+          if [[ -z "${max_geom_points}" ]]; then
+            max_geom_points="8"
+          fi
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "pbf_url=${pbf_url}"
+            echo "bundle_version=${bundle_version}"
+            echo "max_geom_points=${max_geom_points}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download Karlsruhe PBF
+        run: |
+          mkdir -p mapdata/raw
+          curl -L --fail --silent --show-error \
+            "${{ steps.params.outputs.pbf_url }}" \
+            -o "${INPUT_PBF}"
+          test -s "${INPUT_PBF}"
+
+      - name: Build v1 Artifacts And v3 DB
+        run: |
+          scripts/map/build_region_artifacts.sh \
+            --region "${REGION}" \
+            --input "${INPUT_PBF}" \
+            --engine pyosmium \
+            --max-geom-points "${{ steps.params.outputs.max_geom_points }}"
+
+          python3 scripts/map/build_spatialite_v3.py \
+            --v1-dist "mapdata/dist/${REGION}" \
+            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
+
+      - name: Publish Bundle Manifest
+        run: |
+          python3 scripts/map/publish_v3_bundle.py \
+            --region "${REGION}" \
+            --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --bundle-version "${{ steps.params.outputs.bundle_version }}" \
+            --bundle-dir-name latest \
+            --out-root mapdata/bundles/v3 \
+            --db-file-name "${BUNDLE_DB_ASSET}" \
+            --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
+            --github-owner "${GITHUB_REPOSITORY%/*}" \
+            --github-repo "${GITHUB_REPOSITORY#*/}" \
+            --github-release-tag "${{ steps.params.outputs.release_tag }}"
+
+      - name: Upload Bundle Assets To Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./scripts/map/publish_v3_release_assets.sh \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${{ steps.params.outputs.release_tag }}" \
+            --bundle-dir "${BUNDLE_DIR}" \
+            --title "YouSpeed Karlsruhe v3 development bundle"
