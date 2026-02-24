@@ -52,7 +52,6 @@ jobs:
       INPUT_STATE: mapdata/raw/DEU.diff_state.json
       INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
       INPUT_DELTA: mapdata/reports/deltas/daily/DEU-latest.osc.gz
-      LATEST_PBF_URL: https://download.geofabrik.de/europe/germany-latest.osm.pbf
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
     steps:
       - name: Checkout
@@ -107,88 +106,86 @@ jobs:
           mkdir -p mapdata/raw mapdata/reports mapdata/reports/deltas/daily
 
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
-          release_available=0
-          if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            release_available=1
-          else
-            echo "PBF release ${pbf_tag} not found; falling back to direct Geofabrik bootstrap."
+          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Required PBF release not found: ${pbf_tag}" >&2
+            echo "Run Germany PBF Diff Update And Release first." >&2
+            exit 1
           fi
 
-          if [[ "${release_available}" == "1" ]]; then
-            # Preferred ISO3 naming
-            gh release download "${pbf_tag}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --pattern "DEU-latest.osm.pbf" \
-              --pattern "DEU-latest.osm.pbf.part*" \
-              --pattern "DEU-latest.osm.pbf.parts.json" \
-              --pattern "DEU.diff_state.json" \
-              --pattern "diff_update.DEU.latest.json" \
-              --dir mapdata/raw \
-              --clobber || true
+          # Preferred ISO3 naming
+          gh release download "${pbf_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "DEU-latest.osm.pbf" \
+            --pattern "DEU-latest.osm.pbf.part*" \
+            --pattern "DEU-latest.osm.pbf.parts.json" \
+            --pattern "DEU.diff_state.json" \
+            --pattern "diff_update.DEU.latest.json" \
+            --dir mapdata/raw \
+            --clobber || true
 
-            if [[ ! -f "${INPUT_PBF}" ]]; then
-              if [[ -f mapdata/raw/DEU-latest.osm.pbf.parts.json ]]; then
-                mapfile -t manifest_parts < <(python3 -c 'import json,sys; obj=json.load(open(sys.argv[1], encoding="utf-8")); parts=obj.get("parts") or []; [print(str(p)) for p in parts]' mapdata/raw/DEU-latest.osm.pbf.parts.json)
-                if (( ${#manifest_parts[@]} == 0 )); then
-                  echo "parts manifest is missing part list" >&2
+          if [[ ! -f "${INPUT_PBF}" ]]; then
+            if [[ -f mapdata/raw/DEU-latest.osm.pbf.parts.json ]]; then
+              mapfile -t manifest_parts < <(python3 -c 'import json,sys; obj=json.load(open(sys.argv[1], encoding="utf-8")); parts=obj.get("parts") or []; [print(str(p)) for p in parts]' mapdata/raw/DEU-latest.osm.pbf.parts.json)
+              if (( ${#manifest_parts[@]} == 0 )); then
+                echo "parts manifest is missing part list" >&2
+                exit 1
+              fi
+              : > "${INPUT_PBF}"
+              for part_name in "${manifest_parts[@]}"; do
+                part_path="mapdata/raw/${part_name}"
+                if [[ ! -f "${part_path}" ]]; then
+                  echo "missing pbf part: ${part_path}" >&2
                   exit 1
                 fi
-                : > "${INPUT_PBF}"
-                for part_name in "${manifest_parts[@]}"; do
-                  part_path="mapdata/raw/${part_name}"
-                  if [[ ! -f "${part_path}" ]]; then
-                    echo "missing pbf part: ${part_path}" >&2
-                    exit 1
-                  fi
-                  cat "${part_path}" >> "${INPUT_PBF}"
-                done
-              else
-                parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
-                if (( ${#parts[@]} > 0 )); then
-                  cat "${parts[@]}" > "${INPUT_PBF}"
-                fi
+                cat "${part_path}" >> "${INPUT_PBF}"
+              done
+            else
+              parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+              if (( ${#parts[@]} > 0 )); then
+                cat "${parts[@]}" > "${INPUT_PBF}"
               fi
             fi
+          fi
 
-            # Backward compatibility with pre-ISO naming
-            if [[ ! -f "${INPUT_PBF}" ]]; then
-              gh release download "${pbf_tag}" \
-                --repo "${GITHUB_REPOSITORY}" \
-                --pattern "germany-latest.osm.pbf" \
-                --pattern "germany.diff_state.json" \
-                --pattern "diff_update.germany.latest.json" \
-                --dir mapdata/raw \
-                --clobber || true
-              [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
-              [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
-              [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
-            fi
+          # Backward compatibility with pre-ISO naming
+          if [[ ! -f "${INPUT_PBF}" ]]; then
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "germany-latest.osm.pbf" \
+              --pattern "germany.diff_state.json" \
+              --pattern "diff_update.germany.latest.json" \
+              --dir mapdata/raw \
+              --clobber || true
+            [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
+            [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
+            [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
+          fi
 
-            [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
+          [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
 
+          if gh release download "${pbf_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "DEU-latest.osc.gz" \
+            --dir mapdata/reports/deltas/daily \
+            --clobber; then
+            echo "Downloaded daily delta file."
+          else
             if gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --pattern "DEU-latest.osc.gz" \
+              --pattern "germany-latest.osc.gz" \
               --dir mapdata/reports/deltas/daily \
               --clobber; then
-              echo "Downloaded daily delta file."
+              mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
+              echo "Downloaded legacy daily delta file."
             else
-              if gh release download "${pbf_tag}" \
-                --repo "${GITHUB_REPOSITORY}" \
-                --pattern "germany-latest.osc.gz" \
-                --dir mapdata/reports/deltas/daily \
-                --clobber; then
-                mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
-                echo "Downloaded legacy daily delta file."
-              else
-                echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
-              fi
+              echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
             fi
           fi
 
           if [[ ! -f "${INPUT_PBF}" ]]; then
-            echo "Downloading fallback latest PBF from Geofabrik..."
-            curl -L --fail "${LATEST_PBF_URL}" -o "${INPUT_PBF}"
+            echo "Unable to resolve ${INPUT_PBF} from release ${pbf_tag}." >&2
+            echo "Expected DEU-latest.osm.pbf OR DEU-latest.osm.pbf.part* assets." >&2
+            exit 1
           fi
 
           if [[ ! -f "${INPUT_STATE}" ]]; then
