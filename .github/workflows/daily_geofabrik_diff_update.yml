@@ -51,19 +51,6 @@ jobs:
             deu-pbf-${{ runner.os }}-${{ github.ref_name }}-
             deu-pbf-${{ runner.os }}-
 
-      - name: Ensure Latest Pipeline Scripts
-        run: |
-          set -euo pipefail
-          git checkout -- scripts/map/update_from_geofabrik_diffs.sh
-          git checkout -- scripts/map/run_daily_diff_pipeline.py
-          git checkout -- scripts/map/upsert_daily_diff_analysis_row.py
-
-      - name: Install Dependencies
-        run: |
-          set -euo pipefail
-          python -m pip install --upgrade pip
-          python -m pip install osmium
-
       - name: Resolve PBF Release Tag
         id: tags
         run: |
@@ -112,8 +99,36 @@ jobs:
             fi
           fi
 
+      - name: Check Seed Availability
+        id: seed_check
+        run: |
+          set -euo pipefail
+          if [[ -f mapdata/raw/DEU-latest.osm.pbf ]]; then
+            echo "has_seed=1" >> "${GITHUB_OUTPUT}"
+            echo "Seed PBF found. Daily diff pipeline is enabled."
+          else
+            echo "has_seed=0" >> "${GITHUB_OUTPUT}"
+            echo "Seed PBF missing. Skipping daily diff pipeline and downstream publish steps."
+          fi
+
+      - name: Ensure Latest Pipeline Scripts
+        if: steps.seed_check.outputs.has_seed == '1'
+        run: |
+          set -euo pipefail
+          git checkout -- scripts/map/update_from_geofabrik_diffs.sh
+          git checkout -- scripts/map/run_daily_diff_pipeline.py
+          git checkout -- scripts/map/upsert_daily_diff_analysis_row.py
+
+      - name: Install Dependencies
+        if: steps.seed_check.outputs.has_seed == '1'
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+
       - name: Run Daily Diff Pipeline
         id: pipeline
+        if: steps.seed_check.outputs.has_seed == '1'
         run: |
           set -euo pipefail
           python3 scripts/map/run_daily_diff_pipeline.py \
@@ -132,6 +147,7 @@ jobs:
 
       - name: Check Whether Snapshot Release Needs Seeding
         id: release_check
+        if: steps.seed_check.outputs.has_seed == '1'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -153,7 +169,7 @@ jobs:
           echo "need_publish_snapshot=${need_publish}"
 
       - name: Publish Updated PBF Snapshot To Release
-        if: steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1'
+        if: steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -181,7 +197,7 @@ jobs:
           fi
 
       - name: Save Cached Germany PBF
-        if: (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1') && hashFiles('mapdata/raw/DEU-latest.osm.pbf') != ''
+        if: steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1') && hashFiles('mapdata/raw/DEU-latest.osm.pbf') != ''
         uses: actions/cache/save@v4
         with:
           path: |
@@ -190,7 +206,7 @@ jobs:
           key: deu-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Commit CSV and State
-        if: steps.pipeline.outputs.changed == '1'
+        if: steps.seed_check.outputs.has_seed == '1' && steps.pipeline.outputs.changed == '1'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
