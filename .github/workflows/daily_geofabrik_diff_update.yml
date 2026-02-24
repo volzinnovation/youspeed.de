@@ -108,16 +108,38 @@ jobs:
             echo "Seed PBF found. Daily diff pipeline is enabled."
           else
             echo "has_seed=0" >> "${GITHUB_OUTPUT}"
-            echo "Seed PBF missing. Skipping daily diff pipeline and downstream publish steps."
+            echo "Seed PBF missing. Will create fresh seed snapshot first."
           fi
 
       - name: Ensure Latest Pipeline Scripts
-        if: steps.seed_check.outputs.has_seed == '1'
         run: |
           set -euo pipefail
           git checkout -- scripts/map/update_from_geofabrik_diffs.sh
           git checkout -- scripts/map/run_daily_diff_pipeline.py
           git checkout -- scripts/map/upsert_daily_diff_analysis_row.py
+
+      - name: Create Initial Seed Snapshot
+        id: seed_bootstrap
+        if: steps.seed_check.outputs.has_seed != '1'
+        run: |
+          set -euo pipefail
+          mkdir -p mapdata/raw mapdata/reports mapdata/build/germany/updates
+
+          curl -L --fail --silent --show-error \
+            "https://download.geofabrik.de/europe/germany-latest.osm.pbf" \
+            -o mapdata/raw/DEU-latest.osm.pbf
+
+          bash scripts/map/update_from_geofabrik_diffs.sh \
+            --region DEU \
+            --input-pbf mapdata/raw/DEU-latest.osm.pbf \
+            --updates-url https://download.geofabrik.de/europe/germany-updates/ \
+            --state-file mapdata/raw/DEU.diff_state.json \
+            --report-path mapdata/reports/diff_update.DEU.latest.json \
+            --work-dir mapdata/build/germany/updates \
+            --dry-run \
+            --no-emit-delta
+
+          echo "seeded=1" >> "${GITHUB_OUTPUT}"
 
       - name: Install Dependencies
         if: steps.seed_check.outputs.has_seed == '1'
@@ -169,7 +191,7 @@ jobs:
           echo "need_publish_snapshot=${need_publish}"
 
       - name: Publish Updated PBF Snapshot To Release
-        if: steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1')
+        if: steps.seed_bootstrap.outputs.seeded == '1' || (steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1'))
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -197,7 +219,7 @@ jobs:
           fi
 
       - name: Save Cached Germany PBF
-        if: steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1') && hashFiles('mapdata/raw/DEU-latest.osm.pbf') != ''
+        if: (steps.seed_bootstrap.outputs.seeded == '1' || (steps.seed_check.outputs.has_seed == '1' && (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1'))) && hashFiles('mapdata/raw/DEU-latest.osm.pbf') != ''
         uses: actions/cache/save@v4
         with:
           path: |
