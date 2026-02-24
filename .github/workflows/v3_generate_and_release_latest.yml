@@ -112,43 +112,62 @@ jobs:
             exit 1
           fi
 
-          # Preferred ISO3 naming
-          gh release download "${pbf_tag}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern "DEU-latest.osm.pbf" \
-            --pattern "DEU-latest.osm.pbf.part*" \
-            --pattern "DEU-latest.osm.pbf.parts.json" \
-            --pattern "DEU.diff_state.json" \
-            --pattern "diff_update.DEU.latest.json" \
-            --dir mapdata/raw \
-            --clobber || true
+          resolve_iso_pbf() {
+            rm -f "${INPUT_PBF}" mapdata/raw/DEU-latest.osm.pbf.part* mapdata/raw/DEU-latest.osm.pbf.parts.json
 
-          if [[ ! -f "${INPUT_PBF}" ]]; then
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "DEU-latest.osm.pbf" \
+              --pattern "DEU-latest.osm.pbf.part*" \
+              --pattern "DEU-latest.osm.pbf.parts.json" \
+              --pattern "DEU.diff_state.json" \
+              --pattern "diff_update.DEU.latest.json" \
+              --dir mapdata/raw \
+              --clobber || true
+
+            if [[ -f "${INPUT_PBF}" ]]; then
+              return 0
+            fi
+
             if [[ -f mapdata/raw/DEU-latest.osm.pbf.parts.json ]]; then
               mapfile -t manifest_parts < <(python3 -c 'import json,sys; obj=json.load(open(sys.argv[1], encoding="utf-8")); parts=obj.get("parts") or []; [print(str(p)) for p in parts]' mapdata/raw/DEU-latest.osm.pbf.parts.json)
               if (( ${#manifest_parts[@]} == 0 )); then
                 echo "parts manifest is missing part list" >&2
-                exit 1
+                return 1
               fi
               : > "${INPUT_PBF}"
               for part_name in "${manifest_parts[@]}"; do
                 part_path="mapdata/raw/${part_name}"
                 if [[ ! -f "${part_path}" ]]; then
                   echo "missing pbf part: ${part_path}" >&2
-                  exit 1
+                  return 1
                 fi
                 cat "${part_path}" >> "${INPUT_PBF}"
               done
-            else
-              parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
-              if (( ${#parts[@]} > 0 )); then
-                cat "${parts[@]}" > "${INPUT_PBF}"
-              fi
+              return 0
             fi
-          fi
+
+            parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+            if (( ${#parts[@]} > 0 )); then
+              cat "${parts[@]}" > "${INPUT_PBF}"
+              return 0
+            fi
+
+            return 1
+          }
+
+          resolved=0
+          for attempt in 1 2 3 4 5 6; do
+            if resolve_iso_pbf; then
+              resolved=1
+              break
+            fi
+            echo "DEU PBF assets not ready on release ${pbf_tag} (attempt ${attempt}/6)." >&2
+            sleep 20
+          done
 
           # Backward compatibility with pre-ISO naming
-          if [[ ! -f "${INPUT_PBF}" ]]; then
+          if [[ "${resolved}" != "1" ]]; then
             gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
               --pattern "germany-latest.osm.pbf" \
@@ -185,6 +204,7 @@ jobs:
           if [[ ! -f "${INPUT_PBF}" ]]; then
             echo "Unable to resolve ${INPUT_PBF} from release ${pbf_tag}." >&2
             echo "Expected DEU-latest.osm.pbf OR DEU-latest.osm.pbf.part* assets." >&2
+            gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" --json assets --jq '.assets[].name' >&2 || true
             exit 1
           fi
 
