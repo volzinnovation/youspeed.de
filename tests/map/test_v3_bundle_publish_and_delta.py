@@ -210,14 +210,14 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 "germany/2026-02-24",
             ]
         )
-        manifest_path = self.tmpdir / "bundles" / "germany" / "2026-02-24" / "bundle-manifest.v3.json"
+        manifest_path = self.tmpdir / "bundles" / "germany" / "2026-02-24" / "DEU-latest.bundle-manifest.v3.json"
         self.assertTrue(manifest_path.exists())
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["format"], "youspeed.v3.bundle.manifest")
         self.assertEqual(manifest["variant"], "v3")
-        self.assertEqual(manifest["db"]["file"], "speeds_v3.sqlite")
+        self.assertEqual(manifest["db"]["file"], "DEU-latest.speeds_v3.sqlite")
         self.assertIn("github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24", manifest["db"]["url"])
-        self.assertIn("delta-index.v3.json", manifest["delta_index"]["file"])
+        self.assertIn("DEU-latest.delta-index.v3.json", manifest["delta_index"]["file"])
 
     def test_publish_v3_bundle_allows_latest_dir_name(self):
         out_root = self.tmpdir / "bundles"
@@ -237,10 +237,10 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 str(out_root),
             ]
         )
-        manifest_path = out_root / "germany" / "latest" / "bundle-manifest.v3.json"
+        manifest_path = out_root / "germany" / "latest" / "DEU-latest.bundle-manifest.v3.json"
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(payload["bundle_version"], "2026-02-24")
-        self.assertEqual(payload["db"]["file"], "speeds_v3.sqlite")
+        self.assertEqual(payload["db"]["file"], "DEU-latest.speeds_v3.sqlite")
 
     def test_publish_v3_bundle_splits_large_db_into_parts(self):
         out_root = self.tmpdir / "bundles"
@@ -269,14 +269,14 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             ]
         )
         bundle_dir = out_root / "germany" / "latest"
-        manifest_path = bundle_dir / "bundle-manifest.v3.json"
+        manifest_path = bundle_dir / "DEU-latest.bundle-manifest.v3.json"
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertIn("db_parts", payload)
         self.assertGreater(len(payload["db_parts"]), 1)
         self.assertIsNone(payload["db"]["url"])
         self.assertEqual(payload["db"]["bytes"], self.base_db.stat().st_size)
 
-        part_files = sorted(bundle_dir.glob("speeds_v3.sqlite.part*"))
+        part_files = sorted(bundle_dir.glob("DEU-latest.speeds_v3.sqlite.part*"))
         self.assertEqual(len(part_files), len(payload["db_parts"]))
         self.assertGreater(sum(p.stat().st_size for p in part_files), 0)
         for part in payload["db_parts"]:

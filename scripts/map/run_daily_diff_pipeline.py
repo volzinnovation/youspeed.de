@@ -20,7 +20,6 @@ import shutil
 import subprocess
 import sys
 import urllib.request
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -96,12 +95,12 @@ def _normalize_delta(delta_path: Path, out_path: Path) -> Path:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run daily PBF update + CSV upsert pipeline")
-    parser.add_argument("--region", default="germany")
+    parser.add_argument("--region", default="DEU")
     parser.add_argument("--updates-url", default="https://download.geofabrik.de/europe/germany-updates/")
     parser.add_argument("--latest-pbf-url", default="https://download.geofabrik.de/europe/germany-latest.osm.pbf")
-    parser.add_argument("--input-pbf", default="mapdata/raw/germany-latest.osm.pbf")
-    parser.add_argument("--state-file", default="mapdata/raw/germany.diff_state.json")
-    parser.add_argument("--report-path", default="mapdata/reports/diff_update.germany.latest.json")
+    parser.add_argument("--input-pbf", default="mapdata/raw/DEU-latest.osm.pbf")
+    parser.add_argument("--state-file", default="mapdata/raw/DEU.diff_state.json")
+    parser.add_argument("--report-path", default="mapdata/reports/diff_update.DEU.latest.json")
     parser.add_argument("--work-dir", default="mapdata/build/germany/updates")
     parser.add_argument("--daily-dir", default="mapdata/reports/deltas/daily")
     parser.add_argument("--csv-out", default="mapdata/reports/deltas/daily-diff-analysis.csv")
@@ -172,36 +171,12 @@ def main() -> int:
         print(update_proc.stderr, end="", file=sys.stderr)
 
     if update_proc.returncode != 0:
-        combined = f"{update_proc.stdout or ''}\n{update_proc.stderr or ''}"
-        legacy_tmp_mv_error = (
-            "cannot stat" in combined
-            and ".updated." in combined
-            and ".tmp" in combined
-            and "mv:" in combined
+        raise subprocess.CalledProcessError(
+            update_proc.returncode,
+            update_cmd,
+            output=update_proc.stdout,
+            stderr=update_proc.stderr,
         )
-        if legacy_tmp_mv_error:
-            print(
-                "Detected legacy updater tmp-mv failure; continuing non-fatally (no delta exported this run).",
-                file=sys.stderr,
-            )
-            if not report_path.exists():
-                fallback_report = {
-                    "region": args.region,
-                    "input_pbf": str(input_pbf),
-                    "updates_url": args.updates_url,
-                    "status": "ok",
-                    "notes": "Legacy updater failed moving tmp outfile; treated as unchanged PBF.",
-                    "updated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "delta_export": {"status": "skipped", "reason": "legacy_tmp_mv_error", "path": None},
-                }
-                report_path.write_text(json.dumps(fallback_report, indent=2, sort_keys=True), encoding="utf-8")
-        else:
-            raise subprocess.CalledProcessError(
-                update_proc.returncode,
-                update_cmd,
-                output=update_proc.stdout,
-                stderr=update_proc.stderr,
-            )
 
     if not report_path.exists():
         print(f"Expected report missing: {report_path}", file=sys.stderr)

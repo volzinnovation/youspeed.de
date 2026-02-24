@@ -87,20 +87,6 @@ jobs:
               fi
             fi
 
-            # Backward compatibility with pre-ISO naming
-            if [[ ! -f mapdata/raw/DEU-latest.osm.pbf ]]; then
-              gh release download "${pbf_tag}" \
-                --repo "${GITHUB_REPOSITORY}" \
-                --pattern "germany-latest.osm.pbf" \
-                --pattern "germany.diff_state.json" \
-                --pattern "diff_update.germany.latest.json" \
-                --dir mapdata/raw \
-                --clobber || true
-              [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf mapdata/raw/DEU-latest.osm.pbf || true
-              [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json mapdata/raw/DEU.diff_state.json || true
-              [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json mapdata/raw/diff_update.DEU.latest.json || true
-            fi
-
             # Report belongs under mapdata/reports for downstream tooling
             if [[ -f mapdata/raw/diff_update.DEU.latest.json ]]; then
               mv mapdata/raw/diff_update.DEU.latest.json mapdata/reports/diff_update.DEU.latest.json
@@ -234,8 +220,13 @@ jobs:
           gh release upload "${pbf_tag}" mapdata/reports/diff_update.DEU.latest.json --clobber --repo "${GITHUB_REPOSITORY}"
 
           if [[ -n "${{ steps.pipeline.outputs.daily_delta }}" && -f "${{ steps.pipeline.outputs.daily_delta }}" ]]; then
-            cp "${{ steps.pipeline.outputs.daily_delta }}" /tmp/DEU-latest.osc.gz
-            gh release upload "${pbf_tag}" /tmp/DEU-latest.osc.gz --clobber --repo "${GITHUB_REPOSITORY}"
+            daily_delta_path="${{ steps.pipeline.outputs.daily_delta }}"
+            daily_delta_name="$(basename "${daily_delta_path}")"
+            if [[ ! "${daily_delta_name}" =~ ^DEU-[0-9]{4}-[0-9]{2}-[0-9]{2}\.osc\.gz$ ]]; then
+              processed_date="${{ steps.pipeline.outputs.processed_date }}"
+              daily_delta_name="DEU-${processed_date}.osc.gz"
+            fi
+            gh release upload "${pbf_tag}" "${daily_delta_path}#${daily_delta_name}" --clobber --repo "${GITHUB_REPOSITORY}"
           fi
 
       - name: Save Cached Germany PBF

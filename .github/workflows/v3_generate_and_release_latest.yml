@@ -51,8 +51,11 @@ jobs:
       INPUT_PBF: mapdata/raw/DEU-latest.osm.pbf
       INPUT_STATE: mapdata/raw/DEU.diff_state.json
       INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
-      INPUT_DELTA: mapdata/reports/deltas/daily/DEU-latest.osc.gz
+      INPUT_DELTA: mapdata/reports/deltas/daily/DEU-update.osc.gz
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
+      BUNDLE_DB_ASSET: DEU-latest.speeds_v3.sqlite
+      BUNDLE_MANIFEST_ASSET: DEU-latest.bundle-manifest.v3.json
+      DELTA_INDEX_ASSET: DEU-latest.delta-index.v3.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -153,49 +156,38 @@ jobs:
             return 1
           }
 
-          resolved=0
           for attempt in 1 2 3 4 5 6; do
             if resolve_iso_pbf; then
-              resolved=1
               break
             fi
             echo "DEU PBF assets not ready on release ${pbf_tag} (attempt ${attempt}/6)." >&2
             sleep 20
           done
 
-          # Backward compatibility with pre-ISO naming
-          if [[ "${resolved}" != "1" ]]; then
-            gh release download "${pbf_tag}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --pattern "germany-latest.osm.pbf" \
-              --pattern "germany.diff_state.json" \
-              --pattern "diff_update.germany.latest.json" \
-              --dir mapdata/raw \
-              --clobber || true
-            [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
-            [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
-            [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
-          fi
-
           [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
 
-          if gh release download "${pbf_tag}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern "DEU-latest.osc.gz" \
-            --dir mapdata/reports/deltas/daily \
-            --clobber; then
-            echo "Downloaded daily delta file."
-          else
+          rm -f "${INPUT_DELTA}"
+          delta_date=""
+          if [[ -f "${INPUT_REPORT}" ]]; then
+            delta_date="$(python3 -c 'import json,sys; from pathlib import Path; p=Path(sys.argv[1]); payload=json.loads(p.read_text(encoding="utf-8")); pbf_after=payload.get("pbf_after", {}) if isinstance(payload, dict) else {}; server_after=payload.get("server_state_after", {}) if isinstance(payload, dict) else {}; ts=(pbf_after.get("timestamp") if isinstance(pbf_after, dict) else "") or (server_after.get("timestamp") if isinstance(server_after, dict) else ""); print(str(ts)[:10] if ts else "")' "${INPUT_REPORT}" 2>/dev/null || true)"
+          fi
+
+          downloaded_delta=0
+          if [[ -n "${delta_date}" ]]; then
+            dated_delta_asset="DEU-${delta_date}.osc.gz"
             if gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --pattern "germany-latest.osc.gz" \
+              --pattern "${dated_delta_asset}" \
               --dir mapdata/reports/deltas/daily \
               --clobber; then
-              mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
-              echo "Downloaded legacy daily delta file."
-            else
-              echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
+              mv "mapdata/reports/deltas/daily/${dated_delta_asset}" "${INPUT_DELTA}"
+              echo "Downloaded dated daily delta file: ${dated_delta_asset}."
+              downloaded_delta=1
             fi
+          fi
+
+          if [[ "${downloaded_delta}" != "1" ]]; then
+            echo "No dated daily delta asset found in release (delta build will be skipped)."
           fi
 
           if [[ ! -f "${INPUT_PBF}" ]]; then
@@ -254,12 +246,13 @@ jobs:
       - name: Fetch Previous Latest Bundle Metadata
         run: |
           release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.tags.outputs.release_tag }}"
-          prev_manifest_url="${release_base}/bundle-manifest.v3.json"
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
           prev_index_tmp="/tmp/prev_delta_index.v3.json"
 
+          rm -f "${prev_manifest_tmp}" "${prev_index_tmp}"
+          prev_manifest_url="${release_base}/${BUNDLE_MANIFEST_ASSET}"
           if curl -L --fail --silent --show-error "${prev_manifest_url}" -o "${prev_manifest_tmp}"; then
-            echo "Found previous bundle manifest"
+            echo "Found previous bundle manifest: ${BUNDLE_MANIFEST_ASSET}"
           else
             rm -f "${prev_manifest_tmp}"
           fi
@@ -318,20 +311,12 @@ jobs:
             prev_version="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(obj.get("bundle_version") or "")')"
             prev_db_url="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(((obj.get("db") or {}).get("url")) or "")')"
             prev_db_parts_json="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(json.dumps(obj.get("db_parts") or []))')"
+            prev_db_parts_count="$(python3 -c 'import json; import sys; payload=json.loads(sys.argv[1]); print(len(payload) if isinstance(payload, list) else 0)' "${prev_db_parts_json}")"
 
             if [[ -n "${prev_version}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
               rm -f "${prev_db_tmp}"
               downloaded_prev_db=0
-              if [[ -n "${prev_db_url}" ]]; then
-                if curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"; then
-                  downloaded_prev_db=1
-                else
-                  echo "Previous db.url download failed; will try db_parts fallback."
-                  rm -f "${prev_db_tmp}"
-                fi
-              fi
-
-              if [[ "${downloaded_prev_db}" != "1" ]]; then
+              if [[ "${prev_db_parts_count}" -gt 0 ]]; then
                 if python3 scripts/map/download_db_parts.py \
                   --parts-json "${prev_db_parts_json}" \
                   --out "${prev_db_tmp}"; then
@@ -340,31 +325,39 @@ jobs:
                   echo "Previous db_parts download failed; skipping delta creation."
                   rm -f "${prev_db_tmp}"
                 fi
+              elif [[ -n "${prev_db_url}" ]]; then
+                if curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"; then
+                  downloaded_prev_db=1
+                else
+                  echo "Previous db.url download failed; skipping delta creation."
+                  rm -f "${prev_db_tmp}"
+                fi
+              else
+                echo "Previous manifest has neither db_parts nor db.url; skipping delta creation."
               fi
 
               if [[ ! -s "${prev_db_tmp}" ]]; then
                 echo "Previous DB unavailable (no db.url and no usable db_parts); skipping delta creation."
               else
-              delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
-              delta_suffix="${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
-              patch_name="v3_patch_${delta_suffix}.sql"
-              manifest_name="v3_delta_manifest_${delta_suffix}.json"
+                delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
+                patch_name="DEU-${{ steps.version.outputs.bundle_version }}.v3_patch_from_${prev_version}.sql"
+                manifest_name="DEU-${{ steps.version.outputs.bundle_version }}.v3_delta_manifest_from_${prev_version}.json"
 
-              python3 scripts/map/build_v3_delta_pack.py \
-                --base-db "${prev_db_tmp}" \
-                --diff-file "${{ steps.version.outputs.delta_path }}" \
-                --region "${REGION}" \
-                --from-version "${prev_version}" \
-                --to-version "${{ steps.version.outputs.bundle_version }}" \
-                --out-dir "${delta_dir}" \
-                --patch-file-name "${patch_name}" \
-                --manifest-name "${manifest_name}" \
-                --github-owner "${GITHUB_REPOSITORY%/*}" \
-                --github-repo "${GITHUB_REPOSITORY#*/}" \
-                --github-release-tag "${{ steps.tags.outputs.release_tag }}"
+                python3 scripts/map/build_v3_delta_pack.py \
+                  --base-db "${prev_db_tmp}" \
+                  --diff-file "${{ steps.version.outputs.delta_path }}" \
+                  --region "${REGION}" \
+                  --from-version "${prev_version}" \
+                  --to-version "${{ steps.version.outputs.bundle_version }}" \
+                  --out-dir "${delta_dir}" \
+                  --patch-file-name "${patch_name}" \
+                  --manifest-name "${manifest_name}" \
+                  --github-owner "${GITHUB_REPOSITORY%/*}" \
+                  --github-repo "${GITHUB_REPOSITORY#*/}" \
+                  --github-release-tag "${{ steps.tags.outputs.release_tag }}"
 
-              new_delta_manifest="${delta_dir}/${manifest_name}"
-              new_delta_asset_path="${manifest_name}"
+                new_delta_manifest="${delta_dir}/${manifest_name}"
+                new_delta_asset_path="${manifest_name}"
               fi
             fi
           fi
@@ -394,7 +387,7 @@ jobs:
           fi
 
           python3 scripts/map/roll_v3_delta_index.py \
-            --output "${BUNDLE_DIR}/delta-index.v3.json" \
+            --output "${BUNDLE_DIR}/${DELTA_INDEX_ASSET}" \
             --retention-count "${RETENTION_UPDATES}" \
             "${existing_args[@]}" \
             "${new_args[@]}"
@@ -408,7 +401,10 @@ jobs:
             --bundle-version "${{ steps.version.outputs.bundle_version }}" \
             --bundle-dir-name latest \
             --out-root mapdata/bundles/v3 \
-            --delta-index "${BUNDLE_DIR}/delta-index.v3.json" \
+            --db-file-name "${BUNDLE_DB_ASSET}" \
+            --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
+            --delta-index "${BUNDLE_DIR}/${DELTA_INDEX_ASSET}" \
+            --delta-index-file-name "${DELTA_INDEX_ASSET}" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
             --github-repo "${GITHUB_REPOSITORY#*/}" \
             --github-release-tag "${{ steps.tags.outputs.release_tag }}"
@@ -432,5 +428,10 @@ jobs:
           python3 scripts/map/prune_v3_release_assets.py \
             --repo "${GITHUB_REPOSITORY}" \
             --release-tag "${{ steps.tags.outputs.release_tag }}" \
-            --delta-index "${BUNDLE_DIR}/delta-index.v3.json" \
-            --bundle-manifest "${BUNDLE_DIR}/bundle-manifest.v3.json"
+            --delta-index "${BUNDLE_DIR}/${DELTA_INDEX_ASSET}" \
+            --bundle-manifest "${BUNDLE_DIR}/${BUNDLE_MANIFEST_ASSET}" \
+            --bundle-manifest-name "${BUNDLE_MANIFEST_ASSET}" \
+            --delta-index-name "${DELTA_INDEX_ASSET}" \
+            --db-file-name "${BUNDLE_DB_ASSET}" \
+            --delta-manifest-prefix "DEU-" \
+            --patch-prefix "DEU-"

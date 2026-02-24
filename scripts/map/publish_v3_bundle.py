@@ -54,12 +54,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--db-file-name",
-        default="speeds_v3.sqlite",
+        default="DEU-latest.speeds_v3.sqlite",
         help="Database file name inside the bundle directory",
     )
     parser.add_argument(
         "--manifest-name",
-        default="bundle-manifest.v3.json",
+        default="DEU-latest.bundle-manifest.v3.json",
         help="Manifest file name inside the bundle directory",
     )
     parser.add_argument(
@@ -69,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--delta-index-file-name",
-        default="delta-index.v3.json",
+        default="DEU-latest.delta-index.v3.json",
         help="Delta index file name inside the bundle directory",
     )
     parser.add_argument("--min-app-version", default="1.0.0", help="Minimum app version compatible with this bundle")

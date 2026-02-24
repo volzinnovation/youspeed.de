@@ -33,6 +33,7 @@ jobs:
         id: resolve_bundle
         run: |
           requested="${{ inputs.bundle_dir }}"
+          canonical_manifest="DEU-latest.bundle-manifest.v3.json"
           candidates=(
             "${requested}"
             "mapdata/bundles/v3/germany/latest"
@@ -41,7 +42,7 @@ jobs:
 
           resolved=""
           for dir in "${candidates[@]}"; do
-            if [[ -d "${dir}" ]] && [[ -f "${dir}/bundle-manifest.v3.json" ]]; then
+            if [[ -d "${dir}" ]] && [[ -f "${dir}/${canonical_manifest}" ]]; then
               resolved="${dir}"
               break
             fi
@@ -49,7 +50,7 @@ jobs:
 
           if [[ -z "${resolved}" ]]; then
             echo "Bundle directory missing or incomplete: ${requested}" >&2
-            echo "Expected bundle-manifest.v3.json in one of:" >&2
+            echo "Expected ${canonical_manifest} in one of:" >&2
             printf ' - %s\n' "${candidates[@]}" >&2
             echo "Run workflow 'Germany V3 Bundle Build And Release' first, then rerun this publisher." >&2
             exit 1

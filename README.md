@@ -14,7 +14,7 @@ Do not mix these concerns when adding code, tests, or workflows.
 - `sqlite3`
 - `jq`
 - Xcode + iOS toolchain (for iPhone apps)
-- optional: `osmium-tool` (fallback engine)
+- optional: `osmium-tool` (alternative engine)
 
 ## Track A: Scientific Probing and Paper Reproducibility
 
@@ -37,13 +37,13 @@ Goal: reproduce architecture evaluation, benchmark matrix, and paper outputs tha
 
 ```bash
 mkdir -p mapdata/raw
-curl -L --fail https://download.geofabrik.de/europe/germany-latest.osm.pbf -o mapdata/raw/germany-latest.osm.pbf
+curl -L --fail https://download.geofabrik.de/europe/germany-latest.osm.pbf -o mapdata/raw/DEU-latest.osm.pbf
 ```
 
 2. Build `v1` base artifacts:
 
 ```bash
-./scripts/map/build_region_artifacts.sh --region germany --input mapdata/raw/germany-latest.osm.pbf --engine pyosmium --max-geom-points 8
+./scripts/map/build_region_artifacts.sh --region germany --input mapdata/raw/DEU-latest.osm.pbf --engine pyosmium --max-geom-points 8
 ```
 
 3. Build `v2`, `v3`, `v4`:
@@ -106,12 +106,12 @@ Goal: ship the real app with a stable `v3` runtime format and independently upda
 
 Latest bundle assets (release tag `deu-v3-data-latest`):
 
-- `bundle-manifest.v3.json`
-- `speeds_v3.sqlite` (if under GitHub per-asset limit)
-- `speeds_v3.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
-- `delta-index.v3.json`
-- `v3_delta_manifest_<from>_to_<to>.json` (0..30 recent updates)
-- `v3_patch_<from>_to_<to>.sql` (matching delta manifests)
+- `DEU-latest.bundle-manifest.v3.json`
+- `DEU-latest.speeds_v3.sqlite` (if under GitHub per-asset limit)
+- `DEU-latest.speeds_v3.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
+- `DEU-latest.delta-index.v3.json`
+- `DEU-YYYY-MM-DD.v3_delta_manifest_from_YYYY-MM-DD.json` (0..30 recent updates)
+- `DEU-YYYY-MM-DD.v3_patch_from_YYYY-MM-DD.sql` (matching delta manifests)
 
 Important policy enforced in app:
 
@@ -125,9 +125,9 @@ Open TODO (IRL validation):
 
 ```bash
 python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite
-python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-YYYY-MM-DD.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24 --patch-file-name v3_patch_2026-02-23_to_2026-02-24.sql --manifest-name v3_delta_manifest_2026-02-23_to_2026-02-24.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
-python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/v3_delta_manifest_2026-02-23_to_2026-02-24.json --new-delta-manifest-asset-path v3_delta_manifest_2026-02-23_to_2026-02-24.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/delta-index.v3.json
-python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --delta-index mapdata/bundles/v3/germany/latest/delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-2026-02-24.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24 --patch-file-name DEU-2026-02-24.v3_patch_from_2026-02-23.sql --manifest-name DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --new-delta-manifest-asset-path DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json
+python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name DEU-latest.speeds_v3.sqlite --manifest-name DEU-latest.bundle-manifest.v3.json --delta-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --delta-index-file-name DEU-latest.delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
 ./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag deu-v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest
 ```
 

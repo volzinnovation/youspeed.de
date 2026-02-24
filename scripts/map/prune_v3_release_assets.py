@@ -45,6 +45,31 @@ def parse_args() -> argparse.Namespace:
         help="Optional prefix; when set, only assets under this prefix are considered for pruning",
     )
     parser.add_argument(
+        "--bundle-manifest-name",
+        default="DEU-latest.bundle-manifest.v3.json",
+        help="Latest bundle manifest asset name (default: DEU-latest.bundle-manifest.v3.json)",
+    )
+    parser.add_argument(
+        "--delta-index-name",
+        default="DEU-latest.delta-index.v3.json",
+        help="Latest delta index asset name (default: DEU-latest.delta-index.v3.json)",
+    )
+    parser.add_argument(
+        "--db-file-name",
+        default="DEU-latest.speeds_v3.sqlite",
+        help="Latest full DB asset name (default: DEU-latest.speeds_v3.sqlite)",
+    )
+    parser.add_argument(
+        "--delta-manifest-prefix",
+        default="DEU-",
+        help="Prefix used for rolling delta manifest assets (default: DEU-)",
+    )
+    parser.add_argument(
+        "--patch-prefix",
+        default="DEU-",
+        help="Prefix used for rolling SQL patch assets (default: DEU-)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print deletions without deleting assets",
@@ -62,9 +87,18 @@ def main() -> int:
     if prefix and not prefix.endswith("/"):
         prefix += "/"
 
-    keep.add(f"{prefix}bundle-manifest.v3.json")
-    keep.add(f"{prefix}delta-index.v3.json")
-    keep.add(f"{prefix}speeds_v3.sqlite")
+    bundle_manifest_name = args.bundle_manifest_name.strip()
+    delta_index_name = args.delta_index_name.strip()
+    db_file_name = args.db_file_name.strip()
+    delta_manifest_prefix = args.delta_manifest_prefix.strip()
+    patch_prefix = args.patch_prefix.strip()
+
+    if not bundle_manifest_name or not delta_index_name or not db_file_name:
+        raise SystemExit("bundle/delta/db asset names must be non-empty")
+
+    keep.add(f"{prefix}{bundle_manifest_name}")
+    keep.add(f"{prefix}{delta_index_name}")
+    keep.add(f"{prefix}{db_file_name}")
 
     if args.bundle_manifest:
         manifest_path = Path(args.bundle_manifest)
@@ -119,12 +153,12 @@ def main() -> int:
     for asset in assets:
         name = str(asset.get("name", ""))
         managed = (
-            name == f"{prefix}bundle-manifest.v3.json"
-            or name == f"{prefix}delta-index.v3.json"
-            or name == f"{prefix}speeds_v3.sqlite"
-            or name.startswith(f"{prefix}speeds_v3.sqlite.part")
-            or name.startswith(f"{prefix}v3_delta_manifest_")
-            or name.startswith(f"{prefix}v3_patch_")
+            name == f"{prefix}{bundle_manifest_name}"
+            or name == f"{prefix}{delta_index_name}"
+            or name == f"{prefix}{db_file_name}"
+            or name.startswith(f"{prefix}{db_file_name}.part")
+            or (bool(delta_manifest_prefix) and name.startswith(f"{prefix}{delta_manifest_prefix}"))
+            or (bool(patch_prefix) and name.startswith(f"{prefix}{patch_prefix}"))
         )
         if prefix:
             managed = managed and name.startswith(prefix)

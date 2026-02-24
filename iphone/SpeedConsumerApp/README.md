@@ -10,7 +10,7 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 
 ## Update flow
 1. Bootstrap bundled seed `speeds_v3.sqlite`.
-2. Fetch `bundle-manifest.v3.json` from GitHub release assets (`deu-v3-data-latest`).
+2. Fetch `DEU-latest.bundle-manifest.v3.json` from GitHub release assets (`deu-v3-data-latest`).
 3. If delta path exists from active version to target: download + verify + apply SQL patch.
 4. Otherwise download full `speeds_v3.sqlite` bundle.
    - If manifest provides `db_parts`, download parts and assemble local DB before activation.
