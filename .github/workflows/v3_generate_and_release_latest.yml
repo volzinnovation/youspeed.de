@@ -127,9 +127,29 @@ jobs:
               --clobber || true
 
             if [[ ! -f "${INPUT_PBF}" ]]; then
-              parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
-              if (( ${#parts[@]} > 0 )); then
-                cat "${parts[@]}" > "${INPUT_PBF}"
+              if [[ -f mapdata/raw/DEU-latest.osm.pbf.parts.json ]]; then
+                python3 - <<'PY'
+                import json
+                from pathlib import Path
+
+                manifest = Path("mapdata/raw/DEU-latest.osm.pbf.parts.json")
+                out_path = Path("mapdata/raw/DEU-latest.osm.pbf")
+                payload = json.loads(manifest.read_text(encoding="utf-8"))
+                part_names = payload.get("parts") or []
+                if not isinstance(part_names, list) or not part_names:
+                    raise SystemExit("parts manifest is missing part list")
+                with out_path.open("wb") as out:
+                    for name in part_names:
+                        p = manifest.parent / str(name)
+                        if not p.exists():
+                            raise SystemExit(f"missing pbf part: {p}")
+                        out.write(p.read_bytes())
+                PY
+              else
+                parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+                if (( ${#parts[@]} > 0 )); then
+                  cat "${parts[@]}" > "${INPUT_PBF}"
+                fi
               fi
             fi
 
