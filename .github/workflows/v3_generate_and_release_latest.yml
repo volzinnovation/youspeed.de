@@ -64,7 +64,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          set -euo pipefail
           python -m pip install --upgrade pip
           python -m pip install osmium
           chmod +x scripts/map/publish_v3_release_assets.sh
@@ -77,7 +76,6 @@ jobs:
       - name: Resolve Release Tags
         id: tags
         run: |
-          set -euo pipefail
 
           release_tag="${{ github.event.inputs.release_tag || '' }}"
           if [[ -z "${release_tag}" ]]; then
@@ -101,7 +99,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           shopt -s nullglob
           mkdir -p mapdata/raw mapdata/reports mapdata/reports/deltas/daily
 
@@ -223,7 +220,6 @@ jobs:
       - name: Resolve Bundle Version And Delta Path
         id: version
         run: |
-          set -euo pipefail
           python3 - <<'PY'
           import json
           from datetime import datetime, timezone
@@ -257,7 +253,6 @@ jobs:
 
       - name: Fetch Previous Latest Bundle Metadata
         run: |
-          set -euo pipefail
           release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.tags.outputs.release_tag }}"
           prev_manifest_url="${release_base}/bundle-manifest.v3.json"
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
@@ -281,7 +276,6 @@ jobs:
       - name: Check Bundle Version Change
         id: compare
         run: |
-          set -euo pipefail
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
           new_version="${{ steps.version.outputs.bundle_version }}"
 
@@ -299,7 +293,6 @@ jobs:
       - name: Build v1 Artifacts Required For v3, Then Build v3 DB
         if: steps.compare.outputs.needs_publish == '1'
         run: |
-          set -euo pipefail
           scripts/map/build_region_artifacts.sh \
             --region "${REGION}" \
             --input "${INPUT_PBF}" \
@@ -314,7 +307,6 @@ jobs:
         if: steps.compare.outputs.needs_publish == '1'
         id: delta
         run: |
-          set -euo pipefail
           mkdir -p "${BUNDLE_DIR}"
 
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
@@ -385,7 +377,6 @@ jobs:
       - name: Roll Delta Index (Retain Latest 30 Incrementals)
         if: steps.compare.outputs.needs_publish == '1'
         run: |
-          set -euo pipefail
           mkdir -p "${BUNDLE_DIR}"
           release_base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.tags.outputs.release_tag }}"
           existing_args=()
@@ -411,7 +402,6 @@ jobs:
       - name: Publish Latest Full Bundle Manifest
         if: steps.compare.outputs.needs_publish == '1'
         run: |
-          set -euo pipefail
           python3 scripts/map/publish_v3_bundle.py \
             --region "${REGION}" \
             --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
@@ -428,7 +418,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           ./scripts/map/publish_v3_release_assets.sh \
             --repo "${GITHUB_REPOSITORY}" \
             --tag "${{ steps.tags.outputs.release_tag }}" \
@@ -440,7 +429,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           python3 scripts/map/prune_v3_release_assets.py \
             --repo "${GITHUB_REPOSITORY}" \
             --release-tag "${{ steps.tags.outputs.release_tag }}" \
