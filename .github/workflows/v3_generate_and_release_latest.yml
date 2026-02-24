@@ -329,12 +329,25 @@ jobs:
 
             if [[ -n "${prev_version}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
               rm -f "${prev_db_tmp}"
+              downloaded_prev_db=0
               if [[ -n "${prev_db_url}" ]]; then
-                curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"
-              else
-                python3 scripts/map/download_db_parts.py \
+                if curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"; then
+                  downloaded_prev_db=1
+                else
+                  echo "Previous db.url download failed; will try db_parts fallback."
+                  rm -f "${prev_db_tmp}"
+                fi
+              fi
+
+              if [[ "${downloaded_prev_db}" != "1" ]]; then
+                if python3 scripts/map/download_db_parts.py \
                   --parts-json "${prev_db_parts_json}" \
-                  --out "${prev_db_tmp}"
+                  --out "${prev_db_tmp}"; then
+                  downloaded_prev_db=1
+                else
+                  echo "Previous db_parts download failed; skipping delta creation."
+                  rm -f "${prev_db_tmp}"
+                fi
               fi
 
               if [[ ! -s "${prev_db_tmp}" ]]; then
