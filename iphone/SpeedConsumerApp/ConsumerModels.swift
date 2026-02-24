@@ -16,6 +16,7 @@ struct V3BundleManifest: Codable {
     let createdAtUTC: String
     let minAppVersion: String
     let db: BundleArtifact
+    let dbParts: [BundleArtifact]?
     let deltaIndex: BundleArtifact?
 
     enum CodingKeys: String, CodingKey {
@@ -27,6 +28,7 @@ struct V3BundleManifest: Codable {
         case createdAtUTC = "created_at_utc"
         case minAppVersion = "min_app_version"
         case db
+        case dbParts = "db_parts"
         case deltaIndex = "delta_index"
     }
 }

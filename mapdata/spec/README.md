@@ -6,6 +6,7 @@ Files:
 - `catalog.v2.schema.json`: top-level per-region catalog contract.
 - `tile_manifest.v2.schema.json`: per-tile metadata contract.
 - `v3_bundle_manifest.schema.json`: v3 consumer full-bundle contract.
+  - supports optional `db_parts` array for multi-part DB delivery when single-file assets exceed host limits.
 - `v3_delta_manifest.schema.json`: v3 incremental patch contract.
 - `examples/catalog.v2.example.json`: concrete catalog example.
 - `examples/tile_manifest.v2.example.json`: concrete tile-manifest example.

@@ -242,6 +242,46 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         self.assertEqual(payload["bundle_version"], "2026-02-24")
         self.assertEqual(payload["db"]["file"], "speeds_v3.sqlite")
 
+    def test_publish_v3_bundle_splits_large_db_into_parts(self):
+        out_root = self.tmpdir / "bundles"
+        run_cmd(
+            [
+                sys.executable,
+                str(PUBLISH_V3),
+                "--region",
+                "germany",
+                "--db",
+                str(self.base_db),
+                "--bundle-version",
+                "2026-02-24",
+                "--bundle-dir-name",
+                "latest",
+                "--out-root",
+                str(out_root),
+                "--max-release-asset-bytes",
+                "10000",
+                "--github-owner",
+                "volzinnovation",
+                "--github-repo",
+                "youspeed.de",
+                "--github-release-tag",
+                "deu-v3-data-latest",
+            ]
+        )
+        bundle_dir = out_root / "germany" / "latest"
+        manifest_path = bundle_dir / "bundle-manifest.v3.json"
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertIn("db_parts", payload)
+        self.assertGreater(len(payload["db_parts"]), 1)
+        self.assertIsNone(payload["db"]["url"])
+        self.assertEqual(payload["db"]["bytes"], self.base_db.stat().st_size)
+
+        part_files = sorted(bundle_dir.glob("speeds_v3.sqlite.part*"))
+        self.assertEqual(len(part_files), len(payload["db_parts"]))
+        self.assertGreater(sum(p.stat().st_size for p in part_files), 0)
+        for part in payload["db_parts"]:
+            self.assertIn("releases/download/deu-v3-data-latest", str(part.get("url")))
+
     def test_build_delta_index(self):
         delta_dir = self.tmpdir / "deltas"
         a = delta_dir / "a"

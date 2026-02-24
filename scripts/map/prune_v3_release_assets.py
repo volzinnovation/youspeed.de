@@ -35,6 +35,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--release-tag", required=True, help="Release tag to prune")
     parser.add_argument("--delta-index", required=True, help="Path to current rolled delta-index.v3.json")
     parser.add_argument(
+        "--bundle-manifest",
+        default="",
+        help="Optional latest bundle manifest path to keep db_parts assets",
+    )
+    parser.add_argument(
         "--asset-prefix",
         default="",
         help="Optional prefix; when set, only assets under this prefix are considered for pruning",
@@ -60,6 +65,24 @@ def main() -> int:
     keep.add(f"{prefix}bundle-manifest.v3.json")
     keep.add(f"{prefix}delta-index.v3.json")
     keep.add(f"{prefix}speeds_v3.sqlite")
+
+    if args.bundle_manifest:
+        manifest_path = Path(args.bundle_manifest)
+        if manifest_path.exists():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            db_parts = manifest.get("db_parts", [])
+            if isinstance(db_parts, list):
+                for part in db_parts:
+                    if not isinstance(part, dict):
+                        continue
+                    file_name = part.get("file")
+                    url = part.get("url")
+                    if isinstance(file_name, str) and file_name:
+                        keep.add(f"{prefix}{file_name}" if prefix else file_name)
+                    if isinstance(url, str) and (url.startswith("http://") or url.startswith("https://")):
+                        name = _extract_asset_name_from_release_url(url, args.release_tag)
+                        if name:
+                            keep.add(name)
 
     for entry in entries:
         if not isinstance(entry, dict):
@@ -99,6 +122,7 @@ def main() -> int:
             name == f"{prefix}bundle-manifest.v3.json"
             or name == f"{prefix}delta-index.v3.json"
             or name == f"{prefix}speeds_v3.sqlite"
+            or name.startswith(f"{prefix}speeds_v3.sqlite.part")
             or name.startswith(f"{prefix}v3_delta_manifest_")
             or name.startswith(f"{prefix}v3_patch_")
         )

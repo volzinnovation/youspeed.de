@@ -194,11 +194,20 @@ actor V3BundleManager {
     }
 
     private func fullDownloadActivate(manifest: V3BundleManifest, manifestURL: URL) async throws -> BundleSyncResult {
-        let dbURL = try resolveArtifactURL(manifest.db, relativeTo: manifestURL)
-        let dbData = try await downloadData(from: dbURL)
-        try validateSHA256(data: dbData, expectedHex: manifest.db.sha256, label: "bundle db")
+        let stagingDB: URL
+        if let dbParts = manifest.dbParts, !dbParts.isEmpty {
+            stagingDB = try await writeMultipartStagingDB(
+                parts: dbParts,
+                manifest: manifest,
+                manifestURL: manifestURL
+            )
+        } else {
+            let dbURL = try resolveArtifactURL(manifest.db, relativeTo: manifestURL)
+            let downloaded = try await downloadFile(from: dbURL)
+            try validateSHA256(fileAt: downloaded, expectedHex: manifest.db.sha256, label: "bundle db")
+            stagingDB = try writeStagingDB(downloadedFile: downloaded, version: manifest.bundleVersion)
+        }
 
-        let stagingDB = try writeStagingDB(data: dbData, version: manifest.bundleVersion)
         try quickValidateDB(at: stagingDB)
         try activatePreparedDB(
             preparedDB: stagingDB,
@@ -268,13 +277,18 @@ actor V3BundleManager {
         try fileManager.moveItem(at: tmp, to: stateURL)
     }
 
-    private func writeStagingDB(data: Data, version: String) throws -> URL {
+    private func stagingDirectory() throws -> URL {
         let stageDir = try rootDir().appendingPathComponent("staging", isDirectory: true)
         if !fileManager.fileExists(atPath: stageDir.path) {
             try fileManager.createDirectory(at: stageDir, withIntermediateDirectories: true)
         }
+        return stageDir
+    }
+
+    private func writeStagingDB(downloadedFile: URL, version: String) throws -> URL {
+        let stageDir = try stagingDirectory()
         let fileURL = stageDir.appendingPathComponent("\(version)-\(UUID().uuidString).sqlite")
-        try data.write(to: fileURL, options: .atomic)
+        try fileManager.moveItem(at: downloadedFile, to: fileURL)
         return fileURL
     }
 
@@ -282,12 +296,55 @@ actor V3BundleManager {
         guard let current = try activeDatabaseURL(), fileManager.fileExists(atPath: current.path) else {
             throw ConsumerAppError.io("No active DB for delta patch")
         }
-        let stageDir = try rootDir().appendingPathComponent("staging", isDirectory: true)
-        if !fileManager.fileExists(atPath: stageDir.path) {
-            try fileManager.createDirectory(at: stageDir, withIntermediateDirectories: true)
-        }
+        let stageDir = try stagingDirectory()
         let out = stageDir.appendingPathComponent("\(version)-delta-\(UUID().uuidString).sqlite")
         try fileManager.copyItem(at: current, to: out)
+        return out
+    }
+
+    private func writeMultipartStagingDB(
+        parts: [BundleArtifact],
+        manifest: V3BundleManifest,
+        manifestURL: URL
+    ) async throws -> URL {
+        let sortedParts = parts.sorted { $0.file < $1.file }
+        if sortedParts.isEmpty {
+            throw ConsumerAppError.invalidManifest("db_parts is empty")
+        }
+
+        let stageDir = try stagingDirectory()
+        let out = stageDir.appendingPathComponent("\(manifest.bundleVersion)-\(UUID().uuidString).sqlite")
+        fileManager.createFile(atPath: out.path, contents: nil)
+        let outHandle = try FileHandle(forWritingTo: out)
+        defer {
+            try? outHandle.close()
+        }
+
+        var totalBytes: Int64 = 0
+        for part in sortedParts {
+            let partURL = try resolveArtifactURL(part, relativeTo: manifestURL)
+            let downloadedPart = try await downloadFile(from: partURL)
+            try validateSHA256(fileAt: downloadedPart, expectedHex: part.sha256, label: "bundle db part \(part.file)")
+            totalBytes += try fileSize(downloadedPart)
+
+            let inHandle = try FileHandle(forReadingFrom: downloadedPart)
+            while true {
+                let chunk = inHandle.readData(ofLength: 8 * 1024 * 1024)
+                if chunk.isEmpty {
+                    break
+                }
+                outHandle.write(chunk)
+            }
+            try inHandle.close()
+            try? fileManager.removeItem(at: downloadedPart)
+        }
+
+        if totalBytes != manifest.db.bytes {
+            throw ConsumerAppError.invalidManifest(
+                "db_parts size mismatch: expected \(manifest.db.bytes), got \(totalBytes)"
+            )
+        }
+        try validateSHA256(fileAt: out, expectedHex: manifest.db.sha256, label: "bundle db (assembled)")
         return out
     }
 
@@ -311,12 +368,48 @@ actor V3BundleManager {
         return data
     }
 
+    private func downloadFile(from url: URL) async throws -> URL {
+        let (tmpURL, response) = try await session.download(from: url)
+        guard let http = response as? HTTPURLResponse,
+              (200...299).contains(http.statusCode) else {
+            throw ConsumerAppError.network("Unexpected HTTP response for \(url.absoluteString)")
+        }
+        return tmpURL
+    }
+
     private func validateSHA256(data: Data, expectedHex: String, label: String) throws {
         let digest = SHA256.hash(data: data)
         let actual = digest.map { String(format: "%02x", $0) }.joined()
         if actual != expectedHex.lowercased() {
             throw ConsumerAppError.checksum("Checksum mismatch for \(label)")
         }
+    }
+
+    private func validateSHA256(fileAt url: URL, expectedHex: String, label: String) throws {
+        let inHandle = try FileHandle(forReadingFrom: url)
+        defer {
+            try? inHandle.close()
+        }
+
+        var hasher = SHA256()
+        while true {
+            let chunk = inHandle.readData(ofLength: 8 * 1024 * 1024)
+            if chunk.isEmpty {
+                break
+            }
+            hasher.update(data: chunk)
+        }
+        let digest = hasher.finalize()
+        let actual = digest.map { String(format: "%02x", $0) }.joined()
+        if actual != expectedHex.lowercased() {
+            throw ConsumerAppError.checksum("Checksum mismatch for \(label)")
+        }
+    }
+
+    private func fileSize(_ url: URL) throws -> Int64 {
+        let attrs = try fileManager.attributesOfItem(atPath: url.path)
+        let sizeNum = attrs[.size] as? NSNumber
+        return sizeNum?.int64Value ?? 0
     }
 
     private func quickValidateDB(at url: URL) throws {

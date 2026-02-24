@@ -107,7 +107,8 @@ Goal: ship the real app with a stable `v3` runtime format and independently upda
 Latest bundle assets (release tag `deu-v3-data-latest`):
 
 - `bundle-manifest.v3.json`
-- `speeds_v3.sqlite`
+- `speeds_v3.sqlite` (if under GitHub per-asset limit)
+- `speeds_v3.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
 - `delta-index.v3.json`
 - `v3_delta_manifest_<from>_to_<to>.json` (0..30 recent updates)
 - `v3_patch_<from>_to_<to>.sql` (matching delta manifests)
@@ -115,6 +116,10 @@ Latest bundle assets (release tag `deu-v3-data-latest`):
 Important policy enforced in app:
 
 - If installed data is older than 30 days relative to target bundle version, skip incremental patching and do full bundle reload.
+
+Open TODO (IRL validation):
+
+- Run real-world on-road validation for geometry sampling setting `--max-geom-points 8` and compare match quality/latency against higher values (for example `12`, `16`, `24`) before locking production defaults.
 
 ### Local v3 bundle build/publish commands
 

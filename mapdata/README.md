@@ -55,7 +55,8 @@ v3 generated runtime artifact:
 
 v3 consumer bundle artifacts:
 - `bundles/v3/<region>/latest/bundle-manifest.v3.json`
-- `bundles/v3/<region>/latest/speeds_v3.sqlite`
+- `bundles/v3/<region>/latest/speeds_v3.sqlite` (single-file mode)
+- `bundles/v3/<region>/latest/speeds_v3.sqlite.partNNN` (auto-split mode for release size limits)
 - `bundles/v3/<region>/latest/delta-index.v3.json` (rolling window of latest 30 updates)
 - `bundles/v3/<region>/latest/deltas/**/v3_delta_manifest_<from>_to_<to>.json` + `v3_patch_<from>_to_<to>.sql` (optional)
 

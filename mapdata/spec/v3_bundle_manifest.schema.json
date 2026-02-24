@@ -43,6 +43,12 @@
     "db": {
       "$ref": "#/$defs/artifact"
     },
+    "db_parts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
     "delta_index": {
       "anyOf": [
         {

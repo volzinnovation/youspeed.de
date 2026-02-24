@@ -259,9 +259,21 @@ jobs:
           if [[ -f "${prev_manifest_tmp}" && -n "${{ steps.version.outputs.delta_path }}" && -f "${{ steps.version.outputs.delta_path }}" ]]; then
             prev_version="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(obj.get("bundle_version") or "")')"
             prev_db_url="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(((obj.get("db") or {}).get("url")) or "")')"
+            prev_db_parts_json="$(python3 -c 'import json; from pathlib import Path; obj = json.loads(Path("/tmp/prev_bundle_manifest.v3.json").read_text(encoding="utf-8")); print(json.dumps(obj.get("db_parts") or []))')"
 
-            if [[ -n "${prev_version}" && -n "${prev_db_url}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
-              curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"
+            if [[ -n "${prev_version}" && "${prev_version}" != "${{ steps.version.outputs.bundle_version }}" ]]; then
+              rm -f "${prev_db_tmp}"
+              if [[ -n "${prev_db_url}" ]]; then
+                curl -L --fail --silent --show-error "${prev_db_url}" -o "${prev_db_tmp}"
+              else
+                python3 scripts/map/download_db_parts.py \
+                  --parts-json "${prev_db_parts_json}" \
+                  --out "${prev_db_tmp}"
+              fi
+
+              if [[ ! -s "${prev_db_tmp}" ]]; then
+                echo "Previous DB unavailable (no db.url and no usable db_parts); skipping delta creation."
+              else
               delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
               delta_suffix="${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
               patch_name="v3_patch_${delta_suffix}.sql"
@@ -282,6 +294,7 @@ jobs:
 
               new_delta_manifest="${delta_dir}/${manifest_name}"
               new_delta_asset_path="${manifest_name}"
+              fi
             fi
           fi
 
@@ -352,4 +365,5 @@ jobs:
           python3 scripts/map/prune_v3_release_assets.py \
             --repo "${GITHUB_REPOSITORY}" \
             --release-tag "${{ steps.tags.outputs.release_tag }}" \
-            --delta-index "${BUNDLE_DIR}/delta-index.v3.json"
+            --delta-index "${BUNDLE_DIR}/delta-index.v3.json" \
+            --bundle-manifest "${BUNDLE_DIR}/bundle-manifest.v3.json"

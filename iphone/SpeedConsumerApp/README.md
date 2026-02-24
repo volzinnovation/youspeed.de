@@ -13,6 +13,7 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 2. Fetch `bundle-manifest.v3.json` from GitHub release assets (`deu-v3-data-latest`).
 3. If delta path exists from active version to target: download + verify + apply SQL patch.
 4. Otherwise download full `speeds_v3.sqlite` bundle.
+   - If manifest provides `db_parts`, download parts and assemble local DB before activation.
 5. Activate atomically and persist active bundle metadata.
 6. If active bundle is older than 30 days relative to target version, skip deltas and force full bundle reload.
 
