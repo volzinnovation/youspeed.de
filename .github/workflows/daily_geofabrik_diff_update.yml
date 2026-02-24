@@ -230,20 +230,7 @@ jobs:
               echo "Failed to split large PBF into parts." >&2
               exit 1
             fi
-            python3 - <<'PY'
-            import json
-            from pathlib import Path
-            parts = sorted(Path("mapdata/raw").glob("DEU-latest.osm.pbf.part*"))
-            payload = {
-                "asset_name": "DEU-latest.osm.pbf",
-                "size_bytes": Path("mapdata/raw/DEU-latest.osm.pbf").stat().st_size,
-                "parts": [p.name for p in parts],
-            }
-            Path("mapdata/raw/DEU-latest.osm.pbf.parts.json").write_text(
-                json.dumps(payload, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-            PY
+            python3 -c 'import json; from pathlib import Path; parts=sorted(Path("mapdata/raw").glob("DEU-latest.osm.pbf.part*")); payload={"asset_name":"DEU-latest.osm.pbf","size_bytes":Path("mapdata/raw/DEU-latest.osm.pbf").stat().st_size,"parts":[p.name for p in parts]}; Path("mapdata/raw/DEU-latest.osm.pbf.parts.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")'
             for part in "${parts[@]}"; do
               gh release upload "${pbf_tag}" "${part}" --clobber --repo "${GITHUB_REPOSITORY}"
             done

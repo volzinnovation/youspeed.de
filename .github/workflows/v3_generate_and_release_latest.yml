@@ -128,23 +128,20 @@ jobs:
 
             if [[ ! -f "${INPUT_PBF}" ]]; then
               if [[ -f mapdata/raw/DEU-latest.osm.pbf.parts.json ]]; then
-                python3 - <<'PY'
-                import json
-                from pathlib import Path
-
-                manifest = Path("mapdata/raw/DEU-latest.osm.pbf.parts.json")
-                out_path = Path("mapdata/raw/DEU-latest.osm.pbf")
-                payload = json.loads(manifest.read_text(encoding="utf-8"))
-                part_names = payload.get("parts") or []
-                if not isinstance(part_names, list) or not part_names:
-                    raise SystemExit("parts manifest is missing part list")
-                with out_path.open("wb") as out:
-                    for name in part_names:
-                        p = manifest.parent / str(name)
-                        if not p.exists():
-                            raise SystemExit(f"missing pbf part: {p}")
-                        out.write(p.read_bytes())
-                PY
+                mapfile -t manifest_parts < <(python3 -c 'import json,sys; obj=json.load(open(sys.argv[1], encoding="utf-8")); parts=obj.get("parts") or []; [print(str(p)) for p in parts]' mapdata/raw/DEU-latest.osm.pbf.parts.json)
+                if (( ${#manifest_parts[@]} == 0 )); then
+                  echo "parts manifest is missing part list" >&2
+                  exit 1
+                fi
+                : > "${INPUT_PBF}"
+                for part_name in "${manifest_parts[@]}"; do
+                  part_path="mapdata/raw/${part_name}"
+                  if [[ ! -f "${part_path}" ]]; then
+                    echo "missing pbf part: ${part_path}" >&2
+                    exit 1
+                  fi
+                  cat "${part_path}" >> "${INPUT_PBF}"
+                done
               else
                 parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
                 if (( ${#parts[@]} > 0 )); then
