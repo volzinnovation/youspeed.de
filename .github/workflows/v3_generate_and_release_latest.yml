@@ -52,6 +52,7 @@ jobs:
       INPUT_STATE: mapdata/raw/DEU.diff_state.json
       INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
       INPUT_DELTA: mapdata/reports/deltas/daily/DEU-latest.osc.gz
+      LATEST_PBF_URL: https://download.geofabrik.de/europe/germany-latest.osm.pbf
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
     steps:
       - name: Checkout
@@ -105,50 +106,71 @@ jobs:
           mkdir -p mapdata/raw mapdata/reports mapdata/reports/deltas/daily
 
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
-          gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null
-
-          # Preferred ISO3 naming
-          gh release download "${pbf_tag}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern "DEU-latest.osm.pbf" \
-            --pattern "DEU.diff_state.json" \
-            --pattern "diff_update.DEU.latest.json" \
-            --dir mapdata/raw \
-            --clobber || true
-
-          # Backward compatibility with pre-ISO naming
-          if [[ ! -f "${INPUT_PBF}" ]]; then
-            gh release download "${pbf_tag}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --pattern "germany-latest.osm.pbf" \
-              --pattern "germany.diff_state.json" \
-              --pattern "diff_update.germany.latest.json" \
-              --dir mapdata/raw \
-              --clobber || true
-            [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
-            [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
-            [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
+          release_available=0
+          if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            release_available=1
+          else
+            echo "PBF release ${pbf_tag} not found; falling back to direct Geofabrik bootstrap."
           fi
 
-          [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
+          if [[ "${release_available}" == "1" ]]; then
+            # Preferred ISO3 naming
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "DEU-latest.osm.pbf" \
+              --pattern "DEU.diff_state.json" \
+              --pattern "diff_update.DEU.latest.json" \
+              --dir mapdata/raw \
+              --clobber || true
 
-          if gh release download "${pbf_tag}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --pattern "DEU-latest.osc.gz" \
-            --dir mapdata/reports/deltas/daily \
-            --clobber; then
-            echo "Downloaded daily delta file."
-          else
+            # Backward compatibility with pre-ISO naming
+            if [[ ! -f "${INPUT_PBF}" ]]; then
+              gh release download "${pbf_tag}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --pattern "germany-latest.osm.pbf" \
+                --pattern "germany.diff_state.json" \
+                --pattern "diff_update.germany.latest.json" \
+                --dir mapdata/raw \
+                --clobber || true
+              [[ -f mapdata/raw/germany-latest.osm.pbf ]] && mv mapdata/raw/germany-latest.osm.pbf "${INPUT_PBF}" || true
+              [[ -f mapdata/raw/germany.diff_state.json ]] && mv mapdata/raw/germany.diff_state.json "${INPUT_STATE}" || true
+              [[ -f mapdata/raw/diff_update.germany.latest.json ]] && mv mapdata/raw/diff_update.germany.latest.json "${INPUT_REPORT}" || true
+            fi
+
+            [[ -f mapdata/raw/diff_update.DEU.latest.json ]] && mv mapdata/raw/diff_update.DEU.latest.json "${INPUT_REPORT}" || true
+
             if gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
-              --pattern "germany-latest.osc.gz" \
+              --pattern "DEU-latest.osc.gz" \
               --dir mapdata/reports/deltas/daily \
               --clobber; then
-              mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
-              echo "Downloaded legacy daily delta file."
+              echo "Downloaded daily delta file."
             else
-              echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
+              if gh release download "${pbf_tag}" \
+                --repo "${GITHUB_REPOSITORY}" \
+                --pattern "germany-latest.osc.gz" \
+                --dir mapdata/reports/deltas/daily \
+                --clobber; then
+                mv mapdata/reports/deltas/daily/germany-latest.osc.gz "${INPUT_DELTA}"
+                echo "Downloaded legacy daily delta file."
+              else
+                echo "No DEU-latest.osc.gz in release (delta build will be skipped)."
+              fi
             fi
+          fi
+
+          if [[ ! -f "${INPUT_PBF}" ]]; then
+            echo "Downloading fallback latest PBF from Geofabrik..."
+            curl -L --fail "${LATEST_PBF_URL}" -o "${INPUT_PBF}"
+          fi
+
+          if [[ ! -f "${INPUT_STATE}" ]]; then
+            echo '{"updates_url":"https://download.geofabrik.de/europe/germany-updates/","last_applied_seq":null,"last_applied_timestamp":null}' > "${INPUT_STATE}"
+          fi
+
+          if [[ ! -f "${INPUT_REPORT}" ]]; then
+            ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            python3 -c 'import json,sys; out=sys.argv[1]; ts=sys.argv[2]; payload={"region":"DEU","status":"bootstrap","updated_at_utc":ts,"pbf_after":{"timestamp":ts},"server_state_after":{"timestamp":ts},"delta_export":{"status":"skipped","path":None}}; open(out,"w",encoding="utf-8").write(json.dumps(payload,indent=2,sort_keys=True)+"\n")' "${INPUT_REPORT}" "${ts}"
           fi
 
           test -f "${INPUT_PBF}"
