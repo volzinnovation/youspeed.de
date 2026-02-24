@@ -103,6 +103,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          shopt -s nullglob
           mkdir -p mapdata/raw mapdata/reports mapdata/reports/deltas/daily
 
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
@@ -118,10 +119,19 @@ jobs:
             gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
               --pattern "DEU-latest.osm.pbf" \
+              --pattern "DEU-latest.osm.pbf.part*" \
+              --pattern "DEU-latest.osm.pbf.parts.json" \
               --pattern "DEU.diff_state.json" \
               --pattern "diff_update.DEU.latest.json" \
               --dir mapdata/raw \
               --clobber || true
+
+            if [[ ! -f "${INPUT_PBF}" ]]; then
+              parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+              if (( ${#parts[@]} > 0 )); then
+                cat "${parts[@]}" > "${INPUT_PBF}"
+              fi
+            fi
 
             # Backward compatibility with pre-ISO naming
             if [[ ! -f "${INPUT_PBF}" ]]; then

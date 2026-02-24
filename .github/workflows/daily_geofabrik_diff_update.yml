@@ -67,6 +67,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          shopt -s nullglob
           mkdir -p mapdata/raw mapdata/reports
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
           if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
@@ -74,10 +75,19 @@ jobs:
             gh release download "${pbf_tag}" \
               --repo "${GITHUB_REPOSITORY}" \
               --pattern "DEU-latest.osm.pbf" \
+              --pattern "DEU-latest.osm.pbf.part*" \
+              --pattern "DEU-latest.osm.pbf.parts.json" \
               --pattern "DEU.diff_state.json" \
               --pattern "diff_update.DEU.latest.json" \
               --dir mapdata/raw \
               --clobber || true
+
+            if [[ ! -f mapdata/raw/DEU-latest.osm.pbf ]]; then
+              parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+              if (( ${#parts[@]} > 0 )); then
+                cat "${parts[@]}" > mapdata/raw/DEU-latest.osm.pbf
+              fi
+            fi
 
             # Backward compatibility with pre-ISO naming
             if [[ ! -f mapdata/raw/DEU-latest.osm.pbf ]]; then
@@ -181,7 +191,7 @@ jobs:
             need_publish=1
           else
             assets_json="$(gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" --json assets)"
-            missing_required="$(python3 -c 'import json,sys; payload=json.loads(sys.argv[1]); assets=payload.get(\"assets\", []); names={str(a.get(\"name\", \"\")) for a in assets if isinstance(a, dict)}; required={\"DEU-latest.osm.pbf\", \"DEU.diff_state.json\", \"diff_update.DEU.latest.json\"}; print(\"1\" if (required - names) else \"0\")' "${assets_json}")"
+            missing_required="$(python3 -c 'import json,sys; payload=json.loads(sys.argv[1]); assets=payload.get(\"assets\", []); names={str(a.get(\"name\", \"\")) for a in assets if isinstance(a, dict)}; has_pbf=(\"DEU-latest.osm.pbf\" in names) or any(n.startswith(\"DEU-latest.osm.pbf.part\") for n in names); required_other={\"DEU.diff_state.json\", \"diff_update.DEU.latest.json\"}; print(\"1\" if ((not has_pbf) or bool(required_other - names)) else \"0\")' "${assets_json}")"
             if [[ "${missing_required}" == "1" ]]; then
               need_publish=1
             fi
@@ -196,6 +206,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          shopt -s nullglob
           pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
 
           if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
@@ -209,7 +220,38 @@ jobs:
           test -f mapdata/raw/DEU.diff_state.json
           test -f mapdata/reports/diff_update.DEU.latest.json
 
-          gh release upload "${pbf_tag}" mapdata/raw/DEU-latest.osm.pbf --clobber --repo "${GITHUB_REPOSITORY}"
+          pbf_size_bytes="$(wc -c < mapdata/raw/DEU-latest.osm.pbf | tr -d ' ')"
+          pbf_limit_bytes=2147483648
+          if [[ "${pbf_size_bytes}" -ge "${pbf_limit_bytes}" ]]; then
+            rm -f mapdata/raw/DEU-latest.osm.pbf.part*
+            split -b 1900m -d -a 3 mapdata/raw/DEU-latest.osm.pbf mapdata/raw/DEU-latest.osm.pbf.part
+            parts=(mapdata/raw/DEU-latest.osm.pbf.part*)
+            if (( ${#parts[@]} == 0 )); then
+              echo "Failed to split large PBF into parts." >&2
+              exit 1
+            fi
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+            parts = sorted(Path("mapdata/raw").glob("DEU-latest.osm.pbf.part*"))
+            payload = {
+                "asset_name": "DEU-latest.osm.pbf",
+                "size_bytes": Path("mapdata/raw/DEU-latest.osm.pbf").stat().st_size,
+                "parts": [p.name for p in parts],
+            }
+            Path("mapdata/raw/DEU-latest.osm.pbf.parts.json").write_text(
+                json.dumps(payload, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            PY
+            for part in "${parts[@]}"; do
+              gh release upload "${pbf_tag}" "${part}" --clobber --repo "${GITHUB_REPOSITORY}"
+            done
+            gh release upload "${pbf_tag}" mapdata/raw/DEU-latest.osm.pbf.parts.json --clobber --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release upload "${pbf_tag}" mapdata/raw/DEU-latest.osm.pbf --clobber --repo "${GITHUB_REPOSITORY}"
+          fi
+
           gh release upload "${pbf_tag}" mapdata/raw/DEU.diff_state.json --clobber --repo "${GITHUB_REPOSITORY}"
           gh release upload "${pbf_tag}" mapdata/reports/diff_update.DEU.latest.json --clobber --repo "${GITHUB_REPOSITORY}"
 
