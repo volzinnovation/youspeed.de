@@ -124,11 +124,47 @@ Open TODO (IRL validation):
 ### Local v3 bundle build/publish commands
 
 ```bash
+FROM_VERSION=YYYY-MM-DD
+TO_VERSION=YYYY-MM-DD
+
 python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite
-python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-2026-02-24.osc.gz --region germany --from-version 2026-02-23 --to-version 2026-02-24 --out-dir mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24 --patch-file-name DEU-2026-02-24.v3_patch_from_2026-02-23.sql --manifest-name DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
-python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/2026-02-23_to_2026-02-24/DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --new-delta-manifest-asset-path DEU-2026-02-24.v3_delta_manifest_from_2026-02-23.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json
-python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version 2026-02-24 --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name DEU-latest.speeds_v3.sqlite --manifest-name DEU-latest.bundle-manifest.v3.json --delta-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --delta-index-file-name DEU-latest.delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-${TO_VERSION}.osc.gz --region germany --from-version "${FROM_VERSION}" --to-version "${TO_VERSION}" --out-dir mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION} --patch-file-name DEU-${TO_VERSION}.v3_patch_from_${FROM_VERSION}.sql --manifest-name DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
+python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION}/DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --new-delta-manifest-asset-path DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json
+python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version "${TO_VERSION}" --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name DEU-latest.speeds_v3.sqlite --manifest-name DEU-latest.bundle-manifest.v3.json --delta-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --delta-index-file-name DEU-latest.delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
 ./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag deu-v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest
+```
+
+### Consumer app build command
+
+Build the `SpeedConsumer` app (with optional private-release token injection):
+
+```bash
+./scripts/iphone/build_consumer_app.sh
+```
+
+Use local GitHub auth token automatically:
+
+```bash
+./scripts/iphone/build_consumer_app.sh --use-gh-token
+```
+
+Or pass the token explicitly:
+
+```bash
+GITHUB_RELEASE_TOKEN='<token>' ./scripts/iphone/build_consumer_app.sh
+```
+
+For device builds that need signing/profile updates:
+
+```bash
+./scripts/iphone/build_consumer_app.sh --destination 'generic/platform=iOS' --allow-provisioning-updates
+```
+
+Token-enforced on-device test run (fails fast if token is missing or not embedded):
+
+```bash
+GITHUB_RELEASE_TOKEN="$(gh auth token --hostname github.com)" \
+  ./scripts/iphone/run_consumer_device_tests.sh --allow-provisioning-updates
 ```
 
 ### Automated GitHub workflows (consumer pipeline)
@@ -141,6 +177,27 @@ python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/g
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:
   - `Germany PBF Diff Update And Release` publishes `deu-pbf-latest`, then `Germany V3 Bundle Build And Release` consumes that release snapshot.
+
+## Maintenance checklist
+
+Preview stale generated artifacts (safe):
+
+```bash
+git clean -ndX
+```
+
+Delete stale ignored artifacts after preview:
+
+```bash
+git clean -fdX
+```
+
+Check recent scheduled pipeline health:
+
+```bash
+gh run list --workflow "Germany PBF Diff Update And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
+gh run list --workflow "Germany V3 Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
+```
 
 ## Separation rule for contributors
 

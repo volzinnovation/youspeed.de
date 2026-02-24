@@ -107,10 +107,30 @@ struct BundleSyncResult: Codable {
     let details: String
 }
 
+struct BundleSyncProgress: Sendable {
+    enum Stage: String, Sendable {
+        case preparing
+        case downloading
+        case assembling
+        case validating
+        case applyingDelta
+        case completed
+    }
+
+    let stage: Stage
+    let detail: String
+    let completedBytes: Int64
+    let totalBytes: Int64
+}
+
 struct SpeedLimitResult {
     let speedLimitKmh: Int?
     let wayID: String?
     let queryTimeMs: Double
+    let candidateCount: Int
+    let speedCandidateCount: Int
+    let nearestCandidateDistanceM: Double?
+    let nearestSpeedCandidateDistanceM: Double?
 }
 
 enum ConsumerAppError: Error, LocalizedError {

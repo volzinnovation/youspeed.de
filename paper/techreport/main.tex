@@ -5,6 +5,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsfonts}
 \usepackage{nicefrac}
@@ -54,6 +55,58 @@ Subsequent work strengthened route-level inference in sparse regimes. \citet{rah
 These studies primarily optimize candidate selection and path inference given an available road graph. In contrast, our contribution focuses on the systems layer around map data itself: physically tiled, content-addressed assets with independent update delivery and bounded local IO at query time. This targets a complementary bottleneck that is critical for country-scale, offline-first mobile speed-limit inference.
 
 Spatial access methods are central to this systems layer. The R-tree introduced by \citet{guttman1984} established the foundational dynamic index for multi-dimensional range search and remains a standard basis for geographic candidate retrieval in database systems. Here, R-tree-based indexing is evaluated not as a new algorithmic contribution, but as an architectural instrument to control candidate fan-out and improve practical query latency at country scale.
+
+\section{Technical Vision}
+\subsection{Purpose}
+YouSpeed exists to make intelligent speed assistance practical for vehicles already on the road, not only for newly manufactured cars. The product target is an offline-first smartphone assistant that infers local speed limits with low latency, high availability, and transparent data provenance. The project target is broader: to show, with reproducible evidence, that open geospatial data combined with robust runtime architecture can provide safety-relevant functionality at consumer scale.
+
+This work is intentionally dual-track. One track is scientific and publication-oriented, where architecture decisions are benchmarked and documented under controlled conditions. The second track is product-oriented, where validated architecture choices are integrated into an iPhone app under real update, reliability, and operational constraints.
+
+\subsection{Strategic phases}
+The system evolution is explicitly phased:
+\begin{enumerate}
+\item \textbf{Open-data bootstrap:} initialize the platform from OpenStreetMap and rule-aware defaults for country-scale baseline coverage.
+\item \textbf{Product stabilization:} prioritize fast offline inference, deterministic updates, and measurable reliability on consumer devices.
+\item \textbf{Community enrichment:} add user-observed speed-sign signals once install base and observation density are sufficient.
+\end{enumerate}
+Crowdsourcing is defined as an augmentation layer, not a replacement for OSM baseline data.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{../share/TECHNICAL_ARCHITECTURE.png}
+\caption{Technical architecture overview for baseline ingestion, on-device inference, local observation capture, and global merge/publish loops.}
+\label{fig:tech_architecture_overview}
+\end{figure}
+
+\subsection{Crowdsourced speed intelligence}
+With sufficient adoption, two user-facing observation channels are introduced while driving. The first is on-device computer vision, where the smartphone camera detects speed-relevant signs when road-forward view is available. The second is voice input with speech recognition for hands-free reporting of sign changes, temporary restrictions, or map inconsistencies. Both channels generate candidate observations rather than immediate shared truth.
+
+Each observation first updates a local device layer with confidence and decay semantics. Observations are then queued for deferred synchronization and promotion only after cross-device corroboration and validation.
+
+\subsection{Trust model without user accounts}
+YouSpeed is designed to operate without account authentication. Identity is pseudonymous and device-based. This lowers user friction and supports privacy goals, but shifts quality assurance into architecture: per-device source scoring, temporal/spatial consistency checks, minimum independent confirmations, and explicit conflict resolution.
+
+A single-device report must not overwrite shared truth. Promotion to global data requires corroboration and consistency with geometry and legal plausibility constraints.
+
+\subsection{Layered data ownership and feedback loops}
+The data model is layered rather than monolithic:
+\begin{itemize}
+\item \textbf{External baseline layer:} imported from OSM and related official/open sources.
+\item \textbf{Internal global cache layer:} confirmed community observations maintained by YouSpeed.
+\item \textbf{Local device layer:} unconfirmed and recently confirmed observations relevant to one user.
+\item \textbf{Publication layer:} quality-gated candidates eligible for upstream contribution.
+\end{itemize}
+
+Confirmed findings follow two outbound paths: immediate use in the internal global cache and optional moderated feedback to OpenStreetMap via controlled export.
+
+\subsection{Synchronization as a core systems challenge}
+The central systems challenge is synchronization across truth sources with different latency and trust levels: local observations, globally confirmed internal data, external map updates, and periodic app bundles. Required capabilities include deterministic merge rules, versioned records, conflict precedence, rollback-safe activation, bandwidth-aware delta sync, offline accumulation, delayed upload, and eventual convergence without destructive overwrite.
+
+\subsection{App-side integration challenges}
+Computer vision and speech recognition are treated as separate subsystems with independent quality gates, failure modes, and runtime budgets. Integration happens through a shared observation contract so both channels emit comparable events for local storage, synchronization, and trust evaluation.
+
+\subsection{North-star outcome}
+The intended end state is a trusted open-data ISA retrofit platform that remains offline-capable and low-latency while improving continuously through external baselines and validated community observations. In that state, day-to-day user utility, auditable data operations, and reproducible research claims are aligned.
 
 \section{Methodology}
 

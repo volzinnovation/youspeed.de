@@ -2,6 +2,7 @@
 
 \usepackage{cite}
 \usepackage{amsmath}
+\usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage[section]{placeins}
 \usepackage{pgfplots}
@@ -51,6 +52,20 @@ Map matching for transport applications has been widely studied, including geome
 This paper complements that line of work by isolating the systems layer around map data packaging and spatial access. R-tree indexing \cite{guttman1984} is treated as an established mechanism whose deployment characteristics are compared across architecture variants.
 
 Compared with prior ITS map-matching studies, the design focus here is on country-scale runtime packaging and update operability, not only per-query geometric accuracy. This positioning is relevant to production constraints in connected and non-connected operation: an architecture that is fast in a server benchmark may fail under mobile sandbox I/O constraints, while a compact architecture can preserve both latency and maintainability.
+
+\section{Technical Vision}
+The technical vision for our research project is an offline-first ISA retrofit platform that can scale from map consumption to crowd-supported map maintenance without requiring user accounts. The initial runtime knowledge base is built from OpenStreetMap and regulatory datasets, then released as immutable artifacts for cloud distribution and smartphone-local execution. On device, location and heading signals are processed by a low-latency inference engine against the local baseline runtime database to produce speed-limit context under intermittent or absent connectivity.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth,trim=18 470 18 18,clip]{../share/TECHNICAL_ARCHITECTURE_PAPER_SCOPE_BLIND.png}
+\caption{Paper-scope technical architecture. Blue highlights indicate the part evaluated in this manuscript (top two rows, excluding the Sync and observation API).}
+\label{fig:tech_vision_scope}
+\end{figure*}
+
+The long-term extension is a local-first observation loop. Drivers can contribute potential speed-sign updates through voice input and on-device computer-vision capture when road view is available. Observations are normalized locally, stored with pseudonymous device-ID context, and queued for deferred synchronization. The backend then applies spatial and rule validation, resolves conflicts, and merges accepted updates into the global speed intelligence store, with an optional moderated export path to external map ecosystems.
+
+This creates two coordinated loops: a baseline update loop from authoritative sources and an observation loop from user devices. Figure~\ref{fig:tech_vision_scope} highlights the paper scope in blue. The methodology in the next section is intentionally restricted to that scope: country-scale baseline preparation, runtime data packaging scenarios, and on-device inference query behavior. The lower sync-observation stack is architecturally specified but not benchmarked in this manuscript.
 
 \section{Methodology}
 \subsection{Data scope and regulatory baseline}
@@ -236,7 +251,8 @@ All preprocessing, scenario construction, and benchmark steps are parameterized 
 
 \bibliographystyle{IEEEtran}
 \bibliography{../share/IEEEabrv,../share/references}
-\section*{Figures}
+\appendices
+\section{Evaluation Figures}
 
 \begin{figure*}[!t]
 \centering

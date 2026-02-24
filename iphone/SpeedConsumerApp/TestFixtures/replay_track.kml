@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <name>Replay Track</name>
+      <LineString>
+        <coordinates>
+          13.405500,52.520500,0
+          13.407600,52.522000,0
+          13.420000,52.530000,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

@@ -45,6 +45,10 @@ final class V3SpeedLimitService {
         var bestDistance = Double.infinity
         var bestSpeed: Int?
         var bestWayID: String?
+        var candidateCount = 0
+        var speedCandidateCount = 0
+        var nearestCandidateDistance = Double.infinity
+        var nearestSpeedCandidateDistance = Double.infinity
 
         while true {
             let rc = sqlite3_step(stmt)
@@ -65,7 +69,11 @@ final class V3SpeedLimitService {
             let maxLon = sqlite3_column_double(stmt, 7)
             let maxLat = sqlite3_column_double(stmt, 8)
 
+            candidateCount += 1
             let distance = distanceToBBoxM(lat: lat, lon: lon, minLon: minLon, minLat: minLat, maxLon: maxLon, maxLat: maxLat)
+            if distance < nearestCandidateDistance {
+                nearestCandidateDistance = distance
+            }
             if distance > bestDistance {
                 continue
             }
@@ -74,6 +82,10 @@ final class V3SpeedLimitService {
             guard let speed = parsed else {
                 continue
             }
+            speedCandidateCount += 1
+            if distance < nearestSpeedCandidateDistance {
+                nearestSpeedCandidateDistance = distance
+            }
             bestDistance = distance
             bestSpeed = speed
             bestWayID = wayID
@@ -81,7 +93,15 @@ final class V3SpeedLimitService {
 
         let t1 = DispatchTime.now().uptimeNanoseconds
         let elapsedMs = Double(t1 - t0) / 1_000_000.0
-        return SpeedLimitResult(speedLimitKmh: bestSpeed, wayID: bestWayID, queryTimeMs: elapsedMs)
+        return SpeedLimitResult(
+            speedLimitKmh: bestSpeed,
+            wayID: bestWayID,
+            queryTimeMs: elapsedMs,
+            candidateCount: candidateCount,
+            speedCandidateCount: speedCandidateCount,
+            nearestCandidateDistanceM: nearestCandidateDistance.isFinite ? nearestCandidateDistance : nil,
+            nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil
+        )
     }
 
     static func deriveSpeedLimitKmh(maxspeed: String?, maxspeedType: String?, sourceMaxspeed: String?, highway: String?) -> Int? {

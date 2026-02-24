@@ -6,11 +6,24 @@ actor V3BundleManager {
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
+    private var githubToken: String?
+    private var githubAssetURLByReleaseURL: [String: URL] = [:]
+    private var githubReleaseAssetsByTagKey: [String: [String: Int64]] = [:]
 
     init(fileManager: FileManager = .default, session: URLSession = .shared) {
         self.fileManager = fileManager
         self.session = session
         self.decoder = JSONDecoder()
+    }
+
+    func setGitHubToken(_ token: String?) {
+        let trimmed = token?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let normalized = trimmed.isEmpty ? nil : trimmed
+        if githubToken != normalized {
+            githubAssetURLByReleaseURL = [:]
+            githubReleaseAssetsByTagKey = [:]
+        }
+        githubToken = normalized
     }
 
     static func applicationSupportDirectory(fileManager: FileManager = .default) throws -> URL {
@@ -104,7 +117,17 @@ actor V3BundleManager {
         return BundleSyncResult(mode: .bootstrap, bundleVersion: version, dbPath: dst.path, details: "seed bundle activated")
     }
 
-    func syncFromManifestURL(_ manifestURL: URL) async throws -> BundleSyncResult {
+    func syncFromManifestURL(
+        _ manifestURL: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)? = nil
+    ) async throws -> BundleSyncResult {
+        emitProgress(
+            onProgress,
+            stage: .preparing,
+            detail: "Loading bundle manifest",
+            completedBytes: 0,
+            totalBytes: 0
+        )
         let manifestData = try await downloadData(from: manifestURL)
         let manifest = try decoder.decode(V3BundleManifest.self, from: manifestData)
         guard manifest.format == "youspeed.v3.bundle.manifest", manifest.variant == "v3" else {
@@ -115,6 +138,13 @@ actor V3BundleManager {
         if current?.bundleVersion == manifest.bundleVersion,
            let currentDB = try activeDatabaseURL(),
            fileManager.fileExists(atPath: currentDB.path) {
+            emitProgress(
+                onProgress,
+                stage: .completed,
+                detail: "Bundle already up to date",
+                completedBytes: manifest.db.bytes,
+                totalBytes: manifest.db.bytes
+            )
             return BundleSyncResult(mode: .upToDate, bundleVersion: manifest.bundleVersion, dbPath: currentDB.path, details: "already active")
         }
 
@@ -127,20 +157,48 @@ actor V3BundleManager {
                current: current,
                manifest: manifest,
                manifestURL: manifestURL,
-               deltaIndexRef: deltaRef
+               deltaIndexRef: deltaRef,
+               onProgress: onProgress
            ) {
+            emitProgress(
+                onProgress,
+                stage: .completed,
+                detail: "Delta update applied",
+                completedBytes: manifest.db.bytes,
+                totalBytes: manifest.db.bytes
+            )
             return result
         }
 
-        return try await fullDownloadActivate(manifest: manifest, manifestURL: manifestURL)
+        let fullDownload = try await fullDownloadActivate(
+            manifest: manifest,
+            manifestURL: manifestURL,
+            onProgress: onProgress
+        )
+        emitProgress(
+            onProgress,
+            stage: .completed,
+            detail: "Download completed",
+            completedBytes: manifest.db.bytes,
+            totalBytes: manifest.db.bytes
+        )
+        return fullDownload
     }
 
     private func tryApplyDelta(
         current: ActiveBundleState,
         manifest: V3BundleManifest,
         manifestURL: URL,
-        deltaIndexRef: BundleArtifact
+        deltaIndexRef: BundleArtifact,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
     ) async throws -> BundleSyncResult? {
+        emitProgress(
+            onProgress,
+            stage: .preparing,
+            detail: "Loading delta index",
+            completedBytes: 0,
+            totalBytes: 0
+        )
         let deltaIndexURL = try resolveArtifactURL(deltaIndexRef, relativeTo: manifestURL)
         let deltaIndexData = try await downloadData(from: deltaIndexURL)
         let deltaIndex = try decoder.decode(V3DeltaIndex.self, from: deltaIndexData)
@@ -168,6 +226,13 @@ actor V3BundleManager {
         }
 
         let patchURL = try resolveArtifactURL(deltaManifest.patch, relativeTo: deltaManifestURL)
+        emitProgress(
+            onProgress,
+            stage: .downloading,
+            detail: "Downloading delta patch",
+            completedBytes: 0,
+            totalBytes: deltaManifest.patch.bytes
+        )
         let patchData = try await downloadData(from: patchURL)
         try validateSHA256(data: patchData, expectedHex: deltaManifest.patch.sha256, label: "delta patch")
 
@@ -177,6 +242,13 @@ actor V3BundleManager {
 
         let stagingDB = try stageCopyOfActiveDB(forVersion: manifest.bundleVersion)
         let patchSQL = String(decoding: patchData, as: UTF8.self)
+        emitProgress(
+            onProgress,
+            stage: .applyingDelta,
+            detail: "Applying delta patch",
+            completedBytes: deltaManifest.patch.bytes,
+            totalBytes: deltaManifest.patch.bytes
+        )
         try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
         try activatePreparedDB(
             preparedDB: stagingDB,
@@ -193,21 +265,52 @@ actor V3BundleManager {
         )
     }
 
-    private func fullDownloadActivate(manifest: V3BundleManifest, manifestURL: URL) async throws -> BundleSyncResult {
+    private func fullDownloadActivate(
+        manifest: V3BundleManifest,
+        manifestURL: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
+    ) async throws -> BundleSyncResult {
         let stagingDB: URL
         if let dbParts = manifest.dbParts, !dbParts.isEmpty {
             stagingDB = try await writeMultipartStagingDB(
                 parts: dbParts,
                 manifest: manifest,
-                manifestURL: manifestURL
+                manifestURL: manifestURL,
+                onProgress: onProgress
             )
         } else {
             let dbURL = try resolveArtifactURL(manifest.db, relativeTo: manifestURL)
-            let downloaded = try await downloadFile(from: dbURL)
+            let declaredBytes = manifest.db.bytes
+            let detail = "Downloading \(manifest.db.file)"
+            emitProgress(
+                onProgress,
+                stage: .downloading,
+                detail: detail,
+                completedBytes: 0,
+                totalBytes: declaredBytes
+            )
+            let downloaded = try await downloadFile(from: dbURL) { completedBytes, totalBytes in
+                let expected = totalBytes ?? declaredBytes
+                onProgress?(
+                    BundleSyncProgress(
+                        stage: .downloading,
+                        detail: detail,
+                        completedBytes: max(0, min(completedBytes, expected)),
+                        totalBytes: max(0, expected)
+                    )
+                )
+            }
             try validateSHA256(fileAt: downloaded, expectedHex: manifest.db.sha256, label: "bundle db")
             stagingDB = try writeStagingDB(downloadedFile: downloaded, version: manifest.bundleVersion)
         }
 
+        emitProgress(
+            onProgress,
+            stage: .validating,
+            detail: "Validating downloaded database",
+            completedBytes: manifest.db.bytes,
+            totalBytes: manifest.db.bytes
+        )
         try quickValidateDB(at: stagingDB)
         try activatePreparedDB(
             preparedDB: stagingDB,
@@ -305,7 +408,8 @@ actor V3BundleManager {
     private func writeMultipartStagingDB(
         parts: [BundleArtifact],
         manifest: V3BundleManifest,
-        manifestURL: URL
+        manifestURL: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
     ) async throws -> URL {
         let sortedParts = parts.sorted { $0.file < $1.file }
         if sortedParts.isEmpty {
@@ -320,10 +424,31 @@ actor V3BundleManager {
             try? outHandle.close()
         }
 
+        let declaredTotalBytes = manifest.db.bytes
         var totalBytes: Int64 = 0
-        for part in sortedParts {
+        for (index, part) in sortedParts.enumerated() {
             let partURL = try resolveArtifactURL(part, relativeTo: manifestURL)
-            let downloadedPart = try await downloadFile(from: partURL)
+            let partLabel = "Downloading part \(index + 1)/\(sortedParts.count): \(part.file)"
+            let bytesBeforePart = totalBytes
+            emitProgress(
+                onProgress,
+                stage: .downloading,
+                detail: partLabel,
+                completedBytes: bytesBeforePart,
+                totalBytes: declaredTotalBytes
+            )
+            let downloadedPart = try await downloadFile(from: partURL) { completedBytes, totalBytesInPart in
+                let partExpected = totalBytesInPart ?? part.bytes
+                let boundedPartBytes = min(completedBytes, max(partExpected, 0))
+                onProgress?(
+                    BundleSyncProgress(
+                        stage: .downloading,
+                        detail: partLabel,
+                        completedBytes: max(0, bytesBeforePart + boundedPartBytes),
+                        totalBytes: max(0, declaredTotalBytes)
+                    )
+                )
+            }
             try validateSHA256(fileAt: downloadedPart, expectedHex: part.sha256, label: "bundle db part \(part.file)")
             totalBytes += try fileSize(downloadedPart)
 
@@ -337,6 +462,13 @@ actor V3BundleManager {
             }
             try inHandle.close()
             try? fileManager.removeItem(at: downloadedPart)
+            emitProgress(
+                onProgress,
+                stage: .assembling,
+                detail: "Assembled \(index + 1)/\(sortedParts.count) parts",
+                completedBytes: min(totalBytes, declaredTotalBytes),
+                totalBytes: declaredTotalBytes
+            )
         }
 
         if totalBytes != manifest.db.bytes {
@@ -360,21 +492,279 @@ actor V3BundleManager {
     }
 
     private func downloadData(from url: URL) async throws -> Data {
-        let (data, response) = try await session.data(from: url)
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
-            throw ConsumerAppError.network("Unexpected HTTP response for \(url.absoluteString)")
+        let resolvedURL = try await resolveGitHubReleaseAssetAPIURLIfNeeded(url)
+        let request = makeRequest(url: resolvedURL)
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ConsumerAppError.network("Unexpected non-HTTP response for \(url.absoluteString)")
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw ConsumerAppError.network(httpErrorMessage(requestURL: url, response: http, bodyPreviewData: data))
         }
         return data
     }
 
-    private func downloadFile(from url: URL) async throws -> URL {
-        let (tmpURL, response) = try await session.download(from: url)
-        guard let http = response as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {
-            throw ConsumerAppError.network("Unexpected HTTP response for \(url.absoluteString)")
+    private func downloadFile(
+        from url: URL,
+        onProgress: (@Sendable (_ completedBytes: Int64, _ totalBytes: Int64?) -> Void)? = nil
+    ) async throws -> URL {
+        let resolvedURL = try await resolveGitHubReleaseAssetAPIURLIfNeeded(url)
+        let request = makeRequest(url: resolvedURL)
+        let (tmpURL, response): (URL, URLResponse)
+        if shouldUseBackgroundDownloadTransport() {
+            (tmpURL, response) = try await BackgroundDownloadCenter.shared.download(
+                request: request,
+                requestURL: url,
+                onProgress: onProgress
+            )
+        } else {
+            (tmpURL, response) = try await downloadFileViaCurrentSession(
+                request: request,
+                requestURL: url,
+                onProgress: onProgress
+            )
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw ConsumerAppError.network("Unexpected non-HTTP response for \(url.absoluteString)")
+        }
+        guard (200...299).contains(http.statusCode) else {
+            let previewData = try? Data(contentsOf: tmpURL)
+            throw ConsumerAppError.network(
+                httpErrorMessage(
+                    requestURL: url,
+                    response: http,
+                    bodyPreviewData: previewData
+                )
+            )
+        }
+        if let onProgress {
+            let finalSize = (try? fileSize(tmpURL)) ?? 0
+            let total = http.expectedContentLength > 0 ? http.expectedContentLength : nil
+            onProgress(finalSize, total)
         }
         return tmpURL
+    }
+
+    private func shouldUseBackgroundDownloadTransport() -> Bool {
+        let protocolClasses = session.configuration.protocolClasses ?? []
+        return protocolClasses.isEmpty
+    }
+
+    private func downloadFileViaCurrentSession(
+        request: URLRequest,
+        requestURL: URL,
+        onProgress: (@Sendable (_ completedBytes: Int64, _ totalBytes: Int64?) -> Void)? = nil
+    ) async throws -> (URL, URLResponse) {
+        let tempRoot = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        var observation: NSKeyValueObservation?
+        var progressPoller: Task<Void, Never>?
+        defer {
+            observation?.invalidate()
+            progressPoller?.cancel()
+        }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let task = session.downloadTask(with: request) { tmpURL, response, error in
+                progressPoller?.cancel()
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let tmpURL, let response else {
+                    continuation.resume(throwing: ConsumerAppError.network("Empty download response for \(requestURL.absoluteString)"))
+                    return
+                }
+                let retainedURL = tempRoot.appendingPathComponent("download-\(UUID().uuidString).tmp")
+                do {
+                    if FileManager.default.fileExists(atPath: retainedURL.path) {
+                        try FileManager.default.removeItem(at: retainedURL)
+                    }
+                    try FileManager.default.moveItem(at: tmpURL, to: retainedURL)
+                    continuation.resume(returning: (retainedURL, response))
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            if let onProgress {
+                observation = task.progress.observe(\.completedUnitCount, options: [.initial, .new]) { progress, _ in
+                    let totalUnitCount = progress.totalUnitCount
+                    let totalBytes: Int64? = totalUnitCount > 0 ? totalUnitCount : nil
+                    onProgress(progress.completedUnitCount, totalBytes)
+                }
+                progressPoller = Task.detached(priority: .utility) { [weak task] in
+                    guard let task else {
+                        return
+                    }
+                    while !Task.isCancelled {
+                        let expected = task.countOfBytesExpectedToReceive
+                        let totalBytes: Int64? = expected > 0 ? expected : nil
+                        let completed = max(0, task.countOfBytesReceived)
+                        onProgress(completed, totalBytes)
+                        if task.state == .completed || task.state == .canceling {
+                            break
+                        }
+                        try? await Task.sleep(nanoseconds: 250_000_000)
+                    }
+                }
+            }
+            task.resume()
+        }
+    }
+
+    private func emitProgress(
+        _ onProgress: (@Sendable (BundleSyncProgress) -> Void)?,
+        stage: BundleSyncProgress.Stage,
+        detail: String,
+        completedBytes: Int64,
+        totalBytes: Int64
+    ) {
+        guard let onProgress else {
+            return
+        }
+        onProgress(
+            BundleSyncProgress(
+                stage: stage,
+                detail: detail,
+                completedBytes: max(0, completedBytes),
+                totalBytes: max(0, totalBytes)
+            )
+        )
+    }
+
+    private func resolveGitHubReleaseAssetAPIURLIfNeeded(_ url: URL) async throws -> URL {
+        guard githubToken != nil,
+              let releaseAsset = parseGitHubReleaseAssetURL(url) else {
+            return url
+        }
+
+        let originalKey = url.absoluteString
+        if let cached = githubAssetURLByReleaseURL[originalKey] {
+            return cached
+        }
+
+        let tagAssets = try await fetchGitHubReleaseAssets(
+            owner: releaseAsset.owner,
+            repo: releaseAsset.repo,
+            tag: releaseAsset.tag
+        )
+        guard let assetID = tagAssets[releaseAsset.assetName] else {
+            throw ConsumerAppError.invalidManifest(
+                "GitHub release asset not found: \(releaseAsset.assetName) in \(releaseAsset.owner)/\(releaseAsset.repo) tag \(releaseAsset.tag)"
+            )
+        }
+        guard let apiURL = URL(
+            string: "https://api.github.com/repos/\(releaseAsset.owner)/\(releaseAsset.repo)/releases/assets/\(assetID)"
+        ) else {
+            throw ConsumerAppError.invalidManifest("Unable to build GitHub asset API URL")
+        }
+        githubAssetURLByReleaseURL[originalKey] = apiURL
+        return apiURL
+    }
+
+    private func fetchGitHubReleaseAssets(owner: String, repo: String, tag: String) async throws -> [String: Int64] {
+        let key = "\(owner)/\(repo)/\(tag)"
+        if let cached = githubReleaseAssetsByTagKey[key] {
+            return cached
+        }
+        guard let token = githubToken else {
+            throw ConsumerAppError.network("Missing GitHub token for private release download")
+        }
+        guard let url = URL(string: "https://api.github.com/repos/\(owner)/\(repo)/releases/tags/\(tag)") else {
+            throw ConsumerAppError.invalidManifest("Unable to build GitHub release tag API URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 120
+        request.setValue("YouSpeedConsumer/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ConsumerAppError.network("Unexpected non-HTTP response for \(url.absoluteString)")
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw ConsumerAppError.network(httpErrorMessage(requestURL: url, response: http, bodyPreviewData: data))
+        }
+
+        let release: GitHubReleaseTagResponse
+        do {
+            release = try decoder.decode(GitHubReleaseTagResponse.self, from: data)
+        } catch {
+            throw ConsumerAppError.invalidManifest("Unable to decode GitHub release metadata for tag \(tag)")
+        }
+        let mapping = Dictionary(uniqueKeysWithValues: release.assets.map { ($0.name, $0.id) })
+        githubReleaseAssetsByTagKey[key] = mapping
+        return mapping
+    }
+
+    private func parseGitHubReleaseAssetURL(_ url: URL) -> GitHubReleaseAssetPath? {
+        guard let host = url.host?.lowercased(),
+              host == "github.com" || host == "www.github.com" else {
+            return nil
+        }
+        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count >= 6,
+              parts[2] == "releases",
+              parts[3] == "download" else {
+            return nil
+        }
+
+        let owner = String(parts[0])
+        let repo = String(parts[1])
+        let tag = String(parts[4])
+        let assetName = parts[5...].joined(separator: "/")
+        guard !owner.isEmpty, !repo.isEmpty, !tag.isEmpty, !assetName.isEmpty else {
+            return nil
+        }
+        return GitHubReleaseAssetPath(owner: owner, repo: repo, tag: tag, assetName: assetName)
+    }
+
+    private func makeRequest(url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 120
+        request.setValue("YouSpeedConsumer/1.0", forHTTPHeaderField: "User-Agent")
+        if let token = githubToken,
+           let host = url.host?.lowercased(),
+           host == "api.github.com" || host.contains("github.com") || host.contains("githubusercontent.com") {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+        }
+        return request
+    }
+
+    private func httpErrorMessage(
+        requestURL: URL,
+        response: HTTPURLResponse,
+        bodyPreviewData: Data?
+    ) -> String {
+        let finalURL = response.url?.absoluteString ?? requestURL.absoluteString
+        let status = response.statusCode
+        let contentType = response.value(forHTTPHeaderField: "Content-Type") ?? "unknown"
+
+        var bodyPreview = ""
+        if let bodyPreviewData, !bodyPreviewData.isEmpty {
+            let head = bodyPreviewData.prefix(384)
+            if var text = String(data: head, encoding: .utf8) {
+                text = text.replacingOccurrences(of: "\n", with: " ")
+                text = text.replacingOccurrences(of: "\r", with: " ")
+                bodyPreview = " body_preview=\"\(text)\""
+            } else {
+                bodyPreview = " body_preview=<non-utf8 \(head.count)b>"
+            }
+        }
+
+        let host = response.url?.host?.lowercased() ?? requestURL.host?.lowercased() ?? ""
+        let githubPrivateHint: String
+        if (status == 403 || status == 404), (host.contains("github.com") || host.contains("githubusercontent.com")) {
+            githubPrivateHint = " hint=\"GitHub asset may be private or inaccessible without auth\""
+        } else {
+            githubPrivateHint = ""
+        }
+
+        return "Unexpected HTTP response status=\(status) url=\(finalURL) content_type=\(contentType)\(bodyPreview)\(githubPrivateHint)"
     }
 
     private func validateSHA256(data: Data, expectedHex: String, label: String) throws {
@@ -484,4 +874,20 @@ actor V3BundleManager {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.date(from: value)
     }
+}
+
+private struct GitHubReleaseAssetPath {
+    let owner: String
+    let repo: String
+    let tag: String
+    let assetName: String
+}
+
+private struct GitHubReleaseTagResponse: Decodable {
+    let assets: [GitHubReleaseAssetEntry]
+}
+
+private struct GitHubReleaseAssetEntry: Decodable {
+    let id: Int64
+    let name: String
 }

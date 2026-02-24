@@ -57,6 +57,8 @@ targets:
         excludes:
           - "SpeedConsumerTests.swift"
           - "README.md"
+      - path: SpeedConsumerApp/Assets.xcassets
+        buildPhase: resources
       - path: SpeedConsumerApp/speeds_v3.sqlite
         buildPhase: resources
     settings:
@@ -65,14 +67,9 @@ targets:
         CODE_SIGN_IDENTITY: "iPhone Developer"
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
         PRODUCT_NAME: SpeedConsumer
-        INFOPLIST_KEY_CFBundleDisplayName: YouSpeed
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: The app needs your location to compare current speed against map speed limits.
-        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: SpeedConsumerApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1,2"
         OTHER_LDFLAGS:
@@ -87,6 +84,8 @@ targets:
     platform: iOS
     sources:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
+      - path: SpeedConsumerApp/TestFixtures
+        buildPhase: resources
     dependencies:
       - target: SpeedConsumer
     settings:
