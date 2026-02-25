@@ -65,10 +65,14 @@ def benchmark_v1(
     polyline_top_n: int,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     out_maxspeed: Dict[str, Dict[str, float]] = {}
-    out_boundary: Dict[str, Dict[str, float]] = {}
+    out_street_name: Dict[str, Dict[str, float]] = {}
+    out_city_name: Dict[str, Dict[str, float]] = {}
+    out_polygon: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
-        totals: List[float] = []
-        boundary: List[float] = []
+        maxspeed_totals: List[float] = []
+        street_name_totals: List[float] = []
+        city_name: List[float] = []
+        polygon: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -92,11 +96,22 @@ def benchmark_v1(
                 ]
             )
             payload = json.loads(result.stdout)
-            totals.append(float(payload["timing_ms"]["total"]))
-            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
-        out_maxspeed[mode] = summarize(totals)
-        out_boundary[mode] = summarize(boundary)
-    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
+            query_total_ms = float(payload["timing_ms"]["total"])
+            city_resolve_ms = float(payload["timing_ms"].get("city_resolve", 0.0))
+            maxspeed_totals.append(query_total_ms)
+            street_name_totals.append(query_total_ms)
+            city_name.append(city_resolve_ms)
+            polygon.append(city_resolve_ms)
+        out_maxspeed[mode] = summarize(maxspeed_totals)
+        out_street_name[mode] = summarize(street_name_totals)
+        out_city_name[mode] = summarize(city_name)
+        out_polygon[mode] = summarize(polygon)
+    return {
+        "maxspeed": out_maxspeed,
+        "street_name": out_street_name,
+        "city_name": out_city_name,
+        "polygon_containment": out_polygon,
+    }
 
 
 def benchmark_v2(
@@ -111,10 +126,14 @@ def benchmark_v2(
     tile_radius: int,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     out_maxspeed: Dict[str, Dict[str, float]] = {}
-    out_boundary: Dict[str, Dict[str, float]] = {}
+    out_street_name: Dict[str, Dict[str, float]] = {}
+    out_city_name: Dict[str, Dict[str, float]] = {}
+    out_polygon: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
-        totals: List[float] = []
-        boundary: List[float] = []
+        maxspeed_totals: List[float] = []
+        street_name_totals: List[float] = []
+        city_name: List[float] = []
+        polygon: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -140,11 +159,22 @@ def benchmark_v2(
                 ]
             )
             payload = json.loads(result.stdout)
-            totals.append(float(payload["timing_ms"]["total"]))
-            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
-        out_maxspeed[mode] = summarize(totals)
-        out_boundary[mode] = summarize(boundary)
-    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
+            query_total_ms = float(payload["timing_ms"]["total"])
+            city_resolve_ms = float(payload["timing_ms"].get("city_resolve", 0.0))
+            maxspeed_totals.append(query_total_ms)
+            street_name_totals.append(query_total_ms)
+            city_name.append(city_resolve_ms)
+            polygon.append(city_resolve_ms)
+        out_maxspeed[mode] = summarize(maxspeed_totals)
+        out_street_name[mode] = summarize(street_name_totals)
+        out_city_name[mode] = summarize(city_name)
+        out_polygon[mode] = summarize(polygon)
+    return {
+        "maxspeed": out_maxspeed,
+        "street_name": out_street_name,
+        "city_name": out_city_name,
+        "polygon_containment": out_polygon,
+    }
 
 
 def benchmark_v3(
@@ -160,10 +190,14 @@ def benchmark_v3(
     max_candidates: int,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     out_maxspeed: Dict[str, Dict[str, float]] = {}
-    out_boundary: Dict[str, Dict[str, float]] = {}
+    out_street_name: Dict[str, Dict[str, float]] = {}
+    out_city_name: Dict[str, Dict[str, float]] = {}
+    out_polygon: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
-        totals: List[float] = []
-        boundary: List[float] = []
+        maxspeed_totals: List[float] = []
+        street_name_totals: List[float] = []
+        city_name: List[float] = []
+        polygon: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -192,11 +226,22 @@ def benchmark_v3(
                 ]
             )
             payload = json.loads(result.stdout)
-            totals.append(float(payload["timing_ms"]["total"]))
-            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
-        out_maxspeed[mode] = summarize(totals)
-        out_boundary[mode] = summarize(boundary)
-    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
+            query_total_ms = float(payload["timing_ms"]["total"])
+            city_resolve_ms = float(payload["timing_ms"].get("city_resolve", 0.0))
+            maxspeed_totals.append(query_total_ms)
+            street_name_totals.append(query_total_ms)
+            city_name.append(city_resolve_ms)
+            polygon.append(city_resolve_ms)
+        out_maxspeed[mode] = summarize(maxspeed_totals)
+        out_street_name[mode] = summarize(street_name_totals)
+        out_city_name[mode] = summarize(city_name)
+        out_polygon[mode] = summarize(polygon)
+    return {
+        "maxspeed": out_maxspeed,
+        "street_name": out_street_name,
+        "city_name": out_city_name,
+        "polygon_containment": out_polygon,
+    }
 
 
 def benchmark_v4(
@@ -212,10 +257,14 @@ def benchmark_v4(
     max_candidates: int,
 ) -> Dict[str, Dict[str, Dict[str, float]]]:
     out_maxspeed: Dict[str, Dict[str, float]] = {}
-    out_boundary: Dict[str, Dict[str, float]] = {}
+    out_street_name: Dict[str, Dict[str, float]] = {}
+    out_city_name: Dict[str, Dict[str, float]] = {}
+    out_polygon: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
-        totals: List[float] = []
-        boundary: List[float] = []
+        maxspeed_totals: List[float] = []
+        street_name_totals: List[float] = []
+        city_name: List[float] = []
+        polygon: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -244,11 +293,22 @@ def benchmark_v4(
                 ]
             )
             payload = json.loads(result.stdout)
-            totals.append(float(payload["timing_ms"]["total"]))
-            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
-        out_maxspeed[mode] = summarize(totals)
-        out_boundary[mode] = summarize(boundary)
-    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
+            query_total_ms = float(payload["timing_ms"]["total"])
+            city_resolve_ms = float(payload["timing_ms"].get("city_resolve", 0.0))
+            maxspeed_totals.append(query_total_ms)
+            street_name_totals.append(query_total_ms)
+            city_name.append(city_resolve_ms)
+            polygon.append(city_resolve_ms)
+        out_maxspeed[mode] = summarize(maxspeed_totals)
+        out_street_name[mode] = summarize(street_name_totals)
+        out_city_name[mode] = summarize(city_name)
+        out_polygon[mode] = summarize(polygon)
+    return {
+        "maxspeed": out_maxspeed,
+        "street_name": out_street_name,
+        "city_name": out_city_name,
+        "polygon_containment": out_polygon,
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -506,29 +566,25 @@ def main() -> int:
                     payload["polygon_update_workload"] = payload["boundary_update_workload"]
         executed_steps.append("analyze_daily_diff_impact")
 
-    speedups = {}
-    boundary_speedups = {}
-    for mode in ("bbox", "hybrid", "polyline"):
-        v1 = v1_bench["maxspeed"][mode]["avg_ms"]
-        v2 = v2_bench["maxspeed"][mode]["avg_ms"]
-        v3 = v3_bench["maxspeed"][mode]["avg_ms"]
-        v4 = v4_bench["maxspeed"][mode]["avg_ms"]
-        speedups[mode] = {
-            "v2_vs_v1": round(v1 / v2, 2) if v2 > 0 else None,
-            "v3_vs_v1": round(v1 / v3, 2) if v3 > 0 else None,
-            "v4_vs_v1": round(v1 / v4, 2) if v4 > 0 else None,
-            "v4_vs_v2": round(v2 / v4, 2) if v4 > 0 else None,
-        }
-        b1 = v1_bench["boundary"][mode]["avg_ms"]
-        b2 = v2_bench["boundary"][mode]["avg_ms"]
-        b3 = v3_bench["boundary"][mode]["avg_ms"]
-        b4 = v4_bench["boundary"][mode]["avg_ms"]
-        boundary_speedups[mode] = {
-            "v2_vs_v1": round(b1 / b2, 2) if b2 > 0 else None,
-            "v3_vs_v1": round(b1 / b3, 2) if b3 > 0 else None,
-            "v4_vs_v1": round(b1 / b4, 2) if b4 > 0 else None,
-            "v4_vs_v2": round(b2 / b4, 2) if b4 > 0 else None,
-        }
+    def metric_speedups(metric_key: str) -> Dict[str, Dict[str, Optional[float]]]:
+        out: Dict[str, Dict[str, Optional[float]]] = {}
+        for mode in ("bbox", "hybrid", "polyline"):
+            v1 = v1_bench[metric_key][mode]["avg_ms"]
+            v2 = v2_bench[metric_key][mode]["avg_ms"]
+            v3 = v3_bench[metric_key][mode]["avg_ms"]
+            v4 = v4_bench[metric_key][mode]["avg_ms"]
+            out[mode] = {
+                "v2_vs_v1": round(v1 / v2, 2) if v2 > 0 else None,
+                "v3_vs_v1": round(v1 / v3, 2) if v3 > 0 else None,
+                "v4_vs_v1": round(v1 / v4, 2) if v4 > 0 else None,
+                "v4_vs_v2": round(v2 / v4, 2) if v4 > 0 else None,
+            }
+        return out
+
+    maxspeed_speedups = metric_speedups("maxspeed")
+    street_name_speedups = metric_speedups("street_name")
+    city_name_speedups = metric_speedups("city_name")
+    polygon_speedups = metric_speedups("polygon_containment")
 
     v2_catalog_path = v2_dist_dir / "catalog.v2.json"
     tile_count = None
@@ -539,7 +595,7 @@ def main() -> int:
             tile_count = None
 
     report = {
-        "schema_version": 3,
+        "schema_version": 4,
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "region": args.region,
         "input_pbf": str(Path(args.input_pbf)),
@@ -580,44 +636,66 @@ def main() -> int:
                 "v3": v3_bench["maxspeed"],
                 "v4": v4_bench["maxspeed"],
             },
+            "street_name_retrieval": {
+                "v1": v1_bench["street_name"],
+                "v2": v2_bench["street_name"],
+                "v3": v3_bench["street_name"],
+                "v4": v4_bench["street_name"],
+            },
+            "city_name_retrieval": {
+                "v1": v1_bench["city_name"],
+                "v2": v2_bench["city_name"],
+                "v3": v3_bench["city_name"],
+                "v4": v4_bench["city_name"],
+            },
             "boundary_retrieval": {
-                "v1": v1_bench["boundary"],
-                "v2": v2_bench["boundary"],
-                "v3": v3_bench["boundary"],
-                "v4": v4_bench["boundary"],
+                "v1": v1_bench["city_name"],
+                "v2": v2_bench["city_name"],
+                "v3": v3_bench["city_name"],
+                "v4": v4_bench["city_name"],
             },
             "polygon_containment_retrieval": {
-                "v1": v1_bench["boundary"],
-                "v2": v2_bench["boundary"],
-                "v3": v3_bench["boundary"],
-                "v4": v4_bench["boundary"],
+                "v1": v1_bench["polygon_containment"],
+                "v2": v2_bench["polygon_containment"],
+                "v3": v3_bench["polygon_containment"],
+                "v4": v4_bench["polygon_containment"],
             },
         },
         "speedup_x_avg": {
-            "maxspeed_retrieval": speedups,
-            "boundary_retrieval": boundary_speedups,
-            "polygon_containment_retrieval": boundary_speedups,
+            "maxspeed_retrieval": maxspeed_speedups,
+            "street_name_retrieval": street_name_speedups,
+            "city_name_retrieval": city_name_speedups,
+            "boundary_retrieval": city_name_speedups,
+            "polygon_containment_retrieval": polygon_speedups,
         },
         "four_tradeoff_retrieval_hybrid_ms": {
             "S1_v1": {
                 "maxspeed_retrieval_avg_ms": v1_bench["maxspeed"]["hybrid"]["avg_ms"],
-                "boundary_retrieval_avg_ms": v1_bench["boundary"]["hybrid"]["avg_ms"],
-                "polygon_containment_retrieval_avg_ms": v1_bench["boundary"]["hybrid"]["avg_ms"],
+                "street_name_retrieval_avg_ms": v1_bench["street_name"]["hybrid"]["avg_ms"],
+                "city_name_retrieval_avg_ms": v1_bench["city_name"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v1_bench["city_name"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v1_bench["polygon_containment"]["hybrid"]["avg_ms"],
             },
             "S2_v2": {
                 "maxspeed_retrieval_avg_ms": v2_bench["maxspeed"]["hybrid"]["avg_ms"],
-                "boundary_retrieval_avg_ms": v2_bench["boundary"]["hybrid"]["avg_ms"],
-                "polygon_containment_retrieval_avg_ms": v2_bench["boundary"]["hybrid"]["avg_ms"],
+                "street_name_retrieval_avg_ms": v2_bench["street_name"]["hybrid"]["avg_ms"],
+                "city_name_retrieval_avg_ms": v2_bench["city_name"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v2_bench["city_name"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v2_bench["polygon_containment"]["hybrid"]["avg_ms"],
             },
             "S3_v3": {
                 "maxspeed_retrieval_avg_ms": v3_bench["maxspeed"]["hybrid"]["avg_ms"],
-                "boundary_retrieval_avg_ms": v3_bench["boundary"]["hybrid"]["avg_ms"],
-                "polygon_containment_retrieval_avg_ms": v3_bench["boundary"]["hybrid"]["avg_ms"],
+                "street_name_retrieval_avg_ms": v3_bench["street_name"]["hybrid"]["avg_ms"],
+                "city_name_retrieval_avg_ms": v3_bench["city_name"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v3_bench["city_name"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v3_bench["polygon_containment"]["hybrid"]["avg_ms"],
             },
             "S4_v4": {
                 "maxspeed_retrieval_avg_ms": v4_bench["maxspeed"]["hybrid"]["avg_ms"],
-                "boundary_retrieval_avg_ms": v4_bench["boundary"]["hybrid"]["avg_ms"],
-                "polygon_containment_retrieval_avg_ms": v4_bench["boundary"]["hybrid"]["avg_ms"],
+                "street_name_retrieval_avg_ms": v4_bench["street_name"]["hybrid"]["avg_ms"],
+                "city_name_retrieval_avg_ms": v4_bench["city_name"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v4_bench["city_name"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v4_bench["polygon_containment"]["hybrid"]["avg_ms"],
             },
         },
         "four_tradeoff_update": four_tradeoff_update,

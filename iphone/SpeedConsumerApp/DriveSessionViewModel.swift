@@ -19,6 +19,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var currentSpeedKmh: Double = 0
     @Published var speedLimitKmh: Int?
     @Published var limitWayID: String?
+    @Published var limitStreetName: String?
+    @Published var limitCityName: String?
     @Published var lastError: String = ""
     @Published var currentLatitude: Double?
     @Published var currentLongitude: Double?
@@ -29,6 +31,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lastLookupSpeedCandidateCount: Int = 0
     @Published var lastLookupNearestCandidateM: Double?
     @Published var lastLookupNearestSpeedCandidateM: Double?
+    @Published var lastLookupInsideCity: Bool?
+    @Published var lastLookupCitySource: String = "n/a"
+    @Published var lastLookupCityResolveMs: Double = 0
+    @Published var lastLookupCityCandidateBoundaries: Int = 0
+    @Published var lastLookupCityContainingBoundaries: Int = 0
+    @Published var lastLookupCityPlaceCandidates: Int = 0
     @Published var lookupEventLog: [String] = []
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
@@ -383,12 +391,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         lastLookupSpeedCandidateCount = 0
         lastLookupNearestCandidateM = nil
         lastLookupNearestSpeedCandidateM = nil
+        lastLookupInsideCity = nil
+        lastLookupCitySource = "n/a"
+        lastLookupCityResolveMs = 0
+        lastLookupCityCandidateBoundaries = 0
+        lastLookupCityContainingBoundaries = 0
+        lastLookupCityPlaceCandidates = 0
 
         guard let logURL = prepareGPSLogFileIfNeeded() else {
             return
         }
         do {
-            let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
+            let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
             try Data(header.utf8).write(to: logURL, options: .atomic)
         } catch {
             lastError = "gps log reset failed: \(error.localizedDescription)"
@@ -439,6 +453,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     self.speedLimitKmh = result.speedLimitKmh
                     self.limitWayID = result.wayID
+                    self.limitStreetName = result.streetName
+                    self.limitCityName = result.cityName
                     if let wayID = result.wayID {
                         self.previousMatchedWayID = wayID
                     }
@@ -449,12 +465,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.lastLookupSpeedCandidateCount = result.speedCandidateCount
                     self.lastLookupNearestCandidateM = result.nearestCandidateDistanceM
                     self.lastLookupNearestSpeedCandidateM = result.nearestSpeedCandidateDistanceM
+                    self.lastLookupInsideCity = result.insideCity
+                    self.lastLookupCitySource = result.citySource ?? "n/a"
+                    self.lastLookupCityResolveMs = result.cityResolveMs
+                    self.lastLookupCityCandidateBoundaries = result.cityCandidateBoundaries
+                    self.lastLookupCityContainingBoundaries = result.cityContainingBoundaries
+                    self.lastLookupCityPlaceCandidates = result.cityPlaceCandidates
                     let speedText = result.speedLimitKmh.map(String.init) ?? "nil"
                     let wayText = result.wayID ?? "nil"
+                    let streetText = result.streetName ?? "nil"
+                    let cityText = result.cityName ?? "nil"
+                    let insideCityText = result.insideCity.map { $0 ? "1" : "0" } ?? "nil"
+                    let citySourceText = result.citySource ?? "nil"
                     let nearestText = result.nearestCandidateDistanceM.map { String(format: "%.1f", $0) } ?? "nil"
                     let nearestSpeedText = result.nearestSpeedCandidateDistanceM.map { String(format: "%.1f", $0) } ?? "nil"
                     self.appendLookupEvent(
-                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) way=\(wayText) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText)"
+                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText)"
                     )
                     self.appendGPSFixCSV(
                         fixID: fixID,
@@ -520,6 +546,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
 
         let wayID = result?.wayID ?? ""
+        let streetName = result?.streetName ?? ""
+        let cityName = result?.cityName ?? ""
+        let insideCity = result?.insideCity.map { $0 ? "1" : "0" } ?? ""
+        let citySource = result?.citySource ?? ""
+        let cityResolveMs = result.map { String(format: "%.3f", $0.cityResolveMs) } ?? ""
+        let cityCandidateBoundaries = result.map { String($0.cityCandidateBoundaries) } ?? ""
+        let cityContainingBoundaries = result.map { String($0.cityContainingBoundaries) } ?? ""
+        let cityPlaceCandidates = result.map { String($0.cityPlaceCandidates) } ?? ""
         let speedLimit = result?.speedLimitKmh.map(String.init) ?? ""
         let queryMs = result.map { String(format: "%.3f", $0.queryTimeMs) } ?? ""
         let candidateCount = result.map { String($0.candidateCount) } ?? ""
@@ -538,6 +572,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             String(format: "%.2f", courseDeg),
             status,
             wayID,
+            streetName,
+            cityName,
+            insideCity,
+            citySource,
+            cityResolveMs,
+            cityCandidateBoundaries,
+            cityContainingBoundaries,
+            cityPlaceCandidates,
             speedLimit,
             queryMs,
             candidateCount,
@@ -577,7 +619,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
             if !hasPreparedGPSLogFile {
                 if !FileManager.default.fileExists(atPath: logURL.path) {
-                    let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
+                    let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
                     try Data(header.utf8).write(to: logURL, options: .atomic)
                 }
                 hasPreparedGPSLogFile = true

@@ -134,6 +134,14 @@ struct PartDownloadProgress: Sendable, Identifiable {
 struct SpeedLimitResult {
     let speedLimitKmh: Int?
     let wayID: String?
+    let streetName: String?
+    let cityName: String?
+    let insideCity: Bool?
+    let citySource: String?
+    let cityResolveMs: Double
+    let cityCandidateBoundaries: Int
+    let cityContainingBoundaries: Int
+    let cityPlaceCandidates: Int
     let queryTimeMs: Double
     let candidateCount: Int
     let speedCandidateCount: Int

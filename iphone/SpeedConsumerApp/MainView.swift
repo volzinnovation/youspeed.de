@@ -187,7 +187,10 @@ struct MainView: View {
     }
 
     private var debugWayIDText: String {
-        "OSM Weg \(viewModel.limitWayID ?? "?")"
+        let way = viewModel.limitWayID ?? "?"
+        let street = viewModel.limitStreetName ?? "-"
+        let city = viewModel.limitCityName ?? "-"
+        return "OSM Weg \(way) · \(street) · \(city)"
     }
 
     private var limitText: String {
@@ -628,6 +631,14 @@ private struct DebugInformationView: View {
                         Text("Matched way: \(wayID)")
                             .font(.caption)
                     }
+                    if let street = viewModel.limitStreetName, !street.isEmpty {
+                        Text("Street: \(street)")
+                            .font(.caption)
+                    }
+                    if let city = viewModel.limitCityName, !city.isEmpty {
+                        Text("City: \(city)")
+                            .font(.caption)
+                    }
                 }
 
                 GroupBox("Lookup Diagnostics") {
@@ -645,6 +656,12 @@ private struct DebugInformationView: View {
                         )
                         Text(
                             "nearest_m=\(viewModel.lastLookupNearestCandidateM.map { String(format: "%.1f", $0) } ?? "nil") nearest_speed_m=\(viewModel.lastLookupNearestSpeedCandidateM.map { String(format: "%.1f", $0) } ?? "nil")"
+                        )
+                        Text(
+                            "city=\(viewModel.limitCityName ?? "nil") inside_city=\(viewModel.lastLookupInsideCity.map { $0 ? "1" : "0" } ?? "nil") city_src=\(viewModel.lastLookupCitySource)"
+                        )
+                        Text(
+                            "street=\(viewModel.limitStreetName ?? "nil") city_ms=\(String(format: "%.3f", viewModel.lastLookupCityResolveMs)) city_bounds=\(viewModel.lastLookupCityCandidateBoundaries) city_contains=\(viewModel.lastLookupCityContainingBoundaries) city_places=\(viewModel.lastLookupCityPlaceCandidates)"
                         )
                         Text("fix_count=\(viewModel.gpsFixCount)")
                         if !viewModel.gpsLogPath.isEmpty {

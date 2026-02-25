@@ -216,6 +216,9 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(result.wayID, "100")
         XCTAssertEqual(result.speedLimitKmh, 30)
+        XCTAssertEqual(result.streetName, "Fixture Main Street")
+        XCTAssertEqual(result.cityName, "Fixture City")
+        XCTAssertEqual(result.insideCity, true)
     }
 
     func testMultipartSyncReusesCachedPartAfterLaterPartFailure() async throws {
@@ -680,6 +683,7 @@ final class SpeedConsumerTests: XCTestCase {
           row_id INTEGER PRIMARY KEY,
           way_id TEXT NOT NULL UNIQUE,
           highway TEXT,
+          street_name TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
@@ -701,18 +705,40 @@ final class SpeedConsumerTests: XCTestCase {
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
         );
-        INSERT INTO ways(row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, '100', 'residential', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
+        CREATE TABLE areas (
+          row_id INTEGER PRIMARY KEY,
+          area_id TEXT NOT NULL UNIQUE,
+          geometry_type TEXT,
+          name TEXT,
+          place TEXT,
+          boundary TEXT,
+          admin_level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE areas_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '100', 'residential', 'Fixture Main Street', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, '100', '[[52.5200,13.4050],[52.5210,13.4060]]');
-        INSERT INTO ways(row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, '200', 'residential', '50', NULL, NULL, NULL, NULL, 45.0, 13.4072, 52.5218, 13.4080, 52.5222);
+        INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '200', 'residential', 'Fixture Side Street', '50', NULL, NULL, NULL, NULL, 45.0, 13.4072, 52.5218, 13.4080, 52.5222);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (2, 13.4072, 13.4080, 52.5218, 52.5222);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (2, '200', '[[52.5218,13.4072],[52.5222,13.4080]]');
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240);
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
         """
 
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
