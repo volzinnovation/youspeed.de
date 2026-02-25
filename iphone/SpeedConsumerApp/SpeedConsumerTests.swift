@@ -23,10 +23,12 @@ final class SpeedConsumerTests: XCTestCase {
         let moneyOnly = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 8, rules: rules)
         XCTAssertEqual(moneyOnly?.severity, .moneyOnly)
         XCTAssertEqual(moneyOnly?.deltaKmh, 8)
+        XCTAssertEqual(moneyOnly?.moneyFineEUR, 30)
 
         let pointsAndFine = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 35, rules: rules)
         XCTAssertEqual(pointsAndFine?.severity, .pointsAndFine)
         XCTAssertEqual(pointsAndFine?.deltaKmh, 35)
+        XCTAssertEqual(pointsAndFine?.penaltyPoints, 2)
     }
 
     func testLoadBundledDEURules() throws {
@@ -37,6 +39,8 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(rules.countryCode, "DEU")
         XCTAssertEqual(rules.currencyCode, "EUR")
         XCTAssertGreaterThanOrEqual(rules.bands.count, 1)
+        XCTAssertEqual(rules.bands.first?.moneyFineEUR, 30)
+        XCTAssertEqual(rules.bands.last?.penaltyPoints, 2)
     }
 
     func testDecodeBundleManifest() throws {

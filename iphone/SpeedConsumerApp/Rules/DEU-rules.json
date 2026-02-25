@@ -11,35 +11,40 @@
       "max_delta_kmh": 10,
       "severity": "money_only",
       "title_template": "Too Fast by {delta} km/h",
-      "detail_template": "Likely money fine: about 30 to 40 {currency}"
+      "detail_template": "Likely money fine: about 30 to 40 {currency}",
+      "money_fine_eur": 30
     },
     {
       "min_delta_kmh": 11,
       "max_delta_kmh": 15,
       "severity": "money_only",
       "title_template": "Too Fast by {delta} km/h",
-      "detail_template": "Likely money fine: about 50 to 70 {currency}"
+      "detail_template": "Likely money fine: about 50 to 70 {currency}",
+      "money_fine_eur": 50
     },
     {
       "min_delta_kmh": 16,
       "max_delta_kmh": 20,
       "severity": "money_only",
       "title_template": "Too Fast by {delta} km/h",
-      "detail_template": "Likely money fine: about 70 to 100 {currency}"
+      "detail_template": "Likely money fine: about 70 to 100 {currency}",
+      "money_fine_eur": 70
     },
     {
       "min_delta_kmh": 21,
       "max_delta_kmh": 30,
       "severity": "points_and_fine",
       "title_template": "Penalty Points Risk",
-      "detail_template": "{delta} km/h above limit: likely fine plus 1 point"
+      "detail_template": "{delta} km/h above limit: likely fine plus 1 point",
+      "penalty_points": 1
     },
     {
       "min_delta_kmh": 31,
       "max_delta_kmh": null,
       "severity": "points_and_fine",
       "title_template": "High Violation",
-      "detail_template": "{delta} km/h above limit: likely high fine and points"
+      "detail_template": "{delta} km/h above limit: likely high fine and points",
+      "penalty_points": 2
     }
   ]
 }

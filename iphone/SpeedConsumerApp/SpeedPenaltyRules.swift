@@ -11,6 +11,26 @@ struct OverspeedPenaltyBand: Codable, Sendable {
     let severity: PenaltySeverity
     let titleTemplate: String
     let detailTemplate: String
+    let moneyFineEUR: Int?
+    let penaltyPoints: Int?
+
+    init(
+        minDeltaKmh: Int,
+        maxDeltaKmh: Int?,
+        severity: PenaltySeverity,
+        titleTemplate: String,
+        detailTemplate: String,
+        moneyFineEUR: Int? = nil,
+        penaltyPoints: Int? = nil
+    ) {
+        self.minDeltaKmh = minDeltaKmh
+        self.maxDeltaKmh = maxDeltaKmh
+        self.severity = severity
+        self.titleTemplate = titleTemplate
+        self.detailTemplate = detailTemplate
+        self.moneyFineEUR = moneyFineEUR
+        self.penaltyPoints = penaltyPoints
+    }
 
     enum CodingKeys: String, CodingKey {
         case minDeltaKmh = "min_delta_kmh"
@@ -18,6 +38,8 @@ struct OverspeedPenaltyBand: Codable, Sendable {
         case severity
         case titleTemplate = "title_template"
         case detailTemplate = "detail_template"
+        case moneyFineEUR = "money_fine_eur"
+        case penaltyPoints = "penalty_points"
     }
 }
 
@@ -66,21 +88,40 @@ struct SpeedPenaltyRuleSet: Codable, Sendable {
                     maxDeltaKmh: 10,
                     severity: .moneyOnly,
                     titleTemplate: "Too Fast by {delta} km/h",
-                    detailTemplate: "Likely money fine: about 30 to 40 {currency}"
+                    detailTemplate: "Likely money fine: about 30 to 40 {currency}",
+                    moneyFineEUR: 30
                 ),
                 OverspeedPenaltyBand(
                     minDeltaKmh: 11,
+                    maxDeltaKmh: 15,
+                    severity: .moneyOnly,
+                    titleTemplate: "Too Fast by {delta} km/h",
+                    detailTemplate: "Likely money fine: about 50 to 70 {currency}",
+                    moneyFineEUR: 50
+                ),
+                OverspeedPenaltyBand(
+                    minDeltaKmh: 16,
                     maxDeltaKmh: 20,
                     severity: .moneyOnly,
                     titleTemplate: "Too Fast by {delta} km/h",
-                    detailTemplate: "Likely money fine: about 50 to 100 {currency}"
+                    detailTemplate: "Likely money fine: about 70 to 100 {currency}",
+                    moneyFineEUR: 70
                 ),
                 OverspeedPenaltyBand(
                     minDeltaKmh: 21,
-                    maxDeltaKmh: nil,
+                    maxDeltaKmh: 30,
                     severity: .pointsAndFine,
                     titleTemplate: "Penalty Points Risk",
-                    detailTemplate: "{delta} km/h above limit: likely fine plus points"
+                    detailTemplate: "{delta} km/h above limit: likely fine plus 1 point",
+                    penaltyPoints: 1
+                ),
+                OverspeedPenaltyBand(
+                    minDeltaKmh: 31,
+                    maxDeltaKmh: nil,
+                    severity: .pointsAndFine,
+                    titleTemplate: "High Violation",
+                    detailTemplate: "{delta} km/h above limit: likely high fine and points",
+                    penaltyPoints: 2
                 ),
             ]
         )
@@ -92,6 +133,8 @@ struct SpeedPenaltyNotice: Sendable {
     let title: String
     let details: String
     let deltaKmh: Int
+    let moneyFineEUR: Int?
+    let penaltyPoints: Int?
 }
 
 enum SpeedPenaltyRuleEngine {
@@ -123,7 +166,9 @@ enum SpeedPenaltyRuleEngine {
                 deltaKmh: overspeedKmh,
                 rules: rules
             ),
-            deltaKmh: overspeedKmh
+            deltaKmh: overspeedKmh,
+            moneyFineEUR: band.moneyFineEUR,
+            penaltyPoints: band.penaltyPoints
         )
     }
 

@@ -62,7 +62,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var syncBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var syncTask: Task<Void, Never>?
     private var lastAudioFeedbackAt = Date.distantPast
-    private var lastAnnouncedOverspeedKmh: Int?
+    private var lastAnnouncedSpeechText: String?
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let defaultAudioAlertThresholdKmh = 8
     private static let lookupTimestampFormatter: DateFormatter = {
@@ -365,7 +365,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         locationManager.stopUpdatingLocation()
         driveStatus = "stopped"
         lastAudioFeedbackAt = .distantPast
-        lastAnnouncedOverspeedKmh = nil
+        lastAnnouncedSpeechText = nil
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
@@ -594,19 +594,34 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         let overspeed = currentOverspeedKmh
         let threshold = audioAlertThresholdKmh
-        guard threshold > 0, overspeed >= threshold, let speedLimitKmh else {
-            lastAnnouncedOverspeedKmh = nil
+        guard threshold > 0, overspeed >= threshold, let notice = currentPenaltyNotice else {
+            lastAnnouncedSpeechText = nil
             return
         }
 
+        let speechText: String
+        switch notice.severity {
+        case .moneyOnly:
+            if let fineEUR = notice.moneyFineEUR {
+                speechText = "\(fineEUR) Euro"
+            } else {
+                speechText = "Euro"
+            }
+        case .pointsAndFine:
+            if let points = notice.penaltyPoints {
+                speechText = points == 1 ? "1 Punkt" : "\(points) Punkte"
+            } else {
+                speechText = "Punkte"
+            }
+        }
+
         let now = Date()
-        let changedSignificantly = abs((lastAnnouncedOverspeedKmh ?? overspeed) - overspeed) >= 5
+        let changedSignificantly = speechText != lastAnnouncedSpeechText
         let minimumInterval: TimeInterval = 8
         guard changedSignificantly || now.timeIntervalSince(lastAudioFeedbackAt) >= minimumInterval else {
             return
         }
 
-        let speechText = "Speed limit \(speedLimitKmh). You are \(overspeed) kilometers per hour too fast."
         let utterance = AVSpeechUtterance(string: speechText)
         if let preferredLanguage = Locale.preferredLanguages.first {
             utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
@@ -617,7 +632,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         speechSynthesizer.speak(utterance)
         lastAudioFeedbackAt = now
-        lastAnnouncedOverspeedKmh = overspeed
+        lastAnnouncedSpeechText = speechText
     }
 }
 

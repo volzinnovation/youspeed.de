@@ -8,14 +8,19 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let screenInset = min(proxy.size.width, proxy.size.height) * 0.02
-            let signSize = min(proxy.size.width * 0.78, proxy.size.width - (screenInset * 2))
-            ZStack {
+            let minDimension = min(proxy.size.width, proxy.size.height)
+            let screenInset = minDimension * 0.02
+            let signSize = min(proxy.size.width * 0.74, proxy.size.width - (screenInset * 2))
+            let topPadding = proxy.safeAreaInsets.top + screenInset
+            let bottomPadding = proxy.safeAreaInsets.bottom + screenInset
+            ZStack(alignment: .bottom) {
                 screenBackgroundColor
                     .ignoresSafeArea()
 
-                VStack(spacing: 18) {
+                VStack(spacing: 0) {
                     topCornerButtons
+                        .padding(.horizontal, screenInset)
+                        .padding(.top, topPadding)
 
                     SpeedLimitSignView(limitText: limitText)
                         .frame(width: signSize, height: signSize)
@@ -23,19 +28,10 @@ struct ContentView: View {
                         .padding(.top, screenInset)
                         .padding(.horizontal, screenInset)
 
-                    if let fine = finePresentation {
-                        FineNoticeView(fine: fine)
-                    } else {
-                        normalSpeedInfo
-                    }
-
-                    Spacer(minLength: 8)
-
-                    driveToggleButton
+                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
+
+                mainStatusInfo(signSize: signSize, screenSize: proxy.size, bottomPadding: bottomPadding)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -88,38 +84,84 @@ struct ContentView: View {
         .foregroundStyle(primaryForegroundColor)
     }
 
-    private var normalSpeedInfo: some View {
-        VStack(spacing: 6) {
-            Text("Current Speed")
-                .font(.headline)
-                .foregroundStyle(primaryForegroundColor.opacity(0.85))
-            Text("\(Int(round(viewModel.currentSpeedKmh))) km/h")
-                .font(.system(size: 56, weight: .black, design: .rounded))
-                .foregroundStyle(primaryForegroundColor)
-            Text(limitInfoText)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(primaryForegroundColor.opacity(0.85))
+    @ViewBuilder
+    private func mainStatusInfo(signSize: CGFloat, screenSize: CGSize, bottomPadding: CGFloat) -> some View {
+        let minDimension = min(screenSize.width, screenSize.height)
+        let primaryFont = signSize * (limitText == "?" ? 0.5 : 0.38)
+        let secondaryFont = primaryFont * 0.22
+        let valueUnitSpacing: CGFloat = 0
+        let metricDebugGap = max(12, minDimension * 0.024)
+        let debugFont = max(11, minDimension * 0.024)
+        let debugSpacing = max(2, minDimension * 0.004)
+        let horizontalPadding = max(12, screenSize.width * 0.04)
+        let statusAreaHeight = max(150, screenSize.height * 0.34)
+
+        VStack(spacing: 0) {
+            VStack(spacing: valueUnitSpacing) {
+                Text(primaryMetricText)
+                    .font(.system(size: primaryFont, weight: .black, design: .rounded))
+                    .minimumScaleFactor(0.45)
+                Text(secondaryMetricText)
+                    .font(.system(size: secondaryFont, weight: .black, design: .rounded))
+                    .minimumScaleFactor(0.5)
+                    .padding(.top, -primaryFont * 0.1)
+            }
+
+            Spacer(minLength: metricDebugGap)
+
+            VStack(spacing: debugSpacing) {
+                Text(debugCoordinateText)
+                    .font(.system(size: debugFont, weight: .semibold, design: .rounded))
+                    .minimumScaleFactor(0.55)
+                Text(debugWayIDText)
+                    .font(.system(size: debugFont, weight: .semibold, design: .rounded))
+                    .minimumScaleFactor(0.55)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .frame(height: statusAreaHeight, alignment: .bottom)
+        .multilineTextAlignment(.center)
+        .foregroundStyle(primaryForegroundColor)
+        .padding(.horizontal, horizontalPadding)
+        .padding(.bottom, bottomPadding)
     }
 
-    private var driveToggleButton: some View {
-        Button {
-            if viewModel.driveStatus == "running" || viewModel.driveStatus == "requesting_location" {
-                viewModel.stopDriving()
-            } else {
-                viewModel.startDriving()
+    private var primaryMetricText: String {
+        switch finePresentation?.severity {
+        case .moneyOnly:
+            guard let fineEUR = finePresentation?.moneyFineEUR else {
+                return "?"
             }
-        } label: {
-            Text(viewModel.driveStatus == "running" ? "Stop GPS" : "Start GPS")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            return "\(fineEUR)"
+        case .pointsAndFine:
+            guard let points = finePresentation?.penaltyPoints else {
+                return "?"
+            }
+            return "\(points)"
+        case .none:
+            return "\(Int(round(viewModel.currentSpeedKmh)))"
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(buttonTextColor)
-        .background(buttonFillColor, in: Capsule())
+    }
+
+    private var secondaryMetricText: String {
+        switch finePresentation?.severity {
+        case .moneyOnly:
+            return "Euro"
+        case .pointsAndFine:
+            return "punkte"
+        case .none:
+            return "km/h"
+        }
+    }
+
+    private var debugCoordinateText: String {
+        let lat = viewModel.currentLatitude.map { String(format: "%.6f", $0) } ?? "n/a"
+        let lon = viewModel.currentLongitude.map { String(format: "%.6f", $0) } ?? "n/a"
+        return "coord \(lat), \(lon)"
+    }
+
+    private var debugWayIDText: String {
+        "way id \(viewModel.limitWayID ?? "n/a")"
     }
 
     private var limitText: String {
@@ -127,13 +169,6 @@ struct ContentView: View {
             return "?"
         }
         return "\(speedLimit)"
-    }
-
-    private var limitInfoText: String {
-        if let speedLimit = viewModel.speedLimitKmh {
-            return "Limit \(speedLimit) km/h"
-        }
-        return "Limit not available yet"
     }
 
     private var finePresentation: SpeedPenaltyNotice? {
@@ -169,24 +204,6 @@ struct ContentView: View {
         }
     }
 
-    private var buttonFillColor: Color {
-        switch finePresentation?.severity {
-        case .moneyOnly:
-            return Color.black.opacity(0.15)
-        case .pointsAndFine, .none:
-            return Color.white.opacity(0.22)
-        }
-    }
-
-    private var buttonTextColor: Color {
-        switch finePresentation?.severity {
-        case .moneyOnly:
-            return .black
-        case .pointsAndFine, .none:
-            return .white
-        }
-    }
-
     private var shouldAutoTapSyncForTests: Bool {
         let env = ProcessInfo.processInfo.environment
         let envEnabled = env["SPEEDCONSUMER_TEST_AUTOTAP_SYNC"] == "1"
@@ -196,24 +213,6 @@ struct ContentView: View {
             return false
         }
         return env["XCTestConfigurationFilePath"] != nil
-    }
-}
-
-private struct FineNoticeView: View {
-    let fine: SpeedPenaltyNotice
-
-    var body: some View {
-        VStack(spacing: 8) {
-            Text(fine.title)
-                .font(.title2.bold())
-            Text(fine.details)
-                .font(.headline)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .foregroundStyle(fine.severity == .moneyOnly ? Color.black : Color.white)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
     }
 }
 
