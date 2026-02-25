@@ -187,7 +187,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
                 guard let manifestURL else {
                     syncStatus = "seed_only"
-                    speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    if !activeDBPath.isEmpty {
+                        speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    }
                     return
                 }
 
@@ -196,7 +198,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                    (manifestHost.contains("github.com") || manifestHost.contains("githubusercontent.com")) {
                     syncStatus = "sync_failed"
                     lastError = "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
-                    speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    if !activeDBPath.isEmpty {
+                        speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    }
                     return
                 }
 

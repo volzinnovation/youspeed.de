@@ -104,7 +104,13 @@ actor V3BundleManager {
         }
 
         guard let source = bundle.url(forResource: resourceName, withExtension: "sqlite") else {
-            throw ConsumerAppError.io("Missing bundled seed DB resource: \(resourceName).sqlite")
+            // Bundled seed is optional; app can continue with manifest/release download flow.
+            return BundleSyncResult(
+                mode: .upToDate,
+                bundleVersion: "none",
+                dbPath: "",
+                details: "no bundled seed resource"
+            )
         }
         let seedBytes = (try? fileSize(source)) ?? 0
         if seedBytes > 0 {

@@ -59,6 +59,7 @@ paper/techreport/data/.device_benchmark_report*.swp
 
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite
+iphone/SpeedConsumerApp/speeds_v3.sqlite
 iphone/.derived/
 iphone/DerivedData*/
 iphone/SpeedDBBench.xcodeproj/project.xcworkspace/xcuserdata/
