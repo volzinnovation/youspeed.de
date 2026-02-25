@@ -125,12 +125,12 @@ struct MainView: View {
                 Text(debugCoordinateText)
                     .font(.system(size: debugFont, weight: .bold, design: .rounded))
                     .lineLimit(1)
-                    .minimumScaleFactor(1)
+                    .minimumScaleFactor(0.75)
                     .monospacedDigit()
                 Text(debugWayIDText)
                     .font(.system(size: debugFont, weight: .bold, design: .rounded))
                     .lineLimit(1)
-                    .minimumScaleFactor(1)
+                    .minimumScaleFactor(0.75)
             }
             .contentShape(Rectangle())
             .onTapGesture(count: 2) {
@@ -180,6 +180,9 @@ struct MainView: View {
     }
 
     private var debugCoordinateText: String {
+        if let street = normalizedPlaceText(viewModel.limitStreetName), viewModel.limitWayID != nil {
+            return street
+        }
         guard let latitude = viewModel.currentLatitude, let longitude = viewModel.currentLongitude else {
             return "Suche..."
         }
@@ -187,10 +190,10 @@ struct MainView: View {
     }
 
     private var debugWayIDText: String {
-        let way = viewModel.limitWayID ?? "?"
-        let street = viewModel.limitStreetName ?? "-"
-        let city = viewModel.limitCityName ?? "-"
-        return "OSM Weg \(way) · \(street) · \(city)"
+        if let city = normalizedPlaceText(viewModel.limitCityName) {
+            return city
+        }
+        return hasUsableGPSFix ? "Stadt unbekannt" : "Suche..."
     }
 
     private var limitText: String {
@@ -274,26 +277,11 @@ struct MainView: View {
         )
     }
 
-    private func sharedSecondaryScale(baseSecondaryFont: CGFloat, availableWidth: CGFloat) -> CGFloat {
-        let texts = [
-            secondaryMetricText,
-            debugCoordinateText,
-            debugWayIDText,
-        ].filter { !$0.isEmpty }
-
-        guard let longest = texts.max(by: { $0.count < $1.count }) else {
-            return 1
+    private func normalizedPlaceText(_ raw: String?) -> String? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return nil
         }
-
-        let estimatedWidth = estimateTextWidth(longest, fontSize: baseSecondaryFont)
-        guard estimatedWidth > 0 else {
-            return 1
-        }
-        return min(1, max(0.35, availableWidth / estimatedWidth))
-    }
-
-    private func estimateTextWidth(_ text: String, fontSize: CGFloat) -> CGFloat {
-        CGFloat(text.count) * fontSize * 0.58
+        return trimmed
     }
 
     private func iso6709Coordinate(latitude: Double, longitude: Double, fractionalDigits: Int) -> String {
@@ -322,6 +310,21 @@ struct MainView: View {
             return .system(size: size, weight: .bold, design: .rounded)
         }
         return trafficSignNumberFont(size: size)
+    }
+
+    private func sharedSecondaryScale(baseSecondaryFont: CGFloat, availableWidth: CGFloat) -> CGFloat {
+        // Keep the status area visually stable between "no fix" and "fix" states.
+        let stableReference = "N00.0000 O000.0000"
+        let estimatedWidth = estimateTextWidth(stableReference, fontSize: baseSecondaryFont)
+        guard estimatedWidth > 0 else {
+            return 0.45
+        }
+        let adaptive = availableWidth / estimatedWidth
+        return min(0.5, max(0.35, adaptive))
+    }
+
+    private func estimateTextWidth(_ text: String, fontSize: CGFloat) -> CGFloat {
+        CGFloat(text.count) * fontSize * 0.58
     }
 
     private var shouldAutoTapSyncForTests: Bool {

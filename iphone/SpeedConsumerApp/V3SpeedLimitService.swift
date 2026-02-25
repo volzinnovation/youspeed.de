@@ -48,6 +48,7 @@ final class V3SpeedLimitService {
         "village": 2,
         "hamlet": 3,
     ]
+    private static let nearestPlaceFallbackMaxDistanceM: Double = 5_000
 
     init(dbPath: String) {
         self.dbPath = dbPath
@@ -283,26 +284,9 @@ final class V3SpeedLimitService {
     private func resolveCityContext(db: OpaquePointer, lat: Double, lon: Double) -> CityContext {
         let startNs = DispatchTime.now().uptimeNanoseconds
 
-        let hasBoundaryTables = tableExists(db: db, name: "city_boundary")
-            && tableExists(db: db, name: "city_boundary_rtree")
-            && tableExists(db: db, name: "city_ring")
-        let hasPlaceTables = tableExists(db: db, name: "city_place")
-            && tableExists(db: db, name: "city_place_rtree")
-
-        if hasBoundaryTables,
-           let polygonResult = resolveCityContextWithPolygons(db: db, lat: lat, lon: lon, hasPlaceTables: hasPlaceTables) {
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
-            return CityContext(
-                insideCity: polygonResult.insideCity,
-                cityName: polygonResult.cityName,
-                citySource: polygonResult.citySource,
-                candidateBoundaries: polygonResult.candidateBoundaries,
-                containingBoundaries: polygonResult.containingBoundaries,
-                placeCandidates: polygonResult.placeCandidates,
-                resolveMs: elapsed
-            )
-        }
-
+        // Consumer app city naming is intentionally sourced from areas.name only.
+        // We ignore optional city_* polygon tables to keep behavior deterministic
+        // across bundled and synced datasets.
         if tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree") {
             let areaResult = resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
@@ -559,10 +543,10 @@ final class V3SpeedLimitService {
         }
 
         if let best = nearbyPlaces.sorted(by: {
-            if $0.rank != $1.rank { return $0.rank < $1.rank }
             if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
+            if $0.rank != $1.rank { return $0.rank < $1.rank }
             return $0.name < $1.name
-        }).first {
+        }).first, best.distanceM <= Self.nearestPlaceFallbackMaxDistanceM {
             return (
                 false,
                 best.name,
