@@ -306,79 +306,14 @@ jobs:
             --v1-dist "mapdata/dist/${REGION}" \
             --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
 
-      - name: Regression Check (street/city/polygon query outputs)
+      - name: Regression Check (paper benchmark smoke contract)
         if: steps.compare.outputs.needs_publish == '1'
         run: |
-          python3 - <<'PY'
-          import json
-          import sqlite3
-          import subprocess
-          import sys
-
-          db_path = "mapdata/dist-v3/germany/speeds_v3.sqlite"
-          way_id = "17721265"
-          with sqlite3.connect(db_path) as conn:
-              row = conn.execute(
-                  "SELECT (min_lat + max_lat) / 2.0 AS lat, (min_lon + max_lon) / 2.0 AS lon FROM ways WHERE way_id = ? LIMIT 1",
-                  (way_id,),
-              ).fetchone()
-
-          if row is None:
-              print(f"Regression check failed: missing way_id={way_id} in {db_path}", file=sys.stderr)
-              sys.exit(1)
-
-          lat, lon = float(row[0]), float(row[1])
-          completed = subprocess.run(
-              [
-                  "python3",
-                  "scripts/map/query_speed_limit_v3.py",
-                  "--db",
-                  db_path,
-                  "--lat",
-                  str(lat),
-                  "--lon",
-                  str(lon),
-                  "--top-k",
-                  "1",
-                  "--distance-mode",
-                  "hybrid",
-                  "--polyline-top-n",
-                  "64",
-              ],
-              check=True,
-              text=True,
-              capture_output=True,
-          )
-          payload = json.loads(completed.stdout)
-          summary = payload.get("summary", {})
-
-          if summary.get("has_street_name_column") is not True:
-              print("Regression check failed: summary.has_street_name_column is false", file=sys.stderr)
-              sys.exit(1)
-
-          if "city_name" not in summary or "city_source" not in summary:
-              print("Regression check failed: city_name/city_source missing in summary", file=sys.stderr)
-              sys.exit(1)
-
-          if payload.get("timing_ms", {}).get("city_resolve") is None:
-              print("Regression check failed: timing_ms.city_resolve missing", file=sys.stderr)
-              sys.exit(1)
-
-          top = payload.get("top_candidates", [])
-          if not top:
-              print("Regression check failed: top_candidates empty", file=sys.stderr)
-              sys.exit(1)
-          if "street_name" not in top[0]:
-              print("Regression check failed: top_candidates[0].street_name missing", file=sys.stderr)
-              sys.exit(1)
-
-          print(
-              "Regression check passed: "
-              f"way_id={way_id} street_name={top[0].get('street_name')!r} "
-              f"city_name={summary.get('city_name')!r} city_source={summary.get('city_source')!r} "
-              f"city_resolve_ms={payload.get('timing_ms', {}).get('city_resolve')}"
-          )
-          PY
+          python3 scripts/map/validate_v3_release_regressions.py \
+            --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --probe-way-id "17721265" \
+            --expected-maxspeed-kmh "30" \
+            --out-json "mapdata/reports/${REGION}-v3-release-regression.json"
 
       - name: Build New Incremental Delta (If Possible)
         if: steps.compare.outputs.needs_publish == '1'
