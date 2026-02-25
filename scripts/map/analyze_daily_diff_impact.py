@@ -30,6 +30,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 EARTH_RADIUS_M = 6378137.0
 MAX_MERCATOR_LAT = 85.05112878
 MAXSPEED_KEYS = {"maxspeed", "zone:maxspeed", "maxspeed:type", "source:maxspeed", "max:speed"}
+ADMIN_BOUNDARY_LEVELS = {"8", "9"}
 
 
 @dataclass
@@ -46,6 +47,8 @@ class DiffParseResult:
     ways_modified: int
     maxspeed_tag_events: int
     maxspeed_tag_changes: int
+    boundary_admin_way_events: int
+    boundary_admin_way_changes: int
     ops_by_way: Dict[str, WayOp]
     node_coords: Dict[str, Tuple[float, float]]  # node_id -> (lon, lat)
 
@@ -91,6 +94,8 @@ def _parse_daily_diff(path: Path) -> DiffParseResult:
     ways_modified = 0
     maxspeed_tag_events = 0
     maxspeed_tag_changes = 0
+    boundary_admin_way_events = 0
+    boundary_admin_way_changes = 0
     ops_by_way: Dict[str, WayOp] = {}
     node_coords: Dict[str, Tuple[float, float]] = {}
 
@@ -152,6 +157,14 @@ def _parse_daily_diff(path: Path) -> DiffParseResult:
                     maxspeed_tag_events += 1
                     if action == "modify":
                         maxspeed_tag_changes += 1
+                is_admin_boundary_way = (
+                    tags.get("boundary") == "administrative"
+                    and tags.get("admin_level") in ADMIN_BOUNDARY_LEVELS
+                )
+                if is_admin_boundary_way:
+                    boundary_admin_way_events += 1
+                    if action == "modify":
+                        boundary_admin_way_changes += 1
 
                 node_refs: List[str] = []
                 for child in elem:
@@ -174,6 +187,8 @@ def _parse_daily_diff(path: Path) -> DiffParseResult:
         ways_modified=ways_modified,
         maxspeed_tag_events=maxspeed_tag_events,
         maxspeed_tag_changes=maxspeed_tag_changes,
+        boundary_admin_way_events=boundary_admin_way_events,
+        boundary_admin_way_changes=boundary_admin_way_changes,
         ops_by_way=ops_by_way,
         node_coords=node_coords,
     )
@@ -224,6 +239,33 @@ def _fetch_row_ids(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Dict[str
         sql = f"SELECT way_id, row_id FROM ways WHERE way_id IN ({placeholders})"
         for row in conn.execute(sql, chunk):
             out[str(row["way_id"])] = int(row["row_id"])
+    return out
+
+
+def _fetch_existing_area_rows(conn: sqlite3.Connection, area_ids: Sequence[str]) -> Dict[str, sqlite3.Row]:
+    if not area_ids:
+        return {}
+    out: Dict[str, sqlite3.Row] = {}
+    for chunk in _chunked(list(area_ids), 500):
+        placeholders = ",".join(["?"] * len(chunk))
+        sql = f"""
+        SELECT
+          row_id,
+          area_id,
+          geometry_type,
+          name,
+          place,
+          boundary,
+          admin_level,
+          min_lon,
+          min_lat,
+          max_lon,
+          max_lat
+        FROM areas
+        WHERE area_id IN ({placeholders})
+        """
+        for row in conn.execute(sql, chunk):
+            out[str(row["area_id"])] = row
     return out
 
 
@@ -301,6 +343,40 @@ def _build_insert_payload(
             if existing is not None and existing["points_json"] is not None
             else _points_json_from_nodes(op.node_refs, node_coords)
         ),
+    }
+    return payload
+
+
+def _build_boundary_area_insert_payload(
+    way_id: str,
+    op: WayOp,
+    existing_area: Optional[sqlite3.Row],
+    node_coords: Dict[str, Tuple[float, float]],
+) -> Optional[dict]:
+    bbox = _bbox_from_nodes(op.node_refs, node_coords)
+    if bbox is None and existing_area is not None:
+        bbox = (
+            float(existing_area["min_lon"]),
+            float(existing_area["min_lat"]),
+            float(existing_area["max_lon"]),
+            float(existing_area["max_lat"]),
+        )
+    if bbox is None:
+        return None
+
+    min_lon, min_lat, max_lon, max_lat = bbox
+    tags = op.tags
+    payload = {
+        "area_id": f"w:{way_id}",
+        "geometry_type": "LineString",
+        "name": tags.get("name", existing_area["name"] if existing_area is not None else None),
+        "place": tags.get("place", existing_area["place"] if existing_area is not None else None),
+        "boundary": tags.get("boundary", existing_area["boundary"] if existing_area is not None else None),
+        "admin_level": tags.get("admin_level", existing_area["admin_level"] if existing_area is not None else None),
+        "min_lon": float(min_lon),
+        "min_lat": float(min_lat),
+        "max_lon": float(max_lon),
+        "max_lat": float(max_lat),
     }
     return payload
 
@@ -483,6 +559,240 @@ def _simulate_v4_patch(
     return (elapsed_ms, delete_rows, insert_rows, None)
 
 
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1",
+        (table_name,),
+    ).fetchone()
+    return row is not None
+
+
+def _simulate_v3_area_patch(
+    conn: sqlite3.Connection,
+    delete_area_ids: Sequence[str],
+    inserts: Sequence[dict],
+) -> Tuple[float, int, int, Optional[str]]:
+    existing = _fetch_existing_area_rows(conn, delete_area_ids)
+    delete_row_ids = [int(r["row_id"]) for r in existing.values()]
+    delete_rows = len(delete_row_ids) * 2
+    insert_rows = len(inserts) * 2
+
+    t0 = time.perf_counter()
+    try:
+        conn.execute("BEGIN")
+        if delete_row_ids:
+            rows = [(rid,) for rid in delete_row_ids]
+            conn.executemany("DELETE FROM areas_rtree WHERE row_id=?", rows)
+            conn.executemany("DELETE FROM areas WHERE row_id=?", rows)
+
+        for ins in inserts:
+            cur = conn.execute(
+                """
+                INSERT INTO areas(
+                  area_id, geometry_type, name, place, boundary, admin_level,
+                  min_lon, min_lat, max_lon, max_lat
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ins["area_id"],
+                    ins["geometry_type"],
+                    ins["name"],
+                    ins["place"],
+                    ins["boundary"],
+                    ins["admin_level"],
+                    ins["min_lon"],
+                    ins["min_lat"],
+                    ins["max_lon"],
+                    ins["max_lat"],
+                ),
+            )
+            row_id = int(cur.lastrowid)
+            conn.execute(
+                "INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                (row_id, ins["min_lon"], ins["max_lon"], ins["min_lat"], ins["max_lat"]),
+            )
+    except Exception as exc:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        return (round((time.perf_counter() - t0) * 1000.0, 3), delete_rows, insert_rows, str(exc))
+
+    conn.execute("ROLLBACK")
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    return (elapsed_ms, delete_rows, insert_rows, None)
+
+
+def _simulate_v4_area_patch(
+    conn: sqlite3.Connection,
+    delete_area_ids: Sequence[str],
+    inserts: Sequence[dict],
+    tile_size_m: int,
+    max_city_tiles: int,
+) -> Tuple[float, int, int, Optional[str]]:
+    existing = _fetch_existing_area_rows(conn, delete_area_ids)
+    delete_area_row_ids = [int(r["row_id"]) for r in existing.values()]
+
+    has_city_boundary = _table_exists(conn, "city_boundary")
+    has_city_boundary_rtree = _table_exists(conn, "city_boundary_rtree")
+    has_city_tile = _table_exists(conn, "city_tile")
+    has_city_ring = _table_exists(conn, "city_ring")
+
+    delete_boundary_row_ids: List[int] = []
+    if has_city_boundary:
+        way_ids = [aid.split(":", 1)[1] for aid in delete_area_ids if aid.startswith("w:")]
+        for chunk in _chunked(way_ids, 500):
+            int_ids: List[int] = []
+            for wid in chunk:
+                try:
+                    int_ids.append(int(wid))
+                except ValueError:
+                    continue
+            if not int_ids:
+                continue
+            placeholders = ",".join(["?"] * len(int_ids))
+            sql = f"SELECT row_id FROM city_boundary WHERE osm_type='w' AND osm_id IN ({placeholders})"
+            for row in conn.execute(sql, int_ids):
+                delete_boundary_row_ids.append(int(row["row_id"]))
+
+    delete_rows = len(delete_area_row_ids) * 2
+    if delete_boundary_row_ids:
+        delete_rows += len(delete_boundary_row_ids) * 2  # city_boundary + city_boundary_rtree
+        if has_city_tile:
+            for chunk in _chunked([str(rid) for rid in delete_boundary_row_ids], 500):
+                placeholders = ",".join(["?"] * len(chunk))
+                sql = f"SELECT COUNT(*) AS c FROM city_tile WHERE boundary_row_id IN ({placeholders})"
+                c_row = conn.execute(sql, chunk).fetchone()
+                delete_rows += int(c_row["c"]) if c_row else 0
+        if has_city_ring:
+            for chunk in _chunked([str(rid) for rid in delete_boundary_row_ids], 500):
+                placeholders = ",".join(["?"] * len(chunk))
+                sql = f"SELECT COUNT(*) AS c FROM city_ring WHERE boundary_row_id IN ({placeholders})"
+                c_row = conn.execute(sql, chunk).fetchone()
+                delete_rows += int(c_row["c"]) if c_row else 0
+
+    insert_rows = len(inserts) * 2  # areas + areas_rtree
+    if has_city_boundary and has_city_boundary_rtree and has_city_tile:
+        for ins in inserts:
+            if not str(ins["area_id"]).startswith("w:"):
+                continue
+            tile_rows = _tile_rows_for_bbox(
+                ins["min_lon"],
+                ins["min_lat"],
+                ins["max_lon"],
+                ins["max_lat"],
+                tile_size_m=tile_size_m,
+                max_way_tiles=max_city_tiles,
+            )
+            insert_rows += 2 + len(tile_rows)  # city_boundary + rtree + city_tile rows
+
+    t0 = time.perf_counter()
+    try:
+        conn.execute("BEGIN")
+
+        if delete_area_row_ids:
+            rows = [(rid,) for rid in delete_area_row_ids]
+            conn.executemany("DELETE FROM areas_rtree WHERE row_id=?", rows)
+            conn.executemany("DELETE FROM areas WHERE row_id=?", rows)
+
+        if delete_boundary_row_ids and has_city_boundary:
+            rows = [(rid,) for rid in delete_boundary_row_ids]
+            if has_city_tile:
+                conn.executemany("DELETE FROM city_tile WHERE boundary_row_id=?", rows)
+            if has_city_ring:
+                conn.executemany("DELETE FROM city_ring WHERE boundary_row_id=?", rows)
+            if has_city_boundary_rtree:
+                conn.executemany("DELETE FROM city_boundary_rtree WHERE row_id=?", rows)
+            conn.executemany("DELETE FROM city_boundary WHERE row_id=?", rows)
+
+        for ins in inserts:
+            cur = conn.execute(
+                """
+                INSERT INTO areas(
+                  area_id, geometry_type, name, place, boundary, admin_level,
+                  min_lon, min_lat, max_lon, max_lat
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    ins["area_id"],
+                    ins["geometry_type"],
+                    ins["name"],
+                    ins["place"],
+                    ins["boundary"],
+                    ins["admin_level"],
+                    ins["min_lon"],
+                    ins["min_lat"],
+                    ins["max_lon"],
+                    ins["max_lat"],
+                ),
+            )
+            area_row_id = int(cur.lastrowid)
+            conn.execute(
+                "INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                (area_row_id, ins["min_lon"], ins["max_lon"], ins["min_lat"], ins["max_lat"]),
+            )
+
+            if not (has_city_boundary and has_city_boundary_rtree and has_city_tile):
+                continue
+            area_id = str(ins["area_id"])
+            if not area_id.startswith("w:"):
+                continue
+            osm_raw = area_id.split(":", 1)[1]
+            try:
+                osm_id = int(osm_raw)
+            except ValueError:
+                continue
+            try:
+                admin_level = int(ins["admin_level"]) if ins["admin_level"] is not None else 8
+            except ValueError:
+                admin_level = 8
+            bcur = conn.execute(
+                """
+                INSERT INTO city_boundary(
+                  osm_type, osm_id, admin_level, name,
+                  min_lon, min_lat, max_lon, max_lat
+                ) VALUES ('w', ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    osm_id,
+                    admin_level,
+                    ins["name"],
+                    ins["min_lon"],
+                    ins["min_lat"],
+                    ins["max_lon"],
+                    ins["max_lat"],
+                ),
+            )
+            boundary_row_id = int(bcur.lastrowid)
+            conn.execute(
+                "INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                (boundary_row_id, ins["min_lon"], ins["max_lon"], ins["min_lat"], ins["max_lat"]),
+            )
+            tile_rows = _tile_rows_for_bbox(
+                ins["min_lon"],
+                ins["min_lat"],
+                ins["max_lon"],
+                ins["max_lat"],
+                tile_size_m=tile_size_m,
+                max_way_tiles=max_city_tiles,
+            )
+            if tile_rows:
+                conn.executemany(
+                    "INSERT INTO city_tile(boundary_row_id, tile_x, tile_y) VALUES(?, ?, ?)",
+                    [(boundary_row_id, tx, ty) for tx, ty in tile_rows],
+                )
+    except Exception as exc:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        return (round((time.perf_counter() - t0) * 1000.0, 3), delete_rows, insert_rows, str(exc))
+
+    conn.execute("ROLLBACK")
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    return (elapsed_ms, delete_rows, insert_rows, None)
+
+
 def _date_key(path: Path) -> str:
     # Expected format: <region>-YYYY-MM-DD.osc.gz
     name = path.name
@@ -537,6 +847,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=1024,
         help="v4 per-way tile cap before center fallback (default: 1024)",
+    )
+    parser.add_argument(
+        "--v4-max-city-tiles",
+        type=int,
+        default=50000,
+        help="v4 per-boundary tile cap before center fallback (default: 50000)",
     )
     parser.add_argument(
         "--copy-dbs",
@@ -599,8 +915,10 @@ def main() -> int:
     # Prefer DB metadata if available.
     v4_tile_size_row = conn_v4.execute("SELECT value FROM metadata WHERE key='tile_size_m' LIMIT 1").fetchone()
     v4_max_way_tiles_row = conn_v4.execute("SELECT value FROM metadata WHERE key='max_way_tiles' LIMIT 1").fetchone()
+    v4_max_city_tiles_row = conn_v4.execute("SELECT value FROM metadata WHERE key='max_city_tiles' LIMIT 1").fetchone()
     v4_tile_size_m = int(v4_tile_size_row["value"]) if v4_tile_size_row else int(args.v2_tile_size_m)
     v4_max_way_tiles = int(v4_max_way_tiles_row["value"]) if v4_max_way_tiles_row else int(args.v4_max_way_tiles)
+    v4_max_city_tiles = int(v4_max_city_tiles_row["value"]) if v4_max_city_tiles_row else int(args.v4_max_city_tiles)
 
     rows: List[dict] = []
     totals = {
@@ -609,10 +927,16 @@ def main() -> int:
         "ways_modified": 0,
         "maxspeed_tag_events": 0,
         "maxspeed_tag_changes": 0,
+        "boundary_admin_way_events": 0,
+        "boundary_admin_way_changes": 0,
         "invalidated_v1_tiles": 0,
         "invalidated_v2_tiles": 0,
+        "boundary_invalidated_v1_tiles": 0,
+        "boundary_invalidated_v2_tiles": 0,
         "v3_patch_ms": 0.0,
         "v4_patch_ms": 0.0,
+        "boundary_v3_patch_ms": 0.0,
+        "boundary_v4_patch_ms": 0.0,
     }
 
     for i, diff_path in enumerate(diff_files, start=1):
@@ -679,6 +1003,73 @@ def main() -> int:
             max_way_tiles=v4_max_way_tiles,
         )
 
+        boundary_ops = {
+            way_id: op
+            for way_id, op in parsed.ops_by_way.items()
+            if op.tags.get("boundary") == "administrative" and op.tags.get("admin_level") in ADMIN_BOUNDARY_LEVELS
+        }
+        boundary_existing = _fetch_existing_area_rows(
+            conn_v3,
+            [f"w:{way_id}" for way_id in boundary_ops.keys()],
+        )
+        boundary_invalid_v1 = set()
+        boundary_invalid_v2 = set()
+        boundary_delete_ids: List[str] = []
+        boundary_inserts: List[dict] = []
+        boundary_unresolved_bbox = 0
+        boundary_skipped_inserts = 0
+
+        for way_id, op in boundary_ops.items():
+            area_id = f"w:{way_id}"
+            existing_area = boundary_existing.get(area_id)
+
+            bbox: Optional[Tuple[float, float, float, float]] = None
+            if existing_area is not None:
+                bbox = (
+                    float(existing_area["min_lon"]),
+                    float(existing_area["min_lat"]),
+                    float(existing_area["max_lon"]),
+                    float(existing_area["max_lat"]),
+                )
+            else:
+                bbox = _bbox_from_nodes(op.node_refs, parsed.node_coords)
+
+            if bbox is None:
+                boundary_unresolved_bbox += 1
+            else:
+                min_lon, min_lat, max_lon, max_lat = bbox
+                x0, x1, y0, y1 = _cell_range_for_bbox(min_lon, min_lat, max_lon, max_lat, args.v1_grid_scale)
+                for x in range(x0, x1 + 1):
+                    for y in range(y0, y1 + 1):
+                        boundary_invalid_v1.add(f"{x}:{y}")
+                tx0, tx1, ty0, ty1 = _tile_range_for_bbox(min_lon, min_lat, max_lon, max_lat, args.v2_tile_size_m)
+                for tx in range(tx0, tx1 + 1):
+                    for ty in range(ty0, ty1 + 1):
+                        boundary_invalid_v2.add(f"{tx}/{ty}")
+
+            if op.action in {"delete", "modify"}:
+                boundary_delete_ids.append(area_id)
+            if op.action in {"create", "modify"}:
+                payload = _build_boundary_area_insert_payload(way_id, op, existing_area, parsed.node_coords)
+                if payload is None:
+                    boundary_skipped_inserts += 1
+                else:
+                    if op.action == "create" and existing_area is not None and area_id not in boundary_delete_ids:
+                        boundary_skipped_inserts += 1
+                    else:
+                        boundary_inserts.append(payload)
+
+        boundary_v3_ms, boundary_v3_delete_rows, boundary_v3_insert_rows, boundary_v3_error = _simulate_v3_area_patch(
+            conn_v3, boundary_delete_ids, boundary_inserts
+        )
+        boundary_v4_ms, boundary_v4_delete_rows, boundary_v4_insert_rows, boundary_v4_error = _simulate_v4_area_patch(
+            conn_v4,
+            boundary_delete_ids,
+            boundary_inserts,
+            tile_size_m=v4_tile_size_m,
+            max_city_tiles=v4_max_city_tiles,
+        )
+
         row = {
             "date": day_key,
             "diff_file": str(diff_path),
@@ -688,10 +1079,16 @@ def main() -> int:
             "changed_way_count": len(parsed.ops_by_way),
             "maxspeed_tag_events": parsed.maxspeed_tag_events,
             "maxspeed_tag_changes": parsed.maxspeed_tag_changes,
+            "boundary_admin_way_events": parsed.boundary_admin_way_events,
+            "boundary_admin_way_changes": parsed.boundary_admin_way_changes,
             "invalidated_v1_tiles": len(invalid_v1),
             "invalidated_v2_tiles": len(invalid_v2),
+            "boundary_invalidated_v1_tiles": len(boundary_invalid_v1),
+            "boundary_invalidated_v2_tiles": len(boundary_invalid_v2),
             "unresolved_bbox_way_count": unresolved_bbox,
+            "boundary_unresolved_bbox_way_count": boundary_unresolved_bbox,
             "sql_skipped_insert_way_count": skipped_inserts,
+            "boundary_sql_skipped_insert_way_count": boundary_skipped_inserts,
             "v3_sql_delete_rows": v3_delete_rows,
             "v3_sql_insert_rows": v3_insert_rows,
             "v3_sql_total_rows": v3_delete_rows + v3_insert_rows,
@@ -702,6 +1099,16 @@ def main() -> int:
             "v4_sql_total_rows": v4_delete_rows + v4_insert_rows,
             "v4_patch_ms": v4_ms,
             "v4_patch_error": v4_error or "",
+            "boundary_v3_sql_delete_rows": boundary_v3_delete_rows,
+            "boundary_v3_sql_insert_rows": boundary_v3_insert_rows,
+            "boundary_v3_sql_total_rows": boundary_v3_delete_rows + boundary_v3_insert_rows,
+            "boundary_v3_patch_ms": boundary_v3_ms,
+            "boundary_v3_patch_error": boundary_v3_error or "",
+            "boundary_v4_sql_delete_rows": boundary_v4_delete_rows,
+            "boundary_v4_sql_insert_rows": boundary_v4_insert_rows,
+            "boundary_v4_sql_total_rows": boundary_v4_delete_rows + boundary_v4_insert_rows,
+            "boundary_v4_patch_ms": boundary_v4_ms,
+            "boundary_v4_patch_error": boundary_v4_error or "",
         }
         rows.append(row)
 
@@ -710,10 +1117,16 @@ def main() -> int:
         totals["ways_modified"] += parsed.ways_modified
         totals["maxspeed_tag_events"] += parsed.maxspeed_tag_events
         totals["maxspeed_tag_changes"] += parsed.maxspeed_tag_changes
+        totals["boundary_admin_way_events"] += parsed.boundary_admin_way_events
+        totals["boundary_admin_way_changes"] += parsed.boundary_admin_way_changes
         totals["invalidated_v1_tiles"] += len(invalid_v1)
         totals["invalidated_v2_tiles"] += len(invalid_v2)
+        totals["boundary_invalidated_v1_tiles"] += len(boundary_invalid_v1)
+        totals["boundary_invalidated_v2_tiles"] += len(boundary_invalid_v2)
         totals["v3_patch_ms"] += v3_ms
         totals["v4_patch_ms"] += v4_ms
+        totals["boundary_v3_patch_ms"] += boundary_v3_ms
+        totals["boundary_v4_patch_ms"] += boundary_v4_ms
 
     conn_v3.close()
     conn_v4.close()
@@ -729,10 +1142,16 @@ def main() -> int:
         "changed_way_count",
         "maxspeed_tag_events",
         "maxspeed_tag_changes",
+        "boundary_admin_way_events",
+        "boundary_admin_way_changes",
         "invalidated_v1_tiles",
         "invalidated_v2_tiles",
+        "boundary_invalidated_v1_tiles",
+        "boundary_invalidated_v2_tiles",
         "unresolved_bbox_way_count",
+        "boundary_unresolved_bbox_way_count",
         "sql_skipped_insert_way_count",
+        "boundary_sql_skipped_insert_way_count",
         "v3_sql_delete_rows",
         "v3_sql_insert_rows",
         "v3_sql_total_rows",
@@ -743,6 +1162,16 @@ def main() -> int:
         "v4_sql_total_rows",
         "v4_patch_ms",
         "v4_patch_error",
+        "boundary_v3_sql_delete_rows",
+        "boundary_v3_sql_insert_rows",
+        "boundary_v3_sql_total_rows",
+        "boundary_v3_patch_ms",
+        "boundary_v3_patch_error",
+        "boundary_v4_sql_delete_rows",
+        "boundary_v4_sql_insert_rows",
+        "boundary_v4_sql_total_rows",
+        "boundary_v4_patch_ms",
+        "boundary_v4_patch_error",
     ]
     with csv_out.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -768,9 +1197,36 @@ def main() -> int:
             "v2_tile_size_m": args.v2_tile_size_m,
             "v4_tile_size_m": v4_tile_size_m,
             "v4_max_way_tiles": v4_max_way_tiles,
+            "v4_max_city_tiles": v4_max_city_tiles,
         },
         "totals": totals,
         "days": len(rows),
+        "four_tradeoff_update_daily_mean": {
+            "S1_v1": {
+                "maxspeed_update_workload": round((totals["invalidated_v1_tiles"] / len(rows)) if rows else 0.0, 3),
+                "boundary_update_workload": round((totals["boundary_invalidated_v1_tiles"] / len(rows)) if rows else 0.0, 3),
+                "polygon_update_workload": round((totals["boundary_invalidated_v1_tiles"] / len(rows)) if rows else 0.0, 3),
+                "unit": "invalidated_grid_cells_per_day",
+            },
+            "S2_v2": {
+                "maxspeed_update_workload": round((totals["invalidated_v2_tiles"] / len(rows)) if rows else 0.0, 3),
+                "boundary_update_workload": round((totals["boundary_invalidated_v2_tiles"] / len(rows)) if rows else 0.0, 3),
+                "polygon_update_workload": round((totals["boundary_invalidated_v2_tiles"] / len(rows)) if rows else 0.0, 3),
+                "unit": "invalidated_tiles_per_day",
+            },
+            "S3_v3": {
+                "maxspeed_update_workload": round((totals["v3_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "boundary_update_workload": round((totals["boundary_v3_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "polygon_update_workload": round((totals["boundary_v3_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "unit": "simulated_patch_ms_per_day",
+            },
+            "S4_v4": {
+                "maxspeed_update_workload": round((totals["v4_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "boundary_update_workload": round((totals["boundary_v4_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "polygon_update_workload": round((totals["boundary_v4_patch_ms"] / len(rows)) if rows else 0.0, 3),
+                "unit": "simulated_patch_ms_per_day",
+            },
+        },
         "csv_path": str(csv_out),
         "rows": rows,
     }

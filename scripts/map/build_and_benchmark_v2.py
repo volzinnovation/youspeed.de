@@ -18,6 +18,7 @@ BUILD_V1 = REPO_ROOT / "scripts/map/build_region_artifacts.sh"
 BUILD_V2 = REPO_ROOT / "scripts/map/build_tile_assets_v2.py"
 BUILD_V3 = REPO_ROOT / "scripts/map/build_spatialite_v3.py"
 BUILD_V4 = REPO_ROOT / "scripts/map/build_spatialite_v4.py"
+ANALYZE_DAILY_DIFF = REPO_ROOT / "scripts/map/analyze_daily_diff_impact.py"
 QUERY_V1 = REPO_ROOT / "scripts/map/query_speed_limit.py"
 QUERY_V2 = REPO_ROOT / "scripts/map/query_speed_limit_v2.py"
 QUERY_V3 = REPO_ROOT / "scripts/map/query_speed_limit_v3.py"
@@ -55,22 +56,27 @@ def summarize(values: List[float]) -> Dict[str, float]:
 
 def benchmark_v1(
     dist_dir: Path,
+    city_db_path: Path,
     lat: float,
     lon: float,
     heading: float,
     repeats: int,
     top_k: int,
     polyline_top_n: int,
-) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    out_maxspeed: Dict[str, Dict[str, float]] = {}
+    out_boundary: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
         totals: List[float] = []
+        boundary: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
                     str(QUERY_V1),
                     "--dist-dir",
                     str(dist_dir),
+                    "--city-db",
+                    str(city_db_path),
                     "--lat",
                     str(lat),
                     "--lon",
@@ -87,12 +93,15 @@ def benchmark_v1(
             )
             payload = json.loads(result.stdout)
             totals.append(float(payload["timing_ms"]["total"]))
-        out[mode] = summarize(totals)
-    return out
+            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
+        out_maxspeed[mode] = summarize(totals)
+        out_boundary[mode] = summarize(boundary)
+    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
 
 
 def benchmark_v2(
     dist_dir: Path,
+    city_db_path: Path,
     lat: float,
     lon: float,
     heading: float,
@@ -100,16 +109,20 @@ def benchmark_v2(
     top_k: int,
     polyline_top_n: int,
     tile_radius: int,
-) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    out_maxspeed: Dict[str, Dict[str, float]] = {}
+    out_boundary: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
         totals: List[float] = []
+        boundary: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
                     str(QUERY_V2),
                     "--dist-dir",
                     str(dist_dir),
+                    "--city-db",
+                    str(city_db_path),
                     "--lat",
                     str(lat),
                     "--lon",
@@ -128,12 +141,15 @@ def benchmark_v2(
             )
             payload = json.loads(result.stdout)
             totals.append(float(payload["timing_ms"]["total"]))
-        out[mode] = summarize(totals)
-    return out
+            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
+        out_maxspeed[mode] = summarize(totals)
+        out_boundary[mode] = summarize(boundary)
+    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
 
 
 def benchmark_v3(
     db_path: Path,
+    city_db_path: Path,
     lat: float,
     lon: float,
     heading: float,
@@ -142,10 +158,12 @@ def benchmark_v3(
     polyline_top_n: int,
     search_radius_m: float,
     max_candidates: int,
-) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    out_maxspeed: Dict[str, Dict[str, float]] = {}
+    out_boundary: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
         totals: List[float] = []
+        boundary: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -153,6 +171,8 @@ def benchmark_v3(
                     str(QUERY_V3),
                     "--db",
                     str(db_path),
+                    "--city-db",
+                    str(city_db_path),
                     "--lat",
                     str(lat),
                     "--lon",
@@ -173,8 +193,10 @@ def benchmark_v3(
             )
             payload = json.loads(result.stdout)
             totals.append(float(payload["timing_ms"]["total"]))
-        out[mode] = summarize(totals)
-    return out
+            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
+        out_maxspeed[mode] = summarize(totals)
+        out_boundary[mode] = summarize(boundary)
+    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
 
 
 def benchmark_v4(
@@ -188,10 +210,12 @@ def benchmark_v4(
     tile_radius: int,
     search_radius_m: float,
     max_candidates: int,
-) -> Dict[str, Dict[str, float]]:
-    out: Dict[str, Dict[str, float]] = {}
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    out_maxspeed: Dict[str, Dict[str, float]] = {}
+    out_boundary: Dict[str, Dict[str, float]] = {}
     for mode in ("bbox", "hybrid", "polyline"):
         totals: List[float] = []
+        boundary: List[float] = []
         for _ in range(repeats):
             result = run_cmd(
                 [
@@ -221,8 +245,10 @@ def benchmark_v4(
             )
             payload = json.loads(result.stdout)
             totals.append(float(payload["timing_ms"]["total"]))
-        out[mode] = summarize(totals)
-    return out
+            boundary.append(float(payload["timing_ms"].get("city_resolve", 0.0)))
+        out_maxspeed[mode] = summarize(totals)
+        out_boundary[mode] = summarize(boundary)
+    return {"maxspeed": out_maxspeed, "boundary": out_boundary}
 
 
 def parse_args() -> argparse.Namespace:
@@ -269,6 +295,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-build-v2", action="store_true")
     parser.add_argument("--skip-build-v3", action="store_true")
     parser.add_argument("--skip-build-v4", action="store_true")
+    parser.add_argument(
+        "--diff-dir",
+        default=str(REPO_ROOT / "mapdata" / "reports" / "deltas" / "daily"),
+        help="Directory with daily .osc/.osc.gz files for incremental update analysis",
+    )
+    parser.add_argument(
+        "--skip-update-analysis",
+        action="store_true",
+        help="Skip maxspeed+boundary incremental update analysis from daily diffs",
+    )
+    parser.add_argument(
+        "--update-report-json",
+        help="Override daily diff summary JSON path (default: <v4-db-dir>/daily_diff_analysis_extended.json)",
+    )
+    parser.add_argument(
+        "--update-report-csv",
+        help="Override daily diff CSV path (default: <v4-db-dir>/daily_diff_analysis_extended.csv)",
+    )
     return parser.parse_args()
 
 
@@ -288,6 +332,16 @@ def main() -> int:
         else REPO_ROOT / "mapdata" / "dist-v4" / args.region / "speeds_v4.sqlite"
     )
     report_path = Path(args.report_path) if args.report_path else v4_db_path.parent / "benchmark_report.json"
+    update_report_json = (
+        Path(args.update_report_json)
+        if args.update_report_json
+        else v4_db_path.parent / "daily_diff_analysis_extended.json"
+    )
+    update_report_csv = (
+        Path(args.update_report_csv)
+        if args.update_report_csv
+        else v4_db_path.parent / "daily_diff_analysis_extended.csv"
+    )
 
     executed_steps: List[str] = []
 
@@ -358,6 +412,8 @@ def main() -> int:
                 str(v1_dist_dir),
                 "--out-db",
                 str(v4_db_path),
+                "--input-pbf",
+                str(Path(args.input_pbf)),
                 "--tile-size-m",
                 str(args.tile_size_m),
                 "--max-way-tiles",
@@ -369,6 +425,7 @@ def main() -> int:
     print("Benchmarking v1...", file=sys.stderr)
     v1_bench = benchmark_v1(
         dist_dir=v1_dist_dir,
+        city_db_path=v4_db_path,
         lat=args.lat,
         lon=args.lon,
         heading=args.heading,
@@ -379,6 +436,7 @@ def main() -> int:
     print("Benchmarking v2...", file=sys.stderr)
     v2_bench = benchmark_v2(
         dist_dir=v2_dist_dir,
+        city_db_path=v4_db_path,
         lat=args.lat,
         lon=args.lon,
         heading=args.heading,
@@ -390,6 +448,7 @@ def main() -> int:
     print("Benchmarking v3...", file=sys.stderr)
     v3_bench = benchmark_v3(
         db_path=v3_db_path,
+        city_db_path=v4_db_path,
         lat=args.lat,
         lon=args.lon,
         heading=args.heading,
@@ -414,17 +473,61 @@ def main() -> int:
     )
     executed_steps.extend(["benchmark_v1", "benchmark_v2", "benchmark_v3", "benchmark_v4"])
 
+    update_analysis_summary = None
+    four_tradeoff_update = None
+    if not args.skip_update_analysis:
+        print("Analyzing incremental updates from daily diffs...", file=sys.stderr)
+        run_cmd(
+            [
+                sys.executable,
+                str(ANALYZE_DAILY_DIFF),
+                "--diff-dir",
+                str(Path(args.diff_dir)),
+                "--v3-db",
+                str(v3_db_path),
+                "--v4-db",
+                str(v4_db_path),
+                "--v2-tile-size-m",
+                str(args.tile_size_m),
+                "--v4-max-way-tiles",
+                str(args.max_way_tiles),
+                "--no-copy-dbs",
+                "--csv-out",
+                str(update_report_csv),
+                "--json-out",
+                str(update_report_json),
+            ]
+        )
+        update_analysis_summary = json.loads(update_report_json.read_text(encoding="utf-8"))
+        four_tradeoff_update = update_analysis_summary.get("four_tradeoff_update_daily_mean")
+        if isinstance(four_tradeoff_update, dict):
+            for payload in four_tradeoff_update.values():
+                if isinstance(payload, dict) and "boundary_update_workload" in payload:
+                    payload["polygon_update_workload"] = payload["boundary_update_workload"]
+        executed_steps.append("analyze_daily_diff_impact")
+
     speedups = {}
+    boundary_speedups = {}
     for mode in ("bbox", "hybrid", "polyline"):
-        v1 = v1_bench[mode]["avg_ms"]
-        v2 = v2_bench[mode]["avg_ms"]
-        v3 = v3_bench[mode]["avg_ms"]
-        v4 = v4_bench[mode]["avg_ms"]
+        v1 = v1_bench["maxspeed"][mode]["avg_ms"]
+        v2 = v2_bench["maxspeed"][mode]["avg_ms"]
+        v3 = v3_bench["maxspeed"][mode]["avg_ms"]
+        v4 = v4_bench["maxspeed"][mode]["avg_ms"]
         speedups[mode] = {
             "v2_vs_v1": round(v1 / v2, 2) if v2 > 0 else None,
             "v3_vs_v1": round(v1 / v3, 2) if v3 > 0 else None,
             "v4_vs_v1": round(v1 / v4, 2) if v4 > 0 else None,
             "v4_vs_v2": round(v2 / v4, 2) if v4 > 0 else None,
+        }
+        b1 = v1_bench["boundary"][mode]["avg_ms"]
+        b2 = v2_bench["boundary"][mode]["avg_ms"]
+        b3 = v3_bench["boundary"][mode]["avg_ms"]
+        b4 = v4_bench["boundary"][mode]["avg_ms"]
+        boundary_speedups[mode] = {
+            "v2_vs_v1": round(b1 / b2, 2) if b2 > 0 else None,
+            "v3_vs_v1": round(b1 / b3, 2) if b3 > 0 else None,
+            "v4_vs_v1": round(b1 / b4, 2) if b4 > 0 else None,
+            "v4_vs_v2": round(b2 / b4, 2) if b4 > 0 else None,
         }
 
     v2_catalog_path = v2_dist_dir / "catalog.v2.json"
@@ -436,7 +539,7 @@ def main() -> int:
             tile_count = None
 
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "region": args.region,
         "input_pbf": str(Path(args.input_pbf)),
@@ -471,12 +574,58 @@ def main() -> int:
             "v2_tile_count": tile_count,
         },
         "benchmark_ms": {
-            "v1": v1_bench,
-            "v2": v2_bench,
-            "v3": v3_bench,
-            "v4": v4_bench,
+            "maxspeed_retrieval": {
+                "v1": v1_bench["maxspeed"],
+                "v2": v2_bench["maxspeed"],
+                "v3": v3_bench["maxspeed"],
+                "v4": v4_bench["maxspeed"],
+            },
+            "boundary_retrieval": {
+                "v1": v1_bench["boundary"],
+                "v2": v2_bench["boundary"],
+                "v3": v3_bench["boundary"],
+                "v4": v4_bench["boundary"],
+            },
+            "polygon_containment_retrieval": {
+                "v1": v1_bench["boundary"],
+                "v2": v2_bench["boundary"],
+                "v3": v3_bench["boundary"],
+                "v4": v4_bench["boundary"],
+            },
         },
-        "speedup_x_avg": speedups,
+        "speedup_x_avg": {
+            "maxspeed_retrieval": speedups,
+            "boundary_retrieval": boundary_speedups,
+            "polygon_containment_retrieval": boundary_speedups,
+        },
+        "four_tradeoff_retrieval_hybrid_ms": {
+            "S1_v1": {
+                "maxspeed_retrieval_avg_ms": v1_bench["maxspeed"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v1_bench["boundary"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v1_bench["boundary"]["hybrid"]["avg_ms"],
+            },
+            "S2_v2": {
+                "maxspeed_retrieval_avg_ms": v2_bench["maxspeed"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v2_bench["boundary"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v2_bench["boundary"]["hybrid"]["avg_ms"],
+            },
+            "S3_v3": {
+                "maxspeed_retrieval_avg_ms": v3_bench["maxspeed"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v3_bench["boundary"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v3_bench["boundary"]["hybrid"]["avg_ms"],
+            },
+            "S4_v4": {
+                "maxspeed_retrieval_avg_ms": v4_bench["maxspeed"]["hybrid"]["avg_ms"],
+                "boundary_retrieval_avg_ms": v4_bench["boundary"]["hybrid"]["avg_ms"],
+                "polygon_containment_retrieval_avg_ms": v4_bench["boundary"]["hybrid"]["avg_ms"],
+            },
+        },
+        "four_tradeoff_update": four_tradeoff_update,
+        "update_analysis": {
+            "diff_dir": str(Path(args.diff_dir)),
+            "csv_path": str(update_report_csv) if update_analysis_summary is not None else None,
+            "json_path": str(update_report_json) if update_analysis_summary is not None else None,
+        },
     }
 
     report_path.parent.mkdir(parents=True, exist_ok=True)

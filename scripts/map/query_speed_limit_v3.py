@@ -13,9 +13,12 @@ import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from city_polygon_resolver import resolve_city_context
+
 DEFAULT_DE_URBAN = 50
 DEFAULT_DE_RURAL_CAR = 100
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
 NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
 DRIVABLE_HIGHWAYS_CAR = {
     "motorway",
@@ -132,12 +135,97 @@ def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict
     return False
 
 
+def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    for row in rows:
+        if len(row) >= 2 and row[1] == column:
+            return True
+    return False
+
+
+def _bbox_area(area: dict) -> float:
+    return max(float(area["max_lon"]) - float(area["min_lon"]), 0.0) * max(float(area["max_lat"]) - float(area["min_lat"]), 0.0)
+
+
+def _resolve_city_context_from_areas(lat: float, lon: float, area_candidates: Iterable[dict]) -> dict:
+    containing_admin: List[Tuple[int, float, str]] = []
+    containing_places: List[Tuple[int, float, str]] = []
+    nearby_places: List[Tuple[int, float, str]] = []
+
+    for area in area_candidates:
+        name = area.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        place = area.get("place")
+        area_is_admin = area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}
+        inside_bbox = point_in_bbox(lat, lon, area)
+        area_size = _bbox_area(area)
+
+        if area_is_admin and inside_bbox:
+            containing_admin.append((int(area["admin_level"]), area_size, name))
+
+        if place in PLACE_VALUES:
+            center_lat = (float(area["min_lat"]) + float(area["max_lat"])) / 2.0
+            center_lon = (float(area["min_lon"]) + float(area["max_lon"])) / 2.0
+            d = haversine_m(lat, lon, center_lat, center_lon)
+            rank = int(PLACE_RANK.get(place, 99))
+            nearby_places.append((rank, d, name))
+            if inside_bbox:
+                containing_places.append((rank, d, name))
+
+    if containing_admin:
+        containing_admin.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = containing_admin[0]
+        return {
+            "inside_city": True,
+            "city_name": best[2],
+            "city_admin_level": best[0],
+            "city_source": "admin_bbox",
+            "city_candidate_boundaries": len(containing_admin),
+            "city_place_candidates": len(nearby_places),
+        }
+
+    if containing_places:
+        containing_places.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = containing_places[0]
+        return {
+            "inside_city": True,
+            "city_name": best[2],
+            "city_admin_level": None,
+            "city_source": "place_bbox",
+            "city_candidate_boundaries": 0,
+            "city_place_candidates": len(nearby_places),
+        }
+
+    if nearby_places:
+        nearby_places.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = nearby_places[0]
+        return {
+            "inside_city": False,
+            "city_name": best[2],
+            "city_admin_level": None,
+            "city_source": "place_nearest",
+            "city_candidate_boundaries": 0,
+            "city_place_candidates": len(nearby_places),
+        }
+
+    return {
+        "inside_city": False,
+        "city_name": None,
+        "city_admin_level": None,
+        "city_source": None,
+        "city_candidate_boundaries": 0,
+        "city_place_candidates": 0,
+    }
+
+
 def _query_way_rows(
     conn: sqlite3.Connection,
     lat: float,
     lon: float,
     radius_m: float,
     limit_rows: int,
+    has_street_name: bool,
 ) -> List[dict]:
     deg_lat = radius_m / 111132.0
     cos_lat = max(0.173648, abs(math.cos(math.radians(lat))))
@@ -147,10 +235,12 @@ def _query_way_rows(
     min_lon = lon - deg_lon
     max_lon = lon + deg_lon
 
-    sql = """
+    street_name_select = "w.street_name" if has_street_name else "NULL"
+    sql = f"""
     SELECT
       w.way_id,
       w.highway,
+      {street_name_select} AS street_name,
       w.maxspeed,
       w.maxspeed_type,
       w.source_maxspeed,
@@ -223,9 +313,9 @@ def _query_way_rows(
     cur = conn.execute(sql, params)
     for r in cur.fetchall():
         points: List[List[float]] = []
-        if isinstance(r[12], str) and r[12]:
+        if isinstance(r[13], str) and r[13]:
             try:
-                parsed = json.loads(r[12])
+                parsed = json.loads(r[13])
                 if isinstance(parsed, list):
                     points = parsed
             except json.JSONDecodeError:
@@ -234,16 +324,17 @@ def _query_way_rows(
             {
                 "way_id": str(r[0]),
                 "highway": r[1],
-                "maxspeed": r[2],
-                "maxspeed_type": r[3],
-                "source_maxspeed": r[4],
-                "zone_maxspeed": r[5],
-                "traffic_sign": r[6],
-                "approx_heading_deg": r[7],
-                "min_lon": float(r[8]),
-                "min_lat": float(r[9]),
-                "max_lon": float(r[10]),
-                "max_lat": float(r[11]),
+                "street_name": r[2],
+                "maxspeed": r[3],
+                "maxspeed_type": r[4],
+                "source_maxspeed": r[5],
+                "zone_maxspeed": r[6],
+                "traffic_sign": r[7],
+                "approx_heading_deg": r[8],
+                "min_lon": float(r[9]),
+                "min_lat": float(r[10]),
+                "max_lon": float(r[11]),
+                "max_lat": float(r[12]),
                 "points": points,
             }
         )
@@ -251,17 +342,40 @@ def _query_way_rows(
 
 
 def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_rows: int = 512) -> List[dict]:
+    place_window_deg = 0.3
     sql = """
     SELECT
       a.area_id, a.geometry_type, a.name, a.place, a.boundary, a.admin_level,
       a.min_lon, a.min_lat, a.max_lon, a.max_lat
     FROM areas_rtree r
     JOIN areas a ON a.row_id = r.row_id
-    WHERE r.min_lon <= ? AND r.max_lon >= ?
-      AND r.min_lat <= ? AND r.max_lat >= ?
+    WHERE
+      (
+        r.min_lon <= ? AND r.max_lon >= ?
+        AND r.min_lat <= ? AND r.max_lat >= ?
+      )
+      OR
+      (
+        a.place IN ('city','town','village','hamlet')
+        AND r.min_lon <= ? AND r.max_lon >= ?
+        AND r.min_lat <= ? AND r.max_lat >= ?
+      )
     LIMIT ?
     """
-    cur = conn.execute(sql, (lon, lon, lat, lat, limit_rows))
+    cur = conn.execute(
+        sql,
+        (
+            lon,
+            lon,
+            lat,
+            lat,
+            lon + place_window_deg,
+            lon - place_window_deg,
+            lat + place_window_deg,
+            lat - place_window_deg,
+            limit_rows,
+        ),
+    )
     out = []
     for r in cur.fetchall():
         out.append(
@@ -305,7 +419,16 @@ def parse_args() -> argparse.Namespace:
         help="Candidate filtering profile",
     )
     parser.add_argument("--unknown-highway-penalty", type=float, default=30.0)
+    parser.add_argument(
+        "--city-db",
+        help="Optional SQLite DB with city_boundary/city_ring tables (defaults to sibling dist-v4 DB)",
+    )
     return parser.parse_args()
+
+
+def _default_city_db_path(db_path: Path) -> Path:
+    # mapdata/dist-v3/<region>/speeds_v3.sqlite -> mapdata/dist-v4/<region>/speeds_v4.sqlite
+    return db_path.parent.parent.parent / "dist-v4" / db_path.parent.name / "speeds_v4.sqlite"
 
 
 def main() -> int:
@@ -347,6 +470,7 @@ def main() -> int:
     if not schema_ok:
         print("Invalid v3 DB schema", file=sys.stderr)
         return 1
+    has_street_name = _column_exists(conn, "ways", "street_name")
     index_load_ms = (time.perf_counter() - t0) * 1000.0
 
     t1 = time.perf_counter()
@@ -356,9 +480,29 @@ def main() -> int:
         lon=args.lon,
         radius_m=args.search_radius_m,
         limit_rows=args.max_candidates,
+        has_street_name=has_street_name,
     )
     area_candidates = _query_area_rows(conn=conn, lat=args.lat, lon=args.lon)
     candidate_load_ms = (time.perf_counter() - t1) * 1000.0
+
+    city_db_path = Path(args.city_db) if args.city_db else _default_city_db_path(db_path)
+
+    t_city = time.perf_counter()
+    city_context = None
+    if city_db_path.exists():
+        try:
+            if str(city_db_path) == str(db_path):
+                city_context = resolve_city_context(conn, args.lat, args.lon)
+            else:
+                city_conn = sqlite3.connect(str(city_db_path))
+                city_context = resolve_city_context(city_conn, args.lat, args.lon)
+                city_conn.close()
+        except sqlite3.Error:
+            city_context = None
+    if not isinstance(city_context, dict) or city_context.get("city_mode") == "unavailable":
+        city_context = _resolve_city_context_from_areas(args.lat, args.lon, area_candidates)
+        city_context["city_mode"] = "bbox_fallback"
+    city_resolve_ms = (time.perf_counter() - t_city) * 1000.0
 
     t2 = time.perf_counter()
     scored: List[dict] = []
@@ -388,6 +532,7 @@ def main() -> int:
             {
                 "way_id": row["way_id"],
                 "highway": highway,
+                "street_name": row.get("street_name"),
                 "distance_m": round(distance_m, 2),
                 "heading_diff_deg": None if heading_diff is None else round(heading_diff, 2),
                 "score": round(score, 2),
@@ -430,7 +575,7 @@ def main() -> int:
     top = scored[: args.top_k]
     scoring_ms = (time.perf_counter() - t2) * 1000.0
 
-    built_up = inside_built_up_guess(args.lat, args.lon, area_candidates)
+    built_up = bool(city_context.get("inside_city", False))
     default_speed = DEFAULT_DE_URBAN if built_up else DEFAULT_DE_RURAL_CAR
     best = top[0] if top else None
     if best and best.get("parsed_speed_kmh") is not None:
@@ -464,10 +609,19 @@ def main() -> int:
             "default_speed_kmh": default_speed,
             "effective_speed_kmh": effective_speed,
             "effective_speed_source": effective_source,
+            "city_name": city_context.get("city_name"),
+            "city_admin_level": city_context.get("city_admin_level"),
+            "city_source": city_context.get("city_source"),
+            "city_candidate_boundaries": city_context.get("city_candidate_boundaries", 0),
+            "city_containing_boundaries": city_context.get("city_containing_boundaries", 0),
+            "city_place_candidates": city_context.get("city_place_candidates", 0),
+            "city_mode": city_context.get("city_mode"),
+            "has_street_name_column": has_street_name,
         },
         "timing_ms": {
             "load_index": round(index_load_ms, 2),
             "load_candidates": round(candidate_load_ms, 2),
+            "city_resolve": round(city_resolve_ms, 2),
             "polyline_refine": round(polyline_refine_ms, 2),
             "score_and_rank": round(scoring_ms, 2),
             "total": round((time.perf_counter() - started) * 1000.0, 2),
@@ -475,7 +629,7 @@ def main() -> int:
         "top_candidates": top,
         "notes": [
             "v3 query uses SQLite RTree candidate prefilter.",
-            "Built-up inference is heuristic from area bbox candidates.",
+            "Built-up inference prefers exact admin polygon containment when city tables are available.",
             "Use camera-detected signs to override map/default limits in final fusion.",
         ],
     }

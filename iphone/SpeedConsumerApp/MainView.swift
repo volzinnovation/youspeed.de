@@ -1,6 +1,13 @@
+import SafariServices
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
-struct ContentView: View {
+private let speedLimitNumberScale: CGFloat = 0.5
+private let secondaryTextRatio: CGFloat = 9.0 / 16.0
+
+struct MainView: View {
     @StateObject private var viewModel = DriveSessionViewModel()
     @State private var hasAutoTriggeredSyncForTests = false
     @State private var showingSettings = false
@@ -11,6 +18,7 @@ struct ContentView: View {
             let minDimension = min(proxy.size.width, proxy.size.height)
             let screenInset = minDimension * 0.02
             let signSize = min(proxy.size.width * 0.74, proxy.size.width - (screenInset * 2))
+            let primaryMetricFontSize = signSize * speedLimitNumberScale
             let topPadding = proxy.safeAreaInsets.top + screenInset
             let bottomPadding = proxy.safeAreaInsets.bottom + screenInset
             ZStack(alignment: .bottom) {
@@ -22,7 +30,7 @@ struct ContentView: View {
                         .padding(.horizontal, screenInset)
                         .padding(.top, topPadding)
 
-                    SpeedLimitSignView(limitText: limitText)
+                    SpeedLimitSignView(limitText: limitText, numberFontSize: primaryMetricFontSize)
                         .frame(width: signSize, height: signSize)
                         .frame(maxWidth: .infinity)
                         .padding(.top, screenInset)
@@ -31,7 +39,12 @@ struct ContentView: View {
                     Spacer(minLength: 0)
                 }
 
-                mainStatusInfo(signSize: signSize, screenSize: proxy.size, bottomPadding: bottomPadding)
+                mainStatusInfo(
+                    signSize: signSize,
+                    primaryFont: primaryMetricFontSize,
+                    screenSize: proxy.size,
+                    bottomPadding: bottomPadding
+                )
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -59,16 +72,6 @@ struct ContentView: View {
 
     private var topCornerButtons: some View {
         HStack {
-            Button {
-                showingDebug = true
-            } label: {
-                Image(systemName: "ladybug.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .background(buttonBackgroundColor, in: Circle())
-
             Spacer()
 
             Button {
@@ -85,37 +88,53 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func mainStatusInfo(signSize: CGFloat, screenSize: CGSize, bottomPadding: CGFloat) -> some View {
+    private func mainStatusInfo(signSize: CGFloat, primaryFont: CGFloat, screenSize: CGSize, bottomPadding: CGFloat) -> some View {
         let minDimension = min(screenSize.width, screenSize.height)
-        let primaryFont = signSize * (limitText == "?" ? 0.5 : 0.38)
-        let secondaryFont = primaryFont * 0.22
+        let horizontalPadding = max(12, screenSize.width * 0.04)
+        let baseSecondaryFont = primaryFont * secondaryTextRatio
+        let secondaryScale = sharedSecondaryScale(
+            baseSecondaryFont: baseSecondaryFont,
+            availableWidth: screenSize.width - (horizontalPadding * 2)
+        )
+        let secondaryFont = baseSecondaryFont * secondaryScale
         let valueUnitSpacing: CGFloat = 0
         let metricDebugGap = max(12, minDimension * 0.024)
-        let debugFont = max(11, minDimension * 0.024)
+        let debugFont = secondaryFont*0.6
         let debugSpacing = max(2, minDimension * 0.004)
-        let horizontalPadding = max(12, screenSize.width * 0.04)
-        let statusAreaHeight = max(150, screenSize.height * 0.34)
+        let metricBlockHeight = primaryFont + (secondaryFont * 0.9)
+        let debugBlockHeight = (secondaryFont * 2.1) + debugSpacing
+        let statusAreaHeight = max(220, metricBlockHeight + metricDebugGap + debugBlockHeight + bottomPadding)
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
                 Text(primaryMetricText)
-                    .font(.system(size: primaryFont, weight: .black, design: .rounded))
+                    .font(primaryMetricFont(size: primaryFont))
                     .minimumScaleFactor(0.45)
+                    .lineLimit(1)
                 Text(secondaryMetricText)
-                    .font(.system(size: secondaryFont, weight: .black, design: .rounded))
-                    .minimumScaleFactor(0.5)
-                    .padding(.top, -primaryFont * 0.1)
+                    .font(.system(size: secondaryFont, weight: .bold, design: .default))
+                    .minimumScaleFactor(1)
+                    .padding(.top, -primaryFont * 0.06)
+                    .opacity(secondaryMetricText.isEmpty ? 0 : 1)
             }
+            .frame(height: metricBlockHeight, alignment: .center)
 
             Spacer(minLength: metricDebugGap)
 
             VStack(spacing: debugSpacing) {
                 Text(debugCoordinateText)
-                    .font(.system(size: debugFont, weight: .semibold, design: .rounded))
-                    .minimumScaleFactor(0.55)
+                    .font(.system(size: debugFont, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(1)
+                    .monospacedDigit()
                 Text(debugWayIDText)
-                    .font(.system(size: debugFont, weight: .semibold, design: .rounded))
-                    .minimumScaleFactor(0.55)
+                    .font(.system(size: debugFont, weight: .bold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(1)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture(count: 2) {
+                showingDebug = true
             }
         }
         .frame(maxWidth: .infinity)
@@ -139,6 +158,9 @@ struct ContentView: View {
             }
             return "\(points)"
         case .none:
+            guard !isSearchingSignal else {
+                return "Suche Signal"
+            }
             return "\(Int(round(viewModel.currentSpeedKmh)))"
         }
     }
@@ -148,25 +170,29 @@ struct ContentView: View {
         case .moneyOnly:
             return "Euro"
         case .pointsAndFine:
-            return "punkte"
+            return "Punkte"
         case .none:
+            guard !isSearchingSignal else {
+                return ""
+            }
             return "km/h"
         }
     }
 
     private var debugCoordinateText: String {
-        let lat = viewModel.currentLatitude.map { String(format: "%.6f", $0) } ?? "n/a"
-        let lon = viewModel.currentLongitude.map { String(format: "%.6f", $0) } ?? "n/a"
-        return "coord \(lat), \(lon)"
+        guard let latitude = viewModel.currentLatitude, let longitude = viewModel.currentLongitude else {
+            return "Suche..."
+        }
+        return "\(iso6709Coordinate(latitude: latitude, longitude: longitude, fractionalDigits: 3))"
     }
 
     private var debugWayIDText: String {
-        "way id \(viewModel.limitWayID ?? "n/a")"
+        "OSM Weg \(viewModel.limitWayID ?? "?")"
     }
 
     private var limitText: String {
         guard let speedLimit = viewModel.speedLimitKmh else {
-            return "?"
+            return hasUsableGPSFix ? "–" : "?"
         }
         return "\(speedLimit)"
     }
@@ -176,32 +202,123 @@ struct ContentView: View {
     }
 
     private var screenBackgroundColor: Color {
-        switch finePresentation?.severity {
-        case .moneyOnly:
-            return Color(red: 0.98, green: 0.87, blue: 0.20)
-        case .pointsAndFine:
-            return Color(red: 0.77, green: 0.09, blue: 0.13)
-        case .none:
+        guard let progress = overspeedBackgroundProgress else {
             return .black
         }
+        return backgroundColor(for: progress)
     }
 
     private var primaryForegroundColor: Color {
-        switch finePresentation?.severity {
-        case .moneyOnly:
+        if usesDarkForeground {
             return .black
-        case .pointsAndFine, .none:
-            return .white
         }
+        return .white
     }
 
     private var buttonBackgroundColor: Color {
-        switch finePresentation?.severity {
-        case .moneyOnly:
+        if usesDarkForeground {
             return Color.black.opacity(0.08)
-        case .pointsAndFine, .none:
-            return Color.white.opacity(0.14)
         }
+        return Color.white.opacity(0.14)
+    }
+
+    private var isSearchingSignal: Bool {
+        !hasUsableGPSFix
+    }
+
+    private var hasUsableGPSFix: Bool {
+        viewModel.gpsFixCount > 0 && viewModel.currentLatitude != nil && viewModel.currentLongitude != nil
+    }
+
+    private var overspeedBackgroundProgress: Double? {
+        guard hasUsableGPSFix else {
+            return nil
+        }
+        let overspeed = viewModel.currentOverspeedKmh
+        guard overspeed > 0 else {
+            return nil
+        }
+        if finePresentation?.severity == .pointsAndFine {
+            return 1
+        }
+        let pointsThreshold = minOverspeedForPoints
+        let denominator = Double(max(pointsThreshold, 1))
+        return min(1, max(0, Double(overspeed) / denominator))
+    }
+
+    private var minOverspeedForPoints: Int {
+        viewModel.activePenaltyRules.bands
+            .filter { $0.severity == .pointsAndFine }
+            .map(\.minDeltaKmh)
+            .min() ?? 21
+    }
+
+    private var usesDarkForeground: Bool {
+        guard let progress = overspeedBackgroundProgress else {
+            return false
+        }
+        return progress < 0.45
+    }
+
+    private func backgroundColor(for progress: Double) -> Color {
+        let t = min(1, max(0, progress))
+        let yellow = (r: 0.98, g: 0.87, b: 0.20)
+        let red = (r: 0.77, g: 0.09, b: 0.13)
+        return Color(
+            red: yellow.r + (red.r - yellow.r) * t,
+            green: yellow.g + (red.g - yellow.g) * t,
+            blue: yellow.b + (red.b - yellow.b) * t
+        )
+    }
+
+    private func sharedSecondaryScale(baseSecondaryFont: CGFloat, availableWidth: CGFloat) -> CGFloat {
+        let texts = [
+            secondaryMetricText,
+            debugCoordinateText,
+            debugWayIDText,
+        ].filter { !$0.isEmpty }
+
+        guard let longest = texts.max(by: { $0.count < $1.count }) else {
+            return 1
+        }
+
+        let estimatedWidth = estimateTextWidth(longest, fontSize: baseSecondaryFont)
+        guard estimatedWidth > 0 else {
+            return 1
+        }
+        return min(1, max(0.35, availableWidth / estimatedWidth))
+    }
+
+    private func estimateTextWidth(_ text: String, fontSize: CGFloat) -> CGFloat {
+        CGFloat(text.count) * fontSize * 0.58
+    }
+
+    private func iso6709Coordinate(latitude: Double, longitude: Double, fractionalDigits: Int) -> String {
+        let posix = Locale(identifier: "en_US_POSIX")
+        let latSign = latitude >= 0 ? "N" : "S"
+        let lonSign = longitude >= 0 ? "O" : "W"
+        let latBody = String(
+            format: "%0*.*f",
+            locale: posix,
+            3 + 1 + fractionalDigits,
+            fractionalDigits,
+            abs(latitude)
+        )
+        let lonBody = String(
+            format: "%0*.*f",
+            locale: posix,
+            3 + 1 + fractionalDigits,
+            fractionalDigits,
+            abs(longitude)
+        )
+        return "\(latSign)\(latBody) \(lonSign)\(lonBody)"
+    }
+
+    private func primaryMetricFont(size: CGFloat) -> Font {
+        if isSearchingSignal {
+            return .system(size: size, weight: .bold, design: .rounded)
+        }
+        return trafficSignNumberFont(size: size)
     }
 
     private var shouldAutoTapSyncForTests: Bool {
@@ -218,6 +335,7 @@ struct ContentView: View {
 
 private struct SpeedLimitSignView: View {
     let limitText: String
+    let numberFontSize: CGFloat
 
     var body: some View {
         GeometryReader { proxy in
@@ -237,9 +355,10 @@ private struct SpeedLimitSignView: View {
                     .strokeBorder(Color(red: 0.76, green: 0.07, blue: 0.11), lineWidth: redBandWidth)
 
                 Text(limitText)
-                    .font(.system(size: size * (limitText == "?" ? 0.5 : 0.38), weight: .black, design: .rounded))
+                    .font(trafficSignNumberFont(size: numberFontSize))
                     .minimumScaleFactor(0.45)
                     .foregroundStyle(.black)
+                    .lineLimit(1)
             }
             .frame(width: size, height: size)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -248,14 +367,26 @@ private struct SpeedLimitSignView: View {
     }
 }
 
+private func trafficSignNumberFont(size: CGFloat) -> Font {
+    #if canImport(UIKit)
+    if UIFont(name: "DINAlternate-Bold", size: size) != nil {
+        return .custom("DINAlternate-Bold", size: size)
+    }
+    if UIFont(name: "DINCondensed-Bold", size: size) != nil {
+        return .custom("DINCondensed-Bold", size: size)
+    }
+    #endif
+    return .system(size: size, weight: .black, design: .default)
+}
+
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
 
     var body: some View {
         Form {
-            Section("Auditory Feedback") {
+            Section("Akustische Hinweise") {
                 HStack {
-                    Text("Start warning at")
+                    Text("Warnung ab")
                     Spacer()
                     TextField("km/h", value: $viewModel.audioAlertThresholdKmh, format: .number)
                         .keyboardType(.numberPad)
@@ -265,21 +396,21 @@ private struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Stepper(
-                    "Threshold \(viewModel.audioAlertThresholdKmh) km/h above limit",
-                    value: $viewModel.audioAlertThresholdKmh,
-                    in: 0...80,
-                    step: 1
-                )
+                HStack {
+                    Text("Warnschwelle anpassen")
+                    Spacer()
+                    Stepper("", value: $viewModel.audioAlertThresholdKmh, in: 0...80, step: 1)
+                        .labelsHidden()
+                }
 
                 Text(viewModel.audioAlertThresholdKmh == 0
-                     ? "Auditory feedback is disabled."
-                     : "Spoken warning starts at \(viewModel.audioAlertThresholdKmh) km/h above the detected speed limit.")
+                     ? "Akustische Hinweise sind deaktiviert."
+                     : "Sprachwarnung startet bei \(viewModel.audioAlertThresholdKmh) km/h ueber dem erkannten Tempolimit.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Map Data Download") {
+            Section("Kartendaten-Download") {
                 LabeledContent("Status", value: syncStatusLabel)
                 LabeledContent("Bundle", value: viewModel.activeBundleVersion)
 
@@ -289,7 +420,7 @@ private struct SettingsView: View {
                         .foregroundStyle(syncMessage.color)
                 }
 
-                Button("Download/Sync Latest Data") {
+                Button("Neueste Daten herunterladen/synchronisieren") {
                     viewModel.bootstrapAndSync()
                 }
                 .disabled(viewModel.isSyncingNow)
@@ -337,30 +468,30 @@ private struct SettingsView: View {
                 }
             }
 
-            Section("Penalty Rules") {
-                LabeledContent("Active file", value: "DEU-rules.json")
-                LabeledContent("Country", value: "\(viewModel.activePenaltyRules.countryName) (\(viewModel.activePenaltyRules.countryCode))")
-                LabeledContent("Bands", value: "\(viewModel.activePenaltyRules.bands.count)")
+            Section("Bussgeldregeln") {
+                LabeledContent("Aktive Datei", value: "DEU-rules.json")
+                LabeledContent("Land", value: "\(viewModel.activePenaltyRules.countryName) (\(viewModel.activePenaltyRules.countryCode))")
+                LabeledContent("Stufen", value: "\(viewModel.activePenaltyRules.bands.count)")
             }
 
             Section("Debug") {
-                NavigationLink("Open Debug Information") {
+                NavigationLink("Debug-Informationen oeffnen") {
                     DebugInformationView(viewModel: viewModel)
                 }
             }
         }
-        .navigationTitle("Settings")
+        .navigationTitle("Einstellungen")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var syncStatusLabel: String {
         switch viewModel.syncStatus {
         case "not_synced":
-            return "Not synced"
+            return "Nicht synchronisiert"
         case "syncing":
-            return "Syncing"
+            return "Synchronisiert..."
         case "sync_failed":
-            return "Sync failed"
+            return "Synchronisierung fehlgeschlagen"
         default:
             return viewModel.syncStatus.replacingOccurrences(of: "_", with: " ")
         }
@@ -369,15 +500,15 @@ private struct SettingsView: View {
     private var syncMessageLine: (text: String, color: Color)? {
         switch viewModel.syncStatus {
         case "ready_upToDate":
-            return ("Data is available and up to date.", .green)
+            return ("Daten sind verfuegbar und aktuell.", .green)
         case "ready_fullDownload", "ready_deltaPatch":
-            return ("Data sync completed. Local data is up to date.", .green)
+            return ("Datensynchronisierung abgeschlossen. Lokale Daten sind aktuell.", .green)
         case "ready_bootstrap":
-            return ("Seed data is available locally.", .orange)
+            return ("Seed-Daten sind lokal verfuegbar.", .orange)
         case "sync_failed" where !viewModel.activeDBPath.isEmpty:
-            return ("Sync failed, but local data is still available.", .orange)
+            return ("Synchronisierung fehlgeschlagen, lokale Daten sind aber weiterhin verfuegbar.", .orange)
         case "sync_failed":
-            return ("Sync failed. No active data bundle available.", .red)
+            return ("Synchronisierung fehlgeschlagen. Kein aktives Daten-Bundle verfuegbar.", .red)
         default:
             return nil
         }
@@ -421,7 +552,7 @@ private struct SettingsView: View {
             duration.allowedUnits = eta >= 3600 ? [.hour, .minute] : [.minute, .second]
             duration.unitsStyle = .abbreviated
             if let etaText = duration.string(from: eta) {
-                parts.append("ETA \(etaText)")
+                parts.append("Restzeit \(etaText)")
             }
         }
         return parts.joined(separator: " • ")
@@ -444,6 +575,7 @@ private struct SettingsView: View {
 
 private struct DebugInformationView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var showingOSMBrowser = false
 
     var body: some View {
         ScrollView {
@@ -500,10 +632,8 @@ private struct DebugInformationView: View {
 
                 GroupBox("Lookup Diagnostics") {
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 8) {
-                            Text("radius \(Int(viewModel.lookupRadiusM)) m")
-                            Slider(value: $viewModel.lookupRadiusM, in: 50...500, step: 10)
-                        }
+                        Text("strategy=closest_way + prefer_previous_way")
+                        Text("radius=50m (fixed)")
 
                         Stepper("max candidates \(viewModel.lookupMaxCandidates)", value: $viewModel.lookupMaxCandidates, in: 64...1024, step: 64)
 
@@ -540,6 +670,35 @@ private struct DebugInformationView: View {
                     .font(.caption2.monospaced())
                 }
 
+                GroupBox("OSM Link") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let target = osmTarget {
+                            Text("way_id=\(target.wayID) lat=\(target.latText) lon=\(target.lonText)")
+                                .font(.caption2.monospaced())
+
+                            let url = target.url
+                            Text(url.absoluteString)
+                                .font(.caption2.monospaced())
+                                .textSelection(.enabled)
+                                .lineLimit(3)
+
+                            HStack {
+                                Link("Open in Browser", destination: url)
+                                    .buttonStyle(.bordered)
+
+                                Button("Open in Browser View") {
+                                    showingOSMBrowser = true
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
+                        } else {
+                            Text("OSM link unavailable (need matched way + current location)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 if !viewModel.activeDBPath.isEmpty {
                     Text("db=\(viewModel.activeDBPath)")
                         .font(.caption2)
@@ -557,5 +716,43 @@ private struct DebugInformationView: View {
         }
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingOSMBrowser) {
+            if let target = osmTarget {
+                OSMBrowserView(url: target.url)
+                    .ignoresSafeArea()
+            } else {
+                Text("No OSM URL available")
+                    .font(.footnote)
+                    .padding()
+            }
+        }
+    }
+
+    private var osmTarget: (wayID: String, latText: String, lonText: String, url: URL)? {
+        guard let wayID = viewModel.limitWayID,
+              let lat = viewModel.currentLatitude,
+              let lon = viewModel.currentLongitude else {
+            return nil
+        }
+        let latText = String(format: "%.6f", lat)
+        let lonText = String(format: "%.6f", lon)
+        guard let url = URL(string: "https://www.openstreetmap.org/way/\(wayID)#map=18/\(latText)/\(lonText)") else {
+            return nil
+        }
+        return (wayID, latText, lonText, url)
+    }
+}
+
+private struct OSMBrowserView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let browser = SFSafariViewController(url: url)
+        browser.preferredControlTintColor = .systemBlue
+        return browser
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+        // SFSafariViewController does not support updating URL after creation.
     }
 }

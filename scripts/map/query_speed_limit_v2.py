@@ -7,14 +7,18 @@ import argparse
 import json
 import math
 import re
+import sqlite3
 import sys
 import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+from city_polygon_resolver import resolve_city_context
+
 DEFAULT_DE_URBAN = 50
 DEFAULT_DE_RURAL_CAR = 100
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
 NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
 DRIVABLE_HIGHWAYS_CAR = {
     "motorway",
@@ -177,6 +181,82 @@ def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict
     return False
 
 
+def _bbox_area(area: dict) -> float:
+    return max(float(area["max_lon"]) - float(area["min_lon"]), 0.0) * max(float(area["max_lat"]) - float(area["min_lat"]), 0.0)
+
+
+def _resolve_city_context_from_areas(lat: float, lon: float, area_candidates: Iterable[dict]) -> dict:
+    containing_admin: List[Tuple[int, float, str]] = []
+    containing_places: List[Tuple[int, float, str]] = []
+    nearby_places: List[Tuple[int, float, str]] = []
+
+    for area in area_candidates:
+        name = area.get("name")
+        if not isinstance(name, str) or not name.strip():
+            continue
+        place = area.get("place")
+        area_is_admin = area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}
+        inside_bbox = point_in_bbox(lat, lon, area)
+        area_size = _bbox_area(area)
+
+        if area_is_admin and inside_bbox:
+            containing_admin.append((int(area["admin_level"]), area_size, name))
+
+        if place in PLACE_VALUES:
+            center_lat = (float(area["min_lat"]) + float(area["max_lat"])) / 2.0
+            center_lon = (float(area["min_lon"]) + float(area["max_lon"])) / 2.0
+            d = haversine_m(lat, lon, center_lat, center_lon)
+            rank = int(PLACE_RANK.get(place, 99))
+            nearby_places.append((rank, d, name))
+            if inside_bbox:
+                containing_places.append((rank, d, name))
+
+    if containing_admin:
+        containing_admin.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = containing_admin[0]
+        return {
+            "inside_city": True,
+            "city_name": best[2],
+            "city_admin_level": best[0],
+            "city_source": "admin_bbox",
+            "city_candidate_boundaries": len(containing_admin),
+            "city_place_candidates": len(nearby_places),
+        }
+
+    if containing_places:
+        containing_places.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = containing_places[0]
+        return {
+            "inside_city": True,
+            "city_name": best[2],
+            "city_admin_level": None,
+            "city_source": "place_bbox",
+            "city_candidate_boundaries": 0,
+            "city_place_candidates": len(nearby_places),
+        }
+
+    if nearby_places:
+        nearby_places.sort(key=lambda x: (x[0], x[1], x[2]))
+        best = nearby_places[0]
+        return {
+            "inside_city": False,
+            "city_name": best[2],
+            "city_admin_level": None,
+            "city_source": "place_nearest",
+            "city_candidate_boundaries": 0,
+            "city_place_candidates": len(nearby_places),
+        }
+
+    return {
+        "inside_city": False,
+        "city_name": None,
+        "city_admin_level": None,
+        "city_source": None,
+        "city_candidate_boundaries": 0,
+        "city_place_candidates": 0,
+    }
+
+
 def _read_manifest_chunks(manifest: dict, tilepack_path: Path) -> Dict[str, object]:
     chunks = manifest.get("chunks", [])
     if not isinstance(chunks, list):
@@ -245,7 +325,16 @@ def parse_args() -> argparse.Namespace:
         help="Candidate filtering profile",
     )
     parser.add_argument("--unknown-highway-penalty", type=float, default=30.0)
+    parser.add_argument(
+        "--city-db",
+        help="Optional SQLite DB with city_boundary/city_ring tables (defaults to sibling dist-v4 DB)",
+    )
     return parser.parse_args()
+
+
+def _default_city_db_path(dist_dir: Path) -> Path:
+    # mapdata/dist-v2/<region> -> mapdata/dist-v4/<region>/speeds_v4.sqlite
+    return dist_dir.parent.parent / "dist-v4" / dist_dir.name / "speeds_v4.sqlite"
 
 
 def main() -> int:
@@ -351,6 +440,7 @@ def main() -> int:
                 "segment_id": seg_id,
                 "way_id": geom.get("way_id", seg_id),
                 "highway": rules.get("highway", geom.get("highway")),
+                "street_name": rules.get("street_name"),
                 "maxspeed": rules.get("maxspeed"),
                 "maxspeed_type": rules.get("maxspeed_type"),
                 "source_maxspeed": rules.get("source_maxspeed"),
@@ -408,6 +498,7 @@ def main() -> int:
                 "segment_id": row["segment_id"],
                 "way_id": row["way_id"],
                 "highway": highway,
+                "street_name": row.get("street_name"),
                 "distance_m": round(distance_m, 2),
                 "heading_diff_deg": None if heading_diff is None else round(heading_diff, 2),
                 "score": round(score, 2),
@@ -453,7 +544,23 @@ def main() -> int:
     top = scored[: args.top_k]
     scoring_ms = (time.perf_counter() - t2) * 1000.0
 
-    built_up = inside_built_up_guess(args.lat, args.lon, area_candidates)
+    city_db_path = Path(args.city_db) if args.city_db else _default_city_db_path(dist_dir)
+
+    t_city = time.perf_counter()
+    city_context = None
+    if city_db_path.exists():
+        try:
+            city_conn = sqlite3.connect(str(city_db_path))
+            city_context = resolve_city_context(city_conn, args.lat, args.lon)
+            city_conn.close()
+        except sqlite3.Error:
+            city_context = None
+    if not isinstance(city_context, dict) or city_context.get("city_mode") == "unavailable":
+        city_context = _resolve_city_context_from_areas(args.lat, args.lon, area_candidates)
+        city_context["city_mode"] = "bbox_fallback"
+    city_resolve_ms = (time.perf_counter() - t_city) * 1000.0
+
+    built_up = bool(city_context.get("inside_city", False))
     default_speed = DEFAULT_DE_URBAN if built_up else DEFAULT_DE_RURAL_CAR
     best = top[0] if top else None
     if best and best.get("parsed_speed_kmh") is not None:
@@ -489,10 +596,18 @@ def main() -> int:
             "default_speed_kmh": default_speed,
             "effective_speed_kmh": effective_speed,
             "effective_speed_source": effective_source,
+            "city_name": city_context.get("city_name"),
+            "city_admin_level": city_context.get("city_admin_level"),
+            "city_source": city_context.get("city_source"),
+            "city_candidate_boundaries": city_context.get("city_candidate_boundaries", 0),
+            "city_containing_boundaries": city_context.get("city_containing_boundaries", 0),
+            "city_place_candidates": city_context.get("city_place_candidates", 0),
+            "city_mode": city_context.get("city_mode"),
         },
         "timing_ms": {
             "load_index": round(index_load_ms, 2),
             "load_candidates": round(candidate_load_ms, 2),
+            "city_resolve": round(city_resolve_ms, 2),
             "polyline_refine": round(polyline_refine_ms, 2),
             "score_and_rank": round(scoring_ms, 2),
             "total": round((time.perf_counter() - started) * 1000.0, 2),
@@ -500,7 +615,7 @@ def main() -> int:
         "top_candidates": top,
         "notes": [
             "v2 query reads nearby physical tile packs only.",
-            "Built-up inference is heuristic from area bbox candidates.",
+            "Built-up inference prefers exact admin polygon containment when city tables are available.",
             "Use camera-detected signs to override map/default limits in final fusion.",
         ],
     }

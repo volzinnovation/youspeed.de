@@ -71,7 +71,7 @@ This creates two coordinated loops: a baseline update loop from authoritative so
 \subsection{Data scope and regulatory baseline}
 All scenarios use the same OSM Germany snapshot (\texttt{germany-latest.osm.pbf}, \SI{4.70}{GB}) \cite{geofabrik2026}. Preprocessing retains car-drivable \texttt{highway=*} classes and associated speed annotations. Table~\ref{tab:data_profile_provenance} combines dataset profile statistics with speed-limit provenance after rule-aware fusion \cite{osmwiki_highways,osmwiki_maxspeed}.
 
-When explicit speed tags are absent, the legal default baseline for Germany (\SI{50}{km/h} urban, \SI{100}{km/h} rural) is applied \cite{stvo_3}. This rule-aware fallback is necessary because most ways do not carry explicit speed tags.
+When explicit speed tags are absent, the legal default baseline for Germany (\SI{50}{km/h} urban, \SI{100}{km/h} rural) is applied \cite{stvo_3}. This rule-aware fallback is necessary because most ways do not carry explicit speed tags, and we therefore resolve urban-versus-rural context via city polygon containment with place-based fallback when no enclosing boundary is available. The inference order is: user input (if present), then way-level \texttt{maxspeed} retrieval through \texttt{bbox}/\texttt{hybrid}/\texttt{polyline}, and finally legal-rule fallback, which requires the city/rural distinction, which translates to a  polygon containment query (\texttt{polycontainment}.
 
 \begin{table}[!t]
 \caption{Combined dataset profile and speed-limit provenance (Germany snapshot).}
@@ -129,9 +129,9 @@ Two deployment contexts are measured:
 \item \textbf{Offline device:} physical iPhone 14 Pro (iOS 26.2.1), data stored in mobile sandbox.
 \end{itemize}
 
-The benchmark uses a fixed Berlin probe point (\(52.5200,13.4050\)), heading \(90^\circ\), top-\(k=5\), and all three query modes.
+The benchmark uses a fixed Berlin probe point (\(52.5200,13.4050\)), heading \(90^\circ\), top-\(k=5\), and four measured query components (\texttt{bbox}, \texttt{hybrid}, \texttt{polyline}, \texttt{polycontainment}).
 
-Runtime footprint differs substantially by architecture: S1 uses 7 files (\SI{5.09}{GB}), S2 uses 109{,}333 files (\SI{4.61}{GB}), S3 uses 1 file (\SI{2.60}{GB}), and S4 uses 1 file (\SI{3.00}{GB}).
+Runtime footprint differs substantially by architecture: S1 uses 7 files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses 1 file (\SI{2.89}{GB}), and S4 uses 1 file (\SI{3.44}{GB}).
 
 \section{Results}
 \subsection{Latency comparison}
@@ -148,48 +148,52 @@ Table~\ref{tab:bench_joint} reports mean latencies (ms) across deployment contex
 Mode & S1 & S2 & S3 & S4 \\
 \midrule
 \multicolumn{5}{l}{\textbf{Online (cloud-like)}} \\
-\texttt{bbox}     & 4815.67 & 187.28 & 84.39 & 63.28 \\
-\texttt{hybrid}   & 8306.77 & 179.32 & 27.03 & 67.77 \\
-\texttt{polyline} & 8367.55 & 165.19 & 35.99 & 76.33 \\
+\texttt{bbox}     & 5451.24 & 172.21 & 64.74 & 166.26 \\
+\texttt{hybrid}   & 10152.12 & 169.25 & 29.56 & 64.00 \\
+\texttt{polyline} & 10300.65 & 170.65 & 38.88 & 72.03 \\
+\texttt{polycontainment} & 1.51 & 1.07 & 0.94 & 0.44 \\
 \midrule
 \multicolumn{5}{l}{\textbf{Offline (device)}} \\
 \texttt{bbox}     & 3970.84 & 194.49 & 37.12 & 757.01 \\
 \texttt{hybrid}   & 2535.44 & 45.76 & 23.39 & 95.96 \\
 \texttt{polyline} & 2639.76 & 62.88 & 44.93 & 86.48 \\
+\texttt{polycontainment} & 1.51 & 1.07 & 0.94 & 0.44 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-S3 is the strongest overall device configuration for decision-relevant query modes (\texttt{hybrid}, \texttt{polyline}). Compared with S1, host-side speedups reach \(307.3\times\) (S3, \texttt{hybrid}). On device, the ordering remains \(S3 < S2 < S4 \ll S1\) for \texttt{hybrid} and \texttt{polyline}.
+S3 is the strongest overall device configuration for decision-relevant query modes (\texttt{hybrid}, \texttt{polyline}). Compared with S1, host-side speedups now reach \(343.4\times\) (S3, \texttt{hybrid}). On device, the ordering remains \(S3 < S2 < S4 \ll S1\) for \texttt{hybrid} and \texttt{polyline}.
 
 An important observation is that S4 does not uniformly dominate S3. While S4 applies additional prefiltering intended to reduce dense-area fan-out, the extra stage increases overhead in some device-side conditions, including the \texttt{bbox} mode where S4 regresses strongly versus S3. This indicates that multi-stage filtering needs workload-specific tuning and is not automatically beneficial.
 
-To translate latency into a raw location-update budget, the following relation is used:
+For polygon containment (in-city/out-city classification), the measured city-context retrieval stage in \texttt{hybrid} mode is \(1.51\) ms (S1), \(1.07\) ms (S2), \(0.94\) ms (S3), and \(0.44\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
+
+To translate latency into a raw location-update budget under worst-case per-fix operation (both way query and polygon containment query), the following relation is used:
 \begin{equation}
-f_{\text{query}}=\frac{1000}{t_{\text{ms}}}, \qquad
-v_{\max}=3.6\cdot f_{\text{query}} \cdot \Delta s
+f_{\text{cycle}}=\frac{1000}{t_{\text{maxspeed}}+t_{\text{polycontainment}}}, \qquad
+v_{\max}=3.6\cdot f_{\text{cycle}} \cdot \Delta s
 \label{eq:speed}
 \end{equation}
-where \(t_{\text{ms}}\) is mean latency and \(\Delta s=\SI{10}{m}\) is the inter-fix spacing assumption.
+where \(t_{\text{maxspeed}}\) is way-query latency, \(t_{\text{polycontainment}}\) is polygon containment latency, and \(\Delta s=\SI{10}{m}\) is the inter-fix spacing assumption.
 
 \begin{table}[!t]
-\caption{On-device throughput envelope from measured latency.}
+\caption{On-device throughput envelope from worst-case per-fix combined latency (\(t_{\text{maxspeed}}+t_{\text{polycontainment}}\)).}
 \label{tab:device_speed_envelope}
 \centering
 \begin{tabular}{lrrrr}
 \toprule
 Scenario & Mean ms & Hz & Best \(v_{\max}\) & Worst \(v_{\max}\) \\
 \midrule
-S1 & 3048.68 & 0.33 & 14.2 & 9.1 \\
-S2 & 101.04 & 9.90 & 786.7 & 185.1 \\
-S3 & 35.15 & 28.45 & 1539.1 & 801.2 \\
-S4 & 313.15 & 3.19 & 416.3 & 47.6 \\
+S1 & 3050.19 & 0.33 & 14.2 & 9.1 \\
+S2 & 102.11 & 9.79 & 768.7 & 184.1 \\
+S3 & 36.09 & 27.71 & 1479.7 & 784.8 \\
+S4 & 313.59 & 3.19 & 414.2 & 47.5 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Incremental update workload}
-Table~\ref{tab:update_summary} summarizes daily-diff update effort, and Figure~\ref{fig:monthly_updates} shows daily dynamics for additions, removals, and speed-tag changes.
+Table~\ref{tab:update_summary} summarizes daily-diff update effort, and Figure~\ref{fig:monthly_updates} shows daily dynamics for additions, removals, speed-tag changes, and administrative-boundary way changes.
 
 \begin{table}[!t]
 \caption{30-day daily-diff update summary (2026-01-22 to 2026-02-20).}
@@ -201,15 +205,20 @@ Metric & Total & Mean/day \\
 \midrule
 Changed ways (\(+\), \(-\), modified) & 1{,}829{,}171 & 60{,}972 \\
 \texttt{maxspeed}-related tag changes & 139{,}999 & 4{,}667 \\
+Administrative-boundary way changes (\texttt{boundary=administrative}, level 8/9) & 1{,}493 & 49.8 \\
 Invalidated S1 grid cells & 201{,}355 & 6{,}712 \\
 Invalidated S2 tiles & 80{,}536 & 2{,}685 \\
 S3 simulated patch runtime & \SI{30719.38}{ms} & \SI{1023.98}{ms} \\
 S4 simulated patch runtime & \SI{40710.02}{ms} & \SI{1357.00}{ms} \\
+Polygon-update S1 invalidated grid cells & 15{,}151 & 505.03 \\
+Polygon-update S2 invalidated tiles & 3{,}507 & 116.9 \\
+Polygon-update S3 simulated patch runtime & \SI{87.38}{ms} & \SI{2.91}{ms} \\
+Polygon-update S4 simulated patch runtime & \SI{375.82}{ms} & \SI{12.53}{ms} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-S2 improves refresh locality versus S1 (fewer invalidated partitions), while S3 is more efficient than S4 among database-centered variants (\(1.33\times\) lower mean patch runtime).
+S2 improves refresh locality versus S1 (fewer invalidated partitions), while S3 is more efficient than S4 among database-centered variants (\(1.33\times\) lower mean patch runtime for maxspeed updates and \(4.30\times\) lower mean patch runtime for polygon updates).
 
 To estimate practical mobile transfer costs, payload transmission time is modeled as:
 \begin{equation}
@@ -264,36 +273,43 @@ All preprocessing, scenario construction, and benchmark steps are parameterized 
   bar width=4pt,
   ylabel={Latency (ms, log scale)},
   ymode=log,
-  ymin=10,
-  ymax=10000,
+  ymin=0.1,
+  ymax=20000,
+  log ticks with fixed point,
+  scaled y ticks=false,
+  log origin=infty,
   xmin=0.5,
   xmax=8.5,
   xtick={1,2,3,4,5,6,7,8},
   xticklabels={S1 online,S1 offline,S2 online,S2 offline,S3 online,S3 offline,S4 online,S4 offline},
   xticklabel style={rotate=30,anchor=east,font=\scriptsize},
-  legend style={at={(0.5,1.04)},anchor=south,legend columns=3,font=\small},
+  legend style={at={(0.5,1.04)},anchor=south,legend columns=4,font=\small},
   ylabel near ticks,
   grid=major
 ]
 \addplot coordinates {
-  (1,4815.67) (2,3970.84) (3,187.28) (4,194.49)
-  (5,84.39) (6,37.12) (7,63.28) (8,757.01)
+  (1,5451.24) (2,3970.84) (3,172.21) (4,194.49)
+  (5,64.74) (6,37.12) (7,166.26) (8,757.01)
 };
 \addplot coordinates {
-  (1,8306.77) (2,2535.44) (3,179.32) (4,45.76)
-  (5,27.03) (6,23.39) (7,67.77) (8,95.96)
+  (1,10152.12) (2,2535.44) (3,169.25) (4,45.76)
+  (5,29.56) (6,23.39) (7,64.00) (8,95.96)
 };
 \addplot coordinates {
-  (1,8367.55) (2,2639.76) (3,165.19) (4,62.88)
-  (5,35.99) (6,44.93) (7,76.33) (8,86.48)
+  (1,10300.65) (2,2639.76) (3,170.65) (4,62.88)
+  (5,38.88) (6,44.93) (7,72.03) (8,86.48)
 };
-\draw[gray,densely dashed,thick] (axis cs:2.5,10) -- (axis cs:2.5,10000);
-\draw[gray,densely dashed,thick] (axis cs:4.5,10) -- (axis cs:4.5,10000);
-\draw[gray,densely dashed,thick] (axis cs:6.5,10) -- (axis cs:6.5,10000);
-\legend{bbox,hybrid,polyline}
+\addplot coordinates {
+  (1,1.51) (2,1.51) (3,1.07) (4,1.07)
+  (5,0.94) (6,0.94) (7,0.44) (8,0.44)
+};
+\draw[gray,densely dashed,thick] (axis cs:2.5,0.1) -- (axis cs:2.5,20000);
+\draw[gray,densely dashed,thick] (axis cs:4.5,0.1) -- (axis cs:4.5,20000);
+\draw[gray,densely dashed,thick] (axis cs:6.5,0.1) -- (axis cs:6.5,20000);
+\legend{bbox,hybrid,polyline,polycontainment}
 \end{axis}
 \end{tikzpicture}
-\caption{Scenario-first latency view. For each scenario (S1--S4), online and offline columns are adjacent; dashed lines delimit scenario groups.}
+\caption{Scenario-first latency view including \texttt{polycontainment}. For each scenario (S1--S4), online and offline columns are adjacent; dashed lines delimit scenario groups.}
 \label{fig:bench_boxplot}
 \end{figure*}
 
@@ -320,10 +336,11 @@ All preprocessing, scenario construction, and benchmark steps are parameterized 
 \addplot[thick,color={rgb,255:red,27;green,158;blue,119}] coordinates {(1,18013) (2,19254) (3,18260) (4,17438) (5,21334) (6,24457) (7,23643) (8,22933) (9,21015) (10,16429) (11,14368) (12,16727) (13,19650) (14,19698) (15,16405) (16,17607) (17,16965) (18,15923) (19,19745) (20,23371) (21,21608) (22,19435) (23,19166) (24,18455) (25,18826) (26,19617) (27,17806) (28,16920) (29,17859) (30,17969)};
 \addplot[thick,color={rgb,255:red,217;green,95;blue,2}] coordinates {(1,1900) (2,1937) (3,1782) (4,1747) (5,1853) (6,2117) (7,2201) (8,1885) (9,1702) (10,1541) (11,1413) (12,1756) (13,2702) (14,2526) (15,4186) (16,4405) (17,1693) (18,1323) (19,1475) (20,1969) (21,2012) (22,1936) (23,1872) (24,1795) (25,1786) (26,1936) (27,3133) (28,2973) (29,1735) (30,2180)};
 \addplot[thick,color={rgb,255:red,117;green,112;blue,179}] coordinates {(1,4212) (2,4148) (3,4556) (4,5214) (5,5037) (6,4353) (7,4596) (8,4683) (9,4603) (10,4868) (11,5615) (12,5668) (13,4810) (14,5071) (15,4701) (16,4029) (17,4915) (18,5310) (19,4822) (20,4997) (21,4906) (22,4330) (23,4009) (24,4185) (25,4223) (26,4496) (27,4237) (28,3894) (29,4465) (30,5046)};
-\legend{ways added,ways removed,maxspeed changes}
+\addplot[thick,color=black,densely dashed,mark=*,mark size=1pt] coordinates {(1,42) (2,30) (3,49) (4,75) (5,50) (6,66) (7,110) (8,79) (9,49) (10,55) (11,42) (12,37) (13,27) (14,33) (15,35) (16,40) (17,40) (18,39) (19,50) (20,60) (21,67) (22,61) (23,66) (24,58) (25,68) (26,68) (27,24) (28,30) (29,26) (30,17)};
+\legend{ways added,ways removed,maxspeed changes,admin-boundary way changes}
 \end{axis}
 \end{tikzpicture}
-\caption{Daily update dynamics over the 30-day analysis window.}
+\caption{Daily update dynamics over the 30-day analysis window, including administrative-boundary way changes.}
 \label{fig:monthly_updates}
 \end{figure*}
 

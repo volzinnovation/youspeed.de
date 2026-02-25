@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
+		0B40049C2440D677338FE301 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* MainView.swift */; };
 		133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = E178F2DA753300F0D332FA56 /* DEU-rules.json */; };
 		1828C8976EB0DD8023057E03 /* replay_expected.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DEC815A724E0702C9E8EC7B /* replay_expected.json */; };
 		197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */; };
@@ -30,7 +30,7 @@
 		CC4EA803C4F7EFEBAA1DB1EE /* replay_track.gpx in Resources */ = {isa = PBXBuildFile; fileRef = AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */; };
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
 		DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */; };
-		F3CE32AE6AF26C94C7E0239E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02B5CC64873BE8B0371304BC /* ContentView.swift */; };
+		F3CE32AE6AF26C94C7E0239E /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02B5CC64873BE8B0371304BC /* MainView.swift */; };
 		F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -59,12 +59,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		02B5CC64873BE8B0371304BC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		02B5CC64873BE8B0371304BC /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
 		103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3SpeedLimitService.swift; sourceTree = "<group>"; };
 		16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedPenaltyRules.swift; sourceTree = "<group>"; };
 		264903C5CD98D68477E8823C /* V3BundleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3BundleManager.swift; sourceTree = "<group>"; };
-		2AB92E272687221B6BEE64B1 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2AB92E272687221B6BEE64B1 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		2FDCAD97D5DBC71DEBDC7D35 /* SpeedDBBench.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpeedDBBench.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchTests.swift; sourceTree = "<group>"; };
 		4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerApp.swift; sourceTree = "<group>"; };
@@ -98,7 +98,7 @@
 				734BE1C063C1A673E23AE2B7 /* Assets.xcassets */,
 				4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */,
 				50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */,
-				02B5CC64873BE8B0371304BC /* ContentView.swift */,
+				02B5CC64873BE8B0371304BC /* MainView.swift */,
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
@@ -157,7 +157,7 @@
 			children = (
 				FB9DAD9053AB3234DEB88DBA /* AssetStore.swift */,
 				D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */,
-				2AB92E272687221B6BEE64B1 /* ContentView.swift */,
+				2AB92E272687221B6BEE64B1 /* MainView.swift */,
 				AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */,
 				485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */,
 				A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */,
@@ -356,7 +356,7 @@
 			files = (
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */,
-				F3CE32AE6AF26C94C7E0239E /* ContentView.swift in Sources */,
+				F3CE32AE6AF26C94C7E0239E /* MainView.swift in Sources */,
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
 				F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */,
 				260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */,
@@ -388,7 +388,7 @@
 			files = (
 				1F69E46C3D85B97143F1A3FF /* AssetStore.swift in Sources */,
 				C3883B48011E83773BC9DE9C /* BenchmarkModels.swift in Sources */,
-				0B40049C2440D677338FE301 /* ContentView.swift in Sources */,
+				0B40049C2440D677338FE301 /* MainView.swift in Sources */,
 				DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */,
 				7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */,
 			);

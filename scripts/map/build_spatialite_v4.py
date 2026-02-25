@@ -4,6 +4,7 @@
 v4 combines:
 - spatial indexing (RTree) like v3
 - virtual tile partition metadata for fast local prefiltering
+- optional city-context index (admin polygons + place points)
 """
 
 from __future__ import annotations
@@ -14,10 +15,16 @@ import math
 import sqlite3
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
+
+try:
+    import osmium
+except Exception:
+    osmium = None
 
 EARTH_RADIUS_M = 6378137.0
 MAX_MERCATOR_LAT = 85.05112878
+PLACE_VALUES = {"city", "town", "village", "hamlet"}
 
 
 def _lon_lat_to_mercator_m(lon: float, lat: float) -> Tuple[float, float]:
@@ -65,12 +72,285 @@ def _try_load_spatialite(conn: sqlite3.Connection) -> str:
     return backend
 
 
+def _downsample_closed_ring(points: List[Tuple[float, float]], max_points: int) -> List[Tuple[float, float]]:
+    if len(points) < 4:
+        return points
+    if max_points < 4:
+        max_points = 4
+    if len(points) <= max_points:
+        return points
+
+    if points[0] != points[-1]:
+        points = points + [points[0]]
+
+    body = points[:-1]
+    if len(body) < 3:
+        return points
+
+    target_body = max_points - 1
+    if len(body) <= target_body:
+        sampled = body
+    else:
+        step = (len(body) - 1) / max(target_body - 1, 1)
+        sampled = []
+        last_idx = -1
+        for i in range(target_body):
+            idx = int(round(i * step))
+            idx = min(max(idx, 0), len(body) - 1)
+            if idx == last_idx:
+                continue
+            sampled.append(body[idx])
+            last_idx = idx
+        if sampled[-1] != body[-1]:
+            sampled[-1] = body[-1]
+
+    if sampled[0] != sampled[-1]:
+        sampled.append(sampled[0])
+    return sampled
+
+
+class _CityContextExtractor(osmium.SimpleHandler):
+    def __init__(
+        self,
+        tile_size_m: int,
+        max_ring_points: int,
+        max_boundary_tiles: int,
+        batch_size: int,
+        progress_every: int,
+    ) -> None:
+        super().__init__()
+        self.tile_size_m = tile_size_m
+        self.max_ring_points = max_ring_points
+        self.max_boundary_tiles = max_boundary_tiles
+        self.batch_size = batch_size
+        self.progress_every = progress_every
+
+        self.boundary_rows: List[Tuple] = []
+        self.boundary_rtree_rows: List[Tuple] = []
+        self.ring_rows: List[Tuple] = []
+        self.tile_rows: List[Tuple] = []
+        self.place_rows: List[Tuple] = []
+        self.place_rtree_rows: List[Tuple] = []
+
+        self.boundary_row_id = 0
+        self.place_row_id = 0
+
+        self.stats = {
+            "city_boundaries": 0,
+            "city_rings": 0,
+            "city_tiles": 0,
+            "city_tile_fallback_boundaries": 0,
+            "city_places": 0,
+            "area_events_seen": 0,
+        }
+
+    def area(self, area: "osmium.osm.Area") -> None:
+        self.stats["area_events_seen"] += 1
+        tags = area.tags
+        if tags.get("boundary") != "administrative":
+            return
+        admin_level_raw = tags.get("admin_level")
+        if admin_level_raw not in {"8", "9"}:
+            return
+
+        ring_rows_local: List[Tuple[int, int, int, str]] = []
+        min_lon = float("inf")
+        min_lat = float("inf")
+        max_lon = float("-inf")
+        max_lat = float("-inf")
+
+        outer_index = 0
+        ring_index = 0
+
+        for outer in area.outer_rings():
+            outer_pts: List[Tuple[float, float]] = []
+            for n in outer:
+                outer_pts.append((float(n.lon), float(n.lat)))
+            if len(outer_pts) < 4:
+                continue
+            outer_pts = _downsample_closed_ring(outer_pts, self.max_ring_points)
+
+            for lon, lat in outer_pts:
+                min_lon = min(min_lon, lon)
+                min_lat = min(min_lat, lat)
+                max_lon = max(max_lon, lon)
+                max_lat = max(max_lat, lat)
+
+            ring_rows_local.append(
+                (
+                    ring_index,
+                    outer_index,
+                    0,
+                    json.dumps([[lon, lat] for lon, lat in outer_pts], separators=(",", ":")),
+                )
+            )
+            ring_index += 1
+
+            for inner in area.inner_rings(outer):
+                hole_pts: List[Tuple[float, float]] = []
+                for n in inner:
+                    hole_pts.append((float(n.lon), float(n.lat)))
+                if len(hole_pts) < 4:
+                    continue
+                hole_pts = _downsample_closed_ring(hole_pts, self.max_ring_points)
+                ring_rows_local.append(
+                    (
+                        ring_index,
+                        outer_index,
+                        1,
+                        json.dumps([[lon, lat] for lon, lat in hole_pts], separators=(",", ":")),
+                    )
+                )
+                ring_index += 1
+
+            outer_index += 1
+
+        if not ring_rows_local or not math.isfinite(min_lon) or not math.isfinite(min_lat):
+            return
+
+        self.boundary_row_id += 1
+        row_id = self.boundary_row_id
+
+        osm_type = "way" if area.from_way() else "relation"
+        osm_id = int(area.orig_id())
+        admin_level = int(admin_level_raw)
+        name = tags.get("name")
+
+        self.boundary_rows.append((row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat))
+        self.boundary_rtree_rows.append((row_id, min_lon, max_lon, min_lat, max_lat))
+
+        for ring_idx, outer_idx, is_hole, points_json in ring_rows_local:
+            self.ring_rows.append((row_id, ring_idx, outer_idx, is_hole, points_json))
+
+        tx0, tx1, ty0, ty1 = _tile_range_for_bbox(min_lon, min_lat, max_lon, max_lat, self.tile_size_m)
+        tile_count = (tx1 - tx0 + 1) * (ty1 - ty0 + 1)
+        if tile_count > self.max_boundary_tiles:
+            tx, ty = _tile_for_lon_lat((min_lon + max_lon) / 2.0, (min_lat + max_lat) / 2.0, self.tile_size_m)
+            self.tile_rows.append((row_id, tx, ty))
+            self.stats["city_tile_fallback_boundaries"] += 1
+        else:
+            for tx in range(tx0, tx1 + 1):
+                for ty in range(ty0, ty1 + 1):
+                    self.tile_rows.append((row_id, tx, ty))
+
+        self.stats["city_boundaries"] += 1
+        self.stats["city_rings"] += len(ring_rows_local)
+        self.stats["city_tiles"] += 1 if tile_count > self.max_boundary_tiles else tile_count
+
+        if self.stats["city_boundaries"] % self.progress_every == 0:
+            print(f"  city boundaries captured: {self.stats['city_boundaries']}", file=sys.stderr)
+
+    def node(self, node: "osmium.osm.Node") -> None:
+        place = node.tags.get("place")
+        if place not in PLACE_VALUES:
+            return
+        if not node.location.valid():
+            return
+        name = node.tags.get("name")
+        if not name:
+            return
+
+        self.place_row_id += 1
+        lon = float(node.location.lon)
+        lat = float(node.location.lat)
+        self.place_rows.append((self.place_row_id, place, name, lon, lat))
+        self.place_rtree_rows.append((self.place_row_id, lon, lon, lat, lat))
+        self.stats["city_places"] += 1
+
+
+def _insert_city_rows(conn: sqlite3.Connection, extractor: _CityContextExtractor, batch_size: int) -> None:
+    def _flush(rows: List[Tuple], sql: str) -> None:
+        if not rows:
+            return
+        conn.executemany(sql, rows)
+        rows.clear()
+
+    # Boundaries
+    for i in range(0, len(extractor.boundary_rows), batch_size):
+        conn.executemany(
+            """
+            INSERT INTO city_boundary(
+              row_id, osm_type, osm_id, admin_level, name,
+              min_lon, min_lat, max_lon, max_lat
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            extractor.boundary_rows[i : i + batch_size],
+        )
+    for i in range(0, len(extractor.boundary_rtree_rows), batch_size):
+        conn.executemany(
+            "INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+            extractor.boundary_rtree_rows[i : i + batch_size],
+        )
+    for i in range(0, len(extractor.ring_rows), batch_size):
+        conn.executemany(
+            """
+            INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            extractor.ring_rows[i : i + batch_size],
+        )
+    for i in range(0, len(extractor.tile_rows), batch_size):
+        conn.executemany(
+            "INSERT INTO city_tile(boundary_row_id, tile_x, tile_y) VALUES(?, ?, ?)",
+            extractor.tile_rows[i : i + batch_size],
+        )
+
+    # Places from PBF nodes.
+    for i in range(0, len(extractor.place_rows), batch_size):
+        conn.executemany(
+            "INSERT INTO city_place(row_id, place, name, lon, lat) VALUES (?, ?, ?, ?, ?)",
+            extractor.place_rows[i : i + batch_size],
+        )
+    for i in range(0, len(extractor.place_rtree_rows), batch_size):
+        conn.executemany(
+            "INSERT INTO city_place_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+            extractor.place_rtree_rows[i : i + batch_size],
+        )
+
+
+def _populate_city_context_from_areas(conn: sqlite3.Connection, batch_size: int) -> int:
+    cur = conn.execute(
+        """
+        SELECT place, name, min_lon, min_lat
+        FROM areas
+        WHERE geometry_type='Point'
+          AND place IN ('city','town','village','hamlet')
+          AND name IS NOT NULL
+        """
+    )
+    rows = cur.fetchall()
+    out = []
+    out_rtree = []
+    row_id = 0
+    for place, name, lon, lat in rows:
+        row_id += 1
+        lon_f = float(lon)
+        lat_f = float(lat)
+        out.append((row_id, place, name, lon_f, lat_f))
+        out_rtree.append((row_id, lon_f, lon_f, lat_f, lat_f))
+
+    for i in range(0, len(out), batch_size):
+        conn.executemany(
+            "INSERT INTO city_place(row_id, place, name, lon, lat) VALUES (?, ?, ?, ?, ?)",
+            out[i : i + batch_size],
+        )
+    for i in range(0, len(out_rtree), batch_size):
+        conn.executemany(
+            "INSERT INTO city_place_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+            out_rtree[i : i + batch_size],
+        )
+    return len(out)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build v4 SQLite/SpatiaLite DB with tile prefilter table")
     parser.add_argument("--v1-dist", required=True, help="Path to mapdata/dist/<region>")
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
+    parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon index")
     parser.add_argument("--tile-size-m", type=int, default=4096, help="Tile size in EPSG:3857 meters")
     parser.add_argument("--max-way-tiles", type=int, default=1024, help="Per-way tile fan-out cap before center fallback")
+    parser.add_argument("--max-city-tiles", type=int, default=50000, help="Per-city bbox tile cap before center fallback")
+    parser.add_argument("--max-city-ring-points", type=int, default=256, help="Max points per city ring after downsampling")
     parser.add_argument("--batch-size", type=int, default=20000, help="Insert batch size")
     parser.add_argument("--progress-every", type=int, default=250000, help="Progress logging interval")
     return parser.parse_args()
@@ -83,6 +363,12 @@ def main() -> int:
         return 1
     if args.max_way_tiles < 1:
         print("--max-way-tiles must be >= 1", file=sys.stderr)
+        return 1
+    if args.max_city_tiles < 1:
+        print("--max-city-tiles must be >= 1", file=sys.stderr)
+        return 1
+    if args.max_city_ring_points < 4:
+        print("--max-city-ring-points must be >= 4", file=sys.stderr)
         return 1
     if args.batch_size < 100:
         print("--batch-size must be >= 100", file=sys.stderr)
@@ -98,6 +384,11 @@ def main() -> int:
         if not p.exists():
             print(f"Missing required input: {p}", file=sys.stderr)
             return 1
+
+    input_pbf = Path(args.input_pbf) if args.input_pbf else None
+    if input_pbf and not input_pbf.exists():
+        print(f"Missing --input-pbf: {input_pbf}", file=sys.stderr)
+        return 1
 
     out_db.parent.mkdir(parents=True, exist_ok=True)
     if out_db.exists():
@@ -123,6 +414,7 @@ def main() -> int:
           row_id INTEGER PRIMARY KEY,
           way_id TEXT NOT NULL UNIQUE,
           highway TEXT,
+          street_name TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
@@ -172,17 +464,66 @@ def main() -> int:
           min_lon, max_lon,
           min_lat, max_lat
         );
+
+        CREATE TABLE city_boundary (
+          row_id INTEGER PRIMARY KEY,
+          osm_type TEXT NOT NULL,
+          osm_id INTEGER NOT NULL,
+          admin_level INTEGER NOT NULL,
+          name TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+
+        CREATE VIRTUAL TABLE city_boundary_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        CREATE TABLE city_ring (
+          boundary_row_id INTEGER NOT NULL,
+          ring_index INTEGER NOT NULL,
+          outer_index INTEGER NOT NULL,
+          is_hole INTEGER NOT NULL,
+          points_json TEXT NOT NULL
+        );
+
+        CREATE TABLE city_tile (
+          boundary_row_id INTEGER NOT NULL,
+          tile_x INTEGER NOT NULL,
+          tile_y INTEGER NOT NULL
+        );
+
+        CREATE TABLE city_place (
+          row_id INTEGER PRIMARY KEY,
+          place TEXT NOT NULL,
+          name TEXT NOT NULL,
+          lon REAL NOT NULL,
+          lat REAL NOT NULL
+        );
+
+        CREATE VIRTUAL TABLE city_place_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
         """
     )
 
     conn.executemany(
         "INSERT INTO metadata(key, value) VALUES(?, ?)",
         [
-            ("schema_version", "1"),
+            ("schema_version", "2"),
             ("backend", backend),
             ("source_v1_dist", str(v1_dist)),
             ("tile_size_m", str(args.tile_size_m)),
             ("max_way_tiles", str(args.max_way_tiles)),
+            ("max_city_tiles", str(args.max_city_tiles)),
+            ("max_city_ring_points", str(args.max_city_ring_points)),
+            ("city_context_mode", "disabled"),
         ],
     )
 
@@ -233,6 +574,7 @@ def main() -> int:
                     row_id,
                     way_id,
                     meta.get("highway"),
+                    meta.get("street_name"),
                     meta.get("maxspeed"),
                     meta.get("maxspeed_type"),
                     meta.get("source_maxspeed"),
@@ -267,10 +609,10 @@ def main() -> int:
                 conn.executemany(
                     """
                     INSERT INTO ways(
-                      row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
+                      row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
                       zone_maxspeed, traffic_sign, approx_heading_deg,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -299,10 +641,10 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO ways(
-              row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
+              row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
               zone_maxspeed, traffic_sign, approx_heading_deg,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )
@@ -329,8 +671,8 @@ def main() -> int:
         print("areas.idx format invalid: areas must be array", file=sys.stderr)
         return 1
 
-    area_rows = []
-    area_rtree_rows = []
+    area_rows: List[Tuple] = []
+    area_rtree_rows: List[Tuple] = []
     for i, area in enumerate(areas, start=1):
         area_rows.append(
             (
@@ -390,13 +732,75 @@ def main() -> int:
         )
         conn.commit()
 
+    city_mode = "areas_place_points"
+    city_stats: Dict[str, int] = {
+        "city_boundaries": 0,
+        "city_rings": 0,
+        "city_tiles": 0,
+        "city_tile_fallback_boundaries": 0,
+        "city_places": 0,
+    }
+
+    if input_pbf:
+        if osmium is None:
+            print("pyosmium unavailable; skipping exact city polygon extraction", file=sys.stderr)
+        else:
+            print(f"Extracting city polygons from PBF: {input_pbf}", file=sys.stderr)
+            extractor = _CityContextExtractor(
+                tile_size_m=args.tile_size_m,
+                max_ring_points=args.max_city_ring_points,
+                max_boundary_tiles=args.max_city_tiles,
+                batch_size=args.batch_size,
+                progress_every=max(1, args.progress_every // 100),
+            )
+            extractor.apply_file(str(input_pbf), locations=True)
+            _insert_city_rows(conn, extractor, args.batch_size)
+            city_stats = {
+                "city_boundaries": int(extractor.stats["city_boundaries"]),
+                "city_rings": int(extractor.stats["city_rings"]),
+                "city_tiles": int(extractor.stats["city_tiles"]),
+                "city_tile_fallback_boundaries": int(extractor.stats["city_tile_fallback_boundaries"]),
+                "city_places": int(extractor.stats["city_places"]),
+            }
+            city_mode = "admin_polygons_plus_places"
+
+    if city_stats["city_places"] == 0:
+        # Fallback from areas.idx point rows if PBF extraction is disabled or unavailable.
+        city_stats["city_places"] = _populate_city_context_from_areas(conn, args.batch_size)
+
     conn.execute("CREATE INDEX idx_ways_way_id ON ways(way_id)")
     conn.execute("CREATE INDEX idx_way_tile_xy ON way_tile(tile_x, tile_y, row_id)")
     conn.execute("CREATE INDEX idx_way_tile_row ON way_tile(row_id)")
     conn.execute("CREATE INDEX idx_areas_place_admin ON areas(place, admin_level, boundary)")
+
+    conn.execute("CREATE INDEX idx_city_boundary_osm ON city_boundary(osm_type, osm_id)")
+    conn.execute("CREATE INDEX idx_city_ring_boundary ON city_ring(boundary_row_id, outer_index, is_hole, ring_index)")
+    conn.execute("CREATE INDEX idx_city_tile_xy ON city_tile(tile_x, tile_y, boundary_row_id)")
+    conn.execute("CREATE INDEX idx_city_tile_boundary ON city_tile(boundary_row_id)")
+    conn.execute("CREATE INDEX idx_city_place_place_name ON city_place(place, name)")
+
+    conn.executemany(
+        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+        [
+            ("city_context_mode", city_mode),
+            ("city_boundaries", str(city_stats["city_boundaries"])),
+            ("city_rings", str(city_stats["city_rings"])),
+            ("city_tiles", str(city_stats["city_tiles"])),
+            ("city_tile_fallback_boundaries", str(city_stats["city_tile_fallback_boundaries"])),
+            ("city_places", str(city_stats["city_places"])),
+            ("source_input_pbf", str(input_pbf) if input_pbf else ""),
+        ],
+    )
     conn.commit()
     conn.close()
 
+    print(f"City context mode: {city_mode}", file=sys.stderr)
+    print(
+        "City context stats: boundaries={city_boundaries}, rings={city_rings}, tiles={city_tiles}, places={city_places}, tile_fallback={city_tile_fallback_boundaries}".format(
+            **city_stats
+        ),
+        file=sys.stderr,
+    )
     print(f"Wrote v4 DB: {out_db}", file=sys.stderr)
     return 0
 

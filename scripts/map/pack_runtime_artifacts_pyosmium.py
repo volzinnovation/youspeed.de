@@ -157,6 +157,7 @@ class ArtifactHandler(osmium.SimpleHandler):
             way_row = {
                 "way_id": way_id,
                 "highway": highway,
+                "street_name": tags.get("name"),
                 "maxspeed": tags.get("maxspeed"),
                 "maxspeed_type": tags.get("maxspeed:type"),
                 "source_maxspeed": tags.get("source:maxspeed"),

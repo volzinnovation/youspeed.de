@@ -54,6 +54,20 @@ def _tile_id(tx: int, ty: int) -> str:
     return f"{tx}/{ty}"
 
 
+def _table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=? LIMIT 1", (table_name,)
+    ).fetchone()
+    return row is not None
+
+
+def _column_exists(conn: sqlite3.Connection, table_name: str, column_name: str) -> bool:
+    for row in conn.execute(f"PRAGMA table_info({table_name})"):
+        if str(row[1]) == column_name:
+            return True
+    return False
+
+
 def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     r = 6371008.8
     p1 = math.radians(lat1)
@@ -160,6 +174,7 @@ def _query_way_rows(
     tile_y_min: int,
     tile_y_max: int,
     limit_rows: int,
+    has_street_name: bool,
 ) -> Tuple[List[dict], int]:
     deg_lat = radius_m / 111132.0
     cos_lat = max(0.173648, abs(math.cos(math.radians(lat))))
@@ -181,7 +196,8 @@ def _query_way_rows(
         ).fetchone()[0]
     )
 
-    sql = """
+    street_name_select = "w.street_name" if has_street_name else "NULL"
+    sql = f"""
     WITH tile_rows AS (
       SELECT DISTINCT row_id
       FROM way_tile
@@ -191,6 +207,7 @@ def _query_way_rows(
     SELECT
       w.way_id,
       w.highway,
+      {street_name_select} AS street_name,
       w.maxspeed,
       w.maxspeed_type,
       w.source_maxspeed,
@@ -268,9 +285,9 @@ def _query_way_rows(
     cur = conn.execute(sql, params)
     for r in cur.fetchall():
         points: List[List[float]] = []
-        if isinstance(r[12], str) and r[12]:
+        if isinstance(r[13], str) and r[13]:
             try:
-                parsed = json.loads(r[12])
+                parsed = json.loads(r[13])
                 if isinstance(parsed, list):
                     points = parsed
             except json.JSONDecodeError:
@@ -279,16 +296,17 @@ def _query_way_rows(
             {
                 "way_id": str(r[0]),
                 "highway": r[1],
-                "maxspeed": r[2],
-                "maxspeed_type": r[3],
-                "source_maxspeed": r[4],
-                "zone_maxspeed": r[5],
-                "traffic_sign": r[6],
-                "approx_heading_deg": r[7],
-                "min_lon": float(r[8]),
-                "min_lat": float(r[9]),
-                "max_lon": float(r[10]),
-                "max_lat": float(r[11]),
+                "street_name": r[2],
+                "maxspeed": r[3],
+                "maxspeed_type": r[4],
+                "source_maxspeed": r[5],
+                "zone_maxspeed": r[6],
+                "traffic_sign": r[7],
+                "approx_heading_deg": r[8],
+                "min_lon": float(r[9]),
+                "min_lat": float(r[10]),
+                "max_lon": float(r[11]),
+                "max_lat": float(r[12]),
                 "points": points,
             }
         )
@@ -324,6 +342,204 @@ def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_row
             }
         )
     return out
+
+
+def _point_on_segment(lon: float, lat: float, x1: float, y1: float, x2: float, y2: float, eps: float = 1e-12) -> bool:
+    cross = (lon - x1) * (y2 - y1) - (lat - y1) * (x2 - x1)
+    if abs(cross) > eps:
+        return False
+    dot = (lon - x1) * (x2 - x1) + (lat - y1) * (y2 - y1)
+    if dot < -eps:
+        return False
+    sq_len = (x2 - x1) ** 2 + (y2 - y1) ** 2
+    if dot - sq_len > eps:
+        return False
+    return True
+
+
+def _point_in_ring(lon: float, lat: float, ring: List[List[float]]) -> bool:
+    if len(ring) < 4:
+        return False
+
+    inside = False
+    n = len(ring)
+    for i in range(n - 1):
+        x1, y1 = float(ring[i][0]), float(ring[i][1])
+        x2, y2 = float(ring[i + 1][0]), float(ring[i + 1][1])
+
+        if _point_on_segment(lon, lat, x1, y1, x2, y2):
+            return True
+
+        intersects = ((y1 > lat) != (y2 > lat)) and (
+            lon < (x2 - x1) * (lat - y1) / ((y2 - y1) if (y2 - y1) != 0 else 1e-30) + x1
+        )
+        if intersects:
+            inside = not inside
+    return inside
+
+
+def _boundary_contains_point(conn: sqlite3.Connection, boundary_row_id: int, lon: float, lat: float) -> bool:
+    cur = conn.execute(
+        """
+        SELECT outer_index, is_hole, points_json
+        FROM city_ring
+        WHERE boundary_row_id=?
+        ORDER BY outer_index, is_hole, ring_index
+        """,
+        (boundary_row_id,),
+    )
+
+    grouped: Dict[int, Dict[str, List[List[List[float]]]]] = {}
+    for outer_index, is_hole, points_json in cur.fetchall():
+        try:
+            points = json.loads(points_json)
+        except Exception:
+            continue
+        if not isinstance(points, list):
+            continue
+        g = grouped.setdefault(int(outer_index), {"outer": [], "holes": []})
+        if int(is_hole) == 0:
+            g["outer"] = points
+        else:
+            g["holes"].append(points)
+
+    for group in grouped.values():
+        outer = group.get("outer")
+        if not outer:
+            continue
+        if not _point_in_ring(lon, lat, outer):
+            continue
+        in_hole = any(_point_in_ring(lon, lat, hole) for hole in group.get("holes", []))
+        if not in_hole:
+            return True
+    return False
+
+
+def _resolve_city_context(
+    conn: sqlite3.Connection,
+    lat: float,
+    lon: float,
+    query_tx: int,
+    query_ty: int,
+    tile_radius: int,
+) -> Dict[str, object]:
+    has_city_tables = all(
+        _table_exists(conn, t)
+        for t in ("city_boundary", "city_boundary_rtree", "city_ring", "city_tile", "city_place", "city_place_rtree")
+    )
+
+    if not has_city_tables:
+        return {
+            "inside_city": False,
+            "city_name": None,
+            "city_admin_level": None,
+            "city_source": None,
+            "city_candidate_boundaries": 0,
+            "city_containing_boundaries": 0,
+            "city_place_candidates": 0,
+            "city_mode": "unavailable",
+        }
+
+    tile_x_min = query_tx - tile_radius
+    tile_x_max = query_tx + tile_radius
+    tile_y_min = query_ty - tile_radius
+    tile_y_max = query_ty + tile_radius
+
+    candidates = conn.execute(
+        """
+        WITH t AS (
+          SELECT DISTINCT boundary_row_id
+          FROM city_tile
+          WHERE tile_x BETWEEN ? AND ?
+            AND tile_y BETWEEN ? AND ?
+        )
+        SELECT
+          b.row_id,
+          b.admin_level,
+          b.name,
+          b.min_lon,
+          b.min_lat,
+          b.max_lon,
+          b.max_lat
+        FROM t
+        JOIN city_boundary_rtree r ON r.row_id = t.boundary_row_id
+        JOIN city_boundary b ON b.row_id = t.boundary_row_id
+        WHERE r.min_lon <= ? AND r.max_lon >= ?
+          AND r.min_lat <= ? AND r.max_lat >= ?
+        LIMIT 2048
+        """,
+        (
+            tile_x_min,
+            tile_x_max,
+            tile_y_min,
+            tile_y_max,
+            lon,
+            lon,
+            lat,
+            lat,
+        ),
+    ).fetchall()
+
+    containing: List[Tuple[int, Optional[str], float]] = []
+    for row in candidates:
+        row_id = int(row[0])
+        admin_level = int(row[1])
+        name = row[2]
+        bbox_area = max(float(row[5]) - float(row[3]), 0.0) * max(float(row[6]) - float(row[4]), 0.0)
+        if _boundary_contains_point(conn, row_id, lon, lat):
+            containing.append((admin_level, name, bbox_area))
+
+    if containing:
+        containing.sort(key=lambda r: (r[0], r[2], (r[1] or "~")))
+        best_level, best_name, _ = containing[0]
+        return {
+            "inside_city": best_level in {8, 9},
+            "city_name": best_name,
+            "city_admin_level": best_level,
+            "city_source": "admin_polygon",
+            "city_candidate_boundaries": len(candidates),
+            "city_containing_boundaries": len(containing),
+            "city_place_candidates": 0,
+            "city_mode": "admin_polygons_plus_places",
+        }
+
+    # Fallback locality label for outside-city positions.
+    place_candidates = conn.execute(
+        """
+        SELECT p.place, p.name, p.lon, p.lat
+        FROM city_place_rtree r
+        JOIN city_place p ON p.row_id = r.row_id
+        WHERE r.min_lon <= ? AND r.max_lon >= ?
+          AND r.min_lat <= ? AND r.max_lat >= ?
+        ORDER BY ((p.lon - ?) * (p.lon - ?) + (p.lat - ?) * (p.lat - ?)) ASC
+        LIMIT 16
+        """,
+        (lon + 0.3, lon - 0.3, lat + 0.3, lat - 0.3, lon, lon, lat, lat),
+    ).fetchall()
+
+    if place_candidates:
+        best = place_candidates[0]
+        return {
+            "inside_city": False,
+            "city_name": best[1],
+            "city_admin_level": None,
+            "city_source": "place_fallback",
+            "city_candidate_boundaries": len(candidates),
+            "city_containing_boundaries": 0,
+            "city_place_candidates": len(place_candidates),
+            "city_mode": "admin_polygons_plus_places",
+        }
+
+    return {
+        "inside_city": False,
+        "city_name": None,
+        "city_admin_level": None,
+        "city_source": None,
+        "city_candidate_boundaries": len(candidates),
+        "city_containing_boundaries": 0,
+        "city_place_candidates": 0,
+        "city_mode": "admin_polygons_plus_places",
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -398,6 +614,8 @@ def main() -> int:
         print("Invalid v4 DB schema", file=sys.stderr)
         return 1
 
+    has_street_name = _column_exists(conn, "ways", "street_name")
+
     tile_size_row = conn.execute("SELECT value FROM metadata WHERE key='tile_size_m' LIMIT 1").fetchone()
     if not tile_size_row:
         print("v4 metadata missing tile_size_m", file=sys.stderr)
@@ -425,9 +643,14 @@ def main() -> int:
         tile_y_min=tile_y_min,
         tile_y_max=tile_y_max,
         limit_rows=args.max_candidates,
+        has_street_name=has_street_name,
     )
     area_candidates = _query_area_rows(conn=conn, lat=args.lat, lon=args.lon)
     candidate_load_ms = (time.perf_counter() - t1) * 1000.0
+
+    t_city = time.perf_counter()
+    city_context = _resolve_city_context(conn, args.lat, args.lon, tx, ty, args.tile_radius)
+    city_resolve_ms = (time.perf_counter() - t_city) * 1000.0
 
     t2 = time.perf_counter()
     scored: List[dict] = []
@@ -457,6 +680,7 @@ def main() -> int:
             {
                 "way_id": row["way_id"],
                 "highway": highway,
+                "street_name": row.get("street_name"),
                 "distance_m": round(distance_m, 2),
                 "heading_diff_deg": None if heading_diff is None else round(heading_diff, 2),
                 "score": round(score, 2),
@@ -499,7 +723,13 @@ def main() -> int:
     top = scored[: args.top_k]
     scoring_ms = (time.perf_counter() - t2) * 1000.0
 
-    built_up = inside_built_up_guess(args.lat, args.lon, area_candidates)
+    # Built-up decision prefers exact city polygon result when available.
+    city_mode = str(city_context.get("city_mode") or "unavailable")
+    if city_mode != "unavailable":
+        built_up = bool(city_context.get("inside_city", False))
+    else:
+        built_up = inside_built_up_guess(args.lat, args.lon, area_candidates)
+
     default_speed = DEFAULT_DE_URBAN if built_up else DEFAULT_DE_RURAL_CAR
     best = top[0] if top else None
     if best and best.get("parsed_speed_kmh") is not None:
@@ -537,10 +767,19 @@ def main() -> int:
             "default_speed_kmh": default_speed,
             "effective_speed_kmh": effective_speed,
             "effective_speed_source": effective_source,
+            "city_name": city_context.get("city_name"),
+            "city_admin_level": city_context.get("city_admin_level"),
+            "city_source": city_context.get("city_source"),
+            "city_candidate_boundaries": city_context.get("city_candidate_boundaries", 0),
+            "city_containing_boundaries": city_context.get("city_containing_boundaries", 0),
+            "city_place_candidates": city_context.get("city_place_candidates", 0),
+            "city_mode": city_context.get("city_mode"),
+            "has_street_name_column": has_street_name,
         },
         "timing_ms": {
             "load_index": round(index_load_ms, 2),
             "load_candidates": round(candidate_load_ms, 2),
+            "city_resolve": round(city_resolve_ms, 2),
             "polyline_refine": round(polyline_refine_ms, 2),
             "score_and_rank": round(scoring_ms, 2),
             "total": round((time.perf_counter() - started) * 1000.0, 2),
@@ -548,8 +787,8 @@ def main() -> int:
         "top_candidates": top,
         "notes": [
             "v4 query combines tile prefilter (way_tile) with SQLite RTree.",
-            "Built-up inference is heuristic from area bbox candidates.",
-            "Use camera-detected signs to override map/default limits in final fusion.",
+            "Built-up inference prefers exact admin polygon containment when city tables are available.",
+            "Top candidates include street_name when present in the runtime artifact.",
         ],
     }
 

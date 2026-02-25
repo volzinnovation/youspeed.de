@@ -89,6 +89,7 @@ jq -c '
   | {
     way_id: way_id,
       highway: $highway,
+      street_name: (.properties.name // null),
       maxspeed: (.properties.maxspeed // null),
       maxspeed_type: (.properties["maxspeed:type"] // null),
       source_maxspeed: (.properties["source:maxspeed"] // null),

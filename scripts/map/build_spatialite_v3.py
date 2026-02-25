@@ -97,6 +97,7 @@ def main() -> int:
           row_id INTEGER PRIMARY KEY,
           way_id TEXT NOT NULL UNIQUE,
           highway TEXT,
+          street_name TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
@@ -191,6 +192,7 @@ def main() -> int:
                     row_id,
                     way_id,
                     meta.get("highway"),
+                    meta.get("street_name"),
                     meta.get("maxspeed"),
                     meta.get("maxspeed_type"),
                     meta.get("source_maxspeed"),
@@ -218,10 +220,10 @@ def main() -> int:
                 conn.executemany(
                     """
                     INSERT INTO ways(
-                      row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
+                      row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
                       zone_maxspeed, traffic_sign, approx_heading_deg,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -245,10 +247,10 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO ways(
-              row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
+              row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
               zone_maxspeed, traffic_sign, approx_heading_deg,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )

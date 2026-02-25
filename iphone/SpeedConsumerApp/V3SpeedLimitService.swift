@@ -4,11 +4,23 @@ import SQLite3
 final class V3SpeedLimitService {
     private let dbPath: String
 
+    private struct WayCandidate {
+        let wayID: String?
+        let speedKmh: Int?
+        let distanceM: Double
+    }
+
     init(dbPath: String) {
         self.dbPath = dbPath
     }
 
-    func lookupSpeedLimit(lat: Double, lon: Double, radiusM: Double = 120.0, maxCandidates: Int = 256) throws -> SpeedLimitResult {
+    func lookupSpeedLimit(
+        lat: Double,
+        lon: Double,
+        radiusM: Double = 50.0,
+        maxCandidates: Int = 256,
+        preferredWayID: String? = nil
+    ) throws -> SpeedLimitResult {
         let t0 = DispatchTime.now().uptimeNanoseconds
 
         var db: OpaquePointer?
@@ -42,11 +54,10 @@ final class V3SpeedLimitService {
         sqlite3_bind_double(stmt, 4, bounds.minLat)
         sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
 
-        // Bounding-box prefiltering can yield multiple nearby/overlapping ways for one point.
-        // We intentionally resolve by nearest bbox distance and speed parsing, not by fixed way_id.
-        var bestDistance = Double.infinity
-        var bestSpeed: Int?
-        var bestWayID: String?
+        // Strategy 1: resolve by closest way candidate in the query perimeter.
+        // Strategy 2: if previous way_id is still in candidate set, prefer it over the closest candidate.
+        var closestCandidate: WayCandidate?
+        var preferredCandidate: WayCandidate?
         var candidateCount = 0
         var speedCandidateCount = 0
         var nearestCandidateDistance = Double.infinity
@@ -76,28 +87,35 @@ final class V3SpeedLimitService {
             if distance < nearestCandidateDistance {
                 nearestCandidateDistance = distance
             }
-            if distance > bestDistance {
-                continue
+            let parsed = Self.deriveSpeedLimitKmh(maxspeed: maxspeedRaw, maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed, highway: highway)
+            if parsed != nil {
+                speedCandidateCount += 1
+                if distance < nearestSpeedCandidateDistance {
+                    nearestSpeedCandidateDistance = distance
+                }
             }
 
-            let parsed = Self.deriveSpeedLimitKmh(maxspeed: maxspeedRaw, maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed, highway: highway)
-            guard let speed = parsed else {
-                continue
+            let candidate = WayCandidate(wayID: wayID, speedKmh: parsed, distanceM: distance)
+            if let closestCandidate, distance >= closestCandidate.distanceM {
+                // Keep existing closest candidate.
+            } else {
+                closestCandidate = candidate
             }
-            speedCandidateCount += 1
-            if distance < nearestSpeedCandidateDistance {
-                nearestSpeedCandidateDistance = distance
+            if let preferredWayID, wayID == preferredWayID,
+               let preferredCandidate,
+               distance >= preferredCandidate.distanceM {
+                // Keep existing preferred candidate.
+            } else if let preferredWayID, wayID == preferredWayID {
+                preferredCandidate = candidate
             }
-            bestDistance = distance
-            bestSpeed = speed
-            bestWayID = wayID
         }
 
         let t1 = DispatchTime.now().uptimeNanoseconds
         let elapsedMs = Double(t1 - t0) / 1_000_000.0
+        let selected = preferredCandidate ?? closestCandidate
         return SpeedLimitResult(
-            speedLimitKmh: bestSpeed,
-            wayID: bestWayID,
+            speedLimitKmh: selected?.speedKmh,
+            wayID: selected?.wayID,
             queryTimeMs: elapsedMs,
             candidateCount: candidateCount,
             speedCandidateCount: speedCandidateCount,

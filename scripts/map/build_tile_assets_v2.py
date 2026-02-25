@@ -201,6 +201,7 @@ def _build_chunks_for_tile(tile_ways: List[dict], tile_areas: List[dict], tx: in
         }
         speed_rules[seg_id] = {
             "highway": row.get("highway"),
+            "street_name": row.get("street_name"),
             "maxspeed": row.get("maxspeed"),
             "maxspeed_type": row.get("maxspeed_type"),
             "source_maxspeed": row.get("source_maxspeed"),
@@ -370,6 +371,7 @@ def main() -> int:
             row_out = {
                 "way_id": str(way_id),
                 "highway": row.get("highway"),
+                "street_name": row.get("street_name"),
                 "maxspeed": row.get("maxspeed"),
                 "maxspeed_type": row.get("maxspeed_type"),
                 "source_maxspeed": row.get("source_maxspeed"),

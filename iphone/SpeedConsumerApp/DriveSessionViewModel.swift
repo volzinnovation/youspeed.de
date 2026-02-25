@@ -22,7 +22,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lastError: String = ""
     @Published var currentLatitude: Double?
     @Published var currentLongitude: Double?
-    @Published var lookupRadiusM: Double = 150.0
     @Published var lookupMaxCandidates: Int = 512
     @Published var lastLookupStatus: String = "idle"
     @Published var lastLookupQueryMs: Double = 0
@@ -63,8 +62,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var syncTask: Task<Void, Never>?
     private var lastAudioFeedbackAt = Date.distantPast
     private var lastAnnouncedSpeechText: String?
+    private var previousMatchedWayID: String?
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let defaultAudioAlertThresholdKmh = 8
+    private static let defaultLookupRadiusM: Double = 50.0
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -366,6 +367,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveStatus = "stopped"
         lastAudioFeedbackAt = .distantPast
         lastAnnouncedSpeechText = nil
+        previousMatchedWayID = nil
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
@@ -374,6 +376,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func resetDiagnostics() {
         lookupEventLog.removeAll(keepingCapacity: false)
         gpsFixCount = 0
+        previousMatchedWayID = nil
         lastLookupStatus = "idle"
         lastLookupQueryMs = 0
         lastLookupCandidateCount = 0
@@ -420,15 +423,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             return
         }
-        let radiusM = lookupRadiusM
+        let radiusM = Self.defaultLookupRadiusM
         let maxCandidates = lookupMaxCandidates
+        let preferredWayID = previousMatchedWayID
 
         Task.detached(priority: .utility) {
             do {
-                let result = try service.lookupSpeedLimit(lat: lat, lon: lon, radiusM: radiusM, maxCandidates: maxCandidates)
+                let result = try service.lookupSpeedLimit(
+                    lat: lat,
+                    lon: lon,
+                    radiusM: radiusM,
+                    maxCandidates: maxCandidates,
+                    preferredWayID: preferredWayID
+                )
                 await MainActor.run {
                     self.speedLimitKmh = result.speedLimitKmh
                     self.limitWayID = result.wayID
+                    if let wayID = result.wayID {
+                        self.previousMatchedWayID = wayID
+                    }
                     self.maybeSpeakOverspeedWarning()
                     self.lastLookupStatus = result.speedLimitKmh == nil ? "no_match" : "matched"
                     self.lastLookupQueryMs = result.queryTimeMs
