@@ -59,6 +59,8 @@ targets:
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
         buildPhase: resources
+      - path: SpeedConsumerApp/Rules
+        buildPhase: resources
       - path: SpeedConsumerApp/speeds_v3.sqlite
         buildPhase: resources
     settings:

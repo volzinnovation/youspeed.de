@@ -1,6 +1,6 @@
 import Foundation
 
-struct BundleArtifact: Codable {
+struct BundleArtifact: Codable, Sendable {
     let file: String
     let bytes: Int64
     let sha256: String
@@ -118,6 +118,14 @@ struct BundleSyncProgress: Sendable {
     }
 
     let stage: Stage
+    let detail: String
+    let completedBytes: Int64
+    let totalBytes: Int64
+    let partDownloads: [PartDownloadProgress]
+}
+
+struct PartDownloadProgress: Sendable, Identifiable {
+    let id: String
     let detail: String
     let completedBytes: Int64
     let totalBytes: Int64

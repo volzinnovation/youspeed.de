@@ -6,6 +6,7 @@ actor V3BundleManager {
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let minimumFreeDiskReserveBytes: Int64 = 256 * 1024 * 1024
     private var githubToken: String?
     private var githubAssetURLByReleaseURL: [String: URL] = [:]
     private var githubReleaseAssetsByTagKey: [String: [String: Int64]] = [:]
@@ -80,12 +81,34 @@ actor V3BundleManager {
                 .appendingPathComponent(state.bundleVersion, isDirectory: true)
                 .appendingPathComponent(state.dbFileName)
             if fileManager.fileExists(atPath: dbURL.path) {
+                if state.bundleVersion == "seed",
+                   let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite"),
+                   let existingBytes = try? fileSize(dbURL),
+                   let bundledBytes = try? fileSize(bundledSeed),
+                   existingBytes != bundledBytes {
+                    if bundledBytes > 0 {
+                        try ensureSufficientDiskSpace(requiredBytes: bundledBytes, reason: "seed database refresh")
+                    }
+                    let tmp = dbURL.deletingLastPathComponent().appendingPathComponent("\(state.dbFileName).refresh.tmp")
+                    try? removeItemIfExists(at: tmp)
+                    try fileManager.copyItem(at: bundledSeed, to: tmp)
+                    if fileManager.fileExists(atPath: dbURL.path) {
+                        _ = try fileManager.replaceItemAt(dbURL, withItemAt: tmp)
+                    } else {
+                        try fileManager.moveItem(at: tmp, to: dbURL)
+                    }
+                    return BundleSyncResult(mode: .bootstrap, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "seed bundle refreshed")
+                }
                 return BundleSyncResult(mode: .upToDate, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "existing active bundle")
             }
         }
 
         guard let source = bundle.url(forResource: resourceName, withExtension: "sqlite") else {
             throw ConsumerAppError.io("Missing bundled seed DB resource: \(resourceName).sqlite")
+        }
+        let seedBytes = (try? fileSize(source)) ?? 0
+        if seedBytes > 0 {
+            try ensureSufficientDiskSpace(requiredBytes: seedBytes, reason: "seed database")
         }
 
         let version = "seed"
@@ -121,6 +144,7 @@ actor V3BundleManager {
         _ manifestURL: URL,
         onProgress: (@Sendable (BundleSyncProgress) -> Void)? = nil
     ) async throws -> BundleSyncResult {
+        try? cleanupStagingArtifacts()
         emitProgress(
             onProgress,
             stage: .preparing,
@@ -134,55 +158,63 @@ actor V3BundleManager {
             throw ConsumerAppError.invalidManifest("Unexpected manifest format or variant")
         }
 
-        let current = try activeState()
-        if current?.bundleVersion == manifest.bundleVersion,
-           let currentDB = try activeDatabaseURL(),
-           fileManager.fileExists(atPath: currentDB.path) {
+        do {
+            let current = try activeState()
+            if current?.bundleVersion == manifest.bundleVersion,
+               let currentDB = try activeDatabaseURL(),
+               fileManager.fileExists(atPath: currentDB.path) {
+                emitProgress(
+                    onProgress,
+                    stage: .completed,
+                    detail: "Bundle already up to date",
+                    completedBytes: manifest.db.bytes,
+                    totalBytes: manifest.db.bytes
+                )
+                try? cleanupStagingArtifacts()
+                return BundleSyncResult(mode: .upToDate, bundleVersion: manifest.bundleVersion, dbPath: currentDB.path, details: "already active")
+            }
+
+            let forceFullReload = shouldForceFullReload(currentVersion: current?.bundleVersion, targetVersion: manifest.bundleVersion, maxAgeDays: 30)
+
+            if !forceFullReload,
+               let current,
+               let deltaRef = manifest.deltaIndex,
+               let result = try await tryApplyDelta(
+                   current: current,
+                   manifest: manifest,
+                   manifestURL: manifestURL,
+                   deltaIndexRef: deltaRef,
+                   onProgress: onProgress
+               ) {
+                emitProgress(
+                    onProgress,
+                    stage: .completed,
+                    detail: "Delta update applied",
+                    completedBytes: manifest.db.bytes,
+                    totalBytes: manifest.db.bytes
+                )
+                try? cleanupStagingArtifacts()
+                return result
+            }
+
+            let fullDownload = try await fullDownloadActivate(
+                manifest: manifest,
+                manifestURL: manifestURL,
+                onProgress: onProgress
+            )
             emitProgress(
                 onProgress,
                 stage: .completed,
-                detail: "Bundle already up to date",
+                detail: "Download completed",
                 completedBytes: manifest.db.bytes,
                 totalBytes: manifest.db.bytes
             )
-            return BundleSyncResult(mode: .upToDate, bundleVersion: manifest.bundleVersion, dbPath: currentDB.path, details: "already active")
+            try? cleanupStagingArtifacts()
+            return fullDownload
+        } catch {
+            try? cleanupStagingArtifacts()
+            throw error
         }
-
-        let forceFullReload = shouldForceFullReload(currentVersion: current?.bundleVersion, targetVersion: manifest.bundleVersion, maxAgeDays: 30)
-
-        if !forceFullReload,
-           let current,
-           let deltaRef = manifest.deltaIndex,
-           let result = try await tryApplyDelta(
-               current: current,
-               manifest: manifest,
-               manifestURL: manifestURL,
-               deltaIndexRef: deltaRef,
-               onProgress: onProgress
-           ) {
-            emitProgress(
-                onProgress,
-                stage: .completed,
-                detail: "Delta update applied",
-                completedBytes: manifest.db.bytes,
-                totalBytes: manifest.db.bytes
-            )
-            return result
-        }
-
-        let fullDownload = try await fullDownloadActivate(
-            manifest: manifest,
-            manifestURL: manifestURL,
-            onProgress: onProgress
-        )
-        emitProgress(
-            onProgress,
-            stage: .completed,
-            detail: "Download completed",
-            completedBytes: manifest.db.bytes,
-            totalBytes: manifest.db.bytes
-        )
-        return fullDownload
     }
 
     private func tryApplyDelta(
@@ -225,6 +257,15 @@ actor V3BundleManager {
             throw ConsumerAppError.invalidManifest("Delta manifest version mismatch")
         }
 
+        guard let activeDB = try activeDatabaseURL(), fileManager.fileExists(atPath: activeDB.path) else {
+            return nil
+        }
+        let activeDBBytes = try fileSize(activeDB)
+        try ensureSufficientDiskSpace(
+            requiredBytes: activeDBBytes + deltaManifest.patch.bytes,
+            reason: "delta update staging"
+        )
+
         let patchURL = try resolveArtifactURL(deltaManifest.patch, relativeTo: deltaManifestURL)
         emitProgress(
             onProgress,
@@ -236,26 +277,27 @@ actor V3BundleManager {
         let patchData = try await downloadData(from: patchURL)
         try validateSHA256(data: patchData, expectedHex: deltaManifest.patch.sha256, label: "delta patch")
 
-        guard let activeDB = try activeDatabaseURL(), fileManager.fileExists(atPath: activeDB.path) else {
-            return nil
-        }
-
         let stagingDB = try stageCopyOfActiveDB(forVersion: manifest.bundleVersion)
         let patchSQL = String(decoding: patchData, as: UTF8.self)
-        emitProgress(
-            onProgress,
-            stage: .applyingDelta,
-            detail: "Applying delta patch",
-            completedBytes: deltaManifest.patch.bytes,
-            totalBytes: deltaManifest.patch.bytes
-        )
-        try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
-        try activatePreparedDB(
-            preparedDB: stagingDB,
-            manifest: manifest,
-            mode: .deltaPatch,
-            details: "applied delta from \(current.bundleVersion)"
-        )
+        do {
+            emitProgress(
+                onProgress,
+                stage: .applyingDelta,
+                detail: "Applying delta patch",
+                completedBytes: deltaManifest.patch.bytes,
+                totalBytes: deltaManifest.patch.bytes
+            )
+            try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
+            try activatePreparedDB(
+                preparedDB: stagingDB,
+                manifest: manifest,
+                mode: .deltaPatch,
+                details: "applied delta from \(current.bundleVersion)"
+            )
+        } catch {
+            try? removeItemIfExists(at: stagingDB)
+            throw error
+        }
 
         return BundleSyncResult(
             mode: .deltaPatch,
@@ -270,6 +312,16 @@ actor V3BundleManager {
         manifestURL: URL,
         onProgress: (@Sendable (BundleSyncProgress) -> Void)?
     ) async throws -> BundleSyncResult {
+        emitProgress(
+            onProgress,
+            stage: .preparing,
+            detail: "Checking free disk space",
+            completedBytes: 0,
+            totalBytes: 0
+        )
+        let requiredBytes = manifest.db.bytes
+        try ensureSufficientDiskSpace(requiredBytes: requiredBytes, reason: "bundle download")
+
         let stagingDB: URL
         if let dbParts = manifest.dbParts, !dbParts.isEmpty {
             stagingDB = try await writeMultipartStagingDB(
@@ -296,28 +348,37 @@ actor V3BundleManager {
                         stage: .downloading,
                         detail: detail,
                         completedBytes: max(0, min(completedBytes, expected)),
-                        totalBytes: max(0, expected)
+                        totalBytes: max(0, expected),
+                        partDownloads: []
                     )
                 )
+            }
+            defer {
+                try? removeItemIfExists(at: downloaded)
             }
             try validateSHA256(fileAt: downloaded, expectedHex: manifest.db.sha256, label: "bundle db")
             stagingDB = try writeStagingDB(downloadedFile: downloaded, version: manifest.bundleVersion)
         }
 
-        emitProgress(
-            onProgress,
-            stage: .validating,
-            detail: "Validating downloaded database",
-            completedBytes: manifest.db.bytes,
-            totalBytes: manifest.db.bytes
-        )
-        try quickValidateDB(at: stagingDB)
-        try activatePreparedDB(
-            preparedDB: stagingDB,
-            manifest: manifest,
-            mode: .fullDownload,
-            details: "full bundle download"
-        )
+        do {
+            emitProgress(
+                onProgress,
+                stage: .validating,
+                detail: "Validating downloaded database",
+                completedBytes: manifest.db.bytes,
+                totalBytes: manifest.db.bytes
+            )
+            try quickValidateDB(at: stagingDB)
+            try activatePreparedDB(
+                preparedDB: stagingDB,
+                manifest: manifest,
+                mode: .fullDownload,
+                details: "full bundle download"
+            )
+        } catch {
+            try? removeItemIfExists(at: stagingDB)
+            throw error
+        }
 
         return BundleSyncResult(
             mode: .fullDownload,
@@ -340,14 +401,42 @@ actor V3BundleManager {
 
         let finalDB = bundleDir.appendingPathComponent(manifest.db.file)
         let finalTmp = bundleDir.appendingPathComponent("\(manifest.db.file).tmp")
-        if fileManager.fileExists(atPath: finalTmp.path) {
-            try fileManager.removeItem(at: finalTmp)
+        let sqliteCompanionSuffixes = ["-wal", "-shm"]
+        do {
+            try? removeItemIfExists(at: finalTmp)
+            for suffix in sqliteCompanionSuffixes {
+                let preparedCompanion = sqliteCompanionURL(for: preparedDB, suffix: suffix)
+                let finalTmpCompanion = sqliteCompanionURL(for: finalTmp, suffix: suffix)
+                try? removeItemIfExists(at: finalTmpCompanion)
+                if fileManager.fileExists(atPath: preparedCompanion.path) {
+                    try fileManager.moveItem(at: preparedCompanion, to: finalTmpCompanion)
+                }
+            }
+            try fileManager.moveItem(at: preparedDB, to: finalTmp)
+            if fileManager.fileExists(atPath: finalDB.path) {
+                _ = try fileManager.replaceItemAt(finalDB, withItemAt: finalTmp)
+            } else {
+                try fileManager.moveItem(at: finalTmp, to: finalDB)
+            }
+            for suffix in sqliteCompanionSuffixes {
+                let finalCompanion = sqliteCompanionURL(for: finalDB, suffix: suffix)
+                let finalTmpCompanion = sqliteCompanionURL(for: finalTmp, suffix: suffix)
+                try? removeItemIfExists(at: finalCompanion)
+                if fileManager.fileExists(atPath: finalTmpCompanion.path) {
+                    try fileManager.moveItem(at: finalTmpCompanion, to: finalCompanion)
+                }
+            }
+        } catch {
+            try? removeItemIfExists(at: finalTmp)
+            try? removeItemIfExists(at: preparedDB)
+            for suffix in sqliteCompanionSuffixes {
+                let preparedCompanion = sqliteCompanionURL(for: preparedDB, suffix: suffix)
+                let finalTmpCompanion = sqliteCompanionURL(for: finalTmp, suffix: suffix)
+                try? removeItemIfExists(at: preparedCompanion)
+                try? removeItemIfExists(at: finalTmpCompanion)
+            }
+            throw error
         }
-        if fileManager.fileExists(atPath: finalDB.path) {
-            try fileManager.removeItem(at: finalDB)
-        }
-        try fileManager.moveItem(at: preparedDB, to: finalTmp)
-        try fileManager.moveItem(at: finalTmp, to: finalDB)
 
         let manifestURL = bundleDir.appendingPathComponent("bundle-manifest.v3.json")
         let encodedManifest = try JSONEncoder().encode(manifest)
@@ -361,6 +450,7 @@ actor V3BundleManager {
                 activatedAtUTC: nowUTC()
             )
         )
+        try? pruneInactiveBundles(keepingVersions: [manifest.bundleVersion])
 
         _ = mode
         _ = details
@@ -386,6 +476,62 @@ actor V3BundleManager {
             try fileManager.createDirectory(at: stageDir, withIntermediateDirectories: true)
         }
         return stageDir
+    }
+
+    private func multipartPartsCacheDirectory() throws -> URL {
+        let cacheDir = try rootDir().appendingPathComponent("multipart-cache", isDirectory: true)
+        if !fileManager.fileExists(atPath: cacheDir.path) {
+            try fileManager.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        }
+        return cacheDir
+    }
+
+    private func multipartAssembledCacheIdentity(manifest: V3BundleManifest, sortedParts: [BundleArtifact]) -> String {
+        var identity = "\(manifest.bundleVersion)|\(manifest.db.file)|\(manifest.db.sha256)|\(manifest.db.bytes)"
+        for part in sortedParts {
+            identity.append("|\(part.file)|\(part.sha256)|\(part.bytes)")
+        }
+        return identity
+    }
+
+    private func multipartAssembledCacheFileURL(manifest: V3BundleManifest, sortedParts: [BundleArtifact]) throws -> URL {
+        let identity = multipartAssembledCacheIdentity(manifest: manifest, sortedParts: sortedParts)
+        let digest = SHA256.hash(data: Data(identity.utf8))
+        let key = digest.map { String(format: "%02x", $0) }.joined()
+        return try multipartPartsCacheDirectory().appendingPathComponent("\(key).assembled.sqlite")
+    }
+
+    private func multipartAssembleCheckpointFileURL(manifest: V3BundleManifest, sortedParts: [BundleArtifact]) throws -> URL {
+        let identity = multipartAssembledCacheIdentity(manifest: manifest, sortedParts: sortedParts)
+        let digest = SHA256.hash(data: Data(identity.utf8))
+        let key = digest.map { String(format: "%02x", $0) }.joined()
+        return try multipartPartsCacheDirectory().appendingPathComponent("\(key).checkpoint.json")
+    }
+
+    private func isReusableCachedArtifact(
+        _ url: URL,
+        expectedBytes: Int64,
+        expectedSHA256: String,
+        preserveOnMismatch: Bool = false
+    ) throws -> Bool {
+        guard fileManager.fileExists(atPath: url.path) else {
+            return false
+        }
+        guard try fileSize(url) == expectedBytes else {
+            if !preserveOnMismatch {
+                try? removeItemIfExists(at: url)
+            }
+            return false
+        }
+        do {
+            try validateSHA256(fileAt: url, expectedHex: expectedSHA256, label: "bundle db cached artifact")
+            return true
+        } catch {
+            if !preserveOnMismatch {
+                try? removeItemIfExists(at: url)
+            }
+            return false
+        }
     }
 
     private func writeStagingDB(downloadedFile: URL, version: String) throws -> URL {
@@ -416,68 +562,301 @@ actor V3BundleManager {
             throw ConsumerAppError.invalidManifest("db_parts is empty")
         }
 
-        let stageDir = try stagingDirectory()
-        let out = stageDir.appendingPathComponent("\(manifest.bundleVersion)-\(UUID().uuidString).sqlite")
-        fileManager.createFile(atPath: out.path, contents: nil)
-        let outHandle = try FileHandle(forWritingTo: out)
-        defer {
-            try? outHandle.close()
-        }
-
         let declaredTotalBytes = manifest.db.bytes
-        var totalBytes: Int64 = 0
-        for (index, part) in sortedParts.enumerated() {
-            let partURL = try resolveArtifactURL(part, relativeTo: manifestURL)
-            let partLabel = "Downloading part \(index + 1)/\(sortedParts.count): \(part.file)"
-            let bytesBeforePart = totalBytes
-            emitProgress(
-                onProgress,
-                stage: .downloading,
-                detail: partLabel,
-                completedBytes: bytesBeforePart,
-                totalBytes: declaredTotalBytes
-            )
-            let downloadedPart = try await downloadFile(from: partURL) { completedBytes, totalBytesInPart in
-                let partExpected = totalBytesInPart ?? part.bytes
-                let boundedPartBytes = min(completedBytes, max(partExpected, 0))
-                onProgress?(
-                    BundleSyncProgress(
-                        stage: .downloading,
-                        detail: partLabel,
-                        completedBytes: max(0, bytesBeforePart + boundedPartBytes),
-                        totalBytes: max(0, declaredTotalBytes)
-                    )
-                )
-            }
-            try validateSHA256(fileAt: downloadedPart, expectedHex: part.sha256, label: "bundle db part \(part.file)")
-            totalBytes += try fileSize(downloadedPart)
-
-            let inHandle = try FileHandle(forReadingFrom: downloadedPart)
-            while true {
-                let chunk = inHandle.readData(ofLength: 8 * 1024 * 1024)
-                if chunk.isEmpty {
-                    break
-                }
-                outHandle.write(chunk)
-            }
-            try inHandle.close()
-            try? fileManager.removeItem(at: downloadedPart)
+        let assembledOut = try multipartAssembledCacheFileURL(manifest: manifest, sortedParts: sortedParts)
+        let checkpointURL = try multipartAssembleCheckpointFileURL(manifest: manifest, sortedParts: sortedParts)
+        if try isReusableCachedArtifact(
+            assembledOut,
+            expectedBytes: declaredTotalBytes,
+            expectedSHA256: manifest.db.sha256,
+            preserveOnMismatch: true
+        ) {
+            try? removeItemIfExists(at: checkpointURL)
             emitProgress(
                 onProgress,
                 stage: .assembling,
-                detail: "Assembled \(index + 1)/\(sortedParts.count) parts",
-                completedBytes: min(totalBytes, declaredTotalBytes),
+                detail: "Reusing cached assembled database",
+                completedBytes: declaredTotalBytes,
                 totalBytes: declaredTotalBytes
+            )
+            return assembledOut
+        }
+
+        if !fileManager.fileExists(atPath: assembledOut.path) {
+            fileManager.createFile(atPath: assembledOut.path, contents: nil)
+        }
+
+        var totalBytes: Int64 = 0
+        var nextPartIndex = 0
+        if let checkpoint = try? loadMultipartAssembleCheckpoint(at: checkpointURL) {
+            let expectedPrefixBytes = expectedMultipartPrefixBytes(parts: sortedParts, upToPartIndex: checkpoint.nextPartIndex)
+            let existingBytes = (try? fileSize(assembledOut)) ?? 0
+            if checkpoint.nextPartIndex >= 0,
+               checkpoint.nextPartIndex <= sortedParts.count,
+               checkpoint.assembledBytes == expectedPrefixBytes,
+               existingBytes >= expectedPrefixBytes {
+                nextPartIndex = checkpoint.nextPartIndex
+                totalBytes = expectedPrefixBytes
+            } else {
+                try resetMultipartAssemblyState(assembledOut: assembledOut, checkpointURL: checkpointURL)
+            }
+        } else if ((try? fileSize(assembledOut)) ?? 0) > 0 {
+            // Partial file without checkpoint is ambiguous; reset to keep recovery deterministic.
+            try resetMultipartAssemblyState(assembledOut: assembledOut, checkpointURL: checkpointURL)
+        }
+
+        let outHandle = try FileHandle(forWritingTo: assembledOut)
+        defer {
+            try? outHandle.close()
+        }
+        try outHandle.truncate(atOffset: UInt64(max(0, totalBytes)))
+        try outHandle.seekToEnd()
+
+        if nextPartIndex > 0 {
+            emitMultipartSequentialProgress(
+                onProgress: onProgress,
+                detail: "Resuming multipart assembly at part \(nextPartIndex + 1)/\(sortedParts.count)",
+                parts: sortedParts,
+                completedPartCount: nextPartIndex,
+                activePartIndex: nil,
+                activePartCompletedBytes: 0,
+                completedBytes: totalBytes,
+                totalBytes: declaredTotalBytes,
+                stage: .assembling
             )
         }
 
-        if totalBytes != manifest.db.bytes {
-            throw ConsumerAppError.invalidManifest(
-                "db_parts size mismatch: expected \(manifest.db.bytes), got \(totalBytes)"
+        for index in nextPartIndex..<sortedParts.count {
+            let part = sortedParts[index]
+            let partURL = try resolveArtifactURL(part, relativeTo: manifestURL)
+            let partLabel = "Part \(index + 1)/\(sortedParts.count): \(part.file)"
+            let partStart = totalBytes
+
+            emitMultipartSequentialProgress(
+                onProgress: onProgress,
+                detail: "Downloading \(partLabel)",
+                parts: sortedParts,
+                completedPartCount: index,
+                activePartIndex: index,
+                activePartCompletedBytes: 0,
+                completedBytes: partStart,
+                totalBytes: declaredTotalBytes,
+                stage: .downloading
+            )
+
+            do {
+                let partBytes = try await downloadAndAppendMultipartPart(
+                    part: part,
+                    partURL: partURL,
+                    outHandle: outHandle
+                ) { completedBytesInPart in
+                    let overallCompleted = min(declaredTotalBytes, partStart + completedBytesInPart)
+                    self.emitMultipartSequentialProgress(
+                        onProgress: onProgress,
+                        detail: "Downloading \(partLabel)",
+                        parts: sortedParts,
+                        completedPartCount: index,
+                        activePartIndex: index,
+                        activePartCompletedBytes: completedBytesInPart,
+                        completedBytes: overallCompleted,
+                        totalBytes: declaredTotalBytes,
+                        stage: .downloading
+                    )
+                }
+                totalBytes = partStart + partBytes
+            } catch {
+                // Roll back the partial part so restart can continue from last fully completed part.
+                try outHandle.truncate(atOffset: UInt64(max(0, partStart)))
+                try outHandle.seekToEnd()
+                totalBytes = partStart
+                throw error
+            }
+
+            try saveMultipartAssembleCheckpoint(
+                MultipartAssembleCheckpoint(nextPartIndex: index + 1, assembledBytes: totalBytes),
+                to: checkpointURL
+            )
+            emitMultipartSequentialProgress(
+                onProgress: onProgress,
+                detail: "Assembled \(index + 1)/\(sortedParts.count) parts",
+                parts: sortedParts,
+                completedPartCount: index + 1,
+                activePartIndex: nil,
+                activePartCompletedBytes: 0,
+                completedBytes: totalBytes,
+                totalBytes: declaredTotalBytes,
+                stage: .assembling
             )
         }
-        try validateSHA256(fileAt: out, expectedHex: manifest.db.sha256, label: "bundle db (assembled)")
-        return out
+
+        if totalBytes != declaredTotalBytes {
+            throw ConsumerAppError.invalidManifest(
+                "db_parts size mismatch: expected \(declaredTotalBytes), got \(totalBytes)"
+            )
+        }
+        do {
+            try validateSHA256(fileAt: assembledOut, expectedHex: manifest.db.sha256, label: "bundle db (assembled)")
+            try? removeItemIfExists(at: checkpointURL)
+            return assembledOut
+        } catch {
+            try? removeItemIfExists(at: assembledOut)
+            try? removeItemIfExists(at: checkpointURL)
+            throw error
+        }
+    }
+
+    private func loadMultipartAssembleCheckpoint(at url: URL) throws -> MultipartAssembleCheckpoint? {
+        guard fileManager.fileExists(atPath: url.path) else {
+            return nil
+        }
+        let data = try Data(contentsOf: url)
+        return try decoder.decode(MultipartAssembleCheckpoint.self, from: data)
+    }
+
+    private func saveMultipartAssembleCheckpoint(_ checkpoint: MultipartAssembleCheckpoint, to url: URL) throws {
+        let data = try JSONEncoder().encode(checkpoint)
+        try data.write(to: url, options: .atomic)
+    }
+
+    private func expectedMultipartPrefixBytes(parts: [BundleArtifact], upToPartIndex: Int) -> Int64 {
+        guard upToPartIndex > 0 else {
+            return 0
+        }
+        let upperBound = min(upToPartIndex, parts.count)
+        var sum: Int64 = 0
+        for index in 0..<upperBound {
+            let next = max(0, parts[index].bytes)
+            if sum > Int64.max - next {
+                return Int64.max
+            }
+            sum += next
+        }
+        return sum
+    }
+
+    private func resetMultipartAssemblyState(assembledOut: URL, checkpointURL: URL) throws {
+        try? removeItemIfExists(at: checkpointURL)
+        try? removeItemIfExists(at: assembledOut)
+        fileManager.createFile(atPath: assembledOut.path, contents: nil)
+    }
+
+    private nonisolated func emitMultipartSequentialProgress(
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?,
+        detail: String,
+        parts: [BundleArtifact],
+        completedPartCount: Int,
+        activePartIndex: Int?,
+        activePartCompletedBytes: Int64,
+        completedBytes: Int64,
+        totalBytes: Int64,
+        stage: BundleSyncProgress.Stage
+    ) {
+        guard let onProgress else {
+            return
+        }
+        let partDownloads = parts.enumerated().map { index, part in
+            let label = "Part \(index + 1)/\(parts.count): \(part.file)"
+            let total = max(0, part.bytes)
+            if index < completedPartCount {
+                return PartDownloadProgress(
+                    id: part.file,
+                    detail: "\(label) [completed]",
+                    completedBytes: total,
+                    totalBytes: total
+                )
+            }
+            if activePartIndex == index {
+                return PartDownloadProgress(
+                    id: part.file,
+                    detail: "\(label) [downloading]",
+                    completedBytes: min(max(0, activePartCompletedBytes), total),
+                    totalBytes: total
+                )
+            }
+            return PartDownloadProgress(
+                id: part.file,
+                detail: "\(label) [waiting]",
+                completedBytes: 0,
+                totalBytes: total
+            )
+        }
+        onProgress(
+            BundleSyncProgress(
+                stage: stage,
+                detail: detail,
+                completedBytes: max(0, min(completedBytes, totalBytes)),
+                totalBytes: max(0, totalBytes),
+                partDownloads: partDownloads
+            )
+        )
+    }
+
+    private func downloadAndAppendMultipartPart(
+        part: BundleArtifact,
+        partURL: URL,
+        outHandle: FileHandle,
+        onProgress: @escaping @Sendable (_ completedBytesInPart: Int64) -> Void
+    ) async throws -> Int64 {
+        let resolvedURL = try await resolveGitHubReleaseAssetAPIURLIfNeeded(partURL)
+        let request = makeRequest(url: resolvedURL)
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw ConsumerAppError.network("Unexpected non-HTTP response for \(partURL.absoluteString)")
+        }
+        guard (200...299).contains(http.statusCode) else {
+            throw ConsumerAppError.network("Unexpected HTTP response status=\(http.statusCode) url=\(response.url?.absoluteString ?? partURL.absoluteString)")
+        }
+
+        var hasher = SHA256()
+        var downloadedBytes: Int64 = 0
+        var buffer = Data()
+        buffer.reserveCapacity(256 * 1024)
+        var lastProgressAt = Date.distantPast
+        var lastProgressBytes: Int64 = -1
+
+        func emitProgress(force: Bool) {
+            let now = Date()
+            if !force {
+                let elapsed = now.timeIntervalSince(lastProgressAt)
+                let byteDelta = downloadedBytes - lastProgressBytes
+                if elapsed < 0.25 && byteDelta < (2 * 1024 * 1024) {
+                    return
+                }
+            }
+            lastProgressAt = now
+            lastProgressBytes = downloadedBytes
+            onProgress(downloadedBytes)
+        }
+
+        for try await byte in bytes {
+            buffer.append(byte)
+            if buffer.count >= 256 * 1024 {
+                try outHandle.write(contentsOf: buffer)
+                hasher.update(data: buffer)
+                downloadedBytes += Int64(buffer.count)
+                buffer.removeAll(keepingCapacity: true)
+                emitProgress(force: false)
+            }
+        }
+        if !buffer.isEmpty {
+            try outHandle.write(contentsOf: buffer)
+            hasher.update(data: buffer)
+            downloadedBytes += Int64(buffer.count)
+            buffer.removeAll(keepingCapacity: true)
+        }
+        emitProgress(force: true)
+
+        if downloadedBytes != part.bytes {
+            throw ConsumerAppError.invalidManifest(
+                "db part size mismatch for \(part.file): expected \(part.bytes), got \(downloadedBytes)"
+            )
+        }
+
+        let digest = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        if digest != part.sha256.lowercased() {
+            throw ConsumerAppError.checksum("Checksum mismatch for bundle db part \(part.file)")
+        }
+        return downloadedBytes
     }
 
     private func resolveArtifactURL(_ artifact: BundleArtifact, relativeTo baseURL: URL) throws -> URL {
@@ -525,10 +904,12 @@ actor V3BundleManager {
             )
         }
         guard let http = response as? HTTPURLResponse else {
+            try? removeItemIfExists(at: tmpURL)
             throw ConsumerAppError.network("Unexpected non-HTTP response for \(url.absoluteString)")
         }
         guard (200...299).contains(http.statusCode) else {
             let previewData = try? Data(contentsOf: tmpURL)
+            try? removeItemIfExists(at: tmpURL)
             throw ConsumerAppError.network(
                 httpErrorMessage(
                     requestURL: url,
@@ -617,7 +998,8 @@ actor V3BundleManager {
         stage: BundleSyncProgress.Stage,
         detail: String,
         completedBytes: Int64,
-        totalBytes: Int64
+        totalBytes: Int64,
+        partDownloads: [PartDownloadProgress] = []
     ) {
         guard let onProgress else {
             return
@@ -627,7 +1009,8 @@ actor V3BundleManager {
                 stage: stage,
                 detail: detail,
                 completedBytes: max(0, completedBytes),
-                totalBytes: max(0, totalBytes)
+                totalBytes: max(0, totalBytes),
+                partDownloads: partDownloads
             )
         )
     }
@@ -643,20 +1026,23 @@ actor V3BundleManager {
             return cached
         }
 
-        let tagAssets = try await fetchGitHubReleaseAssets(
-            owner: releaseAsset.owner,
-            repo: releaseAsset.repo,
-            tag: releaseAsset.tag
-        )
-        guard let assetID = tagAssets[releaseAsset.assetName] else {
-            throw ConsumerAppError.invalidManifest(
-                "GitHub release asset not found: \(releaseAsset.assetName) in \(releaseAsset.owner)/\(releaseAsset.repo) tag \(releaseAsset.tag)"
+        let tagAssets: [String: Int64]
+        do {
+            tagAssets = try await fetchGitHubReleaseAssets(
+                owner: releaseAsset.owner,
+                repo: releaseAsset.repo,
+                tag: releaseAsset.tag
             )
+        } catch {
+            return url
+        }
+        guard let assetID = tagAssets[releaseAsset.assetName] else {
+            return url
         }
         guard let apiURL = URL(
             string: "https://api.github.com/repos/\(releaseAsset.owner)/\(releaseAsset.repo)/releases/assets/\(assetID)"
         ) else {
-            throw ConsumerAppError.invalidManifest("Unable to build GitHub asset API URL")
+            return url
         }
         githubAssetURLByReleaseURL[originalKey] = apiURL
         return apiURL
@@ -802,9 +1188,98 @@ actor V3BundleManager {
         return sizeNum?.int64Value ?? 0
     }
 
+    private func removeItemIfExists(at url: URL) throws {
+        if fileManager.fileExists(atPath: url.path) {
+            try fileManager.removeItem(at: url)
+        }
+    }
+
+    private func sqliteCompanionURL(for dbURL: URL, suffix: String) -> URL {
+        URL(fileURLWithPath: dbURL.path + suffix)
+    }
+
+    private func cleanupStagingArtifacts() throws {
+        let stageDir = try stagingDirectory()
+        let entries = try fileManager.contentsOfDirectory(
+            at: stageDir,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        for entry in entries {
+            try? removeItemIfExists(at: entry)
+        }
+    }
+
+    private func pruneInactiveBundles(keepingVersions: Set<String>) throws {
+        let bundlesRoot = try bundlesDir()
+        let entries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        for entry in entries {
+            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey])
+            guard values?.isDirectory == true else {
+                continue
+            }
+            guard !keepingVersions.contains(entry.lastPathComponent) else {
+                continue
+            }
+            try? removeItemIfExists(at: entry)
+        }
+    }
+
+    private func ensureSufficientDiskSpace(requiredBytes: Int64, reason: String) throws {
+        guard requiredBytes > 0 else {
+            return
+        }
+        guard let availableBytes = availableDiskSpaceBytes() else {
+            return
+        }
+        let minimumRequired = requiredBytes > Int64.max - minimumFreeDiskReserveBytes
+            ? Int64.max
+            : requiredBytes + minimumFreeDiskReserveBytes
+        guard availableBytes >= minimumRequired else {
+            throw ConsumerAppError.io(
+                "Insufficient free disk space for \(reason). Required at least \(byteCountString(minimumRequired)), available \(byteCountString(availableBytes))."
+            )
+        }
+    }
+
+    private func availableDiskSpaceBytes() -> Int64? {
+        do {
+            let root = try rootDir()
+            let values = try root.resourceValues(forKeys: [
+                .volumeAvailableCapacityForImportantUsageKey,
+                .volumeAvailableCapacityForOpportunisticUsageKey,
+                .volumeAvailableCapacityKey,
+            ])
+            if let important = values.volumeAvailableCapacityForImportantUsage {
+                return important
+            }
+            if let opportunistic = values.volumeAvailableCapacityForOpportunisticUsage {
+                return opportunistic
+            }
+            if let available = values.volumeAvailableCapacity {
+                return Int64(available)
+            }
+            return nil
+        } catch {
+            return nil
+        }
+    }
+
+    private func byteCountString(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+
     private func quickValidateDB(at url: URL) throws {
         var db: OpaquePointer?
-        guard sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK, let db else {
+        let encodedPath = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
             throw ConsumerAppError.sqlite("sqlite open failed for \(url.path)")
         }
         defer { sqlite3_close(db) }
@@ -816,7 +1291,8 @@ actor V3BundleManager {
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK,
                   let stmt else {
-                throw ConsumerAppError.sqlite("prepare failed for schema check")
+                let msg = String(cString: sqlite3_errmsg(db))
+                throw ConsumerAppError.sqlite("prepare failed for schema check: \(msg)")
             }
             defer { sqlite3_finalize(stmt) }
             if sqlite3_step(stmt) != SQLITE_ROW {
@@ -890,4 +1366,9 @@ private struct GitHubReleaseTagResponse: Decodable {
 private struct GitHubReleaseAssetEntry: Decodable {
     let id: Int64
     let name: String
+}
+
+private struct MultipartAssembleCheckpoint: Codable, Sendable {
+    let nextPartIndex: Int
+    let assembledBytes: Int64
 }

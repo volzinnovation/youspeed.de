@@ -42,6 +42,8 @@ final class V3SpeedLimitService {
         sqlite3_bind_double(stmt, 4, bounds.minLat)
         sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
 
+        // Bounding-box prefiltering can yield multiple nearby/overlapping ways for one point.
+        // We intentionally resolve by nearest bbox distance and speed parsing, not by fixed way_id.
         var bestDistance = Double.infinity
         var bestSpeed: Int?
         var bestWayID: String?

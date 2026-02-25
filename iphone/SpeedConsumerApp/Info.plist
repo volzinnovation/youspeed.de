@@ -41,7 +41,11 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>YouSpeedGitHubReleaseToken</key>
-	<string>$(GITHUB_RELEASE_TOKEN)</string>
+	<string>$(YOUSPEED_RELEASE_READ_TOKEN)</string>
+	<key>YOUSPEED_RELEASE_READ_TOKEN</key>
+	<string>$(YOUSPEED_RELEASE_READ_TOKEN)</string>
+	<key>YouSpeedTestAutoTapSync</key>
+	<string>$(SPEEDCONSUMER_TEST_AUTOTAP_SYNC)</string>
 	<key>YouSpeedV3ManifestURL</key>
 	<string>https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json</string>
 </dict>

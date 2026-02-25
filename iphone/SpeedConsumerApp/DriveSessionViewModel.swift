@@ -1,4 +1,5 @@
 import CoreLocation
+import AVFoundation
 import Foundation
 import UIKit
 
@@ -11,6 +12,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var syncProgressTotalBytes: Int64 = 0
     @Published var syncProgressBytesPerSecond: Double = 0
     @Published var syncProgressETASeconds: Double?
+    @Published var syncPartDownloads: [PartDownloadProgress] = []
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
@@ -31,9 +33,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lookupEventLog: [String] = []
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
+    @Published private(set) var activePenaltyRules: SpeedPenaltyRuleSet
+    @Published var audioAlertThresholdKmh: Int {
+        didSet {
+            let clamped = min(max(audioAlertThresholdKmh, 0), 80)
+            if clamped != audioAlertThresholdKmh {
+                audioAlertThresholdKmh = clamped
+                return
+            }
+            guard audioAlertThresholdKmh != oldValue else {
+                return
+            }
+            UserDefaults.standard.set(audioAlertThresholdKmh, forKey: Self.audioAlertThresholdDefaultsKey)
+        }
+    }
 
     private let bundleManager = V3BundleManager()
     private let locationManager = CLLocationManager()
+    private let speechSynthesizer = AVSpeechSynthesizer()
     private let githubReleaseToken: String
     private let manifestURL: URL?
     private var speedLimitService: V3SpeedLimitService?
@@ -43,6 +60,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var lastDownloadProgressAt: Date?
     private var lastDownloadProgressBytes: Int64?
     private var syncBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+    private var syncTask: Task<Void, Never>?
+    private var lastAudioFeedbackAt = Date.distantPast
+    private var lastAnnouncedOverspeedKmh: Int?
+    private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
+    private static let defaultAudioAlertThresholdKmh = 8
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -60,6 +82,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     static func defaultGitHubReleaseToken(infoDictionary: [String: Any]?) -> String {
         let candidates = [
+            "YOUSPEED_RELEASE_READ_TOKEN",
             "YouSpeedGitHubReleaseToken",
             "GITHUB_RELEASE_TOKEN",
         ]
@@ -104,6 +127,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     override init() {
+        let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
+        let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
+        activePenaltyRules = bundledRules
+        audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         githubReleaseToken = Self.defaultGitHubReleaseToken()
         manifestURL = Self.defaultManifestURL()
         super.init()
@@ -111,13 +138,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .automotiveNavigation
         locationManager.distanceFilter = 10
+        ensureSeedBootstrapIfNeeded()
+    }
+
+    var isSyncingNow: Bool {
+        syncTask != nil || syncStatus == "syncing" || syncStatus == "bootstrapping"
     }
 
     func bootstrapAndSync() {
-        Task {
+        guard syncTask == nil else {
+            syncProgressDetail = "Sync already in progress"
+            return
+        }
+        syncTask = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
             beginSyncBackgroundTask()
             defer {
                 endSyncBackgroundTask()
+                syncTask = nil
             }
             do {
                 lastError = ""
@@ -127,6 +167,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressTotalBytes = 0
                 syncProgressBytesPerSecond = 0
                 syncProgressETASeconds = nil
+                syncPartDownloads = []
                 lastDownloadProgressAt = nil
                 lastDownloadProgressBytes = nil
                 await bundleManager.setGitHubToken(githubReleaseToken)
@@ -145,7 +186,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if githubReleaseToken.isEmpty,
                    (manifestHost.contains("github.com") || manifestHost.contains("githubusercontent.com")) {
                     syncStatus = "sync_failed"
-                    lastError = "GitHub release token is missing in app configuration (GITHUB_RELEASE_TOKEN)."
+                    lastError = "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
                     speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                     return
                 }
@@ -164,14 +205,41 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressDetail = "Sync completed"
                 syncProgressBytesPerSecond = 0
                 syncProgressETASeconds = 0
+                syncPartDownloads = []
                 lastError = ""
             } catch {
                 syncStatus = "sync_failed"
                 syncProgressStage = "failed"
                 syncProgressETASeconds = nil
+                syncPartDownloads = []
                 lastError = error.localizedDescription
                 if !activeDBPath.isEmpty {
                     speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                }
+            }
+        }
+    }
+
+    private func ensureSeedBootstrapIfNeeded() {
+        guard speedLimitService == nil, activeDBPath.isEmpty, syncTask == nil else {
+            return
+        }
+        syncTask = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            defer { syncTask = nil }
+            do {
+                let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                activeBundleVersion = bootstrap.bundleVersion
+                activeDBPath = bootstrap.dbPath
+                speedLimitService = V3SpeedLimitService(dbPath: bootstrap.dbPath)
+                if syncStatus == "not_synced" || syncStatus == "sync_failed" {
+                    syncStatus = "ready_bootstrap"
+                }
+            } catch {
+                if lastError.isEmpty {
+                    lastError = error.localizedDescription
                 }
             }
         }
@@ -211,6 +279,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         syncProgressDetail = progress.detail
         syncProgressCompletedBytes = max(0, progress.completedBytes)
         syncProgressTotalBytes = max(0, progress.totalBytes)
+        syncPartDownloads = progress.partDownloads
+        if progress.stage != .downloading && progress.stage != .assembling {
+            syncPartDownloads = []
+        }
         updateDownloadRateAndETA(progress: progress, now: now)
     }
 
@@ -271,11 +343,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func startDriving() {
-        if syncStatus == "not_synced" {
-            lastError = "Run data sync before starting driving mode"
-            return
+        if speedLimitService == nil {
+            ensureSeedBootstrapIfNeeded()
         }
-
         isDriving = true
         driveStatus = "requesting_location"
         let auth = locationManager.authorizationStatus
@@ -294,6 +364,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         isDriving = false
         locationManager.stopUpdatingLocation()
         driveStatus = "stopped"
+        lastAudioFeedbackAt = .distantPast
+        lastAnnouncedOverspeedKmh = nil
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
     }
 
     func resetDiagnostics() {
@@ -354,6 +429,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     self.speedLimitKmh = result.speedLimitKmh
                     self.limitWayID = result.wayID
+                    self.maybeSpeakOverspeedWarning()
                     self.lastLookupStatus = result.speedLimitKmh == nil ? "no_match" : "matched"
                     self.lastLookupQueryMs = result.queryTimeMs
                     self.lastLookupCandidateCount = result.candidateCount
@@ -500,6 +576,49 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return nil
         }
     }
+
+    var currentOverspeedKmh: Int {
+        guard let speedLimitKmh else {
+            return 0
+        }
+        return max(0, Int(round(currentSpeedKmh)) - speedLimitKmh)
+    }
+
+    var currentPenaltyNotice: SpeedPenaltyNotice? {
+        SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: currentOverspeedKmh, rules: activePenaltyRules)
+    }
+
+    private func maybeSpeakOverspeedWarning() {
+        guard driveStatus == "running" else {
+            return
+        }
+        let overspeed = currentOverspeedKmh
+        let threshold = audioAlertThresholdKmh
+        guard threshold > 0, overspeed >= threshold, let speedLimitKmh else {
+            lastAnnouncedOverspeedKmh = nil
+            return
+        }
+
+        let now = Date()
+        let changedSignificantly = abs((lastAnnouncedOverspeedKmh ?? overspeed) - overspeed) >= 5
+        let minimumInterval: TimeInterval = 8
+        guard changedSignificantly || now.timeIntervalSince(lastAudioFeedbackAt) >= minimumInterval else {
+            return
+        }
+
+        let speechText = "Speed limit \(speedLimitKmh). You are \(overspeed) kilometers per hour too fast."
+        let utterance = AVSpeechUtterance(string: speechText)
+        if let preferredLanguage = Locale.preferredLanguages.first {
+            utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
+        }
+        utterance.rate = 0.48
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        speechSynthesizer.speak(utterance)
+        lastAudioFeedbackAt = now
+        lastAnnouncedOverspeedKmh = overspeed
+    }
 }
 
 extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
@@ -526,6 +645,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
             gpsFixCount += 1
+            maybeSpeakOverspeedWarning()
             updateSpeedLimit(for: location, fixID: gpsFixCount)
         }
     }

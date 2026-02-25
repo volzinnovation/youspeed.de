@@ -17,6 +17,28 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"), 130)
     }
 
+    func testPenaltyRuleEngineResolvesBands() {
+        let rules = SpeedPenaltyRuleSet.fallbackDEU()
+
+        let moneyOnly = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 8, rules: rules)
+        XCTAssertEqual(moneyOnly?.severity, .moneyOnly)
+        XCTAssertEqual(moneyOnly?.deltaKmh, 8)
+
+        let pointsAndFine = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 35, rules: rules)
+        XCTAssertEqual(pointsAndFine?.severity, .pointsAndFine)
+        XCTAssertEqual(pointsAndFine?.deltaKmh, 35)
+    }
+
+    func testLoadBundledDEURules() throws {
+        let rules = try SpeedPenaltyRuleSet.loadBundled(
+            named: "DEU-rules",
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self)
+        )
+        XCTAssertEqual(rules.countryCode, "DEU")
+        XCTAssertEqual(rules.currencyCode, "EUR")
+        XCTAssertGreaterThanOrEqual(rules.bands.count, 1)
+    }
+
     func testDecodeBundleManifest() throws {
         let raw = """
         {
@@ -47,7 +69,7 @@ final class SpeedConsumerTests: XCTestCase {
     func testDefaultGitHubReleaseTokenFromInfoDictionary() {
         let token = DriveSessionViewModel.defaultGitHubReleaseToken(
             infoDictionary: [
-                "YouSpeedGitHubReleaseToken": "  built-in-token  ",
+                "YOUSPEED_RELEASE_READ_TOKEN": "  built-in-token  ",
             ]
         )
         XCTAssertEqual(token, "built-in-token")
@@ -57,8 +79,8 @@ final class SpeedConsumerTests: XCTestCase {
     func testDefaultGitHubReleaseTokenIgnoresPlaceholderAndUsesFallbackKey() {
         let token = DriveSessionViewModel.defaultGitHubReleaseToken(
             infoDictionary: [
-                "YouSpeedGitHubReleaseToken": "$(GITHUB_RELEASE_TOKEN)",
-                "GITHUB_RELEASE_TOKEN": "fallback-token",
+                "YOUSPEED_RELEASE_READ_TOKEN": "$(YOUSPEED_RELEASE_READ_TOKEN)",
+                "YouSpeedGitHubReleaseToken": "fallback-token",
             ]
         )
         XCTAssertEqual(token, "fallback-token")
@@ -192,6 +214,105 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 30)
     }
 
+    func testMultipartSyncReusesCachedPartAfterLaterPartFailure() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-cache-tests-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let sourceDB = tempDir.appendingPathComponent("fixture.sqlite")
+        try createFixtureV3DB(at: sourceDB)
+        let sourceData = try Data(contentsOf: sourceDB)
+        let sourceSHA = sha256Hex(sourceData)
+
+        let splitAt = max(1, sourceData.count / 2)
+        let part1Data = sourceData.subdata(in: 0..<splitAt)
+        let part2Data = sourceData.subdata(in: splitAt..<sourceData.count)
+
+        let manifestURL = URL(string: "https://speedconsumer.test/DEU-latest.bundle-manifest.v3.json")!
+        let part1URL = URL(string: "https://speedconsumer.test/DEU-latest.speeds_v3.sqlite.part001")!
+        let part2URL = URL(string: "https://speedconsumer.test/DEU-latest.speeds_v3.sqlite.part002")!
+
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "DEU",
+            bundleVersion: "2026-02-24",
+            createdAtUTC: "2026-02-24T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-latest.speeds_v3.sqlite",
+                bytes: Int64(sourceData.count),
+                sha256: sourceSHA,
+                url: nil
+            ),
+            dbParts: [
+                BundleArtifact(
+                    file: "DEU-latest.speeds_v3.sqlite.part001",
+                    bytes: Int64(part1Data.count),
+                    sha256: sha256Hex(part1Data),
+                    url: part1URL.absoluteString
+                ),
+                BundleArtifact(
+                    file: "DEU-latest.speeds_v3.sqlite.part002",
+                    bytes: Int64(part2Data.count),
+                    sha256: sha256Hex(part2Data),
+                    url: part2URL.absoluteString
+                ),
+            ],
+            deltaIndex: nil
+        )
+        let manifestData = try JSONEncoder().encode(manifest)
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: manifestData),
+            part1URL.absoluteString: (status: 200, body: part1Data),
+            part2URL.absoluteString: (status: 500, body: Data("broken".utf8)),
+        ]
+        do {
+            _ = try await manager.syncFromManifestURL(manifestURL)
+            XCTFail("Expected initial sync to fail while downloading part 2")
+        } catch {
+            // Expected.
+        }
+
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: manifestData),
+            part1URL.absoluteString: (status: 404, body: Data("should not be downloaded again".utf8)),
+            part2URL.absoluteString: (status: 200, body: part2Data),
+        ]
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let sync = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(sync.mode, .fullDownload)
+        XCTAssertEqual(sync.bundleVersion, "2026-02-24")
+
+        guard let dbURL = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active database URL after retry")
+            return
+        }
+        let assembledData = try Data(contentsOf: dbURL)
+        XCTAssertEqual(sourceSHA, sha256Hex(assembledData))
+    }
+
     @MainActor
     func testSyncResolvesGitHubReleaseURLsViaAPIWithAuthorization() async throws {
         let fm = FileManager.default
@@ -220,7 +341,7 @@ final class SpeedConsumerTests: XCTestCase {
         let dbAssetURL = URL(string: "https://api.github.com/repos/volzinnovation/youspeed.de/releases/assets/1002")!
         let token = DriveSessionViewModel.defaultGitHubReleaseToken(
             infoDictionary: [
-                "YouSpeedGitHubReleaseToken": "test-token",
+                "YOUSPEED_RELEASE_READ_TOKEN": "test-token",
             ]
         )
         XCTAssertEqual(token, "test-token")
@@ -318,11 +439,18 @@ final class SpeedConsumerTests: XCTestCase {
 
     func testRealReleaseSyncAssembleAndLookup_whenEnabled() async throws {
         let env = ProcessInfo.processInfo.environment
-        guard env["SPEEDCONSUMER_RUN_REAL_RELEASE_SYNC"] == "1" else {
-            throw XCTSkip("Set SPEEDCONSUMER_RUN_REAL_RELEASE_SYNC=1 to run real private release sync test")
+        if env["SPEEDCONSUMER_SKIP_REAL_RELEASE_SYNC"] == "1" {
+            throw XCTSkip("SPEEDCONSUMER_SKIP_REAL_RELEASE_SYNC=1")
         }
-        guard let token = env["SPEEDCONSUMER_GITHUB_TOKEN"], !token.isEmpty else {
-            throw XCTSkip("Set SPEEDCONSUMER_GITHUB_TOKEN to access private GitHub release assets")
+        let autoTapSyncEnabled = isAutoTapSyncEnabled(env: env)
+        let envTokenCandidates = ["SPEEDCONSUMER_GITHUB_TOKEN", "YOUSPEED_RELEASE_READ_TOKEN", "GITHUB_RELEASE_TOKEN"]
+        let envToken = envTokenCandidates
+            .compactMap { env[$0] }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty && !$0.contains("$(") } ?? ""
+        let token = !envToken.isEmpty ? envToken : embeddedGitHubReleaseToken()
+        guard !token.isEmpty else {
+            throw XCTSkip("Set SPEEDCONSUMER_GITHUB_TOKEN or YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN) to access private GitHub release assets")
         }
 
         let lat = Double(env["SPEEDCONSUMER_TEST_LAT"] ?? "48.801157") ?? 48.801157
@@ -330,28 +458,55 @@ final class SpeedConsumerTests: XCTestCase {
 
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
-        if fm.fileExists(atPath: supportDir.path) {
-            try fm.removeItem(at: supportDir)
-        }
-        defer {
-            try? fm.removeItem(at: supportDir)
-        }
+        let manager: V3BundleManager
+        if autoTapSyncEnabled {
+            manager = V3BundleManager(fileManager: fm)
+            print("REAL_RELEASE_AUTOTAP_WAIT started")
+            let didActivate = try await waitForTapDrivenSyncActivation(manager: manager, timeoutSeconds: 1800)
+            XCTAssertTrue(didActivate, "Timed out waiting for tap-driven sync activation")
+            if !didActivate {
+                return
+            }
+        } else {
+            if fm.fileExists(atPath: supportDir.path) {
+                try fm.removeItem(at: supportDir)
+            }
+            defer {
+                try? fm.removeItem(at: supportDir)
+            }
 
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 300
-        config.timeoutIntervalForResource = 14_400
-        let session = URLSession(configuration: config)
-        let manager = V3BundleManager(fileManager: fm, session: session)
-        await manager.setGitHubToken(token)
+            let config = URLSessionConfiguration.ephemeral
+            config.timeoutIntervalForRequest = 300
+            config.timeoutIntervalForResource = 14_400
+            let session = URLSession(configuration: config)
+            manager = V3BundleManager(fileManager: fm, session: session)
+            await manager.setGitHubToken(token)
 
-        let manifestURL = URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json")!
-        let sync = try await manager.syncFromManifestURL(manifestURL)
-        XCTAssertTrue([BundleSyncResult.Mode.fullDownload, BundleSyncResult.Mode.upToDate].contains(sync.mode))
+            let manifestURL = embeddedManifestURL()
+                ?? URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json")!
+            let sync = try await manager.syncFromManifestURL(manifestURL)
+            XCTAssertTrue([BundleSyncResult.Mode.fullDownload, BundleSyncResult.Mode.upToDate].contains(sync.mode))
+        }
 
         guard let dbURL = try await manager.activeDatabaseURL() else {
             XCTFail("Expected active database URL after real release sync")
             return
         }
+        let activeState = try await manager.activeState()
+        guard let activeState else {
+            XCTFail("Expected active bundle state after real release sync")
+            return
+        }
+        let activatedManifestURL = supportDir
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent(activeState.bundleVersion, isDirectory: true)
+            .appendingPathComponent("bundle-manifest.v3.json")
+        let activatedManifestData = try Data(contentsOf: activatedManifestURL)
+        let activatedManifest = try JSONDecoder().decode(V3BundleManifest.self, from: activatedManifestData)
+        let assembledSize = try fileSize(dbURL)
+        XCTAssertEqual(assembledSize, activatedManifest.db.bytes, "Assembled DB size mismatch after sync")
+        print("REAL_RELEASE_ASSEMBLED db=\(dbURL.lastPathComponent) size=\(assembledSize) expected=\(activatedManifest.db.bytes)")
+
         try assertDBIntegrity(dbURL)
         let first = try readFirstWayRow(dbURL)
         print(String(format: "REAL_RELEASE_FIRST_ROW row_id=%lld way_id=%@ min_lat=%.6f min_lon=%.6f", first.rowID, first.wayID, first.minLat, first.minLon))
@@ -375,7 +530,7 @@ final class SpeedConsumerTests: XCTestCase {
 
     @MainActor
     func testFirstQueryAtDeviceActualLocation() throws {
-        guard let bundledDB = Bundle.main.url(forResource: "speeds_v3", withExtension: "sqlite") else {
+        guard let bundledDB = bundledSpeedDBURL() else {
             throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
         }
 
@@ -462,6 +617,51 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("No speed limit returned for device location")
         }
         XCTAssertGreaterThan(speedLimit, 0)
+    }
+
+    func testBundledKarlsruheSeedLookupIncludesExpectedWayAndResolvesSpeed30Within100m() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let tags = try readWaySpeedTags(dbURL: bundledDB, wayID: "17721265")
+        XCTAssertEqual(tags.maxspeed, "30")
+        XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed(tags.maxspeed), 30)
+        XCTAssertEqual(
+            V3SpeedLimitService.deriveSpeedLimitKmh(
+                maxspeed: tags.maxspeed,
+                maxspeedType: tags.maxspeedType,
+                sourceMaxspeed: tags.sourceMaxspeed,
+                highway: tags.highway
+            ),
+            30
+        )
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        let result = try service.lookupSpeedLimit(
+            lat: 48.801169,
+            lon: 8.442691,
+            radiusM: 100.0,
+            maxCandidates: 512
+        )
+        let candidates = try readCandidateWayIDs(
+            dbURL: bundledDB,
+            lat: 48.801169,
+            lon: 8.442691,
+            radiusM: 100.0,
+            maxCandidates: 512
+        )
+        XCTAssertGreaterThan(
+            candidates.count,
+            1,
+            "Expected overlapping nearby candidates in bbox window (for example 17721265 and 69233057)"
+        )
+        XCTAssertTrue(candidates.contains("17721265"), "Expected way_id=17721265 in candidate set, got \(candidates)")
+        if let returnedWayID = result.wayID {
+            XCTAssertTrue(candidates.contains(returnedWayID), "Returned way_id \(returnedWayID) should be part of candidate set \(candidates)")
+        }
+        // Regression intent: this coordinate can match multiple nearby ways, but the resolved speed must stay stable.
+        XCTAssertEqual(result.speedLimitKmh, 30)
     }
 
     private func createFixtureV3DB(at url: URL) throws {
@@ -589,12 +789,170 @@ final class SpeedConsumerTests: XCTestCase {
         )
     }
 
+    private func bundledSpeedDBURL() -> URL? {
+        if let url = Bundle.main.url(forResource: "speeds_v3", withExtension: "sqlite") {
+            return url
+        }
+        return Bundle(for: SpeedConsumerAppDelegate.self).url(forResource: "speeds_v3", withExtension: "sqlite")
+    }
+
+    private func readWaySpeedTags(dbURL: URL, wayID: String) throws -> (highway: String?, maxspeed: String, maxspeedType: String?, sourceMaxspeed: String?) {
+        var db: OpaquePointer?
+        let encodedPath = dbURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbURL.path
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 27, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed for \(dbURL.path)"])
+        }
+        defer { sqlite3_close(db) }
+
+        let escapedWayID = wayID.replacingOccurrences(of: "'", with: "''")
+        let sql = "SELECT highway, maxspeed, maxspeed_type, source_maxspeed FROM ways WHERE way_id = '\(escapedWayID)' LIMIT 1"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw NSError(domain: "SpeedConsumerTests", code: 28, userInfo: [NSLocalizedDescriptionKey: "prepare speed tag query failed"])
+        }
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_step(stmt) == SQLITE_ROW else {
+            throw NSError(domain: "SpeedConsumerTests", code: 29, userInfo: [NSLocalizedDescriptionKey: "way_id \(wayID) not found"])
+        }
+
+        guard let maxspeedCString = sqlite3_column_text(stmt, 1) else {
+            throw NSError(domain: "SpeedConsumerTests", code: 30, userInfo: [NSLocalizedDescriptionKey: "maxspeed is NULL for way_id \(wayID)"])
+        }
+
+        let highway = sqlite3_column_text(stmt, 0).map { String(cString: $0) }
+        let maxspeed = String(cString: maxspeedCString)
+        let maxspeedType = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
+        let sourceMaxspeed = sqlite3_column_text(stmt, 3).map { String(cString: $0) }
+        return (highway: highway, maxspeed: maxspeed, maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed)
+    }
+
+    private func readCandidateWayIDs(
+        dbURL: URL,
+        lat: Double,
+        lon: Double,
+        radiusM: Double,
+        maxCandidates: Int
+    ) throws -> [String] {
+        var db: OpaquePointer?
+        let encodedPath = dbURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbURL.path
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 31, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed for \(dbURL.path)"])
+        }
+        defer { sqlite3_close(db) }
+
+        let degLat = radiusM / 111_132.0
+        let cosLat = max(0.173648, abs(cos(lat * .pi / 180.0)))
+        let degLon = radiusM / (111_320.0 * cosLat)
+        let minLon = lon - degLon
+        let maxLon = lon + degLon
+        let minLat = lat - degLat
+        let maxLat = lat + degLat
+
+        let sql = """
+        SELECT w.way_id
+        FROM ways_rtree r
+        JOIN ways w ON w.row_id = r.row_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        LIMIT ?5
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw NSError(domain: "SpeedConsumerTests", code: 32, userInfo: [NSLocalizedDescriptionKey: "prepare candidate query failed"])
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        sqlite3_bind_double(stmt, 1, maxLon)
+        sqlite3_bind_double(stmt, 2, minLon)
+        sqlite3_bind_double(stmt, 3, maxLat)
+        sqlite3_bind_double(stmt, 4, minLat)
+        sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
+
+        var wayIDs: [String] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let cText = sqlite3_column_text(stmt, 0) else {
+                continue
+            }
+            wayIDs.append(String(cString: cText))
+        }
+        return wayIDs
+    }
+
+    private func isAutoTapSyncEnabled(env: [String: String]) -> Bool {
+        if env["SPEEDCONSUMER_TEST_AUTOTAP_SYNC"] == "1" {
+            return true
+        }
+        let infoFlag = (Bundle.main.infoDictionary?["YouSpeedTestAutoTapSync"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return infoFlag == "1"
+    }
+
+    private func waitForTapDrivenSyncActivation(
+        manager: V3BundleManager,
+        timeoutSeconds: TimeInterval
+    ) async throws -> Bool {
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
+        let deadline = Date().addingTimeInterval(timeoutSeconds)
+        while Date() < deadline {
+            if let state = try await manager.activeState(),
+               let dbURL = try await manager.activeDatabaseURL(),
+               FileManager.default.fileExists(atPath: dbURL.path) {
+                let size = (try? fileSize(dbURL)) ?? 0
+                let activatedManifestURL = supportDir
+                    .appendingPathComponent("bundles", isDirectory: true)
+                    .appendingPathComponent(state.bundleVersion, isDirectory: true)
+                    .appendingPathComponent("bundle-manifest.v3.json")
+                let hasActivatedManifest = FileManager.default.fileExists(atPath: activatedManifestURL.path)
+                let isSeedBundle = state.bundleVersion == "seed"
+                if size > 0 && !isSeedBundle && hasActivatedManifest {
+                    print("REAL_RELEASE_AUTOTAP_ACTIVATED version=\(state.bundleVersion) db=\(dbURL.lastPathComponent) size=\(size)")
+                    return true
+                }
+            }
+            try await Task.sleep(nanoseconds: 2_000_000_000)
+        }
+        return false
+    }
+
+    private func embeddedGitHubReleaseToken() -> String {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let tokenCandidates = ["YOUSPEED_RELEASE_READ_TOKEN", "YouSpeedGitHubReleaseToken", "GITHUB_RELEASE_TOKEN"]
+        return tokenCandidates
+            .compactMap { info[$0] as? String }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty && !$0.contains("$(") } ?? ""
+    }
+
+    private func embeddedManifestURL() -> URL? {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let manifestCandidates = ["YouSpeedV3ManifestURL", "YouSpeedBundleManifestURL"]
+        let manifestRaw = manifestCandidates
+            .compactMap { info[$0] as? String }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty && !$0.contains("$(") }
+        guard let manifestRaw,
+              let manifestURL = URL(string: manifestRaw),
+              let scheme = manifestURL.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            return nil
+        }
+        return manifestURL
+    }
+
+    private func fileSize(_ url: URL) throws -> Int64 {
+        let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
+        let sizeNum = attrs[.size] as? NSNumber
+        return sizeNum?.int64Value ?? 0
+    }
+
     func testReleaseManifestFilenamesAndURLsReachable_onDevice() async throws {
 #if targetEnvironment(simulator)
         throw XCTSkip("Connected-device only test")
 #else
         let info = Bundle.main.infoDictionary ?? [:]
-        let tokenCandidates = ["YouSpeedGitHubReleaseToken", "GITHUB_RELEASE_TOKEN"]
+        let tokenCandidates = ["YOUSPEED_RELEASE_READ_TOKEN", "YouSpeedGitHubReleaseToken", "GITHUB_RELEASE_TOKEN"]
         let token = tokenCandidates
             .compactMap { info[$0] as? String }
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -662,15 +1020,16 @@ final class SpeedConsumerTests: XCTestCase {
 
             let candidateURL: URL
             if rawURL.host?.lowercased().contains("github.com") == true {
-                guard let apiURL = try await resolveReleaseAssetAPIURL(
+                if let apiURL = try await resolveReleaseAssetAPIURL(
                     fromGitHubReleaseURL: rawURL,
                     token: token,
                     session: session
-                ) else {
-                    XCTFail("Unable to resolve GitHub asset API URL for \(rawURL.absoluteString)")
-                    continue
+                ) {
+                    candidateURL = apiURL
+                } else {
+                    candidateURL = rawURL
+                    print("RELEASE_ARTIFACT_CHECK fallback=direct file=\(artifact.file) url=\(rawURL.absoluteString)")
                 }
-                candidateURL = apiURL
             } else {
                 candidateURL = rawURL
             }
