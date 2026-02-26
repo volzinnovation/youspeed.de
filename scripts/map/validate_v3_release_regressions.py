@@ -57,6 +57,57 @@ def parse_explicit_speed(row: sqlite3.Row) -> int | None:
     return None
 
 
+def inspect_schema_contract(db_path: Path) -> Dict:
+    conn = sqlite3.connect(str(db_path))
+    try:
+        way_columns = {
+            str(row[1]) for row in conn.execute("PRAGMA table_info(ways)")
+        }
+        area_columns = {
+            str(row[1]) for row in conn.execute("PRAGMA table_info(areas)")
+        }
+
+        if "street_name" not in way_columns:
+            raise RuntimeError("schema contract failed: ways.street_name column missing")
+        if "name" not in area_columns:
+            raise RuntimeError("schema contract failed: areas.name column missing")
+
+        ways_with_street_name = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM ways
+                WHERE street_name IS NOT NULL
+                  AND trim(street_name) <> ''
+                """
+            ).fetchone()[0]
+        )
+        areas_with_name = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM areas
+                WHERE name IS NOT NULL
+                  AND trim(name) <> ''
+                """
+            ).fetchone()[0]
+        )
+    finally:
+        conn.close()
+
+    if ways_with_street_name <= 0:
+        raise RuntimeError("schema/data contract failed: ways.street_name has no non-empty values")
+    if areas_with_name <= 0:
+        raise RuntimeError("schema/data contract failed: areas.name has no non-empty values")
+
+    return {
+        "ways_has_street_name_column": True,
+        "areas_has_name_column": True,
+        "ways_with_nonempty_street_name": ways_with_street_name,
+        "areas_with_nonempty_name": areas_with_name,
+    }
+
+
 def load_probe(db_path: Path, way_id: str) -> Tuple[float, float, sqlite3.Row]:
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
@@ -167,6 +218,11 @@ def main() -> int:
         return fail(f"query script not found: {query_script}")
 
     try:
+        schema_contract = inspect_schema_contract(db_path)
+    except Exception as exc:
+        return fail(str(exc))
+
+    try:
         lat, lon, probe = load_probe(db_path, args.probe_way_id)
     except Exception as exc:
         return fail(str(exc))
@@ -178,6 +234,9 @@ def main() -> int:
             f"way_id={args.probe_way_id}: expected={args.expected_maxspeed_kmh}, "
             f"got={parsed_speed}, raw_maxspeed={probe['maxspeed']!r}, zone_maxspeed={probe['zone_maxspeed']!r}"
         )
+    probe_street_name = probe["street_name"]
+    if not isinstance(probe_street_name, str) or not probe_street_name.strip():
+        return fail(f"probe way_id={args.probe_way_id} has empty street_name")
 
     report: Dict[str, Dict[str, float | int | str | None]] = {}
     modes = ("bbox", "hybrid", "polyline")
@@ -231,6 +290,7 @@ def main() -> int:
         "probe_lat": lat,
         "probe_lon": lon,
         "expected_maxspeed_kmh": int(args.expected_maxspeed_kmh),
+        "schema_contract": schema_contract,
         "paper_benchmark_smoke": report,
     }
 

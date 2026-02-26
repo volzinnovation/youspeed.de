@@ -28,6 +28,11 @@ on:
         required: false
         default: "8"
         type: string
+      force_publish:
+        description: "Force full bundle rebuild/publish even when upstream diff changed!=1"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -48,6 +53,7 @@ jobs:
       DEFAULT_PBF_RELEASE_TAG: deu-pbf-latest
       RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
       MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
+      FORCE_PUBLISH: ${{ inputs.force_publish && '1' || '0' }}
       INPUT_PBF: mapdata/raw/DEU-latest.osm.pbf
       INPUT_STATE: mapdata/raw/DEU.diff_state.json
       INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
@@ -275,6 +281,13 @@ jobs:
           prev_manifest_tmp="/tmp/prev_bundle_manifest.v3.json"
           new_version="${{ steps.version.outputs.bundle_version }}"
           diff_changed="${{ steps.version.outputs.diff_changed }}"
+          force_publish="${FORCE_PUBLISH}"
+
+          if [[ "${force_publish}" == "1" ]]; then
+            echo "needs_publish=1" >> "${GITHUB_OUTPUT}"
+            echo "Force publish requested via workflow input; continuing with build/release."
+            exit 0
+          fi
 
           if [[ "${diff_changed}" != "1" ]]; then
             echo "needs_publish=0" >> "${GITHUB_OUTPUT}"
