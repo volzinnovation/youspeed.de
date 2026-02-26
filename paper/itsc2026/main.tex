@@ -131,7 +131,7 @@ Two deployment contexts are measured:
 
 The benchmark uses a fixed Berlin probe point (\(52.5200,13.4050\)), heading \(90^\circ\), top-\(k=5\), and four measured query components (\texttt{bbox}, \texttt{hybrid}, \texttt{polyline}, \texttt{polycontainment}).
 
-Runtime footprint differs substantially by architecture: S1 uses 7 files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses 1 file (\SI{2.89}{GB}), and S4 uses 1 file (\SI{3.44}{GB}).
+Runtime footprint differs substantially by architecture: S1 uses 7 files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses 1 file (\SI{2.60}{GB}), and S4 uses 1 file (\SI{3.44}{GB}).
 
 \section{Results}
 \subsection{Latency comparison}
@@ -154,10 +154,10 @@ Mode & S1 & S2 & S3 & S4 \\
 \texttt{polycontainment} & 1.51 & 1.07 & 0.94 & 0.44 \\
 \midrule
 \multicolumn{5}{l}{\textbf{Offline (device)}} \\
-\texttt{bbox}     & 3970.84 & 194.49 & 37.12 & 757.01 \\
-\texttt{hybrid}   & 2535.44 & 45.76 & 23.39 & 95.96 \\
-\texttt{polyline} & 2639.76 & 62.88 & 44.93 & 86.48 \\
-\texttt{polycontainment} & 1.51 & 1.07 & 0.94 & 0.44 \\
+\texttt{bbox}     & 4526.75 & 232.58 & 43.77 & 792.13 \\
+\texttt{hybrid}   & 2935.52 & 61.03 & 24.10 & 99.57 \\
+\texttt{polyline} & 3122.36 & 76.20 & 39.16 & 78.54 \\
+\texttt{polycontainment} & 3.14 & 0.81 & 0.74 & 2.79 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -166,7 +166,7 @@ S3 is the strongest overall device configuration for decision-relevant query mod
 
 An important observation is that S4 does not uniformly dominate S3. While S4 applies additional prefiltering intended to reduce dense-area fan-out, the extra stage increases overhead in some device-side conditions, including the \texttt{bbox} mode where S4 regresses strongly versus S3. This indicates that multi-stage filtering needs workload-specific tuning and is not automatically beneficial.
 
-For polygon containment (in-city/out-city classification), the measured city-context retrieval stage in \texttt{hybrid} mode is \(1.51\) ms (S1), \(1.07\) ms (S2), \(0.94\) ms (S3), and \(0.44\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
+For polygon containment (in-city/out-city classification), the measured city-context retrieval stage is \(3.14\) ms (S1), \(0.81\) ms (S2), \(0.74\) ms (S3), and \(2.79\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
 
 To translate latency into a raw location-update budget under worst-case per-fix operation (both way query and polygon containment query), the following relation is used:
 \begin{equation}
@@ -184,10 +184,10 @@ where \(t_{\text{maxspeed}}\) is way-query latency, \(t_{\text{polycontainment}}
 \toprule
 Scenario & Mean ms & Hz & Best \(v_{\max}\) & Worst \(v_{\max}\) \\
 \midrule
-S1 & 3050.19 & 0.33 & 14.2 & 9.1 \\
-S2 & 102.11 & 9.79 & 768.7 & 184.1 \\
-S3 & 36.09 & 27.71 & 1479.7 & 784.8 \\
-S4 & 313.59 & 3.19 & 414.2 & 47.5 \\
+S1 & 3531.35 & 0.28 & 12.2 & 7.9 \\
+S2 & 124.08 & 8.06 & 582.1 & 154.2 \\
+S3 & 36.42 & 27.46 & 1449.3 & 808.8 \\
+S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -224,20 +224,20 @@ To estimate practical mobile transfer costs, payload transmission time is modele
 \begin{equation}
 T=\frac{B_{\text{payload}}+B_{\text{overhead}}}{R}
 \end{equation}
-with \(B_{\text{overhead}}=0.1 \cdot B_{\text{payload}}\). For European 5G conditions, \(R\) is bounded by reported ranges in recent network measurements \cite{opensignal_europe_5g_2024,eu_connectivity_impact_2026}. Under this model, compact SQL patch transfer for S3 remains faster than broad tile-bundle refresh for S2 at equivalent daily coverage.
+with \(B_{\text{overhead}}=0.1 \cdot B_{\text{payload}}\). For European 5G conditions, \(R\) is bounded by reported ranges in recent network measurements \cite{opensignal_europe_5g_2024,eu_connectivity_impact_2026}. For scenario-wise comparability, the daily payload proxy combines maxspeed and polygon update workload; S1/S2 use partition-equivalent payload via median tile size, while S3/S4 use patch-byte proxy scaling from measured gzip patch size. Under this model, S3 remains the fastest update path, followed by S4, while S1/S2 transfer cost is dominated by broad partition refresh.
 
 \begin{table}[!t]
 \caption{Indicative update transfer times under measured daily volumes.}
 \label{tab:transfer}
 \centering
-\begin{tabular}{p{3.5cm}r}
+\begin{tabular}{lrr}
 \toprule
-Case & Transfer time (s) \\
+Scenario & Payload (MB/day) & Transfer time (s) \\
 \midrule
-S2: 100 median tiles (\SI{4.72}{MB}) & 0.19--0.40 \\
-S2: 1000 median tiles (\SI{47.2}{MB}) & 1.91--3.98 \\
-S2: mean daily invalidation (\SI{126.73}{MB}) & 5.13--10.69 \\
-S3: daily SQL patch (\SI{5.07}{MB}) & 0.21--0.43 \\
+S1 & \SI{340.64}{MB} & 13.78--28.74 \\
+S2 & \SI{132.25}{MB} & 5.35--11.16 \\
+S3 & \SI{5.08}{MB} & 0.21--0.43 \\
+S4 & \SI{6.78}{MB} & 0.27--0.57 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -288,20 +288,20 @@ All preprocessing, scenario construction, and benchmark steps are parameterized 
   grid=major
 ]
 \addplot coordinates {
-  (1,5451.24) (2,3970.84) (3,172.21) (4,194.49)
-  (5,64.74) (6,37.12) (7,166.26) (8,757.01)
+  (1,5451.24) (2,4526.75) (3,172.21) (4,232.58)
+  (5,64.74) (6,43.77) (7,166.26) (8,792.13)
 };
 \addplot coordinates {
-  (1,10152.12) (2,2535.44) (3,169.25) (4,45.76)
-  (5,29.56) (6,23.39) (7,64.00) (8,95.96)
+  (1,10152.12) (2,2935.52) (3,169.25) (4,61.03)
+  (5,29.56) (6,24.10) (7,64.00) (8,99.57)
 };
 \addplot coordinates {
-  (1,10300.65) (2,2639.76) (3,170.65) (4,62.88)
-  (5,38.88) (6,44.93) (7,72.03) (8,86.48)
+  (1,10300.65) (2,3122.36) (3,170.65) (4,76.20)
+  (5,38.88) (6,39.16) (7,72.03) (8,78.54)
 };
 \addplot coordinates {
-  (1,1.51) (2,1.51) (3,1.07) (4,1.07)
-  (5,0.94) (6,0.94) (7,0.44) (8,0.44)
+  (1,1.51) (2,3.14) (3,1.07) (4,0.81)
+  (5,0.94) (6,0.74) (7,0.44) (8,2.79)
 };
 \draw[gray,densely dashed,thick] (axis cs:2.5,0.1) -- (axis cs:2.5,20000);
 \draw[gray,densely dashed,thick] (axis cs:4.5,0.1) -- (axis cs:4.5,20000);

@@ -289,7 +289,7 @@ The evaluated baseline was generated on 2026-02-23 from \texttt{germany-latest.o
 
 The benchmark protocol uses a fixed Berlin probe point \((52.5200,13.4050)\), heading \(90^\circ\), top-\(k=5\), and four measured query components (\texttt{bbox}, \texttt{hybrid}, \texttt{polyline}, \texttt{polycontainment}).
 
-Runtime footprint is strongly architecture-dependent: S1 uses 7 runtime files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses a single file (\SI{2.89}{GB}), and S4 uses a single file (\SI{3.44}{GB}). A representative country-scale on-device run completed successfully on iPhone with one executed test, \SI{30.328}{s} action elapsed time, and \SI{16758.57}{ms} test duration.
+Runtime footprint is strongly architecture-dependent: S1 uses 7 runtime files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses a single file (\SI{2.60}{GB}), and S4 uses a single file (\SI{3.44}{GB}). A representative country-scale on-device run completed successfully on iPhone with one executed test and \SI{48.331}{s} action elapsed time.
 
 \subsection{Benchmark results}
 Table~\ref{tab:bench_joint} reports the joint online (cloud-like) and offline (device) latency matrix. Figure~\ref{fig:bench_boxplot} orders the same data by scenario (S1--S4), each shown as adjacent online/offline columns.
@@ -307,10 +307,10 @@ online (cloud) & hybrid   & 10152.12 & 169.25 & 29.56 & 64.00 \\
 online (cloud) & polyline & 10300.65 & 170.65 & 38.88 & 72.03 \\
 online (cloud) & polycontainment & 1.51 & 1.07 & 0.94 & 0.44 \\
 \midrule
-offline (device) & bbox     & 3970.84 & 194.49 & 37.12 & 757.01 \\
-offline (device) & hybrid   & 2535.44 & 45.76 & 23.39 & 95.96 \\
-offline (device) & polyline & 2639.76 & 62.88 & 44.93 & 86.48 \\
-offline (device) & polycontainment & 1.51 & 1.07 & 0.94 & 0.44 \\
+offline (device) & bbox     & 4526.75 & 232.58 & 43.77 & 792.13 \\
+offline (device) & hybrid   & 2935.52 & 61.03 & 24.10 & 99.57 \\
+offline (device) & polyline & 3122.36 & 76.20 & 39.16 & 78.54 \\
+offline (device) & polycontainment & 3.14 & 0.81 & 0.74 & 2.79 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -330,10 +330,10 @@ where \(f_{\text{cycle}}\) is per-fix cycle throughput in Hz, \(t_{\text{maxspee
 \toprule
 Scenario & Mean latency (ms) & Mean throughput (Hz) & Best-mode \(v_{\max}\) (km/h) & Worst-mode \(v_{\max}\) (km/h) \\
 \midrule
-S1 & 3050.19 & 0.33 & 14.2 & 9.1 \\
-S2 & 102.11 & 9.79 & 768.7 & 184.1 \\
-S3 & 36.09 & 27.71 & 1479.7 & 784.8 \\
-S4 & 313.59 & 3.19 & 414.2 & 47.5 \\
+S1 & 3531.35 & 0.28 & 12.2 & 7.9 \\
+S2 & 124.08 & 8.06 & 582.1 & 154.2 \\
+S3 & 36.42 & 27.46 & 1449.3 & 808.8 \\
+S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -363,20 +363,20 @@ S4 & 313.59 & 3.19 & 414.2 & 47.5 \\
   grid=major
 ]
 \addplot coordinates {
-  (1,5451.24) (2,3970.84) (3,172.21) (4,194.49)
-  (5,64.74) (6,37.12) (7,166.26) (8,757.01)
+  (1,5451.24) (2,4526.75) (3,172.21) (4,232.58)
+  (5,64.74) (6,43.77) (7,166.26) (8,792.13)
 };
 \addplot coordinates {
-  (1,10152.12) (2,2535.44) (3,169.25) (4,45.76)
-  (5,29.56) (6,23.39) (7,64.00) (8,95.96)
+  (1,10152.12) (2,2935.52) (3,169.25) (4,61.03)
+  (5,29.56) (6,24.10) (7,64.00) (8,99.57)
 };
 \addplot coordinates {
-  (1,10300.65) (2,2639.76) (3,170.65) (4,62.88)
-  (5,38.88) (6,44.93) (7,72.03) (8,86.48)
+  (1,10300.65) (2,3122.36) (3,170.65) (4,76.20)
+  (5,38.88) (6,39.16) (7,72.03) (8,78.54)
 };
 \addplot coordinates {
-  (1,1.51) (2,1.51) (3,1.07) (4,1.07)
-  (5,0.94) (6,0.94) (7,0.44) (8,0.44)
+  (1,1.51) (2,3.14) (3,1.07) (4,0.81)
+  (5,0.94) (6,0.74) (7,0.44) (8,2.79)
 };
 \draw[gray,densely dashed,thick] (axis cs:2.5,0.1) -- (axis cs:2.5,20000);
 \draw[gray,densely dashed,thick] (axis cs:4.5,0.1) -- (axis cs:4.5,20000);
@@ -392,7 +392,7 @@ Compared to S1, host-side speedups range from \(31.7\times\) (S2 bbox) to \(343.
 
 Based on current results, \textbf{S3} is selected as default on-device runtime: it delivers the lowest hybrid/polyline latency while keeping a single-file footprint smaller than S4.
 
-For polygon containment (in-city/out-city classification), the measured city-context retrieval stage in \texttt{hybrid} mode is \(1.51\) ms (S1), \(1.07\) ms (S2), \(0.94\) ms (S3), and \(0.44\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
+For polygon containment (in-city/out-city classification), the measured city-context retrieval stage is \(3.14\) ms (S1), \(0.81\) ms (S2), \(0.74\) ms (S3), and \(2.79\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
 
 \section{Incremental Data Updates}
 Incremental update behavior was evaluated on a 30-day daily-diff window ending immediately before the baseline snapshot date (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\)). The analysis quantifies daily network churn, speed-tag churn, and scenario-specific refresh effort under a common observation period for the Germany subset of OSM.

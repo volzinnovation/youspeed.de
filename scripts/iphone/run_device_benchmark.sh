@@ -263,7 +263,7 @@ if picked is None:
 report = json.loads(picked.read_text())
 bench = report.get("benchmarkMs", {})
 required_variants = ("v1", "v2", "v3", "v4")
-required_modes = ("bbox", "hybrid", "polyline")
+required_modes = ("bbox", "hybrid", "polyline", "polycontainment")
 for variant in required_variants:
     if variant not in bench:
         raise SystemExit(f"Missing variant in report: {variant}")

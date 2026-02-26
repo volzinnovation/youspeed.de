@@ -63,6 +63,7 @@ iphone/SpeedConsumerApp/speeds_v3.sqlite
 iphone/.derived/
 iphone/DerivedData*/
 iphone/SpeedDBBench.xcodeproj/project.xcworkspace/xcuserdata/
+iphone/SpeedDBBench.xcodeproj/xcuserdata/
 *.xcuserstate
 
 # Xcode and test bundles

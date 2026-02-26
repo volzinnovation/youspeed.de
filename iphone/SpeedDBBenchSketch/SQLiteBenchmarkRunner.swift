@@ -26,6 +26,16 @@ private struct ScoredRow {
     let pointsJSON: String?
 }
 
+private struct CityBoundaryCandidate {
+    let rowID: Int64
+    let adminLevel: Int
+    let name: String?
+    let minLon: Double
+    let minLat: Double
+    let maxLon: Double
+    let maxLat: Double
+}
+
 final class SQLiteBenchmarkRunner {
     private let dbPath: String
 
@@ -96,8 +106,354 @@ final class SQLiteBenchmarkRunner {
         mode: DistanceMode,
         tileSizeM: Double
     ) throws {
+        if mode == .polycontainment {
+            _ = try runPolyContainmentProbe(
+                db: db,
+                input: input,
+                variant: variant,
+                tileSizeM: tileSizeM
+            )
+            return
+        }
+
         let candidates = try loadCandidates(db: db, input: input, variant: variant, tileSizeM: tileSizeM)
         _ = rankCandidates(candidates: candidates, input: input, mode: mode)
+    }
+
+    private func runPolyContainmentProbe(
+        db: OpaquePointer,
+        input: ProbeInput,
+        variant: BenchmarkVariant,
+        tileSizeM: Double
+    ) throws -> Int64 {
+        let hasCityBoundary = try tableExists(db: db, tableName: "city_boundary")
+        let hasCityBoundaryRTree = try tableExists(db: db, tableName: "city_boundary_rtree")
+        let hasCityRing = try tableExists(db: db, tableName: "city_ring")
+        let hasCityTile = try tableExists(db: db, tableName: "city_tile")
+        let hasCityPlace = try tableExists(db: db, tableName: "city_place")
+        let hasCityPlaceRTree = try tableExists(db: db, tableName: "city_place_rtree")
+
+        if hasCityBoundary && hasCityBoundaryRTree && hasCityRing {
+            let boundaries = try queryCityBoundaryCandidates(
+                db: db,
+                variant: variant,
+                lat: input.lat,
+                lon: input.lon,
+                tileSizeM: tileSizeM,
+                tileRadius: input.tileRadius,
+                hasCityTile: hasCityTile
+            )
+
+            var containingCount = 0
+            var checksum: Int64 = 0
+            var bestAdminLevel = Int.max
+            var bestArea = Double.infinity
+            var bestName: String?
+
+            for boundary in boundaries {
+                if try boundaryContainsPoint(db: db, boundaryRowID: boundary.rowID, lon: input.lon, lat: input.lat) {
+                    containingCount += 1
+                    checksum = checksum &+ boundary.rowID
+                    let bboxArea = max(boundary.maxLon - boundary.minLon, 0.0) * max(boundary.maxLat - boundary.minLat, 0.0)
+                    let currentName = boundary.name ?? ""
+                    let bestNameStr = bestName ?? ""
+                    if boundary.adminLevel < bestAdminLevel ||
+                        (boundary.adminLevel == bestAdminLevel && bboxArea < bestArea) ||
+                        (boundary.adminLevel == bestAdminLevel && bboxArea == bestArea && currentName < bestNameStr) {
+                        bestAdminLevel = boundary.adminLevel
+                        bestArea = bboxArea
+                        bestName = boundary.name
+                    }
+                }
+            }
+
+            if containingCount > 0 {
+                return checksum &+ Int64(bestAdminLevel) &+ Int64(bestName?.count ?? 0)
+            }
+
+            if hasCityPlace && hasCityPlaceRTree {
+                let placeCount = try queryCityPlaceCandidateCount(db: db, lat: input.lat, lon: input.lon)
+                if placeCount > 0 {
+                    return Int64(placeCount)
+                }
+            }
+            return Int64(boundaries.count)
+        }
+
+        if try tableExists(db: db, tableName: "areas") && tableExists(db: db, tableName: "areas_rtree") {
+            return try runAreaFallbackContainmentProbe(db: db, lat: input.lat, lon: input.lon)
+        }
+
+        return 0
+    }
+
+    private func queryCityBoundaryCandidates(
+        db: OpaquePointer,
+        variant: BenchmarkVariant,
+        lat: Double,
+        lon: Double,
+        tileSizeM: Double,
+        tileRadius: Int,
+        hasCityTile: Bool
+    ) throws -> [CityBoundaryCandidate] {
+        let sql: String
+        if variant == .v4 && hasCityTile {
+            let (tileX, tileY) = tileForLonLat(lon: lon, lat: lat, tileSizeM: tileSizeM)
+            let tileXMin = tileX - tileRadius
+            let tileXMax = tileX + tileRadius
+            let tileYMin = tileY - tileRadius
+            let tileYMax = tileY + tileRadius
+            sql = """
+            WITH t AS (
+              SELECT DISTINCT boundary_row_id
+              FROM city_tile
+              WHERE tile_x BETWEEN ?1 AND ?2
+                AND tile_y BETWEEN ?3 AND ?4
+            )
+            SELECT b.row_id, b.admin_level, b.name, b.min_lon, b.min_lat, b.max_lon, b.max_lat
+            FROM t
+            JOIN city_boundary_rtree r ON r.row_id = t.boundary_row_id
+            JOIN city_boundary b ON b.row_id = t.boundary_row_id
+            WHERE r.min_lon <= ?5 AND r.max_lon >= ?6
+              AND r.min_lat <= ?7 AND r.max_lat >= ?8
+            LIMIT 2048
+            """
+
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                throw BenchmarkError.sqliteError("prepare failed (city boundary candidates v4)")
+            }
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_int64(stmt, 1, Int64(tileXMin))
+            sqlite3_bind_int64(stmt, 2, Int64(tileXMax))
+            sqlite3_bind_int64(stmt, 3, Int64(tileYMin))
+            sqlite3_bind_int64(stmt, 4, Int64(tileYMax))
+            sqlite3_bind_double(stmt, 5, lon)
+            sqlite3_bind_double(stmt, 6, lon)
+            sqlite3_bind_double(stmt, 7, lat)
+            sqlite3_bind_double(stmt, 8, lat)
+            return readCityBoundaryRows(stmt: stmt)
+        }
+
+        sql = """
+        SELECT b.row_id, b.admin_level, b.name, b.min_lon, b.min_lat, b.max_lon, b.max_lat
+        FROM city_boundary_rtree r
+        JOIN city_boundary b ON b.row_id = r.row_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        LIMIT 2048
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw BenchmarkError.sqliteError("prepare failed (city boundary candidates)")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_double(stmt, 1, lon)
+        sqlite3_bind_double(stmt, 2, lon)
+        sqlite3_bind_double(stmt, 3, lat)
+        sqlite3_bind_double(stmt, 4, lat)
+        return readCityBoundaryRows(stmt: stmt)
+    }
+
+    private func readCityBoundaryRows(stmt: OpaquePointer) -> [CityBoundaryCandidate] {
+        var rows: [CityBoundaryCandidate] = []
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_ROW {
+                rows.append(
+                    CityBoundaryCandidate(
+                        rowID: sqlite3_column_int64(stmt, 0),
+                        adminLevel: Int(sqlite3_column_int64(stmt, 1)),
+                        name: cStringOptional(sqlite3_column_text(stmt, 2)),
+                        minLon: sqlite3_column_double(stmt, 3),
+                        minLat: sqlite3_column_double(stmt, 4),
+                        maxLon: sqlite3_column_double(stmt, 5),
+                        maxLat: sqlite3_column_double(stmt, 6)
+                    )
+                )
+            } else if rc == SQLITE_DONE {
+                break
+            } else {
+                break
+            }
+        }
+        return rows
+    }
+
+    private func boundaryContainsPoint(
+        db: OpaquePointer,
+        boundaryRowID: Int64,
+        lon: Double,
+        lat: Double
+    ) throws -> Bool {
+        let sql = """
+        SELECT outer_index, is_hole, points_json
+        FROM city_ring
+        WHERE boundary_row_id = ?1
+        ORDER BY outer_index, is_hole, ring_index
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw BenchmarkError.sqliteError("prepare failed (city ring query)")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 1, boundaryRowID)
+
+        struct RingGroup {
+            var outer: [(Double, Double)]?
+            var holes: [[(Double, Double)]]
+        }
+        var groups: [Int: RingGroup] = [:]
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_ROW {
+                let outerIndex = Int(sqlite3_column_int64(stmt, 0))
+                let isHole = Int(sqlite3_column_int64(stmt, 1))
+                guard let pointsRaw = cStringOptional(sqlite3_column_text(stmt, 2)),
+                      let ring = parseRingPoints(pointsRaw) else {
+                    continue
+                }
+                var group = groups[outerIndex] ?? RingGroup(outer: nil, holes: [])
+                if isHole == 0 {
+                    group.outer = ring
+                } else {
+                    group.holes.append(ring)
+                }
+                groups[outerIndex] = group
+            } else if rc == SQLITE_DONE {
+                break
+            } else {
+                throw BenchmarkError.sqliteError("step failed (city ring query)")
+            }
+        }
+
+        for group in groups.values {
+            guard let outer = group.outer else {
+                continue
+            }
+            if !pointInRing(lon: lon, lat: lat, ring: outer) {
+                continue
+            }
+            let inHole = group.holes.contains { hole in
+                pointInRing(lon: lon, lat: lat, ring: hole)
+            }
+            if !inHole {
+                return true
+            }
+        }
+        return false
+    }
+
+    private func parseRingPoints(_ raw: String) -> [(Double, Double)]? {
+        guard let data = raw.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let arr = json as? [Any] else {
+            return nil
+        }
+        var out: [(Double, Double)] = []
+        out.reserveCapacity(arr.count)
+        for element in arr {
+            guard let pair = element as? [Any], pair.count >= 2 else {
+                continue
+            }
+            guard let lon = pair[0] as? Double,
+                  let lat = pair[1] as? Double else {
+                continue
+            }
+            out.append((lon, lat))
+        }
+        return out.count >= 4 ? out : nil
+    }
+
+    private func pointInRing(lon: Double, lat: Double, ring: [(Double, Double)]) -> Bool {
+        if ring.count < 4 {
+            return false
+        }
+        var inside = false
+        for i in 0..<(ring.count - 1) {
+            let (x1, y1) = ring[i]
+            let (x2, y2) = ring[i + 1]
+            if pointOnSegment(px: lon, py: lat, x1: x1, y1: y1, x2: x2, y2: y2) {
+                return true
+            }
+            let crossesLatitude = ((y1 > lat) != (y2 > lat))
+            let denom = (y2 - y1) == 0 ? 1e-30 : (y2 - y1)
+            let xAtLat = (x2 - x1) * (lat - y1) / denom + x1
+            if crossesLatitude && lon < xAtLat {
+                inside.toggle()
+            }
+        }
+        return inside
+    }
+
+    private func pointOnSegment(px: Double, py: Double, x1: Double, y1: Double, x2: Double, y2: Double) -> Bool {
+        let eps = 1e-12
+        let cross = (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1)
+        if abs(cross) > eps {
+            return false
+        }
+        let dot = (px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)
+        if dot < -eps {
+            return false
+        }
+        let sqLen = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)
+        if dot - sqLen > eps {
+            return false
+        }
+        return true
+    }
+
+    private func queryCityPlaceCandidateCount(db: OpaquePointer, lat: Double, lon: Double) throws -> Int {
+        let sql = """
+        SELECT COUNT(*)
+        FROM (
+          SELECT p.row_id
+          FROM city_place_rtree r
+          JOIN city_place p ON p.row_id = r.row_id
+          WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+            AND r.min_lat <= ?3 AND r.max_lat >= ?4
+          LIMIT 16
+        ) x
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw BenchmarkError.sqliteError("prepare failed (city place query)")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_double(stmt, 1, lon + 0.3)
+        sqlite3_bind_double(stmt, 2, lon - 0.3)
+        sqlite3_bind_double(stmt, 3, lat + 0.3)
+        sqlite3_bind_double(stmt, 4, lat - 0.3)
+        guard sqlite3_step(stmt) == SQLITE_ROW else {
+            throw BenchmarkError.sqliteError("step failed (city place query)")
+        }
+        return Int(sqlite3_column_int64(stmt, 0))
+    }
+
+    private func runAreaFallbackContainmentProbe(db: OpaquePointer, lat: Double, lon: Double) throws -> Int64 {
+        let sql = """
+        SELECT a.row_id
+        FROM areas_rtree r
+        JOIN areas a ON a.row_id = r.row_id
+        WHERE a.boundary='administrative'
+          AND a.admin_level IN ('8','9')
+          AND r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        LIMIT 1
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw BenchmarkError.sqliteError("prepare failed (areas fallback query)")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_double(stmt, 1, lon)
+        sqlite3_bind_double(stmt, 2, lon)
+        sqlite3_bind_double(stmt, 3, lat)
+        sqlite3_bind_double(stmt, 4, lat)
+        if sqlite3_step(stmt) == SQLITE_ROW {
+            return sqlite3_column_int64(stmt, 0)
+        }
+        return 0
     }
 
     private func mapVariantForSchema(

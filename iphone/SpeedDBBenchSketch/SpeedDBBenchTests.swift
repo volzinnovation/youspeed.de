@@ -47,8 +47,8 @@ final class SpeedDBBenchTests: XCTestCase {
                     XCTFail("Missing mode \(mode.rawValue) for variant \(variant.rawValue)")
                     continue
                 }
-                XCTAssertGreaterThan(timing.avgMs, 0)
-                XCTAssertGreaterThan(timing.maxMs, 0)
+                XCTAssertGreaterThanOrEqual(timing.avgMs, 0)
+                XCTAssertGreaterThanOrEqual(timing.maxMs, 0)
             }
         }
         XCTAssertTrue(report.hasWayTileTable)

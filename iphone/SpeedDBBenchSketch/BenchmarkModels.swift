@@ -11,6 +11,7 @@ enum DistanceMode: String, Codable, CaseIterable {
     case bbox
     case hybrid
     case polyline
+    case polycontainment
 }
 
 struct ProbeInput: Codable {
