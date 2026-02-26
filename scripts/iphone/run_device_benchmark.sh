@@ -23,11 +23,48 @@ destinations_log="${result_dir}/SpeedDBBench-${timestamp}.destinations.log"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 bundle_id="de.youspeed.SpeedDBBench"
 country_db_src="${SPEEDDBBENCH_COUNTRY_DB:-${repo_root}/mapdata/dist-v4/germany/speeds_v4.sqlite}"
+fallback_country_db_src="${repo_root}/mapdata/dist-v4/germany/speeds_v4.sqlite"
 
 action_log_json="${result_dir}/SpeedDBBench-${timestamp}.action-log.json"
 docs_dump_dir="${result_dir}/SpeedDBBench-${timestamp}.device-docs"
 
 mkdir -p "${result_dir}"
+
+has_full_matrix_schema() {
+  local db_path="$1"
+  if [[ ! -f "${db_path}" ]]; then
+    return 1
+  fi
+  if ! command -v sqlite3 >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local ways_count
+  local rtree_count
+  local tile_count
+  ways_count="$(sqlite3 "${db_path}" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ways';" 2>/dev/null || echo 0)"
+  rtree_count="$(sqlite3 "${db_path}" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ways_rtree';" 2>/dev/null || echo 0)"
+  tile_count="$(sqlite3 "${db_path}" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='way_tile';" 2>/dev/null || echo 0)"
+
+  [[ "${ways_count}" == "1" && "${rtree_count}" == "1" && "${tile_count}" == "1" ]]
+}
+
+resolve_country_db_for_full_matrix() {
+  if has_full_matrix_schema "${country_db_src}"; then
+    return 0
+  fi
+
+  echo "Provided DB is not full-matrix (v1-v4) capable: ${country_db_src}" >&2
+  if [[ "${country_db_src}" != "${fallback_country_db_src}" ]] && has_full_matrix_schema "${fallback_country_db_src}"; then
+    echo "Switching to full-matrix fallback DB: ${fallback_country_db_src}" >&2
+    country_db_src="${fallback_country_db_src}"
+    return 0
+  fi
+
+  echo "No suitable DB found with ways+ways_rtree+way_tile schema." >&2
+  echo "Build or provide mapdata/dist-v4/germany/speeds_v4.sqlite to benchmark v1-v4 distinctly." >&2
+  return 1
+}
 
 run_xcodebuild_with_timeout() {
   local timeout_s="$1"
@@ -262,6 +299,7 @@ PY
 }
 
 require_device_ready
+resolve_country_db_for_full_matrix
 stage_country_db_on_device
 run_ui_benchmark_tests
 cat "${run_log}" >&2

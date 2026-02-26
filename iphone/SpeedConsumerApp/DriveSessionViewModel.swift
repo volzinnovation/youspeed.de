@@ -1,10 +1,18 @@
 import CoreLocation
 import AVFoundation
 import Foundation
+import OSLog
 import UIKit
 
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
+    private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
+    enum StartupDataState: String {
+        case loading
+        case ready
+        case failed
+    }
+
     @Published var syncStatus: String = "not_synced"
     @Published var syncProgressStage: String = "idle"
     @Published var syncProgressDetail: String = ""
@@ -40,6 +48,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lookupEventLog: [String] = []
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
+    @Published var startupDataState: StartupDataState = .loading
+    @Published var startupProgress: Double = 0
+    @Published var startupDetail: String = "Lokale Daten werden vorbereitet"
     @Published private(set) var activePenaltyRules: SpeedPenaltyRuleSet
     @Published var audioAlertThresholdKmh: Int {
         didSet {
@@ -64,16 +75,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
     private var lastProgressUIUpdate = Date.distantPast
+    private var lastLoggedSyncProgressSignature: String = ""
     private var lastDownloadProgressAt: Date?
     private var lastDownloadProgressBytes: Int64?
     private var syncBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
     private var syncTask: Task<Void, Never>?
+    private var startupTask: Task<Void, Never>?
     private var lastAudioFeedbackAt = Date.distantPast
     private var lastAnnouncedSpeechText: String?
+    private var wasDrivingBanWarningActive = false
+    private var lastDrivingBanWarningAt = Date.distantPast
     private var previousMatchedWayID: String?
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let defaultAudioAlertThresholdKmh = 8
+    private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let defaultLookupRadiusM: Double = 50.0
+    private static let startupSeedActivationFloorProgress: Double = 0.92
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -147,18 +164,29 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .automotiveNavigation
         locationManager.distanceFilter = 10
-        ensureSeedBootstrapIfNeeded()
+        beginStartupDataLoadIfNeeded()
+    }
+
+    var isDatabaseReadyForQueries: Bool {
+        startupDataState == .ready && speedLimitService != nil && !activeDBPath.isEmpty
     }
 
     var isSyncingNow: Bool {
-        syncTask != nil || syncStatus == "syncing" || syncStatus == "bootstrapping"
+        startupTask != nil || syncTask != nil || syncStatus == "syncing" || syncStatus == "bootstrapping"
     }
 
     func bootstrapAndSync() {
-        guard syncTask == nil else {
-            syncProgressDetail = "Sync already in progress"
+        guard startupTask == nil else {
+            syncProgressDetail = "Startup data preparation is still running"
+            Self.logger.notice("sync_request rejected reason=startup_task_running")
             return
         }
+        guard syncTask == nil else {
+            syncProgressDetail = "Sync already in progress"
+            Self.logger.notice("sync_request ignored reason=sync_already_running")
+            return
+        }
+        Self.logger.notice("sync begin")
         syncTask = Task { @MainActor [weak self] in
             guard let self else {
                 return
@@ -184,12 +212,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
                 activeBundleVersion = bootstrap.bundleVersion
                 activeDBPath = bootstrap.dbPath
+                Self.logger.notice(
+                    "sync bootstrap_ready version=\(bootstrap.bundleVersion, privacy: .public) db=\(bootstrap.dbPath, privacy: .public)"
+                )
 
                 guard let manifestURL else {
                     syncStatus = "seed_only"
                     if !activeDBPath.isEmpty {
                         speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                     }
+                    Self.logger.notice("sync seed_only no_manifest_url")
                     return
                 }
 
@@ -201,6 +233,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if !activeDBPath.isEmpty {
                         speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                     }
+                    Self.logger.error("sync failed missing_github_token")
                     return
                 }
 
@@ -220,6 +253,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressETASeconds = 0
                 syncPartDownloads = []
                 lastError = ""
+                Self.logger.notice(
+                    "sync success mode=\(sync.mode.rawValue, privacy: .public) version=\(sync.bundleVersion, privacy: .public) db=\(sync.dbPath, privacy: .public)"
+                )
             } catch {
                 syncStatus = "sync_failed"
                 syncProgressStage = "failed"
@@ -229,31 +265,97 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if !activeDBPath.isEmpty {
                     speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                 }
+                Self.logger.error("sync failed error=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
     private func ensureSeedBootstrapIfNeeded() {
-        guard speedLimitService == nil, activeDBPath.isEmpty, syncTask == nil else {
+        beginStartupDataLoadIfNeeded()
+    }
+
+    func retryStartupDataPreparation() {
+        Self.logger.notice("startup retry requested")
+        beginStartupDataLoadIfNeeded(force: true)
+    }
+
+    private func beginStartupDataLoadIfNeeded(force: Bool = false) {
+        guard force || startupTask == nil else {
+            Self.logger.notice("startup begin skipped reason=task_already_running")
             return
         }
-        syncTask = Task { @MainActor [weak self] in
+        guard force || (speedLimitService == nil && activeDBPath.isEmpty) else {
+            startupDataState = .ready
+            startupProgress = 1
+            startupDetail = "Lokale Daten sind bereit"
+            Self.logger.notice("startup begin skipped reason=already_ready")
+            return
+        }
+
+        startupTask?.cancel()
+        Self.logger.notice("startup begin force=\(force, privacy: .public)")
+        startupTask = Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
-            defer { syncTask = nil }
+            defer { startupTask = nil }
+
+            startupDataState = .loading
+            startupProgress = 0.02
+            startupDetail = "Lokale Daten werden vorbereitet"
+            if force {
+                syncProgressDetail = ""
+            }
+
             do {
-                let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
-                activeBundleVersion = bootstrap.bundleVersion
-                activeDBPath = bootstrap.dbPath
-                speedLimitService = V3SpeedLimitService(dbPath: bootstrap.dbPath)
-                if syncStatus == "not_synced" || syncStatus == "sync_failed" {
-                    syncStatus = "ready_bootstrap"
+                lastError = ""
+                await bundleManager.setGitHubToken(githubReleaseToken)
+                let recovered = try await bundleManager.recoverLocalDataAtStartup { detail, fraction in
+                    Task { @MainActor [weak self] in
+                        guard let self else {
+                            return
+                        }
+                        startupDetail = detail
+                        startupProgress = max(startupProgress, min(max(fraction, 0), 0.9))
+                        if fraction >= 0.99 {
+                            Self.logger.notice("startup progress detail=\(detail, privacy: .public) fraction=\(fraction, privacy: .public)")
+                        }
+                    }
                 }
+
+                let startupResult: BundleSyncResult
+                if let recovered {
+                    startupResult = recovered
+                    Self.logger.notice(
+                        "startup recovered_local mode=\(recovered.mode.rawValue, privacy: .public) version=\(recovered.bundleVersion, privacy: .public)"
+                    )
+                } else {
+                    startupDetail = "Aktiviere Seed-Datenbank"
+                    startupProgress = max(startupProgress, Self.startupSeedActivationFloorProgress)
+                    Self.logger.notice("startup no_local_data_fallback=seed")
+                    startupResult = try await bundleManager.bootstrapSeedIfNeeded()
+                }
+
+                activeBundleVersion = startupResult.bundleVersion
+                activeDBPath = startupResult.dbPath
+                if startupResult.dbPath.isEmpty {
+                    throw ConsumerAppError.io("No local database available after startup recovery")
+                }
+                speedLimitService = V3SpeedLimitService(dbPath: startupResult.dbPath)
+                syncStatus = "ready_\(startupResult.mode.rawValue)"
+                startupProgress = 1
+                startupDetail = "Datenbank ist bereit"
+                startupDataState = .ready
+                Self.logger.notice(
+                    "startup ready mode=\(startupResult.mode.rawValue, privacy: .public) version=\(startupResult.bundleVersion, privacy: .public) db=\(startupResult.dbPath, privacy: .public)"
+                )
             } catch {
-                if lastError.isEmpty {
-                    lastError = error.localizedDescription
-                }
+                startupDataState = .failed
+                startupProgress = min(startupProgress, 0.98)
+                startupDetail = "Lokale Daten konnten nicht geladen werden"
+                lastError = error.localizedDescription
+                syncStatus = "sync_failed"
+                Self.logger.error("startup failed error=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -295,6 +397,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         syncPartDownloads = progress.partDownloads
         if progress.stage != .downloading && progress.stage != .assembling {
             syncPartDownloads = []
+        }
+        let signature = "\(progress.stage.rawValue)|\(progress.detail)"
+        if signature != lastLoggedSyncProgressSignature {
+            lastLoggedSyncProgressSignature = signature
+            Self.logger.notice(
+                "sync progress stage=\(progress.stage.rawValue, privacy: .public) detail=\(progress.detail, privacy: .public) completed=\(progress.completedBytes, privacy: .public) total=\(progress.totalBytes, privacy: .public)"
+            )
         }
         updateDownloadRateAndETA(progress: progress, now: now)
     }
@@ -379,6 +488,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveStatus = "stopped"
         lastAudioFeedbackAt = .distantPast
         lastAnnouncedSpeechText = nil
+        wasDrivingBanWarningActive = false
+        lastDrivingBanWarningAt = .distantPast
         previousMatchedWayID = nil
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
@@ -423,6 +534,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let vAcc = location.verticalAccuracy
         let course = location.course
         guard let service = speedLimitService else {
+            wasDrivingBanWarningActive = false
             appendLookupEvent(
                 "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
             )
@@ -462,6 +574,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if let wayID = result.wayID {
                         self.previousMatchedWayID = wayID
                     }
+                    self.maybeNotifyDrivingBanWarning()
                     self.maybeSpeakOverspeedWarning()
                     self.lastLookupStatus = result.speedLimitKmh == nil ? "no_match" : "matched"
                     self.lastLookupQueryMs = result.queryTimeMs
@@ -504,6 +617,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
+                    self.wasDrivingBanWarningActive = false
                     self.appendLookupEvent(
                         "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) lookup_error=\(error.localizedDescription)"
                     )
@@ -644,7 +758,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var currentPenaltyNotice: SpeedPenaltyNotice? {
-        SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: currentOverspeedKmh, rules: activePenaltyRules)
+        SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: currentOverspeedKmh,
+            rules: activePenaltyRules,
+            insideCity: lastLookupInsideCity
+        )
     }
 
     private func maybeSpeakOverspeedWarning() {
@@ -655,6 +773,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let threshold = audioAlertThresholdKmh
         guard threshold > 0, overspeed >= threshold, let notice = currentPenaltyNotice else {
             lastAnnouncedSpeechText = nil
+            return
+        }
+        if let drivingBanMonths = notice.drivingBanMonths, drivingBanMonths > 0 {
             return
         }
 
@@ -692,6 +813,48 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         speechSynthesizer.speak(utterance)
         lastAudioFeedbackAt = now
         lastAnnouncedSpeechText = speechText
+    }
+
+    private func maybeNotifyDrivingBanWarning() {
+        guard driveStatus == "running" else {
+            wasDrivingBanWarningActive = false
+            return
+        }
+        guard let notice = currentPenaltyNotice,
+              let drivingBanMonths = notice.drivingBanMonths,
+              drivingBanMonths > 0 else {
+            wasDrivingBanWarningActive = false
+            return
+        }
+
+        let now = Date()
+        let enteringWarning = !wasDrivingBanWarningActive
+        let enoughTimeElapsed = now.timeIntervalSince(lastDrivingBanWarningAt) >= Self.drivingBanWarningReminderInterval
+        guard enteringWarning || enoughTimeElapsed else {
+            return
+        }
+
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.warning)
+
+        let speechText = drivingBanMonths == 1
+            ? "Achtung. Ein Monat Fahrverbot moeglich."
+            : "Achtung. \(drivingBanMonths) Monate Fahrverbot moeglich."
+        if enteringWarning && speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        if enteringWarning || !speechSynthesizer.isSpeaking {
+            let utterance = AVSpeechUtterance(string: speechText)
+            if let preferredLanguage = Locale.preferredLanguages.first {
+                utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
+            }
+            utterance.rate = 0.46
+            speechSynthesizer.speak(utterance)
+        }
+
+        wasDrivingBanWarningActive = true
+        lastDrivingBanWarningAt = now
     }
 }
 

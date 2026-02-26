@@ -43,6 +43,28 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(rules.bands.last?.penaltyPoints, 2)
     }
 
+    func testPenaltyRuleEngineUsesInnerortsAusserortsVariants() throws {
+        let rules = try SpeedPenaltyRuleSet.loadBundled(
+            named: "DEU-rules",
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self)
+        )
+
+        let inner = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 12, rules: rules, insideCity: true)
+        let outer = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 12, rules: rules, insideCity: false)
+        XCTAssertEqual(inner?.moneyFineEUR, 50)
+        XCTAssertEqual(outer?.moneyFineEUR, 40)
+
+        let innerHigh = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 31, rules: rules, insideCity: true)
+        let outerHigh = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 31, rules: rules, insideCity: false)
+        XCTAssertEqual(innerHigh?.penaltyPoints, 2)
+        XCTAssertEqual(outerHigh?.penaltyPoints, 1)
+        XCTAssertEqual(innerHigh?.drivingBanMonths, 1)
+        XCTAssertEqual(outerHigh?.drivingBanMonths, 0)
+
+        let outerVeryHigh = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 41, rules: rules, insideCity: false)
+        XCTAssertEqual(outerVeryHigh?.drivingBanMonths, 1)
+    }
+
     func testDecodeBundleManifest() throws {
         let raw = """
         {
@@ -318,6 +340,203 @@ final class SpeedConsumerTests: XCTestCase {
         }
         let assembledData = try Data(contentsOf: dbURL)
         XCTAssertEqual(sourceSHA, sha256Hex(assembledData))
+    }
+
+    func testStartupRecoveryActivatesValidStagingDatabase() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let stageDir = supportDir.appendingPathComponent("staging", isDirectory: true)
+        try fm.createDirectory(at: stageDir, withIntermediateDirectories: true)
+
+        let recoveredCandidate = stageDir.appendingPathComponent("2026-02-24-\(UUID().uuidString).sqlite")
+        try createFixtureV3DB(at: recoveredCandidate)
+        let staleCandidate = stageDir.appendingPathComponent("stale.sqlite")
+        try Data("not a sqlite database".utf8).write(to: staleCandidate, options: .atomic)
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let recovered = try await manager.recoverLocalDataAtStartup()
+        XCTAssertNotNil(recovered)
+        XCTAssertEqual(recovered?.bundleVersion, "2026-02-24")
+
+        guard let activeDB = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active database URL after startup recovery")
+            return
+        }
+        XCTAssertTrue(fm.fileExists(atPath: activeDB.path))
+        XCTAssertFalse(fm.fileExists(atPath: recoveredCandidate.path), "Staging candidate should be moved into active bundles")
+
+        let remainingStageEntries = (try? fm.contentsOfDirectory(atPath: stageDir.path)) ?? []
+        XCTAssertTrue(remainingStageEntries.isEmpty, "Expected staging artifacts cleanup after recovery, got: \(remainingStageEntries)")
+
+        let service = V3SpeedLimitService(dbPath: activeDB.path)
+        let result = try service.lookupSpeedLimit(
+            lat: 52.5205,
+            lon: 13.4055,
+            radiusM: 250.0,
+            maxCandidates: 64
+        )
+        XCTAssertEqual(result.speedLimitKmh, 30)
+        XCTAssertEqual(result.wayID, "100")
+    }
+
+    func testStartupRecoveryRemovesUnusableRemnantsWhenNothingIsRecoverable() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let stageDir = supportDir.appendingPathComponent("staging", isDirectory: true)
+        let cacheDir = supportDir.appendingPathComponent("multipart-cache", isDirectory: true)
+        try fm.createDirectory(at: stageDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+
+        let stageGarbage = stageDir.appendingPathComponent("broken.sqlite")
+        try Data("broken-stage".utf8).write(to: stageGarbage, options: .atomic)
+
+        let cacheGarbage = cacheDir.appendingPathComponent("deadbeef.assembled.sqlite")
+        let checkpointGarbage = cacheDir.appendingPathComponent("deadbeef.checkpoint.json")
+        try Data("broken-cache".utf8).write(to: cacheGarbage, options: .atomic)
+        try Data("{\"nextPartIndex\":1,\"assembledBytes\":128}".utf8).write(to: checkpointGarbage, options: .atomic)
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let recovered = try await manager.recoverLocalDataAtStartup()
+        XCTAssertNil(recovered)
+
+        let remainingStageEntries = (try? fm.contentsOfDirectory(atPath: stageDir.path)) ?? []
+        let remainingCacheEntries = (try? fm.contentsOfDirectory(atPath: cacheDir.path)) ?? []
+        XCTAssertTrue(remainingStageEntries.isEmpty, "Expected staging remnants to be removed, got: \(remainingStageEntries)")
+        XCTAssertTrue(remainingCacheEntries.isEmpty, "Expected multipart cache remnants to be removed, got: \(remainingCacheEntries)")
+    }
+
+    func testStartupRecoveryPrefersDownloadedCacheOverActiveSeed() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesDir = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let seedDir = bundlesDir.appendingPathComponent("seed", isDirectory: true)
+        let cacheDir = supportDir.appendingPathComponent("multipart-cache", isDirectory: true)
+        try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+
+        let seedDB = seedDir.appendingPathComponent("speeds_v3.sqlite")
+        try createFixtureV3DB(at: seedDB)
+
+        let activeState = ActiveBundleState(
+            region: "unknown",
+            bundleVersion: "seed",
+            dbFileName: "speeds_v3.sqlite",
+            activatedAtUTC: "2026-02-25T00:00:00Z"
+        )
+        let activeStateData = try JSONEncoder().encode(activeState)
+        try activeStateData.write(to: supportDir.appendingPathComponent("active_bundle.json"), options: .atomic)
+
+        let downloadedCacheDB = cacheDir.appendingPathComponent("abcdef.assembled.sqlite")
+        try createFixtureV3DB(at: downloadedCacheDB)
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let recovered = try await manager.recoverLocalDataAtStartup()
+        XCTAssertNotNil(recovered)
+        XCTAssertNotEqual(recovered?.bundleVersion, "seed")
+
+        guard let activeDB = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active database URL after startup recovery")
+            return
+        }
+        XCTAssertFalse(activeDB.path.contains("/bundles/seed/"), "Should not keep seed as active DB when downloaded cache exists")
+        XCTAssertFalse(fm.fileExists(atPath: downloadedCacheDB.path), "Recovered cache DB should be moved out of multipart-cache")
+    }
+
+    func testBootstrapSeedUsesBundledDatabasePathWithoutCopy() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        guard let bundledSeed = appBundle.url(forResource: "speeds_v3", withExtension: "sqlite") else {
+            throw XCTSkip("Bundled seed DB not found")
+        }
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let result = try await manager.bootstrapSeedIfNeeded(bundle: appBundle)
+
+        XCTAssertEqual(result.bundleVersion, "seed")
+        XCTAssertEqual(result.dbPath, bundledSeed.path)
+        XCTAssertEqual(result.details, "seed bundle referenced")
+
+        let state = try await manager.activeState()
+        XCTAssertEqual(state?.bundleVersion, "seed")
+        XCTAssertEqual(state?.dbPath, bundledSeed.path)
+
+        let copiedSeedDB = supportDir
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent("seed", isDirectory: true)
+            .appendingPathComponent("speeds_v3.sqlite")
+        XCTAssertFalse(fm.fileExists(atPath: copiedSeedDB.path), "Seed should not be copied into app support on clean bootstrap")
+    }
+
+    func testBootstrapSeedMigratesOldCopiedSeedToBundledPath() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesDir = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let seedDir = bundlesDir.appendingPathComponent("seed", isDirectory: true)
+        try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
+        let copiedSeedDB = seedDir.appendingPathComponent("speeds_v3.sqlite")
+        try createFixtureV3DB(at: copiedSeedDB)
+
+        let legacySeedState = ActiveBundleState(
+            region: "unknown",
+            bundleVersion: "seed",
+            dbFileName: "speeds_v3.sqlite",
+            activatedAtUTC: "2026-02-25T00:00:00Z"
+        )
+        try JSONEncoder().encode(legacySeedState).write(
+            to: supportDir.appendingPathComponent("active_bundle.json"),
+            options: .atomic
+        )
+
+        let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        guard let bundledSeed = appBundle.url(forResource: "speeds_v3", withExtension: "sqlite") else {
+            throw XCTSkip("Bundled seed DB not found")
+        }
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let result = try await manager.bootstrapSeedIfNeeded(bundle: appBundle)
+
+        XCTAssertEqual(result.bundleVersion, "seed")
+        XCTAssertEqual(result.dbPath, bundledSeed.path)
+        XCTAssertFalse(fm.fileExists(atPath: copiedSeedDB.path), "Legacy copied seed should be removed after migration")
+
+        let state = try await manager.activeState()
+        XCTAssertEqual(state?.dbPath, bundledSeed.path)
     }
 
     @MainActor

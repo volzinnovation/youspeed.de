@@ -83,12 +83,28 @@ struct ActiveBundleState: Codable {
     let region: String
     let bundleVersion: String
     let dbFileName: String
+    let dbPath: String?
     let activatedAtUTC: String
+
+    init(
+        region: String,
+        bundleVersion: String,
+        dbFileName: String,
+        activatedAtUTC: String,
+        dbPath: String? = nil
+    ) {
+        self.region = region
+        self.bundleVersion = bundleVersion
+        self.dbFileName = dbFileName
+        self.dbPath = dbPath
+        self.activatedAtUTC = activatedAtUTC
+    }
 
     enum CodingKeys: String, CodingKey {
         case region
         case bundleVersion = "bundle_version"
         case dbFileName = "db_file_name"
+        case dbPath = "db_path"
         case activatedAtUTC = "activated_at_utc"
     }
 }

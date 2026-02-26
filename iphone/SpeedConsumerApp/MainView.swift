@@ -6,9 +6,10 @@ import UIKit
 
 private let speedLimitNumberScale: CGFloat = 0.5
 private let secondaryTextRatio: CGFloat = 9.0 / 16.0
+private let drivingBanPulseCycleSeconds: Double = 2.2
 
 struct MainView: View {
-    @StateObject private var viewModel = DriveSessionViewModel()
+    @ObservedObject var viewModel: DriveSessionViewModel
     @State private var hasAutoTriggeredSyncForTests = false
     @State private var showingSettings = false
     @State private var showingDebug = false
@@ -22,7 +23,7 @@ struct MainView: View {
             let topPadding = proxy.safeAreaInsets.top + screenInset
             let bottomPadding = proxy.safeAreaInsets.bottom + screenInset
             ZStack(alignment: .bottom) {
-                screenBackgroundColor
+                screenBackgroundView
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
@@ -146,6 +147,9 @@ struct MainView: View {
     }
 
     private var primaryMetricText: String {
+        if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
+            return "\(drivingBanMonths)"
+        }
         switch finePresentation?.severity {
         case .moneyOnly:
             guard let fineEUR = finePresentation?.moneyFineEUR else {
@@ -166,6 +170,9 @@ struct MainView: View {
     }
 
     private var secondaryMetricText: String {
+        if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
+            return drivingBanMonths == 1 ? "Monat Fahrverbot" : "Monate Fahrverbot"
+        }
         switch finePresentation?.severity {
         case .moneyOnly:
             return "Euro"
@@ -214,6 +221,17 @@ struct MainView: View {
         return backgroundColor(for: progress)
     }
 
+    @ViewBuilder
+    private var screenBackgroundView: some View {
+        if isDrivingBanWarningActive {
+            TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
+                drivingBanPulseBackgroundColor(at: timeline.date)
+            }
+        } else {
+            screenBackgroundColor
+        }
+    }
+
     private var primaryForegroundColor: Color {
         if usesDarkForeground {
             return .black
@@ -232,6 +250,10 @@ struct MainView: View {
         !hasUsableGPSFix
     }
 
+    private var isDrivingBanWarningActive: Bool {
+        (finePresentation?.drivingBanMonths ?? 0) > 0
+    }
+
     private var hasUsableGPSFix: Bool {
         viewModel.gpsFixCount > 0 && viewModel.currentLatitude != nil && viewModel.currentLongitude != nil
     }
@@ -244,12 +266,20 @@ struct MainView: View {
         guard overspeed > 0 else {
             return nil
         }
-        if finePresentation?.severity == .pointsAndFine {
+        if isDrivingBanWarningActive {
             return 1
         }
-        let pointsThreshold = minOverspeedForPoints
-        let denominator = Double(max(pointsThreshold, 1))
-        return min(1, max(0, Double(overspeed) / denominator))
+        let pointsThreshold = Double(max(minOverspeedForPoints, 1))
+        let drivingBanThreshold = Double(max(minOverspeedForDrivingBan, minOverspeedForPoints + 1))
+        if finePresentation?.severity == .pointsAndFine {
+            let normalized = min(
+                1,
+                max(0, (Double(overspeed) - pointsThreshold) / max(1, drivingBanThreshold - pointsThreshold))
+            )
+            return 0.68 + (normalized * 0.27)
+        }
+        let normalized = min(1, max(0, Double(overspeed) / pointsThreshold))
+        return normalized * 0.62
     }
 
     private var minOverspeedForPoints: Int {
@@ -257,6 +287,13 @@ struct MainView: View {
             .filter { $0.severity == .pointsAndFine }
             .map(\.minDeltaKmh)
             .min() ?? 21
+    }
+
+    private var minOverspeedForDrivingBan: Int {
+        let thresholds = viewModel.activePenaltyRules.bands
+            .filter { ($0.drivingBanMonths ?? 0) > 0 || ($0.conditionalDrivingBanMonths ?? 0) > 0 }
+            .map(\.minDeltaKmh)
+        return thresholds.min() ?? (minOverspeedForPoints + 10)
     }
 
     private var usesDarkForeground: Bool {
@@ -269,11 +306,37 @@ struct MainView: View {
     private func backgroundColor(for progress: Double) -> Color {
         let t = min(1, max(0, progress))
         let yellow = (r: 0.98, g: 0.87, b: 0.20)
-        let red = (r: 0.77, g: 0.09, b: 0.13)
+        let orange = (r: 0.95, g: 0.48, b: 0.12)
+        let red = (r: 0.78, g: 0.10, b: 0.13)
+        let mixed: (r: Double, g: Double, b: Double)
+        if t < 0.6 {
+            let a = t / 0.6
+            mixed = (
+                r: yellow.r + (orange.r - yellow.r) * a,
+                g: yellow.g + (orange.g - yellow.g) * a,
+                b: yellow.b + (orange.b - yellow.b) * a
+            )
+        } else {
+            let a = (t - 0.6) / 0.4
+            mixed = (
+                r: orange.r + (red.r - orange.r) * a,
+                g: orange.g + (red.g - orange.g) * a,
+                b: orange.b + (red.b - orange.b) * a
+            )
+        }
+        return Color(red: mixed.r, green: mixed.g, blue: mixed.b)
+    }
+
+    private func drivingBanPulseBackgroundColor(at date: Date) -> Color {
+        let phase = (date.timeIntervalSinceReferenceDate / drivingBanPulseCycleSeconds) * (2 * Double.pi)
+        let wave = (sin(phase) + 1) / 2
+        let darkRed = (r: 0.42, g: 0.04, b: 0.06)
+        let darkerRed = (r: 0.29, g: 0.01, b: 0.03)
+        let blend = 0.25 + (wave * 0.75)
         return Color(
-            red: yellow.r + (red.r - yellow.r) * t,
-            green: yellow.g + (red.g - yellow.g) * t,
-            blue: yellow.b + (red.b - yellow.b) * t
+            red: darkRed.r + (darkerRed.r - darkRed.r) * blend,
+            green: darkRed.g + (darkerRed.g - darkRed.g) * blend,
+            blue: darkRed.b + (darkerRed.b - darkRed.b) * blend
         )
     }
 

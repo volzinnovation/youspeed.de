@@ -11,6 +11,38 @@ settings:
     MARKETING_VERSION: "0.1.0"
     DEVELOPMENT_TEAM: F4CT29PZS5
 targets:
+  SpeedConsumer:
+    type: application
+    platform: iOS
+    sources:
+      - path: SpeedConsumerApp
+        includes:
+          - "*.swift"
+        excludes:
+          - "SpeedConsumerTests.swift"
+          - "README.md"
+      - path: SpeedConsumerApp/Assets.xcassets
+        buildPhase: resources
+      - path: SpeedConsumerApp/Rules
+        buildPhase: resources
+    settings:
+      base:
+        DEVELOPMENT_TEAM: F4CT29PZS5
+        CODE_SIGN_IDENTITY: "iPhone Developer"
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
+        PRODUCT_NAME: SpeedConsumer
+        INFOPLIST_FILE: SpeedConsumerApp/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1,2"
+        OTHER_LDFLAGS:
+          - "$(inherited)"
+          - "-lsqlite3"
+    scheme:
+      testTargets:
+        - SpeedConsumerTests
+
   SpeedDBBench:
     type: application
     platform: iOS
@@ -46,38 +78,6 @@ targets:
       testTargets:
         - SpeedDBBenchTests
         - SpeedDBBenchUITests
-
-  SpeedConsumer:
-    type: application
-    platform: iOS
-    sources:
-      - path: SpeedConsumerApp
-        includes:
-          - "*.swift"
-        excludes:
-          - "SpeedConsumerTests.swift"
-          - "README.md"
-      - path: SpeedConsumerApp/Assets.xcassets
-        buildPhase: resources
-      - path: SpeedConsumerApp/Rules
-        buildPhase: resources
-    settings:
-      base:
-        DEVELOPMENT_TEAM: F4CT29PZS5
-        CODE_SIGN_IDENTITY: "iPhone Developer"
-        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer
-        PRODUCT_NAME: SpeedConsumer
-        INFOPLIST_FILE: SpeedConsumerApp/Info.plist
-        GENERATE_INFOPLIST_FILE: NO
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_STYLE: Automatic
-        TARGETED_DEVICE_FAMILY: "1,2"
-        OTHER_LDFLAGS:
-          - "$(inherited)"
-          - "-lsqlite3"
-    scheme:
-      testTargets:
-        - SpeedConsumerTests
 
   SpeedConsumerTests:
     type: bundle.unit-test
@@ -123,6 +123,19 @@ targets:
         CODE_SIGN_STYLE: Automatic
 
 schemes:
+  SpeedConsumer:
+    build:
+      targets:
+        SpeedConsumer: all
+        SpeedConsumerTests: [test]
+    test:
+      gatherCoverageData: false
+      targets:
+        - name: SpeedConsumerTests
+    management:
+      isShown: true
+      orderHint: 0
+
   SpeedDBBench:
     build:
       targets:
@@ -134,13 +147,6 @@ schemes:
       targets:
         - name: SpeedDBBenchTests
         - name: SpeedDBBenchUITests
-
-  SpeedConsumer:
-    build:
-      targets:
-        SpeedConsumer: all
-        SpeedConsumerTests: [test]
-    test:
-      gatherCoverageData: false
-      targets:
-        - name: SpeedConsumerTests
+    management:
+      isShown: true
+      orderHint: 1

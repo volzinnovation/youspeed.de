@@ -1,8 +1,10 @@
 import CryptoKit
 import Foundation
+import OSLog
 import SQLite3
 
 actor V3BundleManager {
+    private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "bundle-manager")
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
@@ -70,40 +72,133 @@ actor V3BundleManager {
         guard let state = try activeState() else {
             return nil
         }
+        return try resolveDatabaseURL(for: state)
+    }
+
+    private func resolveDatabaseURL(for state: ActiveBundleState) throws -> URL {
+        if let explicitPath = state.dbPath?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !explicitPath.isEmpty {
+            return URL(fileURLWithPath: explicitPath, isDirectory: false)
+        }
         return try bundlesDir()
             .appendingPathComponent(state.bundleVersion, isDirectory: true)
             .appendingPathComponent(state.dbFileName)
     }
 
-    func bootstrapSeedIfNeeded(resourceName: String = "speeds_v3", bundle: Bundle = .main) throws -> BundleSyncResult {
-        if let state = try activeState() {
-            let dbURL = try bundlesDir()
-                .appendingPathComponent(state.bundleVersion, isDirectory: true)
-                .appendingPathComponent(state.dbFileName)
-            if fileManager.fileExists(atPath: dbURL.path) {
-                if state.bundleVersion == "seed",
-                   let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite"),
-                   let existingBytes = try? fileSize(dbURL),
-                   let bundledBytes = try? fileSize(bundledSeed),
-                   existingBytes != bundledBytes {
-                    if bundledBytes > 0 {
-                        try ensureSufficientDiskSpace(requiredBytes: bundledBytes, reason: "seed database refresh")
-                    }
-                    let tmp = dbURL.deletingLastPathComponent().appendingPathComponent("\(state.dbFileName).refresh.tmp")
-                    try? removeItemIfExists(at: tmp)
-                    try fileManager.copyItem(at: bundledSeed, to: tmp)
-                    if fileManager.fileExists(atPath: dbURL.path) {
-                        _ = try fileManager.replaceItemAt(dbURL, withItemAt: tmp)
-                    } else {
-                        try fileManager.moveItem(at: tmp, to: dbURL)
-                    }
-                    return BundleSyncResult(mode: .bootstrap, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "seed bundle refreshed")
-                }
-                return BundleSyncResult(mode: .upToDate, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "existing active bundle")
+    func recoverLocalDataAtStartup(
+        onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)? = nil
+    ) throws -> BundleSyncResult? {
+        Self.logger.notice("startup_recovery begin")
+        var seedFallback: BundleSyncResult?
+
+        emitStartupProgress(onProgress, detail: "Pruefe aktives Bundle", fraction: 0.05)
+        if let active = try recoverFromActiveState(onProgress: onProgress) {
+            if active.bundleVersion == "seed" {
+                seedFallback = active
+                Self.logger.notice("startup_recovery active_state seed_kept_as_fallback")
+            } else {
+                Self.logger.notice("startup_recovery active_state recovered version=\(active.bundleVersion, privacy: .public)")
+                try? cleanupStagingArtifacts()
+                try? cleanupMultipartCacheArtifacts(removeAll: false)
+                return active
             }
         }
 
-        guard let source = bundle.url(forResource: resourceName, withExtension: "sqlite") else {
+        let hasRecoveryArtifacts = (try? hasAnyLocalRecoveryArtifacts()) ?? false
+        if !hasRecoveryArtifacts {
+            emitStartupProgress(onProgress, detail: "Keine lokalen Download-Daten gefunden", fraction: 0.9)
+            if let seedFallback {
+                try? cleanupStagingArtifacts()
+                try? cleanupMultipartCacheArtifacts(removeAll: true)
+                Self.logger.notice("startup_recovery fast_path using_existing_seed")
+                return seedFallback
+            }
+            emitStartupProgress(onProgress, detail: "Keine wiederverwendbaren lokalen Daten gefunden", fraction: 1.0)
+            Self.logger.notice("startup_recovery fast_path no_recovery_artifacts")
+            return nil
+        }
+
+        emitStartupProgress(onProgress, detail: "Suche heruntergeladene Bundles", fraction: 0.18)
+        if let bundle = try recoverFromBundleDirectories(onProgress: onProgress, includeSeed: false) {
+            Self.logger.notice("startup_recovery bundles recovered version=\(bundle.bundleVersion, privacy: .public)")
+            try? cleanupStagingArtifacts()
+            try? cleanupMultipartCacheArtifacts(removeAll: false)
+            return bundle
+        }
+
+        emitStartupProgress(onProgress, detail: "Pruefe teilweise heruntergeladene Daten", fraction: 0.62)
+        if let staging = try recoverFromStagingArtifacts(onProgress: onProgress) {
+            Self.logger.notice("startup_recovery staging recovered version=\(staging.bundleVersion, privacy: .public)")
+            try? cleanupStagingArtifacts()
+            try? cleanupMultipartCacheArtifacts(removeAll: false)
+            return staging
+        }
+
+        emitStartupProgress(onProgress, detail: "Pruefe zusammengesetzte Download-Dateien", fraction: 0.78)
+        if let cache = try recoverFromMultipartAssembledCache(onProgress: onProgress) {
+            Self.logger.notice("startup_recovery multipart_cache recovered version=\(cache.bundleVersion, privacy: .public)")
+            try? cleanupStagingArtifacts()
+            try? cleanupMultipartCacheArtifacts(removeAll: false)
+            return cache
+        }
+
+        emitStartupProgress(onProgress, detail: "Pruefe Seed-Bundle als Rueckfall", fraction: 0.9)
+        if seedFallback == nil {
+            seedFallback = try recoverFromBundleDirectories(onProgress: onProgress, includeSeed: true, onlySeed: true)
+            if seedFallback != nil {
+                Self.logger.notice("startup_recovery seed_fallback recovered_from_bundles")
+            }
+        }
+        if let seedFallback {
+            try? cleanupStagingArtifacts()
+            // Download artifacts were not recoverable; remove stale remnants to free space.
+            try? cleanupMultipartCacheArtifacts(removeAll: true)
+            Self.logger.notice("startup_recovery fallback_using_seed")
+            return seedFallback
+        }
+
+        emitStartupProgress(onProgress, detail: "Entferne unbrauchbare Download-Reste", fraction: 0.9)
+        try? cleanupStagingArtifacts()
+        try? cleanupMultipartCacheArtifacts(removeAll: true)
+        emitStartupProgress(onProgress, detail: "Keine wiederverwendbaren lokalen Daten gefunden", fraction: 1.0)
+        Self.logger.notice("startup_recovery no_recoverable_local_data")
+        return nil
+    }
+
+    func bootstrapSeedIfNeeded(resourceName: String = "speeds_v3", bundle: Bundle = .main) throws -> BundleSyncResult {
+        let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite")
+
+        if let state = try activeState() {
+            let dbURL = try resolveDatabaseURL(for: state)
+            if fileManager.fileExists(atPath: dbURL.path) {
+                if state.bundleVersion == "seed", let bundledSeed {
+                    let bundledPath = bundledSeed.path
+                    if dbURL.path != bundledPath {
+                        let migrated = ActiveBundleState(
+                            region: state.region,
+                            bundleVersion: state.bundleVersion,
+                            dbFileName: state.dbFileName,
+                            activatedAtUTC: nowUTC(),
+                            dbPath: bundledPath
+                        )
+                        try writeActiveState(migrated)
+                        let seedDir = try bundlesDir().appendingPathComponent("seed", isDirectory: true)
+                        try? removeItemIfExists(at: seedDir)
+                        Self.logger.notice("seed bootstrap migrated_to_bundled_resource")
+                        return BundleSyncResult(
+                            mode: .bootstrap,
+                            bundleVersion: state.bundleVersion,
+                            dbPath: bundledPath,
+                            details: "seed bundle referenced"
+                        )
+                    }
+                }
+                return BundleSyncResult(mode: .upToDate, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "existing active bundle")
+            }
+            try? clearActiveState()
+        }
+
+        guard let source = bundledSeed else {
             // Bundled seed is optional; app can continue with manifest/release download flow.
             return BundleSyncResult(
                 mode: .upToDate,
@@ -112,44 +207,33 @@ actor V3BundleManager {
                 details: "no bundled seed resource"
             )
         }
-        let seedBytes = (try? fileSize(source)) ?? 0
-        if seedBytes > 0 {
-            try ensureSufficientDiskSpace(requiredBytes: seedBytes, reason: "seed database")
-        }
-
-        let version = "seed"
-        let bundleDir = try bundlesDir().appendingPathComponent(version, isDirectory: true)
-        if !fileManager.fileExists(atPath: bundleDir.path) {
-            try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
-        }
-
-        let dbFileName = "speeds_v3.sqlite"
-        let dst = bundleDir.appendingPathComponent(dbFileName)
-        if !fileManager.fileExists(atPath: dst.path) {
-            let tmp = bundleDir.appendingPathComponent("\(dbFileName).tmp")
-            if fileManager.fileExists(atPath: tmp.path) {
-                try fileManager.removeItem(at: tmp)
-            }
-            try fileManager.copyItem(at: source, to: tmp)
-            try fileManager.moveItem(at: tmp, to: dst)
-        }
+        try quickValidateDB(at: source, runQuickCheck: false)
 
         try writeActiveState(
             ActiveBundleState(
-                region: "unknown",
-                bundleVersion: version,
-                dbFileName: dbFileName,
-                activatedAtUTC: nowUTC()
+                region: "DEU",
+                bundleVersion: "seed",
+                dbFileName: "speeds_v3.sqlite",
+                activatedAtUTC: nowUTC(),
+                dbPath: source.path
             )
         )
+        let seedDir = try bundlesDir().appendingPathComponent("seed", isDirectory: true)
+        try? removeItemIfExists(at: seedDir)
 
-        return BundleSyncResult(mode: .bootstrap, bundleVersion: version, dbPath: dst.path, details: "seed bundle activated")
+        return BundleSyncResult(
+            mode: .bootstrap,
+            bundleVersion: "seed",
+            dbPath: source.path,
+            details: "seed bundle referenced"
+        )
     }
 
     func syncFromManifestURL(
         _ manifestURL: URL,
         onProgress: (@Sendable (BundleSyncProgress) -> Void)? = nil
     ) async throws -> BundleSyncResult {
+        Self.logger.notice("sync manifest begin url=\(manifestURL.absoluteString, privacy: .public)")
         try? cleanupStagingArtifacts()
         emitProgress(
             onProgress,
@@ -163,6 +247,9 @@ actor V3BundleManager {
         guard manifest.format == "youspeed.v3.bundle.manifest", manifest.variant == "v3" else {
             throw ConsumerAppError.invalidManifest("Unexpected manifest format or variant")
         }
+        Self.logger.notice(
+            "sync manifest loaded version=\(manifest.bundleVersion, privacy: .public) region=\(manifest.region, privacy: .public) has_parts=\((manifest.dbParts?.isEmpty == false), privacy: .public)"
+        )
 
         do {
             let current = try activeState()
@@ -177,6 +264,7 @@ actor V3BundleManager {
                     totalBytes: manifest.db.bytes
                 )
                 try? cleanupStagingArtifacts()
+                Self.logger.notice("sync manifest up_to_date version=\(manifest.bundleVersion, privacy: .public)")
                 return BundleSyncResult(mode: .upToDate, bundleVersion: manifest.bundleVersion, dbPath: currentDB.path, details: "already active")
             }
 
@@ -200,6 +288,7 @@ actor V3BundleManager {
                     totalBytes: manifest.db.bytes
                 )
                 try? cleanupStagingArtifacts()
+                Self.logger.notice("sync manifest delta_applied version=\(manifest.bundleVersion, privacy: .public)")
                 return result
             }
 
@@ -216,9 +305,11 @@ actor V3BundleManager {
                 totalBytes: manifest.db.bytes
             )
             try? cleanupStagingArtifacts()
+            Self.logger.notice("sync manifest full_download_completed version=\(manifest.bundleVersion, privacy: .public)")
             return fullDownload
         } catch {
             try? cleanupStagingArtifacts()
+            Self.logger.error("sync manifest failed error=\(String(describing: error), privacy: .public)")
             throw error
         }
     }
@@ -370,11 +461,13 @@ actor V3BundleManager {
             emitProgress(
                 onProgress,
                 stage: .validating,
-                detail: "Validating downloaded database",
+                detail: "Checking downloaded database schema",
                 completedBytes: manifest.db.bytes,
                 totalBytes: manifest.db.bytes
             )
-            try quickValidateDB(at: stagingDB)
+            // Full-file SHA256 was already validated during download/assembly.
+            // Keep startup responsive by skipping heavy PRAGMA quick_check here.
+            try quickValidateDB(at: stagingDB, runQuickCheck: false)
             try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
@@ -460,6 +553,396 @@ actor V3BundleManager {
 
         _ = mode
         _ = details
+    }
+
+    private func recoverFromActiveState(
+        onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)?
+    ) throws -> BundleSyncResult? {
+        guard let state = try activeState() else {
+            Self.logger.notice("startup_recovery active_state missing")
+            return nil
+        }
+        let dbURL = try resolveDatabaseURL(for: state)
+        Self.logger.notice(
+            "startup_recovery active_state candidate version=\(state.bundleVersion, privacy: .public) db=\(dbURL.lastPathComponent, privacy: .public)"
+        )
+        guard fileManager.fileExists(atPath: dbURL.path) else {
+            Self.logger.error("startup_recovery active_state file_missing path=\(dbURL.path, privacy: .public)")
+            if state.dbPath == nil {
+                let bundleDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
+                try? removeItemIfExists(at: bundleDir)
+            }
+            try? clearActiveState()
+            return nil
+        }
+        emitStartupProgress(onProgress, detail: "Validiere aktives Bundle \(state.bundleVersion)", fraction: 0.12)
+        do {
+            try quickValidateDB(at: dbURL, runQuickCheck: false)
+            Self.logger.notice("startup_recovery active_state validated version=\(state.bundleVersion, privacy: .public)")
+            return BundleSyncResult(
+                mode: .upToDate,
+                bundleVersion: state.bundleVersion,
+                dbPath: dbURL.path,
+                details: "recovered active bundle"
+            )
+        } catch {
+            Self.logger.error(
+                "startup_recovery active_state invalid version=\(state.bundleVersion, privacy: .public) error=\(String(describing: error), privacy: .public)"
+            )
+            if state.dbPath == nil {
+                let bundleDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
+                try? removeItemIfExists(at: bundleDir)
+            }
+            try? clearActiveState()
+            return nil
+        }
+    }
+
+    private func recoverFromBundleDirectories(
+        onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)?,
+        includeSeed: Bool,
+        onlySeed: Bool = false
+    ) throws -> BundleSyncResult? {
+        let bundlesRoot = try bundlesDir()
+        let entries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        var directories = entries.filter { entry in
+            (try? entry.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+        if onlySeed {
+            directories = directories.filter { $0.lastPathComponent == "seed" }
+        } else if !includeSeed {
+            directories = directories.filter { $0.lastPathComponent != "seed" }
+        }
+        directories.sort { $0.lastPathComponent > $1.lastPathComponent }
+        if includeSeed, let seedIndex = directories.firstIndex(where: { $0.lastPathComponent == "seed" }) {
+            let seed = directories.remove(at: seedIndex)
+            directories.append(seed)
+        }
+        Self.logger.notice("startup_recovery bundles scan_count=\(directories.count, privacy: .public)")
+
+        let count = max(1, directories.count)
+        for (index, bundleDir) in directories.enumerated() {
+            let fraction = 0.2 + (0.38 * (Double(index) / Double(count)))
+            let versionName = bundleDir.lastPathComponent
+            emitStartupProgress(onProgress, detail: "Pruefe Bundle \(versionName)", fraction: fraction)
+            Self.logger.notice("startup_recovery bundles candidate version=\(versionName, privacy: .public)")
+
+            let manifestURL = bundleDir.appendingPathComponent("bundle-manifest.v3.json")
+            let manifest = decodeManifestIfPresent(at: manifestURL)
+            let dbFileName = manifest?.db.file ?? firstSQLiteFileName(in: bundleDir)
+            guard let dbFileName else {
+                Self.logger.error("startup_recovery bundles no_sqlite version=\(versionName, privacy: .public) removing_dir")
+                try? removeItemIfExists(at: bundleDir)
+                continue
+            }
+            let dbURL = bundleDir.appendingPathComponent(dbFileName)
+            guard fileManager.fileExists(atPath: dbURL.path) else {
+                Self.logger.error("startup_recovery bundles db_missing version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public)")
+                try? removeItemIfExists(at: bundleDir)
+                continue
+            }
+
+            do {
+                try quickValidateDB(at: dbURL, runQuickCheck: false)
+            } catch {
+                Self.logger.error(
+                    "startup_recovery bundles validation_failed version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public) error=\(String(describing: error), privacy: .public)"
+                )
+                try? removeItemIfExists(at: bundleDir)
+                continue
+            }
+            Self.logger.notice("startup_recovery bundles validation_ok version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public)")
+
+            let state = ActiveBundleState(
+                region: manifest?.region ?? "DEU",
+                bundleVersion: manifest?.bundleVersion ?? versionName,
+                dbFileName: dbFileName,
+                activatedAtUTC: nowUTC()
+            )
+            try writeActiveState(state)
+            try? pruneInactiveBundles(keepingVersions: [state.bundleVersion, "seed"])
+            Self.logger.notice("startup_recovery bundles activated version=\(state.bundleVersion, privacy: .public)")
+            return BundleSyncResult(
+                mode: .upToDate,
+                bundleVersion: state.bundleVersion,
+                dbPath: dbURL.path,
+                details: "recovered local bundle"
+            )
+        }
+        return nil
+    }
+
+    private func recoverFromStagingArtifacts(
+        onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)?
+    ) throws -> BundleSyncResult? {
+        let stageDir = try stagingDirectory()
+        let entries = try fileManager.contentsOfDirectory(
+            at: stageDir,
+            includingPropertiesForKeys: [.isRegularFileKey, .contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        )
+        var sqliteCandidates = entries.filter { $0.pathExtension.lowercased() == "sqlite" }
+        sqliteCandidates.sort {
+            let lhsDate = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let rhsDate = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return lhsDate > rhsDate
+        }
+        Self.logger.notice("startup_recovery staging scan_count=\(sqliteCandidates.count, privacy: .public)")
+        let count = max(1, sqliteCandidates.count)
+        for (index, candidate) in sqliteCandidates.enumerated() {
+            let fraction = 0.64 + (0.12 * (Double(index) / Double(count)))
+            emitStartupProgress(onProgress, detail: "Validiere lokale Daten aus Staging", fraction: fraction)
+            Self.logger.notice("startup_recovery staging candidate=\(candidate.lastPathComponent, privacy: .public)")
+            do {
+                try quickValidateDB(at: candidate, runQuickCheck: false)
+                let recoveredVersion = parseVersionPrefix(fromStagingFileName: candidate.lastPathComponent)
+                    ?? "recovered-\(startupRecoveryTimestamp())"
+                Self.logger.notice(
+                    "startup_recovery staging validation_ok candidate=\(candidate.lastPathComponent, privacy: .public) version=\(recoveredVersion, privacy: .public)"
+                )
+                return try activateRecoveredDatabase(
+                    sourceDB: candidate,
+                    bundleVersion: recoveredVersion,
+                    region: "DEU",
+                    dbFileName: "DEU-latest.speeds_v3.sqlite",
+                    details: "activated recovered staging bundle"
+                )
+            } catch {
+                Self.logger.error(
+                    "startup_recovery staging validation_failed candidate=\(candidate.lastPathComponent, privacy: .public) error=\(String(describing: error), privacy: .public)"
+                )
+                try? removeSQLiteWithCompanions(at: candidate)
+            }
+        }
+        return nil
+    }
+
+    private func recoverFromMultipartAssembledCache(
+        onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)?
+    ) throws -> BundleSyncResult? {
+        let cacheDir = try multipartPartsCacheDirectory()
+        let entries = try fileManager.contentsOfDirectory(
+            at: cacheDir,
+            includingPropertiesForKeys: [.isRegularFileKey, .contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        )
+        var assembledCandidates = entries.filter { $0.lastPathComponent.hasSuffix(".assembled.sqlite") }
+        assembledCandidates.sort {
+            let lhsDate = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let rhsDate = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return lhsDate > rhsDate
+        }
+        Self.logger.notice("startup_recovery multipart_cache scan_count=\(assembledCandidates.count, privacy: .public)")
+        let count = max(1, assembledCandidates.count)
+        for (index, candidate) in assembledCandidates.enumerated() {
+            let fraction = 0.8 + (0.1 * (Double(index) / Double(count)))
+            emitStartupProgress(onProgress, detail: "Validiere zusammengesetzte Download-Datei", fraction: fraction)
+            Self.logger.notice("startup_recovery multipart_cache candidate=\(candidate.lastPathComponent, privacy: .public)")
+            do {
+                try quickValidateDB(at: candidate, runQuickCheck: false)
+                Self.logger.notice("startup_recovery multipart_cache validation_ok candidate=\(candidate.lastPathComponent, privacy: .public)")
+                let result = try activateRecoveredDatabase(
+                    sourceDB: candidate,
+                    bundleVersion: "recovered-\(startupRecoveryTimestamp())",
+                    region: "DEU",
+                    dbFileName: "DEU-latest.speeds_v3.sqlite",
+                    details: "activated recovered multipart cache"
+                )
+                let prefix = candidate.deletingPathExtension().deletingPathExtension().lastPathComponent
+                let checkpoint = cacheDir.appendingPathComponent("\(prefix).checkpoint.json")
+                try? removeItemIfExists(at: checkpoint)
+                return result
+            } catch {
+                Self.logger.error(
+                    "startup_recovery multipart_cache validation_failed candidate=\(candidate.lastPathComponent, privacy: .public) error=\(String(describing: error), privacy: .public)"
+                )
+                try? removeSQLiteWithCompanions(at: candidate)
+                let prefix = candidate.deletingPathExtension().deletingPathExtension().lastPathComponent
+                let checkpoint = cacheDir.appendingPathComponent("\(prefix).checkpoint.json")
+                try? removeItemIfExists(at: checkpoint)
+            }
+        }
+        return nil
+    }
+
+    private func activateRecoveredDatabase(
+        sourceDB: URL,
+        bundleVersion: String,
+        region: String,
+        dbFileName: String,
+        details: String
+    ) throws -> BundleSyncResult {
+        let normalizedVersion = normalizeBundleVersion(bundleVersion)
+        Self.logger.notice(
+            "startup_recovery activate begin source=\(sourceDB.lastPathComponent, privacy: .public) version=\(normalizedVersion, privacy: .public)"
+        )
+        let bundleDir = try bundlesDir().appendingPathComponent(normalizedVersion, isDirectory: true)
+        if !fileManager.fileExists(atPath: bundleDir.path) {
+            try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        }
+
+        let finalDB = bundleDir.appendingPathComponent(dbFileName)
+        if sourceDB.standardizedFileURL != finalDB.standardizedFileURL {
+            let finalTmp = bundleDir.appendingPathComponent("\(dbFileName).recover.tmp")
+            try? removeItemIfExists(at: finalTmp)
+            for suffix in ["-wal", "-shm"] {
+                let sourceCompanion = sqliteCompanionURL(for: sourceDB, suffix: suffix)
+                let tmpCompanion = sqliteCompanionURL(for: finalTmp, suffix: suffix)
+                try? removeItemIfExists(at: tmpCompanion)
+                if fileManager.fileExists(atPath: sourceCompanion.path) {
+                    try fileManager.moveItem(at: sourceCompanion, to: tmpCompanion)
+                }
+            }
+            try fileManager.moveItem(at: sourceDB, to: finalTmp)
+            if fileManager.fileExists(atPath: finalDB.path) {
+                _ = try fileManager.replaceItemAt(finalDB, withItemAt: finalTmp)
+            } else {
+                try fileManager.moveItem(at: finalTmp, to: finalDB)
+            }
+            for suffix in ["-wal", "-shm"] {
+                let finalCompanion = sqliteCompanionURL(for: finalDB, suffix: suffix)
+                let tmpCompanion = sqliteCompanionURL(for: finalTmp, suffix: suffix)
+                try? removeItemIfExists(at: finalCompanion)
+                if fileManager.fileExists(atPath: tmpCompanion.path) {
+                    try fileManager.moveItem(at: tmpCompanion, to: finalCompanion)
+                }
+            }
+        }
+
+        try writeActiveState(
+            ActiveBundleState(
+                region: region,
+                bundleVersion: normalizedVersion,
+                dbFileName: dbFileName,
+                activatedAtUTC: nowUTC()
+            )
+        )
+        try? pruneInactiveBundles(keepingVersions: [normalizedVersion, "seed"])
+        Self.logger.notice(
+            "startup_recovery activate success version=\(normalizedVersion, privacy: .public) db=\(finalDB.lastPathComponent, privacy: .public)"
+        )
+
+        return BundleSyncResult(
+            mode: .bootstrap,
+            bundleVersion: normalizedVersion,
+            dbPath: finalDB.path,
+            details: details
+        )
+    }
+
+    private func emitStartupProgress(
+        _ onProgress: (@Sendable (_ detail: String, _ fraction: Double) -> Void)?,
+        detail: String,
+        fraction: Double
+    ) {
+        guard let onProgress else {
+            return
+        }
+        onProgress(detail, min(1, max(0, fraction)))
+    }
+
+    private func clearActiveState() throws {
+        let stateURL = try stateFileURL()
+        try? removeItemIfExists(at: stateURL)
+    }
+
+    private func decodeManifestIfPresent(at manifestURL: URL) -> V3BundleManifest? {
+        guard fileManager.fileExists(atPath: manifestURL.path),
+              let data = try? Data(contentsOf: manifestURL) else {
+            return nil
+        }
+        return try? decoder.decode(V3BundleManifest.self, from: data)
+    }
+
+    private func firstSQLiteFileName(in directory: URL) -> String? {
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return nil
+        }
+        let sqliteNames = entries
+            .filter { $0.pathExtension.lowercased() == "sqlite" }
+            .map(\.lastPathComponent)
+            .sorted()
+        return sqliteNames.first
+    }
+
+    private func hasAnyLocalRecoveryArtifacts() throws -> Bool {
+        let bundlesRoot = try bundlesDir()
+        let bundleEntries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        let hasDownloadedBundle = bundleEntries.contains { entry in
+            guard entry.lastPathComponent != "seed" else {
+                return false
+            }
+            return (try? entry.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+        if hasDownloadedBundle {
+            return true
+        }
+
+        let stageDir = try stagingDirectory()
+        let stageEntries = try fileManager.contentsOfDirectory(
+            at: stageDir,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        )
+        if !stageEntries.isEmpty {
+            return true
+        }
+
+        let cacheDir = try multipartPartsCacheDirectory()
+        let cacheEntries = try fileManager.contentsOfDirectory(
+            at: cacheDir,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        )
+        return !cacheEntries.isEmpty
+    }
+
+    private func parseVersionPrefix(fromStagingFileName fileName: String) -> String? {
+        let parts = fileName.split(separator: "-")
+        guard parts.count >= 3 else {
+            return nil
+        }
+        let candidate = "\(parts[0])-\(parts[1])-\(parts[2])"
+        return parseDayVersion(candidate) != nil ? candidate : nil
+    }
+
+    private func startupRecoveryTimestamp() -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMddHHmmss"
+        return formatter.string(from: Date())
+    }
+
+    private func normalizeBundleVersion(_ value: String) -> String {
+        let cleaned = value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+        let allowed = Set("abcdefghijklmnopqrstuvwxyz0123456789-_.")
+        let filtered = cleaned.map { allowed.contains($0) ? $0 : "-" }
+        let joined = String(filtered).trimmingCharacters(in: CharacterSet(charactersIn: "-_."))
+        return joined.isEmpty ? "recovered-\(startupRecoveryTimestamp())" : joined
+    }
+
+    private func removeSQLiteWithCompanions(at dbURL: URL) throws {
+        try? removeItemIfExists(at: dbURL)
+        for suffix in ["-wal", "-shm"] {
+            try? removeItemIfExists(at: sqliteCompanionURL(for: dbURL, suffix: suffix))
+        }
     }
 
     private func writeActiveState(_ state: ActiveBundleState) throws {
@@ -1211,8 +1694,30 @@ actor V3BundleManager {
             includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         )
+        if !entries.isEmpty {
+            Self.logger.notice("startup_recovery cleanup staging count=\(entries.count, privacy: .public)")
+        }
         for entry in entries {
             try? removeItemIfExists(at: entry)
+        }
+    }
+
+    private func cleanupMultipartCacheArtifacts(removeAll: Bool) throws {
+        let cacheDir = try multipartPartsCacheDirectory()
+        let entries = try fileManager.contentsOfDirectory(
+            at: cacheDir,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        )
+        if !entries.isEmpty {
+            Self.logger.notice(
+                "startup_recovery cleanup multipart_cache count=\(entries.count, privacy: .public) remove_all=\(removeAll, privacy: .public)"
+            )
+        }
+        for entry in entries {
+            if removeAll || entry.pathExtension.lowercased() == "json" {
+                try? removeItemIfExists(at: entry)
+            }
         }
     }
 
@@ -1281,7 +1786,7 @@ actor V3BundleManager {
         return formatter.string(fromByteCount: bytes)
     }
 
-    private func quickValidateDB(at url: URL) throws {
+    private func quickValidateDB(at url: URL, runQuickCheck: Bool = true) throws {
         var db: OpaquePointer?
         let encodedPath = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
         let uri = "file:\(encodedPath)?mode=ro&immutable=1"
@@ -1306,6 +1811,9 @@ actor V3BundleManager {
             }
         }
 
+        guard runQuickCheck else {
+            return
+        }
         if sqlite3_exec(db, "PRAGMA quick_check", nil, nil, nil) != SQLITE_OK {
             let msg = String(cString: sqlite3_errmsg(db))
             throw ConsumerAppError.sqlite("quick_check failed: \(msg)")
