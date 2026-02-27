@@ -66,6 +66,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Free Runner Disk Space
+        run: |
+          echo "Disk before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          docker image prune -af >/dev/null 2>&1 || true
+          echo "Disk after cleanup:"
+          df -h
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -330,6 +343,17 @@ jobs:
             --expected-ref "L 564" \
             --out-json "mapdata/reports/${REGION}-v3-release-regression.json"
 
+      - name: Cleanup Heavy Build Intermediates
+        if: steps.compare.outputs.needs_publish == '1'
+        run: |
+          rm -f "${INPUT_PBF}" \
+            mapdata/raw/DEU-latest.osm.pbf.part* \
+            mapdata/raw/DEU-latest.osm.pbf.parts.json
+          rm -rf "mapdata/build/${REGION}" "mapdata/dist/${REGION}"
+          rm -rf ~/.cache/pip
+          echo "Disk after removing heavy intermediates:"
+          df -h
+
       - name: Build New Incremental Delta (If Possible)
         if: steps.compare.outputs.needs_publish == '1'
         id: delta
@@ -401,6 +425,8 @@ jobs:
             echo "new_delta_asset_path=${new_delta_asset_path}"
           } >> "${GITHUB_OUTPUT}"
 
+          rm -f "${prev_db_tmp}"
+
       - name: Roll Delta Index (Retain Latest 30 Incrementals)
         if: steps.compare.outputs.needs_publish == '1'
         run: |
@@ -425,6 +451,12 @@ jobs:
             --retention-count "${RETENTION_UPDATES}" \
             "${existing_args[@]}" \
             "${new_args[@]}"
+
+      - name: Disk Check Before Publish
+        if: steps.compare.outputs.needs_publish == '1'
+        run: |
+          df -h
+          du -sh mapdata/dist-v3/"${REGION}" mapdata/bundles/v3/"${REGION}" 2>/dev/null || true
 
       - name: Publish Latest Full Bundle Manifest
         if: steps.compare.outputs.needs_publish == '1'
