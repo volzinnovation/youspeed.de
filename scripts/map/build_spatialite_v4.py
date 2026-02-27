@@ -422,6 +422,13 @@ def main() -> int:
           zone_maxspeed TEXT,
           traffic_sign TEXT,
           approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -455,6 +462,7 @@ def main() -> int:
           boundary TEXT,
           admin_level TEXT,
           residential TEXT,
+          parking TEXT,
           points_json TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
@@ -585,6 +593,13 @@ def main() -> int:
                     meta.get("zone_maxspeed"),
                     meta.get("traffic_sign"),
                     meta.get("approx_heading_deg"),
+                    meta.get("service"),
+                    meta.get("tunnel"),
+                    meta.get("bridge"),
+                    meta.get("covered"),
+                    meta.get("location"),
+                    meta.get("layer"),
+                    meta.get("level"),
                     min_lon,
                     min_lat,
                     max_lon,
@@ -614,9 +629,9 @@ def main() -> int:
                     """
                     INSERT INTO ways(
                       row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-                      zone_maxspeed, traffic_sign, approx_heading_deg,
+                      zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -646,9 +661,9 @@ def main() -> int:
             """
             INSERT INTO ways(
               row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-              zone_maxspeed, traffic_sign, approx_heading_deg,
+              zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )
@@ -690,6 +705,7 @@ def main() -> int:
                 area.get("boundary"),
                 area.get("admin_level"),
                 area.get("residential"),
+                area.get("parking"),
                 points_json,
                 float(area["min_lon"]),
                 float(area["min_lat"]),
@@ -710,9 +726,9 @@ def main() -> int:
             conn.executemany(
                 """
                 INSERT INTO areas(
-                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
+                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, points_json,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 area_rows,
             )
@@ -728,9 +744,9 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO areas(
-              row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
+              row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, points_json,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             area_rows,
         )

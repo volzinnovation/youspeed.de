@@ -81,10 +81,15 @@ def inspect_schema_contract(db_path: Path) -> Dict:
             raise RuntimeError("schema contract failed: ways.street_name column missing")
         if "ref" not in way_columns:
             raise RuntimeError("schema contract failed: ways.ref column missing")
+        for required_way_column in ("service", "tunnel", "bridge", "covered", "location", "layer", "level"):
+            if required_way_column not in way_columns:
+                raise RuntimeError(f"schema contract failed: ways.{required_way_column} column missing")
         if "name" not in area_columns:
             raise RuntimeError("schema contract failed: areas.name column missing")
         if "residential" not in area_columns:
             raise RuntimeError("schema contract failed: areas.residential column missing")
+        if "parking" not in area_columns:
+            raise RuntimeError("schema contract failed: areas.parking column missing")
         if "points_json" not in area_columns:
             raise RuntimeError("schema contract failed: areas.points_json column missing")
 
@@ -118,6 +123,39 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 """
             ).fetchone()[0]
         )
+        ways_with_service = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM ways
+                WHERE service IS NOT NULL
+                  AND trim(service) <> ''
+                """
+            ).fetchone()[0]
+        )
+        ways_with_parking_aisle = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM ways
+                WHERE lower(trim(service)) = 'parking_aisle'
+                """
+            ).fetchone()[0]
+        )
+        ways_with_vertical_context = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM ways
+                WHERE (tunnel IS NOT NULL AND trim(tunnel) <> '')
+                   OR (bridge IS NOT NULL AND trim(bridge) <> '')
+                   OR (covered IS NOT NULL AND trim(covered) <> '')
+                   OR (location IS NOT NULL AND trim(location) <> '')
+                   OR (layer IS NOT NULL AND trim(layer) <> '')
+                   OR (level IS NOT NULL AND trim(level) <> '')
+                """
+            ).fetchone()[0]
+        )
         residential_areas_with_polygons = int(
             conn.execute(
                 """
@@ -125,6 +163,18 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 FROM areas
                 WHERE residential IS NOT NULL
                   AND trim(residential) <> ''
+                  AND points_json IS NOT NULL
+                  AND trim(points_json) <> ''
+                """
+            ).fetchone()[0]
+        )
+        parking_areas_with_polygons = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM areas
+                WHERE parking IS NOT NULL
+                  AND trim(parking) <> ''
                   AND points_json IS NOT NULL
                   AND trim(points_json) <> ''
                 """
@@ -139,6 +189,8 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         raise RuntimeError("schema/data contract failed: areas.name has no non-empty values")
     if ways_with_nonempty_ref <= 0:
         raise RuntimeError("schema/data contract failed: ways.ref has no non-empty values")
+    if ways_with_service <= 0:
+        raise RuntimeError("schema/data contract failed: ways.service has no non-empty values")
     if residential_areas_with_polygons <= 0:
         raise RuntimeError("schema/data contract failed: areas.residential has no polygon rows")
 
@@ -147,11 +199,16 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         "ways_has_ref_column": True,
         "areas_has_name_column": True,
         "areas_has_residential_column": True,
+        "areas_has_parking_column": True,
         "areas_has_points_json_column": True,
         "ways_with_nonempty_street_name": ways_with_street_name,
         "ways_with_nonempty_ref": ways_with_nonempty_ref,
+        "ways_with_nonempty_service": ways_with_service,
+        "ways_with_service_parking_aisle": ways_with_parking_aisle,
+        "ways_with_vertical_context_tags": ways_with_vertical_context,
         "areas_with_nonempty_name": areas_with_name,
         "residential_areas_with_polygons": residential_areas_with_polygons,
+        "parking_areas_with_polygons": parking_areas_with_polygons,
     }
 
 
@@ -248,6 +305,20 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
         raise RuntimeError(f"has_street_name_column is not true for mode={mode}")
     if summary.get("has_ref_column") is not True:
         raise RuntimeError(f"has_ref_column is not true for mode={mode}")
+    if summary.get("has_service_column") is not True:
+        raise RuntimeError(f"has_service_column is not true for mode={mode}")
+    if summary.get("has_tunnel_column") is not True:
+        raise RuntimeError(f"has_tunnel_column is not true for mode={mode}")
+    if summary.get("has_bridge_column") is not True:
+        raise RuntimeError(f"has_bridge_column is not true for mode={mode}")
+    if summary.get("has_covered_column") is not True:
+        raise RuntimeError(f"has_covered_column is not true for mode={mode}")
+    if summary.get("has_location_column") is not True:
+        raise RuntimeError(f"has_location_column is not true for mode={mode}")
+    if summary.get("has_layer_column") is not True:
+        raise RuntimeError(f"has_layer_column is not true for mode={mode}")
+    if summary.get("has_level_column") is not True:
+        raise RuntimeError(f"has_level_column is not true for mode={mode}")
     if summary.get("residential_mode") != "polygon_containment":
         raise RuntimeError(f"residential_mode is not polygon_containment for mode={mode}")
     if "residential_candidate_polygons" not in summary:
@@ -276,6 +347,9 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
         raise RuntimeError(f"top_candidates[0].street_name missing for mode={mode}")
     if "ref" not in first:
         raise RuntimeError(f"top_candidates[0].ref missing for mode={mode}")
+    for required in ("service", "tunnel", "bridge", "covered", "location", "layer", "level"):
+        if required not in first:
+            raise RuntimeError(f"top_candidates[0].{required} missing for mode={mode}")
 
     timing = payload.get("timing_ms")
     if not isinstance(timing, dict):

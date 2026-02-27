@@ -49,6 +49,13 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   zone_maxspeed TEXT,
                   traffic_sign TEXT,
                   approx_heading_deg REAL,
+                  service TEXT,
+                  tunnel TEXT,
+                  bridge TEXT,
+                  covered TEXT,
+                  location TEXT,
+                  layer TEXT,
+                  level TEXT,
                   min_lon REAL NOT NULL,
                   min_lat REAL NOT NULL,
                   max_lon REAL NOT NULL,
@@ -65,10 +72,10 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   points_json TEXT NOT NULL
                 );
 
-                INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+                INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
                 VALUES
-                  (1, '100', 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 13.0000, 52.0000, 13.0010, 52.0010),
-                  (2, '300', 'service', 'Fixture Service Road', 'K 1', '20', NULL, NULL, NULL, NULL, 0.0, 13.0100, 52.0100, 13.0110, 52.0110);
+                  (1, '100', 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.0000, 13.0010, 52.0010),
+                  (2, '300', 'service', 'Fixture Service Road', 'K 1', '20', NULL, NULL, NULL, NULL, 0.0, 'service', NULL, NULL, NULL, NULL, NULL, NULL, 13.0100, 52.0100, 13.0110, 52.0110);
 
                 INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES

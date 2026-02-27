@@ -188,6 +188,13 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.zone_maxspeed,
           w.traffic_sign,
           w.approx_heading_deg,
+          w.service,
+          w.tunnel,
+          w.bridge,
+          w.covered,
+          w.location,
+          w.layer,
+          w.level,
           w.min_lon,
           w.min_lat,
           w.max_lon,
@@ -256,6 +263,13 @@ def _build_insert_payload(
         "zone_maxspeed": tags.get("zone:maxspeed", existing["zone_maxspeed"] if existing is not None else None),
         "traffic_sign": tags.get("traffic_sign", existing["traffic_sign"] if existing is not None else None),
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
+        "service": tags.get("service", existing["service"] if existing is not None else None),
+        "tunnel": tags.get("tunnel", existing["tunnel"] if existing is not None else None),
+        "bridge": tags.get("bridge", existing["bridge"] if existing is not None else None),
+        "covered": tags.get("covered", existing["covered"] if existing is not None else None),
+        "location": tags.get("location", existing["location"] if existing is not None else None),
+        "layer": tags.get("layer", existing["layer"] if existing is not None else None),
+        "level": tags.get("level", existing["level"] if existing is not None else None),
         "min_lon": float(min_lon),
         "min_lat": float(min_lat),
         "max_lon": float(max_lon),
@@ -296,7 +310,7 @@ def _build_sql_patch(
         lines.append(
             "INSERT INTO ways("
             "way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
-            "zone_maxspeed, traffic_sign, approx_heading_deg, "
+            "zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, "
             "min_lon, min_lat, max_lon, max_lat"
             ") VALUES("
             f"{way_lit}, "
@@ -309,6 +323,13 @@ def _build_sql_patch(
             f"{_sql_literal(ins['zone_maxspeed'])}, "
             f"{_sql_literal(ins['traffic_sign'])}, "
             f"{_sql_literal(ins['approx_heading_deg'])}, "
+            f"{_sql_literal(ins['service'])}, "
+            f"{_sql_literal(ins['tunnel'])}, "
+            f"{_sql_literal(ins['bridge'])}, "
+            f"{_sql_literal(ins['covered'])}, "
+            f"{_sql_literal(ins['location'])}, "
+            f"{_sql_literal(ins['layer'])}, "
+            f"{_sql_literal(ins['level'])}, "
             f"{_sql_literal(ins['min_lon'])}, "
             f"{_sql_literal(ins['min_lat'])}, "
             f"{_sql_literal(ins['max_lon'])}, "

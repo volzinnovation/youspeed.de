@@ -48,6 +48,8 @@ osmium tags-filter \
   w/residential \
   r/landuse=residential \
   w/landuse=residential \
+  r/amenity=parking \
+  w/amenity=parking \
   n/place=city \
   n/place=town \
   n/place=village \

@@ -216,6 +216,13 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.zone_maxspeed,
           w.traffic_sign,
           w.approx_heading_deg,
+          w.service,
+          w.tunnel,
+          w.bridge,
+          w.covered,
+          w.location,
+          w.layer,
+          w.level,
           w.min_lon,
           w.min_lat,
           w.max_lon,
@@ -334,6 +341,13 @@ def _build_insert_payload(
         "zone_maxspeed": tags.get("zone:maxspeed", existing["zone_maxspeed"] if existing is not None else None),
         "traffic_sign": tags.get("traffic_sign", existing["traffic_sign"] if existing is not None else None),
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
+        "service": tags.get("service", existing["service"] if existing is not None else None),
+        "tunnel": tags.get("tunnel", existing["tunnel"] if existing is not None else None),
+        "bridge": tags.get("bridge", existing["bridge"] if existing is not None else None),
+        "covered": tags.get("covered", existing["covered"] if existing is not None else None),
+        "location": tags.get("location", existing["location"] if existing is not None else None),
+        "layer": tags.get("layer", existing["layer"] if existing is not None else None),
+        "level": tags.get("level", existing["level"] if existing is not None else None),
         "min_lon": float(min_lon),
         "min_lat": float(min_lat),
         "max_lon": float(max_lon),
@@ -423,9 +437,9 @@ def _simulate_v3_patch(conn: sqlite3.Connection, delete_ids: Sequence[str], inse
                 """
                 INSERT INTO ways(
                   way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
-                  zone_maxspeed, traffic_sign, approx_heading_deg,
+                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ins["way_id"],
@@ -436,6 +450,13 @@ def _simulate_v3_patch(conn: sqlite3.Connection, delete_ids: Sequence[str], inse
                     ins["zone_maxspeed"],
                     ins["traffic_sign"],
                     ins["approx_heading_deg"],
+                    ins["service"],
+                    ins["tunnel"],
+                    ins["bridge"],
+                    ins["covered"],
+                    ins["location"],
+                    ins["layer"],
+                    ins["level"],
                     ins["min_lon"],
                     ins["min_lat"],
                     ins["max_lon"],
@@ -505,9 +526,9 @@ def _simulate_v4_patch(
                 """
                 INSERT INTO ways(
                   way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
-                  zone_maxspeed, traffic_sign, approx_heading_deg,
+                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ins["way_id"],
@@ -518,6 +539,13 @@ def _simulate_v4_patch(
                     ins["zone_maxspeed"],
                     ins["traffic_sign"],
                     ins["approx_heading_deg"],
+                    ins["service"],
+                    ins["tunnel"],
+                    ins["bridge"],
+                    ins["covered"],
+                    ins["location"],
+                    ins["layer"],
+                    ins["level"],
                     ins["min_lon"],
                     ins["min_lat"],
                     ins["max_lon"],

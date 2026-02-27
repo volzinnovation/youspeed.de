@@ -149,11 +149,21 @@ class ArtifactHandler(osmium.SimpleHandler):
         if residential_value is None and tags.get("landuse") == "residential":
             residential_value = "landuse"
         is_residential_polygon = residential_value is not None
+        parking_value = tags.get("parking")
+        if parking_value is None and tags.get("amenity") == "parking":
+            parking_value = "amenity"
+        is_parking_polygon = parking_value is not None
 
         coords: List[Tuple[float, float]] = []
         bbox: Tuple[float, float, float, float] | None = None
 
-        if is_car_drivable or has_speed_tags or tags.get("boundary") == "administrative" or is_residential_polygon:
+        if (
+            is_car_drivable
+            or has_speed_tags
+            or tags.get("boundary") == "administrative"
+            or is_residential_polygon
+            or is_parking_polygon
+        ):
             coords = _extract_way_coords(way)
             bbox = _bbox_from_coords(coords)
 
@@ -173,6 +183,13 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "maxspeed_conditional": tags.get("maxspeed:conditional"),
                 "zone_maxspeed": tags.get("zone:maxspeed"),
                 "traffic_sign": tags.get("traffic_sign"),
+                "service": tags.get("service"),
+                "tunnel": tags.get("tunnel"),
+                "bridge": tags.get("bridge"),
+                "covered": tags.get("covered"),
+                "location": tags.get("location"),
+                "layer": tags.get("layer"),
+                "level": tags.get("level"),
                 "min_lon": min_lon,
                 "min_lat": min_lat,
                 "max_lon": max_lon,
@@ -219,6 +236,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "boundary": tags.get("boundary"),
                     "admin_level": tags.get("admin_level"),
                     "residential": residential_value,
+                    "parking": parking_value,
                     "points": area_points,
                     "min_lon": min_lon,
                     "min_lat": min_lat,
@@ -239,6 +257,28 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "boundary": tags.get("boundary"),
                     "admin_level": tags.get("admin_level"),
                     "residential": residential_value,
+                    "parking": parking_value,
+                    "points": [[lon, lat] for lon, lat in sampled_area],
+                    "min_lon": min_lon,
+                    "min_lat": min_lat,
+                    "max_lon": max_lon,
+                    "max_lat": max_lat,
+                }
+            )
+
+        if is_parking_polygon and bbox is not None and _is_closed_ring(coords):
+            min_lon, min_lat, max_lon, max_lat = bbox
+            sampled_area = _downsample_coords(coords, self.max_geom_points)
+            self.areas.append(
+                {
+                    "area_id": f"w:{way.id}:parking",
+                    "geometry_type": "Polygon",
+                    "name": tags.get("name"),
+                    "place": tags.get("place"),
+                    "boundary": tags.get("boundary"),
+                    "admin_level": tags.get("admin_level"),
+                    "residential": residential_value,
+                    "parking": parking_value,
                     "points": [[lon, lat] for lon, lat in sampled_area],
                     "min_lon": min_lon,
                     "min_lat": min_lat,
@@ -265,6 +305,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "boundary": node.tags.get("boundary"),
                 "admin_level": node.tags.get("admin_level"),
                 "residential": node.tags.get("residential"),
+                "parking": node.tags.get("parking"),
                 "points": None,
                 "min_lon": lon,
                 "min_lat": lat,

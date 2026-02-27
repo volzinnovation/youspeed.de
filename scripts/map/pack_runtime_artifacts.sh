@@ -90,12 +90,20 @@ jq -c '
     way_id: way_id,
       highway: $highway,
       street_name: (.properties.name // null),
+      ref: (.properties.ref // null),
       maxspeed: (.properties.maxspeed // null),
       maxspeed_type: (.properties["maxspeed:type"] // null),
       source_maxspeed: (.properties["source:maxspeed"] // null),
       maxspeed_conditional: (.properties["maxspeed:conditional"] // null),
       zone_maxspeed: (.properties["zone:maxspeed"] // null),
       traffic_sign: (.properties.traffic_sign // null),
+      service: (.properties.service // null),
+      tunnel: (.properties.tunnel // null),
+      bridge: (.properties.bridge // null),
+      covered: (.properties.covered // null),
+      location: (.properties.location // null),
+      layer: (.properties.layer // null),
+      level: (.properties.level // null),
       min_lon: ($pts | map(.[0]) | min),
       min_lat: ($pts | map(.[1]) | min),
       max_lon: ($pts | map(.[0]) | max),
@@ -126,6 +134,7 @@ jq -c '
   | (geom_points) as $pts
   | select(($pts | length) > 0)
   | ((.properties.residential // (if .properties.landuse == "residential" then "landuse" else null end)) // null) as $residential
+  | ((.properties.parking // (if .properties.amenity == "parking" then "amenity" else null end)) // null) as $parking
   | (
       if .geometry == null then []
       elif .geometry.type == "Polygon" then (.geometry.coordinates[0] // [])
@@ -141,7 +150,8 @@ jq -c '
       boundary: (.properties.boundary // null),
       admin_level: (.properties.admin_level // null),
       residential: $residential,
-      points: (if $residential != null and ($ring | length) >= 4 then $ring else null end),
+      parking: $parking,
+      points: (if ($residential != null or $parking != null) and ($ring | length) >= 4 then $ring else null end),
       min_lon: ($pts | map(.[0]) | min),
       min_lat: ($pts | map(.[1]) | min),
       max_lon: ($pts | map(.[0]) | max),
