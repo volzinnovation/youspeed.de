@@ -14,6 +14,7 @@
 		1F69E46C3D85B97143F1A3FF /* AssetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9DAD9053AB3234DEB88DBA /* AssetStore.swift */; };
 		260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */; };
 		3189ACFB74E79AE546103ABB /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5460B7376654275955039717 /* MainView.swift */; };
+		C1D2E3F40516273849A5B6C7 /* legal.txt in Resources */ = {isa = PBXBuildFile; fileRef = B1A2C3D4E5F60718293A4B5C /* legal.txt */; };
 		35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264903C5CD98D68477E8823C /* V3BundleManager.swift */; };
 		39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B22B25E507BC34DEDF1FF173 /* StartupView.swift */; };
 		48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
@@ -72,6 +73,7 @@
 		50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerModels.swift; sourceTree = "<group>"; };
 		53F856F2EFF21C867259B174 /* speeds_v3.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = speeds_v3.sqlite; sourceTree = "<group>"; };
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		B1A2C3D4E5F60718293A4B5C /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		734BE1C063C1A673E23AE2B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerTests.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 				50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */,
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
 				5460B7376654275955039717 /* MainView.swift */,
+				B1A2C3D4E5F60718293A4B5C /* legal.txt */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
 				7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */,
@@ -337,6 +340,7 @@
 				files = (
 					5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */,
 					133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */,
+					C1D2E3F40516273849A5B6C7 /* legal.txt in Resources */,
 					D7A1A74B3ACF4C98B6A79C55 /* speeds_v3.sqlite in Resources */,
 				);
 				runOnlyForDeploymentPostprocessing = 0;

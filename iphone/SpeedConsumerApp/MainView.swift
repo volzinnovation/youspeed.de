@@ -12,7 +12,9 @@ struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @State private var hasAutoTriggeredSyncForTests = false
     @State private var showingSettings = false
+    @State private var showingLegalInfo = false
     @State private var showingDebug = false
+    @State private var showingLocalRecordings = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -36,6 +38,12 @@ struct MainView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, screenInset)
                         .padding(.horizontal, screenInset)
+                        .contentShape(Rectangle())
+                        .highPriorityGesture(
+                            TapGesture(count: 2).onEnded {
+                                viewModel.beginSpeedLimitCapture()
+                            }
+                        )
 
                     Spacer(minLength: 0)
                 }
@@ -46,6 +54,8 @@ struct MainView: View {
                     screenSize: proxy.size,
                     bottomPadding: bottomPadding
                 )
+
+                bugButton(bottomPadding: bottomPadding, horizontalPadding: screenInset)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -53,9 +63,19 @@ struct MainView: View {
                 SettingsView(viewModel: viewModel)
             }
         }
+        .sheet(isPresented: $showingLegalInfo) {
+            NavigationStack {
+                LegalInformationView()
+            }
+        }
         .sheet(isPresented: $showingDebug) {
             NavigationStack {
                 DebugInformationView(viewModel: viewModel)
+            }
+        }
+        .sheet(isPresented: $showingLocalRecordings) {
+            NavigationStack {
+                LocalRecordingsView(viewModel: viewModel)
             }
         }
         .onAppear {
@@ -71,8 +91,40 @@ struct MainView: View {
         }
     }
 
+    private func bugButton(bottomPadding: CGFloat, horizontalPadding: CGFloat) -> some View {
+        VStack {
+            Spacer()
+            HStack {
+                Button {
+                    showingLocalRecordings = true
+                } label: {
+                    Image(systemName: "ladybug.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .background(buttonBackgroundColor, in: Circle())
+                .foregroundStyle(primaryForegroundColor)
+
+                Spacer()
+            }
+            .padding(.leading, horizontalPadding)
+            .padding(.bottom, bottomPadding + 4)
+        }
+    }
+
     private var topCornerButtons: some View {
         HStack {
+            Button {
+                showingLegalInfo = true
+            } label: {
+                Image(systemName: "info.circle.fill")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .background(buttonBackgroundColor, in: Circle())
+
             Spacer()
 
             Button {
@@ -110,11 +162,12 @@ struct MainView: View {
             VStack(spacing: valueUnitSpacing) {
                 Text(primaryMetricText)
                     .font(primaryMetricFont(size: primaryFont))
+                    .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.45)
-                    .lineLimit(1)
+                    .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
                 Text(secondaryMetricText)
                     .font(.system(size: secondaryFont, weight: .bold, design: .default))
-                    .minimumScaleFactor(1)
+                    .minimumScaleFactor(0.45)
                     .padding(.top, -primaryFont * 0.06)
                     .opacity(secondaryMetricText.isEmpty ? 0 : 1)
             }
@@ -122,20 +175,36 @@ struct MainView: View {
 
             Spacer(minLength: metricDebugGap)
 
-            VStack(spacing: debugSpacing) {
-                Text(debugCoordinateText)
-                    .font(.system(size: debugFont, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                    .monospacedDigit()
-                Text(debugWayIDText)
-                    .font(.system(size: debugFont, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) {
-                showingDebug = true
+            if viewModel.isInSpeedCaptureMode {
+                Color.clear
+                    .frame(height: debugBlockHeight)
+            } else if shouldShowCityBadge {
+                CityLimitBadgeView(
+                    streetName: cityBadgeStreetText ?? "",
+                    cityName: cityBadgeCityText ?? ""
+                )
+                .frame(maxWidth: signSize * 0.86)
+                .frame(height: debugBlockHeight)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    showingDebug = true
+                }
+            } else {
+                VStack(spacing: debugSpacing) {
+                    Text(debugCoordinateText)
+                        .font(.system(size: debugFont, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .monospacedDigit()
+                    Text(debugWayIDText)
+                        .font(.system(size: debugFont, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    showingDebug = true
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -147,6 +216,9 @@ struct MainView: View {
     }
 
     private var primaryMetricText: String {
+        if viewModel.isInSpeedCaptureMode {
+            return "Erfasse"
+        }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return "\(drivingBanMonths)"
         }
@@ -170,6 +242,9 @@ struct MainView: View {
     }
 
     private var secondaryMetricText: String {
+        if viewModel.isInSpeedCaptureMode {
+            return "Geschwindigkeit"
+        }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return drivingBanMonths == 1 ? "Monat Fahrverbot" : "Monate Fahrverbot"
         }
@@ -187,6 +262,9 @@ struct MainView: View {
     }
 
     private var debugCoordinateText: String {
+        if viewModel.isInSpeedCaptureMode {
+            return ""
+        }
         if let street = normalizedPlaceText(viewModel.limitStreetName), viewModel.limitWayID != nil {
             return street
         }
@@ -197,6 +275,9 @@ struct MainView: View {
     }
 
     private var debugWayIDText: String {
+        if viewModel.isInSpeedCaptureMode {
+            return ""
+        }
         if let city = normalizedPlaceText(viewModel.limitCityName) {
             return city
         }
@@ -204,10 +285,28 @@ struct MainView: View {
     }
 
     private var limitText: String {
+        if let capture = viewModel.speedCaptureSignText {
+            return capture
+        }
         guard let speedLimit = viewModel.speedLimitKmh else {
             return hasUsableGPSFix ? "–" : "?"
         }
         return "\(speedLimit)"
+    }
+
+    private var cityBadgeStreetText: String? {
+        normalizedPlaceText(viewModel.limitStreetName)
+    }
+
+    private var cityBadgeCityText: String? {
+        normalizedPlaceText(viewModel.limitCityName)
+    }
+
+    private var shouldShowCityBadge: Bool {
+        guard viewModel.lastLookupInsideCity == true else {
+            return false
+        }
+        return cityBadgeStreetText != nil || cityBadgeCityText != nil
     }
 
     private var finePresentation: SpeedPenaltyNotice? {
@@ -369,6 +468,9 @@ struct MainView: View {
     }
 
     private func primaryMetricFont(size: CGFloat) -> Font {
+        if viewModel.isInSpeedCaptureMode {
+            return .system(size: size * 0.42, weight: .bold, design: .rounded)
+        }
         if isSearchingSignal {
             return .system(size: size, weight: .bold, design: .rounded)
         }
@@ -412,6 +514,7 @@ private struct SpeedLimitSignView: View {
             // Based on Zeichen 274 geometry: black border 7.875 / 450, red band 60.301 / 450.
             let blackBorderWidth = max(1, size * 0.0175)
             let redBandWidth = max(2, size * 0.134)
+            let innerDiameter = max(1, size - (2 * (blackBorderWidth + redBandWidth)))
             ZStack {
                 Circle()
                     .fill(Color.white)
@@ -425,7 +528,9 @@ private struct SpeedLimitSignView: View {
 
                 Text(limitText)
                     .font(trafficSignNumberFont(size: numberFontSize))
-                    .minimumScaleFactor(0.45)
+                    .frame(width: innerDiameter * 0.86, height: innerDiameter * 0.66, alignment: .center)
+                    .minimumScaleFactor(0.28)
+                    .allowsTightening(true)
                     .foregroundStyle(.black)
                     .lineLimit(1)
             }
@@ -448,12 +553,222 @@ private func trafficSignNumberFont(size: CGFloat) -> Font {
     return .system(size: size, weight: .black, design: .default)
 }
 
+private struct LegalInformationView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var legalText: String = LegalTextLoader.load()
+
+    var body: some View {
+        ScrollView {
+            Text(legalText)
+                .font(.system(size: 15, weight: .regular, design: .default))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .textSelection(.enabled)
+        }
+        .navigationTitle("Rechtliche Hinweise")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Fertig") {
+                    dismiss()
+                }
+            }
+        }
+        .background(Color(.systemBackground))
+    }
+}
+
+private enum LegalTextLoader {
+    static func load(bundle: Bundle = .main) -> String {
+        guard let url = bundle.url(forResource: "legal", withExtension: "txt"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else {
+            return "Rechtliche Hinweise konnten nicht geladen werden."
+        }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+private struct CityLimitBadgeView: View {
+    let streetName: String
+    let cityName: String
+
+    var body: some View {
+        VStack(spacing: 2) {
+            if !streetName.isEmpty {
+                Text(streetName)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            if !cityName.isEmpty {
+                Text(cityName)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+        }
+        .foregroundStyle(.black)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(red: 0.97, green: 0.86, blue: 0.30))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.black.opacity(0.9), lineWidth: 2)
+        )
+    }
+}
+
+private struct LocalRecordingsView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var shareItem: ShareItem?
+
+    private struct ShareItem: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            List {
+                if viewModel.localObservations.isEmpty {
+                    Text("Keine lokalen Erfassungen vorhanden.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.localObservations) { observation in
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(formattedTimestamp(observation.capturedAtUTC))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(streetName(for: observation))
+                                    .font(.subheadline.weight(.semibold))
+                                Text("way id \(observation.roadCandidateIDs.first ?? "n/a")")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 10) {
+                                    Text("alt \(observation.oldSpeedKmh.map(String.init) ?? "n/a")")
+                                    Text("neu \(observation.newSpeedKmh.map(String.init) ?? observation.value ?? "n/a")")
+                                }
+                                .font(.subheadline.monospacedDigit())
+                            }
+                            Spacer(minLength: 0)
+                            Button(role: .destructive) {
+                                viewModel.deleteLocalObservation(observation.id)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.body.weight(.semibold))
+                                    .frame(width: 32, height: 32)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Eintrag löschen")
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+
+            VStack(spacing: 8) {
+                if !viewModel.localObservationStatus.isEmpty {
+                    Text(viewModel.localObservationStatus)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Button {
+                    viewModel.exportAllLocalObservations()
+                } label: {
+                    Text("changes.osc exportieren")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button(role: .destructive) {
+                    viewModel.deleteAllLocalObservations()
+                } label: {
+                    Label("Alle lokalen Erfassungen löschen", systemImage: "trash")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+        }
+        .navigationTitle("Lokale Erfassungen")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Fertig") {
+                    dismiss()
+                }
+            }
+        }
+        .task {
+            await viewModel.refreshLocalObservations()
+        }
+        .onChange(of: viewModel.localObservationShareURL) { _, newValue in
+            guard let newValue else {
+                return
+            }
+            shareItem = ShareItem(url: newValue)
+            viewModel.clearLocalObservationShareURL()
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.url])
+        }
+    }
+
+    private func formattedTimestamp(_ value: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let fallbackFormatter = ISO8601DateFormatter()
+        fallbackFormatter.formatOptions = [.withInternetDateTime]
+        let parsed = formatter.date(from: value) ?? fallbackFormatter.date(from: value)
+        guard let parsed else {
+            return value
+        }
+        return parsed.formatted(date: .abbreviated, time: .standard)
+    }
+
+    private func streetName(for observation: LocalObservation) -> String {
+        if let wayID = observation.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !wayID.isEmpty,
+           let lookedUp = viewModel.localObservationStreetNames[wayID],
+           !lookedUp.isEmpty {
+            return lookedUp
+        }
+        if let fallback = observation.streetContext?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !fallback.isEmpty {
+            return fallback
+        }
+        return "Straßenname n/a"
+    }
+}
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var showingFlushLocalContributionsConfirm = false
 
     var body: some View {
         Form {
             Section("Akustische Hinweise") {
+                Toggle("Sprachausgabe", isOn: $viewModel.audioAlertsEnabled)
+
                 HStack {
                     Text("Warnung ab")
                     Spacer()
@@ -464,6 +779,7 @@ private struct SettingsView: View {
                     Text("km/h")
                         .foregroundStyle(.secondary)
                 }
+                .disabled(!viewModel.audioAlertsEnabled)
 
                 HStack {
                     Text("Warnschwelle anpassen")
@@ -471,8 +787,11 @@ private struct SettingsView: View {
                     Stepper("", value: $viewModel.audioAlertThresholdKmh, in: 0...80, step: 1)
                         .labelsHidden()
                 }
+                .disabled(!viewModel.audioAlertsEnabled)
 
-                Text(viewModel.audioAlertThresholdKmh == 0
+                Text(!viewModel.audioAlertsEnabled
+                     ? "Sprachausgabe ist deaktiviert."
+                     : viewModel.audioAlertThresholdKmh == 0
                      ? "Akustische Hinweise sind deaktiviert."
                      : "Sprachwarnung startet bei \(viewModel.audioAlertThresholdKmh) km/h ueber dem erkannten Tempolimit.")
                     .font(.footnote)
@@ -493,6 +812,19 @@ private struct SettingsView: View {
                     viewModel.bootstrapAndSync()
                 }
                 .disabled(viewModel.isSyncingNow)
+
+                Button(role: .destructive) {
+                    showingFlushLocalContributionsConfirm = true
+                } label: {
+                    Text("Lokale Korrekturen loeschen und neu synchronisieren")
+                }
+                .disabled(viewModel.isSyncingNow)
+
+                if !viewModel.maintenanceMessage.isEmpty {
+                    Text(viewModel.maintenanceMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
 
                 if viewModel.syncStatus == "syncing" || viewModel.syncStatus == "bootstrapping" {
                     VStack(alignment: .leading, spacing: 6) {
@@ -551,6 +883,14 @@ private struct SettingsView: View {
         }
         .navigationTitle("Einstellungen")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Lokale Korrekturen loeschen?", isPresented: $showingFlushLocalContributionsConfirm) {
+            Button("Abbrechen", role: .cancel) {}
+            Button("Loeschen und synchronisieren", role: .destructive) {
+                viewModel.flushLocalContributionsAndResync()
+            }
+        } message: {
+            Text("Diese Aktion entfernt lokale Korrektur- und Exportdaten. Anschliessend wird eine neue Datensynchronisierung gestartet.")
+        }
     }
 
     private var syncStatusLabel: String {
@@ -751,6 +1091,85 @@ private struct DebugInformationView: View {
                         .frame(maxHeight: 140)
                     }
                     .font(.caption2.monospaced())
+                }
+
+                GroupBox("Local Corrections (Draft)") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        TextField("Voice command (z. B. Tempo 30)", text: $viewModel.observationDraftVoiceCommand)
+                            .textFieldStyle(.roundedBorder)
+                            .textInputAutocapitalization(.never)
+                            .disableAutocorrection(true)
+
+                        HStack {
+                            Button("Capture Voice") {
+                                viewModel.captureVoiceObservationDraft()
+                            }
+                            .buttonStyle(.borderedProminent)
+
+                            Button("Lock Current Speed") {
+                                viewModel.lockCurrentSpeedAsObservation()
+                            }
+                            .buttonStyle(.bordered)
+                        }
+
+                        HStack {
+                            Button("Export First Approved") {
+                                viewModel.exportFirstApprovedObservation()
+                            }
+                            .buttonStyle(.bordered)
+
+                            Button("Reload") {
+                                Task { @MainActor in
+                                    await viewModel.refreshLocalObservations()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+
+                        if !viewModel.localObservationStatus.isEmpty {
+                            Text(viewModel.localObservationStatus)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        if !viewModel.lastExportDirectoryPath.isEmpty {
+                            Text("export_dir=\(viewModel.lastExportDirectoryPath)")
+                                .font(.caption2.monospaced())
+                                .lineLimit(2)
+                                .textSelection(.enabled)
+                        }
+
+                        Divider()
+
+                        if viewModel.localObservations.isEmpty {
+                            Text("No local observations yet.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(viewModel.localObservations) { observation in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("#\(observation.id.prefix(8)) \(observation.modality.rawValue) \(observation.intentType.rawValue)")
+                                    Text("state=\(observation.state.rawValue) value=\(observation.value ?? "n/a")")
+                                    Text("road=\(observation.roadCandidateIDs.first ?? "n/a") city=\(observation.cityContext ?? "n/a") street=\(observation.streetContext ?? "n/a")")
+                                    Text("captured=\(observation.capturedAtUTC)")
+                                    if observation.state == .needsReview {
+                                        HStack {
+                                            Button("Approve") {
+                                                viewModel.approveObservation(observation.id)
+                                            }
+                                            .buttonStyle(.bordered)
+
+                                            Button("Discard") {
+                                                viewModel.discardObservation(observation.id)
+                                            }
+                                            .buttonStyle(.bordered)
+                                        }
+                                    }
+                                }
+                                .font(.caption2.monospaced())
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
                 }
 
                 GroupBox("OSM Link") {

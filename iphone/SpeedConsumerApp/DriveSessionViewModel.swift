@@ -7,6 +7,13 @@ import UIKit
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
+    enum SpeedCaptureMode: Equatable {
+        case idle
+        case speakingPrompt
+        case countdown(Int)
+        case saving
+    }
+
     enum StartupDataState: String {
         case loading
         case ready
@@ -21,6 +28,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var syncProgressBytesPerSecond: Double = 0
     @Published var syncProgressETASeconds: Double?
     @Published var syncPartDownloads: [PartDownloadProgress] = []
+    @Published var maintenanceMessage: String = ""
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
@@ -51,6 +59,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var startupDataState: StartupDataState = .loading
     @Published var startupProgress: Double = 0
     @Published var startupDetail: String = "Lokale Daten werden vorbereitet"
+    @Published var observationDraftVoiceCommand: String = ""
+    @Published var localObservations: [LocalObservation] = []
+    @Published var localObservationStreetNames: [String: String] = [:]
+    @Published var localObservationStatus: String = ""
+    @Published var lastExportDirectoryPath: String = ""
+    @Published var localObservationShareURL: URL?
+    @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var activePenaltyRules: SpeedPenaltyRuleSet
     @Published var audioAlertThresholdKmh: Int {
         didSet {
@@ -65,8 +80,20 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(audioAlertThresholdKmh, forKey: Self.audioAlertThresholdDefaultsKey)
         }
     }
+    @Published var audioAlertsEnabled: Bool {
+        didSet {
+            guard audioAlertsEnabled != oldValue else {
+                return
+            }
+            UserDefaults.standard.set(audioAlertsEnabled, forKey: Self.audioAlertsEnabledDefaultsKey)
+            if !audioAlertsEnabled, speechSynthesizer.isSpeaking {
+                speechSynthesizer.stopSpeaking(at: .immediate)
+            }
+        }
+    }
 
     private let bundleManager = V3BundleManager()
+    private let localObservationStore = LocalObservationStore()
     private let locationManager = CLLocationManager()
     private let speechSynthesizer = AVSpeechSynthesizer()
     private let githubReleaseToken: String
@@ -86,10 +113,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var wasDrivingBanWarningActive = false
     private var lastDrivingBanWarningAt = Date.distantPast
     private var previousMatchedWayID: String?
+    private var speedCaptureCountdownTask: Task<Void, Never>?
+    private var speedCapturePromptFallbackTask: Task<Void, Never>?
+    private var awaitingSpeedCapturePromptCompletion = false
+    private var speedCaptureBaselineKmh: Int?
+    private var speedCaptureRequiresStableVehicleSpeed = false
+    private var lastKnownSpeedLimitKmh: Int?
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
+    private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
     private static let defaultAudioAlertThresholdKmh = 8
+    private static let defaultAudioAlertsEnabled = true
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
-    private static let defaultLookupRadiusM: Double = 50.0
+    private static let fallbackLookupRadiusM: Double = 50.0
+    private static let minLookupRadiusM: Double = 50.0
+    private static let maxLookupRadiusM: Double = 160.0
+    private static let lookupRadiusAccuracyMultiplier: Double = 2.2
     private static let startupSeedActivationFloorProgress: Double = 0.92
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -154,17 +192,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     override init() {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
+        let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
         activePenaltyRules = bundledRules
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
+        audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         githubReleaseToken = Self.defaultGitHubReleaseToken()
         manifestURL = Self.defaultManifestURL()
         super.init()
         locationManager.delegate = self
+        speechSynthesizer.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .automotiveNavigation
         locationManager.distanceFilter = 10
         beginStartupDataLoadIfNeeded()
+        Task { @MainActor [weak self] in
+            await self?.refreshLocalObservations()
+        }
     }
 
     var isDatabaseReadyForQueries: Bool {
@@ -173,6 +217,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var isSyncingNow: Bool {
         startupTask != nil || syncTask != nil || syncStatus == "syncing" || syncStatus == "bootstrapping"
+    }
+
+    var isInSpeedCaptureMode: Bool {
+        if case .idle = speedCaptureMode {
+            return false
+        }
+        return true
+    }
+
+    var speedCaptureSignText: String? {
+        switch speedCaptureMode {
+        case .idle:
+            return nil
+        case .speakingPrompt, .saving:
+            return "?"
+        case .countdown(let seconds):
+            return "\(seconds)"
+        }
     }
 
     func bootstrapAndSync() {
@@ -266,6 +328,39 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                 }
                 Self.logger.error("sync failed error=\(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    func flushLocalContributionsAndResync() {
+        guard startupTask == nil else {
+            syncProgressDetail = "Startup data preparation is still running"
+            Self.logger.notice("maintenance_flush rejected reason=startup_task_running")
+            return
+        }
+        guard syncTask == nil else {
+            syncProgressDetail = "Sync already in progress"
+            Self.logger.notice("maintenance_flush rejected reason=sync_already_running")
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let removed = try await bundleManager.flushLocalContributionState()
+                previousMatchedWayID = nil
+                maintenanceMessage = removed > 0
+                    ? "Lokale Korrekturen geloescht (\(removed) Eintraege). Starte Synchronisierung."
+                    : "Keine lokalen Korrekturen gefunden. Starte Synchronisierung."
+                Self.logger.notice("maintenance_flush success removed=\(removed, privacy: .public)")
+                bootstrapAndSync()
+            } catch {
+                let text = "Lokale Korrekturen konnten nicht geloescht werden: \(error.localizedDescription)"
+                maintenanceMessage = text
+                lastError = text
+                Self.logger.error("maintenance_flush failed error=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -486,6 +581,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         isDriving = false
         locationManager.stopUpdatingLocation()
         driveStatus = "stopped"
+        cancelSpeedCapture(reason: nil)
         lastAudioFeedbackAt = .distantPast
         lastAnnouncedSpeechText = nil
         wasDrivingBanWarningActive = false
@@ -524,6 +620,362 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    func beginSpeedLimitCapture() {
+        guard !isInSpeedCaptureMode else {
+            return
+        }
+
+        let roundedCurrentSpeed = max(0, Int(round(currentSpeedKmh)))
+        let currentLimit = max(0, speedLimitKmh ?? 0)
+        let rememberedLimit = max(0, lastKnownSpeedLimitKmh ?? 0)
+        let baseline: Int?
+        if roundedCurrentSpeed > 0 {
+            baseline = roundedCurrentSpeed
+            speedCaptureRequiresStableVehicleSpeed = true
+        } else if currentLimit > 0 {
+            baseline = currentLimit
+            speedCaptureRequiresStableVehicleSpeed = false
+        } else if rememberedLimit > 0 {
+            baseline = rememberedLimit
+            speedCaptureRequiresStableVehicleSpeed = false
+        } else {
+            baseline = nil
+            speedCaptureRequiresStableVehicleSpeed = false
+        }
+
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        speedCaptureBaselineKmh = baseline
+        speedCaptureMode = .speakingPrompt
+        awaitingSpeedCapturePromptCompletion = true
+        localObservationStatus = baseline != nil
+            ? "Geschwindigkeitserfassung gestartet."
+            : "Geschwindigkeitserfassung gestartet, aber keine Referenzgeschwindigkeit erkannt."
+        let utterance = AVSpeechUtterance(string: "Geschwindigkeit erfassen, Regelgeschwindigkeit 5 Sekunden halten")
+        utterance.voice = AVSpeechSynthesisVoice(language: "de-DE")
+            ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? "de-DE")
+        utterance.rate = 0.46
+        speechSynthesizer.speak(utterance)
+
+        speedCapturePromptFallbackTask?.cancel()
+        speedCapturePromptFallbackTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 8_000_000_000)
+            guard !Task.isCancelled else {
+                return
+            }
+            await MainActor.run {
+                guard let self, self.awaitingSpeedCapturePromptCompletion else {
+                    return
+                }
+                self.awaitingSpeedCapturePromptCompletion = false
+                self.startSpeedCaptureCountdown()
+            }
+        }
+    }
+
+    func deleteLocalObservation(_ observationID: String) {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                try await localObservationStore.deleteObservation(observationID: observationID)
+                localObservationStatus = "Eintrag geloescht."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Loeschen fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func deleteAllLocalObservations() {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let removed = try await localObservationStore.deleteAllObservations()
+                localObservationStatus = removed > 0
+                    ? "\(removed) lokale Erfassungen geloescht."
+                    : "Keine lokalen Erfassungen vorhanden."
+                localObservationShareURL = nil
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Alle Eintraege loeschen fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func exportAllLocalObservations() {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let result = try await localObservationStore.exportAllLocalObservationsAsOsc()
+                localObservationShareURL = result.changesFile
+                lastExportDirectoryPath = result.packageDirectory.path
+                localObservationStatus = "Export erstellt (\(result.includedCount) Wege): changes.osc"
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Export fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func clearLocalObservationShareURL() {
+        localObservationShareURL = nil
+    }
+
+    func captureVoiceObservationDraft() {
+        let command = observationDraftVoiceCommand.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !command.isEmpty else {
+            localObservationStatus = "Bitte Sprachbefehl eingeben."
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let observation = try await localObservationStore.captureVoiceCommand(
+                    command: command,
+                    context: currentObservationCaptureContext()
+                )
+                observationDraftVoiceCommand = ""
+                localObservationStatus = "Beobachtung erfasst: \(observation.intentType.rawValue) (\(observation.state.rawValue))."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Erfassung fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func lockCurrentSpeedAsObservation() {
+        let speed = Int(round(currentSpeedKmh))
+        guard speed > 0 else {
+            localObservationStatus = "Lock current speed nur mit Geschwindigkeit > 0 km/h."
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let observation = try await localObservationStore.lockCurrentSpeed(
+                    speedKmh: speed,
+                    context: currentObservationCaptureContext()
+                )
+                localObservationStatus = "Speed-Lock erfasst: \(observation.value ?? "?") km/h."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Speed-Lock fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func approveObservation(_ observationID: String) {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                _ = try await localObservationStore.reviewAndApproveProposal(observationID: observationID)
+                localObservationStatus = "Beobachtung freigegeben fuer Export."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Freigabe fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func discardObservation(_ observationID: String) {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                _ = try await localObservationStore.discardObservation(observationID: observationID)
+                localObservationStatus = "Beobachtung verworfen."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Verwerfen fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func exportFirstApprovedObservation() {
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let approved = try await localObservationStore.fetchObservations(states: [.approvedForExport], limit: 1)
+                guard let first = approved.first else {
+                    localObservationStatus = "Keine freigegebene Beobachtung fuer Export vorhanden."
+                    return
+                }
+                let export = try await localObservationStore.exportProposalAsOscPackage(observationID: first.id)
+                lastExportDirectoryPath = export.packageDirectory.path
+                localObservationStatus = "Export erstellt: \(export.packageDirectory.lastPathComponent)"
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Export fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    func refreshLocalObservations() async {
+        do {
+            let observations = try await localObservationStore.fetchObservations(limit: 500)
+            localObservations = observations
+            localObservationStreetNames = resolveStreetNames(for: observations)
+        } catch {
+            localObservationStatus = "Lokale Beobachtungen konnten nicht geladen werden: \(error.localizedDescription)"
+            lastError = localObservationStatus
+        }
+    }
+
+    private func resolveStreetNames(for observations: [LocalObservation]) -> [String: String] {
+        let wayIDs = observations
+            .compactMap { $0.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !wayIDs.isEmpty else {
+            return [:]
+        }
+
+        let resolver: V3SpeedLimitService?
+        if let speedLimitService {
+            resolver = speedLimitService
+        } else if !activeDBPath.isEmpty {
+            resolver = V3SpeedLimitService(dbPath: activeDBPath)
+        } else {
+            resolver = nil
+        }
+
+        guard let resolver else {
+            return [:]
+        }
+        do {
+            return try resolver.lookupStreetNames(forWayIDs: wayIDs)
+        } catch {
+            Self.logger.warning("streetname lookup for local observations failed: \(error.localizedDescription, privacy: .public)")
+            return [:]
+        }
+    }
+
+    private func currentObservationCaptureContext() -> LocalObservationCaptureContext {
+        let source = activeBundleVersion.isEmpty ? "none" : activeBundleVersion
+        let roadCandidates = limitWayID.map { [$0] } ?? []
+        let confidence: Double?
+        if speedLimitKmh != nil {
+            confidence = 0.85
+        } else if lastLookupNearestCandidateM != nil {
+            confidence = 0.55
+        } else {
+            confidence = nil
+        }
+        return LocalObservationCaptureContext(
+            lat: currentLatitude,
+            lon: currentLongitude,
+            headingDeg: nil,
+            roadCandidateIDs: roadCandidates,
+            cityContext: limitCityName,
+            streetContext: limitStreetName,
+            confidenceCalibrated: confidence,
+            sourceVersion: source
+        )
+    }
+
+    private func startSpeedCaptureCountdown() {
+        speedCaptureCountdownTask?.cancel()
+        speedCaptureMode = .countdown(5)
+        speedCaptureCountdownTask = Task { [weak self] in
+            guard let self else {
+                return
+            }
+            for second in stride(from: 5, through: 1, by: -1) {
+                let abort = await MainActor.run { () -> Bool in
+                    if self.speedCaptureRequiresStableVehicleSpeed {
+                        guard let baseline = self.speedCaptureBaselineKmh else {
+                            self.cancelSpeedCapture(reason: "Keine Referenzgeschwindigkeit erkannt. Bitte erneut starten.")
+                            return true
+                        }
+                        let current = Int(round(self.currentSpeedKmh))
+                        if abs(current - baseline) > 3 {
+                            self.cancelSpeedCapture(reason: "Geschwindigkeit nicht stabil gehalten. Bitte erneut starten.")
+                            return true
+                        }
+                    }
+                    self.speedCaptureMode = .countdown(second)
+                    return false
+                }
+                if abort || Task.isCancelled {
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+            await MainActor.run {
+                self.commitSpeedCaptureObservation()
+            }
+        }
+    }
+
+    private func commitSpeedCaptureObservation() {
+        speedCaptureMode = .saving
+        let newSpeed = speedCaptureBaselineKmh
+            ?? speedLimitKmh
+            ?? lastKnownSpeedLimitKmh
+            ?? Int(round(currentSpeedKmh))
+        let oldSpeed = speedLimitKmh
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            defer { cancelSpeedCapture(reason: nil) }
+            guard newSpeed > 0 else {
+                localObservationStatus = "Erfassung abgebrochen: ungueltige Geschwindigkeit."
+                return
+            }
+            do {
+                let observation = try await localObservationStore.recordSpeedLimitChange(
+                    oldSpeedKmh: oldSpeed,
+                    newSpeedKmh: newSpeed,
+                    context: currentObservationCaptureContext()
+                )
+                let way = observation.roadCandidateIDs.first ?? "n/a"
+                localObservationStatus = "Erfasst: way \(way), alt \(oldSpeed?.description ?? "n/a"), neu \(newSpeed) km/h."
+                await refreshLocalObservations()
+            } catch {
+                localObservationStatus = "Erfassung fehlgeschlagen: \(error.localizedDescription)"
+                lastError = localObservationStatus
+            }
+        }
+    }
+
+    private func cancelSpeedCapture(reason: String?) {
+        speedCaptureCountdownTask?.cancel()
+        speedCaptureCountdownTask = nil
+        speedCapturePromptFallbackTask?.cancel()
+        speedCapturePromptFallbackTask = nil
+        awaitingSpeedCapturePromptCompletion = false
+        speedCaptureBaselineKmh = nil
+        speedCaptureRequiresStableVehicleSpeed = false
+        speedCaptureMode = .idle
+        if let reason, !reason.isEmpty {
+            localObservationStatus = reason
+        }
+    }
+
     private func updateSpeedLimit(for location: CLLocation, fixID: Int) {
         let fixTimestamp = Self.lookupTimestampFormatter.string(from: location.timestamp)
         let fixTimestampISO = Self.isoFormatter.string(from: location.timestamp)
@@ -532,7 +984,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let gpsKmh = max(0, location.speed) * 3.6
         let hAcc = location.horizontalAccuracy
         let vAcc = location.verticalAccuracy
-        let course = location.course
+        let rawCourse = location.course
+        let course = (0.0 ... 360.0).contains(rawCourse) ? rawCourse : nil
+        let rawCourseAccuracy = location.courseAccuracy
+        let courseAccuracy = rawCourseAccuracy >= 0.0 ? rawCourseAccuracy : nil
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
             appendLookupEvent(
@@ -546,14 +1001,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 speedKmh: gpsKmh,
                 horizontalAccM: hAcc,
                 verticalAccM: vAcc,
-                courseDeg: course,
+                courseDeg: rawCourse,
                 status: "no_service",
                 result: nil,
                 errorText: nil
             )
             return
         }
-        let radiusM = Self.defaultLookupRadiusM
+        let radiusM = Self.lookupRadius(forHorizontalAccuracy: hAcc)
         let maxCandidates = lookupMaxCandidates
         let preferredWayID = previousMatchedWayID
 
@@ -564,10 +1019,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     lon: lon,
                     radiusM: radiusM,
                     maxCandidates: maxCandidates,
-                    preferredWayID: preferredWayID
+                    preferredWayID: preferredWayID,
+                    headingDeg: course,
+                    headingAccuracyDeg: courseAccuracy,
+                    speedKmh: gpsKmh,
+                    horizontalAccuracyM: hAcc
                 )
                 await MainActor.run {
                     self.speedLimitKmh = result.speedLimitKmh
+                    if let resolved = result.speedLimitKmh {
+                        self.lastKnownSpeedLimitKmh = resolved
+                    }
                     self.limitWayID = result.wayID
                     self.limitStreetName = result.streetName
                     self.limitCityName = result.cityName
@@ -607,7 +1069,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         speedKmh: gpsKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
-                        courseDeg: course,
+                        courseDeg: rawCourse,
                         status: result.speedLimitKmh == nil ? "no_match" : "matched",
                         result: result,
                         errorText: nil
@@ -629,7 +1091,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         speedKmh: gpsKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
-                        courseDeg: course,
+                        courseDeg: rawCourse,
                         status: "lookup_error",
                         result: nil,
                         errorText: error.localizedDescription
@@ -637,6 +1099,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
             }
         }
+    }
+
+    private static func lookupRadius(forHorizontalAccuracy horizontalAccuracyM: Double) -> Double {
+        guard horizontalAccuracyM.isFinite, horizontalAccuracyM >= 0 else {
+            return fallbackLookupRadiusM
+        }
+        let radius = (horizontalAccuracyM * lookupRadiusAccuracyMultiplier) + 20.0
+        return min(max(radius, minLookupRadiusM), maxLookupRadiusM)
     }
 
     private func appendLookupEvent(_ line: String) {
@@ -769,6 +1239,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard driveStatus == "running" else {
             return
         }
+        guard !isInSpeedCaptureMode else {
+            return
+        }
+        guard audioAlertsEnabled else {
+            lastAnnouncedSpeechText = nil
+            return
+        }
         let overspeed = currentOverspeedKmh
         let threshold = audioAlertThresholdKmh
         guard threshold > 0, overspeed >= threshold, let notice = currentPenaltyNotice else {
@@ -789,7 +1266,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         case .pointsAndFine:
             if let points = notice.penaltyPoints {
-                speechText = points == 1 ? "1 Punkt" : "\(points) Punkte"
+                speechText = points == 1 ? "ein Punkt" : "\(points) Punkte"
             } else {
                 speechText = "Punkte"
             }
@@ -820,6 +1297,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             wasDrivingBanWarningActive = false
             return
         }
+        guard !isInSpeedCaptureMode else {
+            return
+        }
         guard let notice = currentPenaltyNotice,
               let drivingBanMonths = notice.drivingBanMonths,
               drivingBanMonths > 0 else {
@@ -841,20 +1321,44 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speechText = drivingBanMonths == 1
             ? "Achtung. Ein Monat Fahrverbot moeglich."
             : "Achtung. \(drivingBanMonths) Monate Fahrverbot moeglich."
-        if enteringWarning && speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
-        if enteringWarning || !speechSynthesizer.isSpeaking {
-            let utterance = AVSpeechUtterance(string: speechText)
-            if let preferredLanguage = Locale.preferredLanguages.first {
-                utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
+        if audioAlertsEnabled {
+            if enteringWarning && speechSynthesizer.isSpeaking {
+                speechSynthesizer.stopSpeaking(at: .immediate)
             }
-            utterance.rate = 0.46
-            speechSynthesizer.speak(utterance)
+            if enteringWarning || !speechSynthesizer.isSpeaking {
+                let utterance = AVSpeechUtterance(string: speechText)
+                if let preferredLanguage = Locale.preferredLanguages.first {
+                    utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
+                }
+                utterance.rate = 0.46
+                speechSynthesizer.speak(utterance)
+            }
         }
 
         wasDrivingBanWarningActive = true
         lastDrivingBanWarningAt = now
+    }
+}
+
+extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        Task { @MainActor [weak self] in
+            guard let self, self.awaitingSpeedCapturePromptCompletion else {
+                return
+            }
+            self.awaitingSpeedCapturePromptCompletion = false
+            self.startSpeedCaptureCountdown()
+        }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        Task { @MainActor [weak self] in
+            guard let self, self.awaitingSpeedCapturePromptCompletion else {
+                return
+            }
+            self.awaitingSpeedCapturePromptCompletion = false
+            self.startSpeedCaptureCountdown()
+        }
     }
 }
 

@@ -75,6 +75,49 @@ actor V3BundleManager {
         return try resolveDatabaseURL(for: state)
     }
 
+    /// Removes writable local correction artifacts so the app can rely on
+    /// upstream OSM-derived daily diffs after user-side editor uploads.
+    /// Does not remove active runtime bundles or active bundle state.
+    func flushLocalContributionState() throws -> Int {
+        let root = try rootDir()
+        let sqliteBaseNames = [
+            "local_corrections.sqlite",
+            "local_overrides.sqlite",
+            "local_observation_store.sqlite",
+            "local_overlay_cache.sqlite",
+            "osm-editor-export-outbox.sqlite",
+        ]
+        let sqliteCompanionSuffixes = ["", "-shm", "-wal"]
+        let removableFiles = sqliteBaseNames.flatMap { baseName in
+            sqliteCompanionSuffixes.map { suffix in
+                root.appendingPathComponent(baseName + suffix)
+            }
+        }
+        let removableDirectories = [
+            root.appendingPathComponent("osm-editor-export-outbox", isDirectory: true),
+            root.appendingPathComponent("osm-editor-packages", isDirectory: true),
+            root.appendingPathComponent("local-corrections-export", isDirectory: true),
+            root.appendingPathComponent("local_observation_store", isDirectory: true),
+            root.appendingPathComponent("local_overlay_cache", isDirectory: true),
+        ]
+
+        var removedCount = 0
+        for fileURL in removableFiles {
+            if fileManager.fileExists(atPath: fileURL.path) {
+                try removeItemIfExists(at: fileURL)
+                removedCount += 1
+            }
+        }
+        for directoryURL in removableDirectories {
+            if fileManager.fileExists(atPath: directoryURL.path) {
+                try removeItemIfExists(at: directoryURL)
+                removedCount += 1
+            }
+        }
+        Self.logger.notice("maintenance flush_local_contribution_state removed=\(removedCount, privacy: .public)")
+        return removedCount
+    }
+
     private func resolveDatabaseURL(for state: ActiveBundleState) throws -> URL {
         if let explicitPath = state.dbPath?.trimmingCharacters(in: .whitespacesAndNewlines),
            !explicitPath.isEmpty {

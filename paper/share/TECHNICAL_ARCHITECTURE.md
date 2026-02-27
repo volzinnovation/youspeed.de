@@ -2,6 +2,11 @@
 
 This diagram captures the system components and data interactions described in `VISION.md`, including offline inference, crowdsourced observations, multi-source sync, and optional OSM feedback.
 
+Detailed policy and UX behavior for local corrections is documented in:
+- `paper/share/LOCAL_CORRECTIONS_STRATEGY.md`
+
+Policy update: current implementation targets editor-mediated individual-contributor uploads (JOSM/Merkaartor), not direct app uploads and not centralized backend publishing.
+
 Rendered variants for iteration:
 - Full architecture PNG: `paper/share/TECHNICAL_ARCHITECTURE.png`
 - Paper-scope PNG (highlighted): `paper/share/TECHNICAL_ARCHITECTURE_PAPER_SCOPE.png`

@@ -87,7 +87,8 @@ Implementation guidance:
 ### 3.2 Storage stages
 - Local only for MVP (`SQLite`/`Core Data`).
 - Versioned rule table (`fine_rules_version`, `law_source_version`, `effective_from`).
-- Later: optional sync to global backend.
+- Publication path: app exports `.osc` packages after explicit review; individual contributors upload in JOSM/Merkaartor with their own OSM account (no centralized backend publishing authority).
+- Optional backend remains non-authoritative (artifact delivery/diagnostics), not OSM write owner.
 
 ## 4) Karlsruhe-region bootstrap plan (OSM)
 

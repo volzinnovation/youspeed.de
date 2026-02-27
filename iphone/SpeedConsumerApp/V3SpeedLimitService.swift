@@ -6,6 +6,14 @@ final class V3SpeedLimitService {
 
     private struct WayCandidate {
         let wayID: String?
+        let highway: String?
+        let service: String?
+        let tunnel: String?
+        let bridge: String?
+        let covered: String?
+        let location: String?
+        let layer: Int?
+        let level: Int?
         let streetName: String?
         let speedKmh: Int?
         let distanceM: Double
@@ -92,16 +100,32 @@ final class V3SpeedLimitService {
         let hasStreetName = columnExists(db: db, table: "ways", column: "street_name")
         let hasStreetRef = columnExists(db: db, table: "ways", column: "ref")
         let hasApproxHeading = columnExists(db: db, table: "ways", column: "approx_heading_deg")
+        let hasService = columnExists(db: db, table: "ways", column: "service")
+        let hasTunnel = columnExists(db: db, table: "ways", column: "tunnel")
+        let hasBridge = columnExists(db: db, table: "ways", column: "bridge")
+        let hasCovered = columnExists(db: db, table: "ways", column: "covered")
+        let hasLocation = columnExists(db: db, table: "ways", column: "location")
+        let hasLayer = columnExists(db: db, table: "ways", column: "layer")
+        let hasLevel = columnExists(db: db, table: "ways", column: "level")
         let hasWayGeom = tableExists(db: db, name: "way_geom")
         let streetSelect = hasStreetName ? "w.street_name" : "NULL"
         let refSelect = hasStreetRef ? "w.ref" : "NULL"
         let headingSelect = hasApproxHeading ? "w.approx_heading_deg" : "NULL"
+        let serviceSelect = hasService ? "w.service" : "NULL"
+        let tunnelSelect = hasTunnel ? "w.tunnel" : "NULL"
+        let bridgeSelect = hasBridge ? "w.bridge" : "NULL"
+        let coveredSelect = hasCovered ? "w.covered" : "NULL"
+        let locationSelect = hasLocation ? "w.location" : "NULL"
+        let layerSelect = hasLayer ? "w.layer" : "NULL"
+        let levelSelect = hasLevel ? "w.level" : "NULL"
         let wayGeomJoin = hasWayGeom ? "LEFT JOIN way_geom g ON g.row_id = w.row_id" : ""
         let pointsSelect = hasWayGeom ? "g.points_json" : "NULL"
         let bounds = queryBounds(lat: lat, lon: lon, radiusM: radiusM)
         let sql = """
         SELECT w.way_id, w.highway, \(streetSelect) AS street_name, \(refSelect) AS ref, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
-               \(headingSelect) AS approx_heading_deg, w.min_lon, w.min_lat, w.max_lon, w.max_lat, \(pointsSelect) AS points_json
+               \(headingSelect) AS approx_heading_deg, \(serviceSelect) AS service, \(tunnelSelect) AS tunnel,
+               \(bridgeSelect) AS bridge, \(coveredSelect) AS covered, \(locationSelect) AS location, \(layerSelect) AS layer,
+               \(levelSelect) AS level, w.min_lon, w.min_lat, w.max_lon, w.max_lat, \(pointsSelect) AS points_json
         FROM ways_rtree r
         JOIN ways w ON w.row_id = r.row_id
         \(wayGeomJoin)
@@ -154,11 +178,18 @@ final class V3SpeedLimitService {
             let maxspeedType = cStringOptional(sqlite3_column_text(stmt, 5))
             let sourceMaxspeed = cStringOptional(sqlite3_column_text(stmt, 6))
             let approxHeadingDeg = sqlite3_column_type(stmt, 7) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 7)
-            let minLon = sqlite3_column_double(stmt, 8)
-            let minLat = sqlite3_column_double(stmt, 9)
-            let maxLon = sqlite3_column_double(stmt, 10)
-            let maxLat = sqlite3_column_double(stmt, 11)
-            let points = parseWayPoints(cStringOptional(sqlite3_column_text(stmt, 12)))
+            let service = cStringOptional(sqlite3_column_text(stmt, 8))
+            let tunnel = cStringOptional(sqlite3_column_text(stmt, 9))
+            let bridge = cStringOptional(sqlite3_column_text(stmt, 10))
+            let covered = cStringOptional(sqlite3_column_text(stmt, 11))
+            let locationTag = cStringOptional(sqlite3_column_text(stmt, 12))
+            let layer = intColumnValue(stmt: stmt, index: 13)
+            let level = intColumnValue(stmt: stmt, index: 14)
+            let minLon = sqlite3_column_double(stmt, 15)
+            let minLat = sqlite3_column_double(stmt, 16)
+            let maxLon = sqlite3_column_double(stmt, 17)
+            let maxLat = sqlite3_column_double(stmt, 18)
+            let points = parseWayPoints(cStringOptional(sqlite3_column_text(stmt, 19)))
 
             candidateCount += 1
             let bboxDistance = distanceToBBoxM(
@@ -198,6 +229,14 @@ final class V3SpeedLimitService {
 
             let candidate = WayCandidate(
                 wayID: wayID,
+                highway: highway,
+                service: service,
+                tunnel: tunnel,
+                bridge: bridge,
+                covered: covered,
+                location: locationTag,
+                layer: layer,
+                level: level,
                 streetName: streetName,
                 speedKmh: parsed,
                 distanceM: distance,
@@ -261,6 +300,14 @@ final class V3SpeedLimitService {
         return SpeedLimitResult(
             speedLimitKmh: effectiveSpeed,
             wayID: selected?.wayID,
+            highway: selected?.highway,
+            service: selected?.service,
+            tunnel: selected?.tunnel,
+            bridge: selected?.bridge,
+            covered: selected?.covered,
+            location: selected?.location,
+            layer: selected?.layer,
+            level: selected?.level,
             streetName: selected?.streetName,
             cityName: cityContext.cityName,
             insideCity: residentialContext.insideCity,
@@ -275,6 +322,86 @@ final class V3SpeedLimitService {
             nearestCandidateDistanceM: nearestCandidateDistance.isFinite ? nearestCandidateDistance : nil,
             nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil
         )
+    }
+
+    func lookupStreetNames(forWayIDs wayIDs: [String]) throws -> [String: String] {
+        let uniqueWayIDs = Array(
+            Set(
+                wayIDs
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            )
+        ).sorted()
+        guard !uniqueWayIDs.isEmpty else {
+            return [:]
+        }
+
+        var db: OpaquePointer?
+        let encodedPath = dbPath.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbPath
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
+            throw ConsumerAppError.sqlite("sqlite open failed for \(dbPath)")
+        }
+        defer { sqlite3_close(db) }
+
+        guard tableExists(db: db, name: "ways"), columnExists(db: db, table: "ways", column: "way_id") else {
+            return [:]
+        }
+
+        let hasStreetName = columnExists(db: db, table: "ways", column: "street_name")
+        let hasStreetRef = columnExists(db: db, table: "ways", column: "ref")
+        guard hasStreetName || hasStreetRef else {
+            return [:]
+        }
+
+        let streetSelect = hasStreetName ? "street_name" : "NULL"
+        let refSelect = hasStreetRef ? "ref" : "NULL"
+        var resolved: [String: String] = [:]
+
+        let chunkSize = 200
+        var cursor = 0
+        while cursor < uniqueWayIDs.count {
+            let end = min(cursor + chunkSize, uniqueWayIDs.count)
+            let chunk = Array(uniqueWayIDs[cursor..<end])
+            let placeholders = chunk.enumerated().map { "?\($0.offset + 1)" }.joined(separator: ",")
+            let sql = """
+            SELECT way_id, \(streetSelect) AS street_name, \(refSelect) AS ref
+            FROM ways
+            WHERE way_id IN (\(placeholders))
+            """
+
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                throw ConsumerAppError.sqlite("prepare failed in street lookup query")
+            }
+            defer { sqlite3_finalize(stmt) }
+
+            for (index, wayID) in chunk.enumerated() {
+                sqlite3_bind_text(stmt, Int32(index + 1), wayID, -1, SQLITE_TRANSIENT)
+            }
+
+            while true {
+                let rc = sqlite3_step(stmt)
+                if rc == SQLITE_DONE {
+                    break
+                }
+                if rc != SQLITE_ROW {
+                    throw ConsumerAppError.sqlite("step failed in street lookup query")
+                }
+                guard let wayID = cStringOptional(sqlite3_column_text(stmt, 0)) else {
+                    continue
+                }
+                let streetName = cStringOptional(sqlite3_column_text(stmt, 1))
+                let ref = cStringOptional(sqlite3_column_text(stmt, 2))
+                if let display = Self.formattedStreetDisplay(streetName: streetName, ref: ref) {
+                    resolved[wayID] = display
+                }
+            }
+
+            cursor = end
+        }
+
+        return resolved
     }
 
     static func deriveSpeedLimitKmh(maxspeed: String?, maxspeedType: String?, sourceMaxspeed: String?, highway: String?) -> Int? {
@@ -488,6 +615,23 @@ final class V3SpeedLimitService {
             return nil
         }
         return String(cString: cString)
+    }
+
+    private func intColumnValue(stmt: OpaquePointer, index: Int32) -> Int? {
+        let type = sqlite3_column_type(stmt, index)
+        if type == SQLITE_NULL {
+            return nil
+        }
+        if type == SQLITE_INTEGER {
+            return Int(sqlite3_column_int64(stmt, index))
+        }
+        if type == SQLITE_FLOAT {
+            return Int(sqlite3_column_double(stmt, index))
+        }
+        if let text = cStringOptional(sqlite3_column_text(stmt, index)) {
+            return Int(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return nil
     }
 
     private func tableExists(db: OpaquePointer, name: String) -> Bool {

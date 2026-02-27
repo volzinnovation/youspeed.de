@@ -161,6 +161,253 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(invalidScheme)
     }
 
+    func testFlushLocalContributionStateRemovesLocalCorrectionArtifacts() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+        try fm.createDirectory(at: supportDir, withIntermediateDirectories: true)
+
+        let files = [
+            supportDir.appendingPathComponent("local_corrections.sqlite"),
+            supportDir.appendingPathComponent("local_corrections.sqlite-shm"),
+            supportDir.appendingPathComponent("local_overrides.sqlite"),
+            supportDir.appendingPathComponent("local_observation_store.sqlite-wal"),
+            supportDir.appendingPathComponent("local_overlay_cache.sqlite"),
+            supportDir.appendingPathComponent("osm-editor-export-outbox.sqlite"),
+        ]
+        for file in files {
+            try Data("test".utf8).write(to: file)
+        }
+        let exportDir = supportDir.appendingPathComponent("osm-editor-packages", isDirectory: true)
+        try fm.createDirectory(at: exportDir, withIntermediateDirectories: true)
+        try Data("pkg".utf8).write(to: exportDir.appendingPathComponent("candidate.osc"))
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let removedCount = try await manager.flushLocalContributionState()
+
+        XCTAssertEqual(removedCount, files.count + 1)
+        for file in files {
+            XCTAssertFalse(fm.fileExists(atPath: file.path), "expected removed file \(file.lastPathComponent)")
+        }
+        XCTAssertFalse(fm.fileExists(atPath: exportDir.path), "expected removed export directory")
+    }
+
+    func testFlushLocalContributionStateKeepsActiveBundleStateAndDatabase() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+        try fm.createDirectory(at: supportDir, withIntermediateDirectories: true)
+
+        let bundlesDir = supportDir.appendingPathComponent("bundles/2026-02-27", isDirectory: true)
+        try fm.createDirectory(at: bundlesDir, withIntermediateDirectories: true)
+        let activeDB = bundlesDir.appendingPathComponent("DEU-latest.speeds_v3.sqlite")
+        try Data("runtime-db".utf8).write(to: activeDB)
+
+        let activeState = ActiveBundleState(
+            region: "DEU",
+            bundleVersion: "2026-02-27",
+            dbFileName: "DEU-latest.speeds_v3.sqlite",
+            activatedAtUTC: "2026-02-27T00:00:00Z"
+        )
+        let activeStateData = try JSONEncoder().encode(activeState)
+        try activeStateData.write(to: supportDir.appendingPathComponent("active_bundle.json"), options: .atomic)
+
+        let removableFile = supportDir.appendingPathComponent("local_corrections.sqlite")
+        try Data("local".utf8).write(to: removableFile)
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let removedCount = try await manager.flushLocalContributionState()
+
+        XCTAssertGreaterThanOrEqual(removedCount, 1)
+        XCTAssertFalse(fm.fileExists(atPath: removableFile.path), "expected local correction file to be removed")
+        XCTAssertTrue(fm.fileExists(atPath: activeDB.path), "active runtime database must remain")
+        XCTAssertTrue(
+            fm.fileExists(atPath: supportDir.appendingPathComponent("active_bundle.json").path),
+            "active bundle state must remain"
+        )
+    }
+
+    func testLocalObservationStoreLockCurrentSpeedCreatesNeedsReviewObservation() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("speedconsumer-localobs-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.localobs.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: defaultsName) else {
+            XCTFail("failed to create isolated defaults suite")
+            return
+        }
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fm,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root
+        )
+
+        let context = LocalObservationCaptureContext(
+            lat: 48.8011149,
+            lon: 8.442695,
+            headingDeg: 92.0,
+            roadCandidateIDs: ["17721265"],
+            cityContext: "Karlsruhe",
+            streetContext: "Dobler Strasse",
+            confidenceCalibrated: 0.9,
+            sourceVersion: "seed"
+        )
+        let observation = try await store.lockCurrentSpeed(speedKmh: 64, context: context)
+
+        XCTAssertEqual(observation.modality, .lock_current_speed)
+        XCTAssertEqual(observation.intentType, .lock_speed_snapshot)
+        XCTAssertEqual(observation.value, "64")
+        XCTAssertEqual(observation.state, .needsReview)
+        XCTAssertEqual(observation.roadCandidateIDs, ["17721265"])
+        XCTAssertNil(observation.oldSpeedKmh)
+        XCTAssertEqual(observation.newSpeedKmh, 64)
+    }
+
+    func testLocalObservationStoreCaptureApproveAndExportFlow() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("speedconsumer-localobs-export-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.localobs.export.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: defaultsName) else {
+            XCTFail("failed to create isolated defaults suite")
+            return
+        }
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let fixedDate = Date(timeIntervalSince1970: 1_770_000_000)
+        let store = LocalObservationStore(
+            fileManager: fm,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { fixedDate }
+        )
+
+        let context = LocalObservationCaptureContext(
+            lat: 48.8011149,
+            lon: 8.442695,
+            headingDeg: 90.0,
+            roadCandidateIDs: ["17721265"],
+            cityContext: "Karlsruhe",
+            streetContext: "Dobler Strasse",
+            confidenceCalibrated: 0.88,
+            sourceVersion: "2026-02-27"
+        )
+        let captured = try await store.captureVoiceCommand(command: "Tempo 30", context: context)
+        XCTAssertEqual(captured.state, .needsReview)
+        XCTAssertEqual(captured.intentType, .set_maxspeed)
+        XCTAssertEqual(captured.value, "30")
+
+        let approved = try await store.reviewAndApproveProposal(observationID: captured.id)
+        XCTAssertEqual(approved.state, .approvedForExport)
+
+        let export = try await store.exportProposalAsOscPackage(observationID: captured.id)
+        XCTAssertTrue(fm.fileExists(atPath: export.changesFile.path))
+        XCTAssertTrue(fm.fileExists(atPath: export.reviewFile.path))
+        XCTAssertTrue(fm.fileExists(atPath: export.readmeFile.path))
+
+        let osc = try String(contentsOf: export.changesFile, encoding: .utf8)
+        XCTAssertTrue(osc.contains("<osmChange"))
+        XCTAssertTrue(osc.contains("<way id=\"17721265\">"))
+        XCTAssertTrue(osc.contains("<tag k=\"maxspeed\" v=\"30\"/>"))
+
+        let review = try String(contentsOf: export.reviewFile, encoding: .utf8)
+        XCTAssertTrue(review.contains("\"export_id\""))
+        XCTAssertTrue(review.contains("\"observation_ids\""))
+        XCTAssertTrue(review.contains("17721265"))
+
+        let all = try await store.fetchObservations(limit: 5)
+        XCTAssertEqual(all.first(where: { $0.id == captured.id })?.state, .exportedOsc)
+    }
+
+    func testLocalObservationStoreBulkExportAndDeleteFlow() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("speedconsumer-localobs-bulk-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.localobs.bulk.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: defaultsName) else {
+            XCTFail("failed to create isolated defaults suite")
+            return
+        }
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fm,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root
+        )
+
+        let contextA = LocalObservationCaptureContext(
+            lat: 48.8011149,
+            lon: 8.442695,
+            headingDeg: nil,
+            roadCandidateIDs: ["17721265"],
+            cityContext: "Karlsruhe",
+            streetContext: "Dobler Strasse",
+            confidenceCalibrated: 0.9,
+            sourceVersion: "seed"
+        )
+        let contextB = LocalObservationCaptureContext(
+            lat: 48.801234,
+            lon: 8.442901,
+            headingDeg: nil,
+            roadCandidateIDs: ["69233057"],
+            cityContext: "Karlsruhe",
+            streetContext: "Kullenmuehle",
+            confidenceCalibrated: 0.84,
+            sourceVersion: "seed"
+        )
+
+        let first = try await store.recordSpeedLimitChange(oldSpeedKmh: 30, newSpeedKmh: 40, context: contextA)
+        let second = try await store.recordSpeedLimitChange(oldSpeedKmh: 50, newSpeedKmh: 60, context: contextB)
+        XCTAssertEqual(first.oldSpeedKmh, 30)
+        XCTAssertEqual(first.newSpeedKmh, 40)
+        XCTAssertEqual(second.oldSpeedKmh, 50)
+        XCTAssertEqual(second.newSpeedKmh, 60)
+
+        let bulk = try await store.exportAllLocalObservationsAsOsc()
+        XCTAssertEqual(bulk.includedCount, 2)
+        XCTAssertTrue(fm.fileExists(atPath: bulk.changesFile.path))
+
+        let osc = try String(contentsOf: bulk.changesFile, encoding: .utf8)
+        XCTAssertTrue(osc.contains("<way id=\"17721265\">"))
+        XCTAssertTrue(osc.contains("<tag k=\"maxspeed\" v=\"40\"/>"))
+        XCTAssertTrue(osc.contains("<way id=\"69233057\">"))
+        XCTAssertTrue(osc.contains("<tag k=\"maxspeed\" v=\"60\"/>"))
+
+        try await store.deleteObservation(observationID: first.id)
+        let afterSingleDelete = try await store.fetchObservations(limit: 10)
+        XCTAssertFalse(afterSingleDelete.contains(where: { $0.id == first.id }))
+
+        let removed = try await store.deleteAllObservations()
+        XCTAssertGreaterThanOrEqual(removed, 1)
+        let afterDeleteAll = try await store.fetchObservations(limit: 10)
+        XCTAssertTrue(afterDeleteAll.isEmpty)
+    }
+
     func testMultipartBundleSyncAndFirstQuery() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
@@ -911,6 +1158,24 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 30)
     }
 
+    func testBundledSchemaIncludesTunnelBridgeParkingContextColumns() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let wayColumns = try readColumnNames(dbURL: bundledDB, table: "ways")
+        let requiredWay = Set(["service", "tunnel", "bridge", "covered", "location", "layer", "level"])
+        let missingWay = requiredWay.subtracting(wayColumns)
+        if !missingWay.isEmpty {
+            throw XCTSkip("Bundled seed DB was built before context-schema extension; missing ways columns: \(missingWay.sorted())")
+        }
+
+        let areaColumns = try readColumnNames(dbURL: bundledDB, table: "areas")
+        if !areaColumns.contains("parking") {
+            throw XCTSkip("Bundled seed DB was built before context-schema extension; missing areas.parking")
+        }
+    }
+
     func testLookupSwitchesWayWhenHeadingConflictsWithPreferredWay() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-heading-\(UUID().uuidString)", isDirectory: true)
@@ -936,6 +1201,9 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(turnedResult.wayID, "B1")
         XCTAssertEqual(turnedResult.speedLimitKmh, 50)
+        XCTAssertEqual(turnedResult.bridge, "yes")
+        XCTAssertEqual(turnedResult.layer, 1)
+        XCTAssertEqual(turnedResult.service, "main")
 
         let lowSpeedResult = try service.lookupSpeedLimit(
             lat: 52.0,
@@ -950,6 +1218,10 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(lowSpeedResult.wayID, "A1")
         XCTAssertEqual(lowSpeedResult.speedLimitKmh, 30)
+        XCTAssertEqual(lowSpeedResult.tunnel, "yes")
+        XCTAssertEqual(lowSpeedResult.location, "underground")
+        XCTAssertEqual(lowSpeedResult.layer, -1)
+        XCTAssertEqual(lowSpeedResult.service, "parking_aisle")
     }
 
     func testLookupRemainsCompatibleWithLegacySchemaWithoutWayGeomAndApproxHeading() throws {
@@ -1015,6 +1287,13 @@ final class SpeedConsumerTests: XCTestCase {
           zone_maxspeed TEXT,
           traffic_sign TEXT,
           approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -1039,6 +1318,7 @@ final class SpeedConsumerTests: XCTestCase {
           boundary TEXT,
           admin_level TEXT,
           residential TEXT,
+          parking TEXT,
           points_json TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
@@ -1050,24 +1330,24 @@ final class SpeedConsumerTests: XCTestCase {
           min_lon, max_lon,
           min_lat, max_lat
         );
-        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, '100', 'residential', 'Fixture Main Street', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '100', 'residential', 'Fixture Main Street', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.4050, 52.5200, 13.4060, 52.5210);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, '100', '[[52.5200,13.4050],[52.5210,13.4060]]');
-        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, '200', 'residential', 'Fixture Side Street', NULL, '50', NULL, NULL, NULL, NULL, 45.0, 13.4072, 52.5218, 13.4080, 52.5222);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '200', 'residential', 'Fixture Side Street', NULL, '50', NULL, NULL, NULL, NULL, 45.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.4072, 52.5218, 13.4080, 52.5222);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (2, 13.4072, 13.4080, 52.5218, 52.5222);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (2, '200', '[[52.5218,13.4072],[52.5222,13.4080]]');
-        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', NULL, NULL, 13.4040, 52.5190, 13.4090, 52.5240);
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', NULL, NULL, NULL, 13.4040, 52.5190, 13.4090, 52.5240);
         INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
-        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, 'w:410', 'Polygon', 'Fixture Residential Zone', NULL, NULL, NULL, 'yes', '[[13.4050,52.5200],[13.4062,52.5200],[13.4062,52.5212],[13.4050,52.5212],[13.4050,52.5200]]', 13.4050, 52.5200, 13.4062, 52.5212);
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'w:410', 'Polygon', 'Fixture Residential Zone', NULL, NULL, NULL, 'yes', NULL, '[[13.4050,52.5200],[13.4062,52.5200],[13.4062,52.5212],[13.4050,52.5212],[13.4050,52.5200]]', 13.4050, 52.5200, 13.4062, 52.5212);
         INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (2, 13.4050, 13.4062, 52.5200, 52.5212);
         """
@@ -1098,6 +1378,13 @@ final class SpeedConsumerTests: XCTestCase {
           zone_maxspeed TEXT,
           traffic_sign TEXT,
           approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -1114,15 +1401,15 @@ final class SpeedConsumerTests: XCTestCase {
           points_json TEXT NOT NULL
         );
 
-        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, 'A1', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 13.0000, 51.9999, 13.0100, 52.0001);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'A1', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'parking_aisle', 'yes', NULL, NULL, 'underground', '-1', NULL, 13.0000, 51.9999, 13.0100, 52.0001);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, 'A1', '[[52.0000,13.0000],[52.0000,13.0100]]');
 
-        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, 'B1', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 13.0049, 51.9950, 13.0051, 52.0050);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'B1', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 'main', NULL, 'yes', NULL, NULL, '1', NULL, 13.0049, 51.9950, 13.0051, 52.0050);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (2, 13.0049, 13.0051, 51.9950, 52.0050);
         INSERT INTO way_geom(row_id, way_id, points_json)
@@ -1270,10 +1557,19 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     private func bundledSpeedDBURL() -> URL? {
-        if let url = Bundle.main.url(forResource: "speeds_v3", withExtension: "sqlite") {
-            return url
+        let candidates: [(resource: String, ext: String)] = [
+            ("speeds_v3", "sqlite"),
+            ("DEU-latest.speeds_v3", "sqlite"),
+        ]
+        for candidate in candidates {
+            if let url = Bundle.main.url(forResource: candidate.resource, withExtension: candidate.ext) {
+                return url
+            }
+            if let url = Bundle(for: SpeedConsumerAppDelegate.self).url(forResource: candidate.resource, withExtension: candidate.ext) {
+                return url
+            }
         }
-        return Bundle(for: SpeedConsumerAppDelegate.self).url(forResource: "speeds_v3", withExtension: "sqlite")
+        return nil
     }
 
     private func readWaySpeedTags(dbURL: URL, wayID: String) throws -> (highway: String?, maxspeed: String, maxspeedType: String?, sourceMaxspeed: String?) {
@@ -1358,6 +1654,31 @@ final class SpeedConsumerTests: XCTestCase {
             wayIDs.append(String(cString: cText))
         }
         return wayIDs
+    }
+
+    private func readColumnNames(dbURL: URL, table: String) throws -> Set<String> {
+        var db: OpaquePointer?
+        let encodedPath = dbURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbURL.path
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 33, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed for \(dbURL.path)"])
+        }
+        defer { sqlite3_close(db) }
+
+        var stmt: OpaquePointer?
+        let sql = "PRAGMA table_info(\(table));"
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw NSError(domain: "SpeedConsumerTests", code: 34, userInfo: [NSLocalizedDescriptionKey: "prepare table_info failed for \(table)"])
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        var names: Set<String> = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let namePtr = sqlite3_column_text(stmt, 1) {
+                names.insert(String(cString: namePtr))
+            }
+        }
+        return names
     }
 
     private func isAutoTapSyncEnabled(env: [String: String]) -> Bool {

@@ -7,6 +7,14 @@ This repository has two separate workstreams:
 
 Do not mix these concerns when adding code, tests, or workflows.
 
+## Current overview (as of 2026-02-27)
+
+- `Track B` (consumer app) is now v3-only with hardened startup sync/recovery and token-gated release access paths.
+- `Track A` (paper/benchmark) now includes explicit city-context evaluation (`polycontainment`) in the on-device benchmark matrix.
+- Release safety was tightened with pre-publish v3 regression checks (`scripts/map/validate_v3_release_regressions.py`) and dedicated tests.
+- CI publishing pipelines were hardened for runner disk pressure and large-bundle handling.
+- Besides the Germany rolling pipeline, a separate Karlsruhe development bundle workflow is available.
+
 ## Shared prerequisites
 
 - `python3`
@@ -27,6 +35,9 @@ Goal: reproduce architecture evaluation, benchmark matrix, and paper outputs tha
   - `v2`: tile/segment assets (`mapdata/dist-v2/...`)
   - `v3`: single SQLite runtime DB (`mapdata/dist-v3/...`)
   - `v4`: SQLite + tile prefilter (`mapdata/dist-v4/...`)
+- Benchmark dimensions:
+  - maxspeed retrieval (`bbox`, `hybrid`, `polyline`)
+  - city-context containment (`polycontainment`) in on-device matrix runs
 - Dedicated benchmark app (kept stable for reproducibility):
   - `/Users/raphaelvolz/Github/youspeed.de/iphone/SpeedDBBenchSketch`
   - scheme in project: `SpeedDBBench`
@@ -69,7 +80,13 @@ python3 scripts/map/query_speed_limit_v4.py --db mapdata/dist-v4/germany/speeds_
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 ```
 
-6. Run on-device benchmark harness (paper replication app):
+6. Run release regression contract checks for v3 publishing safety:
+
+```bash
+python3 scripts/map/validate_v3_release_regressions.py --db mapdata/dist-v3/germany/speeds_v3.sqlite --probe-way-id 17721265 --expected-maxspeed-kmh 30 --probe-ref-way-id 1220097540 --expected-ref "L 564" --out-json mapdata/reports/germany-v3-release-regression.json
+```
+
+7. Run on-device benchmark harness (paper replication app):
 
 ```bash
 ./scripts/iphone/run_device_benchmark.sh /Users/raphaelvolz/Github/youspeed.de/iphone/SpeedDBBench.xcodeproj SpeedDBBench <DeviceUDID>
@@ -173,6 +190,8 @@ YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/v3_generate_and_release_latest.yml`
 - Manual publish helper:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/publish_v3_bundle_release.yml`
+- Manual Karlsruhe development bundle build/release:
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_v3_bundle_build_and_release.yml`
 - Geofabrik diff ingestion and delta analysis:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:
@@ -197,7 +216,25 @@ Check recent scheduled pipeline health:
 ```bash
 gh run list --workflow "Germany PBF Diff Update And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
 gh run list --workflow "Germany V3 Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
+gh run list --workflow "Karlsruhe V3 Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
 ```
+
+Quick project overview commands:
+
+```bash
+git status --short
+git log --oneline --decorate -n 20
+gh api rate_limit --jq '.resources.core'
+```
+
+Typical transient artifacts to avoid committing:
+
+- `docs/cv/tmp/*`
+- `docs/cv/*.aux`
+- `iphone/SpeedDBBenchSketch/*.sqlite-wal`
+- `iphone/SpeedDBBenchSketch/*.sqlite-shm`
+- `mapdata/bundles/**/*.part*`
+- timestamped device benchmark dumps under `paper/techreport/data/`
 
 ## Separation rule for contributors
 

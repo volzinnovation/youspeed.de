@@ -26,6 +26,8 @@ YouSpeed is intended to work without user authentication. Identity is device-bas
 
 The trust model therefore needs explicit safeguards: source scoring per device, temporal and spatial consistency checks, minimum independent confirmations, and conflict handling when local evidence disagrees with external data. A single device report should never overwrite shared truth. Promotion to global data should require corroboration by independent devices and consistency with map geometry and legal plausibility constraints.
 
+Runtime usage remains account-free. For OSM publication, uploads are attributable to individual contributors via an editor-mediated workflow: the app exports change files, and users upload with their own OSM account in JOSM/Merkaartor.
+
 ## Data Ownership and Feedback Loops
 YouSpeed should maintain a layered data model instead of one monolithic database.
 
@@ -45,6 +47,11 @@ YouSpeed needs deterministic merge rules, versioned records, conflict precedence
 Computer vision and speech recognition are independent technical domains and should be developed as separate subsystems, each with its own quality benchmarks, failure modes, and runtime budgets. Integration into the app should happen through a common observation contract so both channels produce comparable events for local storage, sync, and trust evaluation.
 
 That separation is important for engineering velocity. CV can evolve with model and camera pipeline improvements, while speech can evolve with language handling and noise robustness, without destabilizing core inference and sync logic.
+
+## Driving Corrections Strategy Reference
+The implementation strategy for driving-safe local corrections, local-vs-baseline priority rules, local data capture/storage, and multi-user sync/OSM feedback is specified in:
+
+- `paper/share/LOCAL_CORRECTIONS_STRATEGY.md`
 
 ## North-Star Outcome
 YouSpeed aims to become a trusted open-data ISA retrofit platform: offline-capable, low-latency, and continuously improving through a combination of external map baselines and validated community observations. In that end state, the product is useful day to day, the data pipeline is auditable, and the research claims remain reproducible. The result is not only an app, but a reference architecture for how ITS research, mobile engineering, and crowdsourced map intelligence can work together responsibly.
