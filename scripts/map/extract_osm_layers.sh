@@ -44,6 +44,10 @@ osmium tags-filter \
   r/admin_level=8 \
   r/admin_level=9 \
   w/boundary=administrative \
+  r/residential \
+  w/residential \
+  r/landuse=residential \
+  w/landuse=residential \
   n/place=city \
   n/place=town \
   n/place=village \

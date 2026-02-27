@@ -181,6 +181,7 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.way_id,
           w.highway,
           w.street_name,
+          w.ref,
           w.maxspeed,
           w.maxspeed_type,
           w.source_maxspeed,
@@ -248,6 +249,7 @@ def _build_insert_payload(
         "way_id": way_id,
         "highway": tags.get("highway", existing["highway"] if existing is not None else None),
         "street_name": tags.get("name", existing["street_name"] if existing is not None else None),
+        "ref": tags.get("ref", existing["ref"] if existing is not None else None),
         "maxspeed": tags.get("maxspeed", existing["maxspeed"] if existing is not None else None),
         "maxspeed_type": tags.get("maxspeed:type", existing["maxspeed_type"] if existing is not None else None),
         "source_maxspeed": tags.get("source:maxspeed", existing["source_maxspeed"] if existing is not None else None),
@@ -293,13 +295,14 @@ def _build_sql_patch(
         way_lit = _sql_literal(ins["way_id"])
         lines.append(
             "INSERT INTO ways("
-            "way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, "
+            "way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
             "zone_maxspeed, traffic_sign, approx_heading_deg, "
             "min_lon, min_lat, max_lon, max_lat"
             ") VALUES("
             f"{way_lit}, "
             f"{_sql_literal(ins['highway'])}, "
             f"{_sql_literal(ins['street_name'])}, "
+            f"{_sql_literal(ins['ref'])}, "
             f"{_sql_literal(ins['maxspeed'])}, "
             f"{_sql_literal(ins['maxspeed_type'])}, "
             f"{_sql_literal(ins['source_maxspeed'])}, "

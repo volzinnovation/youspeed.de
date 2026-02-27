@@ -9,6 +9,7 @@ final class V3SpeedLimitService {
         let streetName: String?
         let speedKmh: Int?
         let distanceM: Double
+        let score: Double
     }
 
     private struct CityBoundaryCandidate {
@@ -42,6 +43,13 @@ final class V3SpeedLimitService {
         let resolveMs: Double
     }
 
+    private struct ResidentialContext {
+        let insideCity: Bool?
+        let candidatePolygons: Int
+        let containingPolygons: Int
+        let resolveMs: Double
+    }
+
     private static let placeRank: [String: Int] = [
         "city": 0,
         "town": 1,
@@ -49,6 +57,12 @@ final class V3SpeedLimitService {
         "hamlet": 3,
     ]
     private static let nearestPlaceFallbackMaxDistanceM: Double = 5_000
+    private static let headingWeightMPerDeg: Double = 1.8
+    private static let headingMinSpeedKmh: Double = 8.0
+    private static let headingMaxAccuracyDeg: Double = 45.0
+    private static let preferredWayScoreSlackM: Double = 12.0
+    private static let preferredWayDistanceMultiplier: Double = 1.6
+    private static let preferredWayDistanceFloorM: Double = 70.0
 
     init(dbPath: String) {
         self.dbPath = dbPath
@@ -59,7 +73,11 @@ final class V3SpeedLimitService {
         lon: Double,
         radiusM: Double = 50.0,
         maxCandidates: Int = 256,
-        preferredWayID: String? = nil
+        preferredWayID: String? = nil,
+        headingDeg: Double? = nil,
+        headingAccuracyDeg: Double? = nil,
+        speedKmh: Double? = nil,
+        horizontalAccuracyM: Double? = nil
     ) throws -> SpeedLimitResult {
         let t0 = DispatchTime.now().uptimeNanoseconds
 
@@ -72,13 +90,21 @@ final class V3SpeedLimitService {
         defer { sqlite3_close(db) }
 
         let hasStreetName = columnExists(db: db, table: "ways", column: "street_name")
+        let hasStreetRef = columnExists(db: db, table: "ways", column: "ref")
+        let hasApproxHeading = columnExists(db: db, table: "ways", column: "approx_heading_deg")
+        let hasWayGeom = tableExists(db: db, name: "way_geom")
         let streetSelect = hasStreetName ? "w.street_name" : "NULL"
+        let refSelect = hasStreetRef ? "w.ref" : "NULL"
+        let headingSelect = hasApproxHeading ? "w.approx_heading_deg" : "NULL"
+        let wayGeomJoin = hasWayGeom ? "LEFT JOIN way_geom g ON g.row_id = w.row_id" : ""
+        let pointsSelect = hasWayGeom ? "g.points_json" : "NULL"
         let bounds = queryBounds(lat: lat, lon: lon, radiusM: radiusM)
         let sql = """
-        SELECT w.way_id, w.highway, \(streetSelect) AS street_name, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
-               w.min_lon, w.min_lat, w.max_lon, w.max_lat
+        SELECT w.way_id, w.highway, \(streetSelect) AS street_name, \(refSelect) AS ref, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
+               \(headingSelect) AS approx_heading_deg, w.min_lon, w.min_lat, w.max_lon, w.max_lat, \(pointsSelect) AS points_json
         FROM ways_rtree r
         JOIN ways w ON w.row_id = r.row_id
+        \(wayGeomJoin)
         WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
         LIMIT ?5
@@ -96,9 +122,14 @@ final class V3SpeedLimitService {
         sqlite3_bind_double(stmt, 4, bounds.minLat)
         sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
 
-        // Strategy 1: resolve by closest way candidate in the query perimeter.
-        // Strategy 2: if previous way_id is still in candidate set, prefer it over the closest candidate.
-        var closestCandidate: WayCandidate?
+        let resolvedHeading = normalizedHeadingDegrees(headingDeg)
+        let headingForScoring = shouldUseHeading(
+            headingDeg: resolvedHeading,
+            headingAccuracyDeg: headingAccuracyDeg,
+            speedKmh: speedKmh
+        ) ? resolvedHeading : nil
+
+        var bestCandidate: WayCandidate?
         var preferredCandidate: WayCandidate?
         var candidateCount = 0
         var speedCandidateCount = 0
@@ -116,21 +147,39 @@ final class V3SpeedLimitService {
 
             let wayID = cStringOptional(sqlite3_column_text(stmt, 0))
             let highway = cStringOptional(sqlite3_column_text(stmt, 1))
-            let streetName = cStringOptional(sqlite3_column_text(stmt, 2))
-            let maxspeedRaw = cStringOptional(sqlite3_column_text(stmt, 3))
-            let maxspeedType = cStringOptional(sqlite3_column_text(stmt, 4))
-            let sourceMaxspeed = cStringOptional(sqlite3_column_text(stmt, 5))
-            let minLon = sqlite3_column_double(stmt, 6)
-            let minLat = sqlite3_column_double(stmt, 7)
-            let maxLon = sqlite3_column_double(stmt, 8)
-            let maxLat = sqlite3_column_double(stmt, 9)
+            let rawStreetName = cStringOptional(sqlite3_column_text(stmt, 2))
+            let streetRef = cStringOptional(sqlite3_column_text(stmt, 3))
+            let streetName = Self.formattedStreetDisplay(streetName: rawStreetName, ref: streetRef)
+            let maxspeedRaw = cStringOptional(sqlite3_column_text(stmt, 4))
+            let maxspeedType = cStringOptional(sqlite3_column_text(stmt, 5))
+            let sourceMaxspeed = cStringOptional(sqlite3_column_text(stmt, 6))
+            let approxHeadingDeg = sqlite3_column_type(stmt, 7) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 7)
+            let minLon = sqlite3_column_double(stmt, 8)
+            let minLat = sqlite3_column_double(stmt, 9)
+            let maxLon = sqlite3_column_double(stmt, 10)
+            let maxLat = sqlite3_column_double(stmt, 11)
+            let points = parseWayPoints(cStringOptional(sqlite3_column_text(stmt, 12)))
 
             candidateCount += 1
-            let distance = distanceToBBoxM(lat: lat, lon: lon, minLon: minLon, minLat: minLat, maxLon: maxLon, maxLat: maxLat)
+            let bboxDistance = distanceToBBoxM(
+                lat: lat,
+                lon: lon,
+                minLon: minLon,
+                minLat: minLat,
+                maxLon: maxLon,
+                maxLat: maxLat
+            )
+            let polylineDistance = polylineDistanceM(lat: lat, lon: lon, points: points)
+            let distance = polylineDistance ?? bboxDistance
             if distance < nearestCandidateDistance {
                 nearestCandidateDistance = distance
             }
-            let parsed = Self.deriveSpeedLimitKmh(maxspeed: maxspeedRaw, maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed, highway: highway)
+            let parsed = Self.deriveSpeedLimitKmh(
+                maxspeed: maxspeedRaw,
+                maxspeedType: maxspeedType,
+                sourceMaxspeed: sourceMaxspeed,
+                highway: highway
+            )
             if parsed != nil {
                 speedCandidateCount += 1
                 if distance < nearestSpeedCandidateDistance {
@@ -138,32 +187,73 @@ final class V3SpeedLimitService {
                 }
             }
 
-            let candidate = WayCandidate(wayID: wayID, streetName: streetName, speedKmh: parsed, distanceM: distance)
-            if let closestCandidate, distance >= closestCandidate.distanceM {
-                // Keep existing closest candidate.
+            // TODO(v5): Replace coarse per-way heading with segment-level heading + topology transitions.
+            let headingPenalty: Double
+            if let headingForScoring, let approxHeadingDeg {
+                headingPenalty = headingMismatchDeg(headingDeg: headingForScoring, approxHeadingDeg: approxHeadingDeg) * Self.headingWeightMPerDeg
             } else {
-                closestCandidate = candidate
+                headingPenalty = 0.0
             }
-            if let preferredWayID, wayID == preferredWayID,
-               let preferredCandidate,
-               distance >= preferredCandidate.distanceM {
-                // Keep existing preferred candidate.
-            } else if let preferredWayID, wayID == preferredWayID {
-                preferredCandidate = candidate
+            let score = distance + headingPenalty
+
+            let candidate = WayCandidate(
+                wayID: wayID,
+                streetName: streetName,
+                speedKmh: parsed,
+                distanceM: distance,
+                score: score
+            )
+            if let currentBest = bestCandidate {
+                if isBetterCandidate(candidate, than: currentBest) {
+                    bestCandidate = candidate
+                }
+            } else {
+                bestCandidate = candidate
+            }
+            if let preferredWayID, wayID == preferredWayID {
+                if let existingPreferred = preferredCandidate {
+                    if isBetterCandidate(candidate, than: existingPreferred) {
+                        preferredCandidate = candidate
+                    }
+                } else {
+                    preferredCandidate = candidate
+                }
             }
         }
 
+        let selected: WayCandidate?
+        if let bestCandidate, let preferredCandidate {
+            let accuracyBuffer = max(horizontalAccuracyM ?? 0.0, 0.0)
+            let maxPreferredDistance = max(
+                radiusM * Self.preferredWayDistanceMultiplier,
+                Self.preferredWayDistanceFloorM
+            ) + accuracyBuffer
+            let keepPreferred = preferredCandidate.distanceM <= maxPreferredDistance &&
+                preferredCandidate.score <= bestCandidate.score + Self.preferredWayScoreSlackM
+            if keepPreferred {
+                selected = preferredCandidate
+            } else {
+                selected = bestCandidate
+            }
+        } else {
+            selected = preferredCandidate ?? bestCandidate
+        }
+
         let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
+        let residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
 
         let t1 = DispatchTime.now().uptimeNanoseconds
         let elapsedMs = Double(t1 - t0) / 1_000_000.0
-        let selected = preferredCandidate ?? closestCandidate
 
         let effectiveSpeed: Int?
         if let matchedSpeed = selected?.speedKmh {
             effectiveSpeed = matchedSpeed
-        } else if selected != nil, let insideCity = cityContext.insideCity {
+        } else if selected != nil, let insideCity = residentialContext.insideCity {
+            // Keep inherited defaults only when a way match exists.
             effectiveSpeed = insideCity ? 50 : 100
+        } else if residentialContext.insideCity == true {
+            // Residential polygon containment can still provide a safe inner-city fallback.
+            effectiveSpeed = 50
         } else {
             effectiveSpeed = nil
         }
@@ -173,9 +263,9 @@ final class V3SpeedLimitService {
             wayID: selected?.wayID,
             streetName: selected?.streetName,
             cityName: cityContext.cityName,
-            insideCity: cityContext.insideCity,
+            insideCity: residentialContext.insideCity,
             citySource: cityContext.citySource,
-            cityResolveMs: cityContext.resolveMs,
+            cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
             cityCandidateBoundaries: cityContext.candidateBoundaries,
             cityContainingBoundaries: cityContext.containingBoundaries,
             cityPlaceCandidates: cityContext.placeCandidates,
@@ -225,6 +315,24 @@ final class V3SpeedLimitService {
         return value
     }
 
+    static func formattedStreetDisplay(streetName: String?, ref: String?) -> String? {
+        let normalizedStreet = streetName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedRef = ref?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasStreet = (normalizedStreet?.isEmpty == false)
+        let hasRef = (normalizedRef?.isEmpty == false)
+
+        if hasStreet, hasRef {
+            return "\(normalizedStreet!) (\(normalizedRef!))"
+        }
+        if hasStreet {
+            return normalizedStreet
+        }
+        if hasRef {
+            return normalizedRef
+        }
+        return nil
+    }
+
     private func queryBounds(lat: Double, lon: Double, radiusM: Double) -> (minLon: Double, minLat: Double, maxLon: Double, maxLat: Double) {
         let degLat = radiusM / 111_132.0
         let cosLat = max(0.173648, abs(cos(lat * .pi / 180.0)))
@@ -236,6 +344,133 @@ final class V3SpeedLimitService {
         let clampedLon = min(max(lon, minLon), maxLon)
         let clampedLat = min(max(lat, minLat), maxLat)
         return haversineM(lat1: lat, lon1: lon, lat2: clampedLat, lon2: clampedLon)
+    }
+
+    private func normalizedHeadingDegrees(_ headingDeg: Double?) -> Double? {
+        guard var headingDeg, headingDeg.isFinite else {
+            return nil
+        }
+        headingDeg.formTruncatingRemainder(dividingBy: 360.0)
+        if headingDeg < 0.0 {
+            headingDeg += 360.0
+        }
+        return headingDeg
+    }
+
+    private func shouldUseHeading(
+        headingDeg: Double?,
+        headingAccuracyDeg: Double?,
+        speedKmh: Double?
+    ) -> Bool {
+        guard headingDeg != nil else {
+            return false
+        }
+        if let speedKmh, speedKmh.isFinite, speedKmh < Self.headingMinSpeedKmh {
+            return false
+        }
+        if let headingAccuracyDeg, headingAccuracyDeg.isFinite,
+           headingAccuracyDeg >= 0.0, headingAccuracyDeg > Self.headingMaxAccuracyDeg {
+            return false
+        }
+        return true
+    }
+
+    private func headingMismatchDeg(headingDeg: Double, approxHeadingDeg: Double) -> Double {
+        var raw = abs((headingDeg - approxHeadingDeg).truncatingRemainder(dividingBy: 360.0))
+        raw = min(raw, 360.0 - raw)
+        return min(raw, abs(180.0 - raw))
+    }
+
+    private func parseWayPoints(_ raw: String?) -> [(Double, Double)] {
+        guard let raw, let data = raw.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let arr = json as? [Any] else {
+            return []
+        }
+
+        var out: [(Double, Double)] = []
+        out.reserveCapacity(arr.count)
+        for element in arr {
+            guard let pair = element as? [Any], pair.count >= 2 else {
+                continue
+            }
+            guard let lat = pair[0] as? Double,
+                  let lon = pair[1] as? Double else {
+                continue
+            }
+            out.append((lat, lon))
+        }
+        return out
+    }
+
+    private func polylineDistanceM(lat: Double, lon: Double, points: [(Double, Double)]) -> Double? {
+        if points.isEmpty {
+            return nil
+        }
+        if points.count == 1 {
+            let point = points[0]
+            return haversineM(lat1: lat, lon1: lon, lat2: point.0, lon2: point.1)
+        }
+        var best = Double.infinity
+        for i in 0..<(points.count - 1) {
+            let p1 = points[i]
+            let p2 = points[i + 1]
+            let distance = pointToSegmentDistanceM(
+                lat: lat,
+                lon: lon,
+                lat1: p1.0,
+                lon1: p1.1,
+                lat2: p2.0,
+                lon2: p2.1
+            )
+            if distance < best {
+                best = distance
+            }
+        }
+        return best.isFinite ? best : nil
+    }
+
+    private func pointToSegmentDistanceM(
+        lat: Double,
+        lon: Double,
+        lat1: Double,
+        lon1: Double,
+        lat2: Double,
+        lon2: Double
+    ) -> Double {
+        let origin = toXYMeters(lat: lat, lon: lon, originLat: lat, originLon: lon)
+        let start = toXYMeters(lat: lat1, lon: lon1, originLat: lat, originLon: lon)
+        let end = toXYMeters(lat: lat2, lon: lon2, originLat: lat, originLon: lon)
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+
+        if dx == 0.0 && dy == 0.0 {
+            return hypot(origin.x - start.x, origin.y - start.y)
+        }
+        let tNumerator = (origin.x - start.x) * dx + (origin.y - start.y) * dy
+        let tDenominator = (dx * dx) + (dy * dy)
+        let t = min(max(tNumerator / tDenominator, 0.0), 1.0)
+        let projectionX = start.x + (t * dx)
+        let projectionY = start.y + (t * dy)
+        return hypot(origin.x - projectionX, origin.y - projectionY)
+    }
+
+    private func toXYMeters(lat: Double, lon: Double, originLat: Double, originLon: Double) -> (x: Double, y: Double) {
+        let metersPerDegLat = 111_132.0
+        let metersPerDegLon = 111_320.0 * cos(originLat * .pi / 180.0)
+        let x = (lon - originLon) * metersPerDegLon
+        let y = (lat - originLat) * metersPerDegLat
+        return (x, y)
+    }
+
+    private func isBetterCandidate(_ lhs: WayCandidate, than rhs: WayCandidate) -> Bool {
+        if lhs.score != rhs.score {
+            return lhs.score < rhs.score
+        }
+        if lhs.distanceM != rhs.distanceM {
+            return lhs.distanceM < rhs.distanceM
+        }
+        return (lhs.wayID ?? "~") < (rhs.wayID ?? "~")
     }
 
     private func haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
@@ -284,10 +519,8 @@ final class V3SpeedLimitService {
     private func resolveCityContext(db: OpaquePointer, lat: Double, lon: Double) -> CityContext {
         let startNs = DispatchTime.now().uptimeNanoseconds
 
-        // Consumer app city naming is intentionally sourced from areas.name only.
-        // We ignore optional city_* polygon tables to keep behavior deterministic
-        // across bundled and synced datasets.
-        if tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree") {
+        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
+        if hasAreasTables {
             let areaResult = resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
             return CityContext(
@@ -301,6 +534,33 @@ final class V3SpeedLimitService {
             )
         }
 
+        // Compatibility fallback for older datasets that still expose dedicated
+        // city boundary polygons instead of the consolidated areas table.
+        let hasBoundaryTables = tableExists(db: db, name: "city_boundary") &&
+            tableExists(db: db, name: "city_boundary_rtree") &&
+            tableExists(db: db, name: "city_ring")
+        if hasBoundaryTables {
+            let hasPlaceTables = tableExists(db: db, name: "city_place") &&
+                tableExists(db: db, name: "city_place_rtree")
+            if let polygonResult = resolveCityContextWithPolygons(
+                db: db,
+                lat: lat,
+                lon: lon,
+                hasPlaceTables: hasPlaceTables
+            ) {
+                let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+                return CityContext(
+                    insideCity: polygonResult.insideCity,
+                    cityName: polygonResult.cityName,
+                    citySource: polygonResult.citySource,
+                    candidateBoundaries: polygonResult.candidateBoundaries,
+                    containingBoundaries: polygonResult.containingBoundaries,
+                    placeCandidates: polygonResult.placeCandidates,
+                    resolveMs: elapsed
+                )
+            }
+        }
+
         let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
         return CityContext(
             insideCity: nil,
@@ -309,6 +569,63 @@ final class V3SpeedLimitService {
             candidateBoundaries: 0,
             containingBoundaries: 0,
             placeCandidates: 0,
+            resolveMs: elapsed
+        )
+    }
+
+    private func resolveResidentialContext(db: OpaquePointer, lat: Double, lon: Double, limitRows: Int = 1024) -> ResidentialContext {
+        let startNs = DispatchTime.now().uptimeNanoseconds
+
+        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
+        let hasResidentialColumn = columnExists(db: db, table: "areas", column: "residential")
+        let hasPointsColumn = columnExists(db: db, table: "areas", column: "points_json")
+        guard hasAreasTables, hasResidentialColumn, hasPointsColumn else {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+            return ResidentialContext(insideCity: nil, candidatePolygons: 0, containingPolygons: 0, resolveMs: elapsed)
+        }
+
+        let sql = """
+        SELECT a.residential, a.points_json
+        FROM areas_rtree r
+        JOIN areas a ON a.row_id = r.row_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+          AND a.residential IS NOT NULL
+          AND trim(a.residential) <> ''
+        LIMIT ?5
+        """
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+            return ResidentialContext(insideCity: nil, candidatePolygons: 0, containingPolygons: 0, resolveMs: elapsed)
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        sqlite3_bind_double(stmt, 1, lon)
+        sqlite3_bind_double(stmt, 2, lon)
+        sqlite3_bind_double(stmt, 3, lat)
+        sqlite3_bind_double(stmt, 4, lat)
+        sqlite3_bind_int64(stmt, 5, Int64(limitRows))
+
+        var candidates = 0
+        var containing = 0
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let pointsRaw = cStringOptional(sqlite3_column_text(stmt, 1)),
+                  let ring = parseRingPoints(pointsRaw) else {
+                continue
+            }
+            candidates += 1
+            if pointInRing(lon: lon, lat: lat, ring: ring) {
+                containing += 1
+            }
+        }
+
+        let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+        return ResidentialContext(
+            insideCity: containing > 0,
+            candidatePolygons: candidates,
+            containingPolygons: containing,
             resolveMs: elapsed
         )
     }

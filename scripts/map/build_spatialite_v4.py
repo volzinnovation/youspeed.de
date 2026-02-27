@@ -415,6 +415,7 @@ def main() -> int:
           way_id TEXT NOT NULL UNIQUE,
           highway TEXT,
           street_name TEXT,
+          ref TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
@@ -453,6 +454,8 @@ def main() -> int:
           place TEXT,
           boundary TEXT,
           admin_level TEXT,
+          residential TEXT,
+          points_json TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -575,6 +578,7 @@ def main() -> int:
                     way_id,
                     meta.get("highway"),
                     meta.get("street_name"),
+                    meta.get("ref"),
                     meta.get("maxspeed"),
                     meta.get("maxspeed_type"),
                     meta.get("source_maxspeed"),
@@ -609,10 +613,10 @@ def main() -> int:
                 conn.executemany(
                     """
                     INSERT INTO ways(
-                      row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
+                      row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
                       zone_maxspeed, traffic_sign, approx_heading_deg,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -641,10 +645,10 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO ways(
-              row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed,
+              row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
               zone_maxspeed, traffic_sign, approx_heading_deg,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )
@@ -674,6 +678,8 @@ def main() -> int:
     area_rows: List[Tuple] = []
     area_rtree_rows: List[Tuple] = []
     for i, area in enumerate(areas, start=1):
+        points = area.get("points")
+        points_json = json.dumps(points, separators=(",", ":")) if isinstance(points, list) and points else None
         area_rows.append(
             (
                 i,
@@ -683,6 +689,8 @@ def main() -> int:
                 area.get("place"),
                 area.get("boundary"),
                 area.get("admin_level"),
+                area.get("residential"),
+                points_json,
                 float(area["min_lon"]),
                 float(area["min_lat"]),
                 float(area["max_lon"]),
@@ -702,9 +710,9 @@ def main() -> int:
             conn.executemany(
                 """
                 INSERT INTO areas(
-                  row_id, area_id, geometry_type, name, place, boundary, admin_level,
+                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 area_rows,
             )
@@ -720,9 +728,9 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO areas(
-              row_id, area_id, geometry_type, name, place, boundary, admin_level,
+              row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             area_rows,
         )

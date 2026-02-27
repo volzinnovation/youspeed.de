@@ -117,6 +117,10 @@ def _extract_way_coords(way: osmium.osm.Way) -> List[Tuple[float, float]]:
     return coords
 
 
+def _is_closed_ring(coords: List[Tuple[float, float]]) -> bool:
+    return len(coords) >= 4 and coords[0] == coords[-1]
+
+
 class ArtifactHandler(osmium.SimpleHandler):
     def __init__(
         self,
@@ -141,11 +145,15 @@ class ArtifactHandler(osmium.SimpleHandler):
         highway = tags.get("highway")
         is_car_drivable = highway in DRIVABLE_HIGHWAYS_CAR
         has_speed_tags = any(k in tags for k in SPEED_TAG_KEYS)
+        residential_value = tags.get("residential")
+        if residential_value is None and tags.get("landuse") == "residential":
+            residential_value = "landuse"
+        is_residential_polygon = residential_value is not None
 
         coords: List[Tuple[float, float]] = []
         bbox: Tuple[float, float, float, float] | None = None
 
-        if is_car_drivable or has_speed_tags or tags.get("boundary") == "administrative":
+        if is_car_drivable or has_speed_tags or tags.get("boundary") == "administrative" or is_residential_polygon:
             coords = _extract_way_coords(way)
             bbox = _bbox_from_coords(coords)
 
@@ -158,6 +166,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "way_id": way_id,
                 "highway": highway,
                 "street_name": tags.get("name"),
+                "ref": tags.get("ref"),
                 "maxspeed": tags.get("maxspeed"),
                 "maxspeed_type": tags.get("maxspeed:type"),
                 "source_maxspeed": tags.get("source:maxspeed"),
@@ -197,6 +206,10 @@ class ArtifactHandler(osmium.SimpleHandler):
 
         if tags.get("boundary") == "administrative" and tags.get("admin_level") in {"8", "9"} and bbox is not None:
             min_lon, min_lat, max_lon, max_lat = bbox
+            area_points = None
+            if _is_closed_ring(coords):
+                sampled_area = _downsample_coords(coords, self.max_geom_points)
+                area_points = [[lon, lat] for lon, lat in sampled_area]
             self.areas.append(
                 {
                     "area_id": f"w:{way.id}",
@@ -205,6 +218,28 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "place": tags.get("place"),
                     "boundary": tags.get("boundary"),
                     "admin_level": tags.get("admin_level"),
+                    "residential": residential_value,
+                    "points": area_points,
+                    "min_lon": min_lon,
+                    "min_lat": min_lat,
+                    "max_lon": max_lon,
+                    "max_lat": max_lat,
+                }
+            )
+
+        if is_residential_polygon and bbox is not None and _is_closed_ring(coords):
+            min_lon, min_lat, max_lon, max_lat = bbox
+            sampled_area = _downsample_coords(coords, self.max_geom_points)
+            self.areas.append(
+                {
+                    "area_id": f"w:{way.id}",
+                    "geometry_type": "Polygon",
+                    "name": tags.get("name"),
+                    "place": tags.get("place"),
+                    "boundary": tags.get("boundary"),
+                    "admin_level": tags.get("admin_level"),
+                    "residential": residential_value,
+                    "points": [[lon, lat] for lon, lat in sampled_area],
                     "min_lon": min_lon,
                     "min_lat": min_lat,
                     "max_lon": max_lon,
@@ -229,6 +264,8 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "place": place,
                 "boundary": node.tags.get("boundary"),
                 "admin_level": node.tags.get("admin_level"),
+                "residential": node.tags.get("residential"),
+                "points": None,
                 "min_lon": lon,
                 "min_lat": lat,
                 "max_lon": lon,

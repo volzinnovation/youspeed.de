@@ -28,6 +28,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--probe-way-id", default="17721265", help="Way ID used as query probe anchor")
     parser.add_argument("--expected-maxspeed-kmh", type=int, default=30, help="Expected explicit maxspeed at probe")
     parser.add_argument(
+        "--probe-ref-way-id",
+        default="",
+        help="Optional second probe way ID used to validate exact ref tag value",
+    )
+    parser.add_argument(
+        "--expected-ref",
+        default="",
+        help="Expected ref value at --probe-ref-way-id (exact string after trim)",
+    )
+    parser.add_argument(
         "--query-script",
         default="scripts/map/query_speed_limit_v3.py",
         help="Path to v3 query script",
@@ -69,8 +79,14 @@ def inspect_schema_contract(db_path: Path) -> Dict:
 
         if "street_name" not in way_columns:
             raise RuntimeError("schema contract failed: ways.street_name column missing")
+        if "ref" not in way_columns:
+            raise RuntimeError("schema contract failed: ways.ref column missing")
         if "name" not in area_columns:
             raise RuntimeError("schema contract failed: areas.name column missing")
+        if "residential" not in area_columns:
+            raise RuntimeError("schema contract failed: areas.residential column missing")
+        if "points_json" not in area_columns:
+            raise RuntimeError("schema contract failed: areas.points_json column missing")
 
         ways_with_street_name = int(
             conn.execute(
@@ -92,6 +108,28 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 """
             ).fetchone()[0]
         )
+        ways_with_nonempty_ref = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM ways
+                WHERE ref IS NOT NULL
+                  AND trim(ref) <> ''
+                """
+            ).fetchone()[0]
+        )
+        residential_areas_with_polygons = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM areas
+                WHERE residential IS NOT NULL
+                  AND trim(residential) <> ''
+                  AND points_json IS NOT NULL
+                  AND trim(points_json) <> ''
+                """
+            ).fetchone()[0]
+        )
     finally:
         conn.close()
 
@@ -99,12 +137,21 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         raise RuntimeError("schema/data contract failed: ways.street_name has no non-empty values")
     if areas_with_name <= 0:
         raise RuntimeError("schema/data contract failed: areas.name has no non-empty values")
+    if ways_with_nonempty_ref <= 0:
+        raise RuntimeError("schema/data contract failed: ways.ref has no non-empty values")
+    if residential_areas_with_polygons <= 0:
+        raise RuntimeError("schema/data contract failed: areas.residential has no polygon rows")
 
     return {
         "ways_has_street_name_column": True,
+        "ways_has_ref_column": True,
         "areas_has_name_column": True,
+        "areas_has_residential_column": True,
+        "areas_has_points_json_column": True,
         "ways_with_nonempty_street_name": ways_with_street_name,
+        "ways_with_nonempty_ref": ways_with_nonempty_ref,
         "areas_with_nonempty_name": areas_with_name,
+        "residential_areas_with_polygons": residential_areas_with_polygons,
     }
 
 
@@ -132,6 +179,27 @@ def load_probe(db_path: Path, way_id: str) -> Tuple[float, float, sqlite3.Row]:
     lat = float(row["probe_lat"])
     lon = float(row["probe_lon"])
     return lat, lon, row
+
+
+def load_way_ref(db_path: Path, way_id: str) -> str | None:
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            """
+            SELECT ref
+            FROM ways
+            WHERE way_id = ?
+            LIMIT 1
+            """,
+            (way_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        raise RuntimeError(f"ref probe way_id={way_id} not found")
+    return row["ref"]
 
 
 def run_query(
@@ -178,6 +246,14 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
 
     if summary.get("has_street_name_column") is not True:
         raise RuntimeError(f"has_street_name_column is not true for mode={mode}")
+    if summary.get("has_ref_column") is not True:
+        raise RuntimeError(f"has_ref_column is not true for mode={mode}")
+    if summary.get("residential_mode") != "polygon_containment":
+        raise RuntimeError(f"residential_mode is not polygon_containment for mode={mode}")
+    if "residential_candidate_polygons" not in summary:
+        raise RuntimeError(f"summary.residential_candidate_polygons missing for mode={mode}")
+    if "residential_containing_polygons" not in summary:
+        raise RuntimeError(f"summary.residential_containing_polygons missing for mode={mode}")
 
     for required in (
         "city_name",
@@ -198,6 +274,8 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
         raise RuntimeError(f"top_candidates[0] not an object for mode={mode}")
     if "street_name" not in first:
         raise RuntimeError(f"top_candidates[0].street_name missing for mode={mode}")
+    if "ref" not in first:
+        raise RuntimeError(f"top_candidates[0].ref missing for mode={mode}")
 
     timing = payload.get("timing_ms")
     if not isinstance(timing, dict):
@@ -237,6 +315,30 @@ def main() -> int:
     probe_street_name = probe["street_name"]
     if not isinstance(probe_street_name, str) or not probe_street_name.strip():
         return fail(f"probe way_id={args.probe_way_id} has empty street_name")
+
+    probe_ref_way_id = str(args.probe_ref_way_id or "").strip()
+    expected_ref = str(args.expected_ref or "").strip()
+    ref_probe: Dict[str, str | None] | None = None
+    if probe_ref_way_id or expected_ref:
+        if not probe_ref_way_id:
+            return fail("--probe-ref-way-id is required when --expected-ref is provided")
+        if not expected_ref:
+            return fail("--expected-ref is required when --probe-ref-way-id is provided")
+        try:
+            ref_value = load_way_ref(db_path, probe_ref_way_id)
+        except Exception as exc:
+            return fail(str(exc))
+        normalized_ref = ref_value.strip() if isinstance(ref_value, str) else ""
+        if normalized_ref != expected_ref:
+            return fail(
+                "ref mismatch at probe "
+                f"way_id={probe_ref_way_id}: expected={expected_ref!r}, got={ref_value!r}"
+            )
+        ref_probe = {
+            "probe_ref_way_id": probe_ref_way_id,
+            "expected_ref": expected_ref,
+            "actual_ref": ref_value,
+        }
 
     report: Dict[str, Dict[str, float | int | str | None]] = {}
     modes = ("bbox", "hybrid", "polyline")
@@ -293,6 +395,8 @@ def main() -> int:
         "schema_contract": schema_contract,
         "paper_benchmark_smoke": report,
     }
+    if ref_probe is not None:
+        payload["ref_probe"] = ref_probe
 
     if args.out_json:
         out = Path(args.out_json)

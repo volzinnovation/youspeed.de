@@ -113,6 +113,8 @@ jobs:
             --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
             --probe-way-id "17721265" \
             --expected-maxspeed-kmh "30" \
+            --probe-ref-way-id "1220097540" \
+            --expected-ref "L 564" \
             --out-json "mapdata/reports/karlsruhe-v3-release-regression.json"
 
       - name: Publish Bundle Manifest

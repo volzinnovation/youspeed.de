@@ -123,16 +123,64 @@ def point_in_bbox(lat: float, lon: float, row: dict) -> bool:
     return row["min_lat"] <= lat <= row["max_lat"] and row["min_lon"] <= lon <= row["max_lon"]
 
 
-def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict]) -> bool:
+def _point_on_segment(lon: float, lat: float, x1: float, y1: float, x2: float, y2: float, eps: float = 1e-12) -> bool:
+    cross = (lon - x1) * (y2 - y1) - (lat - y1) * (x2 - x1)
+    if abs(cross) > eps:
+        return False
+    dot = (lon - x1) * (x2 - x1) + (lat - y1) * (y2 - y1)
+    if dot < -eps:
+        return False
+    sq_len = (x2 - x1) ** 2 + (y2 - y1) ** 2
+    if dot - sq_len > eps:
+        return False
+    return True
+
+
+def _point_in_ring(lon: float, lat: float, ring: List[List[float]]) -> bool:
+    if len(ring) < 4:
+        return False
+    inside = False
+    for i in range(len(ring) - 1):
+        x1, y1 = float(ring[i][0]), float(ring[i][1])
+        x2, y2 = float(ring[i + 1][0]), float(ring[i + 1][1])
+        if _point_on_segment(lon, lat, x1, y1, x2, y2):
+            return True
+        intersects = ((y1 > lat) != (y2 > lat)) and (
+            lon < (x2 - x1) * (lat - y1) / ((y2 - y1) if (y2 - y1) != 0 else 1e-30) + x1
+        )
+        if intersects:
+            inside = not inside
+    return inside
+
+
+def _resolve_residential_context(lat: float, lon: float, area_candidates: Iterable[dict], enabled: bool) -> Dict[str, object]:
+    if not enabled:
+        return {
+            "inside_city": False,
+            "candidate_polygons": 0,
+            "containing_polygons": 0,
+            "residential_mode": "unavailable",
+        }
+
+    candidate_polygons = 0
+    containing_polygons = 0
     for area in area_candidates:
-        if not point_in_bbox(lat, lon, area):
+        residential = area.get("residential")
+        if not isinstance(residential, str) or not residential.strip():
             continue
-        place = area.get("place")
-        if place in PLACE_VALUES:
-            return True
-        if area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}:
-            return True
-    return False
+        points = area.get("points")
+        if not isinstance(points, list) or len(points) < 4:
+            continue
+        candidate_polygons += 1
+        if _point_in_ring(lon, lat, points):
+            containing_polygons += 1
+
+    return {
+        "inside_city": containing_polygons > 0,
+        "candidate_polygons": candidate_polygons,
+        "containing_polygons": containing_polygons,
+        "residential_mode": "polygon_containment",
+    }
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
@@ -226,6 +274,7 @@ def _query_way_rows(
     radius_m: float,
     limit_rows: int,
     has_street_name: bool,
+    has_ref: bool,
 ) -> List[dict]:
     deg_lat = radius_m / 111132.0
     cos_lat = max(0.173648, abs(math.cos(math.radians(lat))))
@@ -236,11 +285,13 @@ def _query_way_rows(
     max_lon = lon + deg_lon
 
     street_name_select = "w.street_name" if has_street_name else "NULL"
+    ref_select = "w.ref" if has_ref else "NULL"
     sql = f"""
     SELECT
       w.way_id,
       w.highway,
       {street_name_select} AS street_name,
+      {ref_select} AS ref,
       w.maxspeed,
       w.maxspeed_type,
       w.source_maxspeed,
@@ -313,9 +364,9 @@ def _query_way_rows(
     cur = conn.execute(sql, params)
     for r in cur.fetchall():
         points: List[List[float]] = []
-        if isinstance(r[13], str) and r[13]:
+        if isinstance(r[14], str) and r[14]:
             try:
-                parsed = json.loads(r[13])
+                parsed = json.loads(r[14])
                 if isinstance(parsed, list):
                     points = parsed
             except json.JSONDecodeError:
@@ -325,28 +376,40 @@ def _query_way_rows(
                 "way_id": str(r[0]),
                 "highway": r[1],
                 "street_name": r[2],
-                "maxspeed": r[3],
-                "maxspeed_type": r[4],
-                "source_maxspeed": r[5],
-                "zone_maxspeed": r[6],
-                "traffic_sign": r[7],
-                "approx_heading_deg": r[8],
-                "min_lon": float(r[9]),
-                "min_lat": float(r[10]),
-                "max_lon": float(r[11]),
-                "max_lat": float(r[12]),
+                "ref": r[3],
+                "maxspeed": r[4],
+                "maxspeed_type": r[5],
+                "source_maxspeed": r[6],
+                "zone_maxspeed": r[7],
+                "traffic_sign": r[8],
+                "approx_heading_deg": r[9],
+                "min_lon": float(r[10]),
+                "min_lat": float(r[11]),
+                "max_lon": float(r[12]),
+                "max_lat": float(r[13]),
                 "points": points,
             }
         )
     return rows
 
 
-def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_rows: int = 512) -> List[dict]:
+def _query_area_rows(
+    conn: sqlite3.Connection,
+    lat: float,
+    lon: float,
+    limit_rows: int = 512,
+    has_residential: bool = False,
+    has_points_json: bool = False,
+) -> List[dict]:
     place_window_deg = 0.3
+    residential_select = "a.residential" if has_residential else "NULL"
+    points_select = "a.points_json" if has_points_json else "NULL"
     sql = """
     SELECT
       a.area_id, a.geometry_type, a.name, a.place, a.boundary, a.admin_level,
-      a.min_lon, a.min_lat, a.max_lon, a.max_lat
+      a.min_lon, a.min_lat, a.max_lon, a.max_lat,
+      {residential_select} AS residential,
+      {points_select} AS points_json
     FROM areas_rtree r
     JOIN areas a ON a.row_id = r.row_id
     WHERE
@@ -361,7 +424,7 @@ def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_row
         AND r.min_lat <= ? AND r.max_lat >= ?
       )
     LIMIT ?
-    """
+    """.format(residential_select=residential_select, points_select=points_select)
     cur = conn.execute(
         sql,
         (
@@ -378,6 +441,14 @@ def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_row
     )
     out = []
     for r in cur.fetchall():
+        points: List[List[float]] = []
+        if isinstance(r[11], str) and r[11]:
+            try:
+                parsed = json.loads(r[11])
+                if isinstance(parsed, list):
+                    points = parsed
+            except json.JSONDecodeError:
+                points = []
         out.append(
             {
                 "area_id": str(r[0]),
@@ -390,6 +461,8 @@ def _query_area_rows(conn: sqlite3.Connection, lat: float, lon: float, limit_row
                 "min_lat": float(r[7]),
                 "max_lon": float(r[8]),
                 "max_lat": float(r[9]),
+                "residential": r[10],
+                "points": points,
             }
         )
     return out
@@ -471,6 +544,9 @@ def main() -> int:
         print("Invalid v3 DB schema", file=sys.stderr)
         return 1
     has_street_name = _column_exists(conn, "ways", "street_name")
+    has_ref = _column_exists(conn, "ways", "ref")
+    has_area_residential = _column_exists(conn, "areas", "residential")
+    has_area_points_json = _column_exists(conn, "areas", "points_json")
     index_load_ms = (time.perf_counter() - t0) * 1000.0
 
     t1 = time.perf_counter()
@@ -481,8 +557,15 @@ def main() -> int:
         radius_m=args.search_radius_m,
         limit_rows=args.max_candidates,
         has_street_name=has_street_name,
+        has_ref=has_ref,
     )
-    area_candidates = _query_area_rows(conn=conn, lat=args.lat, lon=args.lon)
+    area_candidates = _query_area_rows(
+        conn=conn,
+        lat=args.lat,
+        lon=args.lon,
+        has_residential=has_area_residential,
+        has_points_json=has_area_points_json,
+    )
     candidate_load_ms = (time.perf_counter() - t1) * 1000.0
 
     city_db_path = Path(args.city_db) if args.city_db else _default_city_db_path(db_path)
@@ -502,6 +585,12 @@ def main() -> int:
     if not isinstance(city_context, dict) or city_context.get("city_mode") == "unavailable":
         city_context = _resolve_city_context_from_areas(args.lat, args.lon, area_candidates)
         city_context["city_mode"] = "bbox_fallback"
+    residential_context = _resolve_residential_context(
+        args.lat,
+        args.lon,
+        area_candidates,
+        enabled=bool(has_area_residential and has_area_points_json),
+    )
     city_resolve_ms = (time.perf_counter() - t_city) * 1000.0
 
     t2 = time.perf_counter()
@@ -533,6 +622,7 @@ def main() -> int:
                 "way_id": row["way_id"],
                 "highway": highway,
                 "street_name": row.get("street_name"),
+                "ref": row.get("ref"),
                 "distance_m": round(distance_m, 2),
                 "heading_diff_deg": None if heading_diff is None else round(heading_diff, 2),
                 "score": round(score, 2),
@@ -575,7 +665,7 @@ def main() -> int:
     top = scored[: args.top_k]
     scoring_ms = (time.perf_counter() - t2) * 1000.0
 
-    built_up = bool(city_context.get("inside_city", False))
+    built_up = bool(residential_context.get("inside_city", False))
     default_speed = DEFAULT_DE_URBAN if built_up else DEFAULT_DE_RURAL_CAR
     best = top[0] if top else None
     if best and best.get("parsed_speed_kmh") is not None:
@@ -606,6 +696,9 @@ def main() -> int:
             "polyline_missing_rows": polyline_missing_rows,
             "candidate_areas": len(area_candidates),
             "inside_built_up_guess": built_up,
+            "residential_candidate_polygons": residential_context.get("candidate_polygons", 0),
+            "residential_containing_polygons": residential_context.get("containing_polygons", 0),
+            "residential_mode": residential_context.get("residential_mode"),
             "default_speed_kmh": default_speed,
             "effective_speed_kmh": effective_speed,
             "effective_speed_source": effective_source,
@@ -617,6 +710,7 @@ def main() -> int:
             "city_place_candidates": city_context.get("city_place_candidates", 0),
             "city_mode": city_context.get("city_mode"),
             "has_street_name_column": has_street_name,
+            "has_ref_column": has_ref,
         },
         "timing_ms": {
             "load_index": round(index_load_ms, 2),
@@ -629,7 +723,7 @@ def main() -> int:
         "top_candidates": top,
         "notes": [
             "v3 query uses SQLite RTree candidate prefilter.",
-            "Built-up inference prefers exact admin polygon containment when city tables are available.",
+            "Built-up inference uses residential=* polygon containment from areas table.",
             "Use camera-detected signs to override map/default limits in final fusion.",
         ],
     }

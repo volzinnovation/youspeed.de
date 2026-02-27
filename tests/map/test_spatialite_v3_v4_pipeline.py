@@ -114,6 +114,10 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
               <node id='402' lat='49.0000' lon='8.0100'/>
               <node id='403' lat='49.0100' lon='8.0100'/>
               <node id='404' lat='49.0100' lon='8.0000'/>
+              <node id='501' lat='49.0010' lon='8.0010'/>
+              <node id='502' lat='49.0010' lon='8.0060'/>
+              <node id='503' lat='49.0060' lon='8.0060'/>
+              <node id='504' lat='49.0060' lon='8.0010'/>
 
               <way id='100'>
                 <nd ref='1'/>
@@ -154,6 +158,15 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
                 <tag k='boundary' v='administrative'/>
                 <tag k='admin_level' v='8'/>
                 <tag k='name' v='Teststadt Boundary'/>
+              </way>
+              <way id='410'>
+                <nd ref='501'/>
+                <nd ref='502'/>
+                <nd ref='503'/>
+                <nd ref='504'/>
+                <nd ref='501'/>
+                <tag k='residential' v='yes'/>
+                <tag k='name' v='Teststadt Residential Zone'/>
               </way>
             </osm>
             """

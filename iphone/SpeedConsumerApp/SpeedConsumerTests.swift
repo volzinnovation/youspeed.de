@@ -17,6 +17,27 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"), 130)
     }
 
+    func testFormattedStreetDisplayUsesNameRefFallbackRules() {
+        XCTAssertEqual(
+            V3SpeedLimitService.formattedStreetDisplay(streetName: "Main Street", ref: nil),
+            "Main Street"
+        )
+        XCTAssertEqual(
+            V3SpeedLimitService.formattedStreetDisplay(streetName: nil, ref: "L 605"),
+            "L 605"
+        )
+        XCTAssertEqual(
+            V3SpeedLimitService.formattedStreetDisplay(streetName: "Main Street", ref: "L 605"),
+            "Main Street (L 605)"
+        )
+        XCTAssertNil(
+            V3SpeedLimitService.formattedStreetDisplay(streetName: nil, ref: nil)
+        )
+        XCTAssertNil(
+            V3SpeedLimitService.formattedStreetDisplay(streetName: "   ", ref: " ")
+        )
+    }
+
     func testPenaltyRuleEngineResolvesBands() {
         let rules = SpeedPenaltyRuleSet.fallbackDEU()
 
@@ -890,6 +911,90 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 30)
     }
 
+    func testLookupSwitchesWayWhenHeadingConflictsWithPreferredWay() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-heading-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("heading_fixture.sqlite")
+        try createHeadingDisambiguationFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let turnedResult = try service.lookupSpeedLimit(
+            lat: 52.0,
+            lon: 13.005,
+            radiusM: 80.0,
+            maxCandidates: 32,
+            preferredWayID: "A1",
+            headingDeg: 0.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 40.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(turnedResult.wayID, "B1")
+        XCTAssertEqual(turnedResult.speedLimitKmh, 50)
+
+        let lowSpeedResult = try service.lookupSpeedLimit(
+            lat: 52.0,
+            lon: 13.005,
+            radiusM: 80.0,
+            maxCandidates: 32,
+            preferredWayID: "A1",
+            headingDeg: 0.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 2.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(lowSpeedResult.wayID, "A1")
+        XCTAssertEqual(lowSpeedResult.speedLimitKmh, 30)
+    }
+
+    func testLookupRemainsCompatibleWithLegacySchemaWithoutWayGeomAndApproxHeading() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-legacy-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("legacy_fixture.sqlite")
+        try createLegacyFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let onWay = try service.lookupSpeedLimit(
+            lat: 52.5205,
+            lon: 13.4055,
+            radiusM: 80.0,
+            maxCandidates: 64,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 40.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(onWay.wayID, "100")
+        XCTAssertEqual(onWay.speedLimitKmh, 30)
+        XCTAssertNil(onWay.insideCity)
+
+        let insideOnly = try service.lookupSpeedLimit(
+            lat: 52.5202,
+            lon: 13.4078,
+            radiusM: 20.0,
+            maxCandidates: 64,
+            preferredWayID: nil,
+            headingDeg: nil,
+            headingAccuracyDeg: nil,
+            speedKmh: nil,
+            horizontalAccuracyM: nil
+        )
+        XCTAssertNil(insideOnly.wayID)
+        XCTAssertNil(insideOnly.insideCity)
+        XCTAssertNil(insideOnly.speedLimitKmh)
+    }
+
     private func createFixtureV3DB(at url: URL) throws {
         var db: OpaquePointer?
         guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
@@ -903,6 +1008,7 @@ final class SpeedConsumerTests: XCTestCase {
           way_id TEXT NOT NULL UNIQUE,
           highway TEXT,
           street_name TEXT,
+          ref TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
@@ -932,6 +1038,8 @@ final class SpeedConsumerTests: XCTestCase {
           place TEXT,
           boundary TEXT,
           admin_level TEXT,
+          residential TEXT,
+          points_json TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -942,27 +1050,150 @@ final class SpeedConsumerTests: XCTestCase {
           min_lon, max_lon,
           min_lat, max_lat
         );
-        INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, '100', 'residential', 'Fixture Main Street', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '100', 'residential', 'Fixture Main Street', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, '100', '[[52.5200,13.4050],[52.5210,13.4060]]');
-        INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, '200', 'residential', 'Fixture Side Street', '50', NULL, NULL, NULL, NULL, 45.0, 13.4072, 52.5218, 13.4080, 52.5222);
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '200', 'residential', 'Fixture Side Street', NULL, '50', NULL, NULL, NULL, NULL, 45.0, 13.4072, 52.5218, 13.4080, 52.5222);
         INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (2, 13.4072, 13.4080, 52.5218, 52.5222);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (2, '200', '[[52.5218,13.4072],[52.5222,13.4080]]');
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', NULL, NULL, 13.4040, 52.5190, 13.4090, 52.5240);
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'w:410', 'Polygon', 'Fixture Residential Zone', NULL, NULL, NULL, 'yes', '[[13.4050,52.5200],[13.4062,52.5200],[13.4062,52.5212],[13.4050,52.5212],[13.4050,52.5200]]', 13.4050, 52.5200, 13.4062, 52.5212);
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (2, 13.4050, 13.4062, 52.5200, 52.5212);
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 2, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createHeadingDisambiguationFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 101, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'A1', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 13.0000, 51.9999, 13.0100, 52.0001);
+        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, 'A1', '[[52.0000,13.0000],[52.0000,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'B1', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 13.0049, 51.9950, 13.0051, 52.0050);
+        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (2, 13.0049, 13.0051, 51.9950, 52.0050);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, 'B1', '[[51.9950,13.0050],[52.0050,13.0050]]');
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 102, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createLegacyFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 103, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE areas (
+          row_id INTEGER PRIMARY KEY,
+          area_id TEXT NOT NULL UNIQUE,
+          geometry_type TEXT,
+          name TEXT,
+          place TEXT,
+          boundary TEXT,
+          admin_level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE areas_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '100', 'residential', 'Legacy Main Street', '30', NULL, NULL, 13.4050, 52.5200, 13.4060, 52.5210);
+        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
+
         INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240);
+        VALUES (1, 'w:400', 'Polygon', 'Legacy City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240);
         INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
         VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
         """
 
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
-            throw NSError(domain: "SpeedConsumerTests", code: 2, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+            throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 

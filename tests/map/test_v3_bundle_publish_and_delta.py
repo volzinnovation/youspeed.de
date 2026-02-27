@@ -42,6 +42,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   way_id TEXT NOT NULL UNIQUE,
                   highway TEXT,
                   street_name TEXT,
+                  ref TEXT,
                   maxspeed TEXT,
                   maxspeed_type TEXT,
                   source_maxspeed TEXT,
@@ -64,10 +65,10 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   points_json TEXT NOT NULL
                 );
 
-                INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+                INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
                 VALUES
-                  (1, '100', 'residential', 'Fixture Street', '50', NULL, NULL, NULL, NULL, 90.0, 13.0000, 52.0000, 13.0010, 52.0010),
-                  (2, '300', 'service', 'Fixture Service Road', '20', NULL, NULL, NULL, NULL, 0.0, 13.0100, 52.0100, 13.0110, 52.0110);
+                  (1, '100', 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 13.0000, 52.0000, 13.0010, 52.0010),
+                  (2, '300', 'service', 'Fixture Service Road', 'K 1', '20', NULL, NULL, NULL, NULL, 0.0, 13.0100, 52.0100, 13.0110, 52.0110);
 
                 INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES
@@ -98,6 +99,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   <nd ref='2'/>
                   <tag k='highway' v='residential'/>
                   <tag k='name' v='Updated Fixture Street'/>
+                  <tag k='ref' v='B 3'/>
                   <tag k='maxspeed' v='30'/>
                 </way>
               </modify>
@@ -108,6 +110,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   <nd ref='3'/>
                   <nd ref='4'/>
                   <tag k='highway' v='service'/>
+                  <tag k='ref' v='K 2'/>
                   <tag k='maxspeed' v='20'/>
                 </way>
               </create>
@@ -169,11 +172,13 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         patch_sql = patch_path.read_text(encoding="utf-8")
         with sqlite3.connect(db_copy) as conn:
             conn.executescript(patch_sql)
-            rows = conn.execute("SELECT way_id, maxspeed, street_name FROM ways ORDER BY way_id").fetchall()
-            row_map = {r[0]: {"maxspeed": r[1], "street_name": r[2]} for r in rows}
+            rows = conn.execute("SELECT way_id, maxspeed, street_name, ref FROM ways ORDER BY way_id").fetchall()
+            row_map = {r[0]: {"maxspeed": r[1], "street_name": r[2], "ref": r[3]} for r in rows}
             self.assertEqual(row_map.get("100", {}).get("maxspeed"), "30")
             self.assertEqual(row_map.get("100", {}).get("street_name"), "Updated Fixture Street")
+            self.assertEqual(row_map.get("100", {}).get("ref"), "B 3")
             self.assertEqual(row_map.get("200", {}).get("maxspeed"), "20")
+            self.assertEqual(row_map.get("200", {}).get("ref"), "K 2")
             self.assertNotIn("300", row_map)
 
     def test_publish_v3_bundle_with_github_release_urls(self):

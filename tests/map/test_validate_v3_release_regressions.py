@@ -37,6 +37,7 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   way_id TEXT NOT NULL UNIQUE,
                   highway TEXT,
                   street_name TEXT,
+                  ref TEXT,
                   maxspeed TEXT,
                   maxspeed_type TEXT,
                   source_maxspeed TEXT,
@@ -69,6 +70,8 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   place TEXT,
                   boundary TEXT,
                   admin_level TEXT,
+                  residential TEXT,
+                  points_json TEXT,
                   min_lon REAL NOT NULL,
                   min_lat REAL NOT NULL,
                   max_lon REAL NOT NULL,
@@ -81,8 +84,8 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   min_lat, max_lat
                 );
 
-                INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
-                VALUES (1, '100', 'residential', 'Fixture Street', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
+                INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat)
+                VALUES (1, '100', 'residential', 'Fixture Street', 'K 9652', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210);
 
                 INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
@@ -90,11 +93,15 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                 INSERT INTO way_geom(row_id, way_id, points_json)
                 VALUES (1, '100', '[[52.5200,13.4050],[52.5210,13.4060]]');
 
-                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat)
-                VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240);
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES (1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', NULL, NULL, 13.4040, 52.5190, 13.4090, 52.5240);
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES (2, 'w:410', 'Polygon', 'Fixture Residential', NULL, NULL, NULL, 'yes', '[[13.4050,52.5200],[13.4060,52.5200],[13.4060,52.5210],[13.4050,52.5210],[13.4050,52.5200]]', 13.4050, 52.5200, 13.4060, 52.5210);
 
                 INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (2, 13.4050, 13.4060, 52.5200, 52.5210);
                 """
             )
             conn.commit()
@@ -103,32 +110,72 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
 
     @staticmethod
     def _create_fixture_db_missing_columns(
-        path: Path, *, include_street_name: bool, include_area_name: bool
+        path: Path,
+        *,
+        include_street_name: bool,
+        include_area_name: bool,
+        include_ref: bool = True,
+        include_area_residential: bool = True,
+        include_area_points: bool = True,
     ) -> None:
         ways_street_col = "street_name TEXT," if include_street_name else ""
-        ways_insert_cols = (
-            "row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, "
-            "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
-            if include_street_name
-            else "row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed, "
-            "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
-        )
-        ways_insert_vals = (
-            "1, '100', 'residential', 'Fixture Street', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210"
-            if include_street_name
-            else "1, '100', 'residential', '30', NULL, NULL, NULL, NULL, 90.0, 13.4050, 52.5200, 13.4060, 52.5210"
-        )
+        ways_ref_col = "ref TEXT," if include_ref else ""
+        if include_street_name and include_ref:
+            ways_insert_cols = (
+                "row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
+                "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
+            )
+            ways_insert_vals = (
+                "1, '100', 'residential', 'Fixture Street', 'K 9652', '30', NULL, NULL, NULL, NULL, "
+                "90.0, 13.4050, 52.5200, 13.4060, 52.5210"
+            )
+        elif include_street_name and not include_ref:
+            ways_insert_cols = (
+                "row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, "
+                "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
+            )
+            ways_insert_vals = (
+                "1, '100', 'residential', 'Fixture Street', '30', NULL, NULL, NULL, NULL, "
+                "90.0, 13.4050, 52.5200, 13.4060, 52.5210"
+            )
+        elif include_ref:
+            ways_insert_cols = (
+                "row_id, way_id, highway, ref, maxspeed, maxspeed_type, source_maxspeed, "
+                "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
+            )
+            ways_insert_vals = (
+                "1, '100', 'residential', 'K 9652', '30', NULL, NULL, NULL, NULL, "
+                "90.0, 13.4050, 52.5200, 13.4060, 52.5210"
+            )
+        else:
+            ways_insert_cols = (
+                "row_id, way_id, highway, maxspeed, maxspeed_type, source_maxspeed, "
+                "zone_maxspeed, traffic_sign, approx_heading_deg, min_lon, min_lat, max_lon, max_lat"
+            )
+            ways_insert_vals = (
+                "1, '100', 'residential', '30', NULL, NULL, NULL, NULL, "
+                "90.0, 13.4050, 52.5200, 13.4060, 52.5210"
+            )
         areas_name_col = "name TEXT," if include_area_name else ""
-        areas_insert_cols = (
-            "row_id, area_id, geometry_type, name, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat"
-            if include_area_name
-            else "row_id, area_id, geometry_type, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat"
-        )
-        areas_insert_vals = (
-            "1, 'w:400', 'Polygon', 'Fixture City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240"
-            if include_area_name
-            else "1, 'w:400', 'Polygon', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240"
-        )
+        areas_residential_col = "residential TEXT," if include_area_residential else ""
+        areas_points_col = "points_json TEXT," if include_area_points else ""
+        area_insert_cols_list = ["row_id", "area_id", "geometry_type"]
+        area_insert_vals_list = ["1", "'w:400'", "'Polygon'"]
+        if include_area_name:
+            area_insert_cols_list.append("name")
+            area_insert_vals_list.append("'Fixture City'")
+        area_insert_cols_list.extend(["place", "boundary", "admin_level"])
+        area_insert_vals_list.extend(["'city'", "'administrative'", "'8'"])
+        if include_area_residential:
+            area_insert_cols_list.append("residential")
+            area_insert_vals_list.append("'yes'")
+        if include_area_points:
+            area_insert_cols_list.append("points_json")
+            area_insert_vals_list.append("'[[13.4050,52.5200],[13.4060,52.5200],[13.4060,52.5210],[13.4050,52.5210],[13.4050,52.5200]]'")
+        area_insert_cols_list.extend(["min_lon", "min_lat", "max_lon", "max_lat"])
+        area_insert_vals_list.extend(["13.4040", "52.5190", "13.4090", "52.5240"])
+        areas_insert_cols = ", ".join(area_insert_cols_list)
+        areas_insert_vals = ", ".join(area_insert_vals_list)
 
         conn = sqlite3.connect(path)
         try:
@@ -139,6 +186,7 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   way_id TEXT NOT NULL UNIQUE,
                   highway TEXT,
                   {ways_street_col}
+                  {ways_ref_col}
                   maxspeed TEXT,
                   maxspeed_type TEXT,
                   source_maxspeed TEXT,
@@ -171,6 +219,8 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   place TEXT,
                   boundary TEXT,
                   admin_level TEXT,
+                  {areas_residential_col}
+                  {areas_points_col}
                   min_lon REAL NOT NULL,
                   min_lat REAL NOT NULL,
                   max_lon REAL NOT NULL,
@@ -214,6 +264,10 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                 "100",
                 "--expected-maxspeed-kmh",
                 "30",
+                "--probe-ref-way-id",
+                "100",
+                "--expected-ref",
+                "K 9652",
                 "--out-json",
                 str(self.out_json),
             ]
@@ -224,6 +278,9 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
         self.assertEqual(payload["probe_way_id"], "100")
         self.assertIn("paper_benchmark_smoke", payload)
         self.assertIn("hybrid", payload["paper_benchmark_smoke"])
+        self.assertEqual(payload["ref_probe"]["probe_ref_way_id"], "100")
+        self.assertEqual(payload["ref_probe"]["expected_ref"], "K 9652")
+        self.assertEqual(payload["ref_probe"]["actual_ref"], "K 9652")
 
     def test_regression_validator_fails_on_expected_speed_mismatch(self):
         result = run_cmd(
@@ -241,6 +298,27 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("explicit speed mismatch", result.stderr)
+
+    def test_regression_validator_fails_on_expected_ref_mismatch(self):
+        result = run_cmd(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--db",
+                str(self.db_path),
+                "--probe-way-id",
+                "100",
+                "--expected-maxspeed-kmh",
+                "30",
+                "--probe-ref-way-id",
+                "100",
+                "--expected-ref",
+                "L 564",
+            ],
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ref mismatch at probe", result.stderr)
 
     def test_regression_validator_fails_on_missing_street_name_column(self):
         db_path = self.tmpdir / "legacy_no_street_name.sqlite"
@@ -279,6 +357,80 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("areas.name column missing", result.stderr)
+
+    def test_regression_validator_fails_on_missing_ref_column(self):
+        db_path = self.tmpdir / "legacy_no_ref.sqlite"
+        self._create_fixture_db_missing_columns(
+            db_path,
+            include_street_name=True,
+            include_area_name=True,
+            include_ref=False,
+        )
+        result = run_cmd(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--db",
+                str(db_path),
+                "--probe-way-id",
+                "100",
+                "--expected-maxspeed-kmh",
+                "30",
+            ],
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("ways.ref column missing", result.stderr)
+
+    def test_regression_validator_fails_on_missing_area_residential_column(self):
+        db_path = self.tmpdir / "legacy_no_area_residential.sqlite"
+        self._create_fixture_db_missing_columns(
+            db_path,
+            include_street_name=True,
+            include_area_name=True,
+            include_area_residential=False,
+            include_area_points=True,
+        )
+        result = run_cmd(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--db",
+                str(db_path),
+                "--probe-way-id",
+                "100",
+                "--expected-maxspeed-kmh",
+                "30",
+            ],
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("areas.residential column missing", result.stderr)
+
+    def test_regression_validator_fails_on_missing_area_points_json_column(self):
+        db_path = self.tmpdir / "legacy_no_area_points.sqlite"
+        self._create_fixture_db_missing_columns(
+            db_path,
+            include_street_name=True,
+            include_area_name=True,
+            include_area_residential=True,
+            include_area_points=False,
+        )
+        result = run_cmd(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--db",
+                str(db_path),
+                "--probe-way-id",
+                "100",
+                "--expected-maxspeed-kmh",
+                "30",
+            ],
+            check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("areas.points_json column missing", result.stderr)
 
 
 if __name__ == "__main__":

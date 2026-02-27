@@ -125,6 +125,14 @@ jq -c '
   select(.type == "Feature")
   | (geom_points) as $pts
   | select(($pts | length) > 0)
+  | ((.properties.residential // (if .properties.landuse == "residential" then "landuse" else null end)) // null) as $residential
+  | (
+      if .geometry == null then []
+      elif .geometry.type == "Polygon" then (.geometry.coordinates[0] // [])
+      elif .geometry.type == "MultiPolygon" then (.geometry.coordinates[0][0] // [])
+      else []
+      end
+    ) as $ring
   | {
       area_id: area_id,
       geometry_type: (.geometry.type // null),
@@ -132,6 +140,8 @@ jq -c '
       place: (.properties.place // null),
       boundary: (.properties.boundary // null),
       admin_level: (.properties.admin_level // null),
+      residential: $residential,
+      points: (if $residential != null and ($ring | length) >= 4 then $ring else null end),
       min_lon: ($pts | map(.[0]) | min),
       min_lat: ($pts | map(.[1]) | min),
       max_lon: ($pts | map(.[0]) | max),
