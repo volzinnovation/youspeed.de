@@ -104,7 +104,7 @@ def heading_mismatch_deg(heading: float, approx_heading: Optional[float]) -> Opt
 
 
 def parse_explicit_speed_kmh(row: dict) -> Optional[int]:
-    for key in ("maxspeed", "zone_maxspeed"):
+    for key in ("maxspeed",):
         value = row.get(key)
         if isinstance(value, str):
             m = NUMERIC_SPEED_RE.match(value.strip())
@@ -309,8 +309,6 @@ def _query_way_rows(
       w.maxspeed,
       w.maxspeed_type,
       w.source_maxspeed,
-      w.zone_maxspeed,
-      w.traffic_sign,
       w.approx_heading_deg,
       {service_select} AS service,
       {tunnel_select} AS tunnel,
@@ -385,9 +383,9 @@ def _query_way_rows(
     cur = conn.execute(sql, params)
     for r in cur.fetchall():
         points: List[List[float]] = []
-        if isinstance(r[21], str) and r[21]:
+        if isinstance(r[19], str) and r[19]:
             try:
-                parsed = json.loads(r[21])
+                parsed = json.loads(r[19])
                 if isinstance(parsed, list):
                     points = parsed
             except json.JSONDecodeError:
@@ -401,20 +399,18 @@ def _query_way_rows(
                 "maxspeed": r[4],
                 "maxspeed_type": r[5],
                 "source_maxspeed": r[6],
-                "zone_maxspeed": r[7],
-                "traffic_sign": r[8],
-                "approx_heading_deg": r[9],
-                "service": r[10],
-                "tunnel": r[11],
-                "bridge": r[12],
-                "covered": r[13],
-                "location": r[14],
-                "layer": r[15],
-                "level": r[16],
-                "min_lon": float(r[17]),
-                "min_lat": float(r[18]),
-                "max_lon": float(r[19]),
-                "max_lat": float(r[20]),
+                "approx_heading_deg": r[7],
+                "service": r[8],
+                "tunnel": r[9],
+                "bridge": r[10],
+                "covered": r[11],
+                "location": r[12],
+                "layer": r[13],
+                "level": r[14],
+                "min_lon": float(r[15]),
+                "min_lat": float(r[16]),
+                "max_lon": float(r[17]),
+                "max_lat": float(r[18]),
                 "points": points,
             }
         )
@@ -671,7 +667,6 @@ def main() -> int:
                 "maxspeed": row.get("maxspeed"),
                 "maxspeed_type": row.get("maxspeed_type"),
                 "source_maxspeed": row.get("source_maxspeed"),
-                "zone_maxspeed": row.get("zone_maxspeed"),
                 "service": row.get("service"),
                 "tunnel": row.get("tunnel"),
                 "bridge": row.get("bridge"),

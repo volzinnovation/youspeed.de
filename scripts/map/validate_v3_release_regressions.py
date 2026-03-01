@@ -58,7 +58,7 @@ def fail(message: str) -> int:
 
 
 def parse_explicit_speed(row: sqlite3.Row) -> int | None:
-    for key in ("maxspeed", "zone_maxspeed"):
+    for key in ("maxspeed",):
         raw = row[key]
         if isinstance(raw, str):
             m = NUMERIC_SPEED_RE.match(raw.strip())
@@ -70,17 +70,21 @@ def parse_explicit_speed(row: sqlite3.Row) -> int | None:
 def inspect_schema_contract(db_path: Path) -> Dict:
     conn = sqlite3.connect(str(db_path))
     try:
-        way_columns = {
-            str(row[1]) for row in conn.execute("PRAGMA table_info(ways)")
+        way_info = {
+            str(row[1]): str(row[2]).upper() for row in conn.execute("PRAGMA table_info(ways)")
         }
         area_columns = {
             str(row[1]) for row in conn.execute("PRAGMA table_info(areas)")
         }
+        way_columns = set(way_info.keys())
 
         if "street_name" not in way_columns:
             raise RuntimeError("schema contract failed: ways.street_name column missing")
         if "ref" not in way_columns:
             raise RuntimeError("schema contract failed: ways.ref column missing")
+        way_id_type = way_info.get("way_id", "")
+        if "INT" not in way_id_type:
+            raise RuntimeError(f"schema contract failed: ways.way_id must be INTEGER-like, got {way_id_type!r}")
         for required_way_column in ("service", "tunnel", "bridge", "covered", "location", "layer", "level"):
             if required_way_column not in way_columns:
                 raise RuntimeError(f"schema contract failed: ways.{required_way_column} column missing")
@@ -88,8 +92,6 @@ def inspect_schema_contract(db_path: Path) -> Dict:
             raise RuntimeError("schema contract failed: areas.name column missing")
         if "residential" not in area_columns:
             raise RuntimeError("schema contract failed: areas.residential column missing")
-        if "parking" not in area_columns:
-            raise RuntimeError("schema contract failed: areas.parking column missing")
         if "points_json" not in area_columns:
             raise RuntimeError("schema contract failed: areas.points_json column missing")
 
@@ -168,18 +170,6 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 """
             ).fetchone()[0]
         )
-        parking_areas_with_polygons = int(
-            conn.execute(
-                """
-                SELECT COUNT(*)
-                FROM areas
-                WHERE parking IS NOT NULL
-                  AND trim(parking) <> ''
-                  AND points_json IS NOT NULL
-                  AND trim(points_json) <> ''
-                """
-            ).fetchone()[0]
-        )
     finally:
         conn.close()
 
@@ -197,9 +187,9 @@ def inspect_schema_contract(db_path: Path) -> Dict:
     return {
         "ways_has_street_name_column": True,
         "ways_has_ref_column": True,
+        "ways_way_id_integer": True,
         "areas_has_name_column": True,
         "areas_has_residential_column": True,
-        "areas_has_parking_column": True,
         "areas_has_points_json_column": True,
         "ways_with_nonempty_street_name": ways_with_street_name,
         "ways_with_nonempty_ref": ways_with_nonempty_ref,
@@ -208,7 +198,6 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         "ways_with_vertical_context_tags": ways_with_vertical_context,
         "areas_with_nonempty_name": areas_with_name,
         "residential_areas_with_polygons": residential_areas_with_polygons,
-        "parking_areas_with_polygons": parking_areas_with_polygons,
     }
 
 
@@ -218,7 +207,7 @@ def load_probe(db_path: Path, way_id: str) -> Tuple[float, float, sqlite3.Row]:
     try:
         row = conn.execute(
             """
-            SELECT way_id, street_name, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed,
+            SELECT way_id, street_name, maxspeed, maxspeed_type, source_maxspeed,
                    (min_lat + max_lat) / 2.0 AS probe_lat,
                    (min_lon + max_lon) / 2.0 AS probe_lon
             FROM ways
@@ -384,7 +373,7 @@ def main() -> int:
         return fail(
             "explicit speed mismatch at probe "
             f"way_id={args.probe_way_id}: expected={args.expected_maxspeed_kmh}, "
-            f"got={parsed_speed}, raw_maxspeed={probe['maxspeed']!r}, zone_maxspeed={probe['zone_maxspeed']!r}"
+            f"got={parsed_speed}, raw_maxspeed={probe['maxspeed']!r}"
         )
     probe_street_name = probe["street_name"]
     if not isinstance(probe_street_name, str) or not probe_street_name.strip():

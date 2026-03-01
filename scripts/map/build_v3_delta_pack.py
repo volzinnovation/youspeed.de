@@ -185,8 +185,6 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.maxspeed,
           w.maxspeed_type,
           w.source_maxspeed,
-          w.zone_maxspeed,
-          w.traffic_sign,
           w.approx_heading_deg,
           w.service,
           w.tunnel,
@@ -260,8 +258,6 @@ def _build_insert_payload(
         "maxspeed": tags.get("maxspeed", existing["maxspeed"] if existing is not None else None),
         "maxspeed_type": tags.get("maxspeed:type", existing["maxspeed_type"] if existing is not None else None),
         "source_maxspeed": tags.get("source:maxspeed", existing["source_maxspeed"] if existing is not None else None),
-        "zone_maxspeed": tags.get("zone:maxspeed", existing["zone_maxspeed"] if existing is not None else None),
-        "traffic_sign": tags.get("traffic_sign", existing["traffic_sign"] if existing is not None else None),
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
         "service": tags.get("service", existing["service"] if existing is not None else None),
         "tunnel": tags.get("tunnel", existing["tunnel"] if existing is not None else None),
@@ -310,7 +306,7 @@ def _build_sql_patch(
         lines.append(
             "INSERT INTO ways("
             "way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
-            "zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, "
+            "approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, "
             "min_lon, min_lat, max_lon, max_lat"
             ") VALUES("
             f"{way_lit}, "
@@ -320,8 +316,6 @@ def _build_sql_patch(
             f"{_sql_literal(ins['maxspeed'])}, "
             f"{_sql_literal(ins['maxspeed_type'])}, "
             f"{_sql_literal(ins['source_maxspeed'])}, "
-            f"{_sql_literal(ins['zone_maxspeed'])}, "
-            f"{_sql_literal(ins['traffic_sign'])}, "
             f"{_sql_literal(ins['approx_heading_deg'])}, "
             f"{_sql_literal(ins['service'])}, "
             f"{_sql_literal(ins['tunnel'])}, "
@@ -344,10 +338,10 @@ def _build_sql_patch(
             f"{_sql_literal(ins['min_lat'])}, {_sql_literal(ins['max_lat'])});"
         )
         lines.append(
-            "INSERT INTO way_geom(row_id, way_id, points_json) "
+            "INSERT INTO way_geom(row_id, points_json) "
             "VALUES(("
             f"SELECT row_id FROM ways WHERE way_id={way_lit}"
-            f"), {way_lit}, {_sql_literal(ins['points_json'])});"
+            f"), {_sql_literal(ins['points_json'])});"
         )
 
     lines.append("COMMIT;")

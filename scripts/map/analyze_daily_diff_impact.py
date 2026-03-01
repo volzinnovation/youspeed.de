@@ -213,8 +213,6 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.maxspeed,
           w.maxspeed_type,
           w.source_maxspeed,
-          w.zone_maxspeed,
-          w.traffic_sign,
           w.approx_heading_deg,
           w.service,
           w.tunnel,
@@ -338,8 +336,6 @@ def _build_insert_payload(
         "maxspeed": tags.get("maxspeed", existing["maxspeed"] if existing is not None else None),
         "maxspeed_type": tags.get("maxspeed:type", existing["maxspeed_type"] if existing is not None else None),
         "source_maxspeed": tags.get("source:maxspeed", existing["source_maxspeed"] if existing is not None else None),
-        "zone_maxspeed": tags.get("zone:maxspeed", existing["zone_maxspeed"] if existing is not None else None),
-        "traffic_sign": tags.get("traffic_sign", existing["traffic_sign"] if existing is not None else None),
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
         "service": tags.get("service", existing["service"] if existing is not None else None),
         "tunnel": tags.get("tunnel", existing["tunnel"] if existing is not None else None),
@@ -437,9 +433,9 @@ def _simulate_v3_patch(conn: sqlite3.Connection, delete_ids: Sequence[str], inse
                 """
                 INSERT INTO ways(
                   way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
-                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+                  approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ins["way_id"],
@@ -447,8 +443,6 @@ def _simulate_v3_patch(conn: sqlite3.Connection, delete_ids: Sequence[str], inse
                     ins["maxspeed"],
                     ins["maxspeed_type"],
                     ins["source_maxspeed"],
-                    ins["zone_maxspeed"],
-                    ins["traffic_sign"],
                     ins["approx_heading_deg"],
                     ins["service"],
                     ins["tunnel"],
@@ -469,8 +463,8 @@ def _simulate_v3_patch(conn: sqlite3.Connection, delete_ids: Sequence[str], inse
                 (row_id, ins["min_lon"], ins["max_lon"], ins["min_lat"], ins["max_lat"]),
             )
             conn.execute(
-                "INSERT INTO way_geom(row_id, way_id, points_json) VALUES(?, ?, ?)",
-                (row_id, ins["way_id"], ins["points_json"]),
+                "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
+                (row_id, ins["points_json"]),
             )
     except Exception as exc:
         try:
@@ -526,9 +520,9 @@ def _simulate_v4_patch(
                 """
                 INSERT INTO ways(
                   way_id, highway, maxspeed, maxspeed_type, source_maxspeed,
-                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+                  approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     ins["way_id"],
@@ -536,8 +530,6 @@ def _simulate_v4_patch(
                     ins["maxspeed"],
                     ins["maxspeed_type"],
                     ins["source_maxspeed"],
-                    ins["zone_maxspeed"],
-                    ins["traffic_sign"],
                     ins["approx_heading_deg"],
                     ins["service"],
                     ins["tunnel"],
@@ -558,8 +550,8 @@ def _simulate_v4_patch(
                 (row_id, ins["min_lon"], ins["max_lon"], ins["min_lat"], ins["max_lat"]),
             )
             conn.execute(
-                "INSERT INTO way_geom(row_id, way_id, points_json) VALUES(?, ?, ?)",
-                (row_id, ins["way_id"], ins["points_json"]),
+                "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
+                (row_id, ins["points_json"]),
             )
 
             tile_rows = _tile_rows_for_bbox(

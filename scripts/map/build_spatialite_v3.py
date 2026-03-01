@@ -130,15 +130,13 @@ def main() -> int:
 
         CREATE TABLE ways (
           row_id INTEGER PRIMARY KEY,
-          way_id TEXT NOT NULL UNIQUE,
+          way_id INTEGER NOT NULL UNIQUE,
           highway TEXT,
           street_name TEXT,
           ref TEXT,
           maxspeed TEXT,
           maxspeed_type TEXT,
           source_maxspeed TEXT,
-          zone_maxspeed TEXT,
-          traffic_sign TEXT,
           approx_heading_deg REAL,
           service TEXT,
           tunnel TEXT,
@@ -162,7 +160,7 @@ def main() -> int:
         CREATE TABLE tunnel_portal (
           row_id INTEGER PRIMARY KEY,
           way_row_id INTEGER NOT NULL,
-          way_id TEXT NOT NULL,
+          way_id INTEGER NOT NULL,
           portal_index INTEGER NOT NULL,
           lon REAL NOT NULL,
           lat REAL NOT NULL,
@@ -180,7 +178,6 @@ def main() -> int:
 
         CREATE TABLE way_geom (
           row_id INTEGER PRIMARY KEY,
-          way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
         );
 
@@ -193,8 +190,6 @@ def main() -> int:
           boundary TEXT,
           admin_level TEXT,
           residential TEXT,
-          parking TEXT,
-          traffic_sign TEXT,
           points_json TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
@@ -251,7 +246,7 @@ def main() -> int:
                 return 1
 
             row_id += 1
-            way_id = str(meta["way_id"])
+            way_id = int(meta["way_id"])
             points = geom.get("points")
             if not isinstance(points, list):
                 points = []
@@ -266,8 +261,6 @@ def main() -> int:
                     meta.get("maxspeed"),
                     meta.get("maxspeed_type"),
                     meta.get("source_maxspeed"),
-                    meta.get("zone_maxspeed"),
-                    meta.get("traffic_sign"),
                     meta.get("approx_heading_deg"),
                     meta.get("service"),
                     meta.get("tunnel"),
@@ -291,7 +284,7 @@ def main() -> int:
                     float(meta["max_lat"]),
                 )
             )
-            geom_batch.append((row_id, way_id, json.dumps(points, separators=(",", ":"))))
+            geom_batch.append((row_id, json.dumps(points, separators=(",", ":"))))
 
             if _is_tunnel_like_way(meta) and len(points) >= 2:
                 layer = _parse_numeric_tag(meta.get("layer"))
@@ -332,9 +325,9 @@ def main() -> int:
                     """
                     INSERT INTO ways(
                       row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-                      zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+                      approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
@@ -343,7 +336,7 @@ def main() -> int:
                     ways_rtree_batch,
                 )
                 conn.executemany(
-                    "INSERT INTO way_geom(row_id, way_id, points_json) VALUES(?, ?, ?)",
+                    "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
                     geom_batch,
                 )
                 conn.executemany(
@@ -373,9 +366,9 @@ def main() -> int:
             """
             INSERT INTO ways(
               row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-              zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+              approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )
@@ -384,7 +377,7 @@ def main() -> int:
             ways_rtree_batch,
         )
         conn.executemany(
-            "INSERT INTO way_geom(row_id, way_id, points_json) VALUES(?, ?, ?)",
+            "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
             geom_batch,
         )
         conn.executemany(
@@ -411,13 +404,9 @@ def main() -> int:
 
     area_rows = []
     area_rtree_rows = []
-    city_sign_marker_count = 0
     for i, area in enumerate(areas, start=1):
         points = area.get("points")
         points_json = json.dumps(points, separators=(",", ":")) if isinstance(points, list) and points else None
-        traffic_sign = area.get("traffic_sign")
-        if traffic_sign:
-            city_sign_marker_count += 1
         area_rows.append(
             (
                 i,
@@ -428,8 +417,6 @@ def main() -> int:
                 area.get("boundary"),
                 area.get("admin_level"),
                 area.get("residential"),
-                area.get("parking"),
-                traffic_sign,
                 points_json,
                 float(area["min_lon"]),
                 float(area["min_lat"]),
@@ -450,9 +437,9 @@ def main() -> int:
             conn.executemany(
                 """
                 INSERT INTO areas(
-                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json,
+                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
                   min_lon, min_lat, max_lon, max_lat
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 area_rows,
             )
@@ -468,9 +455,9 @@ def main() -> int:
         conn.executemany(
             """
             INSERT INTO areas(
-              row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json,
+              row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             area_rows,
         )
@@ -482,13 +469,11 @@ def main() -> int:
 
     conn.execute("CREATE INDEX idx_ways_way_id ON ways(way_id)")
     conn.execute("CREATE INDEX idx_areas_place_admin ON areas(place, admin_level, boundary)")
-    conn.execute("CREATE INDEX idx_areas_traffic_sign ON areas(traffic_sign, geometry_type)")
     conn.execute("CREATE INDEX idx_tunnel_portal_way ON tunnel_portal(way_id, way_row_id, portal_index)")
     conn.executemany(
         "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
         [
             ("tunnel_portal_count", str(tunnel_portal_row_id)),
-            ("city_sign_marker_count", str(city_sign_marker_count)),
         ],
     )
     conn.commit()
