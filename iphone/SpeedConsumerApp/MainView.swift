@@ -33,7 +33,11 @@ struct MainView: View {
                         .padding(.horizontal, screenInset)
                         .padding(.top, topPadding)
 
-                    SpeedLimitSignView(limitText: limitText, numberFontSize: primaryMetricFontSize)
+                    SpeedLimitSignView(
+                        limitText: limitText,
+                        numberFontSize: primaryMetricFontSize,
+                        showsTunnelIcon: shouldShowTunnelSignIcon
+                    )
                         .frame(width: signSize, height: signSize)
                         .frame(maxWidth: .infinity)
                         .padding(.top, screenInset)
@@ -288,10 +292,17 @@ struct MainView: View {
         if let capture = viewModel.speedCaptureSignText {
             return capture
         }
+        if shouldShowTunnelSignIcon {
+            return ""
+        }
         guard let speedLimit = viewModel.speedLimitKmh else {
             return hasUsableGPSFix ? "–" : "?"
         }
         return "\(speedLimit)"
+    }
+
+    private var shouldShowTunnelSignIcon: Bool {
+        viewModel.isTunnelModeActive && !viewModel.isInSpeedCaptureMode
     }
 
     private var cityBadgeStreetText: String? {
@@ -507,6 +518,7 @@ struct MainView: View {
 private struct SpeedLimitSignView: View {
     let limitText: String
     let numberFontSize: CGFloat
+    let showsTunnelIcon: Bool
 
     var body: some View {
         GeometryReader { proxy in
@@ -526,13 +538,19 @@ private struct SpeedLimitSignView: View {
                     .inset(by: blackBorderWidth)
                     .strokeBorder(Color(red: 0.76, green: 0.07, blue: 0.11), lineWidth: redBandWidth)
 
-                Text(limitText)
-                    .font(trafficSignNumberFont(size: numberFontSize))
-                    .frame(width: innerDiameter * 0.86, height: innerDiameter * 0.66, alignment: .center)
-                    .minimumScaleFactor(0.28)
-                    .allowsTightening(true)
-                    .foregroundStyle(.black)
-                    .lineLimit(1)
+                if showsTunnelIcon {
+                    Image(systemName: "tunnel.fill")
+                        .font(.system(size: innerDiameter * 0.42, weight: .bold))
+                        .foregroundStyle(.black)
+                } else {
+                    Text(limitText)
+                        .font(trafficSignNumberFont(size: numberFontSize))
+                        .frame(width: innerDiameter * 0.86, height: innerDiameter * 0.66, alignment: .center)
+                        .minimumScaleFactor(0.28)
+                        .allowsTightening(true)
+                        .foregroundStyle(.black)
+                        .lineLimit(1)
+                }
             }
             .frame(width: size, height: size)
             .frame(maxWidth: .infinity, maxHeight: .infinity)

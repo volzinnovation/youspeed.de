@@ -121,6 +121,14 @@ jq -c '
     (.properties["@id"] // .id // "") as $raw |
     if ($raw | type) == "number" then ($raw | tostring)
     else (($raw | tostring | split("/"))[-1]) end;
+  def canonical_city_sign($raw):
+    if $raw == null then null
+    else ($raw | tostring | ascii_downcase) as $text
+      | if ($text | test("(^|[;|,[:space:]])de:310([^0-9]|$)")) then "DE:310"
+        elif ($text | test("(^|[;|,[:space:]])de:311([^0-9]|$)")) then "DE:311"
+        else null
+        end
+    end;
   def geom_points:
     if .geometry == null then []
     elif .geometry.type == "Point" then [ .geometry.coordinates ]
@@ -135,6 +143,7 @@ jq -c '
   | select(($pts | length) > 0)
   | ((.properties.residential // (if .properties.landuse == "residential" then "landuse" else null end)) // null) as $residential
   | ((.properties.parking // (if .properties.amenity == "parking" then "amenity" else null end)) // null) as $parking
+  | (canonical_city_sign(.properties.traffic_sign)) as $traffic_sign
   | (
       if .geometry == null then []
       elif .geometry.type == "Polygon" then (.geometry.coordinates[0] // [])
@@ -151,6 +160,7 @@ jq -c '
       admin_level: (.properties.admin_level // null),
       residential: $residential,
       parking: $parking,
+      traffic_sign: $traffic_sign,
       points: (if ($residential != null or $parking != null) and ($ring | length) >= 4 then $ring else null end),
       min_lon: ($pts | map(.[0]) | min),
       min_lat: ($pts | map(.[1]) | min),

@@ -118,6 +118,14 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
               <node id='502' lat='49.0010' lon='8.0060'/>
               <node id='503' lat='49.0060' lon='8.0060'/>
               <node id='504' lat='49.0060' lon='8.0010'/>
+              <node id='601' lat='49.0400' lon='8.0000'/>
+              <node id='602' lat='49.0400' lon='8.0060'/>
+              <node id='701' lat='49.0025' lon='8.0025'>
+                <tag k='traffic_sign' v='DE:310'/>
+              </node>
+              <node id='702' lat='49.0495' lon='8.0515'>
+                <tag k='traffic_sign' v='DE:311'/>
+              </node>
 
               <way id='100'>
                 <nd ref='1'/>
@@ -134,6 +142,13 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
                 <nd ref='5'/>
                 <nd ref='6'/>
                 <tag k='highway' v='service'/>
+              </way>
+              <way id='109'>
+                <nd ref='601'/>
+                <nd ref='602'/>
+                <tag k='highway' v='secondary'/>
+                <tag k='tunnel' v='yes'/>
+                <tag k='location' v='underground'/>
               </way>
               <way id='200'>
                 <nd ref='7'/>
@@ -312,6 +327,52 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
             _, p4 = self.run_query_v4(lat, lon)
             self.assertEqual(p3["summary"]["effective_speed_kmh"], p4["summary"]["effective_speed_kmh"])
             self.assertEqual(p3["summary"]["effective_speed_source"], p4["summary"]["effective_speed_source"])
+
+    def test_tunnel_portal_markers_exist_in_v3_and_v4(self):
+        with sqlite3.connect(self.db_v3) as conn:
+            count = conn.execute("SELECT COUNT(*) FROM tunnel_portal WHERE way_id='109'").fetchone()[0]
+            self.assertEqual(count, 2)
+            meta_count = conn.execute(
+                "SELECT value FROM metadata WHERE key='tunnel_portal_count'"
+            ).fetchone()
+            self.assertIsNotNone(meta_count)
+            self.assertGreaterEqual(int(meta_count[0]), 2)
+
+        with sqlite3.connect(self.db_v4) as conn:
+            count = conn.execute("SELECT COUNT(*) FROM tunnel_portal WHERE way_id='109'").fetchone()[0]
+            self.assertEqual(count, 2)
+            meta_count = conn.execute(
+                "SELECT value FROM metadata WHERE key='tunnel_portal_count'"
+            ).fetchone()
+            self.assertIsNotNone(meta_count)
+            self.assertGreaterEqual(int(meta_count[0]), 2)
+
+    def test_city_sign_markers_exist_in_v3_and_v4(self):
+        with sqlite3.connect(self.db_v3) as conn:
+            area_columns = {row[1] for row in conn.execute("PRAGMA table_info(areas)").fetchall()}
+            self.assertIn("traffic_sign", area_columns)
+            sign_rows = conn.execute(
+                "SELECT COUNT(*) FROM areas WHERE traffic_sign IN ('DE:310','DE:311')"
+            ).fetchone()[0]
+            self.assertGreaterEqual(sign_rows, 2)
+            meta_count = conn.execute(
+                "SELECT value FROM metadata WHERE key='city_sign_marker_count'"
+            ).fetchone()
+            self.assertIsNotNone(meta_count)
+            self.assertGreaterEqual(int(meta_count[0]), 2)
+
+        with sqlite3.connect(self.db_v4) as conn:
+            area_columns = {row[1] for row in conn.execute("PRAGMA table_info(areas)").fetchall()}
+            self.assertIn("traffic_sign", area_columns)
+            sign_rows = conn.execute(
+                "SELECT COUNT(*) FROM areas WHERE traffic_sign IN ('DE:310','DE:311')"
+            ).fetchone()[0]
+            self.assertGreaterEqual(sign_rows, 2)
+            meta_count = conn.execute(
+                "SELECT value FROM metadata WHERE key='city_sign_marker_count'"
+            ).fetchone()
+            self.assertIsNotNone(meta_count)
+            self.assertGreaterEqual(int(meta_count[0]), 2)
 
 
 if __name__ == "__main__":

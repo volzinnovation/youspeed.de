@@ -162,6 +162,10 @@ struct SpeedLimitResult {
     let location: String?
     let layer: Int?
     let level: Int?
+    let isTunnelSegment: Bool
+    let nearTunnelPortal: Bool
+    let tunnelPortalDistanceM: Double?
+    let tunnelPortalMarkersAvailable: Bool
     let streetName: String?
     let cityName: String?
     let insideCity: Bool?

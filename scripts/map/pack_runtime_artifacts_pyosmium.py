@@ -13,6 +13,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 from collections import defaultdict
 from typing import Dict, Iterable, List, TextIO, Tuple
@@ -30,6 +31,9 @@ except ImportError as exc:
 GRID_SCALE_DEFAULT = 100  # 0.01 degree cells
 MAX_GEOM_POINTS_DEFAULT = 24
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+CITY_SIGN_ENTRY = "DE:310"
+CITY_SIGN_EXIT = "DE:311"
+CITY_SIGN_PATTERN = re.compile(r"(?:^|[;|,\s])de:(310|311)(?:[^0-9]|$)", re.IGNORECASE)
 SPEED_TAG_KEYS = (
     "maxspeed",
     "maxspeed:type",
@@ -121,6 +125,22 @@ def _is_closed_ring(coords: List[Tuple[float, float]]) -> bool:
     return len(coords) >= 4 and coords[0] == coords[-1]
 
 
+def _canonical_city_sign(raw: object) -> str | None:
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    match = CITY_SIGN_PATTERN.search(text.lower())
+    if not match:
+        return None
+    if match.group(1) == "310":
+        return CITY_SIGN_ENTRY
+    if match.group(1) == "311":
+        return CITY_SIGN_EXIT
+    return None
+
+
 class ArtifactHandler(osmium.SimpleHandler):
     def __init__(
         self,
@@ -143,6 +163,7 @@ class ArtifactHandler(osmium.SimpleHandler):
     def way(self, way: osmium.osm.Way) -> None:
         tags = way.tags
         highway = tags.get("highway")
+        city_sign = _canonical_city_sign(tags.get("traffic_sign"))
         is_car_drivable = highway in DRIVABLE_HIGHWAYS_CAR
         has_speed_tags = any(k in tags for k in SPEED_TAG_KEYS)
         residential_value = tags.get("residential")
@@ -237,6 +258,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "admin_level": tags.get("admin_level"),
                     "residential": residential_value,
                     "parking": parking_value,
+                    "traffic_sign": city_sign,
                     "points": area_points,
                     "min_lon": min_lon,
                     "min_lat": min_lat,
@@ -258,6 +280,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "admin_level": tags.get("admin_level"),
                     "residential": residential_value,
                     "parking": parking_value,
+                    "traffic_sign": city_sign,
                     "points": [[lon, lat] for lon, lat in sampled_area],
                     "min_lon": min_lon,
                     "min_lat": min_lat,
@@ -279,6 +302,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                     "admin_level": tags.get("admin_level"),
                     "residential": residential_value,
                     "parking": parking_value,
+                    "traffic_sign": city_sign,
                     "points": [[lon, lat] for lon, lat in sampled_area],
                     "min_lon": min_lon,
                     "min_lat": min_lat,
@@ -289,7 +313,8 @@ class ArtifactHandler(osmium.SimpleHandler):
 
     def node(self, node: osmium.osm.Node) -> None:
         place = node.tags.get("place")
-        if place not in PLACE_VALUES:
+        city_sign = _canonical_city_sign(node.tags.get("traffic_sign"))
+        if place not in PLACE_VALUES and city_sign is None:
             return
         if not node.location.valid():
             return
@@ -306,6 +331,7 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "admin_level": node.tags.get("admin_level"),
                 "residential": node.tags.get("residential"),
                 "parking": node.tags.get("parking"),
+                "traffic_sign": city_sign,
                 "points": None,
                 "min_lon": lon,
                 "min_lat": lat,

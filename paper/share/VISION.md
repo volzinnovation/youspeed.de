@@ -14,12 +14,54 @@ YouSpeed should evolve in explicit phases rather than jumping directly to a full
 
 The key principle is that crowdsourcing does not replace OSM; it augments it. Baseline map truth comes from external open data, while community signals improve freshness and local detail between external snapshot cycles.
 
+## Current Scope vs North-Star (2026)
+The architecture has a deliberate split between what is implemented now and what remains the long-term target.
+
+Current scope (implemented baseline):
+- Authoritative runtime baseline comes from OSM snapshots/diffs packaged into app bundles.
+- Runtime is account-free and device-ID based.
+- Local corrections are captured and applied locally first; publication is editor-mediated export (`.osc` package for JOSM/Merkaartor), uploaded by the user with their own OSM account.
+- No direct app upload to OSM API and no centralized backend publication authority in the critical path.
+- Local correction state can be flushed after user-led publication; convergence comes from subsequent OSM daily diffs.
+
+North-star scope (future phase):
+- Device-observation corroboration at broad install-base scale.
+- Optional internal global cache for cross-device acceleration between OSM refresh cycles.
+- Strict quality gates before any promotion of crowd signals beyond local scope.
+
 ## Crowdsourced Speed Intelligence
 When the product reaches meaningful adoption, YouSpeed should support two acquisition channels while users are driving.
 
 The first channel is on-device computer vision, where the smartphone camera sees the road ahead and detects speed-related traffic signs. The second channel is voice input with speech recognition, where drivers report speed-sign changes, temporary restrictions, or inconsistencies hands-free. Both channels produce candidate observations, not immediate ground truth.
 
-Each observation should update a local user-side traffic-sign layer first. That local layer can immediately improve device behavior in known locations, with confidence flags and decay rules. The same observations then enter a global confirmation pipeline, where third-party corroboration determines whether a claim is promoted to shared data.
+Each observation should update a local user-side traffic-sign layer first. That local layer can immediately improve device behavior in known locations, with confidence flags and decay rules. Promotion beyond the local layer is phase-dependent: currently via editor-mediated OSM contribution and later, if activated, via corroboration-gated shared intelligence.
+
+## Operational Inference Policy
+The app must apply a deterministic inference order:
+
+1. User explicit input and approved local override.
+2. Way-level speed tags from baseline data (query modes: bbox, hybrid, polyline).
+3. Legal rule fallback, which requires city/rural classification.
+
+City/rural classification must combine multiple evidence sources:
+- residential/admin polygon containment,
+- place and administrative context,
+- city-entry/city-exit sign context (`traffic_sign=DE:310/311`).
+
+City name and street name resolution are first-class outputs, not debug-only metadata, because they are required for user trust, correction review, and export traceability.
+
+## Tunnel and Multi-Level Road Handling
+Tunnel handling is a dedicated operating mode. The system must avoid confusing tunnel segments with roads above/below by combining geometry and context attributes (`tunnel`, `location`, `layer`, `level`) plus tunnel portal markers.
+
+When entering a tunnel, speed display can switch to tunnel-state signaling if confidence is reduced. Temporary GPS loss inside tunnels is expected; tunnel mode should persist through short GNSS outages and clear only after credible exit evidence (portal proximity and/or restored stable GPS fixes).
+
+## Parking and Service-Road Policy
+Parking and service contexts require explicit treatment to avoid overconfident rule fallback:
+
+- Keep parking-lot polygons and service-road tags in runtime data.
+- Reduce confidence for generic service contexts without explicit speed evidence.
+- Prefer explicit speed tags or validated local observations over class-based defaults in parking-like areas.
+- Preserve auditable source attribution whenever a low-confidence fallback is used.
 
 ## Trust Model Without User Accounts
 YouSpeed is intended to work without user authentication. Identity is device-based, using pseudonymous device identifiers rather than personal accounts. This choice lowers friction and supports privacy goals, but it also creates data-quality and abuse-resistance challenges that must be solved in architecture, not policy text alone.
@@ -27,6 +69,19 @@ YouSpeed is intended to work without user authentication. Identity is device-bas
 The trust model therefore needs explicit safeguards: source scoring per device, temporal and spatial consistency checks, minimum independent confirmations, and conflict handling when local evidence disagrees with external data. A single device report should never overwrite shared truth. Promotion to global data should require corroboration by independent devices and consistency with map geometry and legal plausibility constraints.
 
 Runtime usage remains account-free. For OSM publication, uploads are attributable to individual contributors via an editor-mediated workflow: the app exports change files, and users upload with their own OSM account in JOSM/Merkaartor.
+
+## Local Correction Lifecycle
+Local correction flow is stateful and auditable:
+
+1. Capture while driving (voice, lock-current-speed, or deferred note).
+2. Mandatory post-drive review.
+3. Local activation as confidence overlay (when evidence is sufficient).
+4. Optional export package generation (`changes.osc` + review metadata).
+5. User-led upload in JOSM/Merkaartor with individual OSM identity.
+6. Optional user-entered changeset reference for traceability.
+7. Local contribution flush once expected upstream convergence is accepted.
+
+The flush capability is required operationally because upstream truth is re-ingested from OSM daily diffs, not pushed directly by the app.
 
 ## Data Ownership and Feedback Loops
 YouSpeed should maintain a layered data model instead of one monolithic database.
@@ -42,6 +97,20 @@ This layered model supports two outbound paths for confirmed findings: feed back
 The hardest systems problem is synchronization across multiple truth sources with different latency and trust levels: local device observations, globally confirmed internal data, external map updates, and periodic app data bundles. This is not a background detail; it is a primary product requirement.
 
 YouSpeed needs deterministic merge rules, versioned records, conflict precedence, rollback-safe activation, and bandwidth-aware delta sync. It must support offline accumulation, delayed upload, and eventual convergence once connectivity returns. It must also avoid destructive overwrite patterns when external baseline updates arrive after local crowd observations.
+
+## Quantitative Phase Gates
+Progression between phases must be controlled by measurable gates.
+
+Core runtime gates (per release):
+- On-device end-to-end inference latency (fix -> displayed result) with reported median and p95.
+- Joint query budget including maxspeed retrieval and polygon containment.
+- Daily-diff update operability (invalidations, patch/apply time, and transfer volume).
+- Stability metrics for tunnel mode transitions and false tunnel activations.
+- Correction pipeline metrics: capture success, review completion, export success, and local-overlay retirement after upstream refresh.
+
+Community-enrichment activation gate:
+- Multi-device observation density and consistency must exceed a defined threshold before enabling any shared corroboration loop.
+- Until that threshold is met, local-first behavior plus editor-mediated OSM contribution remains the default operating model.
 
 ## App-Side Integration Challenges
 Computer vision and speech recognition are independent technical domains and should be developed as separate subsystems, each with its own quality benchmarks, failure modes, and runtime budgets. Integration into the app should happen through a common observation contract so both channels produce comparable events for local storage, sync, and trust evaluation.

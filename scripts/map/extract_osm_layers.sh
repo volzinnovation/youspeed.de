@@ -54,6 +54,8 @@ osmium tags-filter \
   n/place=town \
   n/place=village \
   n/place=hamlet \
+  n/traffic_sign=DE:310 \
+  n/traffic_sign=DE:311 \
   --add-referenced \
   --overwrite \
   -o "$context_out"

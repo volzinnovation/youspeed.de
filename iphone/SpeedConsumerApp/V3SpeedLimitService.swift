@@ -16,8 +16,16 @@ final class V3SpeedLimitService {
         let level: Int?
         let streetName: String?
         let speedKmh: Int?
+        let speedSource: DerivedSpeedSource
         let distanceM: Double
         let score: Double
+    }
+
+    private enum DerivedSpeedSource {
+        case explicitTag
+        case inheritedTag
+        case highwayClass
+        case none
     }
 
     private struct CityBoundaryCandidate {
@@ -58,6 +66,20 @@ final class V3SpeedLimitService {
         let resolveMs: Double
     }
 
+    private struct CitySignContext {
+        let insideCity: Bool?
+        let source: String?
+        let candidateSigns: Int
+        let nearestDistanceM: Double?
+        let resolveMs: Double
+    }
+
+    private struct TunnelPortalContext {
+        let markersAvailable: Bool
+        let nearPortal: Bool
+        let nearestDistanceM: Double?
+    }
+
     private static let placeRank: [String: Int] = [
         "city": 0,
         "town": 1,
@@ -71,6 +93,11 @@ final class V3SpeedLimitService {
     private static let preferredWayScoreSlackM: Double = 12.0
     private static let preferredWayDistanceMultiplier: Double = 1.6
     private static let preferredWayDistanceFloorM: Double = 70.0
+    private static let tunnelPortalSearchRadiusM: Double = 120.0
+    private static let tunnelPortalNearThresholdM: Double = 90.0
+    private static let nonTunnelNearPortalPenaltyM: Double = 55.0
+    private static let citySignSearchRadiusM: Double = 220.0
+    private static let citySignMaxDistanceM: Double = 160.0
 
     init(dbPath: String) {
         self.dbPath = dbPath
@@ -121,6 +148,13 @@ final class V3SpeedLimitService {
         let wayGeomJoin = hasWayGeom ? "LEFT JOIN way_geom g ON g.row_id = w.row_id" : ""
         let pointsSelect = hasWayGeom ? "g.points_json" : "NULL"
         let bounds = queryBounds(lat: lat, lon: lon, radiusM: radiusM)
+        let tunnelPortalContext = resolveTunnelPortalContext(
+            db: db,
+            lat: lat,
+            lon: lon,
+            searchRadiusM: Self.tunnelPortalSearchRadiusM,
+            nearThresholdM: Self.tunnelPortalNearThresholdM
+        )
         let sql = """
         SELECT w.way_id, w.highway, \(streetSelect) AS street_name, \(refSelect) AS ref, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
                \(headingSelect) AS approx_heading_deg, \(serviceSelect) AS service, \(tunnelSelect) AS tunnel,
@@ -205,12 +239,13 @@ final class V3SpeedLimitService {
             if distance < nearestCandidateDistance {
                 nearestCandidateDistance = distance
             }
-            let parsed = Self.deriveSpeedLimitKmh(
+            let parsedResult = Self.deriveSpeedLimitWithSource(
                 maxspeed: maxspeedRaw,
                 maxspeedType: maxspeedType,
                 sourceMaxspeed: sourceMaxspeed,
                 highway: highway
             )
+            let parsed = parsedResult.speed
             if parsed != nil {
                 speedCandidateCount += 1
                 if distance < nearestSpeedCandidateDistance {
@@ -225,7 +260,19 @@ final class V3SpeedLimitService {
             } else {
                 headingPenalty = 0.0
             }
-            let score = distance + headingPenalty
+            let candidateTunnelLike = isTunnelLike(
+                tunnel: tunnel,
+                location: locationTag,
+                layer: layer,
+                level: level
+            )
+            let nonTunnelPortalPenalty: Double
+            if tunnelPortalContext.nearPortal && !candidateTunnelLike {
+                nonTunnelPortalPenalty = Self.nonTunnelNearPortalPenaltyM
+            } else {
+                nonTunnelPortalPenalty = 0.0
+            }
+            let score = distance + headingPenalty + nonTunnelPortalPenalty
 
             let candidate = WayCandidate(
                 wayID: wayID,
@@ -239,6 +286,7 @@ final class V3SpeedLimitService {
                 level: level,
                 streetName: streetName,
                 speedKmh: parsed,
+                speedSource: parsedResult.source,
                 distanceM: distance,
                 score: score
             )
@@ -280,22 +328,40 @@ final class V3SpeedLimitService {
 
         let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
         let residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
+        let citySignContext = resolveCitySignContext(db: db, lat: lat, lon: lon)
+        let insideCityDecision = resolveInsideCityDecision(
+            cityContext: cityContext,
+            residentialContext: residentialContext,
+            citySignContext: citySignContext
+        )
 
         let t1 = DispatchTime.now().uptimeNanoseconds
         let elapsedMs = Double(t1 - t0) / 1_000_000.0
 
         let effectiveSpeed: Int?
-        if let matchedSpeed = selected?.speedKmh {
-            effectiveSpeed = matchedSpeed
-        } else if selected != nil, let insideCity = residentialContext.insideCity {
+        if let selected, let matchedSpeed = selected.speedKmh {
+            if selected.speedSource == .highwayClass, let insideCity = insideCityDecision.insideCity {
+                // Highway class alone is weaker than explicit city/rural context.
+                effectiveSpeed = insideCity ? 50 : 100
+            } else {
+                effectiveSpeed = matchedSpeed
+            }
+        } else if selected != nil, let insideCity = insideCityDecision.insideCity {
             // Keep inherited defaults only when a way match exists.
             effectiveSpeed = insideCity ? 50 : 100
-        } else if residentialContext.insideCity == true {
+        } else if insideCityDecision.insideCity == true {
             // Residential polygon containment can still provide a safe inner-city fallback.
             effectiveSpeed = 50
         } else {
             effectiveSpeed = nil
         }
+
+        let selectedTunnelLike = isTunnelLike(
+            tunnel: selected?.tunnel,
+            location: selected?.location,
+            layer: selected?.layer,
+            level: selected?.level
+        )
 
         return SpeedLimitResult(
             speedLimitKmh: effectiveSpeed,
@@ -308,14 +374,18 @@ final class V3SpeedLimitService {
             location: selected?.location,
             layer: selected?.layer,
             level: selected?.level,
+            isTunnelSegment: selectedTunnelLike,
+            nearTunnelPortal: tunnelPortalContext.nearPortal,
+            tunnelPortalDistanceM: tunnelPortalContext.nearestDistanceM,
+            tunnelPortalMarkersAvailable: tunnelPortalContext.markersAvailable,
             streetName: selected?.streetName,
             cityName: cityContext.cityName,
-            insideCity: residentialContext.insideCity,
-            citySource: cityContext.citySource,
-            cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
+            insideCity: insideCityDecision.insideCity,
+            citySource: insideCityDecision.source ?? cityContext.citySource,
+            cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs + citySignContext.resolveMs,
             cityCandidateBoundaries: cityContext.candidateBoundaries,
             cityContainingBoundaries: cityContext.containingBoundaries,
-            cityPlaceCandidates: cityContext.placeCandidates,
+            cityPlaceCandidates: cityContext.placeCandidates + citySignContext.candidateSigns,
             queryTimeMs: elapsedMs,
             candidateCount: candidateCount,
             speedCandidateCount: speedCandidateCount,
@@ -405,32 +475,46 @@ final class V3SpeedLimitService {
     }
 
     static func deriveSpeedLimitKmh(maxspeed: String?, maxspeedType: String?, sourceMaxspeed: String?, highway: String?) -> Int? {
+        deriveSpeedLimitWithSource(
+            maxspeed: maxspeed,
+            maxspeedType: maxspeedType,
+            sourceMaxspeed: sourceMaxspeed,
+            highway: highway
+        ).speed
+    }
+
+    private static func deriveSpeedLimitWithSource(
+        maxspeed: String?,
+        maxspeedType: String?,
+        sourceMaxspeed: String?,
+        highway: String?
+    ) -> (speed: Int?, source: DerivedSpeedSource) {
         if let maxspeed, let explicit = parseExplicitSpeed(maxspeed) {
-            return explicit
+            return (explicit, .explicitTag)
         }
 
         let inherited = [maxspeedType, sourceMaxspeed].compactMap { $0 }.joined(separator: " ").lowercased()
         if inherited.contains("urban") {
-            return 50
+            return (50, .inheritedTag)
         }
         if inherited.contains("rural") {
-            return 100
+            return (100, .inheritedTag)
         }
         if inherited.contains("motorway") {
-            return 130
+            return (130, .inheritedTag)
         }
 
         switch highway?.lowercased() {
         case "motorway", "motorway_link":
-            return 130
+            return (130, .highwayClass)
         case "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link":
-            return 100
+            return (100, .highwayClass)
         case "living_street":
-            return 10
+            return (10, .highwayClass)
         case "residential", "service", "unclassified", "road":
-            return 50
+            return (50, .highwayClass)
         default:
-            return nil
+            return (nil, .none)
         }
     }
 
@@ -634,6 +718,85 @@ final class V3SpeedLimitService {
         return nil
     }
 
+    private func resolveTunnelPortalContext(
+        db: OpaquePointer,
+        lat: Double,
+        lon: Double,
+        searchRadiusM: Double,
+        nearThresholdM: Double,
+        limitRows: Int = 128
+    ) -> TunnelPortalContext {
+        guard tableExists(db: db, name: "tunnel_portal"),
+              tableExists(db: db, name: "tunnel_portal_rtree") else {
+            return TunnelPortalContext(markersAvailable: false, nearPortal: false, nearestDistanceM: nil)
+        }
+
+        let bounds = queryBounds(lat: lat, lon: lon, radiusM: max(searchRadiusM, 20.0))
+        let sql = """
+        SELECT p.lon, p.lat
+        FROM tunnel_portal_rtree r
+        JOIN tunnel_portal p ON p.row_id = r.row_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        LIMIT ?5
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            return TunnelPortalContext(markersAvailable: true, nearPortal: false, nearestDistanceM: nil)
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        sqlite3_bind_double(stmt, 1, bounds.maxLon)
+        sqlite3_bind_double(stmt, 2, bounds.minLon)
+        sqlite3_bind_double(stmt, 3, bounds.maxLat)
+        sqlite3_bind_double(stmt, 4, bounds.minLat)
+        sqlite3_bind_int64(stmt, 5, Int64(max(limitRows, 16)))
+
+        var nearest = Double.infinity
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let portalLon = sqlite3_column_double(stmt, 0)
+            let portalLat = sqlite3_column_double(stmt, 1)
+            let distance = haversineM(lat1: lat, lon1: lon, lat2: portalLat, lon2: portalLon)
+            if distance < nearest {
+                nearest = distance
+            }
+        }
+
+        let nearestDistance = nearest.isFinite ? nearest : nil
+        let nearPortal = (nearestDistance ?? Double.infinity) <= max(nearThresholdM, 0.0)
+        return TunnelPortalContext(markersAvailable: true, nearPortal: nearPortal, nearestDistanceM: nearestDistance)
+    }
+
+    private func isTunnelLike(tunnel: String?, location: String?, layer: Int?, level: Int?) -> Bool {
+        if isTruthyOSMTag(tunnel) {
+            return true
+        }
+        if let location {
+            let normalized = location.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            if normalized.contains("underground") || normalized == "tunnel" {
+                return true
+            }
+        }
+        if let layer, layer < 0 {
+            return true
+        }
+        if let level, level < 0 {
+            return true
+        }
+        return false
+    }
+
+    private func isTruthyOSMTag(_ raw: String?) -> Bool {
+        guard let raw else {
+            return false
+        }
+        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.isEmpty {
+            return false
+        }
+        return !["0", "false", "no", "off", "none"].contains(normalized)
+    }
+
     private func tableExists(db: OpaquePointer, name: String) -> Bool {
         var stmt: OpaquePointer?
         defer { sqlite3_finalize(stmt) }
@@ -766,12 +929,155 @@ final class V3SpeedLimitService {
         }
 
         let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+        let insideCity: Bool? = candidates > 0 ? (containing > 0) : nil
         return ResidentialContext(
-            insideCity: containing > 0,
+            insideCity: insideCity,
             candidatePolygons: candidates,
             containingPolygons: containing,
             resolveMs: elapsed
         )
+    }
+
+    private func resolveCitySignContext(
+        db: OpaquePointer,
+        lat: Double,
+        lon: Double,
+        limitRows: Int = 256
+    ) -> CitySignContext {
+        let startNs = DispatchTime.now().uptimeNanoseconds
+        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
+        let hasTrafficSignColumn = columnExists(db: db, table: "areas", column: "traffic_sign")
+        guard hasAreasTables, hasTrafficSignColumn else {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+            return CitySignContext(
+                insideCity: nil,
+                source: nil,
+                candidateSigns: 0,
+                nearestDistanceM: nil,
+                resolveMs: elapsed
+            )
+        }
+
+        let bounds = queryBounds(lat: lat, lon: lon, radiusM: Self.citySignSearchRadiusM)
+        let sql = """
+        SELECT a.traffic_sign, a.min_lon, a.min_lat
+        FROM areas_rtree r
+        JOIN areas a ON a.row_id = r.row_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+          AND a.geometry_type = 'Point'
+          AND a.traffic_sign IS NOT NULL
+          AND trim(a.traffic_sign) <> ''
+        LIMIT ?5
+        """
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+            return CitySignContext(
+                insideCity: nil,
+                source: nil,
+                candidateSigns: 0,
+                nearestDistanceM: nil,
+                resolveMs: elapsed
+            )
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        sqlite3_bind_double(stmt, 1, bounds.maxLon)
+        sqlite3_bind_double(stmt, 2, bounds.minLon)
+        sqlite3_bind_double(stmt, 3, bounds.maxLat)
+        sqlite3_bind_double(stmt, 4, bounds.minLat)
+        sqlite3_bind_int64(stmt, 5, Int64(max(limitRows, 16)))
+
+        var candidateSigns = 0
+        var nearestDistance = Double.infinity
+        var nearestSign: String?
+
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let rawTrafficSign = cStringOptional(sqlite3_column_text(stmt, 0))
+            guard let sign = canonicalCityBoundarySign(rawTrafficSign) else {
+                continue
+            }
+            candidateSigns += 1
+            let signLon = sqlite3_column_double(stmt, 1)
+            let signLat = sqlite3_column_double(stmt, 2)
+            let distance = haversineM(lat1: lat, lon1: lon, lat2: signLat, lon2: signLon)
+            if distance < nearestDistance {
+                nearestDistance = distance
+                nearestSign = sign
+            }
+        }
+
+        let nearest = nearestDistance.isFinite ? nearestDistance : nil
+        let insideCity: Bool?
+        let source: String?
+        if let sign = nearestSign,
+           let nearest,
+           nearest <= Self.citySignMaxDistanceM {
+            insideCity = (sign == "DE:310")
+            source = insideCity == true ? "traffic_sign_310" : "traffic_sign_311"
+        } else {
+            insideCity = nil
+            source = nil
+        }
+
+        let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+        return CitySignContext(
+            insideCity: insideCity,
+            source: source,
+            candidateSigns: candidateSigns,
+            nearestDistanceM: nearest,
+            resolveMs: elapsed
+        )
+    }
+
+    private func canonicalCityBoundarySign(_ raw: String?) -> String? {
+        guard let raw else {
+            return nil
+        }
+        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else {
+            return nil
+        }
+        if normalized.range(of: #"(^|[;|,\s])de:310([^0-9]|$)"#, options: .regularExpression) != nil {
+            return "DE:310"
+        }
+        if normalized.range(of: #"(^|[;|,\s])de:311([^0-9]|$)"#, options: .regularExpression) != nil {
+            return "DE:311"
+        }
+        return nil
+    }
+
+    private func resolveInsideCityDecision(
+        cityContext: CityContext,
+        residentialContext: ResidentialContext,
+        citySignContext: CitySignContext
+    ) -> (insideCity: Bool?, source: String?) {
+        if let insideCity = residentialContext.insideCity {
+            return (insideCity, "residential_polygon")
+        }
+
+        if let insideCity = cityContext.insideCity,
+           let source = cityContext.citySource,
+           isStrongCityInsideSource(source) {
+            return (insideCity, source)
+        }
+
+        if let insideCity = citySignContext.insideCity {
+            return (insideCity, citySignContext.source)
+        }
+
+        return (nil, nil)
+    }
+
+    private func isStrongCityInsideSource(_ source: String) -> Bool {
+        switch source {
+        case "admin_polygon", "admin_bbox", "place_bbox":
+            return true
+        default:
+            return false
+        }
     }
 
     private func resolveCityContextWithPolygons(

@@ -17,6 +17,37 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"), 130)
     }
 
+    func testTunnelModeTrackerUsesPortalMarkersAndSignalRecovery() {
+        var tracker = TunnelModeTracker()
+        XCTAssertEqual(tracker.state, .inactive)
+
+        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: true, tunnelPortalMarkersAvailable: true)
+        XCTAssertEqual(tracker.state, .inactive)
+
+        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: true, tunnelPortalMarkersAvailable: true)
+        XCTAssertEqual(tracker.state, .active)
+
+        tracker.markSignalLost()
+        XCTAssertEqual(tracker.state, .awaitingSignalReturn)
+        XCTAssertTrue(tracker.isTunnelModeActive)
+
+        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: true)
+        XCTAssertEqual(tracker.state, .inactive)
+        XCTAssertFalse(tracker.isTunnelModeActive)
+    }
+
+    func testTunnelModeTrackerFallsBackWhenPortalMarkersUnavailable() {
+        var tracker = TunnelModeTracker()
+        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
+        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
+        XCTAssertEqual(tracker.state, .active)
+
+        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
+        XCTAssertEqual(tracker.state, .active)
+        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
+        XCTAssertEqual(tracker.state, .inactive)
+    }
+
     func testFormattedStreetDisplayUsesNameRefFallbackRules() {
         XCTAssertEqual(
             V3SpeedLimitService.formattedStreetDisplay(streetName: "Main Street", ref: nil),
@@ -406,6 +437,82 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(removed, 1)
         let afterDeleteAll = try await store.fetchObservations(limit: 10)
         XCTAssertTrue(afterDeleteAll.isEmpty)
+    }
+
+    func testResolveLocalSpeedOverridesUsesLatestAndSkipsDiscarded() async {
+        let base = "2026-03-08T00:00:00.000Z"
+        let observations: [LocalObservation] = [
+            LocalObservation(
+                id: "obs-latest",
+                modality: .lock_current_speed,
+                intentType: .set_maxspeed,
+                value: "40",
+                lat: 48.801,
+                lon: 8.443,
+                headingDeg: nil,
+                roadCandidateIDs: ["17721265"],
+                cityContext: "Karlsruhe",
+                streetContext: "Dobler Strasse",
+                capturedAtUTC: base,
+                confidenceCalibrated: 0.9,
+                sourceVersion: "seed",
+                state: .localOnly,
+                devicePseudoID: "device-a",
+                updatedAtUTC: base,
+                exportID: nil,
+                oldSpeedKmh: 30,
+                newSpeedKmh: 40
+            ),
+            LocalObservation(
+                id: "obs-discarded",
+                modality: .lock_current_speed,
+                intentType: .set_maxspeed,
+                value: "60",
+                lat: 48.801,
+                lon: 8.443,
+                headingDeg: nil,
+                roadCandidateIDs: ["17721265"],
+                cityContext: "Karlsruhe",
+                streetContext: "Dobler Strasse",
+                capturedAtUTC: "2026-03-07T00:00:00.000Z",
+                confidenceCalibrated: 0.8,
+                sourceVersion: "seed",
+                state: .discarded,
+                devicePseudoID: "device-a",
+                updatedAtUTC: "2026-03-07T00:00:00.000Z",
+                exportID: nil,
+                oldSpeedKmh: 30,
+                newSpeedKmh: 60
+            ),
+            LocalObservation(
+                id: "obs-second-way",
+                modality: .voice_command,
+                intentType: .set_maxspeed,
+                value: "50",
+                lat: 48.802,
+                lon: 8.444,
+                headingDeg: nil,
+                roadCandidateIDs: ["69233057"],
+                cityContext: "Karlsruhe",
+                streetContext: "Kullenmuehle",
+                capturedAtUTC: "2026-03-07T10:00:00.000Z",
+                confidenceCalibrated: 0.84,
+                sourceVersion: "seed",
+                state: .needsReview,
+                devicePseudoID: "device-a",
+                updatedAtUTC: "2026-03-07T10:00:00.000Z",
+                exportID: nil,
+                oldSpeedKmh: nil,
+                newSpeedKmh: 50
+            ),
+        ]
+
+        let resolved = await MainActor.run {
+            DriveSessionViewModel.resolveLocalSpeedOverrides(from: observations)
+        }
+        XCTAssertEqual(resolved["17721265"], 40)
+        XCTAssertEqual(resolved["69233057"], 50)
+        XCTAssertEqual(resolved.count, 2)
     }
 
     func testMultipartBundleSyncAndFirstQuery() async throws {
@@ -931,6 +1038,84 @@ final class SpeedConsumerTests: XCTestCase {
         try runReplayAssertion(track: track, expected: expected, radiusM: 120.0)
     }
 
+    func testBenchmarkEndToEndLookupLatency_usingBundledDBAndReplayTrack() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let track = try parseGPXTrack(url: fixtureURL(named: "replay_track.gpx"))
+        XCTAssertFalse(track.isEmpty, "Replay track fixture must contain at least one point")
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        var e2eMs: [Double] = []
+        var serviceMs: [Double] = []
+        var cityMs: [Double] = []
+        e2eMs.reserveCapacity(track.count * 20)
+        serviceMs.reserveCapacity(track.count * 20)
+        cityMs.reserveCapacity(track.count * 20)
+
+        // Warmup pass to stabilize caches and first-open effects.
+        for point in track {
+            _ = try service.lookupSpeedLimit(lat: point.lat, lon: point.lon, radiusM: 120.0, maxCandidates: 64)
+        }
+
+        for _ in 0..<20 {
+            for point in track {
+                let started = DispatchTime.now().uptimeNanoseconds
+                let result = try service.lookupSpeedLimit(
+                    lat: point.lat,
+                    lon: point.lon,
+                    radiusM: 120.0,
+                    maxCandidates: 64
+                )
+
+                // Include app-facing post-processing payload projection to approximate
+                // fix->UI handoff cost, not only pure DB query timing.
+                let speedText = result.speedLimitKmh.map(String.init) ?? "nil"
+                let wayText = result.wayID ?? "nil"
+                let streetText = result.streetName ?? "nil"
+                let cityText = result.cityName ?? "nil"
+                let insideCityText = result.insideCity.map { $0 ? "1" : "0" } ?? "nil"
+                _ = "\(speedText)|\(wayText)|\(streetText)|\(cityText)|\(insideCityText)"
+
+                let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000.0
+                e2eMs.append(elapsedMs)
+                serviceMs.append(result.queryTimeMs)
+                cityMs.append(result.cityResolveMs)
+            }
+        }
+
+        func percentile(_ values: [Double], _ p: Double) -> Double {
+            guard !values.isEmpty else { return 0.0 }
+            let sorted = values.sorted()
+            let idx = Int((Double(sorted.count - 1) * p).rounded(.toNearestOrEven))
+            return sorted[min(max(idx, 0), sorted.count - 1)]
+        }
+
+        let e2eMedian = percentile(e2eMs, 0.50)
+        let e2eP95 = percentile(e2eMs, 0.95)
+        let serviceMedian = percentile(serviceMs, 0.50)
+        let serviceP95 = percentile(serviceMs, 0.95)
+        let cityMedian = percentile(cityMs, 0.50)
+        let cityP95 = percentile(cityMs, 0.95)
+
+        print(
+            String(
+                format: "APP_E2E_BENCH n=%d e2e_ms_median=%.3f e2e_ms_p95=%.3f service_ms_median=%.3f service_ms_p95=%.3f city_ms_median=%.3f city_ms_p95=%.3f",
+                e2eMs.count,
+                e2eMedian,
+                e2eP95,
+                serviceMedian,
+                serviceP95,
+                cityMedian,
+                cityP95
+            )
+        )
+
+        XCTAssertGreaterThan(e2eMedian, 0.0)
+        XCTAssertLessThan(e2eP95, 250.0, "Unexpectedly high p95 end-to-end lookup latency")
+    }
+
     func testRealReleaseSyncAssembleAndLookup_whenEnabled() async throws {
         let env = ProcessInfo.processInfo.environment
         if env["SPEEDCONSUMER_SKIP_REAL_RELEASE_SYNC"] == "1" {
@@ -1024,8 +1209,16 @@ final class SpeedConsumerTests: XCTestCase {
 
     @MainActor
     func testFirstQueryAtDeviceActualLocation() throws {
+        #if targetEnvironment(simulator)
+        throw XCTSkip("Connected-device only test")
+        #endif
+
         guard let bundledDB = bundledSpeedDBURL() else {
             throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        guard CLLocationManager.locationServicesEnabled() else {
+            throw XCTSkip("Location services are disabled on this device")
         }
 
         let locationManager = CLLocationManager()
@@ -1081,7 +1274,16 @@ final class SpeedConsumerTests: XCTestCase {
             XCTFail("Did not receive a device location in time")
             return
         }
-        let location = try locationResult.get()
+        let location: CLLocation
+        switch locationResult {
+        case .success(let value):
+            location = value
+        case .failure(let error):
+            if let clError = error as? CLError {
+                throw XCTSkip("Location fix unavailable (\(clError.errorCode)): \(clError.localizedDescription)")
+            }
+            throw error
+        }
 
         let service = V3SpeedLimitService(dbPath: bundledDB.path)
         let started = DispatchTime.now().uptimeNanoseconds
@@ -1204,6 +1406,8 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(turnedResult.bridge, "yes")
         XCTAssertEqual(turnedResult.layer, 1)
         XCTAssertEqual(turnedResult.service, "main")
+        XCTAssertTrue(turnedResult.tunnelPortalMarkersAvailable)
+        XCTAssertFalse(turnedResult.nearTunnelPortal)
 
         let lowSpeedResult = try service.lookupSpeedLimit(
             lat: 52.0,
@@ -1222,6 +1426,82 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(lowSpeedResult.location, "underground")
         XCTAssertEqual(lowSpeedResult.layer, -1)
         XCTAssertEqual(lowSpeedResult.service, "parking_aisle")
+        XCTAssertTrue(lowSpeedResult.tunnelPortalMarkersAvailable)
+        XCTAssertFalse(lowSpeedResult.nearTunnelPortal)
+    }
+
+    func testLookupMarksNearTunnelPortalWhenProbeIsAtPortal() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-portal-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("heading_fixture.sqlite")
+        try createHeadingDisambiguationFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let nearPortal = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0001,
+            radiusM: 80.0,
+            maxCandidates: 32,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 20.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertTrue(nearPortal.isTunnelSegment)
+        XCTAssertTrue(nearPortal.tunnelPortalMarkersAvailable)
+        XCTAssertTrue(nearPortal.nearTunnelPortal)
+        XCTAssertNotNil(nearPortal.tunnelPortalDistanceM)
+    }
+
+    func testLookupUsesCityBoundaryTrafficSignsWhenResidentialPolygonsAreUnavailable() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-sign-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_sign_fixture.sqlite")
+        try createCitySignFallbackFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let inner = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0021,
+            radiusM: 120.0,
+            maxCandidates: 32,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 40.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(inner.wayID, "S1")
+        XCTAssertEqual(inner.insideCity, true)
+        XCTAssertEqual(inner.speedLimitKmh, 50)
+        XCTAssertEqual(inner.citySource, "traffic_sign_310")
+
+        let outer = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0079,
+            radiusM: 120.0,
+            maxCandidates: 32,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 40.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(outer.wayID, "S1")
+        XCTAssertEqual(outer.insideCity, false)
+        XCTAssertEqual(outer.speedLimitKmh, 100)
+        XCTAssertEqual(outer.citySource, "traffic_sign_311")
     }
 
     func testLookupRemainsCompatibleWithLegacySchemaWithoutWayGeomAndApproxHeading() throws {
@@ -1249,7 +1529,7 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(onWay.wayID, "100")
         XCTAssertEqual(onWay.speedLimitKmh, 30)
-        XCTAssertNil(onWay.insideCity)
+        XCTAssertEqual(onWay.insideCity, true)
 
         let insideOnly = try service.lookupSpeedLimit(
             lat: 52.5202,
@@ -1263,8 +1543,8 @@ final class SpeedConsumerTests: XCTestCase {
             horizontalAccuracyM: nil
         )
         XCTAssertNil(insideOnly.wayID)
-        XCTAssertNil(insideOnly.insideCity)
-        XCTAssertNil(insideOnly.speedLimitKmh)
+        XCTAssertEqual(insideOnly.insideCity, true)
+        XCTAssertEqual(insideOnly.speedLimitKmh, 50)
     }
 
     private func createFixtureV3DB(at url: URL) throws {
@@ -1308,6 +1588,23 @@ final class SpeedConsumerTests: XCTestCase {
           row_id INTEGER PRIMARY KEY,
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
+        );
+        CREATE TABLE tunnel_portal (
+          row_id INTEGER PRIMARY KEY,
+          way_row_id INTEGER NOT NULL,
+          way_id TEXT NOT NULL,
+          portal_index INTEGER NOT NULL,
+          lon REAL NOT NULL,
+          lat REAL NOT NULL,
+          tunnel TEXT,
+          location TEXT,
+          layer REAL,
+          level REAL
+        );
+        CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
         );
         CREATE TABLE areas (
           row_id INTEGER PRIMARY KEY,
@@ -1400,6 +1697,23 @@ final class SpeedConsumerTests: XCTestCase {
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
         );
+        CREATE TABLE tunnel_portal (
+          row_id INTEGER PRIMARY KEY,
+          way_row_id INTEGER NOT NULL,
+          way_id TEXT NOT NULL,
+          portal_index INTEGER NOT NULL,
+          lon REAL NOT NULL,
+          lat REAL NOT NULL,
+          tunnel TEXT,
+          location TEXT,
+          layer REAL,
+          level REAL
+        );
+        CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, 'A1', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'parking_aisle', 'yes', NULL, NULL, 'underground', '-1', NULL, 13.0000, 51.9999, 13.0100, 52.0001);
@@ -1407,6 +1721,14 @@ final class SpeedConsumerTests: XCTestCase {
         VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, 'A1', '[[52.0000,13.0000],[52.0000,13.0100]]');
+        INSERT INTO tunnel_portal(row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level)
+        VALUES (1, 1, 'A1', 0, 13.0000, 52.0000, 'yes', 'underground', -1, NULL);
+        INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.0000, 13.0000, 52.0000, 52.0000);
+        INSERT INTO tunnel_portal(row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level)
+        VALUES (2, 1, 'A1', 1, 13.0100, 52.0000, 'yes', 'underground', -1, NULL);
+        INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (2, 13.0100, 13.0100, 52.0000, 52.0000);
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
         VALUES (2, 'B1', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 'main', NULL, 'yes', NULL, NULL, '1', NULL, 13.0049, 51.9950, 13.0051, 52.0050);
@@ -1481,6 +1803,94 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
             throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createCitySignFallbackFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 105, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+        CREATE TABLE areas (
+          row_id INTEGER PRIMARY KEY,
+          area_id TEXT NOT NULL UNIQUE,
+          geometry_type TEXT,
+          name TEXT,
+          place TEXT,
+          boundary TEXT,
+          admin_level TEXT,
+          residential TEXT,
+          parking TEXT,
+          traffic_sign TEXT,
+          points_json TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE areas_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'S1', 'secondary', 'City Boundary Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 51.9999, 13.0100, 52.0001);
+        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, 'S1', '[[52.0000,13.0000],[52.0000,13.0100]]');
+
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'n:1001', 'Point', NULL, NULL, NULL, NULL, NULL, NULL, 'DE:310', NULL, 13.0020, 52.0000, 13.0020, 52.0000);
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.0020, 13.0020, 52.0000, 52.0000);
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'n:1002', 'Point', NULL, NULL, NULL, NULL, NULL, NULL, 'DE:311', NULL, 13.0080, 52.0000, 13.0080, 52.0000);
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (2, 13.0080, 13.0080, 52.0000, 52.0000);
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 106, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 
