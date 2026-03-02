@@ -1,0 +1,509 @@
+#!/usr/bin/env python3
+"""Generate v3 bundles for one region or top-N countries from maxspeed ranking."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import shutil
+import subprocess
+import sys
+import urllib.request
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Tuple
+
+
+@dataclass(frozen=True)
+class RankingCountry:
+    rank: int
+    country: str
+    iso2: str
+    geofabrik_id: str
+    pbf_url: str
+    pbf_size_bytes: int
+
+
+@dataclass(frozen=True)
+class BundleTarget:
+    country_name: str
+    country_id: str
+    iso2: str
+    region_id: str
+    pbf_url: str
+    poly_url: Optional[str]
+    is_shard: bool
+
+
+def _slug(value: str) -> str:
+    return (
+        value.strip()
+        .lower()
+        .replace(" ", "-")
+        .replace("_", "-")
+        .replace("/", "-")
+    )
+
+
+def _now_bundle_version() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _load_geofabrik_index(path: Path) -> Dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _iter_feature_props(index_payload: Dict) -> Iterable[Dict]:
+    for feature in index_payload.get("features", []):
+        props = feature.get("properties")
+        if isinstance(props, dict):
+            yield props
+
+
+def _build_index_maps(index_payload: Dict) -> Tuple[Dict[str, Dict], Dict[str, List[Dict]]]:
+    by_id: Dict[str, Dict] = {}
+    children: Dict[str, List[Dict]] = {}
+    for props in _iter_feature_props(index_payload):
+        geofabrik_id = str(props.get("id", "")).strip().lower()
+        if not geofabrik_id:
+            continue
+        by_id[geofabrik_id] = props
+        parent = str(props.get("parent", "")).strip().lower()
+        if parent:
+            children.setdefault(parent, []).append(props)
+    for parent, entries in children.items():
+        entries.sort(key=lambda item: str(item.get("name", item.get("id", ""))).lower())
+        children[parent] = entries
+    return by_id, children
+
+
+def _urls_from_props(props: Dict) -> Dict:
+    urls = props.get("urls")
+    return urls if isinstance(urls, dict) else {}
+
+
+def _iso2_from_props(props: Dict) -> str:
+    raw = props.get("iso3166-1:alpha2")
+    if isinstance(raw, list) and raw:
+        return str(raw[0]).upper()
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip().upper()
+    return ""
+
+
+def _load_ranking(path: Path) -> List[RankingCountry]:
+    rows: List[RankingCountry] = []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        required = {
+            "rank",
+            "country",
+            "iso2",
+            "geofabrik_id",
+            "pbf_url",
+            "pbf_size_bytes",
+        }
+        missing = required - set(reader.fieldnames or [])
+        if missing:
+            raise SystemExit(f"Ranking CSV missing columns: {sorted(missing)}")
+        for row in reader:
+            rows.append(
+                RankingCountry(
+                    rank=int(row["rank"]),
+                    country=str(row["country"]),
+                    iso2=str(row["iso2"]).upper(),
+                    geofabrik_id=str(row["geofabrik_id"]).strip().lower(),
+                    pbf_url=str(row["pbf_url"]).strip(),
+                    pbf_size_bytes=int(row["pbf_size_bytes"]),
+                )
+            )
+    rows.sort(key=lambda item: item.rank)
+    return rows
+
+
+def plan_targets_from_top_countries(
+    *,
+    ranking_rows: List[RankingCountry],
+    index_by_id: Dict[str, Dict],
+    child_regions_by_parent: Dict[str, List[Dict]],
+    top_n: int,
+    max_country_pbf_bytes: int,
+) -> List[BundleTarget]:
+    if top_n <= 0:
+        raise SystemExit("--top-n must be > 0")
+
+    targets: List[BundleTarget] = []
+    for country in ranking_rows[:top_n]:
+        country_props = index_by_id.get(country.geofabrik_id)
+        if country_props is None:
+            raise SystemExit(f"Geofabrik id not found in index: {country.geofabrik_id}")
+        country_name = str(country_props.get("name", country.country))
+
+        if country.pbf_size_bytes > max_country_pbf_bytes:
+            shards = child_regions_by_parent.get(country.geofabrik_id, [])
+            if not shards:
+                raise SystemExit(
+                    f"Country '{country.geofabrik_id}' exceeds threshold but has no child regions in index"
+                )
+            for shard in shards:
+                urls = _urls_from_props(shard)
+                pbf_url = str(urls.get("pbf", "")).strip()
+                if not pbf_url:
+                    continue
+                targets.append(
+                    BundleTarget(
+                        country_name=country_name,
+                        country_id=country.geofabrik_id,
+                        iso2=country.iso2,
+                        region_id=str(shard.get("id", "")).strip().lower(),
+                        pbf_url=pbf_url,
+                        poly_url=str(urls.get("poly", "")).strip() or None,
+                        is_shard=True,
+                    )
+                )
+        else:
+            urls = _urls_from_props(country_props)
+            poly_url = str(urls.get("poly", "")).strip() or None
+            targets.append(
+                BundleTarget(
+                    country_name=country_name,
+                    country_id=country.geofabrik_id,
+                    iso2=country.iso2,
+                    region_id=country.geofabrik_id,
+                    pbf_url=country.pbf_url,
+                    poly_url=poly_url,
+                    is_shard=False,
+                )
+            )
+    return targets
+
+
+def plan_single_region_target(
+    *,
+    region_id: str,
+    index_by_id: Dict[str, Dict],
+    iso2_override: str,
+) -> BundleTarget:
+    key = region_id.strip().lower()
+    props = index_by_id.get(key)
+    if props is None:
+        raise SystemExit(f"Region id not found in Geofabrik index: {region_id}")
+    urls = _urls_from_props(props)
+    pbf_url = str(urls.get("pbf", "")).strip()
+    if not pbf_url:
+        raise SystemExit(f"Region has no PBF URL in index: {region_id}")
+    parent = str(props.get("parent", "")).strip().lower()
+    country_id = parent or key
+    iso2 = iso2_override.strip().upper() or _iso2_from_props(props)
+    if not iso2:
+        raise SystemExit(f"Region has no ISO2 in index and --iso2 was not provided: {region_id}")
+
+    return BundleTarget(
+        country_name=str(props.get("name", region_id)),
+        country_id=country_id,
+        iso2=iso2,
+        region_id=key,
+        pbf_url=pbf_url,
+        poly_url=str(urls.get("poly", "")).strip() or None,
+        is_shard=False,
+    )
+
+
+def _download_file(url: str, out_path: Path, force: bool) -> None:
+    if out_path.exists() and not force:
+        return
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with urllib.request.urlopen(url) as response:
+        with out_path.open("wb") as f:
+            shutil.copyfileobj(response, f)
+
+
+def _run(cmd: List[str], dry_run: bool) -> None:
+    printable = " ".join(cmd)
+    print(f"$ {printable}")
+    if dry_run:
+        return
+    subprocess.run(cmd, check=True)
+
+
+def _bundle_commands(
+    *,
+    repo_root: Path,
+    target: BundleTarget,
+    bundle_version: str,
+    max_geom_points: int,
+    release_tag: str,
+    skip_release_urls: bool,
+) -> List[List[str]]:
+    region_slug = _slug(target.region_id)
+    iso2 = target.iso2.upper()
+    raw_dir = repo_root / "mapdata" / "raw"
+    pbf_path = raw_dir / f"{region_slug}-latest.osm.pbf"
+    poly_path = raw_dir / f"{region_slug}.poly"
+    v1_dist = repo_root / "mapdata" / "dist" / region_slug
+    v3_dist = repo_root / "mapdata" / "dist-v3" / region_slug
+    db_path = v3_dist / "speeds_v3.sqlite"
+
+    commands: List[List[str]] = [
+        [
+            str(repo_root / "scripts" / "map" / "build_region_artifacts.sh"),
+            "--region",
+            region_slug,
+            "--input",
+            str(pbf_path),
+            "--root",
+            str(repo_root),
+            "--max-geom-points",
+            str(max_geom_points),
+        ],
+        [
+            "python3",
+            str(repo_root / "scripts" / "map" / "build_spatialite_v3.py"),
+            "--v1-dist",
+            str(v1_dist),
+            "--out-db",
+            str(db_path),
+        ],
+        [
+            "python3",
+            str(repo_root / "scripts" / "map" / "publish_v3_bundle.py"),
+            "--region",
+            region_slug,
+            "--db",
+            str(db_path),
+            "--bundle-version",
+            bundle_version,
+            "--bundle-dir-name",
+            "latest",
+            "--out-root",
+            str(repo_root / "mapdata" / "bundles" / "v3"),
+            "--db-file-name",
+            f"{iso2}-latest.speeds_v3.sqlite",
+            "--manifest-name",
+            f"{iso2}-latest.bundle-manifest.v3.json",
+            "--coverage-poly",
+            str(poly_path),
+        ],
+    ]
+
+    if not skip_release_urls:
+        publish = commands[-1]
+        publish.extend(
+            [
+                "--github-owner",
+                "volzinnovation",
+                "--github-repo",
+                "youspeed.de",
+                "--github-release-tag",
+                release_tag,
+            ]
+        )
+    return commands
+
+
+def _catalog_command(
+    *,
+    repo_root: Path,
+    country_id: str,
+    iso2: str,
+    bundle_version: str,
+    region_ids: List[str],
+) -> List[str]:
+    cmd: List[str] = [
+        "python3",
+        str(repo_root / "scripts" / "map" / "build_v3_country_bundle_catalog.py"),
+        "--country",
+        iso2.upper(),
+        "--bundle-version",
+        bundle_version,
+    ]
+    for region_id in region_ids:
+        region_slug = _slug(region_id)
+        cmd.extend(
+            [
+                "--manifest",
+                str(
+                    repo_root
+                    / "mapdata"
+                    / "bundles"
+                    / "v3"
+                    / region_slug
+                    / "latest"
+                    / f"{iso2.upper()}-latest.bundle-manifest.v3.json"
+                ),
+            ]
+        )
+    cmd.extend(
+        [
+            "--out-json",
+            str(
+                repo_root
+                / "mapdata"
+                / "bundles"
+                / "v3"
+                / _slug(country_id)
+                / "latest"
+                / f"{iso2.upper()}-latest.bundle-catalog.v3.json"
+            ),
+        ]
+    )
+    return cmd
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate v3 bundles for one region or top countries")
+    parser.add_argument("--repo-root", default=".", help="Repository root (default: .)")
+    parser.add_argument(
+        "--ranking-csv",
+        default="mapdata/reports/europe_maxspeed_with_germany.ranking.csv",
+        help="Ranking CSV used for --top-n mode",
+    )
+    parser.add_argument(
+        "--geofabrik-index",
+        default="mapdata/build/geofabrik/index-v1.json",
+        help="Geofabrik index-v1.json path",
+    )
+    parser.add_argument(
+        "--geofabrik-index-url",
+        default="https://download.geofabrik.de/index-v1.json",
+        help="Download URL used when --geofabrik-index file is missing",
+    )
+    parser.add_argument("--max-country-pbf-bytes", type=int, default=1_000_000_000)
+    parser.add_argument("--top-n", type=int, default=0, help="Generate bundles for top N ranked countries")
+    parser.add_argument(
+        "--bundle-region",
+        default="",
+        help="Generate one explicit Geofabrik region id (bypasses --top-n)",
+    )
+    parser.add_argument("--iso2", default="", help="Optional ISO2 override for --bundle-region mode")
+    parser.add_argument("--bundle-version", default="", help="Bundle version (default: UTC date)")
+    parser.add_argument("--max-geom-points", type=int, default=8)
+    parser.add_argument(
+        "--release-tag",
+        default="deu-v3-data-latest",
+        help="Release tag used when embedding release URLs in manifests",
+    )
+    parser.add_argument(
+        "--skip-release-urls",
+        action="store_true",
+        help="Do not embed GitHub release URLs in generated manifests",
+    )
+    parser.add_argument(
+        "--force-download",
+        action="store_true",
+        help="Re-download PBF/poly even if local file already exists",
+    )
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Run generation commands (default: print plan only)",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    repo_root = Path(args.repo_root).resolve()
+    index_path = (repo_root / args.geofabrik_index).resolve()
+    if not index_path.exists():
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            print(f"Geofabrik index missing, downloading: {args.geofabrik_index_url}")
+            _download_file(args.geofabrik_index_url, index_path, force=True)
+        except Exception as exc:
+            raise SystemExit(
+                f"Missing geofabrik index at {index_path} and download failed: {exc}"
+            ) from exc
+
+    index_payload = _load_geofabrik_index(index_path)
+    index_by_id, child_regions_by_parent = _build_index_maps(index_payload)
+
+    bundle_version = args.bundle_version.strip() or _now_bundle_version()
+    top_n = int(args.top_n)
+    bundle_region = args.bundle_region.strip().lower()
+    if not bundle_region and top_n <= 0:
+        raise SystemExit("Provide either --bundle-region or --top-n > 0")
+
+    if bundle_region:
+        targets = [
+            plan_single_region_target(
+                region_id=bundle_region,
+                index_by_id=index_by_id,
+                iso2_override=args.iso2,
+            )
+        ]
+    else:
+        ranking_path = (repo_root / args.ranking_csv).resolve()
+        ranking_rows = _load_ranking(ranking_path)
+        targets = plan_targets_from_top_countries(
+            ranking_rows=ranking_rows,
+            index_by_id=index_by_id,
+            child_regions_by_parent=child_regions_by_parent,
+            top_n=top_n,
+            max_country_pbf_bytes=int(args.max_country_pbf_bytes),
+        )
+
+    print(f"Bundle version: {bundle_version}")
+    print(f"Targets: {len(targets)}")
+    for idx, target in enumerate(targets, start=1):
+        print(
+            f"  {idx:02d}. country={target.country_id} region={target.region_id} "
+            f"iso2={target.iso2} shard={'yes' if target.is_shard else 'no'}"
+        )
+
+    raw_dir = repo_root / "mapdata" / "raw"
+    for target in targets:
+        region_slug = _slug(target.region_id)
+        pbf_path = raw_dir / f"{region_slug}-latest.osm.pbf"
+        poly_path = raw_dir / f"{region_slug}.poly"
+
+        print(f"\n=== {target.country_name} / {target.region_id} ===")
+        if args.execute:
+            print(f"Downloading PBF: {target.pbf_url}")
+            _download_file(target.pbf_url, pbf_path, force=args.force_download)
+            if target.poly_url:
+                print(f"Downloading POLY: {target.poly_url}")
+                _download_file(target.poly_url, poly_path, force=args.force_download)
+            elif not poly_path.exists():
+                raise SystemExit(f"No poly URL in index and local poly missing for region {target.region_id}")
+        else:
+            print(f"PBF -> {pbf_path}")
+            print(f"POLY -> {poly_path if target.poly_url else '[local required]'}")
+
+        for cmd in _bundle_commands(
+            repo_root=repo_root,
+            target=target,
+            bundle_version=bundle_version,
+            max_geom_points=int(args.max_geom_points),
+            release_tag=args.release_tag,
+            skip_release_urls=bool(args.skip_release_urls),
+        ):
+            _run(cmd, dry_run=not args.execute)
+
+    by_country: Dict[Tuple[str, str], List[str]] = {}
+    for target in targets:
+        key = (target.country_id, target.iso2.upper())
+        by_country.setdefault(key, []).append(target.region_id)
+    for (country_id, iso2), regions in sorted(by_country.items()):
+        if len(regions) <= 1:
+            continue
+        print(f"\n=== Catalog {country_id} ({len(regions)} regions) ===")
+        _run(
+            _catalog_command(
+                repo_root=repo_root,
+                country_id=country_id,
+                iso2=iso2,
+                bundle_version=bundle_version,
+                region_ids=regions,
+            ),
+            dry_run=not args.execute,
+        )
+
+    print("\nDone.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

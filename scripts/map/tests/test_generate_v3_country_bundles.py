@@ -1,0 +1,164 @@
+import importlib.util
+import sys
+import unittest
+from pathlib import Path
+
+
+def _load_module(module_path: Path, module_name: str):
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load module at {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+MODULE = _load_module(
+    REPO_ROOT / "scripts" / "map" / "generate_v3_country_bundles.py",
+    "generate_v3_country_bundles",
+)
+
+
+class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
+    def test_plan_targets_splits_large_country_into_children(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "netherlands",
+                        "name": "Netherlands",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/netherlands-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/netherlands.poly",
+                        },
+                        "iso3166-1:alpha2": ["NL"],
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "netherlands/drenthe",
+                        "name": "Drenthe",
+                        "parent": "netherlands",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/netherlands/drenthe-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/netherlands/drenthe.poly",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "netherlands/utrecht",
+                        "name": "Utrecht",
+                        "parent": "netherlands",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/netherlands/utrecht-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/netherlands/utrecht.poly",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "romania",
+                        "name": "Romania",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/romania-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/romania.poly",
+                        },
+                        "iso3166-1:alpha2": ["RO"],
+                    }
+                },
+            ]
+        }
+        by_id, children = MODULE._build_index_maps(index_payload)
+        ranking = [
+            MODULE.RankingCountry(
+                rank=1,
+                country="Netherlands",
+                iso2="NL",
+                geofabrik_id="netherlands",
+                pbf_url="https://download.geofabrik.de/europe/netherlands-latest.osm.pbf",
+                pbf_size_bytes=1_300_000_000,
+            ),
+            MODULE.RankingCountry(
+                rank=2,
+                country="Romania",
+                iso2="RO",
+                geofabrik_id="romania",
+                pbf_url="https://download.geofabrik.de/europe/romania-latest.osm.pbf",
+                pbf_size_bytes=300_000_000,
+            ),
+        ]
+
+        targets = MODULE.plan_targets_from_top_countries(
+            ranking_rows=ranking,
+            index_by_id=by_id,
+            child_regions_by_parent=children,
+            top_n=2,
+            max_country_pbf_bytes=1_000_000_000,
+        )
+
+        self.assertEqual(len(targets), 3)
+        self.assertEqual(targets[0].region_id, "netherlands/drenthe")
+        self.assertTrue(targets[0].is_shard)
+        self.assertEqual(targets[1].region_id, "netherlands/utrecht")
+        self.assertTrue(targets[1].is_shard)
+        self.assertEqual(targets[2].region_id, "romania")
+        self.assertFalse(targets[2].is_shard)
+
+    def test_plan_single_region_target_uses_iso_override(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "germany/bayern",
+                        "name": "Bayern",
+                        "parent": "germany",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany/bayern-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/germany/bayern.poly",
+                        },
+                    }
+                }
+            ]
+        }
+        by_id, _ = MODULE._build_index_maps(index_payload)
+
+        target = MODULE.plan_single_region_target(
+            region_id="germany/bayern",
+            index_by_id=by_id,
+            iso2_override="de",
+        )
+
+        self.assertEqual(target.region_id, "germany/bayern")
+        self.assertEqual(target.iso2, "DE")
+        self.assertEqual(target.country_id, "germany")
+
+    def test_catalog_command_uses_country_latest_path(self) -> None:
+        cmd = MODULE._catalog_command(
+            repo_root=Path("/tmp/repo"),
+            country_id="germany",
+            iso2="DE",
+            bundle_version="2026-03-02",
+            region_ids=["germany/bayern", "germany/berlin"],
+        )
+        self.assertIn("--manifest", cmd)
+        self.assertIn(
+            "/tmp/repo/mapdata/bundles/v3/germany-bayern/latest/DE-latest.bundle-manifest.v3.json",
+            cmd,
+        )
+        self.assertIn(
+            "/tmp/repo/mapdata/bundles/v3/germany-berlin/latest/DE-latest.bundle-manifest.v3.json",
+            cmd,
+        )
+        self.assertEqual(
+            cmd[-1],
+            "/tmp/repo/mapdata/bundles/v3/germany/latest/DE-latest.bundle-catalog.v3.json",
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
