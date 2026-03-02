@@ -351,6 +351,18 @@ def _download_file(url: str, out_path: Path, force: bool) -> None:
             shutil.copyfileobj(response, f)
 
 
+def _probe_content_length_bytes(url: str) -> Optional[int]:
+    request = urllib.request.Request(url, method="HEAD")
+    with urllib.request.urlopen(request) as response:
+        raw = response.headers.get("Content-Length")
+        if raw is None:
+            return None
+        value = str(raw).strip()
+        if not value:
+            return None
+        return int(value)
+
+
 def _run(cmd: List[str], dry_run: bool) -> None:
     printable = " ".join(cmd)
     print(f"$ {printable}")
@@ -545,6 +557,12 @@ def parse_args() -> argparse.Namespace:
         help="Re-download PBF/poly even if local file already exists",
     )
     parser.add_argument(
+        "--country-pbf-bytes",
+        type=int,
+        default=-1,
+        help="Optional explicit size hint for --bundle-country (bytes). Overrides ranking/HTTP probe.",
+    )
+    parser.add_argument(
         "--execute",
         action="store_true",
         help="Run generation commands (default: print plan only)",
@@ -588,12 +606,41 @@ def main() -> int:
     elif bundle_country:
         # If ranking data is available, reuse known PBF bytes for threshold decisions.
         size_hint: Optional[int] = None
+        if args.country_pbf_bytes >= 0:
+            size_hint = int(args.country_pbf_bytes)
+
         ranking_path = (repo_root / args.ranking_csv).resolve()
-        if ranking_path.exists():
+        if size_hint is None and ranking_path.exists():
             for row in _load_ranking(ranking_path):
                 if row.geofabrik_id == bundle_country:
                     size_hint = row.pbf_size_bytes
                     break
+
+        if size_hint is None:
+            country_props = index_by_id.get(bundle_country)
+            if country_props is None:
+                raise SystemExit(f"Country id not found in Geofabrik index: {bundle_country}")
+            country_urls = _urls_from_props(country_props)
+            country_pbf_url = str(country_urls.get("pbf", "")).strip()
+            if not country_pbf_url:
+                raise SystemExit(f"Country has no PBF URL in index: {bundle_country}")
+            try:
+                size_hint = _probe_content_length_bytes(country_pbf_url)
+            except Exception as exc:
+                raise SystemExit(
+                    "Unable to determine country PBF size for sharding decision "
+                    f"({bundle_country}): {exc}"
+                ) from exc
+            if size_hint is None:
+                raise SystemExit(
+                    "Unable to determine country PBF size for sharding decision "
+                    f"({bundle_country}): missing Content-Length"
+                )
+
+        print(
+            f"Country '{bundle_country}' PBF bytes: {size_hint} "
+            f"(threshold: {int(args.max_country_pbf_bytes)})"
+        )
         targets = plan_targets_for_country(
             country_id=bundle_country,
             index_by_id=index_by_id,
