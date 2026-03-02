@@ -87,8 +87,8 @@ final class SpeedConsumerTests: XCTestCase {
         let germany = try XCTUnwrap(config.country(countryID: "germany"))
         XCTAssertEqual(germany.countryCode, "DEU")
         XCTAssertEqual(germany.mode, "regional_shards")
-        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "germany/bayern" }))
-        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "germany/berlin" }))
+        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "bayern" }))
+        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "berlin" }))
     }
 
     func testPenaltyRuleEngineUsesInnerortsAusserortsVariants() throws {

@@ -11,18 +11,42 @@
       "iso2": "NL",
       "mode": "regional_shards",
       "regions": [
-        { "region_id": "netherlands/drenthe" },
-        { "region_id": "netherlands/flevoland" },
-        { "region_id": "netherlands/friesland" },
-        { "region_id": "netherlands/gelderland" },
-        { "region_id": "netherlands/groningen" },
-        { "region_id": "netherlands/limburg" },
-        { "region_id": "netherlands/noord-brabant" },
-        { "region_id": "netherlands/noord-holland" },
-        { "region_id": "netherlands/overijssel" },
-        { "region_id": "netherlands/utrecht" },
-        { "region_id": "netherlands/zeeland" },
-        { "region_id": "netherlands/zuid-holland" }
+        {
+          "region_id": "drenthe"
+        },
+        {
+          "region_id": "flevoland"
+        },
+        {
+          "region_id": "friesland"
+        },
+        {
+          "region_id": "gelderland"
+        },
+        {
+          "region_id": "groningen"
+        },
+        {
+          "region_id": "limburg"
+        },
+        {
+          "region_id": "noord-brabant"
+        },
+        {
+          "region_id": "noord-holland"
+        },
+        {
+          "region_id": "overijssel"
+        },
+        {
+          "region_id": "utrecht"
+        },
+        {
+          "region_id": "zeeland"
+        },
+        {
+          "region_id": "zuid-holland"
+        }
       ]
     },
     {
@@ -32,7 +56,9 @@
       "iso2": "RO",
       "mode": "single_country",
       "regions": [
-        { "region_id": "romania" }
+        {
+          "region_id": "romania"
+        }
       ]
     },
     {
@@ -42,7 +68,9 @@
       "iso2": "LU",
       "mode": "single_country",
       "regions": [
-        { "region_id": "luxembourg" }
+        {
+          "region_id": "luxembourg"
+        }
       ]
     },
     {
@@ -52,7 +80,9 @@
       "iso2": "BE",
       "mode": "single_country",
       "regions": [
-        { "region_id": "belgium" }
+        {
+          "region_id": "belgium"
+        }
       ]
     },
     {
@@ -62,7 +92,9 @@
       "iso2": "SE",
       "mode": "single_country",
       "regions": [
-        { "region_id": "sweden" }
+        {
+          "region_id": "sweden"
+        }
       ]
     },
     {
@@ -72,7 +104,9 @@
       "iso2": "LI",
       "mode": "single_country",
       "regions": [
-        { "region_id": "liechtenstein" }
+        {
+          "region_id": "liechtenstein"
+        }
       ]
     },
     {
@@ -82,7 +116,9 @@
       "iso2": "IS",
       "mode": "single_country",
       "regions": [
-        { "region_id": "iceland" }
+        {
+          "region_id": "iceland"
+        }
       ]
     },
     {
@@ -92,22 +128,54 @@
       "iso2": "DE",
       "mode": "regional_shards",
       "regions": [
-        { "region_id": "germany/baden-wuerttemberg" },
-        { "region_id": "germany/bayern" },
-        { "region_id": "germany/berlin" },
-        { "region_id": "germany/brandenburg" },
-        { "region_id": "germany/bremen" },
-        { "region_id": "germany/hamburg" },
-        { "region_id": "germany/hessen" },
-        { "region_id": "germany/mecklenburg-vorpommern" },
-        { "region_id": "germany/niedersachsen" },
-        { "region_id": "germany/nordrhein-westfalen" },
-        { "region_id": "germany/rheinland-pfalz" },
-        { "region_id": "germany/saarland" },
-        { "region_id": "germany/sachsen" },
-        { "region_id": "germany/sachsen-anhalt" },
-        { "region_id": "germany/schleswig-holstein" },
-        { "region_id": "germany/thueringen" }
+        {
+          "region_id": "baden-wuerttemberg"
+        },
+        {
+          "region_id": "bayern"
+        },
+        {
+          "region_id": "berlin"
+        },
+        {
+          "region_id": "brandenburg"
+        },
+        {
+          "region_id": "bremen"
+        },
+        {
+          "region_id": "hamburg"
+        },
+        {
+          "region_id": "hessen"
+        },
+        {
+          "region_id": "mecklenburg-vorpommern"
+        },
+        {
+          "region_id": "niedersachsen"
+        },
+        {
+          "region_id": "nordrhein-westfalen"
+        },
+        {
+          "region_id": "rheinland-pfalz"
+        },
+        {
+          "region_id": "saarland"
+        },
+        {
+          "region_id": "sachsen"
+        },
+        {
+          "region_id": "sachsen-anhalt"
+        },
+        {
+          "region_id": "schleswig-holstein"
+        },
+        {
+          "region_id": "thueringen"
+        }
       ]
     },
     {
@@ -117,7 +185,9 @@
       "iso2": "MC",
       "mode": "single_country",
       "regions": [
-        { "region_id": "monaco" }
+        {
+          "region_id": "monaco"
+        }
       ]
     },
     {
@@ -127,11 +197,21 @@
       "iso2": "GB",
       "mode": "regional_shards",
       "regions": [
-        { "region_id": "united-kingdom/bermuda" },
-        { "region_id": "united-kingdom/england" },
-        { "region_id": "united-kingdom/falklands" },
-        { "region_id": "united-kingdom/scotland" },
-        { "region_id": "united-kingdom/wales" }
+        {
+          "region_id": "bermuda"
+        },
+        {
+          "region_id": "england"
+        },
+        {
+          "region_id": "falklands"
+        },
+        {
+          "region_id": "scotland"
+        },
+        {
+          "region_id": "wales"
+        }
       ]
     }
   ]
