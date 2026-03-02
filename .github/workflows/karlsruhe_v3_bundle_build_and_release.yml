@@ -1,4 +1,4 @@
-name: Karlsruhe V3 Bundle Build And Release
+name: Karlsruhe Bundle Build And Release
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: karlsruhe-v3-bundle-release
+  group: karlsruhe-bundle-release
   cancel-in-progress: false
 
 jobs:
@@ -95,7 +95,7 @@ jobs:
             -o "${INPUT_PBF}"
           test -s "${INPUT_PBF}"
 
-      - name: Build v1 Artifacts And v3 DB
+      - name: Build v1 Artifacts And DB
         run: |
           scripts/map/build_region_artifacts.sh \
             --region "${REGION}" \
@@ -128,7 +128,6 @@ jobs:
             --out-root mapdata/bundles/v3 \
             --db-file-name "${BUNDLE_DB_ASSET}" \
             --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
-            --penalty-rules "iphone/SpeedConsumerApp/Rules/DEU-rules.json" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
             --github-repo "${GITHUB_REPOSITORY#*/}" \
             --github-release-tag "${{ steps.params.outputs.release_tag }}"
@@ -141,4 +140,4 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --tag "${{ steps.params.outputs.release_tag }}" \
             --bundle-dir "${BUNDLE_DIR}" \
-            --title "YouSpeed Karlsruhe v3 development bundle"
+            --title "Karlsruhe Regbez YouSpeed Data"

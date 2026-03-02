@@ -1,4 +1,4 @@
-name: Germany V3 Bundle Build And Release
+name: Germany Bundle Build And Release
 
 on:
   workflow_run:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag used for app-consumed latest v3 bundle assets"
+        description: "Release tag used for app-consumed latest bundle assets"
         required: false
         default: "germany"
         type: string
@@ -38,7 +38,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: germany-v3-bundle-release-latest
+  group: germany-bundle-release-latest
   cancel-in-progress: false
 
 jobs:
@@ -114,7 +114,7 @@ jobs:
             echo "pbf_release_tag=${pbf_release_tag}"
           } >> "${GITHUB_OUTPUT}"
 
-          echo "Using v3 release tag: ${release_tag}"
+          echo "Using release tag: ${release_tag}"
           echo "Using PBF release tag: ${pbf_release_tag}"
 
       - name: Download Updated Germany PBF Snapshot From Release
@@ -319,7 +319,7 @@ jobs:
 
           echo "needs_publish=1" >> "${GITHUB_OUTPUT}"
 
-      - name: Build v1 Artifacts Required For v3, Then Build v3 DB
+      - name: Build v1 Artifacts Then Build DB
         if: steps.compare.outputs.needs_publish == '1'
         run: |
           scripts/map/build_region_artifacts.sh \
@@ -470,7 +470,6 @@ jobs:
             --out-root mapdata/bundles/v3 \
             --db-file-name "${BUNDLE_DB_ASSET}" \
             --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
-            --penalty-rules "iphone/SpeedConsumerApp/Rules/DEU-rules.json" \
             --delta-index "${BUNDLE_DIR}/${DELTA_INDEX_ASSET}" \
             --delta-index-file-name "${DELTA_INDEX_ASSET}" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
@@ -486,7 +485,7 @@ jobs:
               --repo "${GITHUB_REPOSITORY}" \
               --tag "${{ steps.tags.outputs.release_tag }}" \
               --bundle-dir "${BUNDLE_DIR}" \
-              --title "YouSpeed germany v3 latest data bundle"
+              --title "Germany YouSpeed Data"
 
       - name: Prune Old Incremental Assets Beyond Retention
         if: steps.compare.outputs.needs_publish == '1'

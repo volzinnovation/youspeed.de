@@ -5,7 +5,7 @@ usage() {
   cat <<USAGE
 Usage: $0 --repo <owner/repo> --tag <release_tag> --bundle-dir <dir> [--title <name>] [--notes <text>] [--draft]
 
-Uploads v3 consumer bundle assets to a GitHub release.
+Uploads consumer bundle assets to a GitHub release.
 Relative paths are attached as display labels; release asset names are basenames.
 
 Examples:
@@ -19,7 +19,7 @@ repo=""
 tag=""
 bundle_dir=""
 title=""
-notes="Automated v3 data bundle release"
+notes="Automated data bundle release"
 draft="0"
 
 while [[ $# -gt 0 ]]; do

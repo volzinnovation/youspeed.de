@@ -1,4 +1,4 @@
-name: Publish V3 Data Bundle Release
+name: Publish Data Bundle Release
 
 on:
   workflow_dispatch:
@@ -57,7 +57,7 @@ jobs:
             echo "Bundle directory missing or incomplete: ${requested}" >&2
             echo "Expected *_manifest.json in one of:" >&2
             printf ' - %s\n' "${candidates[@]}" >&2
-            echo "Run workflow 'Germany V3 Bundle Build And Release' first, then rerun this publisher." >&2
+            echo "Run workflow 'Germany Bundle Build And Release' first, then rerun this publisher." >&2
             exit 1
           fi
 
@@ -69,6 +69,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pretty_region="$(RELEASE_TAG="${{ inputs.release_tag }}" python3 -c 'import os; raw=os.environ[\"RELEASE_TAG\"].replace(\"_\", \"-\"); print(\" \".join(p[:1].upper()+p[1:] for p in raw.split(\"-\") if p))')"
+          default_title="${pretty_region} YouSpeed Data"
           if [[ -n "${{ inputs.release_title }}" ]]; then
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
@@ -79,5 +81,6 @@ jobs:
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
               --tag "${{ inputs.release_tag }}" \
-              --bundle-dir "${{ steps.resolve_bundle.outputs.bundle_dir }}"
+              --bundle-dir "${{ steps.resolve_bundle.outputs.bundle_dir }}" \
+              --title "${default_title}"
           fi

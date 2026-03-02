@@ -1,4 +1,4 @@
-name: EU V3 Country Or Region Bundle Build
+name: EU Country Or Region Bundle Build
 
 on:
   workflow_dispatch:
@@ -158,12 +158,13 @@ jobs:
             fi
 
             bundle_id="$(basename "$(dirname "${latest_dir}")")"
+            pretty_region="$(BUNDLE_ID="${bundle_id}" python3 -c 'import os; raw=os.environ[\"BUNDLE_ID\"].replace(\"_\", \"-\"); print(\" \".join(p[:1].upper()+p[1:] for p in raw.split(\"-\") if p))')"
             echo "Publishing bundle_id=${bundle_id} from ${latest_dir}"
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
               --tag "${bundle_id}" \
               --bundle-dir "${latest_dir}" \
-              --title "YouSpeed v3 data bundle (${bundle_id})"
+              --title "${pretty_region} YouSpeed Data"
           done
 
       - name: Collect Generated Bundle Metadata
@@ -190,7 +191,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: country-region-v3-bundle-run-metadata
+          name: country-region-bundle-run-metadata
           path: |
             mapdata/reports/top-country-run/generated_manifests.txt
             mapdata/reports/top-country-run/bundle_size_summary.txt
