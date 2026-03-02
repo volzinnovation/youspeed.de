@@ -88,6 +88,11 @@ fi
 
 while IFS= read -r -d '' file; do
   rel="${file#${bundle_dir%/}/}"
+  base="$(basename "$rel")"
+  if [[ "$base" == *-rules.json ]]; then
+    echo "skipped: $rel"
+    continue
+  fi
   gh release upload "$tag" "$file#$rel" --clobber --repo "$repo"
   echo "uploaded: $rel"
 done < <(find "$bundle_dir" -type f -print0 | sort -z)

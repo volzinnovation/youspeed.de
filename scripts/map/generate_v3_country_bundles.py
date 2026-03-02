@@ -494,7 +494,6 @@ def _bundle_commands(
     max_geom_points: int,
     release_tag: str,
     skip_release_urls: bool,
-    rules_dir: Path,
 ) -> List[List[str]]:
     region_slug = _slug(target.region_id)
     region_asset_id = _id_token(target.region_id)
@@ -505,10 +504,6 @@ def _bundle_commands(
     v1_dist = repo_root / "mapdata" / "dist" / region_slug
     v3_dist = repo_root / "mapdata" / "dist-v3" / region_slug
     db_path = v3_dist / "speeds_v3.sqlite"
-    penalty_rules_path = rules_dir / f"{iso3}-rules.json"
-    if not penalty_rules_path.exists():
-        raise SystemExit(f"Missing penalty rules file for {iso3}: {penalty_rules_path}")
-
     commands: List[List[str]] = [
         [
             str(repo_root / "scripts" / "map" / "build_region_artifacts.sh"),
@@ -550,8 +545,6 @@ def _bundle_commands(
             str(poly_path),
             "--country-code",
             iso3,
-            "--penalty-rules",
-            str(penalty_rules_path),
         ],
     ]
 
@@ -652,11 +645,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--iso2", default="", help="Optional ISO2 override for --bundle-region mode")
     parser.add_argument("--bundle-version", default="", help="Bundle version (default: UTC date)")
     parser.add_argument("--max-geom-points", type=int, default=8)
-    parser.add_argument(
-        "--rules-dir",
-        default="iphone/SpeedConsumerApp/Rules",
-        help="Directory containing <ISO3>-rules.json files",
-    )
     parser.add_argument(
         "--bundle-target-config",
         default="iphone/SpeedConsumerApp/BundleTargets.top10.json",
@@ -811,9 +799,6 @@ def main() -> int:
         )
 
     raw_dir = repo_root / "mapdata" / "raw"
-    rules_dir = (repo_root / args.rules_dir).resolve()
-    if not rules_dir.exists():
-        raise SystemExit(f"Rules directory not found: {rules_dir}")
     effective_release_tag = args.release_tag.strip()
     if not args.skip_release_urls:
         if not effective_release_tag:
@@ -853,7 +838,6 @@ def main() -> int:
             max_geom_points=int(args.max_geom_points),
             release_tag=effective_release_tag,
             skip_release_urls=bool(args.skip_release_urls),
-            rules_dir=rules_dir,
         ):
             _run(cmd, dry_run=not args.execute)
 
