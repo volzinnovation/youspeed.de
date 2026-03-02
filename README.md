@@ -187,11 +187,11 @@ YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
 ### Automated GitHub workflows (consumer pipeline)
 
 - Daily generate + publish latest full bundle and incrementals:
-  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/v3_generate_and_release_latest.yml`
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/germany_generate_and_release_latest.yml`
 - Manual publish helper:
-  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/publish_v3_bundle_release.yml`
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/publish_bundle_release.yml`
 - Manual Karlsruhe development bundle build/release:
-  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_v3_bundle_build_and_release.yml`
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_bundle_build_and_release.yml`
 - Geofabrik diff ingestion and delta analysis:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:

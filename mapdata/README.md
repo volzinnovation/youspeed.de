@@ -69,7 +69,7 @@ v3 consumer bundle artifacts:
 
 Automation:
 - Daily PBF update + release snapshot: `../.github/workflows/daily_geofabrik_diff_update.yml`
-- V3 bundle build/release from published PBF snapshot: `../.github/workflows/v3_generate_and_release_latest.yml`
+- V3 bundle build/release from published PBF snapshot: `../.github/workflows/germany_generate_and_release_latest.yml`
 - GitHub release assets are uploaded with flat names; manifests carry explicit URLs for full bundle and delta files.
 
 v4 generated runtime artifact:
