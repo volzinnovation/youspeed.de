@@ -1,0 +1,46 @@
+rank,country,iso2,geofabrik_id,pbf_url,pbf_size_bytes,drivable_way_count,maxspeed_way_count,maxspeed_share_pct
+1,Netherlands,NL,netherlands,https://download.geofabrik.de/europe/netherlands-latest.osm.pbf,1376984068,1360101,921426,67.7469
+2,Romania,RO,romania,https://download.geofabrik.de/europe/romania-latest.osm.pbf,314004997,671248,419884,62.5527
+3,Luxembourg,LU,luxembourg,https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf,46190609,57401,30766,53.5984
+4,Belgium,BE,belgium,https://download.geofabrik.de/europe/belgium-latest.osm.pbf,677915833,816110,302452,37.0602
+5,Sweden,SE,sweden,https://download.geofabrik.de/europe/sweden-latest.osm.pbf,796516851,1235544,443443,35.8905
+6,Liechtenstein,LI,liechtenstein,https://download.geofabrik.de/europe/liechtenstein-latest.osm.pbf,3283134,5407,1836,33.9560
+7,Iceland,IS,iceland,https://download.geofabrik.de/europe/iceland-latest.osm.pbf,63608995,61433,20751,33.7783
+8,Germany,DE,germany,https://download.geofabrik.de/europe/germany-latest.osm.pbf,4705330912,7964480,2637436,33.1150
+9,Monaco,MC,monaco,https://download.geofabrik.de/europe/monaco-latest.osm.pbf,672177,1224,355,29.0033
+10,United Kingdom,GB,united-kingdom,https://download.geofabrik.de/europe/united-kingdom-latest.osm.pbf,2167238358,4871056,1275216,26.1795
+11,Andorra,AD,andorra,https://download.geofabrik.de/europe/andorra-latest.osm.pbf,3337856,3714,955,25.7135
+12,Switzerland,CH,switzerland,https://download.geofabrik.de/europe/switzerland-latest.osm.pbf,524619868,862842,218757,25.3531
+13,Hungary,HU,hungary,https://download.geofabrik.de/europe/hungary-latest.osm.pbf,310170624,514402,126714,24.6333
+14,Austria,AT,austria,https://download.geofabrik.de/europe/austria-latest.osm.pbf,794519033,1257719,287600,22.8668
+15,Czech Republic,CZ,czech-republic,https://download.geofabrik.de/europe/czech-republic-latest.osm.pbf,921855691,860607,187689,21.8089
+16,France,FR,france,https://download.geofabrik.de/europe/france-latest.osm.pbf,4964384824,7111322,1490044,20.9531
+17,Serbia,RS,serbia,https://download.geofabrik.de/europe/serbia-latest.osm.pbf,230003765,381641,77588,20.3301
+18,Slovakia,SK,slovakia,https://download.geofabrik.de/europe/slovakia-latest.osm.pbf,330939716,367681,74103,20.1542
+19,Malta,MT,malta,https://download.geofabrik.de/europe/malta-latest.osm.pbf,8532060,26092,4658,17.8522
+20,Ireland and Northern Ireland,IE,ireland-and-northern-ireland,https://download.geofabrik.de/europe/ireland-and-northern-ireland-latest.osm.pbf,393114839,1096604,195628,17.8394
+21,Denmark,DK,denmark,https://download.geofabrik.de/europe/denmark-latest.osm.pbf,483524723,886408,157710,17.7920
+22,Finland,FI,finland,https://download.geofabrik.de/europe/finland-latest.osm.pbf,708610137,996944,167987,16.8502
+23,Spain,ES,spain,https://download.geofabrik.de/europe/spain-latest.osm.pbf,1413042317,2720041,439358,16.1526
+24,Belarus,BY,belarus,https://download.geofabrik.de/europe/belarus-latest.osm.pbf,338249554,534645,85966,16.0791
+25,Croatia,HR,croatia,https://download.geofabrik.de/europe/croatia-latest.osm.pbf,193600693,298960,47342,15.8356
+26,Norway,NO,norway,https://download.geofabrik.de/europe/norway-latest.osm.pbf,1361642540,1207883,189060,15.6522
+27,Poland,PL,poland,https://download.geofabrik.de/europe/poland-latest.osm.pbf,2026730582,3030384,467033,15.4117
+28,Lithuania,LT,lithuania,https://download.geofabrik.de/europe/lithuania-latest.osm.pbf,218058043,327952,49525,15.1013
+29,Estonia,EE,estonia,https://download.geofabrik.de/europe/estonia-latest.osm.pbf,119616135,182364,26243,14.3904
+30,Cyprus,CY,cyprus,https://download.geofabrik.de/europe/cyprus-latest.osm.pbf,35639266,115415,16038,13.8959
+31,Bulgaria,BG,bulgaria,https://download.geofabrik.de/europe/bulgaria-latest.osm.pbf,162396565,368235,49724,13.5033
+32,Italy,IT,italy,https://download.geofabrik.de/europe/italy-latest.osm.pbf,2166349455,4005392,539504,13.4694
+33,Montenegro,ME,montenegro,https://download.geofabrik.de/europe/montenegro-latest.osm.pbf,32881142,56044,7498,13.3788
+34,Macedonia,MK,macedonia,https://download.geofabrik.de/europe/macedonia-latest.osm.pbf,28636330,68219,8943,13.1093
+35,Latvia,LV,latvia,https://download.geofabrik.de/europe/latvia-latest.osm.pbf,136203549,263163,32967,12.5272
+36,Faroe Islands,FO,faroe-islands,https://download.geofabrik.de/europe/faroe-islands-latest.osm.pbf,7655413,13226,1654,12.5057
+37,Slovenia,SI,slovenia,https://download.geofabrik.de/europe/slovenia-latest.osm.pbf,306525639,252487,29961,11.8664
+38,Greece,GR,greece,https://download.geofabrik.de/europe/greece-latest.osm.pbf,333708004,888354,104360,11.7476
+39,Portugal,PT,portugal,https://download.geofabrik.de/europe/portugal-latest.osm.pbf,402791737,870579,102083,11.7259
+40,Albania,AL,albania,https://download.geofabrik.de/europe/albania-latest.osm.pbf,51770333,125492,11242,8.9583
+41,Ukraine (with Crimea),UA,ukraine,https://download.geofabrik.de/europe/ukraine-latest.osm.pbf,853591460,1441203,114036,7.9126
+42,Georgia,GE,georgia,https://download.geofabrik.de/europe/georgia-latest.osm.pbf,97546682,189701,11521,6.0732
+43,Bosnia-Herzegovina,BA,bosnia-herzegovina,https://download.geofabrik.de/europe/bosnia-herzegovina-latest.osm.pbf,156299196,214701,10729,4.9972
+44,Moldova,MD,moldova,https://download.geofabrik.de/europe/moldova-latest.osm.pbf,98281739,188319,9175,4.8721
+45,Turkey,TR,turkey,https://download.geofabrik.de/europe/turkey-latest.osm.pbf,624274141,1902558,59063,3.1044
