@@ -50,7 +50,7 @@ on:
         type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   PYTHONUNBUFFERED: "1"
@@ -127,6 +127,44 @@ jobs:
           printf '\n'
 
           "${cmd[@]}"
+
+      - name: Publish Generated Bundle Releases
+        if: ${{ inputs.execute }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          bundle_root="mapdata/bundles/v3"
+          if [[ ! -d "${bundle_root}" ]]; then
+            echo "Bundle root not found: ${bundle_root}" >&2
+            exit 1
+          fi
+
+          shopt -s nullglob
+          latest_dirs=("${bundle_root}"/*/latest)
+          if [[ ${#latest_dirs[@]} -eq 0 ]]; then
+            echo "No generated bundle directories found under ${bundle_root}" >&2
+            exit 1
+          fi
+
+          for latest_dir in "${latest_dirs[@]}"; do
+            if [[ ! -d "${latest_dir}" ]]; then
+              continue
+            fi
+            if [[ -z "$(find "${latest_dir}" -maxdepth 1 -type f -print -quit)" ]]; then
+              continue
+            fi
+
+            bundle_id="$(basename "$(dirname "${latest_dir}")")"
+            echo "Publishing bundle_id=${bundle_id} from ${latest_dir}"
+            ./scripts/map/publish_v3_release_assets.sh \
+              --repo "${{ github.repository }}" \
+              --tag "${bundle_id}" \
+              --bundle-dir "${latest_dir}" \
+              --title "YouSpeed v3 data bundle (${bundle_id})"
+          done
 
       - name: Collect Generated Bundle Metadata
         if: ${{ always() }}
