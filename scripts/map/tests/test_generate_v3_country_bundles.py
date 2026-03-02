@@ -39,23 +39,32 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
                 },
                 {
                     "properties": {
-                        "id": "netherlands/drenthe",
+                        "id": "drenthe",
                         "name": "Drenthe",
                         "parent": "netherlands",
                         "urls": {
                             "pbf": "https://download.geofabrik.de/europe/netherlands/drenthe-latest.osm.pbf",
-                            "poly": "https://download.geofabrik.de/europe/netherlands/drenthe.poly",
                         },
                     }
                 },
                 {
                     "properties": {
-                        "id": "netherlands/utrecht",
+                        "id": "utrecht",
                         "name": "Utrecht",
                         "parent": "netherlands",
                         "urls": {
                             "pbf": "https://download.geofabrik.de/europe/netherlands/utrecht-latest.osm.pbf",
                             "poly": "https://download.geofabrik.de/europe/netherlands/utrecht.poly",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "bermuda",
+                        "name": "Bermuda",
+                        "parent": "netherlands",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/north-america/bermuda-latest.osm.pbf",
                         },
                     }
                 },
@@ -103,6 +112,10 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
 
         self.assertEqual(len(targets), 3)
         self.assertEqual(targets[0].region_id, "netherlands/drenthe")
+        self.assertEqual(
+            targets[0].poly_url,
+            "https://download.geofabrik.de/europe/netherlands/drenthe.poly",
+        )
         self.assertTrue(targets[0].is_shard)
         self.assertEqual(targets[1].region_id, "netherlands/utrecht")
         self.assertTrue(targets[1].is_shard)
@@ -136,6 +149,14 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertEqual(target.region_id, "germany/bayern")
         self.assertEqual(target.iso2, "DE")
         self.assertEqual(target.country_id, "germany")
+
+    def test_derive_poly_url_from_pbf_url(self) -> None:
+        self.assertEqual(
+            MODULE._derive_poly_url_from_pbf_url(
+                "https://download.geofabrik.de/europe/netherlands-latest.osm.pbf"
+            ),
+            "https://download.geofabrik.de/europe/netherlands.poly",
+        )
 
     def test_catalog_command_uses_country_latest_path(self) -> None:
         cmd = MODULE._catalog_command(

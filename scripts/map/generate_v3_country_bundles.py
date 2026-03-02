@@ -47,6 +47,17 @@ def _slug(value: str) -> str:
     )
 
 
+def _derive_poly_url_from_pbf_url(pbf_url: str) -> Optional[str]:
+    url = pbf_url.strip()
+    if not url:
+        return None
+    if url.endswith("-latest.osm.pbf"):
+        return url[: -len("-latest.osm.pbf")] + ".poly"
+    if url.endswith(".osm.pbf"):
+        return url[: -len(".osm.pbf")] + ".poly"
+    return None
+
+
 def _now_bundle_version() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -147,25 +158,36 @@ def plan_targets_from_top_countries(
                 raise SystemExit(
                     f"Country '{country.geofabrik_id}' exceeds threshold but has no child regions in index"
                 )
+            country_url_prefix = country.pbf_url.rsplit("/", 1)[0] + "/"
             for shard in shards:
                 urls = _urls_from_props(shard)
                 pbf_url = str(urls.get("pbf", "")).strip()
                 if not pbf_url:
                     continue
+                if not pbf_url.startswith(country_url_prefix):
+                    # Exclude overseas/non-subtree extracts that are not in the
+                    # country-specific Geofabrik subtree.
+                    continue
+                shard_id = str(shard.get("id", "")).strip().lower()
+                if not shard_id:
+                    continue
+                if "/" not in shard_id:
+                    shard_id = f"{country.geofabrik_id}/{shard_id}"
+                poly_url = str(urls.get("poly", "")).strip() or _derive_poly_url_from_pbf_url(pbf_url)
                 targets.append(
                     BundleTarget(
                         country_name=country_name,
                         country_id=country.geofabrik_id,
                         iso2=country.iso2,
-                        region_id=str(shard.get("id", "")).strip().lower(),
+                        region_id=shard_id,
                         pbf_url=pbf_url,
-                        poly_url=str(urls.get("poly", "")).strip() or None,
+                        poly_url=poly_url,
                         is_shard=True,
                     )
                 )
         else:
             urls = _urls_from_props(country_props)
-            poly_url = str(urls.get("poly", "")).strip() or None
+            poly_url = str(urls.get("poly", "")).strip() or _derive_poly_url_from_pbf_url(country.pbf_url)
             targets.append(
                 BundleTarget(
                     country_name=country_name,
@@ -200,13 +222,15 @@ def plan_single_region_target(
     if not iso2:
         raise SystemExit(f"Region has no ISO2 in index and --iso2 was not provided: {region_id}")
 
+    poly_url = str(urls.get("poly", "")).strip() or _derive_poly_url_from_pbf_url(pbf_url)
+
     return BundleTarget(
         country_name=str(props.get("name", region_id)),
         country_id=country_id,
         iso2=iso2,
         region_id=key,
         pbf_url=pbf_url,
-        poly_url=str(urls.get("poly", "")).strip() or None,
+        poly_url=poly_url,
         is_shard=False,
     )
 
