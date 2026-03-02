@@ -11,7 +11,7 @@ on:
       release_tag:
         description: "Release tag used for app-consumed latest v3 bundle assets"
         required: false
-        default: "deu-v3-data-latest"
+        default: "germany"
         type: string
       pbf_release_tag:
         description: "Release tag containing updated Germany PBF snapshot assets"
@@ -49,7 +49,7 @@ jobs:
     env:
       REGION: germany
       ISO3: DEU
-      DEFAULT_RELEASE_TAG: deu-v3-data-latest
+      DEFAULT_RELEASE_TAG: germany
       DEFAULT_PBF_RELEASE_TAG: deu-pbf-latest
       RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
       MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
@@ -59,9 +59,9 @@ jobs:
       INPUT_REPORT: mapdata/reports/diff_update.DEU.latest.json
       INPUT_DELTA: mapdata/reports/deltas/daily/DEU-update.osc.gz
       BUNDLE_DIR: mapdata/bundles/v3/germany/latest
-      BUNDLE_DB_ASSET: DEU-latest.speeds_v3.sqlite
-      BUNDLE_MANIFEST_ASSET: DEU-latest.bundle-manifest.v3.json
-      DELTA_INDEX_ASSET: DEU-latest.delta-index.v3.json
+      BUNDLE_DB_ASSET: germany_speeds.sqlite
+      BUNDLE_MANIFEST_ASSET: germany_manifest.json
+      DELTA_INDEX_ASSET: germany_delta_index.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -398,8 +398,8 @@ jobs:
                 echo "Previous DB unavailable (no db.url and no usable db_parts); skipping delta creation."
               else
                 delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${{ steps.version.outputs.bundle_version }}"
-                patch_name="DEU-${{ steps.version.outputs.bundle_version }}.v3_patch_from_${prev_version}.sql"
-                manifest_name="DEU-${{ steps.version.outputs.bundle_version }}.v3_delta_manifest_from_${prev_version}.json"
+                patch_name="germany_${{ steps.version.outputs.bundle_version }}.v3_patch_from_${prev_version}.sql"
+                manifest_name="germany_${{ steps.version.outputs.bundle_version }}.v3_delta_manifest_from_${prev_version}.json"
 
                 python3 scripts/map/build_v3_delta_pack.py \
                   --base-db "${prev_db_tmp}" \
@@ -483,10 +483,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./scripts/map/publish_v3_release_assets.sh \
-            --repo "${GITHUB_REPOSITORY}" \
-            --tag "${{ steps.tags.outputs.release_tag }}" \
-            --bundle-dir "${BUNDLE_DIR}" \
-            --title "YouSpeed DEU v3 latest data bundle"
+              --repo "${GITHUB_REPOSITORY}" \
+              --tag "${{ steps.tags.outputs.release_tag }}" \
+              --bundle-dir "${BUNDLE_DIR}" \
+              --title "YouSpeed germany v3 latest data bundle"
 
       - name: Prune Old Incremental Assets Beyond Retention
         if: steps.compare.outputs.needs_publish == '1'
@@ -501,5 +501,5 @@ jobs:
             --bundle-manifest-name "${BUNDLE_MANIFEST_ASSET}" \
             --delta-index-name "${DELTA_INDEX_ASSET}" \
             --db-file-name "${BUNDLE_DB_ASSET}" \
-            --delta-manifest-prefix "DEU-" \
-            --patch-prefix "DEU-"
+            --delta-manifest-prefix "germany_" \
+            --patch-prefix "germany_"

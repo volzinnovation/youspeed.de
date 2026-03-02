@@ -339,23 +339,28 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         cmd = MODULE._catalog_command(
             repo_root=Path("/tmp/repo"),
             country_id="germany",
-            iso3="DEU",
             bundle_version="2026-03-02",
             region_ids=["germany/bayern", "germany/berlin"],
         )
         self.assertIn("--manifest", cmd)
         self.assertIn(
-            "/tmp/repo/mapdata/bundles/v3/germany-bayern/latest/DEU-latest.bundle-manifest.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany-bayern/latest/germany-bayern_manifest.json",
             cmd,
         )
         self.assertIn(
-            "/tmp/repo/mapdata/bundles/v3/germany-berlin/latest/DEU-latest.bundle-manifest.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany-berlin/latest/germany-berlin_manifest.json",
             cmd,
         )
         self.assertEqual(
             cmd[-1],
-            "/tmp/repo/mapdata/bundles/v3/germany/latest/DEU-latest.bundle-catalog.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany/latest/germany_catalog.json",
         )
+
+    def test_id_based_asset_name_helpers(self) -> None:
+        self.assertEqual(MODULE._db_asset_name("germany"), "germany_speeds.sqlite")
+        self.assertEqual(MODULE._manifest_asset_name("germany"), "germany_manifest.json")
+        self.assertEqual(MODULE._db_asset_name("germany/bayern"), "germany-bayern_speeds.sqlite")
+        self.assertEqual(MODULE._manifest_asset_name("germany/bayern"), "germany-bayern_manifest.json")
 
 
 if __name__ == "__main__":

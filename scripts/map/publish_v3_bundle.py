@@ -37,6 +37,16 @@ def _github_release_asset_url(owner: str, repo: str, tag: str, asset_name: str) 
     return f"https://github.com/{owner}/{repo}/releases/download/{tag}/{asset_name}"
 
 
+def _id_token(value: str) -> str:
+    return (
+        value.strip()
+        .lower()
+        .replace(" ", "-")
+        .replace("_", "-")
+        .replace("/", "-")
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish v3 map bundle for consumer app updates")
     parser.add_argument("--region", default="germany", help="Region identifier (default: germany)")
@@ -59,13 +69,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--db-file-name",
-        default="DEU-latest.speeds_v3.sqlite",
-        help="Database file name inside the bundle directory",
+        default="",
+        help="Database file name inside the bundle directory (default: <region-id>_speeds.sqlite)",
     )
     parser.add_argument(
         "--manifest-name",
-        default="DEU-latest.bundle-manifest.v3.json",
-        help="Manifest file name inside the bundle directory",
+        default="",
+        help="Manifest file name inside the bundle directory (default: <region-id>_manifest.json)",
     )
     parser.add_argument(
         "--delta-index",
@@ -74,8 +84,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--delta-index-file-name",
-        default="DEU-latest.delta-index.v3.json",
-        help="Delta index file name inside the bundle directory",
+        default="",
+        help="Delta index file name inside the bundle directory (default: <region-id>_delta_index.json)",
     )
     parser.add_argument("--min-app-version", default="1.0.0", help="Minimum app version compatible with this bundle")
     parser.add_argument("--schema-version", type=int, default=1, help="Bundle schema version (default: 1)")
@@ -238,11 +248,19 @@ def main() -> int:
     if not src_db.exists():
         raise SystemExit(f"Missing DB file: {src_db}")
 
+    region_id_token = _id_token(args.region)
+    if not region_id_token:
+        raise SystemExit("--region must not be empty")
+
+    db_file_name = args.db_file_name.strip() or f"{region_id_token}_speeds.sqlite"
+    manifest_name = args.manifest_name.strip() or f"{region_id_token}_manifest.json"
+    delta_index_file_name = args.delta_index_file_name.strip() or f"{region_id_token}_delta_index.json"
+
     bundle_dir_name = args.bundle_dir_name or args.bundle_version
     out_dir = Path(args.out_root) / args.region / bundle_dir_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    dst_db = out_dir / args.db_file_name
+    dst_db = out_dir / db_file_name
     db_size = src_db.stat().st_size
     should_split_db = (
         (not args.no_split_db)
@@ -268,7 +286,7 @@ def main() -> int:
         part_paths = _split_file_to_parts(
             src=src_db,
             out_dir=out_dir,
-            base_name=args.db_file_name,
+            base_name=db_file_name,
             max_part_bytes=int(args.max_release_asset_bytes),
         )
     else:
@@ -313,7 +331,7 @@ def main() -> int:
             return _join_url(args.base_url, args.region, bundle_dir_name, file_name)
         return None
 
-    db_url = artifact_url(args.db_file_name) if not should_split_db else None
+    db_url = artifact_url(db_file_name) if not should_split_db else None
     manifest: dict = {
         "format": "youspeed.v3.bundle.manifest",
         "schema_version": args.schema_version,
@@ -322,13 +340,13 @@ def main() -> int:
         "bundle_version": args.bundle_version,
         "created_at_utc": _now_utc(),
         "min_app_version": args.min_app_version,
-        "db": _logical_db_payload(src_db, args.db_file_name, db_url),
+        "db": _logical_db_payload(src_db, db_file_name, db_url),
         "delta_index": None,
         "db_parts": [],
         "source": {},
         "self": {
-            "file": args.manifest_name,
-            "url": artifact_url(args.manifest_name),
+            "file": manifest_name,
+            "url": artifact_url(manifest_name),
         },
     }
     country_code = args.country_code.strip().upper()
@@ -365,15 +383,15 @@ def main() -> int:
         src_delta_index = Path(args.delta_index)
         if not src_delta_index.exists():
             raise SystemExit(f"Missing delta index file: {src_delta_index}")
-        dst_delta_index = out_dir / args.delta_index_file_name
+        dst_delta_index = out_dir / delta_index_file_name
         if src_delta_index.resolve() != dst_delta_index.resolve():
             shutil.copy2(src_delta_index, dst_delta_index)
-        delta_url = artifact_url(args.delta_index_file_name)
-        manifest["delta_index"] = _artifact_payload(dst_delta_index, args.delta_index_file_name, delta_url)
+        delta_url = artifact_url(delta_index_file_name)
+        manifest["delta_index"] = _artifact_payload(dst_delta_index, delta_index_file_name, delta_url)
         if args.include_source_paths:
             manifest["source"]["delta_index"] = str(src_delta_index)
 
-    manifest_path = out_dir / args.manifest_name
+    manifest_path = out_dir / manifest_name
     if not manifest["source"]:
         manifest.pop("source", None)
     if not manifest["db_parts"]:

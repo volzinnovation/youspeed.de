@@ -46,28 +46,28 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--bundle-manifest-name",
-        default="DEU-latest.bundle-manifest.v3.json",
-        help="Latest bundle manifest asset name (default: DEU-latest.bundle-manifest.v3.json)",
+        default="germany_manifest.json",
+        help="Latest bundle manifest asset name (default: germany_manifest.json)",
     )
     parser.add_argument(
         "--delta-index-name",
-        default="DEU-latest.delta-index.v3.json",
-        help="Latest delta index asset name (default: DEU-latest.delta-index.v3.json)",
+        default="germany_delta_index.json",
+        help="Latest delta index asset name (default: germany_delta_index.json)",
     )
     parser.add_argument(
         "--db-file-name",
-        default="DEU-latest.speeds_v3.sqlite",
-        help="Latest full DB asset name (default: DEU-latest.speeds_v3.sqlite)",
+        default="germany_speeds.sqlite",
+        help="Latest full DB asset name (default: germany_speeds.sqlite)",
     )
     parser.add_argument(
         "--delta-manifest-prefix",
-        default="DEU-",
-        help="Prefix used for rolling delta manifest assets (default: DEU-)",
+        default="germany_",
+        help="Prefix used for rolling delta manifest assets (default: germany_)",
     )
     parser.add_argument(
         "--patch-prefix",
-        default="DEU-",
-        help="Prefix used for rolling SQL patch assets (default: DEU-)",
+        default="germany_",
+        help="Prefix used for rolling SQL patch assets (default: germany_)",
     )
     parser.add_argument(
         "--dry-run",

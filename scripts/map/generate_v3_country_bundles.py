@@ -77,6 +77,23 @@ def _slug(value: str) -> str:
     )
 
 
+def _id_token(official_id: str) -> str:
+    """Normalize Geofabrik IDs for filesystem/release asset names."""
+    return _slug(official_id)
+
+
+def _db_asset_name(official_id: str) -> str:
+    return f"{_id_token(official_id)}_speeds.sqlite"
+
+
+def _manifest_asset_name(official_id: str) -> str:
+    return f"{_id_token(official_id)}_manifest.json"
+
+
+def _catalog_asset_name(official_id: str) -> str:
+    return f"{_id_token(official_id)}_catalog.json"
+
+
 def _derive_poly_url_from_pbf_url(pbf_url: str) -> Optional[str]:
     url = pbf_url.strip()
     if not url:
@@ -480,6 +497,7 @@ def _bundle_commands(
     rules_dir: Path,
 ) -> List[List[str]]:
     region_slug = _slug(target.region_id)
+    region_asset_id = _id_token(target.region_id)
     iso3 = target.iso3.upper()
     raw_dir = repo_root / "mapdata" / "raw"
     pbf_path = raw_dir / f"{region_slug}-latest.osm.pbf"
@@ -525,9 +543,9 @@ def _bundle_commands(
             "--out-root",
             str(repo_root / "mapdata" / "bundles" / "v3"),
             "--db-file-name",
-            f"{iso3}-latest.speeds_v3.sqlite",
+            _db_asset_name(region_asset_id),
             "--manifest-name",
-            f"{iso3}-latest.bundle-manifest.v3.json",
+            _manifest_asset_name(region_asset_id),
             "--coverage-poly",
             str(poly_path),
             "--country-code",
@@ -556,7 +574,6 @@ def _catalog_command(
     *,
     repo_root: Path,
     country_id: str,
-    iso3: str,
     bundle_version: str,
     region_ids: List[str],
 ) -> List[str]:
@@ -564,12 +581,13 @@ def _catalog_command(
         "python3",
         str(repo_root / "scripts" / "map" / "build_v3_country_bundle_catalog.py"),
         "--country",
-        iso3.upper(),
+        country_id,
         "--bundle-version",
         bundle_version,
     ]
     for region_id in region_ids:
         region_slug = _slug(region_id)
+        region_asset_id = _id_token(region_id)
         cmd.extend(
             [
                 "--manifest",
@@ -580,7 +598,7 @@ def _catalog_command(
                     / "v3"
                     / region_slug
                     / "latest"
-                    / f"{iso3.upper()}-latest.bundle-manifest.v3.json"
+                    / _manifest_asset_name(region_asset_id)
                 ),
             ]
         )
@@ -594,7 +612,7 @@ def _catalog_command(
                 / "v3"
                 / _slug(country_id)
                 / "latest"
-                / f"{iso3.upper()}-latest.bundle-catalog.v3.json"
+                / _catalog_asset_name(country_id)
             ),
         ]
     )
@@ -646,8 +664,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--release-tag",
-        default="deu-v3-data-latest",
-        help="Release tag used when embedding release URLs in manifests",
+        default="",
+        help="Release tag used when embedding release URLs in manifests. Empty => use <ID> in single-target mode.",
     )
     parser.add_argument(
         "--skip-release-urls",
@@ -796,6 +814,20 @@ def main() -> int:
     rules_dir = (repo_root / args.rules_dir).resolve()
     if not rules_dir.exists():
         raise SystemExit(f"Rules directory not found: {rules_dir}")
+    effective_release_tag = args.release_tag.strip()
+    if not args.skip_release_urls:
+        if not effective_release_tag:
+            unique_country_ids = sorted({target.country_id for target in targets})
+            if len(targets) == 1:
+                effective_release_tag = _id_token(targets[0].region_id)
+            elif len(unique_country_ids) == 1:
+                effective_release_tag = _id_token(unique_country_ids[0])
+            else:
+                raise SystemExit(
+                    "--release-tag is required for multi-country runs when release URLs are enabled"
+                )
+        print(f"Release tag: {effective_release_tag}")
+
     for target in targets:
         region_slug = _slug(target.region_id)
         pbf_path = raw_dir / f"{region_slug}-latest.osm.pbf"
@@ -819,17 +851,17 @@ def main() -> int:
             target=target,
             bundle_version=bundle_version,
             max_geom_points=int(args.max_geom_points),
-            release_tag=args.release_tag,
+            release_tag=effective_release_tag,
             skip_release_urls=bool(args.skip_release_urls),
             rules_dir=rules_dir,
         ):
             _run(cmd, dry_run=not args.execute)
 
-    by_country: Dict[Tuple[str, str], List[str]] = {}
+    by_country: Dict[str, List[str]] = {}
     for target in targets:
-        key = (target.country_id, target.iso3.upper())
+        key = target.country_id
         by_country.setdefault(key, []).append(target.region_id)
-    for (country_id, iso3), regions in sorted(by_country.items()):
+    for country_id, regions in sorted(by_country.items()):
         if len(regions) <= 1:
             continue
         print(f"\n=== Catalog {country_id} ({len(regions)} regions) ===")
@@ -837,7 +869,6 @@ def main() -> int:
             _catalog_command(
                 repo_root=repo_root,
                 country_id=country_id,
-                iso3=iso3,
                 bundle_version=bundle_version,
                 region_ids=regions,
             ),

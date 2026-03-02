@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "GitHub release tag (for example: deu-v3-data-latest)"
+        description: "GitHub release tag (for example: germany or karlsruhe-regbez)"
         required: false
-        default: "deu-v3-data-latest"
+        default: "germany"
         type: string
       bundle_dir:
         description: "Bundle directory to upload"
@@ -33,7 +33,6 @@ jobs:
         id: resolve_bundle
         run: |
           requested="${{ inputs.bundle_dir }}"
-          canonical_manifest="DEU-latest.bundle-manifest.v3.json"
           candidates=(
             "${requested}"
             "mapdata/bundles/v3/germany/latest"
@@ -41,16 +40,22 @@ jobs:
           )
 
           resolved=""
+          canonical_manifest=""
           for dir in "${candidates[@]}"; do
-            if [[ -d "${dir}" ]] && [[ -f "${dir}/${canonical_manifest}" ]]; then
+            if [[ ! -d "${dir}" ]]; then
+              continue
+            fi
+            manifest_found="$(find "${dir}" -maxdepth 1 -type f -name '*_manifest.json' | head -n 1 || true)"
+            if [[ -n "${manifest_found}" ]]; then
               resolved="${dir}"
+              canonical_manifest="$(basename "${manifest_found}")"
               break
             fi
           done
 
           if [[ -z "${resolved}" ]]; then
             echo "Bundle directory missing or incomplete: ${requested}" >&2
-            echo "Expected ${canonical_manifest} in one of:" >&2
+            echo "Expected *_manifest.json in one of:" >&2
             printf ' - %s\n' "${candidates[@]}" >&2
             echo "Run workflow 'Germany V3 Bundle Build And Release' first, then rerun this publisher." >&2
             exit 1

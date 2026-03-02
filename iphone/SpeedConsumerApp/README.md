@@ -9,8 +9,8 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 - Support independent map updates via GitHub-hosted bundle manifest and optional SQL delta patches.
 
 ## Update flow
-1. Bootstrap bundled seed `speeds_v3.sqlite`.
-2. Fetch `DEU-latest.bundle-manifest.v3.json` from GitHub release assets (`deu-v3-data-latest`) using fixed plist key `YouSpeedV3ManifestURL`.
+1. Bootstrap bundled seed `karlsruhe-regbez_speeds.sqlite`.
+2. Fetch `<ID>_manifest.json` from GitHub release tag `<ID>` using fixed plist key `YouSpeedV3ManifestURL`.
 3. If delta path exists from active version to target: download + verify + apply SQL patch.
 4. Otherwise download full `speeds_v3.sqlite` bundle.
    - If manifest provides `db_parts`, download parts and assemble local DB before activation.

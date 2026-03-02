@@ -6,7 +6,7 @@ on:
       release_tag:
         description: "Release tag for Karlsruhe development bundle assets"
         required: false
-        default: "deu-v3-data-karlsruhe-latest"
+        default: "karlsruhe-regbez"
         type: string
       pbf_url:
         description: "Source OSM PBF URL"
@@ -39,8 +39,8 @@ jobs:
       REGION: karlsruhe-regbez
       INPUT_PBF: mapdata/raw/karlsruhe-regbez-latest.osm.pbf
       BUNDLE_DIR: mapdata/bundles/v3/karlsruhe-regbez/latest
-      BUNDLE_DB_ASSET: DEU-latest.speeds_v3.sqlite
-      BUNDLE_MANIFEST_ASSET: DEU-latest.bundle-manifest.v3.json
+      BUNDLE_DB_ASSET: karlsruhe-regbez_speeds.sqlite
+      BUNDLE_MANIFEST_ASSET: karlsruhe-regbez_manifest.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,7 +62,7 @@ jobs:
         run: |
           release_tag="${{ github.event.inputs.release_tag || '' }}"
           if [[ -z "${release_tag}" ]]; then
-            release_tag="deu-v3-data-karlsruhe-latest"
+            release_tag="karlsruhe-regbez"
           fi
 
           pbf_url="${{ github.event.inputs.pbf_url || '' }}"

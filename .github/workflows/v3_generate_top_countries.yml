@@ -34,9 +34,9 @@ on:
         default: "8"
         type: string
       release_tag:
-        description: "Release tag used for manifest URL embedding"
+        description: "Release tag used for manifest URL embedding (default: <ID>)"
         required: false
-        default: "eu-v3-data-latest"
+        default: ""
         type: string
       skip_release_urls:
         description: "Do not embed GitHub release URLs in manifests"
@@ -98,7 +98,7 @@ jobs:
             --bundle-target-config "iphone/SpeedConsumerApp/BundleTargets.top10.json"
             --max-country-pbf-bytes "${{ inputs.max_country_pbf_bytes || '1000000000' }}"
             --max-geom-points "${{ inputs.max_geom_points || '8' }}"
-            --release-tag "${{ inputs.release_tag || 'eu-v3-data-latest' }}"
+            --release-tag "${{ inputs.release_tag || '' }}"
           )
 
           if [[ -n "${{ inputs.bundle_region || '' }}" ]]; then
@@ -135,7 +135,7 @@ jobs:
           set -euo pipefail
           mkdir -p mapdata/reports/top-country-run
 
-          find mapdata/bundles/v3 -type f \( -name '*bundle-manifest.v3.json' -o -name '*bundle-catalog.v3.json' \) \
+          find mapdata/bundles/v3 -type f \( -name '*_manifest.json' -o -name '*_catalog.json' \) \
             | sort > mapdata/reports/top-country-run/generated_manifests.txt || true
 
           {

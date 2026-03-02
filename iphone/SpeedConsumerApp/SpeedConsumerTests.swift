@@ -410,7 +410,7 @@ final class SpeedConsumerTests: XCTestCase {
 
     @MainActor
     func testDefaultManifestURLFromInfoDictionary() {
-        let raw = "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json"
+        let raw = "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_manifest.json"
         let url = DriveSessionViewModel.defaultManifestURL(
             infoDictionary: [
                 "YouSpeedV3ManifestURL": raw,
@@ -1054,13 +1054,13 @@ final class SpeedConsumerTests: XCTestCase {
         try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
         try fm.createDirectory(at: cacheDir, withIntermediateDirectories: true)
 
-        let seedDB = seedDir.appendingPathComponent("speeds_v3.sqlite")
+        let seedDB = seedDir.appendingPathComponent("karlsruhe-regbez_speeds.sqlite")
         try createFixtureV3DB(at: seedDB)
 
         let activeState = ActiveBundleState(
             region: "unknown",
             bundleVersion: "seed",
-            dbFileName: "speeds_v3.sqlite",
+            dbFileName: "karlsruhe-regbez_speeds.sqlite",
             activatedAtUTC: "2026-02-25T00:00:00Z"
         )
         let activeStateData = try JSONEncoder().encode(activeState)
@@ -1093,7 +1093,7 @@ final class SpeedConsumerTests: XCTestCase {
         }
 
         let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
-        guard let bundledSeed = appBundle.url(forResource: "speeds_v3", withExtension: "sqlite") else {
+        guard let bundledSeed = appBundle.url(forResource: "karlsruhe-regbez_speeds", withExtension: "sqlite") else {
             throw XCTSkip("Bundled seed DB not found")
         }
 
@@ -1111,7 +1111,7 @@ final class SpeedConsumerTests: XCTestCase {
         let copiedSeedDB = supportDir
             .appendingPathComponent("bundles", isDirectory: true)
             .appendingPathComponent("seed", isDirectory: true)
-            .appendingPathComponent("speeds_v3.sqlite")
+            .appendingPathComponent("karlsruhe-regbez_speeds.sqlite")
         XCTAssertFalse(fm.fileExists(atPath: copiedSeedDB.path), "Seed should not be copied into app support on clean bootstrap")
     }
 
@@ -1128,13 +1128,13 @@ final class SpeedConsumerTests: XCTestCase {
         let bundlesDir = supportDir.appendingPathComponent("bundles", isDirectory: true)
         let seedDir = bundlesDir.appendingPathComponent("seed", isDirectory: true)
         try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
-        let copiedSeedDB = seedDir.appendingPathComponent("speeds_v3.sqlite")
+        let copiedSeedDB = seedDir.appendingPathComponent("karlsruhe-regbez_speeds.sqlite")
         try createFixtureV3DB(at: copiedSeedDB)
 
         let legacySeedState = ActiveBundleState(
             region: "unknown",
             bundleVersion: "seed",
-            dbFileName: "speeds_v3.sqlite",
+            dbFileName: "karlsruhe-regbez_speeds.sqlite",
             activatedAtUTC: "2026-02-25T00:00:00Z"
         )
         try JSONEncoder().encode(legacySeedState).write(
@@ -1143,7 +1143,7 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
-        guard let bundledSeed = appBundle.url(forResource: "speeds_v3", withExtension: "sqlite") else {
+        guard let bundledSeed = appBundle.url(forResource: "karlsruhe-regbez_speeds", withExtension: "sqlite") else {
             throw XCTSkip("Bundled seed DB not found")
         }
 
@@ -2309,6 +2309,7 @@ final class SpeedConsumerTests: XCTestCase {
 
     private func bundledSpeedDBURL() -> URL? {
         let candidates: [(resource: String, ext: String)] = [
+            ("karlsruhe-regbez_speeds", "sqlite"),
             ("speeds_v3", "sqlite"),
             ("DEU-latest.speeds_v3", "sqlite"),
         ]

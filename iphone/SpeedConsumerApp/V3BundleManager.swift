@@ -340,8 +340,9 @@ actor V3BundleManager {
         return nil
     }
 
-    func bootstrapSeedIfNeeded(resourceName: String = "speeds_v3", bundle: Bundle = .main) throws -> BundleSyncResult {
+    func bootstrapSeedIfNeeded(resourceName: String = "karlsruhe-regbez_speeds", bundle: Bundle = .main) throws -> BundleSyncResult {
         let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite")
+        let seedDBFileName = "\(resourceName).sqlite"
 
         if let state = try activeState() {
             let dbURL = try resolveDatabaseURL(for: state)
@@ -386,9 +387,9 @@ actor V3BundleManager {
 
         try writeActiveState(
             ActiveBundleState(
-                region: "DEU",
+                region: "karlsruhe-regbez",
                 bundleVersion: "seed",
-                dbFileName: "speeds_v3.sqlite",
+                dbFileName: seedDBFileName,
                 activatedAtUTC: nowUTC(),
                 dbPath: source.path
             )
@@ -895,8 +896,8 @@ actor V3BundleManager {
                 return try activateRecoveredDatabase(
                     sourceDB: candidate,
                     bundleVersion: recoveredVersion,
-                    region: "DEU",
-                    dbFileName: "DEU-latest.speeds_v3.sqlite",
+                    region: "recovered",
+                    dbFileName: candidate.lastPathComponent,
                     details: "activated recovered staging bundle"
                 )
             } catch {
@@ -933,14 +934,14 @@ actor V3BundleManager {
             do {
                 try quickValidateDB(at: candidate, runQuickCheck: false)
                 Self.logger.notice("startup_recovery multipart_cache validation_ok candidate=\(candidate.lastPathComponent, privacy: .public)")
+                let prefix = candidate.deletingPathExtension().deletingPathExtension().lastPathComponent
                 let result = try activateRecoveredDatabase(
                     sourceDB: candidate,
                     bundleVersion: "recovered-\(startupRecoveryTimestamp())",
-                    region: "DEU",
-                    dbFileName: "DEU-latest.speeds_v3.sqlite",
+                    region: "recovered",
+                    dbFileName: "\(prefix).sqlite",
                     details: "activated recovered multipart cache"
                 )
-                let prefix = candidate.deletingPathExtension().deletingPathExtension().lastPathComponent
                 let checkpoint = cacheDir.appendingPathComponent("\(prefix).checkpoint.json")
                 try? removeItemIfExists(at: checkpoint)
                 return result
