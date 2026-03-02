@@ -328,51 +328,33 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
             self.assertEqual(p3["summary"]["effective_speed_kmh"], p4["summary"]["effective_speed_kmh"])
             self.assertEqual(p3["summary"]["effective_speed_source"], p4["summary"]["effective_speed_source"])
 
-    def test_tunnel_portal_markers_exist_in_v3_and_v4(self):
+    def test_tunnel_tag_persists_in_v3_and_v4(self):
         with sqlite3.connect(self.db_v3) as conn:
-            count = conn.execute("SELECT COUNT(*) FROM tunnel_portal WHERE way_id='109'").fetchone()[0]
-            self.assertEqual(count, 2)
-            meta_count = conn.execute(
-                "SELECT value FROM metadata WHERE key='tunnel_portal_count'"
-            ).fetchone()
-            self.assertIsNotNone(meta_count)
-            self.assertGreaterEqual(int(meta_count[0]), 2)
+            tunnel = conn.execute("SELECT tunnel FROM ways WHERE way_id=109").fetchone()
+            self.assertIsNotNone(tunnel)
+            self.assertEqual((tunnel[0] or "").lower(), "yes")
 
         with sqlite3.connect(self.db_v4) as conn:
-            count = conn.execute("SELECT COUNT(*) FROM tunnel_portal WHERE way_id='109'").fetchone()[0]
-            self.assertEqual(count, 2)
-            meta_count = conn.execute(
-                "SELECT value FROM metadata WHERE key='tunnel_portal_count'"
-            ).fetchone()
-            self.assertIsNotNone(meta_count)
-            self.assertGreaterEqual(int(meta_count[0]), 2)
+            tunnel = conn.execute("SELECT tunnel FROM ways WHERE way_id=109").fetchone()
+            self.assertIsNotNone(tunnel)
+            self.assertEqual((tunnel[0] or "").lower(), "yes")
 
-    def test_city_sign_markers_exist_in_v3_and_v4(self):
+    def test_residential_polygons_exist_in_v3_and_v4(self):
         with sqlite3.connect(self.db_v3) as conn:
             area_columns = {row[1] for row in conn.execute("PRAGMA table_info(areas)").fetchall()}
-            self.assertIn("traffic_sign", area_columns)
-            sign_rows = conn.execute(
-                "SELECT COUNT(*) FROM areas WHERE traffic_sign IN ('DE:310','DE:311')"
+            self.assertIn("residential", area_columns)
+            residential_rows = conn.execute(
+                "SELECT COUNT(*) FROM areas WHERE residential IS NOT NULL AND trim(residential) <> ''"
             ).fetchone()[0]
-            self.assertGreaterEqual(sign_rows, 2)
-            meta_count = conn.execute(
-                "SELECT value FROM metadata WHERE key='city_sign_marker_count'"
-            ).fetchone()
-            self.assertIsNotNone(meta_count)
-            self.assertGreaterEqual(int(meta_count[0]), 2)
+            self.assertGreaterEqual(residential_rows, 1)
 
         with sqlite3.connect(self.db_v4) as conn:
             area_columns = {row[1] for row in conn.execute("PRAGMA table_info(areas)").fetchall()}
-            self.assertIn("traffic_sign", area_columns)
-            sign_rows = conn.execute(
-                "SELECT COUNT(*) FROM areas WHERE traffic_sign IN ('DE:310','DE:311')"
+            self.assertIn("residential", area_columns)
+            residential_rows = conn.execute(
+                "SELECT COUNT(*) FROM areas WHERE residential IS NOT NULL AND trim(residential) <> ''"
             ).fetchone()[0]
-            self.assertGreaterEqual(sign_rows, 2)
-            meta_count = conn.execute(
-                "SELECT value FROM metadata WHERE key='city_sign_marker_count'"
-            ).fetchone()
-            self.assertIsNotNone(meta_count)
-            self.assertGreaterEqual(int(meta_count[0]), 2)
+            self.assertGreaterEqual(residential_rows, 1)
 
 
 if __name__ == "__main__":

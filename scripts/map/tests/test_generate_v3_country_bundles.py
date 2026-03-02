@@ -112,6 +112,7 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
 
         self.assertEqual(len(targets), 3)
         self.assertEqual(targets[0].region_id, "netherlands/drenthe")
+        self.assertEqual(targets[0].iso3, "NLD")
         self.assertEqual(
             targets[0].poly_url,
             "https://download.geofabrik.de/europe/netherlands/drenthe.poly",
@@ -121,6 +122,98 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertTrue(targets[1].is_shard)
         self.assertEqual(targets[2].region_id, "romania")
         self.assertFalse(targets[2].is_shard)
+
+    def test_plan_targets_for_country_prefers_shards_when_large(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "germany",
+                        "name": "Germany",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/germany.poly",
+                        },
+                        "iso3166-1:alpha2": ["DE"],
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "baden-wuerttemberg",
+                        "name": "Baden-Wuerttemberg",
+                        "parent": "germany",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany/baden-wuerttemberg-latest.osm.pbf",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "bermuda",
+                        "name": "Bermuda",
+                        "parent": "germany",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/north-america/bermuda-latest.osm.pbf",
+                        },
+                    }
+                },
+            ]
+        }
+        by_id, children = MODULE._build_index_maps(index_payload)
+        targets = MODULE.plan_targets_for_country(
+            country_id="germany",
+            index_by_id=by_id,
+            child_regions_by_parent=children,
+            max_country_pbf_bytes=1_000_000_000,
+            country_pbf_size_bytes=4_000_000_000,
+        )
+
+        self.assertEqual(len(targets), 1)
+        self.assertEqual(targets[0].region_id, "germany/baden-wuerttemberg")
+        self.assertEqual(targets[0].iso3, "DEU")
+        self.assertTrue(targets[0].is_shard)
+
+    def test_plan_targets_for_country_keeps_single_bundle_when_small(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "romania",
+                        "name": "Romania",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/romania-latest.osm.pbf",
+                            "poly": "https://download.geofabrik.de/europe/romania.poly",
+                        },
+                        "iso3166-1:alpha2": ["RO"],
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "bucharest",
+                        "name": "Bucharest",
+                        "parent": "romania",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/romania/bucharest-latest.osm.pbf",
+                        },
+                    }
+                },
+            ]
+        }
+        by_id, children = MODULE._build_index_maps(index_payload)
+        targets = MODULE.plan_targets_for_country(
+            country_id="romania",
+            index_by_id=by_id,
+            child_regions_by_parent=children,
+            max_country_pbf_bytes=1_000_000_000,
+            country_pbf_size_bytes=300_000_000,
+        )
+
+        self.assertEqual(len(targets), 1)
+        self.assertEqual(targets[0].region_id, "romania")
+        self.assertEqual(targets[0].iso3, "ROU")
+        self.assertFalse(targets[0].is_shard)
 
     def test_plan_single_region_target_uses_iso_override(self) -> None:
         index_payload = {
@@ -148,6 +241,7 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
 
         self.assertEqual(target.region_id, "germany/bayern")
         self.assertEqual(target.iso2, "DE")
+        self.assertEqual(target.iso3, "DEU")
         self.assertEqual(target.country_id, "germany")
 
     def test_derive_poly_url_from_pbf_url(self) -> None:
@@ -162,22 +256,22 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         cmd = MODULE._catalog_command(
             repo_root=Path("/tmp/repo"),
             country_id="germany",
-            iso2="DE",
+            iso3="DEU",
             bundle_version="2026-03-02",
             region_ids=["germany/bayern", "germany/berlin"],
         )
         self.assertIn("--manifest", cmd)
         self.assertIn(
-            "/tmp/repo/mapdata/bundles/v3/germany-bayern/latest/DE-latest.bundle-manifest.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany-bayern/latest/DEU-latest.bundle-manifest.v3.json",
             cmd,
         )
         self.assertIn(
-            "/tmp/repo/mapdata/bundles/v3/germany-berlin/latest/DE-latest.bundle-manifest.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany-berlin/latest/DEU-latest.bundle-manifest.v3.json",
             cmd,
         )
         self.assertEqual(
             cmd[-1],
-            "/tmp/repo/mapdata/bundles/v3/germany/latest/DE-latest.bundle-catalog.v3.json",
+            "/tmp/repo/mapdata/bundles/v3/germany/latest/DEU-latest.bundle-catalog.v3.json",
         )
 
 

@@ -121,12 +121,14 @@ jobs:
         run: |
           python3 scripts/map/publish_v3_bundle.py \
             --region "${REGION}" \
+            --country-code "DEU" \
             --db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
             --bundle-version "${{ steps.params.outputs.bundle_version }}" \
             --bundle-dir-name latest \
             --out-root mapdata/bundles/v3 \
             --db-file-name "${BUNDLE_DB_ASSET}" \
             --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
+            --penalty-rules "iphone/SpeedConsumerApp/Rules/DEU-rules.json" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
             --github-repo "${GITHUB_REPOSITORY#*/}" \
             --github-release-tag "${{ steps.params.outputs.release_tag }}"

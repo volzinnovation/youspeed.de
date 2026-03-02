@@ -188,18 +188,13 @@ def _fetch_existing_rows(conn: sqlite3.Connection, way_ids: Sequence[str]) -> Di
           w.approx_heading_deg,
           w.service,
           w.tunnel,
-          w.bridge,
-          w.covered,
-          w.location,
-          w.layer,
-          w.level,
           w.min_lon,
           w.min_lat,
           w.max_lon,
           w.max_lat,
           g.points_json
         FROM ways w
-        LEFT JOIN way_geom g ON g.row_id = w.row_id
+        LEFT JOIN way_geom g ON g.way_id = w.way_id
         WHERE w.way_id IN ({placeholders})
         """
         for row in conn.execute(sql, chunk):
@@ -261,11 +256,6 @@ def _build_insert_payload(
         "approx_heading_deg": existing["approx_heading_deg"] if existing is not None else None,
         "service": tags.get("service", existing["service"] if existing is not None else None),
         "tunnel": tags.get("tunnel", existing["tunnel"] if existing is not None else None),
-        "bridge": tags.get("bridge", existing["bridge"] if existing is not None else None),
-        "covered": tags.get("covered", existing["covered"] if existing is not None else None),
-        "location": tags.get("location", existing["location"] if existing is not None else None),
-        "layer": tags.get("layer", existing["layer"] if existing is not None else None),
-        "level": tags.get("level", existing["level"] if existing is not None else None),
         "min_lon": float(min_lon),
         "min_lat": float(min_lat),
         "max_lon": float(max_lon),
@@ -297,8 +287,8 @@ def _build_sql_patch(
 
     for way_id in sorted(set(delete_ids)):
         way_lit = _sql_literal(way_id)
-        lines.append(f"DELETE FROM way_geom WHERE row_id IN (SELECT row_id FROM ways WHERE way_id={way_lit});")
-        lines.append(f"DELETE FROM ways_rtree WHERE row_id IN (SELECT row_id FROM ways WHERE way_id={way_lit});")
+        lines.append(f"DELETE FROM way_geom WHERE way_id={way_lit};")
+        lines.append(f"DELETE FROM ways_rtree WHERE way_id={way_lit};")
         lines.append(f"DELETE FROM ways WHERE way_id={way_lit};")
 
     for ins in inserts:
@@ -306,7 +296,7 @@ def _build_sql_patch(
         lines.append(
             "INSERT INTO ways("
             "way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, "
-            "approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, "
+            "approx_heading_deg, service, tunnel, "
             "min_lon, min_lat, max_lon, max_lat"
             ") VALUES("
             f"{way_lit}, "
@@ -319,11 +309,6 @@ def _build_sql_patch(
             f"{_sql_literal(ins['approx_heading_deg'])}, "
             f"{_sql_literal(ins['service'])}, "
             f"{_sql_literal(ins['tunnel'])}, "
-            f"{_sql_literal(ins['bridge'])}, "
-            f"{_sql_literal(ins['covered'])}, "
-            f"{_sql_literal(ins['location'])}, "
-            f"{_sql_literal(ins['layer'])}, "
-            f"{_sql_literal(ins['level'])}, "
             f"{_sql_literal(ins['min_lon'])}, "
             f"{_sql_literal(ins['min_lat'])}, "
             f"{_sql_literal(ins['max_lon'])}, "
@@ -331,17 +316,13 @@ def _build_sql_patch(
             ");"
         )
         lines.append(
-            "INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat) "
-            "VALUES(("
-            f"SELECT row_id FROM ways WHERE way_id={way_lit}"
-            f"), {_sql_literal(ins['min_lon'])}, {_sql_literal(ins['max_lon'])}, "
+            "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) "
+            f"VALUES({way_lit}, {_sql_literal(ins['min_lon'])}, {_sql_literal(ins['max_lon'])}, "
             f"{_sql_literal(ins['min_lat'])}, {_sql_literal(ins['max_lat'])});"
         )
         lines.append(
-            "INSERT INTO way_geom(row_id, points_json) "
-            "VALUES(("
-            f"SELECT row_id FROM ways WHERE way_id={way_lit}"
-            f"), {_sql_literal(ins['points_json'])});"
+            "INSERT INTO way_geom(way_id, points_json) "
+            f"VALUES({way_lit}, {_sql_literal(ins['points_json'])});"
         )
 
     lines.append("COMMIT;")

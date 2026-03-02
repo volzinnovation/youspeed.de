@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "NLD",
+  "country_name": "Netherlands",
+  "currency_code": "EUR",
+  "default_language": "en",
+  "source_url": "https://www.om.nl/onderwerpen/verkeer/handhaving-in-het-verkeer/boetebedragen-verkeer",
+  "source_checked_at": "2026-03-02",
+  "note": "Indicative consumer warning bands for passenger cars; verify against current official enforcement tables.",
+  "bands": [
+    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 50 {currency}", "money_fine_eur": 50 },
+    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 120 {currency}", "money_fine_eur": 120 },
+    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Indicative fine around 240 {currency}", "money_fine_eur": 240 },
+    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Indicative fine around 350 {currency}", "money_fine_eur": 350 },
+    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely court-level handling; indicative fine from 480 {currency}", "money_fine_eur": 480, "penalty_points": 0, "conditional_driving_ban_months": 2, "driving_ban_condition": "court_discretion" }
+  ]
+}

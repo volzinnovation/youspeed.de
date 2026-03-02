@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "ISL",
+  "country_name": "Iceland",
+  "currency_code": "ISK",
+  "default_language": "en",
+  "source_url": "https://www.samgongustofa.is/umferd/oryggi/sektir/",
+  "source_checked_at": "2026-03-02",
+  "note": "Indicative warning bands for passenger cars; exact fines vary by zone and over-speed interval.",
+  "bands": [
+    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 20000 {currency}", "money_fine_eur": 20000 },
+    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 30000 {currency}", "money_fine_eur": 30000 },
+    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely fine from about 45000 {currency}", "money_fine_eur": 45000 },
+    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely fine from about 65000 {currency}", "money_fine_eur": 65000 },
+    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely severe sanction and possible license suspension", "money_fine_eur": 90000, "penalty_points": 0, "conditional_driving_ban_months": 2, "driving_ban_condition": "license_suspension_possible" }
+  ]
+}

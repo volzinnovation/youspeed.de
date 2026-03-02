@@ -1,12 +1,22 @@
-name: EU V3 Top Countries Bundle Build
+name: EU V3 Country Or Region Bundle Build
 
 on:
   workflow_dispatch:
     inputs:
-      top_n:
-        description: "Top-N countries by maxspeed share ranking"
+      bundle_country:
+        description: "Geofabrik country id (for example: germany). Used when bundle_region is empty."
         required: false
-        default: "10"
+        default: "germany"
+        type: string
+      bundle_region:
+        description: "Optional Geofabrik region id (for example: germany/bayern). Overrides bundle_country."
+        required: false
+        default: ""
+        type: string
+      iso2:
+        description: "Optional ISO2 override when bundle_region is used and index is missing ISO2"
+        required: false
+        default: ""
         type: string
       max_country_pbf_bytes:
         description: "Shard threshold in bytes (country PBF > threshold => child regions)"
@@ -46,9 +56,9 @@ env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
-  build-top-countries:
+  build-country-or-region:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 240
 
     steps:
       - name: Checkout
@@ -77,7 +87,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install osmium
 
-      - name: Build Top Countries Bundles
+      - name: Build Country Or Region Bundles
         shell: bash
         run: |
           set -euo pipefail
@@ -85,11 +95,19 @@ jobs:
           cmd=(
             python3 scripts/map/generate_v3_country_bundles.py
             --repo-root "$GITHUB_WORKSPACE"
-            --top-n "${{ inputs.top_n || '10' }}"
             --max-country-pbf-bytes "${{ inputs.max_country_pbf_bytes || '1000000000' }}"
             --max-geom-points "${{ inputs.max_geom_points || '8' }}"
             --release-tag "${{ inputs.release_tag || 'eu-v3-data-latest' }}"
           )
+
+          if [[ -n "${{ inputs.bundle_region || '' }}" ]]; then
+            cmd+=(--bundle-region "${{ inputs.bundle_region }}")
+            if [[ -n "${{ inputs.iso2 || '' }}" ]]; then
+              cmd+=(--iso2 "${{ inputs.iso2 }}")
+            fi
+          else
+            cmd+=(--bundle-country "${{ inputs.bundle_country || 'germany' }}")
+          fi
 
           if [[ -n "${{ inputs.bundle_version || '' }}" ]]; then
             cmd+=(--bundle-version "${{ inputs.bundle_version }}")
@@ -133,7 +151,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: top-country-v3-bundle-run-metadata
+          name: country-region-v3-bundle-run-metadata
           path: |
             mapdata/reports/top-country-run/generated_manifests.txt
             mapdata/reports/top-country-run/bundle_size_summary.txt

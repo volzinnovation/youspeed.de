@@ -24,8 +24,22 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         self.tmp_ctx = tempfile.TemporaryDirectory()
         self.tmpdir = Path(self.tmp_ctx.name)
         self.base_db = self.tmpdir / "speeds_v3.sqlite"
+        self.rules_json = self.tmpdir / "NLD-rules.json"
         self.diff_file = self.tmpdir / "delta.osc"
         self._create_fixture_db(self.base_db)
+        self.rules_json.write_text(
+            json.dumps(
+                {
+                    "format": "youspeed.penalty.rules",
+                    "schema_version": 1,
+                    "country_code": "NLD",
+                    "country_name": "Netherlands",
+                    "currency_code": "EUR",
+                    "bands": [],
+                }
+            ),
+            encoding="utf-8",
+        )
         self.diff_file.write_text(self._fixture_diff(), encoding="utf-8")
 
     def tearDown(self):
@@ -38,8 +52,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             conn.executescript(
                 """
                 CREATE TABLE ways (
-                  row_id INTEGER PRIMARY KEY,
-                  way_id TEXT NOT NULL UNIQUE,
+                  way_id INTEGER PRIMARY KEY,
                   highway TEXT,
                   street_name TEXT,
                   ref TEXT,
@@ -51,41 +64,35 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   approx_heading_deg REAL,
                   service TEXT,
                   tunnel TEXT,
-                  bridge TEXT,
-                  covered TEXT,
-                  location TEXT,
-                  layer TEXT,
-                  level TEXT,
                   min_lon REAL NOT NULL,
                   min_lat REAL NOT NULL,
                   max_lon REAL NOT NULL,
                   max_lat REAL NOT NULL
                 );
                 CREATE VIRTUAL TABLE ways_rtree USING rtree(
-                  row_id,
+                  way_id,
                   min_lon, max_lon,
                   min_lat, max_lat
                 );
                 CREATE TABLE way_geom (
-                  row_id INTEGER PRIMARY KEY,
-                  way_id TEXT NOT NULL UNIQUE,
+                  way_id INTEGER PRIMARY KEY,
                   points_json TEXT NOT NULL
                 );
 
-                INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+                INSERT INTO ways(way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, min_lon, min_lat, max_lon, max_lat)
                 VALUES
-                  (1, '100', 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.0000, 13.0010, 52.0010),
-                  (2, '300', 'service', 'Fixture Service Road', 'K 1', '20', NULL, NULL, NULL, NULL, 0.0, 'service', NULL, NULL, NULL, NULL, NULL, NULL, 13.0100, 52.0100, 13.0110, 52.0110);
+                  (100, 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, 13.0000, 52.0000, 13.0010, 52.0010),
+                  (300, 'service', 'Fixture Service Road', 'K 1', '20', NULL, NULL, NULL, NULL, 0.0, 'service', NULL, 13.0100, 52.0100, 13.0110, 52.0110);
 
-                INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES
-                  (1, 13.0000, 13.0010, 52.0000, 52.0010),
-                  (2, 13.0100, 13.0110, 52.0100, 52.0110);
+                  (100, 13.0000, 13.0010, 52.0000, 52.0010),
+                  (300, 13.0100, 13.0110, 52.0100, 52.0110);
 
-                INSERT INTO way_geom(row_id, way_id, points_json)
+                INSERT INTO way_geom(way_id, points_json)
                 VALUES
-                  (1, '100', '[[52.0000,13.0000],[52.0010,13.0010]]'),
-                  (2, '300', '[[52.0100,13.0100],[52.0110,13.0110]]');
+                  (100, '[[52.0000,13.0000],[52.0010,13.0010]]'),
+                  (300, '[[52.0100,13.0100],[52.0110,13.0110]]');
                 """
             )
             conn.commit()
@@ -181,12 +188,12 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             conn.executescript(patch_sql)
             rows = conn.execute("SELECT way_id, maxspeed, street_name, ref FROM ways ORDER BY way_id").fetchall()
             row_map = {r[0]: {"maxspeed": r[1], "street_name": r[2], "ref": r[3]} for r in rows}
-            self.assertEqual(row_map.get("100", {}).get("maxspeed"), "30")
-            self.assertEqual(row_map.get("100", {}).get("street_name"), "Updated Fixture Street")
-            self.assertEqual(row_map.get("100", {}).get("ref"), "B 3")
-            self.assertEqual(row_map.get("200", {}).get("maxspeed"), "20")
-            self.assertEqual(row_map.get("200", {}).get("ref"), "K 2")
-            self.assertNotIn("300", row_map)
+            self.assertEqual(row_map.get(100, {}).get("maxspeed"), "30")
+            self.assertEqual(row_map.get(100, {}).get("street_name"), "Updated Fixture Street")
+            self.assertEqual(row_map.get(100, {}).get("ref"), "B 3")
+            self.assertEqual(row_map.get(200, {}).get("maxspeed"), "20")
+            self.assertEqual(row_map.get(200, {}).get("ref"), "K 2")
+            self.assertNotIn(300, row_map)
 
     def test_publish_v3_bundle_with_github_release_urls(self):
         delta_index = self.tmpdir / "delta-index.v3.json"
@@ -223,6 +230,10 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 "v3-data-2026-02-24",
                 "--github-asset-prefix",
                 "germany/2026-02-24",
+                "--country-code",
+                "NLD",
+                "--penalty-rules",
+                str(self.rules_json),
             ]
         )
         manifest_path = self.tmpdir / "bundles" / "germany" / "2026-02-24" / "DEU-latest.bundle-manifest.v3.json"
@@ -230,9 +241,15 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["format"], "youspeed.v3.bundle.manifest")
         self.assertEqual(manifest["variant"], "v3")
+        self.assertEqual(manifest["country_code"], "NLD")
         self.assertEqual(manifest["db"]["file"], "DEU-latest.speeds_v3.sqlite")
         self.assertIn("github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24", manifest["db"]["url"])
         self.assertIn("DEU-latest.delta-index.v3.json", manifest["delta_index"]["file"])
+        self.assertEqual(manifest["penalty_rules"]["file"], "NLD-rules.json")
+        self.assertIn(
+            "github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24",
+            manifest["penalty_rules"]["url"],
+        )
 
     def test_publish_v3_bundle_allows_latest_dir_name(self):
         out_root = self.tmpdir / "bundles"

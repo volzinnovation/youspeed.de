@@ -85,7 +85,7 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         way_id_type = way_info.get("way_id", "")
         if "INT" not in way_id_type:
             raise RuntimeError(f"schema contract failed: ways.way_id must be INTEGER-like, got {way_id_type!r}")
-        for required_way_column in ("service", "tunnel", "bridge", "covered", "location", "layer", "level"):
+        for required_way_column in ("service", "tunnel"):
             if required_way_column not in way_columns:
                 raise RuntimeError(f"schema contract failed: ways.{required_way_column} column missing")
         if "name" not in area_columns:
@@ -144,17 +144,13 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 """
             ).fetchone()[0]
         )
-        ways_with_vertical_context = int(
+        ways_with_tunnel = int(
             conn.execute(
                 """
                 SELECT COUNT(*)
                 FROM ways
-                WHERE (tunnel IS NOT NULL AND trim(tunnel) <> '')
-                   OR (bridge IS NOT NULL AND trim(bridge) <> '')
-                   OR (covered IS NOT NULL AND trim(covered) <> '')
-                   OR (location IS NOT NULL AND trim(location) <> '')
-                   OR (layer IS NOT NULL AND trim(layer) <> '')
-                   OR (level IS NOT NULL AND trim(level) <> '')
+                WHERE tunnel IS NOT NULL
+                  AND trim(tunnel) <> ''
                 """
             ).fetchone()[0]
         )
@@ -195,7 +191,7 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         "ways_with_nonempty_ref": ways_with_nonempty_ref,
         "ways_with_nonempty_service": ways_with_service,
         "ways_with_service_parking_aisle": ways_with_parking_aisle,
-        "ways_with_vertical_context_tags": ways_with_vertical_context,
+        "ways_with_tunnel_tag": ways_with_tunnel,
         "areas_with_nonempty_name": areas_with_name,
         "residential_areas_with_polygons": residential_areas_with_polygons,
     }
@@ -298,16 +294,6 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
         raise RuntimeError(f"has_service_column is not true for mode={mode}")
     if summary.get("has_tunnel_column") is not True:
         raise RuntimeError(f"has_tunnel_column is not true for mode={mode}")
-    if summary.get("has_bridge_column") is not True:
-        raise RuntimeError(f"has_bridge_column is not true for mode={mode}")
-    if summary.get("has_covered_column") is not True:
-        raise RuntimeError(f"has_covered_column is not true for mode={mode}")
-    if summary.get("has_location_column") is not True:
-        raise RuntimeError(f"has_location_column is not true for mode={mode}")
-    if summary.get("has_layer_column") is not True:
-        raise RuntimeError(f"has_layer_column is not true for mode={mode}")
-    if summary.get("has_level_column") is not True:
-        raise RuntimeError(f"has_level_column is not true for mode={mode}")
     if summary.get("residential_mode") != "polygon_containment":
         raise RuntimeError(f"residential_mode is not polygon_containment for mode={mode}")
     if "residential_candidate_polygons" not in summary:
@@ -336,7 +322,7 @@ def ensure_payload_contract(payload: Dict, mode: str) -> None:
         raise RuntimeError(f"top_candidates[0].street_name missing for mode={mode}")
     if "ref" not in first:
         raise RuntimeError(f"top_candidates[0].ref missing for mode={mode}")
-    for required in ("service", "tunnel", "bridge", "covered", "location", "layer", "level"):
+    for required in ("service", "tunnel"):
         if required not in first:
             raise RuntimeError(f"top_candidates[0].{required} missing for mode={mode}")
 

@@ -15,9 +15,7 @@ import json
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
-
-FALSE_TAG_VALUES = {"", "0", "false", "no", "off", "none"}
+from typing import Iterator, List, Tuple
 
 
 def _iter_jsonl(path: Path) -> Iterator[dict]:
@@ -59,39 +57,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _tag_truthy(raw: object) -> bool:
-    if raw is None:
-        return False
-    value = str(raw).strip().lower()
-    if value in FALSE_TAG_VALUES:
-        return False
-    return True
-
-
-def _parse_numeric_tag(raw: object) -> Optional[float]:
-    if raw is None:
-        return None
-    try:
-        return float(str(raw).strip())
-    except (TypeError, ValueError):
-        return None
-
-
-def _is_tunnel_like_way(meta: dict) -> bool:
-    if _tag_truthy(meta.get("tunnel")):
-        return True
-    location = str(meta.get("location") or "").strip().lower()
-    if location in {"underground", "tunnel"}:
-        return True
-    layer = _parse_numeric_tag(meta.get("layer"))
-    if layer is not None and layer < 0:
-        return True
-    level = _parse_numeric_tag(meta.get("level"))
-    if level is not None and level < 0:
-        return True
-    return False
-
-
 def main() -> int:
     args = parse_args()
     v1_dist = Path(args.v1_dist)
@@ -129,8 +94,7 @@ def main() -> int:
         );
 
         CREATE TABLE ways (
-          row_id INTEGER PRIMARY KEY,
-          way_id INTEGER NOT NULL UNIQUE,
+          way_id INTEGER PRIMARY KEY,
           highway TEXT,
           street_name TEXT,
           ref TEXT,
@@ -140,11 +104,6 @@ def main() -> int:
           approx_heading_deg REAL,
           service TEXT,
           tunnel TEXT,
-          bridge TEXT,
-          covered TEXT,
-          location TEXT,
-          layer TEXT,
-          level TEXT,
           min_lon REAL NOT NULL,
           min_lat REAL NOT NULL,
           max_lon REAL NOT NULL,
@@ -152,32 +111,13 @@ def main() -> int:
         );
 
         CREATE VIRTUAL TABLE ways_rtree USING rtree(
-          row_id,
-          min_lon, max_lon,
-          min_lat, max_lat
-        );
-
-        CREATE TABLE tunnel_portal (
-          row_id INTEGER PRIMARY KEY,
-          way_row_id INTEGER NOT NULL,
-          way_id INTEGER NOT NULL,
-          portal_index INTEGER NOT NULL,
-          lon REAL NOT NULL,
-          lat REAL NOT NULL,
-          tunnel TEXT,
-          location TEXT,
-          layer REAL,
-          level REAL
-        );
-
-        CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(
-          row_id,
+          way_id,
           min_lon, max_lon,
           min_lat, max_lat
         );
 
         CREATE TABLE way_geom (
-          row_id INTEGER PRIMARY KEY,
+          way_id INTEGER PRIMARY KEY,
           points_json TEXT NOT NULL
         );
 
@@ -217,10 +157,7 @@ def main() -> int:
     ways_batch: List[Tuple] = []
     ways_rtree_batch: List[Tuple] = []
     geom_batch: List[Tuple] = []
-    tunnel_portal_batch: List[Tuple] = []
-    tunnel_portal_rtree_batch: List[Tuple] = []
-    row_id = 0
-    tunnel_portal_row_id = 0
+    way_rows = 0
 
     with ways_meta.open("r", encoding="utf-8") as fm, ways_geom.open("r", encoding="utf-8") as fg:
         while True:
@@ -245,7 +182,7 @@ def main() -> int:
                 )
                 return 1
 
-            row_id += 1
+            way_rows += 1
             way_id = int(meta["way_id"])
             points = geom.get("points")
             if not isinstance(points, list):
@@ -253,7 +190,6 @@ def main() -> int:
 
             ways_batch.append(
                 (
-                    row_id,
                     way_id,
                     meta.get("highway"),
                     meta.get("street_name"),
@@ -264,11 +200,6 @@ def main() -> int:
                     meta.get("approx_heading_deg"),
                     meta.get("service"),
                     meta.get("tunnel"),
-                    meta.get("bridge"),
-                    meta.get("covered"),
-                    meta.get("location"),
-                    meta.get("layer"),
-                    meta.get("level"),
                     float(meta["min_lon"]),
                     float(meta["min_lat"]),
                     float(meta["max_lon"]),
@@ -277,124 +208,64 @@ def main() -> int:
             )
             ways_rtree_batch.append(
                 (
-                    row_id,
+                    way_id,
                     float(meta["min_lon"]),
                     float(meta["max_lon"]),
                     float(meta["min_lat"]),
                     float(meta["max_lat"]),
                 )
             )
-            geom_batch.append((row_id, json.dumps(points, separators=(",", ":"))))
-
-            if _is_tunnel_like_way(meta) and len(points) >= 2:
-                layer = _parse_numeric_tag(meta.get("layer"))
-                level = _parse_numeric_tag(meta.get("level"))
-                for portal_index, portal in enumerate((points[0], points[-1])):
-                    try:
-                        lat = float(portal[0])
-                        lon = float(portal[1])
-                    except (TypeError, ValueError, IndexError):
-                        continue
-                    tunnel_portal_row_id += 1
-                    tunnel_portal_batch.append(
-                        (
-                            tunnel_portal_row_id,
-                            row_id,
-                            way_id,
-                            portal_index,
-                            lon,
-                            lat,
-                            meta.get("tunnel"),
-                            meta.get("location"),
-                            layer,
-                            level,
-                        )
-                    )
-                    tunnel_portal_rtree_batch.append(
-                        (
-                            tunnel_portal_row_id,
-                            lon,
-                            lon,
-                            lat,
-                            lat,
-                        )
-                    )
+            geom_batch.append((way_id, json.dumps(points, separators=(",", ":"))))
 
             if len(ways_batch) >= args.batch_size:
                 conn.executemany(
                     """
                     INSERT INTO ways(
-                      row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-                      approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+                      way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+                      approx_heading_deg, service, tunnel,
                       min_lon, min_lat, max_lon, max_lat
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     ways_batch,
                 )
                 conn.executemany(
-                    "INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                    "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
                     ways_rtree_batch,
                 )
                 conn.executemany(
-                    "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
+                    "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
                     geom_batch,
-                )
-                conn.executemany(
-                    """
-                    INSERT INTO tunnel_portal(
-                      row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level
-                    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    tunnel_portal_batch,
-                )
-                conn.executemany(
-                    "INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
-                    tunnel_portal_rtree_batch,
                 )
                 conn.commit()
                 ways_batch.clear()
                 ways_rtree_batch.clear()
                 geom_batch.clear()
-                tunnel_portal_batch.clear()
-                tunnel_portal_rtree_batch.clear()
 
-            if row_id % args.progress_every == 0:
-                print(f"  ways inserted: {row_id}", file=sys.stderr)
+            if way_rows % args.progress_every == 0:
+                print(f"  ways inserted: {way_rows}", file=sys.stderr)
 
     if ways_batch:
         conn.executemany(
             """
             INSERT INTO ways(
-              row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
-              approx_heading_deg, service, tunnel, bridge, covered, location, layer, level,
+              way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+              approx_heading_deg, service, tunnel,
               min_lon, min_lat, max_lon, max_lat
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             ways_batch,
         )
         conn.executemany(
-            "INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+            "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
             ways_rtree_batch,
         )
         conn.executemany(
-            "INSERT INTO way_geom(row_id, points_json) VALUES(?, ?)",
+            "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
             geom_batch,
-        )
-        conn.executemany(
-            """
-            INSERT INTO tunnel_portal(
-              row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            tunnel_portal_batch,
-        )
-        conn.executemany(
-            "INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
-            tunnel_portal_rtree_batch,
         )
         conn.commit()
 
-    print(f"Ways done: {row_id}", file=sys.stderr)
+    print(f"Ways done: {way_rows}", file=sys.stderr)
 
     areas_payload = json.loads(areas_idx.read_text(encoding="utf-8"))
     areas = areas_payload.get("areas", [])
@@ -467,15 +338,7 @@ def main() -> int:
         )
         conn.commit()
 
-    conn.execute("CREATE INDEX idx_ways_way_id ON ways(way_id)")
     conn.execute("CREATE INDEX idx_areas_place_admin ON areas(place, admin_level, boundary)")
-    conn.execute("CREATE INDEX idx_tunnel_portal_way ON tunnel_portal(way_id, way_row_id, portal_index)")
-    conn.executemany(
-        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
-        [
-            ("tunnel_portal_count", str(tunnel_portal_row_id)),
-        ],
-    )
     conn.commit()
     conn.close()
 

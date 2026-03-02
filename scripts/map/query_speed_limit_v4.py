@@ -196,11 +196,6 @@ def _query_way_rows(
     has_ref: bool,
     has_service: bool,
     has_tunnel: bool,
-    has_bridge: bool,
-    has_covered: bool,
-    has_location: bool,
-    has_layer: bool,
-    has_level: bool,
 ) -> Tuple[List[dict], int]:
     deg_lat = radius_m / 111132.0
     cos_lat = max(0.173648, abs(math.cos(math.radians(lat))))
@@ -213,7 +208,7 @@ def _query_way_rows(
     tile_row_count = int(
         conn.execute(
             """
-            SELECT COUNT(DISTINCT row_id)
+            SELECT COUNT(DISTINCT way_id)
             FROM way_tile
             WHERE tile_x BETWEEN ? AND ?
               AND tile_y BETWEEN ? AND ?
@@ -226,14 +221,9 @@ def _query_way_rows(
     ref_select = "w.ref" if has_ref else "NULL"
     service_select = "w.service" if has_service else "NULL"
     tunnel_select = "w.tunnel" if has_tunnel else "NULL"
-    bridge_select = "w.bridge" if has_bridge else "NULL"
-    covered_select = "w.covered" if has_covered else "NULL"
-    location_select = "w.location" if has_location else "NULL"
-    layer_select = "w.layer" if has_layer else "NULL"
-    level_select = "w.level" if has_level else "NULL"
     sql = f"""
     WITH tile_rows AS (
-      SELECT DISTINCT row_id
+      SELECT DISTINCT way_id
       FROM way_tile
       WHERE tile_x BETWEEN ? AND ?
         AND tile_y BETWEEN ? AND ?
@@ -249,20 +239,15 @@ def _query_way_rows(
       w.approx_heading_deg,
       {service_select} AS service,
       {tunnel_select} AS tunnel,
-      {bridge_select} AS bridge,
-      {covered_select} AS covered,
-      {location_select} AS location,
-      {layer_select} AS layer,
-      {level_select} AS level,
       w.min_lon,
       w.min_lat,
       w.max_lon,
       w.max_lat,
       g.points_json
     FROM tile_rows t
-    JOIN ways_rtree r ON r.row_id = t.row_id
-    JOIN ways w ON w.row_id = t.row_id
-    LEFT JOIN way_geom g ON g.row_id = t.row_id
+    JOIN ways_rtree r ON r.way_id = t.way_id
+    JOIN ways w ON w.way_id = t.way_id
+    LEFT JOIN way_geom g ON g.way_id = t.way_id
     WHERE r.min_lon <= ? AND r.max_lon >= ?
       AND r.min_lat <= ? AND r.max_lat >= ?
     ORDER BY
@@ -325,9 +310,9 @@ def _query_way_rows(
     cur = conn.execute(sql, params)
     for r in cur.fetchall():
         points: List[List[float]] = []
-        if isinstance(r[19], str) and r[19]:
+        if isinstance(r[14], str) and r[14]:
             try:
-                parsed = json.loads(r[19])
+                parsed = json.loads(r[14])
                 if isinstance(parsed, list):
                     points = parsed
             except json.JSONDecodeError:
@@ -344,15 +329,10 @@ def _query_way_rows(
                 "approx_heading_deg": r[7],
                 "service": r[8],
                 "tunnel": r[9],
-                "bridge": r[10],
-                "covered": r[11],
-                "location": r[12],
-                "layer": r[13],
-                "level": r[14],
-                "min_lon": float(r[15]),
-                "min_lat": float(r[16]),
-                "max_lon": float(r[17]),
-                "max_lat": float(r[18]),
+                "min_lon": float(r[10]),
+                "min_lat": float(r[11]),
+                "max_lon": float(r[12]),
+                "max_lat": float(r[13]),
                 "points": points,
             }
         )
@@ -685,11 +665,6 @@ def main() -> int:
     has_ref = _column_exists(conn, "ways", "ref")
     has_service = _column_exists(conn, "ways", "service")
     has_tunnel = _column_exists(conn, "ways", "tunnel")
-    has_bridge = _column_exists(conn, "ways", "bridge")
-    has_covered = _column_exists(conn, "ways", "covered")
-    has_location = _column_exists(conn, "ways", "location")
-    has_layer = _column_exists(conn, "ways", "layer")
-    has_level = _column_exists(conn, "ways", "level")
     has_area_residential = _column_exists(conn, "areas", "residential")
     has_area_points_json = _column_exists(conn, "areas", "points_json")
 
@@ -724,11 +699,6 @@ def main() -> int:
         has_ref=has_ref,
         has_service=has_service,
         has_tunnel=has_tunnel,
-        has_bridge=has_bridge,
-        has_covered=has_covered,
-        has_location=has_location,
-        has_layer=has_layer,
-        has_level=has_level,
     )
     area_candidates = _query_area_rows(
         conn=conn,
@@ -787,11 +757,6 @@ def main() -> int:
                 "source_maxspeed": row.get("source_maxspeed"),
                 "service": row.get("service"),
                 "tunnel": row.get("tunnel"),
-                "bridge": row.get("bridge"),
-                "covered": row.get("covered"),
-                "location": row.get("location"),
-                "layer": row.get("layer"),
-                "level": row.get("level"),
                 "parsed_speed_kmh": parsed_speed,
                 "points": row.get("points", []),
                 "_heading_penalty": heading_penalty,
@@ -880,11 +845,6 @@ def main() -> int:
             "has_ref_column": has_ref,
             "has_service_column": has_service,
             "has_tunnel_column": has_tunnel,
-            "has_bridge_column": has_bridge,
-            "has_covered_column": has_covered,
-            "has_location_column": has_location,
-            "has_layer_column": has_layer,
-            "has_level_column": has_level,
         },
         "timing_ms": {
             "load_index": round(index_load_ms, 2),

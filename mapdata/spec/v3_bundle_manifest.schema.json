@@ -28,6 +28,10 @@
       "type": "string",
       "minLength": 1
     },
+    "country_code": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
     "bundle_version": {
       "type": "string",
       "minLength": 1
@@ -58,6 +62,37 @@
           "type": "null"
         }
       ]
+    },
+    "penalty_rules": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/artifact"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "bbox"
+      ],
+      "properties": {
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        },
+        "poly": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
     },
     "self": {
       "type": "object",
@@ -104,6 +139,29 @@
             "string",
             "null"
           ]
+        }
+      }
+    },
+    "bbox": {
+      "type": "object",
+      "required": [
+        "min_lon",
+        "min_lat",
+        "max_lon",
+        "max_lat"
+      ],
+      "properties": {
+        "min_lon": {
+          "type": "number"
+        },
+        "min_lat": {
+          "type": "number"
+        },
+        "max_lon": {
+          "type": "number"
+        },
+        "max_lat": {
+          "type": "number"
         }
       }
     }

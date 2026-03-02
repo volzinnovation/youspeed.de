@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "MCO",
+  "country_name": "Monaco",
+  "currency_code": "EUR",
+  "default_language": "en",
+  "source_url": "https://speedingeurope.com/monaco/",
+  "source_checked_at": "2026-03-02",
+  "note": "Indicative warning bands aligned with commonly documented Monaco/France-style sanction levels.",
+  "bands": [
+    { "min_delta_kmh": 1, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fixed fine from about 68 {currency}", "money_fine_eur": 68 },
+    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely fine around 135 {currency}", "money_fine_eur": 135 },
+    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "points_and_fine", "title_template": "High overspeed", "detail_template": "Likely higher fine and potential points/suspension", "money_fine_eur": 375, "penalty_points": 0, "conditional_driving_ban_months": 1, "driving_ban_condition": "case_dependent" },
+    { "min_delta_kmh": 41, "max_delta_kmh": 50, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely severe sanction and possible suspension", "money_fine_eur": 750, "penalty_points": 0, "conditional_driving_ban_months": 2, "driving_ban_condition": "case_dependent" },
+    { "min_delta_kmh": 51, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely court-level handling and high fine", "money_fine_eur": 1500, "penalty_points": 0, "conditional_driving_ban_months": 3, "driving_ban_condition": "court_discretion" }
+  ]
+}

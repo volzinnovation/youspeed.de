@@ -40,6 +40,11 @@ def _github_release_asset_url(owner: str, repo: str, tag: str, asset_name: str) 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Publish v3 map bundle for consumer app updates")
     parser.add_argument("--region", default="germany", help="Region identifier (default: germany)")
+    parser.add_argument(
+        "--country-code",
+        default="",
+        help="Optional ISO 3166-1 alpha-3 code linked to this bundle (for example: DEU)",
+    )
     parser.add_argument("--db", required=True, help="Path to source speeds_v3.sqlite")
     parser.add_argument("--bundle-version", required=True, help="Bundle version (for example: 2026-02-23)")
     parser.add_argument(
@@ -117,6 +122,16 @@ def parse_args() -> argparse.Namespace:
         "--coverage-poly-file-name",
         default="",
         help="Optional target file name for copied coverage poly (default: basename of --coverage-poly)",
+    )
+    parser.add_argument(
+        "--penalty-rules",
+        default="",
+        help="Optional country penalty rules JSON to include in bundle and manifest",
+    )
+    parser.add_argument(
+        "--penalty-rules-file-name",
+        default="",
+        help="Optional target file name for copied penalty rules (default: basename of --penalty-rules)",
     )
     return parser.parse_args()
 
@@ -238,6 +253,11 @@ def main() -> int:
         coverage_poly_src = Path(args.coverage_poly)
         if not coverage_poly_src.exists():
             raise SystemExit(f"Coverage poly not found: {coverage_poly_src}")
+    penalty_rules_src: Optional[Path] = None
+    if args.penalty_rules:
+        penalty_rules_src = Path(args.penalty_rules)
+        if not penalty_rules_src.exists():
+            raise SystemExit(f"Penalty rules file not found: {penalty_rules_src}")
 
     if should_split_db and args.no_copy_db:
         raise SystemExit("--no-copy-db cannot be combined with split DB output")
@@ -275,6 +295,13 @@ def main() -> int:
             "max_lat": max_lat,
         }
 
+    penalty_rules_dst: Optional[Path] = None
+    if penalty_rules_src is not None:
+        penalty_rules_name = args.penalty_rules_file_name.strip() or penalty_rules_src.name
+        penalty_rules_dst = out_dir / penalty_rules_name
+        if penalty_rules_src.resolve() != penalty_rules_dst.resolve():
+            shutil.copy2(penalty_rules_src, penalty_rules_dst)
+
     use_github_urls = bool(args.github_owner and args.github_repo and args.github_release_tag)
     asset_prefix = args.github_asset_prefix.strip("/")
 
@@ -304,11 +331,22 @@ def main() -> int:
             "url": artifact_url(args.manifest_name),
         },
     }
+    country_code = args.country_code.strip().upper()
+    if country_code:
+        if len(country_code) != 3 or not country_code.isalpha():
+            raise SystemExit(f"--country-code must be a 3-letter ISO alpha-3 code, got: {args.country_code!r}")
+        manifest["country_code"] = country_code
     if coverage_poly_dst is not None and coverage_bbox_payload is not None:
         manifest["coverage"] = {
             "bbox": coverage_bbox_payload,
             "poly": _artifact_payload(coverage_poly_dst, coverage_poly_dst.name, artifact_url(coverage_poly_dst.name)),
         }
+    if penalty_rules_dst is not None:
+        manifest["penalty_rules"] = _artifact_payload(
+            penalty_rules_dst,
+            penalty_rules_dst.name,
+            artifact_url(penalty_rules_dst.name),
+        )
     if should_split_db:
         manifest["db_parts"] = [
             _artifact_payload(path, path.name, artifact_url(path.name))
@@ -320,6 +358,8 @@ def main() -> int:
             manifest["source"]["db_parts"] = [str(p) for p in part_paths]
         if coverage_poly_src is not None:
             manifest["source"]["coverage_poly"] = str(coverage_poly_src)
+        if penalty_rules_src is not None:
+            manifest["source"]["penalty_rules"] = str(penalty_rules_src)
 
     if args.delta_index:
         src_delta_index = Path(args.delta_index)
