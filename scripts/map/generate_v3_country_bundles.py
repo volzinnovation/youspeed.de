@@ -249,6 +249,7 @@ def plan_targets_from_top_countries(
     child_regions_by_parent: Dict[str, List[Dict]],
     top_n: int,
     max_country_pbf_bytes: int,
+    force_single_country: bool = False,
 ) -> List[BundleTarget]:
     if top_n <= 0:
         raise SystemExit("--top-n must be > 0")
@@ -260,7 +261,7 @@ def plan_targets_from_top_countries(
             raise SystemExit(f"Geofabrik id not found in index: {country.geofabrik_id}")
         country_name = str(country_props.get("name", country.country))
 
-        if country.pbf_size_bytes > max_country_pbf_bytes:
+        if (not force_single_country) and country.pbf_size_bytes > max_country_pbf_bytes:
             shards = child_regions_by_parent.get(country.geofabrik_id, [])
             if not shards:
                 raise SystemExit(
@@ -430,7 +431,17 @@ def plan_targets_for_country_from_config(
     *,
     config_country: BundleTargetConfigCountry,
     index_by_id: Dict[str, Dict],
+    force_single_country: bool = False,
 ) -> List[BundleTarget]:
+    if force_single_country:
+        return [
+            plan_single_region_target(
+                region_id=config_country.country_id,
+                index_by_id=index_by_id,
+                iso2_override=config_country.iso2,
+            )
+        ]
+
     iso2_override = config_country.iso2
     country_id = config_country.country_id
     mode = config_country.mode
@@ -676,6 +687,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run generation commands (default: print plan only)",
     )
+    parser.add_argument(
+        "--force-single-country",
+        action="store_true",
+        help="Always build country-level bundles (never fan out to regional shards)",
+    )
+    parser.add_argument(
+        "--require-country-in-config",
+        action="store_true",
+        help="Fail --bundle-country mode if the country is missing in --bundle-target-config",
+    )
     return parser.parse_args()
 
 
@@ -717,57 +738,72 @@ def main() -> int:
         ]
     elif bundle_country:
         config_country = config_country_by_id.get(bundle_country)
+        if args.require_country_in_config and config_country is None:
+            raise SystemExit(
+                f"--bundle-country '{bundle_country}' is not listed in bundle target config: {target_config_path}"
+            )
         if config_country is not None:
             targets = plan_targets_for_country_from_config(
                 config_country=config_country,
                 index_by_id=index_by_id,
+                force_single_country=bool(args.force_single_country),
             )
         else:
-        # If ranking data is available, reuse known PBF bytes for threshold decisions.
-            size_hint: Optional[int] = None
-            if args.country_pbf_bytes >= 0:
-                size_hint = int(args.country_pbf_bytes)
-
-            ranking_path = (repo_root / args.ranking_csv).resolve()
-            if size_hint is None and ranking_path.exists():
-                for row in _load_ranking(ranking_path):
-                    if row.geofabrik_id == bundle_country:
-                        size_hint = row.pbf_size_bytes
-                        break
-
-            if size_hint is None:
-                country_props = index_by_id.get(bundle_country)
-                if country_props is None:
-                    raise SystemExit(f"Country id not found in Geofabrik index: {bundle_country}")
-                country_urls = _urls_from_props(country_props)
-                country_pbf_url = str(country_urls.get("pbf", "")).strip()
-                if not country_pbf_url:
-                    raise SystemExit(f"Country has no PBF URL in index: {bundle_country}")
-                try:
-                    size_hint = _probe_content_length_bytes(country_pbf_url)
-                except Exception as exc:
-                    raise SystemExit(
-                        "Unable to determine country PBF size for sharding decision "
-                        f"({bundle_country}): {exc}"
-                    ) from exc
-                if size_hint is None:
-                    raise SystemExit(
-                        "Unable to determine country PBF size for sharding decision "
-                        f"({bundle_country}): missing Content-Length"
+            if args.force_single_country:
+                targets = [
+                    plan_single_region_target(
+                        region_id=bundle_country,
+                        index_by_id=index_by_id,
+                        iso2_override=args.iso2,
                     )
+                ]
+                print(f"Country '{bundle_country}' forced to single-country target")
+            else:
+                # If ranking data is available, reuse known PBF bytes for threshold decisions.
+                size_hint: Optional[int] = None
+                if args.country_pbf_bytes >= 0:
+                    size_hint = int(args.country_pbf_bytes)
 
-            print(
-                f"Country '{bundle_country}' PBF bytes: {size_hint} "
-                f"(threshold: {int(args.max_country_pbf_bytes)})"
-            )
-            targets = plan_targets_for_country(
-                country_id=bundle_country,
-                index_by_id=index_by_id,
-                child_regions_by_parent=child_regions_by_parent,
-                max_country_pbf_bytes=int(args.max_country_pbf_bytes),
-                iso2_override=args.iso2,
-                country_pbf_size_bytes=size_hint,
-            )
+                ranking_path = (repo_root / args.ranking_csv).resolve()
+                if size_hint is None and ranking_path.exists():
+                    for row in _load_ranking(ranking_path):
+                        if row.geofabrik_id == bundle_country:
+                            size_hint = row.pbf_size_bytes
+                            break
+
+                if size_hint is None:
+                    country_props = index_by_id.get(bundle_country)
+                    if country_props is None:
+                        raise SystemExit(f"Country id not found in Geofabrik index: {bundle_country}")
+                    country_urls = _urls_from_props(country_props)
+                    country_pbf_url = str(country_urls.get("pbf", "")).strip()
+                    if not country_pbf_url:
+                        raise SystemExit(f"Country has no PBF URL in index: {bundle_country}")
+                    try:
+                        size_hint = _probe_content_length_bytes(country_pbf_url)
+                    except Exception as exc:
+                        raise SystemExit(
+                            "Unable to determine country PBF size for sharding decision "
+                            f"({bundle_country}): {exc}"
+                        ) from exc
+                    if size_hint is None:
+                        raise SystemExit(
+                            "Unable to determine country PBF size for sharding decision "
+                            f"({bundle_country}): missing Content-Length"
+                        )
+
+                print(
+                    f"Country '{bundle_country}' PBF bytes: {size_hint} "
+                    f"(threshold: {int(args.max_country_pbf_bytes)})"
+                )
+                targets = plan_targets_for_country(
+                    country_id=bundle_country,
+                    index_by_id=index_by_id,
+                    child_regions_by_parent=child_regions_by_parent,
+                    max_country_pbf_bytes=int(args.max_country_pbf_bytes),
+                    iso2_override=args.iso2,
+                    country_pbf_size_bytes=size_hint,
+                )
     else:
         if config_countries:
             selected_config = config_countries[:top_n]
@@ -777,6 +813,7 @@ def main() -> int:
                     plan_targets_for_country_from_config(
                         config_country=config_country,
                         index_by_id=index_by_id,
+                        force_single_country=bool(args.force_single_country),
                     )
                 )
         else:
@@ -788,6 +825,7 @@ def main() -> int:
                 child_regions_by_parent=child_regions_by_parent,
                 top_n=top_n,
                 max_country_pbf_bytes=int(args.max_country_pbf_bytes),
+                force_single_country=bool(args.force_single_country),
             )
 
     print(f"Bundle version: {bundle_version}")

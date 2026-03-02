@@ -274,6 +274,16 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
             "features": [
                 {
                     "properties": {
+                        "id": "germany",
+                        "name": "Germany",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany-latest.osm.pbf",
+                        },
+                    }
+                },
+                {
+                    "properties": {
                         "id": "germany/bayern",
                         "name": "Bayern",
                         "parent": "germany",
@@ -326,6 +336,14 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         )
         self.assertEqual([t.region_id for t in targets], ["germany/bayern", "germany/berlin"])
         self.assertTrue(all(t.is_shard for t in targets))
+
+        forced_targets = MODULE.plan_targets_for_country_from_config(
+            config_country=cfg[0],
+            index_by_id=by_id,
+            force_single_country=True,
+        )
+        self.assertEqual([t.region_id for t in forced_targets], ["germany"])
+        self.assertFalse(forced_targets[0].is_shard)
 
     def test_derive_poly_url_from_pbf_url(self) -> None:
         self.assertEqual(

@@ -1,27 +1,12 @@
-name: EU Country Or Region Bundle Build
+name: EU Country Bundle Build
 
 on:
   workflow_dispatch:
     inputs:
       bundle_country:
-        description: "Geofabrik country id (for example: germany). Used when bundle_region is empty."
+        description: "Geofabrik country id from BundleTargets.top10.json (for example: germany)"
         required: false
         default: "germany"
-        type: string
-      bundle_region:
-        description: "Optional Geofabrik region id (for example: germany/bayern). Overrides bundle_country."
-        required: false
-        default: ""
-        type: string
-      iso2:
-        description: "Optional ISO2 override when bundle_region is used and index is missing ISO2"
-        required: false
-        default: ""
-        type: string
-      max_country_pbf_bytes:
-        description: "Shard threshold in bytes (country PBF > threshold => child regions)"
-        required: false
-        default: "1000000000"
         type: string
       bundle_version:
         description: "Optional bundle version override (YYYY-MM-DD). Empty = current UTC date"
@@ -56,7 +41,7 @@ env:
   PYTHONUNBUFFERED: "1"
 
 jobs:
-  build-country-or-region:
+  build-country:
     runs-on: ubuntu-latest
     timeout-minutes: 240
 
@@ -87,7 +72,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install osmium
 
-      - name: Build Country Or Region Bundles
+      - name: Build Country Bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -96,19 +81,12 @@ jobs:
             python3 scripts/map/generate_v3_country_bundles.py
             --repo-root "$GITHUB_WORKSPACE"
             --bundle-target-config "iphone/SpeedConsumerApp/BundleTargets.top10.json"
-            --max-country-pbf-bytes "${{ inputs.max_country_pbf_bytes || '1000000000' }}"
             --max-geom-points "${{ inputs.max_geom_points || '8' }}"
             --release-tag "${{ inputs.release_tag || '' }}"
+            --bundle-country "${{ inputs.bundle_country || 'germany' }}"
+            --require-country-in-config
+            --force-single-country
           )
-
-          if [[ -n "${{ inputs.bundle_region || '' }}" ]]; then
-            cmd+=(--bundle-region "${{ inputs.bundle_region }}")
-            if [[ -n "${{ inputs.iso2 || '' }}" ]]; then
-              cmd+=(--iso2 "${{ inputs.iso2 }}")
-            fi
-          else
-            cmd+=(--bundle-country "${{ inputs.bundle_country || 'germany' }}")
-          fi
 
           if [[ -n "${{ inputs.bundle_version || '' }}" ]]; then
             cmd+=(--bundle-version "${{ inputs.bundle_version }}")
@@ -172,10 +150,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p mapdata/reports/top-country-run
+          mkdir -p mapdata/reports/country-run
 
           find mapdata/bundles/v3 -type f \( -name '*_manifest.json' -o -name '*_catalog.json' \) \
-            | sort > mapdata/reports/top-country-run/generated_manifests.txt || true
+            | sort > mapdata/reports/country-run/generated_manifests.txt || true
 
           {
             echo "Generated bundle directories:"
@@ -183,17 +161,17 @@ jobs:
             echo
             echo "Directory sizes:"
             du -sh mapdata/bundles/v3/* 2>/dev/null || true
-          } > mapdata/reports/top-country-run/bundle_size_summary.txt
+          } > mapdata/reports/country-run/bundle_size_summary.txt
 
-          cp mapdata/reports/europe_maxspeed_with_germany.ranking.csv mapdata/reports/top-country-run/ 2>/dev/null || true
+          cp mapdata/reports/europe_maxspeed_with_germany.ranking.csv mapdata/reports/country-run/ 2>/dev/null || true
 
       - name: Upload Run Metadata Artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: country-region-bundle-run-metadata
+          name: country-bundle-run-metadata
           path: |
-            mapdata/reports/top-country-run/generated_manifests.txt
-            mapdata/reports/top-country-run/bundle_size_summary.txt
-            mapdata/reports/top-country-run/europe_maxspeed_with_germany.ranking.csv
+            mapdata/reports/country-run/generated_manifests.txt
+            mapdata/reports/country-run/bundle_size_summary.txt
+            mapdata/reports/country-run/europe_maxspeed_with_germany.ranking.csv
           if-no-files-found: warn
