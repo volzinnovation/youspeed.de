@@ -69,7 +69,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pretty_region="$(RELEASE_TAG="${{ inputs.release_tag }}" python3 -c 'import os; raw=os.environ[\"RELEASE_TAG\"].replace(\"_\", \"-\"); print(\" \".join(p[:1].upper()+p[1:] for p in raw.split(\"-\") if p))')"
+          pretty_region="$(echo "${{ inputs.release_tag }}" | tr '_-' '  ' | awk '{for(i=1;i<=NF;i++){$i=toupper(substr($i,1,1)) substr($i,2)}; print}')"
           default_title="${pretty_region} YouSpeed Data"
           if [[ -n "${{ inputs.release_title }}" ]]; then
             ./scripts/map/publish_v3_release_assets.sh \

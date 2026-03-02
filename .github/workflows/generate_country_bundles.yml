@@ -136,7 +136,7 @@ jobs:
             fi
 
             bundle_id="$(basename "$(dirname "${latest_dir}")")"
-            pretty_region="$(BUNDLE_ID="${bundle_id}" python3 -c 'import os; raw=os.environ[\"BUNDLE_ID\"].replace(\"_\", \"-\"); print(\" \".join(p[:1].upper()+p[1:] for p in raw.split(\"-\") if p))')"
+            pretty_region="$(echo "${bundle_id}" | tr '_-' '  ' | awk '{for(i=1;i<=NF;i++){$i=toupper(substr($i,1,1)) substr($i,2)}; print}')"
             echo "Publishing bundle_id=${bundle_id} from ${latest_dir}"
             ./scripts/map/publish_v3_release_assets.sh \
               --repo "${{ github.repository }}" \
