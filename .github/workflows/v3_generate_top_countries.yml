@@ -1,0 +1,141 @@
+name: EU V3 Top Countries Bundle Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      top_n:
+        description: "Top-N countries by maxspeed share ranking"
+        required: false
+        default: "10"
+        type: string
+      max_country_pbf_bytes:
+        description: "Shard threshold in bytes (country PBF > threshold => child regions)"
+        required: false
+        default: "1000000000"
+        type: string
+      bundle_version:
+        description: "Optional bundle version override (YYYY-MM-DD). Empty = current UTC date"
+        required: false
+        default: ""
+        type: string
+      max_geom_points:
+        description: "Max sampled geometry points for preprocessing"
+        required: false
+        default: "8"
+        type: string
+      release_tag:
+        description: "Release tag used for manifest URL embedding"
+        required: false
+        default: "eu-v3-data-latest"
+        type: string
+      skip_release_urls:
+        description: "Do not embed GitHub release URLs in manifests"
+        required: false
+        default: true
+        type: boolean
+      execute:
+        description: "Run full build (true) or dry-run command planning (false)"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  build-top-countries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free Runner Disk Space
+        run: |
+          echo "Disk before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          docker image prune -af >/dev/null 2>&1 || true
+          echo "Disk after cleanup:"
+          df -h
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+
+      - name: Build Top Countries Bundles
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cmd=(
+            python3 scripts/map/generate_v3_country_bundles.py
+            --repo-root "$GITHUB_WORKSPACE"
+            --top-n "${{ inputs.top_n || '10' }}"
+            --max-country-pbf-bytes "${{ inputs.max_country_pbf_bytes || '1000000000' }}"
+            --max-geom-points "${{ inputs.max_geom_points || '8' }}"
+            --release-tag "${{ inputs.release_tag || 'eu-v3-data-latest' }}"
+          )
+
+          if [[ -n "${{ inputs.bundle_version || '' }}" ]]; then
+            cmd+=(--bundle-version "${{ inputs.bundle_version }}")
+          fi
+
+          if [[ "${{ inputs.skip_release_urls }}" == "true" ]]; then
+            cmd+=(--skip-release-urls)
+          fi
+
+          if [[ "${{ inputs.execute }}" == "true" ]]; then
+            cmd+=(--execute)
+          fi
+
+          printf 'Running command:\n  %q' "${cmd[0]}"
+          for ((i=1; i<${#cmd[@]}; i++)); do printf ' %q' "${cmd[$i]}"; done
+          printf '\n'
+
+          "${cmd[@]}"
+
+      - name: Collect Generated Bundle Metadata
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p mapdata/reports/top-country-run
+
+          find mapdata/bundles/v3 -type f \( -name '*bundle-manifest.v3.json' -o -name '*bundle-catalog.v3.json' \) \
+            | sort > mapdata/reports/top-country-run/generated_manifests.txt || true
+
+          {
+            echo "Generated bundle directories:"
+            find mapdata/bundles/v3 -mindepth 2 -maxdepth 2 -type d | sort || true
+            echo
+            echo "Directory sizes:"
+            du -sh mapdata/bundles/v3/* 2>/dev/null || true
+          } > mapdata/reports/top-country-run/bundle_size_summary.txt
+
+          cp mapdata/reports/europe_maxspeed_with_germany.ranking.csv mapdata/reports/top-country-run/ 2>/dev/null || true
+
+      - name: Upload Run Metadata Artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: top-country-v3-bundle-run-metadata
+          path: |
+            mapdata/reports/top-country-run/generated_manifests.txt
+            mapdata/reports/top-country-run/bundle_size_summary.txt
+            mapdata/reports/top-country-run/europe_maxspeed_with_germany.ranking.csv
+          if-no-files-found: warn
