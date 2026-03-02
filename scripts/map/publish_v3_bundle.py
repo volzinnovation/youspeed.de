@@ -9,7 +9,7 @@ import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 
 def _sha256_path(path: Path) -> str:
@@ -108,6 +108,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable DB splitting even if DB exceeds --max-release-asset-bytes",
     )
+    parser.add_argument(
+        "--coverage-poly",
+        default="",
+        help="Optional Geofabrik .poly file describing regional coverage for this bundle",
+    )
+    parser.add_argument(
+        "--coverage-poly-file-name",
+        default="",
+        help="Optional target file name for copied coverage poly (default: basename of --coverage-poly)",
+    )
     return parser.parse_args()
 
 
@@ -171,6 +181,42 @@ def _split_file_to_parts(src: Path, out_dir: Path, base_name: str, max_part_byte
     return parts
 
 
+def _parse_poly_bbox(poly_path: Path) -> Tuple[float, float, float, float]:
+    text = poly_path.read_text(encoding="utf-8")
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if len(lines) < 4:
+        raise SystemExit(f"Coverage poly seems invalid (too few lines): {poly_path}")
+
+    min_lon = float("inf")
+    min_lat = float("inf")
+    max_lon = float("-inf")
+    max_lat = float("-inf")
+    for line in lines[1:]:
+        upper = line.upper()
+        if upper == "END":
+            continue
+        if line.startswith("!"):
+            continue
+        if line.isdigit():
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        try:
+            lon = float(parts[0])
+            lat = float(parts[1])
+        except ValueError:
+            continue
+        min_lon = min(min_lon, lon)
+        min_lat = min(min_lat, lat)
+        max_lon = max(max_lon, lon)
+        max_lat = max(max_lat, lat)
+
+    if not (min_lon < float("inf") and min_lat < float("inf") and max_lon > float("-inf") and max_lat > float("-inf")):
+        raise SystemExit(f"Coverage poly contains no coordinates: {poly_path}")
+    return min_lon, min_lat, max_lon, max_lat
+
+
 def main() -> int:
     args = parse_args()
     src_db = Path(args.db)
@@ -187,6 +233,11 @@ def main() -> int:
         (not args.no_split_db)
         and db_size > int(args.max_release_asset_bytes)
     )
+    coverage_poly_src: Optional[Path] = None
+    if args.coverage_poly:
+        coverage_poly_src = Path(args.coverage_poly)
+        if not coverage_poly_src.exists():
+            raise SystemExit(f"Coverage poly not found: {coverage_poly_src}")
 
     if should_split_db and args.no_copy_db:
         raise SystemExit("--no-copy-db cannot be combined with split DB output")
@@ -208,6 +259,21 @@ def main() -> int:
             tmp_db = dst_db.with_suffix(dst_db.suffix + ".tmp")
             shutil.copy2(src_db, tmp_db)
             tmp_db.replace(dst_db)
+
+    coverage_poly_dst: Optional[Path] = None
+    coverage_bbox_payload: Optional[dict] = None
+    if coverage_poly_src is not None:
+        coverage_name = args.coverage_poly_file_name.strip() or coverage_poly_src.name
+        coverage_poly_dst = out_dir / coverage_name
+        if coverage_poly_src.resolve() != coverage_poly_dst.resolve():
+            shutil.copy2(coverage_poly_src, coverage_poly_dst)
+        min_lon, min_lat, max_lon, max_lat = _parse_poly_bbox(coverage_poly_src)
+        coverage_bbox_payload = {
+            "min_lon": min_lon,
+            "min_lat": min_lat,
+            "max_lon": max_lon,
+            "max_lat": max_lat,
+        }
 
     use_github_urls = bool(args.github_owner and args.github_repo and args.github_release_tag)
     asset_prefix = args.github_asset_prefix.strip("/")
@@ -238,6 +304,11 @@ def main() -> int:
             "url": artifact_url(args.manifest_name),
         },
     }
+    if coverage_poly_dst is not None and coverage_bbox_payload is not None:
+        manifest["coverage"] = {
+            "bbox": coverage_bbox_payload,
+            "poly": _artifact_payload(coverage_poly_dst, coverage_poly_dst.name, artifact_url(coverage_poly_dst.name)),
+        }
     if should_split_db:
         manifest["db_parts"] = [
             _artifact_payload(path, path.name, artifact_url(path.name))
@@ -247,6 +318,8 @@ def main() -> int:
         manifest["source"]["db"] = str(src_db)
         if should_split_db:
             manifest["source"]["db_parts"] = [str(p) for p in part_paths]
+        if coverage_poly_src is not None:
+            manifest["source"]["coverage_poly"] = str(coverage_poly_src)
 
     if args.delta_index:
         src_delta_index = Path(args.delta_index)
