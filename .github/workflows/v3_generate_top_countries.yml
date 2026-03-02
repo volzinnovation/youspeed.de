@@ -95,6 +95,7 @@ jobs:
           cmd=(
             python3 scripts/map/generate_v3_country_bundles.py
             --repo-root "$GITHUB_WORKSPACE"
+            --bundle-target-config "iphone/SpeedConsumerApp/BundleTargets.top10.json"
             --max-country-pbf-bytes "${{ inputs.max_country_pbf_bytes || '1000000000' }}"
             --max-geom-points "${{ inputs.max_geom_points || '8' }}"
             --release-tag "${{ inputs.release_tag || 'eu-v3-data-latest' }}"

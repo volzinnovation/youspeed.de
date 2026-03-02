@@ -1,5 +1,7 @@
 import importlib.util
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -243,6 +245,87 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertEqual(target.iso2, "DE")
         self.assertEqual(target.iso3, "DEU")
         self.assertEqual(target.country_id, "germany")
+
+    def test_plan_single_region_target_country_id_for_country_level_region(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "romania",
+                        "name": "Romania",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/romania-latest.osm.pbf",
+                        },
+                    }
+                }
+            ]
+        }
+        by_id, _ = MODULE._build_index_maps(index_payload)
+        target = MODULE.plan_single_region_target(
+            region_id="romania",
+            index_by_id=by_id,
+            iso2_override="ro",
+        )
+        self.assertEqual(target.country_id, "romania")
+
+    def test_load_bundle_target_config_and_plan_country_targets(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "germany/bayern",
+                        "name": "Bayern",
+                        "parent": "germany",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany/bayern-latest.osm.pbf",
+                        },
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "germany/berlin",
+                        "name": "Berlin",
+                        "parent": "germany",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/germany/berlin-latest.osm.pbf",
+                        },
+                    }
+                },
+            ]
+        }
+        by_id, _ = MODULE._build_index_maps(index_payload)
+        payload = {
+            "format": "youspeed.v3.bundle.targets",
+            "schema_version": 1,
+            "variant": "v3",
+            "max_country_pbf_bytes": 1000000000,
+            "countries": [
+                {
+                    "rank": 8,
+                    "country_id": "germany",
+                    "country_code": "DEU",
+                    "iso2": "DE",
+                    "mode": "regional_shards",
+                    "regions": [
+                        {"region_id": "germany/bayern"},
+                        {"region_id": "germany/berlin"},
+                    ],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory(prefix="youspeed-target-config-") as td:
+            path = Path(td) / "BundleTargets.top10.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            cfg = MODULE._load_bundle_target_config(path)
+
+        self.assertEqual(len(cfg), 1)
+        targets = MODULE.plan_targets_for_country_from_config(
+            config_country=cfg[0],
+            index_by_id=by_id,
+        )
+        self.assertEqual([t.region_id for t in targets], ["germany/bayern", "germany/berlin"])
+        self.assertTrue(all(t.is_shard for t in targets))
 
     def test_derive_poly_url_from_pbf_url(self) -> None:
         self.assertEqual(

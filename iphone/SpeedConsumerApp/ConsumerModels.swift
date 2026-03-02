@@ -11,30 +11,205 @@ struct BundleArtifact: Codable, Sendable {
     let url: String?
 }
 
+struct BundleCoverageBBox: Codable, Sendable {
+    let minLon: Double
+    let minLat: Double
+    let maxLon: Double
+    let maxLat: Double
+
+    enum CodingKeys: String, CodingKey {
+        case minLon = "min_lon"
+        case minLat = "min_lat"
+        case maxLon = "max_lon"
+        case maxLat = "max_lat"
+    }
+}
+
+struct BundleCoverage: Codable, Sendable {
+    let bbox: BundleCoverageBBox
+    let poly: BundleArtifact?
+}
+
 struct V3BundleManifest: Codable {
     let format: String
     let schemaVersion: Int
     let variant: String
     let region: String
+    let countryCode: String?
     let bundleVersion: String
     let createdAtUTC: String
     let minAppVersion: String
     let db: BundleArtifact
     let dbParts: [BundleArtifact]?
     let deltaIndex: BundleArtifact?
+    let penaltyRules: BundleArtifact?
+    let coverage: BundleCoverage?
 
     enum CodingKeys: String, CodingKey {
         case format
         case schemaVersion = "schema_version"
         case variant
         case region
+        case countryCode = "country_code"
         case bundleVersion = "bundle_version"
         case createdAtUTC = "created_at_utc"
         case minAppVersion = "min_app_version"
         case db
         case dbParts = "db_parts"
         case deltaIndex = "delta_index"
+        case penaltyRules = "penalty_rules"
+        case coverage
     }
+
+    init(
+        format: String,
+        schemaVersion: Int,
+        variant: String,
+        region: String,
+        countryCode: String? = nil,
+        bundleVersion: String,
+        createdAtUTC: String,
+        minAppVersion: String,
+        db: BundleArtifact,
+        dbParts: [BundleArtifact]?,
+        deltaIndex: BundleArtifact?,
+        penaltyRules: BundleArtifact? = nil,
+        coverage: BundleCoverage? = nil
+    ) {
+        self.format = format
+        self.schemaVersion = schemaVersion
+        self.variant = variant
+        self.region = region
+        self.countryCode = countryCode
+        self.bundleVersion = bundleVersion
+        self.createdAtUTC = createdAtUTC
+        self.minAppVersion = minAppVersion
+        self.db = db
+        self.dbParts = dbParts
+        self.deltaIndex = deltaIndex
+        self.penaltyRules = penaltyRules
+        self.coverage = coverage
+    }
+}
+
+struct V3CountryBundleCatalogRegion: Codable, Sendable {
+    let region: String
+    let name: String
+    let bundleVersion: String
+    let manifest: BundleArtifact
+    let coverage: BundleCoverage?
+
+    enum CodingKeys: String, CodingKey {
+        case region
+        case name
+        case bundleVersion = "bundle_version"
+        case manifest
+        case coverage
+    }
+}
+
+struct V3CountryBundleCatalog: Codable, Sendable {
+    let format: String
+    let schemaVersion: Int
+    let variant: String
+    let country: String
+    let bundleVersion: String
+    let createdAtUTC: String
+    let maxCountryPBFBytes: Int64
+    let regions: [V3CountryBundleCatalogRegion]
+
+    enum CodingKeys: String, CodingKey {
+        case format
+        case schemaVersion = "schema_version"
+        case variant
+        case country
+        case bundleVersion = "bundle_version"
+        case createdAtUTC = "created_at_utc"
+        case maxCountryPBFBytes = "max_country_pbf_bytes"
+        case regions
+    }
+}
+
+struct V3BundleTargetRegionConfig: Codable, Sendable {
+    let regionID: String
+
+    enum CodingKeys: String, CodingKey {
+        case regionID = "region_id"
+    }
+}
+
+struct V3BundleTargetCountryConfig: Codable, Sendable {
+    let rank: Int
+    let countryID: String
+    let countryCode: String
+    let iso2: String?
+    let mode: String
+    let regions: [V3BundleTargetRegionConfig]
+
+    enum CodingKeys: String, CodingKey {
+        case rank
+        case countryID = "country_id"
+        case countryCode = "country_code"
+        case iso2
+        case mode
+        case regions
+    }
+}
+
+struct V3BundleTargetsConfig: Codable, Sendable {
+    let format: String
+    let schemaVersion: Int
+    let variant: String
+    let maxCountryPBFBytes: Int64
+    let countries: [V3BundleTargetCountryConfig]
+
+    enum CodingKeys: String, CodingKey {
+        case format
+        case schemaVersion = "schema_version"
+        case variant
+        case maxCountryPBFBytes = "max_country_pbf_bytes"
+        case countries
+    }
+
+    func country(countryID: String) -> V3BundleTargetCountryConfig? {
+        let key = countryID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty else {
+            return nil
+        }
+        return countries.first { $0.countryID.lowercased() == key }
+    }
+
+    func country(countryCode: String) -> V3BundleTargetCountryConfig? {
+        let key = countryCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !key.isEmpty else {
+            return nil
+        }
+        return countries.first { $0.countryCode.uppercased() == key }
+    }
+
+    static func loadBundled(
+        named resourceName: String = "BundleTargets.top10",
+        bundle: Bundle = .main
+    ) throws -> V3BundleTargetsConfig {
+        guard let url = bundle.url(forResource: resourceName, withExtension: "json") else {
+            throw ConsumerAppError.io("Missing bundled \(resourceName).json")
+        }
+        let data = try Data(contentsOf: url)
+        return try JSONDecoder().decode(V3BundleTargetsConfig.self, from: data)
+    }
+}
+
+struct LocalBundleRoute: Sendable {
+    let region: String
+    let bundleVersion: String
+    let countryCode: String?
+    let dbPath: String
+}
+
+struct PenaltyRuleContext: Sendable {
+    let countryCode: String?
+    let rulesPath: String?
+    let rulesFileName: String?
 }
 
 struct V3DeltaIndex: Codable {
@@ -163,9 +338,6 @@ struct SpeedLimitResult {
     let layer: Int?
     let level: Int?
     let isTunnelSegment: Bool
-    let nearTunnelPortal: Bool
-    let tunnelPortalDistanceM: Double?
-    let tunnelPortalMarkersAvailable: Bool
     let streetName: String?
     let cityName: String?
     let insideCity: Bool?

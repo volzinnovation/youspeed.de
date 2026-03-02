@@ -17,35 +17,17 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"), 130)
     }
 
-    func testTunnelModeTrackerUsesPortalMarkersAndSignalRecovery() {
+    func testTunnelModeTrackerFollowsTunnelSegmentTag() {
         var tracker = TunnelModeTracker()
         XCTAssertEqual(tracker.state, .inactive)
 
-        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: true, tunnelPortalMarkersAvailable: true)
-        XCTAssertEqual(tracker.state, .inactive)
-
-        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: true, tunnelPortalMarkersAvailable: true)
+        tracker.consumeFix(isTunnelSegment: true)
         XCTAssertEqual(tracker.state, .active)
-
-        tracker.markSignalLost()
-        XCTAssertEqual(tracker.state, .awaitingSignalReturn)
         XCTAssertTrue(tracker.isTunnelModeActive)
 
-        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: true)
+        tracker.consumeFix(isTunnelSegment: false)
         XCTAssertEqual(tracker.state, .inactive)
         XCTAssertFalse(tracker.isTunnelModeActive)
-    }
-
-    func testTunnelModeTrackerFallsBackWhenPortalMarkersUnavailable() {
-        var tracker = TunnelModeTracker()
-        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
-        tracker.consumeFix(isTunnelSegment: true, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
-        XCTAssertEqual(tracker.state, .active)
-
-        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
-        XCTAssertEqual(tracker.state, .active)
-        tracker.consumeFix(isTunnelSegment: false, nearTunnelPortal: false, tunnelPortalMarkersAvailable: false)
-        XCTAssertEqual(tracker.state, .inactive)
     }
 
     func testFormattedStreetDisplayUsesNameRefFallbackRules() {
@@ -95,6 +77,20 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(rules.bands.last?.penaltyPoints, 2)
     }
 
+    func testLoadBundledTopCountryBundleTargetsConfig() throws {
+        let config = try V3BundleTargetsConfig.loadBundled(bundle: Bundle(for: SpeedConsumerAppDelegate.self))
+        XCTAssertEqual(config.format, "youspeed.v3.bundle.targets")
+        XCTAssertEqual(config.schemaVersion, 1)
+        XCTAssertEqual(config.variant, "v3")
+        XCTAssertGreaterThanOrEqual(config.countries.count, 10)
+
+        let germany = try XCTUnwrap(config.country(countryID: "germany"))
+        XCTAssertEqual(germany.countryCode, "DEU")
+        XCTAssertEqual(germany.mode, "regional_shards")
+        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "germany/bayern" }))
+        XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "germany/berlin" }))
+    }
+
     func testPenaltyRuleEngineUsesInnerortsAusserortsVariants() throws {
         let rules = try SpeedPenaltyRuleSet.loadBundled(
             named: "DEU-rules",
@@ -124,6 +120,7 @@ final class SpeedConsumerTests: XCTestCase {
           "schema_version": 1,
           "variant": "v3",
           "region": "germany",
+          "country_code": "DEU",
           "bundle_version": "2026-02-24",
           "created_at_utc": "2026-02-24T00:00:00Z",
           "min_app_version": "1.0.0",
@@ -133,6 +130,12 @@ final class SpeedConsumerTests: XCTestCase {
             "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             "url": "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.speeds_v3.sqlite"
           },
+          "penalty_rules": {
+            "file": "DEU-rules.json",
+            "bytes": 1234,
+            "sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+            "url": "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-rules.json"
+          },
           "delta_index": null
         }
         """
@@ -140,7 +143,248 @@ final class SpeedConsumerTests: XCTestCase {
         let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
         XCTAssertEqual(manifest.variant, "v3")
         XCTAssertEqual(manifest.bundleVersion, "2026-02-24")
+        XCTAssertEqual(manifest.countryCode, "DEU")
         XCTAssertEqual(manifest.db.file, "DEU-latest.speeds_v3.sqlite")
+        XCTAssertEqual(manifest.penaltyRules?.file, "DEU-rules.json")
+    }
+
+    func testDecodeBundleManifestCoverage() throws {
+        let raw = """
+        {
+          "format": "youspeed.v3.bundle.manifest",
+          "schema_version": 1,
+          "variant": "v3",
+          "region": "germany-baden-wuerttemberg",
+          "bundle_version": "2026-03-02",
+          "created_at_utc": "2026-03-02T00:00:00Z",
+          "min_app_version": "1.0.0",
+          "db": {
+            "file": "DEU-latest.speeds_v3.sqlite",
+            "bytes": 123,
+            "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            "url": null
+          },
+          "coverage": {
+            "bbox": {
+              "min_lon": 8.0,
+              "min_lat": 47.0,
+              "max_lon": 10.0,
+              "max_lat": 49.0
+            },
+            "poly": {
+              "file": "germany-baden-wuerttemberg.poly",
+              "bytes": 512,
+              "sha256": "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+              "url": null
+            }
+          }
+        }
+        """
+        let data = Data(raw.utf8)
+        let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
+        XCTAssertEqual(manifest.region, "germany-baden-wuerttemberg")
+        XCTAssertEqual(manifest.coverage?.bbox.minLon, 8.0)
+        XCTAssertEqual(manifest.coverage?.bbox.maxLat, 49.0)
+        XCTAssertEqual(manifest.coverage?.poly?.file, "germany-baden-wuerttemberg.poly")
+    }
+
+    func testResolveLocalBundleRouteUsesCoveragePolygons() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesRoot = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let bwDir = bundlesRoot.appendingPathComponent("deu-bw-2026-03-02", isDirectory: true)
+        let byDir = bundlesRoot.appendingPathComponent("deu-by-2026-03-02", isDirectory: true)
+        try fm.createDirectory(at: bwDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: byDir, withIntermediateDirectories: true)
+
+        let bwDB = bwDir.appendingPathComponent("DEU-latest.speeds_v3.sqlite")
+        let byDB = byDir.appendingPathComponent("DEU-latest.speeds_v3.sqlite")
+        try createFixtureV3DB(at: bwDB)
+        try createFixtureV3DB(at: byDB)
+
+        let bwPoly = bwDir.appendingPathComponent("deu-bw.poly")
+        let byPoly = byDir.appendingPathComponent("deu-by.poly")
+        let bwPolyText = """
+        deu-bw
+        1
+          8.0 48.0
+          9.0 48.0
+          9.0 49.0
+          8.0 49.0
+          8.0 48.0
+        END
+        END
+        """
+        let byPolyText = """
+        deu-by
+        1
+          11.0 48.0
+          12.0 48.0
+          12.0 49.0
+          11.0 49.0
+          11.0 48.0
+        END
+        END
+        """
+        try Data(bwPolyText.utf8).write(to: bwPoly, options: .atomic)
+        try Data(byPolyText.utf8).write(to: byPoly, options: .atomic)
+
+        let bwCoverage = BundleCoverage(
+            bbox: BundleCoverageBBox(minLon: 8.0, minLat: 48.0, maxLon: 9.0, maxLat: 49.0),
+            poly: BundleArtifact(
+                file: bwPoly.lastPathComponent,
+                bytes: Int64((try Data(contentsOf: bwPoly)).count),
+                sha256: sha256Hex(try Data(contentsOf: bwPoly)),
+                url: nil
+            )
+        )
+        let byCoverage = BundleCoverage(
+            bbox: BundleCoverageBBox(minLon: 11.0, minLat: 48.0, maxLon: 12.0, maxLat: 49.0),
+            poly: BundleArtifact(
+                file: byPoly.lastPathComponent,
+                bytes: Int64((try Data(contentsOf: byPoly)).count),
+                sha256: sha256Hex(try Data(contentsOf: byPoly)),
+                url: nil
+            )
+        )
+
+        let bwManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "deu-bw",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-02",
+            createdAtUTC: "2026-03-02T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-latest.speeds_v3.sqlite",
+                bytes: try fileSize(bwDB),
+                sha256: sha256Hex(try Data(contentsOf: bwDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: bwCoverage
+        )
+        let byManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "deu-by",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-02",
+            createdAtUTC: "2026-03-02T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-latest.speeds_v3.sqlite",
+                bytes: try fileSize(byDB),
+                sha256: sha256Hex(try Data(contentsOf: byDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: byCoverage
+        )
+
+        try JSONEncoder().encode(bwManifest).write(
+            to: bwDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+        try JSONEncoder().encode(byManifest).write(
+            to: byDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let bwRoute = try await manager.resolveLocalBundleRoute(lat: 48.5, lon: 8.5, fallbackDBPath: nil)
+        XCTAssertEqual(bwRoute?.region, "deu-bw")
+        XCTAssertEqual(bwRoute?.countryCode, "DEU")
+        XCTAssertEqual(bwRoute?.dbPath, bwDB.path)
+
+        let byRoute = try await manager.resolveLocalBundleRoute(lat: 48.5, lon: 11.5, fallbackDBPath: nil)
+        XCTAssertEqual(byRoute?.region, "deu-by")
+        XCTAssertEqual(byRoute?.countryCode, "DEU")
+        XCTAssertEqual(byRoute?.dbPath, byDB.path)
+
+        let fallbackRoute = try await manager.resolveLocalBundleRoute(lat: 47.0, lon: 7.0, fallbackDBPath: bwDB.path)
+        XCTAssertEqual(fallbackRoute?.dbPath, bwDB.path)
+    }
+
+    func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundleDir = supportDir
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent("nld-2026-03-02", isDirectory: true)
+        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        let dbURL = bundleDir.appendingPathComponent("NLD-latest.speeds_v3.sqlite")
+        try createFixtureV3DB(at: dbURL)
+
+        let rulesURL = bundleDir.appendingPathComponent("NLD-rules.json")
+        try Data(
+            """
+            {
+              "format":"youspeed.penalty.rules",
+              "schema_version":1,
+              "country_code":"NLD",
+              "country_name":"Netherlands",
+              "currency_code":"EUR",
+              "bands":[]
+            }
+            """.utf8
+        ).write(to: rulesURL, options: .atomic)
+
+        let rulesData = try Data(contentsOf: rulesURL)
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "netherlands",
+            countryCode: "NLD",
+            bundleVersion: "2026-03-02",
+            createdAtUTC: "2026-03-02T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: dbURL.lastPathComponent,
+                bytes: try fileSize(dbURL),
+                sha256: sha256Hex(try Data(contentsOf: dbURL)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            penaltyRules: BundleArtifact(
+                file: rulesURL.lastPathComponent,
+                bytes: Int64(rulesData.count),
+                sha256: sha256Hex(rulesData),
+                url: nil
+            ),
+            coverage: nil
+        )
+        try JSONEncoder().encode(manifest).write(
+            to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let context = try await manager.resolvePenaltyRuleContext(forDBPath: dbURL.path)
+        XCTAssertEqual(context?.countryCode, "NLD")
+        XCTAssertEqual(context?.rulesFileName, "NLD-rules.json")
+        XCTAssertEqual(context?.rulesPath, rulesURL.path)
     }
 
     @MainActor
@@ -1176,9 +1420,8 @@ final class SpeedConsumerTests: XCTestCase {
             XCTFail("Expected active bundle state after real release sync")
             return
         }
-        let activatedManifestURL = supportDir
-            .appendingPathComponent("bundles", isDirectory: true)
-            .appendingPathComponent(activeState.bundleVersion, isDirectory: true)
+        let activatedManifestURL = dbURL
+            .deletingLastPathComponent()
             .appendingPathComponent("bundle-manifest.v3.json")
         let activatedManifestData = try Data(contentsOf: activatedManifestURL)
         let activatedManifest = try JSONDecoder().decode(V3BundleManifest.self, from: activatedManifestData)
@@ -1360,21 +1603,23 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 30)
     }
 
-    func testBundledSchemaIncludesTunnelBridgeParkingContextColumns() throws {
+    func testBundledSchemaIncludesTunnelAndResidentialContextColumns() throws {
         guard let bundledDB = bundledSpeedDBURL() else {
             throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
         }
 
         let wayColumns = try readColumnNames(dbURL: bundledDB, table: "ways")
-        let requiredWay = Set(["service", "tunnel", "bridge", "covered", "location", "layer", "level"])
+        let requiredWay = Set(["service", "tunnel"])
         let missingWay = requiredWay.subtracting(wayColumns)
         if !missingWay.isEmpty {
             throw XCTSkip("Bundled seed DB was built before context-schema extension; missing ways columns: \(missingWay.sorted())")
         }
 
         let areaColumns = try readColumnNames(dbURL: bundledDB, table: "areas")
-        if !areaColumns.contains("parking") {
-            throw XCTSkip("Bundled seed DB was built before context-schema extension; missing areas.parking")
+        let requiredArea = Set(["residential", "points_json"])
+        let missingArea = requiredArea.subtracting(areaColumns)
+        if !missingArea.isEmpty {
+            throw XCTSkip("Bundled seed DB was built before context-schema extension; missing areas columns: \(missingArea.sorted())")
         }
     }
 
@@ -1395,44 +1640,38 @@ final class SpeedConsumerTests: XCTestCase {
             lon: 13.005,
             radiusM: 80.0,
             maxCandidates: 32,
-            preferredWayID: "A1",
+            preferredWayID: "1001",
             headingDeg: 0.0,
             headingAccuracyDeg: 5.0,
             speedKmh: 40.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertEqual(turnedResult.wayID, "B1")
+        XCTAssertEqual(turnedResult.wayID, "1002")
         XCTAssertEqual(turnedResult.speedLimitKmh, 50)
-        XCTAssertEqual(turnedResult.bridge, "yes")
-        XCTAssertEqual(turnedResult.layer, 1)
         XCTAssertEqual(turnedResult.service, "main")
-        XCTAssertTrue(turnedResult.tunnelPortalMarkersAvailable)
-        XCTAssertFalse(turnedResult.nearTunnelPortal)
 
         let lowSpeedResult = try service.lookupSpeedLimit(
             lat: 52.0,
             lon: 13.005,
             radiusM: 80.0,
             maxCandidates: 32,
-            preferredWayID: "A1",
+            preferredWayID: "1001",
             headingDeg: 0.0,
             headingAccuracyDeg: 5.0,
             speedKmh: 2.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertEqual(lowSpeedResult.wayID, "A1")
+        XCTAssertEqual(lowSpeedResult.wayID, "1001")
         XCTAssertEqual(lowSpeedResult.speedLimitKmh, 30)
         XCTAssertEqual(lowSpeedResult.tunnel, "yes")
-        XCTAssertEqual(lowSpeedResult.location, "underground")
-        XCTAssertEqual(lowSpeedResult.layer, -1)
+        XCTAssertNil(lowSpeedResult.location)
+        XCTAssertNil(lowSpeedResult.layer)
         XCTAssertEqual(lowSpeedResult.service, "parking_aisle")
-        XCTAssertTrue(lowSpeedResult.tunnelPortalMarkersAvailable)
-        XCTAssertFalse(lowSpeedResult.nearTunnelPortal)
     }
 
-    func testLookupMarksNearTunnelPortalWhenProbeIsAtPortal() throws {
+    func testLookupMarksTunnelSegmentFromTunnelTag() throws {
         let fm = FileManager.default
-        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-portal-\(UUID().uuidString)", isDirectory: true)
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-tag-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer {
             try? fm.removeItem(at: tempDir)
@@ -1442,7 +1681,7 @@ final class SpeedConsumerTests: XCTestCase {
         try createHeadingDisambiguationFixtureDB(at: dbURL)
         let service = V3SpeedLimitService(dbPath: dbURL.path)
 
-        let nearPortal = try service.lookupSpeedLimit(
+        let tunnelMatch = try service.lookupSpeedLimit(
             lat: 52.0000,
             lon: 13.0001,
             radiusM: 80.0,
@@ -1453,13 +1692,10 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 20.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertTrue(nearPortal.isTunnelSegment)
-        XCTAssertTrue(nearPortal.tunnelPortalMarkersAvailable)
-        XCTAssertTrue(nearPortal.nearTunnelPortal)
-        XCTAssertNotNil(nearPortal.tunnelPortalDistanceM)
+        XCTAssertTrue(tunnelMatch.isTunnelSegment)
     }
 
-    func testLookupUsesCityBoundaryTrafficSignsWhenResidentialPolygonsAreUnavailable() throws {
+    func testLookupIgnoresTrafficSignFallbackForCityClassification() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-sign-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -1482,10 +1718,9 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 40.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertEqual(inner.wayID, "S1")
-        XCTAssertEqual(inner.insideCity, true)
-        XCTAssertEqual(inner.speedLimitKmh, 50)
-        XCTAssertEqual(inner.citySource, "traffic_sign_310")
+        XCTAssertEqual(inner.wayID, "3001")
+        XCTAssertNil(inner.insideCity)
+        XCTAssertEqual(inner.speedLimitKmh, 100)
 
         let outer = try service.lookupSpeedLimit(
             lat: 52.0000,
@@ -1498,13 +1733,70 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 40.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertEqual(outer.wayID, "S1")
-        XCTAssertEqual(outer.insideCity, false)
+        XCTAssertEqual(outer.wayID, "3001")
+        XCTAssertNil(outer.insideCity)
         XCTAssertEqual(outer.speedLimitKmh, 100)
-        XCTAssertEqual(outer.citySource, "traffic_sign_311")
     }
 
-    func testLookupRemainsCompatibleWithLegacySchemaWithoutWayGeomAndApproxHeading() throws {
+    func testLookupCityClassificationPrefersInCityHighwayOverResidentialPolygon() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-precedence-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_precedence_fixture.sqlite")
+        try createCityClassificationPrecedenceFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0006,
+            lon: 13.0042,
+            radiusM: 120.0,
+            maxCandidates: 64,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 30.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "4001")
+        XCTAssertEqual(result.citySource, "highway_class_in_city")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupCityClassificationUsesResidentialPolygonForOtherHighways() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-precedence-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_precedence_fixture.sqlite")
+        try createCityClassificationPrecedenceFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.00085,
+            lon: 13.00495,
+            radiusM: 120.0,
+            maxCandidates: 64,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 30.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "4002")
+        XCTAssertEqual(result.citySource, "residential_polygon")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupFailsForLegacySchemaWithoutWayGeomAndApproxHeading() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-legacy-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -1516,35 +1808,19 @@ final class SpeedConsumerTests: XCTestCase {
         try createLegacyFixtureDB(at: dbURL)
         let service = V3SpeedLimitService(dbPath: dbURL.path)
 
-        let onWay = try service.lookupSpeedLimit(
-            lat: 52.5205,
-            lon: 13.4055,
-            radiusM: 80.0,
-            maxCandidates: 64,
-            preferredWayID: nil,
-            headingDeg: 90.0,
-            headingAccuracyDeg: 5.0,
-            speedKmh: 40.0,
-            horizontalAccuracyM: 5.0
+        XCTAssertThrowsError(
+            try service.lookupSpeedLimit(
+                lat: 52.5205,
+                lon: 13.4055,
+                radiusM: 80.0,
+                maxCandidates: 64,
+                preferredWayID: nil,
+                headingDeg: 90.0,
+                headingAccuracyDeg: 5.0,
+                speedKmh: 40.0,
+                horizontalAccuracyM: 5.0
+            )
         )
-        XCTAssertEqual(onWay.wayID, "100")
-        XCTAssertEqual(onWay.speedLimitKmh, 30)
-        XCTAssertEqual(onWay.insideCity, true)
-
-        let insideOnly = try service.lookupSpeedLimit(
-            lat: 52.5202,
-            lon: 13.4078,
-            radiusM: 20.0,
-            maxCandidates: 64,
-            preferredWayID: nil,
-            headingDeg: nil,
-            headingAccuracyDeg: nil,
-            speedKmh: nil,
-            horizontalAccuracyM: nil
-        )
-        XCTAssertNil(insideOnly.wayID)
-        XCTAssertEqual(insideOnly.insideCity, true)
-        XCTAssertEqual(insideOnly.speedLimitKmh, 50)
     }
 
     private func createFixtureV3DB(at url: URL) throws {
@@ -1580,7 +1856,7 @@ final class SpeedConsumerTests: XCTestCase {
           max_lat REAL NOT NULL
         );
         CREATE VIRTUAL TABLE ways_rtree USING rtree(
-          row_id,
+          way_id,
           min_lon, max_lon,
           min_lat, max_lat
         );
@@ -1588,23 +1864,6 @@ final class SpeedConsumerTests: XCTestCase {
           row_id INTEGER PRIMARY KEY,
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
-        );
-        CREATE TABLE tunnel_portal (
-          row_id INTEGER PRIMARY KEY,
-          way_row_id INTEGER NOT NULL,
-          way_id TEXT NOT NULL,
-          portal_index INTEGER NOT NULL,
-          lon REAL NOT NULL,
-          lat REAL NOT NULL,
-          tunnel TEXT,
-          location TEXT,
-          layer REAL,
-          level REAL
-        );
-        CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(
-          row_id,
-          min_lon, max_lon,
-          min_lat, max_lat
         );
         CREATE TABLE areas (
           row_id INTEGER PRIMARY KEY,
@@ -1629,14 +1888,14 @@ final class SpeedConsumerTests: XCTestCase {
         );
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, '100', 'residential', 'Fixture Main Street', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.4050, 52.5200, 13.4060, 52.5210);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (100, 13.4050, 13.4060, 52.5200, 52.5210);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (1, '100', '[[52.5200,13.4050],[52.5210,13.4060]]');
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
         VALUES (2, '200', 'residential', 'Fixture Side Street', NULL, '50', NULL, NULL, NULL, NULL, 45.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.4072, 52.5218, 13.4080, 52.5222);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (2, 13.4072, 13.4080, 52.5218, 52.5222);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (200, 13.4072, 13.4080, 52.5218, 52.5222);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (2, '200', '[[52.5218,13.4072],[52.5222,13.4080]]');
         INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, points_json, min_lon, min_lat, max_lon, max_lat)
@@ -1688,7 +1947,7 @@ final class SpeedConsumerTests: XCTestCase {
           max_lat REAL NOT NULL
         );
         CREATE VIRTUAL TABLE ways_rtree USING rtree(
-          row_id,
+          way_id,
           min_lon, max_lon,
           min_lat, max_lat
         );
@@ -1697,45 +1956,20 @@ final class SpeedConsumerTests: XCTestCase {
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
         );
-        CREATE TABLE tunnel_portal (
-          row_id INTEGER PRIMARY KEY,
-          way_row_id INTEGER NOT NULL,
-          way_id TEXT NOT NULL,
-          portal_index INTEGER NOT NULL,
-          lon REAL NOT NULL,
-          lat REAL NOT NULL,
-          tunnel TEXT,
-          location TEXT,
-          layer REAL,
-          level REAL
-        );
-        CREATE VIRTUAL TABLE tunnel_portal_rtree USING rtree(
-          row_id,
-          min_lon, max_lon,
-          min_lat, max_lat
-        );
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, 'A1', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'parking_aisle', 'yes', NULL, NULL, 'underground', '-1', NULL, 13.0000, 51.9999, 13.0100, 52.0001);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
+        VALUES (1, '1001', 'residential', 'East-West Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'parking_aisle', 'yes', NULL, NULL, 'underground', '-1', NULL, 13.0000, 51.9999, 13.0100, 52.0001);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1001, 13.0000, 13.0100, 51.9999, 52.0001);
         INSERT INTO way_geom(row_id, way_id, points_json)
-        VALUES (1, 'A1', '[[52.0000,13.0000],[52.0000,13.0100]]');
-        INSERT INTO tunnel_portal(row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level)
-        VALUES (1, 1, 'A1', 0, 13.0000, 52.0000, 'yes', 'underground', -1, NULL);
-        INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (1, 13.0000, 13.0000, 52.0000, 52.0000);
-        INSERT INTO tunnel_portal(row_id, way_row_id, way_id, portal_index, lon, lat, tunnel, location, layer, level)
-        VALUES (2, 1, 'A1', 1, 13.0100, 52.0000, 'yes', 'underground', -1, NULL);
-        INSERT INTO tunnel_portal_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (2, 13.0100, 13.0100, 52.0000, 52.0000);
+        VALUES (1, '1001', '[[52.0000,13.0000],[52.0000,13.0100]]');
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
-        VALUES (2, 'B1', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 'main', NULL, 'yes', NULL, NULL, '1', NULL, 13.0049, 51.9950, 13.0051, 52.0050);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (2, 13.0049, 13.0051, 51.9950, 52.0050);
+        VALUES (2, '1002', 'residential', 'North-South Way', NULL, '50', NULL, NULL, NULL, NULL, 0.0, 'main', NULL, 'yes', NULL, NULL, '1', NULL, 13.0049, 51.9950, 13.0051, 52.0050);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1002, 13.0049, 13.0051, 51.9950, 52.0050);
         INSERT INTO way_geom(row_id, way_id, points_json)
-        VALUES (2, 'B1', '[[51.9950,13.0050],[52.0050,13.0050]]');
+        VALUES (2, '1002', '[[51.9950,13.0050],[52.0050,13.0050]]');
         """
 
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
@@ -1766,7 +2000,7 @@ final class SpeedConsumerTests: XCTestCase {
           max_lat REAL NOT NULL
         );
         CREATE VIRTUAL TABLE ways_rtree USING rtree(
-          row_id,
+          way_id,
           min_lon, max_lon,
           min_lat, max_lat
         );
@@ -1791,8 +2025,8 @@ final class SpeedConsumerTests: XCTestCase {
 
         INSERT INTO ways(row_id, way_id, highway, street_name, maxspeed, maxspeed_type, source_maxspeed, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, '100', 'residential', 'Legacy Main Street', '30', NULL, NULL, 13.4050, 52.5200, 13.4060, 52.5210);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (1, 13.4050, 13.4060, 52.5200, 52.5210);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (100, 13.4050, 13.4060, 52.5200, 52.5210);
 
         INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, 'w:400', 'Polygon', 'Legacy City', 'city', 'administrative', '8', 13.4040, 52.5190, 13.4090, 52.5240);
@@ -1839,7 +2073,7 @@ final class SpeedConsumerTests: XCTestCase {
           max_lat REAL NOT NULL
         );
         CREATE VIRTUAL TABLE ways_rtree USING rtree(
-          row_id,
+          way_id,
           min_lon, max_lon,
           min_lat, max_lat
         );
@@ -1872,11 +2106,11 @@ final class SpeedConsumerTests: XCTestCase {
         );
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
-        VALUES (1, 'S1', 'secondary', 'City Boundary Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 51.9999, 13.0100, 52.0001);
-        INSERT INTO ways_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
-        VALUES (1, 13.0000, 13.0100, 51.9999, 52.0001);
+        VALUES (1, '3001', 'secondary', 'City Boundary Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 51.9999, 13.0100, 52.0001);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (3001, 13.0000, 13.0100, 51.9999, 52.0001);
         INSERT INTO way_geom(row_id, way_id, points_json)
-        VALUES (1, 'S1', '[[52.0000,13.0000],[52.0000,13.0100]]');
+        VALUES (1, '3001', '[[52.0000,13.0000],[52.0000,13.0100]]');
 
         INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, 'n:1001', 'Point', NULL, NULL, NULL, NULL, NULL, NULL, 'DE:310', NULL, 13.0020, 52.0000, 13.0020, 52.0000);
@@ -1891,6 +2125,113 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
             throw NSError(domain: "SpeedConsumerTests", code: 106, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createCityClassificationPrecedenceFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 107, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+        CREATE TABLE areas (
+          row_id INTEGER PRIMARY KEY,
+          area_id TEXT NOT NULL UNIQUE,
+          geometry_type TEXT,
+          name TEXT,
+          place TEXT,
+          boundary TEXT,
+          admin_level TEXT,
+          residential TEXT,
+          parking TEXT,
+          traffic_sign TEXT,
+          points_json TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE areas_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '4001', 'service', 'Service Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0040, 52.0005, 13.0050, 52.0007);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (4001, 13.0040, 13.0050, 52.0005, 52.0007);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '4001', '[[52.0006,13.0040],[52.0006,13.0050]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '4002', 'secondary', 'Secondary Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0040, 52.00075, 13.0050, 52.00095);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (4002, 13.0040, 13.0050, 52.00075, 52.00095);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, '4002', '[[52.00085,13.0040],[52.00085,13.0050]]');
+
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (
+          1,
+          'w:3001',
+          'Polygon',
+          'Residential Test Polygon',
+          NULL,
+          NULL,
+          NULL,
+          'yes',
+          NULL,
+          NULL,
+          '[[13.0040,52.0000],[13.0050,52.0000],[13.0050,52.0010],[13.0048,52.0010],[13.0048,52.0002],[13.0040,52.0002],[13.0040,52.0000]]',
+          13.0040,
+          52.0000,
+          13.0050,
+          52.0010
+        );
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, 13.0040, 13.0050, 52.0000, 52.0010);
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 108, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 
@@ -2036,17 +2377,29 @@ final class SpeedConsumerTests: XCTestCase {
         let minLat = lat - degLat
         let maxLat = lat + degLat
 
+        let joinCondition: String
+        if try readColumnNames(dbURL: dbURL, table: "ways_rtree").contains("way_id") {
+            joinCondition = "w.way_id = r.way_id"
+        } else {
+            joinCondition = "w.row_id = r.row_id"
+        }
+
         let sql = """
         SELECT w.way_id
         FROM ways_rtree r
-        JOIN ways w ON w.row_id = r.row_id
+        JOIN ways w ON \(joinCondition)
         WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
         LIMIT ?5
         """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            throw NSError(domain: "SpeedConsumerTests", code: 32, userInfo: [NSLocalizedDescriptionKey: "prepare candidate query failed"])
+            let message = String(cString: sqlite3_errmsg(db))
+            throw NSError(
+                domain: "SpeedConsumerTests",
+                code: 32,
+                userInfo: [NSLocalizedDescriptionKey: "prepare candidate query failed: \(message)"]
+            )
         }
         defer { sqlite3_finalize(stmt) }
 
@@ -2104,16 +2457,14 @@ final class SpeedConsumerTests: XCTestCase {
         manager: V3BundleManager,
         timeoutSeconds: TimeInterval
     ) async throws -> Bool {
-        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
         let deadline = Date().addingTimeInterval(timeoutSeconds)
         while Date() < deadline {
             if let state = try await manager.activeState(),
                let dbURL = try await manager.activeDatabaseURL(),
                FileManager.default.fileExists(atPath: dbURL.path) {
                 let size = (try? fileSize(dbURL)) ?? 0
-                let activatedManifestURL = supportDir
-                    .appendingPathComponent("bundles", isDirectory: true)
-                    .appendingPathComponent(state.bundleVersion, isDirectory: true)
+                let activatedManifestURL = dbURL
+                    .deletingLastPathComponent()
                     .appendingPathComponent("bundle-manifest.v3.json")
                 let hasActivatedManifest = FileManager.default.fileExists(atPath: activatedManifestURL.path)
                 let isSeedBundle = state.bundleVersion == "seed"

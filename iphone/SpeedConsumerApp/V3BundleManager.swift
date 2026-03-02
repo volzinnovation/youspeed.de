@@ -5,13 +5,38 @@ import SQLite3
 
 actor V3BundleManager {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "bundle-manager")
+    private struct CoverageRing {
+        let isHole: Bool
+        let points: [(lon: Double, lat: Double)]
+    }
+
+    private struct CoverageEntry {
+        let region: String
+        let bundleVersion: String
+        let countryCode: String?
+        let dbPath: String
+        let bbox: BundleCoverageBBox
+        let rings: [CoverageRing]
+    }
+
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
     private let minimumFreeDiskReserveBytes: Int64 = 256 * 1024 * 1024
+    private let coverageCacheTTLSeconds: TimeInterval = 60
     private var githubToken: String?
     private var githubAssetURLByReleaseURL: [String: URL] = [:]
     private var githubReleaseAssetsByTagKey: [String: [String: Int64]] = [:]
+    private var coverageCacheUpdatedAt: Date?
+    private var cachedCoverageEntries: [CoverageEntry] = []
+
+    func configuredShardRegions(forCountryCode countryCode: String) -> [String] {
+        guard let config = try? V3BundleTargetsConfig.loadBundled(),
+              let country = config.country(countryCode: countryCode) else {
+            return []
+        }
+        return country.regions.map(\.regionID)
+    }
 
     init(fileManager: FileManager = .default, session: URLSession = .shared) {
         self.fileManager = fileManager
@@ -75,6 +100,93 @@ actor V3BundleManager {
         return try resolveDatabaseURL(for: state)
     }
 
+    func resolveLocalBundleRoute(lat: Double, lon: Double, fallbackDBPath: String?) throws -> LocalBundleRoute? {
+        let entries = try loadCoverageEntriesIfNeeded()
+        guard !entries.isEmpty else {
+            if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
+                return LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)
+            }
+            return nil
+        }
+
+        if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty,
+           let current = entries.first(where: { $0.dbPath == fallback }),
+           pointIsInsideCoverage(lon: lon, lat: lat, entry: current) {
+            return LocalBundleRoute(
+                region: current.region,
+                bundleVersion: current.bundleVersion,
+                countryCode: current.countryCode,
+                dbPath: current.dbPath
+            )
+        }
+
+        let matches = entries.filter { pointIsInsideCoverage(lon: lon, lat: lat, entry: $0) }
+        if matches.isEmpty {
+            if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
+                return LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)
+            }
+            return nil
+        }
+
+        let best = matches.sorted { lhs, rhs in
+            let lhsArea = bboxArea(lhs.bbox)
+            let rhsArea = bboxArea(rhs.bbox)
+            if lhsArea != rhsArea {
+                return lhsArea < rhsArea
+            }
+            if lhs.bundleVersion != rhs.bundleVersion {
+                return lhs.bundleVersion > rhs.bundleVersion
+            }
+            return lhs.region < rhs.region
+        }.first!
+
+        return LocalBundleRoute(
+            region: best.region,
+            bundleVersion: best.bundleVersion,
+            countryCode: best.countryCode,
+            dbPath: best.dbPath
+        )
+    }
+
+    func resolvePenaltyRuleContext(forDBPath dbPath: String?) throws -> PenaltyRuleContext? {
+        guard let dbPath, !dbPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        let normalizedDBPath = URL(fileURLWithPath: dbPath).standardizedFileURL.path
+        let bundlesRoot = try bundlesDir()
+        let bundleDirs = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ).filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+
+        for bundleDir in bundleDirs {
+            let manifestURL = bundleDir.appendingPathComponent("bundle-manifest.v3.json")
+            guard let manifest = decodeManifestIfPresent(at: manifestURL) else {
+                continue
+            }
+            let manifestDBPath = bundleDir.appendingPathComponent(manifest.db.file).standardizedFileURL.path
+            guard manifestDBPath == normalizedDBPath else {
+                continue
+            }
+            var rulesPath: String?
+            var rulesFileName: String?
+            if let penaltyRules = manifest.penaltyRules {
+                let candidate = bundleDir.appendingPathComponent(penaltyRules.file)
+                rulesFileName = penaltyRules.file
+                if fileManager.fileExists(atPath: candidate.path) {
+                    rulesPath = candidate.path
+                }
+            }
+            return PenaltyRuleContext(
+                countryCode: manifest.countryCode,
+                rulesPath: rulesPath,
+                rulesFileName: rulesFileName
+            )
+        }
+        return nil
+    }
+
     /// Removes writable local correction artifacts so the app can rely on
     /// upstream OSM-derived daily diffs after user-side editor uploads.
     /// Does not remove active runtime bundles or active bundle state.
@@ -123,9 +235,29 @@ actor V3BundleManager {
            !explicitPath.isEmpty {
             return URL(fileURLWithPath: explicitPath, isDirectory: false)
         }
-        return try bundlesDir()
+        let root = try bundlesDir()
+        let preferred = root
+            .appendingPathComponent(bundleDirectoryName(region: state.region, bundleVersion: state.bundleVersion), isDirectory: true)
+            .appendingPathComponent(state.dbFileName)
+        if fileManager.fileExists(atPath: preferred.path) {
+            return preferred
+        }
+        return root
             .appendingPathComponent(state.bundleVersion, isDirectory: true)
             .appendingPathComponent(state.dbFileName)
+    }
+
+    private func bundleDirectoryName(region: String, bundleVersion: String) -> String {
+        let regionKey = region
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "_", with: "-")
+        let versionKey = normalizeBundleVersion(bundleVersion)
+        if regionKey.isEmpty || regionKey == "unknown" {
+            return versionKey
+        }
+        return "\(regionKey)-\(versionKey)"
     }
 
     func recoverLocalDataAtStartup(
@@ -536,7 +668,10 @@ actor V3BundleManager {
         mode: BundleSyncResult.Mode,
         details: String
     ) throws {
-        let bundleDir = try bundlesDir().appendingPathComponent(manifest.bundleVersion, isDirectory: true)
+        let bundleDir = try bundlesDir().appendingPathComponent(
+            bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
+            isDirectory: true
+        )
         if !fileManager.fileExists(atPath: bundleDir.path) {
             try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
         }
@@ -612,8 +747,13 @@ actor V3BundleManager {
         guard fileManager.fileExists(atPath: dbURL.path) else {
             Self.logger.error("startup_recovery active_state file_missing path=\(dbURL.path, privacy: .public)")
             if state.dbPath == nil {
-                let bundleDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
-                try? removeItemIfExists(at: bundleDir)
+                let preferredDir = try bundlesDir().appendingPathComponent(
+                    bundleDirectoryName(region: state.region, bundleVersion: state.bundleVersion),
+                    isDirectory: true
+                )
+                let legacyDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
+                try? removeItemIfExists(at: preferredDir)
+                try? removeItemIfExists(at: legacyDir)
             }
             try? clearActiveState()
             return nil
@@ -633,8 +773,13 @@ actor V3BundleManager {
                 "startup_recovery active_state invalid version=\(state.bundleVersion, privacy: .public) error=\(String(describing: error), privacy: .public)"
             )
             if state.dbPath == nil {
-                let bundleDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
-                try? removeItemIfExists(at: bundleDir)
+                let preferredDir = try bundlesDir().appendingPathComponent(
+                    bundleDirectoryName(region: state.region, bundleVersion: state.bundleVersion),
+                    isDirectory: true
+                )
+                let legacyDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
+                try? removeItemIfExists(at: preferredDir)
+                try? removeItemIfExists(at: legacyDir)
             }
             try? clearActiveState()
             return nil
@@ -823,7 +968,10 @@ actor V3BundleManager {
         Self.logger.notice(
             "startup_recovery activate begin source=\(sourceDB.lastPathComponent, privacy: .public) version=\(normalizedVersion, privacy: .public)"
         )
-        let bundleDir = try bundlesDir().appendingPathComponent(normalizedVersion, isDirectory: true)
+        let bundleDir = try bundlesDir().appendingPathComponent(
+            bundleDirectoryName(region: region, bundleVersion: normalizedVersion),
+            isDirectory: true
+        )
         if !fileManager.fileExists(atPath: bundleDir.path) {
             try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
         }
@@ -916,6 +1064,184 @@ actor V3BundleManager {
         return sqliteNames.first
     }
 
+    private func loadCoverageEntriesIfNeeded(forceReload: Bool = false) throws -> [CoverageEntry] {
+        let now = Date()
+        if !forceReload,
+           let updatedAt = coverageCacheUpdatedAt,
+           now.timeIntervalSince(updatedAt) < coverageCacheTTLSeconds {
+            return cachedCoverageEntries
+        }
+
+        let bundlesRoot = try bundlesDir()
+        let bundleDirs = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ).filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+
+        var loaded: [CoverageEntry] = []
+        for bundleDir in bundleDirs {
+            let manifestURL = bundleDir.appendingPathComponent("bundle-manifest.v3.json")
+            guard let manifest = decodeManifestIfPresent(at: manifestURL),
+                  let coverage = manifest.coverage else {
+                continue
+            }
+            let dbURL = bundleDir.appendingPathComponent(manifest.db.file)
+            guard fileManager.fileExists(atPath: dbURL.path) else {
+                continue
+            }
+
+            let rings: [CoverageRing]
+            if let poly = coverage.poly {
+                let polyURL = bundleDir.appendingPathComponent(poly.file)
+                guard fileManager.fileExists(atPath: polyURL.path) else {
+                    continue
+                }
+                rings = try parsePolyRings(at: polyURL)
+            } else {
+                rings = []
+            }
+
+            loaded.append(
+                CoverageEntry(
+                    region: manifest.region,
+                    bundleVersion: manifest.bundleVersion,
+                    countryCode: manifest.countryCode,
+                    dbPath: dbURL.path,
+                    bbox: coverage.bbox,
+                    rings: rings
+                )
+            )
+        }
+
+        cachedCoverageEntries = loaded
+        coverageCacheUpdatedAt = now
+        return loaded
+    }
+
+    private func bboxArea(_ bbox: BundleCoverageBBox) -> Double {
+        let width = max(0, bbox.maxLon - bbox.minLon)
+        let height = max(0, bbox.maxLat - bbox.minLat)
+        return width * height
+    }
+
+    private func pointIsInsideCoverage(lon: Double, lat: Double, entry: CoverageEntry) -> Bool {
+        if lon < entry.bbox.minLon || lon > entry.bbox.maxLon || lat < entry.bbox.minLat || lat > entry.bbox.maxLat {
+            return false
+        }
+
+        guard !entry.rings.isEmpty else {
+            return true
+        }
+
+        var insideOuter = false
+        for ring in entry.rings where !ring.isHole {
+            if pointInRing(lon: lon, lat: lat, ring: ring.points) {
+                insideOuter = true
+                break
+            }
+        }
+        guard insideOuter else {
+            return false
+        }
+        for ring in entry.rings where ring.isHole {
+            if pointInRing(lon: lon, lat: lat, ring: ring.points) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func parsePolyRings(at polyURL: URL) throws -> [CoverageRing] {
+        let content = try String(contentsOf: polyURL, encoding: .utf8)
+        let lines = content.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard !lines.isEmpty else {
+            return []
+        }
+
+        var rings: [CoverageRing] = []
+        var index = 1 // first line is polygon label
+        while index < lines.count {
+            let token = lines[index]
+            index += 1
+            if token.isEmpty {
+                continue
+            }
+            if token.uppercased() == "END" {
+                break
+            }
+
+            let isHole = token.hasPrefix("!")
+            var points: [(lon: Double, lat: Double)] = []
+            while index < lines.count {
+                let pointLine = lines[index]
+                index += 1
+                if pointLine.isEmpty {
+                    continue
+                }
+                if pointLine.uppercased() == "END" {
+                    break
+                }
+                let comps = pointLine.split(whereSeparator: \.isWhitespace)
+                if comps.count < 2 {
+                    continue
+                }
+                guard let lon = Double(comps[0]), let lat = Double(comps[1]) else {
+                    continue
+                }
+                points.append((lon: lon, lat: lat))
+            }
+            if points.count >= 3 {
+                if points.first?.lon != points.last?.lon || points.first?.lat != points.last?.lat {
+                    points.append(points[0])
+                }
+                if points.count >= 4 {
+                    rings.append(CoverageRing(isHole: isHole, points: points))
+                }
+            }
+        }
+        return rings
+    }
+
+    private func pointInRing(lon: Double, lat: Double, ring: [(lon: Double, lat: Double)]) -> Bool {
+        guard ring.count >= 4 else {
+            return false
+        }
+        var inside = false
+        for idx in 0..<(ring.count - 1) {
+            let a = ring[idx]
+            let b = ring[idx + 1]
+            if pointOnSegment(lon: lon, lat: lat, a: a, b: b) {
+                return true
+            }
+            let intersects = ((a.lat > lat) != (b.lat > lat)) &&
+                (lon < (b.lon - a.lon) * (lat - a.lat) / ((b.lat - a.lat) != 0 ? (b.lat - a.lat) : 1e-30) + a.lon)
+            if intersects {
+                inside.toggle()
+            }
+        }
+        return inside
+    }
+
+    private func pointOnSegment(
+        lon: Double,
+        lat: Double,
+        a: (lon: Double, lat: Double),
+        b: (lon: Double, lat: Double),
+        eps: Double = 1e-12
+    ) -> Bool {
+        let cross = (lon - a.lon) * (b.lat - a.lat) - (lat - a.lat) * (b.lon - a.lon)
+        if abs(cross) > eps {
+            return false
+        }
+        let dot = (lon - a.lon) * (b.lon - a.lon) + (lat - a.lat) * (b.lat - a.lat)
+        if dot < -eps {
+            return false
+        }
+        let sqLen = (b.lon - a.lon) * (b.lon - a.lon) + (b.lat - a.lat) * (b.lat - a.lat)
+        return dot - sqLen <= eps
+    }
+
     private func hasAnyLocalRecoveryArtifacts() throws -> Bool {
         let bundlesRoot = try bundlesDir()
         let bundleEntries = try fileManager.contentsOfDirectory(
@@ -1000,6 +1326,8 @@ actor V3BundleManager {
             try fileManager.removeItem(at: stateURL)
         }
         try fileManager.moveItem(at: tmp, to: stateURL)
+        coverageCacheUpdatedAt = nil
+        cachedCoverageEntries = []
     }
 
     private func stagingDirectory() throws -> URL {
@@ -1765,6 +2093,7 @@ actor V3BundleManager {
     }
 
     private func pruneInactiveBundles(keepingVersions: Set<String>) throws {
+        _ = keepingVersions
         let bundlesRoot = try bundlesDir()
         let entries = try fileManager.contentsOfDirectory(
             at: bundlesRoot,
@@ -1776,7 +2105,14 @@ actor V3BundleManager {
             guard values?.isDirectory == true else {
                 continue
             }
-            guard !keepingVersions.contains(entry.lastPathComponent) else {
+            if entry.lastPathComponent == "seed" {
+                continue
+            }
+            let manifestURL = entry.appendingPathComponent("bundle-manifest.v3.json")
+            if fileManager.fileExists(atPath: manifestURL.path) {
+                continue
+            }
+            if firstSQLiteFileName(in: entry) != nil {
                 continue
             }
             try? removeItemIfExists(at: entry)

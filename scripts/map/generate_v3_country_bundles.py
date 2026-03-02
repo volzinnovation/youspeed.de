@@ -27,6 +27,7 @@ ISO2_TO_ISO3: Dict[str, str] = {
     "MC": "MCO",
     "GB": "GBR",
 }
+ISO3_TO_ISO2: Dict[str, str] = {iso3: iso2 for iso2, iso3 in ISO2_TO_ISO3.items()}
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,21 @@ class BundleTarget:
     is_shard: bool
 
 
+@dataclass(frozen=True)
+class BundleTargetConfigRegion:
+    region_id: str
+
+
+@dataclass(frozen=True)
+class BundleTargetConfigCountry:
+    rank: int
+    country_id: str
+    country_code: str
+    iso2: str
+    mode: str
+    regions: List[BundleTargetConfigRegion]
+
+
 def _slug(value: str) -> str:
     return (
         value.strip()
@@ -70,6 +86,57 @@ def _derive_poly_url_from_pbf_url(pbf_url: str) -> Optional[str]:
     if url.endswith(".osm.pbf"):
         return url[: -len(".osm.pbf")] + ".poly"
     return None
+
+
+def _load_bundle_target_config(path: Path) -> List[BundleTargetConfigCountry]:
+    if not path.exists():
+        return []
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("format") != "youspeed.v3.bundle.targets":
+        raise SystemExit(f"Unexpected bundle target config format in {path}")
+
+    countries_raw = payload.get("countries")
+    if not isinstance(countries_raw, list):
+        raise SystemExit(f"Invalid bundle target config (countries must be array): {path}")
+
+    countries: List[BundleTargetConfigCountry] = []
+    for row in countries_raw:
+        if not isinstance(row, dict):
+            continue
+        country_id = str(row.get("country_id", "")).strip().lower()
+        if not country_id:
+            continue
+        rank = int(row.get("rank", 9999))
+        country_code = str(row.get("country_code", "")).strip().upper()
+        iso2 = str(row.get("iso2", "")).strip().upper()
+        if not iso2 and country_code:
+            iso2 = ISO3_TO_ISO2.get(country_code, "")
+        mode = str(row.get("mode", "single_country")).strip().lower() or "single_country"
+        regions_raw = row.get("regions")
+        if not isinstance(regions_raw, list):
+            raise SystemExit(f"Invalid regions list for country '{country_id}' in {path}")
+        regions: List[BundleTargetConfigRegion] = []
+        for region_row in regions_raw:
+            if not isinstance(region_row, dict):
+                continue
+            region_id = str(region_row.get("region_id", "")).strip().lower()
+            if not region_id:
+                continue
+            regions.append(BundleTargetConfigRegion(region_id=region_id))
+        if not regions:
+            raise SystemExit(f"Country '{country_id}' has no regions in bundle target config: {path}")
+        countries.append(
+            BundleTargetConfigCountry(
+                rank=rank,
+                country_id=country_id,
+                country_code=country_code,
+                iso2=iso2,
+                mode=mode,
+                regions=regions,
+            )
+        )
+    countries.sort(key=lambda item: (item.rank, item.country_id))
+    return countries
 
 
 def _now_bundle_version() -> str:
@@ -322,7 +389,7 @@ def plan_single_region_target(
     if not pbf_url:
         raise SystemExit(f"Region has no PBF URL in index: {region_id}")
     parent = str(props.get("parent", "")).strip().lower()
-    country_id = parent or key
+    country_id = parent if "/" in key and parent else key
     iso2 = iso2_override.strip().upper() or _iso2_from_props(props)
     if not iso2:
         raise SystemExit(f"Region has no ISO2 in index and --iso2 was not provided: {region_id}")
@@ -340,6 +407,37 @@ def plan_single_region_target(
         poly_url=poly_url,
         is_shard=False,
     )
+
+
+def plan_targets_for_country_from_config(
+    *,
+    config_country: BundleTargetConfigCountry,
+    index_by_id: Dict[str, Dict],
+) -> List[BundleTarget]:
+    iso2_override = config_country.iso2
+    country_id = config_country.country_id
+    mode = config_country.mode
+    targets: List[BundleTarget] = []
+    for region in config_country.regions:
+        target = plan_single_region_target(
+            region_id=region.region_id,
+            index_by_id=index_by_id,
+            iso2_override=iso2_override,
+        )
+        is_shard = mode == "regional_shards" and target.region_id != country_id
+        targets.append(
+            BundleTarget(
+                country_name=target.country_name,
+                country_id=country_id,
+                iso2=target.iso2,
+                iso3=target.iso3,
+                region_id=target.region_id,
+                pbf_url=target.pbf_url,
+                poly_url=target.poly_url,
+                is_shard=is_shard,
+            )
+        )
+    return targets
 
 
 def _download_file(url: str, out_path: Path, force: bool) -> None:
@@ -542,6 +640,11 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing <ISO3>-rules.json files",
     )
     parser.add_argument(
+        "--bundle-target-config",
+        default="iphone/SpeedConsumerApp/BundleTargets.top10.json",
+        help="Shared country/region bundle target config path",
+    )
+    parser.add_argument(
         "--release-tag",
         default="deu-v3-data-latest",
         help="Release tag used when embedding release URLs in manifests",
@@ -586,6 +689,9 @@ def main() -> int:
 
     index_payload = _load_geofabrik_index(index_path)
     index_by_id, child_regions_by_parent = _build_index_maps(index_payload)
+    target_config_path = (repo_root / args.bundle_target_config).resolve()
+    config_countries = _load_bundle_target_config(target_config_path)
+    config_country_by_id = {row.country_id: row for row in config_countries}
 
     bundle_version = args.bundle_version.strip() or _now_bundle_version()
     top_n = int(args.top_n)
@@ -604,61 +710,79 @@ def main() -> int:
             )
         ]
     elif bundle_country:
+        config_country = config_country_by_id.get(bundle_country)
+        if config_country is not None:
+            targets = plan_targets_for_country_from_config(
+                config_country=config_country,
+                index_by_id=index_by_id,
+            )
+        else:
         # If ranking data is available, reuse known PBF bytes for threshold decisions.
-        size_hint: Optional[int] = None
-        if args.country_pbf_bytes >= 0:
-            size_hint = int(args.country_pbf_bytes)
+            size_hint: Optional[int] = None
+            if args.country_pbf_bytes >= 0:
+                size_hint = int(args.country_pbf_bytes)
 
-        ranking_path = (repo_root / args.ranking_csv).resolve()
-        if size_hint is None and ranking_path.exists():
-            for row in _load_ranking(ranking_path):
-                if row.geofabrik_id == bundle_country:
-                    size_hint = row.pbf_size_bytes
-                    break
+            ranking_path = (repo_root / args.ranking_csv).resolve()
+            if size_hint is None and ranking_path.exists():
+                for row in _load_ranking(ranking_path):
+                    if row.geofabrik_id == bundle_country:
+                        size_hint = row.pbf_size_bytes
+                        break
 
-        if size_hint is None:
-            country_props = index_by_id.get(bundle_country)
-            if country_props is None:
-                raise SystemExit(f"Country id not found in Geofabrik index: {bundle_country}")
-            country_urls = _urls_from_props(country_props)
-            country_pbf_url = str(country_urls.get("pbf", "")).strip()
-            if not country_pbf_url:
-                raise SystemExit(f"Country has no PBF URL in index: {bundle_country}")
-            try:
-                size_hint = _probe_content_length_bytes(country_pbf_url)
-            except Exception as exc:
-                raise SystemExit(
-                    "Unable to determine country PBF size for sharding decision "
-                    f"({bundle_country}): {exc}"
-                ) from exc
             if size_hint is None:
-                raise SystemExit(
-                    "Unable to determine country PBF size for sharding decision "
-                    f"({bundle_country}): missing Content-Length"
-                )
+                country_props = index_by_id.get(bundle_country)
+                if country_props is None:
+                    raise SystemExit(f"Country id not found in Geofabrik index: {bundle_country}")
+                country_urls = _urls_from_props(country_props)
+                country_pbf_url = str(country_urls.get("pbf", "")).strip()
+                if not country_pbf_url:
+                    raise SystemExit(f"Country has no PBF URL in index: {bundle_country}")
+                try:
+                    size_hint = _probe_content_length_bytes(country_pbf_url)
+                except Exception as exc:
+                    raise SystemExit(
+                        "Unable to determine country PBF size for sharding decision "
+                        f"({bundle_country}): {exc}"
+                    ) from exc
+                if size_hint is None:
+                    raise SystemExit(
+                        "Unable to determine country PBF size for sharding decision "
+                        f"({bundle_country}): missing Content-Length"
+                    )
 
-        print(
-            f"Country '{bundle_country}' PBF bytes: {size_hint} "
-            f"(threshold: {int(args.max_country_pbf_bytes)})"
-        )
-        targets = plan_targets_for_country(
-            country_id=bundle_country,
-            index_by_id=index_by_id,
-            child_regions_by_parent=child_regions_by_parent,
-            max_country_pbf_bytes=int(args.max_country_pbf_bytes),
-            iso2_override=args.iso2,
-            country_pbf_size_bytes=size_hint,
-        )
+            print(
+                f"Country '{bundle_country}' PBF bytes: {size_hint} "
+                f"(threshold: {int(args.max_country_pbf_bytes)})"
+            )
+            targets = plan_targets_for_country(
+                country_id=bundle_country,
+                index_by_id=index_by_id,
+                child_regions_by_parent=child_regions_by_parent,
+                max_country_pbf_bytes=int(args.max_country_pbf_bytes),
+                iso2_override=args.iso2,
+                country_pbf_size_bytes=size_hint,
+            )
     else:
-        ranking_path = (repo_root / args.ranking_csv).resolve()
-        ranking_rows = _load_ranking(ranking_path)
-        targets = plan_targets_from_top_countries(
-            ranking_rows=ranking_rows,
-            index_by_id=index_by_id,
-            child_regions_by_parent=child_regions_by_parent,
-            top_n=top_n,
-            max_country_pbf_bytes=int(args.max_country_pbf_bytes),
-        )
+        if config_countries:
+            selected_config = config_countries[:top_n]
+            targets = []
+            for config_country in selected_config:
+                targets.extend(
+                    plan_targets_for_country_from_config(
+                        config_country=config_country,
+                        index_by_id=index_by_id,
+                    )
+                )
+        else:
+            ranking_path = (repo_root / args.ranking_csv).resolve()
+            ranking_rows = _load_ranking(ranking_path)
+            targets = plan_targets_from_top_countries(
+                ranking_rows=ranking_rows,
+                index_by_id=index_by_id,
+                child_regions_by_parent=child_regions_by_parent,
+                top_n=top_n,
+                max_country_pbf_bytes=int(args.max_country_pbf_bytes),
+            )
 
     print(f"Bundle version: {bundle_version}")
     print(f"Targets: {len(targets)}")

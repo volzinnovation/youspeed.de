@@ -1,0 +1,138 @@
+{
+  "format": "youspeed.v3.bundle.targets",
+  "schema_version": 1,
+  "variant": "v3",
+  "max_country_pbf_bytes": 1000000000,
+  "countries": [
+    {
+      "rank": 1,
+      "country_id": "netherlands",
+      "country_code": "NLD",
+      "iso2": "NL",
+      "mode": "regional_shards",
+      "regions": [
+        { "region_id": "netherlands/drenthe" },
+        { "region_id": "netherlands/flevoland" },
+        { "region_id": "netherlands/friesland" },
+        { "region_id": "netherlands/gelderland" },
+        { "region_id": "netherlands/groningen" },
+        { "region_id": "netherlands/limburg" },
+        { "region_id": "netherlands/noord-brabant" },
+        { "region_id": "netherlands/noord-holland" },
+        { "region_id": "netherlands/overijssel" },
+        { "region_id": "netherlands/utrecht" },
+        { "region_id": "netherlands/zeeland" },
+        { "region_id": "netherlands/zuid-holland" }
+      ]
+    },
+    {
+      "rank": 2,
+      "country_id": "romania",
+      "country_code": "ROU",
+      "iso2": "RO",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "romania" }
+      ]
+    },
+    {
+      "rank": 3,
+      "country_id": "luxembourg",
+      "country_code": "LUX",
+      "iso2": "LU",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "luxembourg" }
+      ]
+    },
+    {
+      "rank": 4,
+      "country_id": "belgium",
+      "country_code": "BEL",
+      "iso2": "BE",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "belgium" }
+      ]
+    },
+    {
+      "rank": 5,
+      "country_id": "sweden",
+      "country_code": "SWE",
+      "iso2": "SE",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "sweden" }
+      ]
+    },
+    {
+      "rank": 6,
+      "country_id": "liechtenstein",
+      "country_code": "LIE",
+      "iso2": "LI",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "liechtenstein" }
+      ]
+    },
+    {
+      "rank": 7,
+      "country_id": "iceland",
+      "country_code": "ISL",
+      "iso2": "IS",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "iceland" }
+      ]
+    },
+    {
+      "rank": 8,
+      "country_id": "germany",
+      "country_code": "DEU",
+      "iso2": "DE",
+      "mode": "regional_shards",
+      "regions": [
+        { "region_id": "germany/baden-wuerttemberg" },
+        { "region_id": "germany/bayern" },
+        { "region_id": "germany/berlin" },
+        { "region_id": "germany/brandenburg" },
+        { "region_id": "germany/bremen" },
+        { "region_id": "germany/hamburg" },
+        { "region_id": "germany/hessen" },
+        { "region_id": "germany/mecklenburg-vorpommern" },
+        { "region_id": "germany/niedersachsen" },
+        { "region_id": "germany/nordrhein-westfalen" },
+        { "region_id": "germany/rheinland-pfalz" },
+        { "region_id": "germany/saarland" },
+        { "region_id": "germany/sachsen" },
+        { "region_id": "germany/sachsen-anhalt" },
+        { "region_id": "germany/schleswig-holstein" },
+        { "region_id": "germany/thueringen" }
+      ]
+    },
+    {
+      "rank": 9,
+      "country_id": "monaco",
+      "country_code": "MCO",
+      "iso2": "MC",
+      "mode": "single_country",
+      "regions": [
+        { "region_id": "monaco" }
+      ]
+    },
+    {
+      "rank": 10,
+      "country_id": "united-kingdom",
+      "country_code": "GBR",
+      "iso2": "GB",
+      "mode": "regional_shards",
+      "regions": [
+        { "region_id": "united-kingdom/bermuda" },
+        { "region_id": "united-kingdom/england" },
+        { "region_id": "united-kingdom/falklands" },
+        { "region_id": "united-kingdom/scotland" },
+        { "region_id": "united-kingdom/wales" }
+      ]
+    }
+  ]
+}
