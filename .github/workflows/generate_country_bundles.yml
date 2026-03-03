@@ -8,6 +8,11 @@ on:
         required: false
         default: "germany"
         type: string
+      regional_shards:
+        description: "Generate regional shards from config mode (for example Germany states)"
+        required: false
+        default: false
+        type: boolean
       bundle_version:
         description: "Optional bundle version override (YYYY-MM-DD). Empty = current UTC date"
         required: false
@@ -85,8 +90,11 @@ jobs:
             --release-tag "${{ inputs.release_tag || '' }}"
             --bundle-country "${{ inputs.bundle_country || 'germany' }}"
             --require-country-in-config
-            --force-single-country
           )
+
+          if [[ "${{ inputs.regional_shards }}" != "true" ]]; then
+            cmd+=(--force-single-country)
+          fi
 
           if [[ -n "${{ inputs.bundle_version || '' }}" ]]; then
             cmd+=(--bundle-version "${{ inputs.bundle_version }}")
