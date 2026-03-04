@@ -1,0 +1,22 @@
+{
+  "asset_name": "karlsruhe-regbez-latest.osm.pbf",
+  "downloaded_at_utc": "2026-03-04T15:02:36Z",
+  "format": "youspeed.seed.pbf.parts",
+  "parts": [
+    {
+      "bytes": 99614720,
+      "file": "karlsruhe-regbez-latest.osm.pbf.part000",
+      "sha256": "3c849d77af4c5be26aed1993c9c1dfcd873edac081d0494edf52f9be3f6949f3"
+    },
+    {
+      "bytes": 51360265,
+      "file": "karlsruhe-regbez-latest.osm.pbf.part001",
+      "sha256": "3607aedcebc5158561d9f8fbae830f6e6733b69aa16aaedf938a8e11c2551d63"
+    }
+  ],
+  "region": "karlsruhe-regbez",
+  "schema_version": 1,
+  "sha256": "1a873f1cca3d746332bfd3234e7ddff9f0f6b18673940cd079779258b67b0ada",
+  "size_bytes": 150974985,
+  "source_url": "https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-latest.osm.pbf"
+}
