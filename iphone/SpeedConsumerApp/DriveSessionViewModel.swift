@@ -2,84 +2,109 @@ import CoreLocation
 import AVFoundation
 import Foundation
 import OSLog
+import Speech
 import UIKit
 
 struct TunnelModeTracker {
     enum State: String, Equatable {
         case inactive
         case active
-        case awaitingSignalReturn
     }
 
     private(set) var state: State = .inactive
-    private var consecutiveTunnelFixes = 0
-    private var consecutiveNonTunnelFixes = 0
 
     mutating func reset() {
         state = .inactive
-        consecutiveTunnelFixes = 0
-        consecutiveNonTunnelFixes = 0
     }
 
-    mutating func markSignalLost() {
-        guard state == .active else {
-            return
-        }
-        state = .awaitingSignalReturn
-        consecutiveTunnelFixes = 0
-        consecutiveNonTunnelFixes = 0
-    }
-
-    mutating func consumeFix(
-        isTunnelSegment: Bool,
-        nearTunnelPortal: Bool,
-        tunnelPortalMarkersAvailable: Bool
-    ) {
-        if state == .awaitingSignalReturn {
-            // Expected behavior for tunnel GPS shadowing: leave tunnel mode once
-            // signal is back and continue with fresh evidence.
-            state = .inactive
-            consecutiveTunnelFixes = 0
-            consecutiveNonTunnelFixes = 0
-        }
-
-        let tunnelEntryEvidence: Bool
-        if tunnelPortalMarkersAvailable {
-            tunnelEntryEvidence = isTunnelSegment && nearTunnelPortal
-        } else {
-            // Backward compatibility for older bundles without portal markers.
-            tunnelEntryEvidence = isTunnelSegment
-        }
-
-        switch state {
-        case .inactive:
-            if tunnelEntryEvidence {
-                consecutiveTunnelFixes += 1
-                consecutiveNonTunnelFixes = 0
-                if consecutiveTunnelFixes >= 2 {
-                    state = .active
-                    consecutiveTunnelFixes = 0
-                }
-            } else {
-                consecutiveTunnelFixes = 0
-                consecutiveNonTunnelFixes = 0
-            }
-        case .active:
-            if isTunnelSegment {
-                consecutiveNonTunnelFixes = 0
-            } else {
-                consecutiveNonTunnelFixes += 1
-                if consecutiveNonTunnelFixes >= 2 {
-                    reset()
-                }
-            }
-        case .awaitingSignalReturn:
-            break
-        }
+    mutating func consumeFix(isTunnelSegment: Bool) {
+        state = isTunnelSegment ? .active : .inactive
     }
 
     var isTunnelModeActive: Bool {
         state != .inactive
+    }
+}
+
+private final class ConfirmationTonePlayer {
+    private static let sampleRate: Double = 44_100
+    private static let frequencyHz: Double = 432
+    private static let durationSeconds: Double = 0.18
+    private static let amplitude: Float = 0.30
+
+    private let toneBuffer: AVAudioPCMBuffer?
+    private var engine: AVAudioEngine?
+    private var playerNode: AVAudioPlayerNode?
+
+    init() {
+        toneBuffer = Self.makeToneBuffer()
+    }
+
+    func play() {
+        guard let toneBuffer else {
+            return
+        }
+        stop()
+
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.ambient, mode: .default, options: [.duckOthers])
+        try? session.setActive(true)
+
+        let engine = AVAudioEngine()
+        let playerNode = AVAudioPlayerNode()
+        engine.attach(playerNode)
+        engine.connect(playerNode, to: engine.mainMixerNode, format: toneBuffer.format)
+        playerNode.scheduleBuffer(toneBuffer, at: nil, options: [.interrupts]) { [weak self] in
+            DispatchQueue.main.async {
+                self?.stopAndDeactivate()
+            }
+        }
+
+        do {
+            try engine.start()
+        } catch {
+            stopAndDeactivate()
+            return
+        }
+
+        self.engine = engine
+        self.playerNode = playerNode
+        playerNode.play()
+    }
+
+    private func stopAndDeactivate() {
+        stop()
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    private func stop() {
+        playerNode?.stop()
+        engine?.stop()
+        playerNode = nil
+        engine = nil
+    }
+
+    private static func makeToneBuffer() -> AVAudioPCMBuffer? {
+        let frameCount = Int(sampleRate * durationSeconds)
+        guard frameCount > 0,
+              let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(frameCount)),
+              let channel = buffer.floatChannelData?.pointee else {
+            return nil
+        }
+
+        let attackFrames = max(1, Int(sampleRate * 0.012))
+        let releaseFrames = max(1, Int(sampleRate * 0.04))
+        for frame in 0..<frameCount {
+            let t = Double(frame) / sampleRate
+            let wave = sin(2.0 * Double.pi * frequencyHz * t)
+            let attack = min(1.0, Double(frame) / Double(attackFrames))
+            let release = min(1.0, Double(frameCount - frame) / Double(releaseFrames))
+            let envelope = Float(min(attack, release))
+            channel[frame] = Float(wave) * amplitude * envelope
+        }
+        buffer.frameLength = AVAudioFrameCount(frameCount)
+        return buffer
     }
 }
 
@@ -89,7 +114,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     enum SpeedCaptureMode: Equatable {
         case idle
         case speakingPrompt
-        case countdown(Int)
+        case listening
+        case evaluating
         case saving
     }
 
@@ -97,6 +123,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case loading
         case ready
         case failed
+    }
+
+    struct BundleDownloadOption: Identifiable, Hashable {
+        let id: String
+        let countryCode: String
+        let countryName: String
+        let displayName: String
+        let endpoint: V3ManifestEndpoint
+    }
+
+    struct BundleDownloadCountrySection: Identifiable, Hashable {
+        let id: String
+        let countryCode: String
+        let countryName: String
+        let options: [BundleDownloadOption]
     }
 
     @Published var syncStatus: String = "not_synced"
@@ -144,9 +185,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var localObservationStatus: String = ""
     @Published var lastExportDirectoryPath: String = ""
     @Published var localObservationShareURL: URL?
+    @Published private(set) var bundleDownloadSections: [BundleDownloadCountrySection] = []
+    @Published private(set) var downloadedBundleCountByRegion: [String: Int] = [:]
+    @Published private(set) var downloadedBundleLatestVersionByRegion: [String: String] = [:]
+    @Published private(set) var expectedBundleBytesByRegion: [String: Int64] = [:]
+    @Published private(set) var activeDownloadOptionID: String?
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
     @Published private(set) var activePenaltyRules: SpeedPenaltyRuleSet
+    @Published private(set) var activePenaltyRulesFile: String
     @Published var audioAlertThresholdKmh: Int {
         didSet {
             let clamped = min(max(audioAlertThresholdKmh, 0), 80)
@@ -171,13 +218,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
     }
+    @Published var hideWelcomeScreen: Bool {
+        didSet {
+            guard hideWelcomeScreen != oldValue else {
+                return
+            }
+            UserDefaults.standard.set(hideWelcomeScreen, forKey: Self.hideWelcomeScreenDefaultsKey)
+        }
+    }
 
     private let bundleManager = V3BundleManager()
     private let localObservationStore = LocalObservationStore()
     private let locationManager = CLLocationManager()
     private let speechSynthesizer = AVSpeechSynthesizer()
+    private let captureConfirmationTonePlayer = ConfirmationTonePlayer()
     private let githubReleaseToken: String
-    private let manifestURL: URL?
+    private let bundledTargetsConfig: V3BundleTargetsConfig?
+    private let manifestEndpoints: [V3ManifestEndpoint]
     private var speedLimitService: V3SpeedLimitService?
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
@@ -193,27 +250,112 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var wasDrivingBanWarningActive = false
     private var lastDrivingBanWarningAt = Date.distantPast
     private var previousMatchedWayID: String?
-    private var speedCaptureCountdownTask: Task<Void, Never>?
     private var speedCapturePromptFallbackTask: Task<Void, Never>?
+    private var speedCaptureListeningTimeoutTask: Task<Void, Never>?
     private var awaitingSpeedCapturePromptCompletion = false
-    private var speedCaptureBaselineKmh: Int?
-    private var speedCaptureRequiresStableVehicleSpeed = false
+    private var speedCaptureRecognizer: SFSpeechRecognizer?
+    private var speedCaptureRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var speedCaptureRecognitionTask: SFSpeechRecognitionTask?
+    private var speedCaptureAudioEngine: AVAudioEngine?
+    private var speedCaptureStartListeningTask: Task<Void, Never>?
+    private var speedCaptureLatestTranscript: String = ""
+    private var speedCaptureDidResolve = false
     private var lastKnownSpeedLimitKmh: Int?
     private var localSpeedOverridesByWayID: [String: Int] = [:]
+    private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection?
+    private var limitStreetBaseName: String?
+    private var limitStreetRef: String?
     private var tunnelModeTracker = TunnelModeTracker()
-    private var locationSignalMonitorTask: Task<Void, Never>?
-    private var lastLocationFixAt = Date.distantPast
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
+    private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
+    private static let defaultHideWelcomeScreen = false
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let fallbackLookupRadiusM: Double = 50.0
     private static let minLookupRadiusM: Double = 50.0
     private static let maxLookupRadiusM: Double = 160.0
     private static let lookupRadiusAccuracyMultiplier: Double = 2.2
     private static let startupSeedActivationFloorProgress: Double = 0.92
-    private static let tunnelGpsLossTimeoutSeconds: TimeInterval = 6
+    private static let speedCaptureSpeechLocaleIdentifier = "de-DE"
+    private static let speedCaptureListeningWindowSeconds: UInt64 = 4
+    private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
+    private static let speedCaptureStartDelayNanos: UInt64 = 300_000_000
+    private struct SpeedCaptureWhitelistEntry {
+        let value: String
+        let count: Int
+        let contextualPhrases: [String]
+        let displayLabel: String
+    }
+    private struct ActiveLocalSpeedCorrection {
+        let maxspeedValue: String
+        let numericSpeedKmh: Int?
+        let anchorStreetName: String?
+        let anchorRef: String?
+        var wayIDs: Set<String>
+    }
+    // Source: https://taginfo.openstreetmap.org/api/4/key/values?key=maxspeed&filter=all&lang=de&sortname=count&sortorder=desc&rp=26
+    // Snapshot date: 2026-03-03
+    private static let speedCaptureWhitelistByPriority: [SpeedCaptureWhitelistEntry] = [
+        .init(value: "50", count: 4_638_156, contextualPhrases: ["50", "fuenfzig"], displayLabel: "50 km/h"),
+        .init(value: "30", count: 4_230_894, contextualPhrases: ["30", "dreissig"], displayLabel: "30 km/h"),
+        .init(value: "40", count: 1_489_813, contextualPhrases: ["40", "vierzig"], displayLabel: "40 km/h"),
+        .init(value: "60", count: 1_296_509, contextualPhrases: ["60", "sechzig"], displayLabel: "60 km/h"),
+        .init(value: "80", count: 990_073, contextualPhrases: ["80", "achtzig"], displayLabel: "80 km/h"),
+        .init(value: "70", count: 716_723, contextualPhrases: ["70", "siebzig"], displayLabel: "70 km/h"),
+        .init(value: "100", count: 657_012, contextualPhrases: ["100", "hundert"], displayLabel: "100 km/h"),
+        .init(value: "20", count: 634_365, contextualPhrases: ["20", "zwanzig"], displayLabel: "20 km/h"),
+        .init(value: "90", count: 480_306, contextualPhrases: ["90", "neunzig"], displayLabel: "90 km/h"),
+        .init(value: "120", count: 266_492, contextualPhrases: ["120", "hundertzwanzig"], displayLabel: "120 km/h"),
+        .init(value: "10", count: 157_726, contextualPhrases: ["10", "zehn"], displayLabel: "10 km/h"),
+        .init(value: "110", count: 152_915, contextualPhrases: ["110", "hundertzehn"], displayLabel: "110 km/h"),
+        .init(value: "130", count: 111_960, contextualPhrases: ["130", "hundertdreissig"], displayLabel: "130 km/h"),
+        .init(value: "walk", count: 5_788, contextualPhrases: ["fussgaengerzone", "fussgaenger zone", "walk"], displayLabel: "Fussgaengerzone"),
+    ]
+    private static let speedCaptureValueSet: Set<String> = Set(speedCaptureWhitelistByPriority.map(\.value))
+    private static let speedCapturePhraseToValue: [String: String] = [
+        "zehn": "10",
+        "zwanzig": "20",
+        "dreissig": "30",
+        "vierzig": "40",
+        "fuenfzig": "50",
+        "sechzig": "60",
+        "siebzig": "70",
+        "achtzig": "80",
+        "neunzig": "90",
+        "hundert": "100",
+        "hundert zehn": "110",
+        "hundertzehn": "110",
+        "einhundert zehn": "110",
+        "einhundertzehn": "110",
+        "hundert zwanzig": "120",
+        "hundertzwanzig": "120",
+        "einhundert zwanzig": "120",
+        "einhundertzwanzig": "120",
+        "hundert dreissig": "130",
+        "hundertdreissig": "130",
+        "einhundert dreissig": "130",
+        "einhundertdreissig": "130",
+        "fussgaengerzone": "walk",
+        "fussgaenger zone": "walk",
+        "fussgaengerbereich": "walk",
+        "walk": "walk",
+    ]
+    private static let speedCaptureContextualStrings: [String] = {
+        var out: [String] = []
+        var seen = Set<String>()
+        for entry in speedCaptureWhitelistByPriority {
+            let tokens = [entry.value] + entry.contextualPhrases
+            for token in tokens {
+                guard seen.insert(token).inserted else {
+                    continue
+                }
+                out.append(token)
+            }
+        }
+        return out
+    }()
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -275,16 +417,314 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return nil
     }
 
+    static func defaultManifestEndpoints(
+        bundle: Bundle = .main,
+        preferredCountryCode: String? = "DEU"
+    ) -> [V3ManifestEndpoint] {
+        var endpoints: [V3ManifestEndpoint] = []
+        if let config = try? V3BundleTargetsConfig.loadBundled(bundle: bundle) {
+            endpoints.append(contentsOf: config.manifestEndpoints(preferredCountryCode: preferredCountryCode))
+        }
+        if let explicitURL = defaultManifestURL(bundle: bundle) {
+            endpoints.append(
+                V3ManifestEndpoint(
+                    countryID: "custom",
+                    countryCode: "UNK",
+                    regionID: "custom",
+                    manifestRegion: "custom",
+                    manifestURL: explicitURL
+                )
+            )
+        }
+        var seen = Set<URL>()
+        var deduped: [V3ManifestEndpoint] = []
+        for endpoint in endpoints {
+            guard seen.insert(endpoint.manifestURL).inserted else {
+                continue
+            }
+            deduped.append(endpoint)
+        }
+        return deduped
+    }
+
+    private func refreshDownloadedBundleInventory() async {
+        do {
+            let downloaded = try await bundleManager.listDownloadedBundles()
+            var countByRegion: [String: Int] = [:]
+            var latestByRegion: [String: String] = [:]
+            for bundle in downloaded {
+                let key = bundle.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                countByRegion[key, default: 0] += 1
+                if let existing = latestByRegion[key] {
+                    if bundle.bundleVersion > existing {
+                        latestByRegion[key] = bundle.bundleVersion
+                    }
+                } else {
+                    latestByRegion[key] = bundle.bundleVersion
+                }
+            }
+            downloadedBundleCountByRegion = countByRegion
+            downloadedBundleLatestVersionByRegion = latestByRegion
+        } catch {
+            Self.logger.warning("bundle inventory refresh failed: \(error.localizedDescription, privacy: .public)")
+            downloadedBundleCountByRegion = [:]
+            downloadedBundleLatestVersionByRegion = [:]
+        }
+    }
+
+    private func buildBundleDownloadSections() -> [BundleDownloadCountrySection] {
+        guard let config = bundledTargetsConfig else {
+            return []
+        }
+        var sections: [BundleDownloadCountrySection] = []
+        let locale = Locale(identifier: "de_DE")
+        for country in config.countries {
+            let countryCode = country.countryCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            let countryName = localizedCountryName(for: country, locale: locale)
+            let endpointsForCountry = manifestEndpoints.filter {
+                $0.countryID.lowercased() == country.countryID.lowercased()
+            }
+            guard !endpointsForCountry.isEmpty else {
+                continue
+            }
+            let options = endpointsForCountry.map { endpoint in
+                BundleDownloadOption(
+                    id: "\(endpoint.countryID)|\(endpoint.manifestRegion)",
+                    countryCode: countryCode,
+                    countryName: countryName,
+                    displayName: localizedRegionName(for: endpoint, countryName: countryName, locale: locale),
+                    endpoint: endpoint
+                )
+            }.sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+            sections.append(
+                BundleDownloadCountrySection(
+                    id: countryCode,
+                    countryCode: countryCode,
+                    countryName: countryName,
+                    options: options
+                )
+            )
+        }
+        return sections.sorted {
+            $0.countryName.localizedCaseInsensitiveCompare($1.countryName) == .orderedAscending
+        }
+    }
+
+    private func refreshExpectedBundleSizes() async {
+        var sizes: [String: Int64] = [:]
+        for section in bundleDownloadSections {
+            for option in section.options {
+                let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+                if sizes[primaryRegion] == nil,
+                   let bytes = await fetchExpectedBundleBytes(from: option.endpoint.manifestURL) {
+                    sizes[primaryRegion] = bytes
+                }
+
+                if sizes[primaryRegion] == nil,
+                   let fallbackURL = countryFallbackManifestURL(for: option),
+                   let bytes = await fetchExpectedBundleBytes(from: fallbackURL) {
+                    let countryRegion = countryManifestRegionToken(for: option)
+                    sizes[countryRegion] = bytes
+                }
+            }
+        }
+        expectedBundleBytesByRegion = sizes
+    }
+
+    private func fetchExpectedBundleBytes(from manifestURL: URL) async -> Int64? {
+        do {
+            var request = URLRequest(url: manifestURL)
+            request.timeoutInterval = 15
+            let host = manifestURL.host?.lowercased() ?? ""
+            if !githubReleaseToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               host.contains("github.com") || host.contains("githubusercontent.com") {
+                request.setValue("Bearer \(githubReleaseToken)", forHTTPHeaderField: "Authorization")
+                request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
+            }
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+                return nil
+            }
+            let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
+            return manifest.db.bytes > 0 ? manifest.db.bytes : nil
+        } catch {
+            return nil
+        }
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        guard bytes > 0 else {
+            return "0 MB"
+        }
+        let gb = Double(bytes) / 1_000_000_000.0
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.numberStyle = .decimal
+        if gb >= 1.0 {
+            formatter.minimumFractionDigits = 0
+            formatter.maximumFractionDigits = gb < 10 ? 1 : 0
+            let value = formatter.string(from: NSNumber(value: gb)) ?? String(format: "%.1f", gb)
+            return "\(value) GB"
+        }
+        let mb = Double(bytes) / 1_000_000.0
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 0
+        let value = formatter.string(from: NSNumber(value: mb.rounded())) ?? String(Int(mb.rounded()))
+        return "\(value) MB"
+    }
+
+    private func localizedCountryName(for country: V3BundleTargetCountryConfig, locale: Locale) -> String {
+        let iso2 = country.iso2?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
+        if let localized = locale.localizedString(forRegionCode: iso2), !localized.isEmpty {
+            return localized
+        }
+        let raw = country.countryID.replacingOccurrences(of: "-", with: " ").replacingOccurrences(of: "_", with: " ")
+        return String(raw.prefix(1)).uppercased(with: locale) + String(raw.dropFirst())
+    }
+
+    private func localizedRegionName(for endpoint: V3ManifestEndpoint, countryName: String, locale: Locale) -> String {
+        let normalizedCountryID = endpoint.countryID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedRegionID = endpoint.regionID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalizedCountryID == normalizedRegionID {
+            return countryName
+        }
+        if let configured = endpoint.regionName?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !configured.isEmpty {
+            return configured
+        }
+        let tail = normalizedRegionID.split(separator: "/").last.map(String.init) ?? normalizedRegionID
+
+        let words = tail
+            .replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+            .split(separator: " ")
+        let title = words
+            .map { token in
+                String(token.prefix(1)).uppercased(with: locale) + String(token.dropFirst())
+            }
+            .joined(separator: " ")
+        return title.isEmpty ? countryName : title
+    }
+
+    private func normalizedManifestRegion(_ raw: String) -> String {
+        raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func idToken(_ raw: String) -> String {
+        raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "_", with: "-")
+            .replacingOccurrences(of: "/", with: "-")
+    }
+
+    private func countryManifestRegionToken(for option: BundleDownloadOption) -> String {
+        idToken(option.endpoint.countryID)
+    }
+
+    private func countryFallbackManifestURL(for option: BundleDownloadOption) -> URL? {
+        let countryToken = countryManifestRegionToken(for: option)
+        guard !countryToken.isEmpty else {
+            return nil
+        }
+        guard let components = URLComponents(url: option.endpoint.manifestURL, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        let pathParts = components.path.split(separator: "/", omittingEmptySubsequences: true)
+        guard pathParts.count >= 6,
+              pathParts[2] == "releases",
+              pathParts[3] == "download" else {
+            return nil
+        }
+        let owner = String(pathParts[0])
+        let repo = String(pathParts[1])
+        let manifestFile = "\(countryToken)_manifest.json"
+        var rebuilt = components
+        rebuilt.path = "/\(owner)/\(repo)/releases/download/\(countryToken)/\(manifestFile)"
+        rebuilt.query = nil
+        rebuilt.fragment = nil
+        return rebuilt.url
+    }
+
+    private func normalizedCountryCode(_ raw: String?) -> String? {
+        guard let raw else {
+            return nil
+        }
+        let code = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard code.count == 3 else {
+            return nil
+        }
+        return code
+    }
+
+    private func inferCountryCodeFromDBPath(_ dbPath: String) -> String? {
+        let fileName = URL(fileURLWithPath: dbPath).lastPathComponent.uppercased()
+        if fileName.count >= 3 {
+            let prefix = String(fileName.prefix(3))
+            if prefix.allSatisfy(\.isLetter) {
+                return prefix
+            }
+        }
+        return nil
+    }
+
+    private func applyPenaltyRulesForActiveBundle(preferredCountryCode: String? = nil) async {
+        var context: PenaltyRuleContext?
+        if !activeDBPath.isEmpty {
+            context = try? await bundleManager.resolvePenaltyRuleContext(forDBPath: activeDBPath)
+        }
+
+        if let rulesPath = context?.rulesPath {
+            do {
+                let fileURL = URL(fileURLWithPath: rulesPath)
+                let rules = try SpeedPenaltyRuleSet.loadFile(at: fileURL)
+                activePenaltyRules = rules
+                activePenaltyRulesFile = fileURL.lastPathComponent
+                return
+            } catch {
+                Self.logger.warning("rules load from local bundle failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        let countryCode = normalizedCountryCode(preferredCountryCode)
+            ?? normalizedCountryCode(context?.countryCode)
+            ?? inferCountryCodeFromDBPath(activeDBPath)
+            ?? "DEU"
+        let bundledStem = "\(countryCode)-rules"
+        if let rules = try? SpeedPenaltyRuleSet.loadBundled(named: bundledStem) {
+            activePenaltyRules = rules
+            activePenaltyRulesFile = "\(bundledStem).json"
+            return
+        }
+        if let fallbackBundled = try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules") {
+            activePenaltyRules = fallbackBundled
+            activePenaltyRulesFile = "DEU-rules.json"
+            return
+        }
+        activePenaltyRules = SpeedPenaltyRuleSet.fallbackDEU()
+        activePenaltyRulesFile = "DEU-rules.json"
+    }
+
     override init() {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
+        let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
         activePenaltyRules = bundledRules
+        activePenaltyRulesFile = "DEU-rules.json"
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
+        hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
         githubReleaseToken = Self.defaultGitHubReleaseToken()
-        manifestURL = Self.defaultManifestURL()
+        bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
+        manifestEndpoints = Self.defaultManifestEndpoints()
+        let endpointCount = manifestEndpoints.count
+        Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -293,6 +733,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         beginStartupDataLoadIfNeeded()
         Task { @MainActor [weak self] in
             await self?.refreshLocalObservations()
+            await self?.refreshDownloadedBundleInventory()
+            await self?.refreshExpectedBundleSizes()
         }
     }
 
@@ -302,6 +744,291 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var isSyncingNow: Bool {
         startupTask != nil || syncTask != nil || syncStatus == "syncing" || syncStatus == "bootstrapping"
+    }
+
+    var configuredManifestEndpointCount: Int {
+        manifestEndpoints.count
+    }
+
+    var hasGitHubReleaseToken: Bool {
+        !githubReleaseToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var configuredManifestCountryCodes: String {
+        let codes = Set(
+            manifestEndpoints
+                .map { $0.countryCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() }
+                .filter { !$0.isEmpty && $0 != "UNK" }
+        )
+        if codes.isEmpty {
+            return "n/a"
+        }
+        return codes.sorted().joined(separator: ", ")
+    }
+
+    var activeDatabaseFileName: String {
+        guard !activeDBPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return "n/a"
+        }
+        return URL(fileURLWithPath: activeDBPath).lastPathComponent
+    }
+
+    var activeDatabaseOriginLabel: String {
+        guard !activeDBPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return "none"
+        }
+        if activeBundleVersion.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "seed" {
+            return "seed"
+        }
+        if activeDBPath.contains("/bundles/") {
+            return "downloaded"
+        }
+        return "embedded"
+    }
+
+    func isBundleDownloaded(_ option: BundleDownloadOption) -> Bool {
+        let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+        if downloadedBundleCountByRegion[primaryRegion, default: 0] > 0 {
+            return true
+        }
+        let countryRegion = countryManifestRegionToken(for: option)
+        if countryRegion != primaryRegion,
+           downloadedBundleCountByRegion[countryRegion, default: 0] > 0 {
+            return true
+        }
+        return false
+    }
+
+    func downloadedBundleStatusText(_ option: BundleDownloadOption) -> String {
+        let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+        let countryRegion = countryManifestRegionToken(for: option)
+
+        let count: Int
+        let latest: String
+        if downloadedBundleCountByRegion[primaryRegion, default: 0] > 0 {
+            count = downloadedBundleCountByRegion[primaryRegion, default: 0]
+            latest = downloadedBundleLatestVersionByRegion[primaryRegion] ?? "n/a"
+        } else if countryRegion != primaryRegion, downloadedBundleCountByRegion[countryRegion, default: 0] > 0 {
+            count = downloadedBundleCountByRegion[countryRegion, default: 0]
+            latest = downloadedBundleLatestVersionByRegion[countryRegion] ?? "n/a"
+        } else {
+            let size = bundleSizeText(for: option)
+            return size.isEmpty ? "" : "Dateigroesse: \(size)"
+        }
+
+        if count == 1 {
+            return "Installiert (\(latest))"
+        }
+        return "Installiert (\(count)x, neueste \(latest))"
+    }
+
+    func bundleSizeText(for option: BundleDownloadOption) -> String {
+        let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+        let countryRegion = countryManifestRegionToken(for: option)
+        if let bytes = expectedBundleBytesByRegion[primaryRegion], bytes > 0 {
+            return formatBytes(bytes)
+        }
+        if countryRegion != primaryRegion, let bytes = expectedBundleBytesByRegion[countryRegion], bytes > 0 {
+            return formatBytes(bytes)
+        }
+        return ""
+    }
+
+    var hasActiveBundleDownload: Bool {
+        guard let activeDownloadOptionID,
+              !activeDownloadOptionID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        return syncStatus == "syncing" || syncTask != nil
+    }
+
+    func isActiveBundleDownload(_ option: BundleDownloadOption) -> Bool {
+        hasActiveBundleDownload && activeDownloadOptionID == option.id
+    }
+
+    func activeBundleDownloadProgress(_ option: BundleDownloadOption) -> Double? {
+        guard isActiveBundleDownload(option) else {
+            return nil
+        }
+        let total = max(syncProgressTotalBytes, 0)
+        guard total > 0 else {
+            return nil
+        }
+        let completed = min(max(syncProgressCompletedBytes, 0), total)
+        return Double(completed) / Double(total)
+    }
+
+    func activeBundleDownloadBytesText(_ option: BundleDownloadOption) -> String {
+        guard isActiveBundleDownload(option) else {
+            return ""
+        }
+        let completed = max(syncProgressCompletedBytes, 0)
+        let total = max(syncProgressTotalBytes, 0)
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        if total > 0 {
+            return "\(formatter.string(fromByteCount: completed)) / \(formatter.string(fromByteCount: total))"
+        }
+        if completed > 0 {
+            return formatter.string(fromByteCount: completed)
+        }
+        return ""
+    }
+
+    func downloadSelectedBundle(_ option: BundleDownloadOption) {
+        guard startupTask == nil else {
+            let message = "Download blockiert: Startup-Datenvorbereitung laeuft noch."
+            syncProgressDetail = message
+            maintenanceMessage = message
+            Self.logger.notice("download_selected blocked reason=startup_task_running bundle=\(option.displayName, privacy: .public)")
+            return
+        }
+        guard syncTask == nil else {
+            let message = "Download blockiert: Es laeuft bereits eine Synchronisierung."
+            syncProgressDetail = message
+            maintenanceMessage = message
+            Self.logger.notice("download_selected blocked reason=sync_already_running bundle=\(option.displayName, privacy: .public)")
+            return
+        }
+        activeDownloadOptionID = option.id
+        syncTask = Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            beginSyncBackgroundTask()
+            defer {
+                endSyncBackgroundTask()
+                activeDownloadOptionID = nil
+                syncTask = nil
+            }
+            do {
+                lastError = ""
+                syncProgressStage = "preparing"
+                syncProgressDetail = "Preparing sync"
+                syncProgressCompletedBytes = 0
+                syncProgressTotalBytes = 0
+                syncProgressBytesPerSecond = 0
+                syncProgressETASeconds = nil
+                syncPartDownloads = []
+                maintenanceMessage = "Download gestartet: \(option.displayName)"
+                Self.logger.notice(
+                    "download_selected start bundle=\(option.displayName, privacy: .public) region=\(option.endpoint.manifestRegion, privacy: .public) url=\(option.endpoint.manifestURL.absoluteString, privacy: .public)"
+                )
+                await bundleManager.setGitHubToken(githubReleaseToken)
+
+                if githubReleaseToken.isEmpty {
+                    let host = option.endpoint.manifestURL.host?.lowercased() ?? ""
+                    if host.contains("github.com") || host.contains("githubusercontent.com") {
+                        throw ConsumerAppError.network(
+                            "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
+                        )
+                    }
+                }
+
+                syncStatus = "syncing"
+                let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+                let countryRegion = countryManifestRegionToken(for: option)
+                let fallbackManifestURL = countryFallbackManifestURL(for: option)
+
+                let sync: BundleSyncResult
+                var usedCountryFallback = false
+                do {
+                    sync = try await bundleManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
+                        Task { @MainActor [weak self] in
+                            self?.applySyncProgress(progress)
+                        }
+                    }
+                } catch {
+                    let shouldTryCountryFallback = countryRegion != primaryRegion && fallbackManifestURL != nil
+                    guard shouldTryCountryFallback, let fallbackManifestURL else {
+                        throw error
+                    }
+                    usedCountryFallback = true
+                    Self.logger.notice(
+                        "download_selected retry country_fallback bundle=\(option.displayName, privacy: .public) fallback_url=\(fallbackManifestURL.absoluteString, privacy: .public)"
+                    )
+                    sync = try await bundleManager.syncFromManifestURL(fallbackManifestURL) { progress in
+                        Task { @MainActor [weak self] in
+                            self?.applySyncProgress(progress)
+                        }
+                    }
+                }
+                activeBundleVersion = sync.bundleVersion
+                activeDBPath = sync.dbPath
+                speedLimitService = V3SpeedLimitService(dbPath: sync.dbPath)
+                await applyPenaltyRulesForActiveBundle(preferredCountryCode: option.countryCode)
+                syncStatus = "ready_\(sync.mode.rawValue)"
+                syncProgressStage = "completed"
+                syncProgressDetail = "Sync completed"
+                syncProgressBytesPerSecond = 0
+                syncProgressETASeconds = 0
+                syncPartDownloads = []
+                if usedCountryFallback {
+                    maintenanceMessage = "Bundle geladen (Landes-Fallback): \(option.displayName) (\(sync.bundleVersion))"
+                } else {
+                    maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
+                }
+                await refreshDownloadedBundleInventory()
+            } catch {
+                syncStatus = "sync_failed"
+                syncProgressStage = "failed"
+                syncProgressETASeconds = nil
+                syncPartDownloads = []
+                lastError = error.localizedDescription
+                maintenanceMessage = "Download fehlgeschlagen: \(option.displayName) (\(error.localizedDescription))"
+                Self.logger.error(
+                    "download_selected failed bundle=\(option.displayName, privacy: .public) region=\(option.endpoint.manifestRegion, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                )
+                if !activeDBPath.isEmpty {
+                    speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    await applyPenaltyRulesForActiveBundle()
+                }
+            }
+        }
+    }
+
+    func deleteSelectedBundle(_ option: BundleDownloadOption) {
+        guard startupTask == nil else {
+            maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
+            return
+        }
+        guard syncTask == nil else {
+            maintenanceMessage = "Synchronisierung laeuft bereits."
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
+                let countryRegion = countryManifestRegionToken(for: option)
+                var removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: primaryRegion)
+                if removed == 0, countryRegion != primaryRegion {
+                    removed = try await bundleManager.removeDownloadedBundles(forManifestRegion: countryRegion)
+                }
+                if removed > 0 {
+                    let activeURL = try await bundleManager.activeDatabaseURL()
+                    let activeExists = activeURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+                    if !activeExists {
+                        let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                        activeBundleVersion = bootstrap.bundleVersion
+                        activeDBPath = bootstrap.dbPath
+                        speedLimitService = bootstrap.dbPath.isEmpty ? nil : V3SpeedLimitService(dbPath: bootstrap.dbPath)
+                        await applyPenaltyRulesForActiveBundle()
+                        syncStatus = "ready_\(bootstrap.mode.rawValue)"
+                    }
+                    maintenanceMessage = "Bundle geloescht: \(option.displayName)"
+                } else {
+                    maintenanceMessage = "Kein heruntergeladenes Bundle gefunden: \(option.displayName)"
+                }
+                await refreshDownloadedBundleInventory()
+            } catch {
+                let text = "Bundle konnte nicht geloescht werden: \(error.localizedDescription)"
+                maintenanceMessage = text
+                lastError = text
+            }
+        }
     }
 
     var isInSpeedCaptureMode: Bool {
@@ -319,21 +1046,50 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         switch speedCaptureMode {
         case .idle:
             return nil
-        case .speakingPrompt, .saving:
+        case .speakingPrompt, .listening, .evaluating, .saving:
             return "?"
-        case .countdown(let seconds):
-            return "\(seconds)"
+        }
+    }
+
+    var speedCapturePrimaryMetricText: String? {
+        switch speedCaptureMode {
+        case .idle:
+            return nil
+        case .speakingPrompt, .listening:
+            return "Jetzt"
+        case .evaluating:
+            return "Pruefe"
+        case .saving:
+            return "Speichere"
+        }
+    }
+
+    var speedCaptureSecondaryMetricText: String? {
+        switch speedCaptureMode {
+        case .idle:
+            return nil
+        case .speakingPrompt, .listening:
+            return "sprechen"
+        case .evaluating:
+            return "Eingabe"
+        case .saving:
+            return "Wert"
         }
     }
 
     func bootstrapAndSync() {
+        activeDownloadOptionID = nil
         guard startupTask == nil else {
-            syncProgressDetail = "Startup data preparation is still running"
+            let message = "Synchronisierung blockiert: Startup-Datenvorbereitung laeuft noch."
+            syncProgressDetail = message
+            maintenanceMessage = message
             Self.logger.notice("sync_request rejected reason=startup_task_running")
             return
         }
         guard syncTask == nil else {
-            syncProgressDetail = "Sync already in progress"
+            let message = "Synchronisierung laeuft bereits."
+            syncProgressDetail = message
+            maintenanceMessage = message
             Self.logger.notice("sync_request ignored reason=sync_already_running")
             return
         }
@@ -367,29 +1123,42 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     "sync bootstrap_ready version=\(bootstrap.bundleVersion, privacy: .public) db=\(bootstrap.dbPath, privacy: .public)"
                 )
 
-                guard let manifestURL else {
+                guard !manifestEndpoints.isEmpty else {
                     syncStatus = "seed_only"
                     if !activeDBPath.isEmpty {
                         speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                        await applyPenaltyRulesForActiveBundle()
                     }
-                    Self.logger.notice("sync seed_only no_manifest_url")
+                    Self.logger.notice("sync seed_only no_manifest_endpoint")
                     return
                 }
 
-                let manifestHost = manifestURL.host?.lowercased() ?? ""
-                if githubReleaseToken.isEmpty,
-                   (manifestHost.contains("github.com") || manifestHost.contains("githubusercontent.com")) {
+                let hasGitHubManifest = manifestEndpoints.contains { endpoint in
+                    let host = endpoint.manifestURL.host?.lowercased() ?? ""
+                    return host.contains("github.com") || host.contains("githubusercontent.com")
+                }
+                if githubReleaseToken.isEmpty, hasGitHubManifest {
                     syncStatus = "sync_failed"
                     lastError = "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
                     if !activeDBPath.isEmpty {
                         speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                        await applyPenaltyRulesForActiveBundle()
                     }
                     Self.logger.error("sync failed missing_github_token")
                     return
                 }
 
                 syncStatus = "syncing"
-                let sync = try await bundleManager.syncFromManifestURL(manifestURL) { progress in
+                let preferredCountryCode = normalizedCountryCode(activePenaltyRules.countryCode)
+                    ?? inferCountryCodeFromDBPath(activeDBPath)
+                    ?? "DEU"
+                Self.logger.notice(
+                    "sync endpoints run preferred_country=\(preferredCountryCode, privacy: .public) endpoint_count=\(manifestEndpoints.count, privacy: .public)"
+                )
+                let sync = try await bundleManager.syncFromManifestEndpoints(
+                    manifestEndpoints,
+                    preferredCountryCode: preferredCountryCode
+                ) { progress in
                     Task { @MainActor [weak self] in
                         self?.applySyncProgress(progress)
                     }
@@ -397,6 +1166,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
                 speedLimitService = V3SpeedLimitService(dbPath: sync.dbPath)
+                await applyPenaltyRulesForActiveBundle()
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
                 syncProgressDetail = "Sync completed"
@@ -404,6 +1174,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressETASeconds = 0
                 syncPartDownloads = []
                 lastError = ""
+                await refreshDownloadedBundleInventory()
                 Self.logger.notice(
                     "sync success mode=\(sync.mode.rawValue, privacy: .public) version=\(sync.bundleVersion, privacy: .public) db=\(sync.dbPath, privacy: .public)"
                 )
@@ -415,6 +1186,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 lastError = error.localizedDescription
                 if !activeDBPath.isEmpty {
                     speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    await applyPenaltyRulesForActiveBundle()
                 }
                 Self.logger.error("sync failed error=\(error.localizedDescription, privacy: .public)")
             }
@@ -451,6 +1223,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 maintenanceMessage = text
                 lastError = text
                 Self.logger.error("maintenance_flush failed error=\(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
+    func deleteDownloadedBundlesKeepingSeed() {
+        guard startupTask == nil else {
+            maintenanceMessage = "Startup-Datenvorbereitung laeuft noch."
+            return
+        }
+        guard syncTask == nil else {
+            maintenanceMessage = "Synchronisierung laeuft bereits."
+            return
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()
+                let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                activeBundleVersion = bootstrap.bundleVersion
+                activeDBPath = bootstrap.dbPath
+                speedLimitService = bootstrap.dbPath.isEmpty ? nil : V3SpeedLimitService(dbPath: bootstrap.dbPath)
+                await applyPenaltyRulesForActiveBundle()
+                syncStatus = "ready_\(bootstrap.mode.rawValue)"
+                lastError = ""
+                await refreshDownloadedBundleInventory()
+                maintenanceMessage = removed > 0
+                    ? "Heruntergeladene Datenbanken geloescht (\(removed)). Seed ist aktiv."
+                    : "Keine heruntergeladene Datenbank gefunden. Seed ist aktiv."
+                Self.logger.notice("maintenance delete_downloaded_bundles removed=\(removed, privacy: .public)")
+            } catch {
+                let text = "Heruntergeladene Datenbanken konnten nicht geloescht werden: \(error.localizedDescription)"
+                maintenanceMessage = text
+                lastError = text
+                Self.logger.error("maintenance delete_downloaded_bundles failed error=\(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -527,7 +1336,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     throw ConsumerAppError.io("No local database available after startup recovery")
                 }
                 speedLimitService = V3SpeedLimitService(dbPath: startupResult.dbPath)
+                await applyPenaltyRulesForActiveBundle()
                 syncStatus = "ready_\(startupResult.mode.rawValue)"
+                await refreshDownloadedBundleInventory()
                 startupProgress = 1
                 startupDetail = "Datenbank ist bereit"
                 startupDataState = .ready
@@ -655,8 +1466,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         isDriving = true
         resetTunnelModeTracking()
-        lastLocationFixAt = Date.distantPast
-        startLocationSignalMonitor()
         driveStatus = "requesting_location"
         let auth = locationManager.authorizationStatus
         if auth == .notDetermined {
@@ -673,7 +1482,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func stopDriving() {
         isDriving = false
         locationManager.stopUpdatingLocation()
-        stopLocationSignalMonitor()
         driveStatus = "stopped"
         cancelSpeedCapture(reason: nil)
         resetTunnelModeTracking()
@@ -682,6 +1490,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         wasDrivingBanWarningActive = false
         lastDrivingBanWarningAt = .distantPast
         previousMatchedWayID = nil
+        activeLocalSpeedCorrection = nil
+        limitStreetBaseName = nil
+        limitStreetRef = nil
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
@@ -698,39 +1509,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         syncTunnelModePublishedState()
     }
 
-    private func startLocationSignalMonitor() {
-        locationSignalMonitorTask?.cancel()
-        locationSignalMonitorTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                guard let self else {
-                    return
-                }
-                guard self.driveStatus == "running" else {
-                    continue
-                }
-                guard self.tunnelModeTracker.state == .active else {
-                    continue
-                }
-                let silence = Date().timeIntervalSince(self.lastLocationFixAt)
-                if silence >= Self.tunnelGpsLossTimeoutSeconds {
-                    self.tunnelModeTracker.markSignalLost()
-                    self.syncTunnelModePublishedState()
-                    self.lastLookupStatus = "gps_shadow_tunnel"
-                }
-            }
-        }
-    }
-
-    private func stopLocationSignalMonitor() {
-        locationSignalMonitorTask?.cancel()
-        locationSignalMonitorTask = nil
-    }
-
     func resetDiagnostics() {
         lookupEventLog.removeAll(keepingCapacity: false)
         gpsFixCount = 0
         previousMatchedWayID = nil
+        activeLocalSpeedCorrection = nil
+        limitStreetBaseName = nil
+        limitStreetRef = nil
         lastLookupStatus = "idle"
         lastLookupQueryMs = 0
         lastLookupCandidateCount = 0
@@ -744,7 +1529,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         lastLookupCityContainingBoundaries = 0
         lastLookupCityPlaceCandidates = 0
         resetTunnelModeTracking()
-        lastLocationFixAt = Date.distantPast
 
         guard let logURL = prepareGPSLogFileIfNeeded() else {
             return
@@ -761,52 +1545,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard !isInSpeedCaptureMode else {
             return
         }
-
-        let roundedCurrentSpeed = max(0, Int(round(currentSpeedKmh)))
-        let currentLimit = max(0, speedLimitKmh ?? 0)
-        let rememberedLimit = max(0, lastKnownSpeedLimitKmh ?? 0)
-        let baseline: Int?
-        if roundedCurrentSpeed > 0 {
-            baseline = roundedCurrentSpeed
-            speedCaptureRequiresStableVehicleSpeed = true
-        } else if currentLimit > 0 {
-            baseline = currentLimit
-            speedCaptureRequiresStableVehicleSpeed = false
-        } else if rememberedLimit > 0 {
-            baseline = rememberedLimit
-            speedCaptureRequiresStableVehicleSpeed = false
-        } else {
-            baseline = nil
-            speedCaptureRequiresStableVehicleSpeed = false
-        }
-
         if speechSynthesizer.isSpeaking {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
-        speedCaptureBaselineKmh = baseline
-        speedCaptureMode = .speakingPrompt
-        awaitingSpeedCapturePromptCompletion = true
-        localObservationStatus = baseline != nil
-            ? "Geschwindigkeitserfassung gestartet."
-            : "Geschwindigkeitserfassung gestartet, aber keine Referenzgeschwindigkeit erkannt."
-        let utterance = AVSpeechUtterance(string: "Geschwindigkeit erfassen, Regelgeschwindigkeit 5 Sekunden halten")
-        utterance.voice = AVSpeechSynthesisVoice(language: "de-DE")
-            ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? "de-DE")
-        utterance.rate = 0.46
-        speechSynthesizer.speak(utterance)
-
+        activeLocalSpeedCorrection = nil
+        awaitingSpeedCapturePromptCompletion = false
         speedCapturePromptFallbackTask?.cancel()
-        speedCapturePromptFallbackTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 8_000_000_000)
-            guard !Task.isCancelled else {
+        speedCapturePromptFallbackTask = nil
+        speedCaptureStartListeningTask?.cancel()
+        speedCaptureStartListeningTask = nil
+        speedCaptureMode = .speakingPrompt
+        localObservationStatus = "Jetzt sprechen."
+        speedCaptureLatestTranscript = ""
+        speedCaptureDidResolve = false
+        Task { @MainActor [weak self] in
+            guard let self else {
                 return
             }
-            await MainActor.run {
-                guard let self, self.awaitingSpeedCapturePromptCompletion else {
-                    return
-                }
-                self.awaitingSpeedCapturePromptCompletion = false
-                self.startSpeedCaptureCountdown()
+            do {
+                try await self.prepareSpeedCaptureRecognizer()
+                self.startSpeedCaptureListening()
+            } catch {
+                self.cancelSpeedCapture(reason: "Spracherfassung nicht verfuegbar: \(error.localizedDescription)")
             }
         }
     }
@@ -1055,95 +1815,490 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
-    private func startSpeedCaptureCountdown() {
-        speedCaptureCountdownTask?.cancel()
-        speedCaptureMode = .countdown(5)
-        speedCaptureCountdownTask = Task { [weak self] in
-            guard let self else {
+    private func startSpeedCapturePromptSpeech() {
+        if speechSynthesizer.isSpeaking {
+            speechSynthesizer.stopSpeaking(at: .immediate)
+        }
+        awaitingSpeedCapturePromptCompletion = true
+        speedCaptureMode = .speakingPrompt
+        let utterance = AVSpeechUtterance(string: "Geschwindigkeit erfassen. Jetzt sprechen.")
+        utterance.voice = AVSpeechSynthesisVoice(language: Self.speedCaptureSpeechLocaleIdentifier)
+            ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? Self.speedCaptureSpeechLocaleIdentifier)
+        utterance.rate = 0.46
+        speechSynthesizer.speak(utterance)
+
+        speedCapturePromptFallbackTask?.cancel()
+        speedCapturePromptFallbackTask = Task { [weak self] in
+            let fallbackDelayNanos = 3_800_000_000 as UInt64
+            try? await Task.sleep(nanoseconds: fallbackDelayNanos)
+            guard !Task.isCancelled else {
                 return
             }
-            for second in stride(from: 5, through: 1, by: -1) {
-                let abort = await MainActor.run { () -> Bool in
-                    if self.speedCaptureRequiresStableVehicleSpeed {
-                        guard let baseline = self.speedCaptureBaselineKmh else {
-                            self.cancelSpeedCapture(reason: "Keine Referenzgeschwindigkeit erkannt. Bitte erneut starten.")
-                            return true
-                        }
-                        let current = Int(round(self.currentSpeedKmh))
-                        if abs(current - baseline) > 3 {
-                            self.cancelSpeedCapture(reason: "Geschwindigkeit nicht stabil gehalten. Bitte erneut starten.")
-                            return true
-                        }
-                    }
-                    self.speedCaptureMode = .countdown(second)
-                    return false
-                }
-                if abort || Task.isCancelled {
+            await MainActor.run {
+                guard let self, self.awaitingSpeedCapturePromptCompletion else {
                     return
                 }
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-            }
-            await MainActor.run {
-                self.commitSpeedCaptureObservation()
+                self.awaitingSpeedCapturePromptCompletion = false
+                self.scheduleSpeedCaptureListeningStart()
             }
         }
     }
 
-    private func commitSpeedCaptureObservation() {
+    private func scheduleSpeedCaptureListeningStart() {
+        speedCaptureStartListeningTask?.cancel()
+        speedCaptureStartListeningTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.speedCaptureStartDelayNanos)
+            guard !Task.isCancelled else {
+                return
+            }
+            await MainActor.run {
+                guard let self else {
+                    return
+                }
+                guard self.speedCaptureMode == .speakingPrompt else {
+                    return
+                }
+                self.startSpeedCaptureListening()
+            }
+        }
+    }
+
+    private func startSpeedCaptureListening() {
+        guard !speedCaptureDidResolve else {
+            return
+        }
+        guard speedCaptureMode == .speakingPrompt || speedCaptureMode == .listening else {
+            return
+        }
+        guard let recognizer = speedCaptureRecognizer else {
+            cancelSpeedCapture(reason: "Spracherkennung nicht initialisiert.")
+            return
+        }
+        stopActiveSpeedCaptureRecognition(keepStatus: true)
+        speedCaptureLatestTranscript = ""
+        speedCaptureDidResolve = false
+        speedCaptureMode = .listening
+        localObservationStatus = "Jetzt sprechen: 10 bis 130 oder Fussgaengerzone."
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.requiresOnDeviceRecognition = true
+        request.shouldReportPartialResults = true
+        request.taskHint = .confirmation
+        request.addsPunctuation = false
+        request.contextualStrings = Self.speedCaptureContextualStrings
+        speedCaptureRecognitionRequest = request
+
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.record, mode: .measurement, options: [.duckOthers])
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+            let engine = AVAudioEngine()
+            speedCaptureAudioEngine = engine
+            let inputNode = engine.inputNode
+            inputNode.removeTap(onBus: 0)
+            let format = inputNode.outputFormat(forBus: 0)
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+                self?.speedCaptureRecognitionRequest?.append(buffer)
+            }
+            engine.prepare()
+            try engine.start()
+        } catch {
+            cancelSpeedCapture(reason: "Mikrofonstart fehlgeschlagen: \(error.localizedDescription)")
+            return
+        }
+
+        speedCaptureRecognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    return
+                }
+                if let transcript = result?.bestTranscription.formattedString,
+                   !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    self.speedCaptureLatestTranscript = transcript
+                }
+                if let error {
+                    if !self.speedCaptureLatestTranscript.isEmpty {
+                        self.finishSpeedCaptureListening(source: "recognition_error_with_transcript")
+                    } else {
+                        self.cancelSpeedCapture(reason: "Spracherkennung fehlgeschlagen: \(error.localizedDescription)")
+                    }
+                    return
+                }
+                if result?.isFinal == true {
+                    self.finishSpeedCaptureListening(source: "final_result")
+                }
+            }
+        }
+
+        speedCaptureListeningTimeoutTask?.cancel()
+        speedCaptureListeningTimeoutTask = Task { [weak self] in
+            let timeout = (Self.speedCaptureListeningWindowSeconds * 1_000_000_000) + Self.speedCaptureTimeoutPaddingNanos
+            try? await Task.sleep(nanoseconds: timeout)
+            guard !Task.isCancelled else {
+                return
+            }
+            await MainActor.run {
+                self?.finishSpeedCaptureListening(source: "timeout")
+            }
+        }
+    }
+
+    private func finishSpeedCaptureListening(source: String) {
+        guard !speedCaptureDidResolve else {
+            return
+        }
+        speedCaptureDidResolve = true
+        speedCaptureMode = .evaluating
+        speedCaptureListeningTimeoutTask?.cancel()
+        speedCaptureListeningTimeoutTask = nil
+        stopActiveSpeedCaptureRecognition(keepStatus: true)
+
+        let transcript = speedCaptureLatestTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !transcript.isEmpty else {
+            cancelSpeedCapture(reason: "Keine Sprache erkannt. Bitte erneut starten.")
+            return
+        }
+        guard let selection = Self.resolveSpeedCaptureSelection(from: transcript) else {
+            Self.logger.notice("capture_speech unmatched transcript=\(transcript, privacy: .private(mask: .hash)) source=\(source, privacy: .public)")
+            cancelSpeedCapture(reason: "Nicht verstanden. Erlaubt sind 10 bis 130 oder Fussgaengerzone.")
+            return
+        }
+        Self.logger.notice(
+            "capture_speech matched transcript=\(transcript, privacy: .private(mask: .hash)) maxspeed=\(selection.value, privacy: .public) source=\(source, privacy: .public)"
+        )
+        commitSpeedCaptureObservation(selection: selection)
+    }
+
+    private func commitSpeedCaptureObservation(selection: SpeedCaptureWhitelistEntry) {
         speedCaptureMode = .saving
-        let newSpeed = speedCaptureBaselineKmh
-            ?? speedLimitKmh
-            ?? lastKnownSpeedLimitKmh
-            ?? Int(round(currentSpeedKmh))
         let oldSpeed = speedLimitKmh
         Task { @MainActor [weak self] in
             guard let self else {
                 return
             }
-            defer { cancelSpeedCapture(reason: nil) }
-            guard newSpeed > 0 else {
-                localObservationStatus = "Erfassung abgebrochen: ungueltige Geschwindigkeit."
-                return
-            }
             do {
+                let captureContext = currentObservationCaptureContext()
+                let wayID = captureContext.roadCandidateIDs.first ?? "n/a"
+                Self.logger.notice(
+                    "capture_speech persist begin maxspeed=\(selection.value, privacy: .public) old=\(oldSpeed?.description ?? "n/a", privacy: .public) way=\(wayID, privacy: .public) source=\(captureContext.sourceVersion, privacy: .public)"
+                )
                 let observation = try await localObservationStore.recordSpeedLimitChange(
                     oldSpeedKmh: oldSpeed,
-                    newSpeedKmh: newSpeed,
-                    context: currentObservationCaptureContext()
+                    newMaxspeedValue: selection.value,
+                    context: captureContext
                 )
-                if let wayID = observation.roadCandidateIDs.first,
+                if let numericSpeed = observation.newSpeedKmh,
+                   let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    localSpeedOverridesByWayID[wayID] = newSpeed
+                    localSpeedOverridesByWayID[wayID] = numericSpeed
                     if limitWayID == wayID {
-                        speedLimitKmh = newSpeed
-                        lastKnownSpeedLimitKmh = newSpeed
+                        speedLimitKmh = numericSpeed
+                        lastKnownSpeedLimitKmh = numericSpeed
                     }
                 }
                 let way = observation.roadCandidateIDs.first ?? "n/a"
-                localObservationStatus = "Erfasst: way \(way), alt \(oldSpeed?.description ?? "n/a"), neu \(newSpeed) km/h."
+                localObservationStatus = "Erfasst: way \(way), alt \(oldSpeed?.description ?? "n/a"), neu \(selection.displayLabel)."
+                Self.logger.notice(
+                    "capture_speech persist saved id=\(observation.id, privacy: .public) way=\(way, privacy: .public) value=\(observation.value ?? "n/a", privacy: .public) state=\(observation.state.rawValue, privacy: .public)"
+                )
+                activateLocalSpeedCorrectionIfPossible(selection: selection, observation: observation)
                 await refreshLocalObservations()
+                cancelSpeedCapture(reason: nil)
+                playSpeedCaptureConfirmationTone()
             } catch {
-                localObservationStatus = "Erfassung fehlgeschlagen: \(error.localizedDescription)"
-                lastError = localObservationStatus
+                let message = "Erfassung fehlgeschlagen: \(error.localizedDescription)"
+                localObservationStatus = message
+                lastError = message
+                Self.logger.error("capture_speech persist failed error=\(error.localizedDescription, privacy: .public)")
+                cancelSpeedCapture(reason: message)
             }
         }
     }
 
+    private func playSpeedCaptureConfirmationTone() {
+        captureConfirmationTonePlayer.play()
+        Self.logger.notice("capture_speech confirmation_tone played freq_hz=432")
+    }
+
+    private func activateLocalSpeedCorrectionIfPossible(selection: SpeedCaptureWhitelistEntry, observation: LocalObservation) {
+        let wayID = observation.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !wayID.isEmpty else {
+            activeLocalSpeedCorrection = nil
+            return
+        }
+
+        let anchorRef = normalizedRoadIdentity(limitStreetRef)
+        let anchorStreet = normalizedRoadIdentity(limitStreetBaseName ?? limitStreetName)
+        guard anchorRef != nil || anchorStreet != nil else {
+            activeLocalSpeedCorrection = nil
+            Self.logger.notice("capture_corr anchor_unavailable way=\(wayID, privacy: .public)")
+            return
+        }
+
+        activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
+            maxspeedValue: selection.value,
+            numericSpeedKmh: observation.newSpeedKmh ?? Int(selection.value),
+            anchorStreetName: anchorStreet,
+            anchorRef: anchorRef,
+            wayIDs: [wayID]
+        )
+        Self.logger.notice(
+            "capture_corr session_started way=\(wayID, privacy: .public) ref=\(anchorRef ?? "n/a", privacy: .public) street=\(anchorStreet ?? "n/a", privacy: .public) value=\(selection.value, privacy: .public)"
+        )
+    }
+
+    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat: Double, lon: Double) -> Int? {
+        guard var correction = activeLocalSpeedCorrection else {
+            return nil
+        }
+        guard let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines), !wayID.isEmpty else {
+            return nil
+        }
+
+        let currentRef = normalizedRoadIdentity(result.streetRef)
+        let currentStreet = normalizedRoadIdentity(result.streetBaseName ?? result.streetName)
+        let sharesRef = correction.anchorRef != nil && correction.anchorRef == currentRef
+        let sharesStreet = correction.anchorStreetName != nil && correction.anchorStreetName == currentStreet
+        guard sharesRef || sharesStreet else {
+            Self.logger.notice(
+                "capture_corr session_stopped reason=road_changed way=\(wayID, privacy: .public) ref=\(currentRef ?? "n/a", privacy: .public) street=\(currentStreet ?? "n/a", privacy: .public)"
+            )
+            activeLocalSpeedCorrection = nil
+            return nil
+        }
+
+        if correction.wayIDs.contains(wayID) {
+            if let numeric = correction.numericSpeedKmh {
+                localSpeedOverridesByWayID[wayID] = numeric
+            }
+            return correction.numericSpeedKmh
+        }
+
+        correction.wayIDs.insert(wayID)
+        activeLocalSpeedCorrection = correction
+
+        if let numeric = correction.numericSpeedKmh {
+            localSpeedOverridesByWayID[wayID] = numeric
+        }
+
+        let source = activeBundleVersion.isEmpty ? "none" : activeBundleVersion
+        let context = LocalObservationCaptureContext(
+            lat: lat,
+            lon: lon,
+            headingDeg: nil,
+            roadCandidateIDs: [wayID],
+            cityContext: result.cityName,
+            streetContext: result.streetName,
+            confidenceCalibrated: 0.72,
+            sourceVersion: source
+        )
+        let oldSpeed = result.speedLimitKmh
+        let maxspeedValue = correction.maxspeedValue
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            do {
+                let persisted = try await localObservationStore.recordSpeedLimitChange(
+                    oldSpeedKmh: oldSpeed,
+                    newMaxspeedValue: maxspeedValue,
+                    context: context
+                )
+                Self.logger.notice(
+                    "capture_corr segment_saved obs=\(persisted.id, privacy: .public) way=\(wayID, privacy: .public) value=\(maxspeedValue, privacy: .public)"
+                )
+                await refreshLocalObservations()
+            } catch {
+                Self.logger.error(
+                    "capture_corr segment_save_failed way=\(wayID, privacy: .public) value=\(maxspeedValue, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+
+        return correction.numericSpeedKmh
+    }
+
+    private func normalizedRoadIdentity(_ raw: String?) -> String? {
+        guard let raw else {
+            return nil
+        }
+        let normalized = raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        return normalized.isEmpty ? nil : normalized
+    }
+
     private func cancelSpeedCapture(reason: String?) {
-        speedCaptureCountdownTask?.cancel()
-        speedCaptureCountdownTask = nil
+        stopActiveSpeedCaptureRecognition(keepStatus: true)
+        speedCaptureStartListeningTask?.cancel()
+        speedCaptureStartListeningTask = nil
         speedCapturePromptFallbackTask?.cancel()
         speedCapturePromptFallbackTask = nil
+        speedCaptureListeningTimeoutTask?.cancel()
+        speedCaptureListeningTimeoutTask = nil
         awaitingSpeedCapturePromptCompletion = false
-        speedCaptureBaselineKmh = nil
-        speedCaptureRequiresStableVehicleSpeed = false
+        speedCaptureLatestTranscript = ""
+        speedCaptureDidResolve = false
         speedCaptureMode = .idle
         if let reason, !reason.isEmpty {
             localObservationStatus = reason
         }
     }
 
-    private func updateSpeedLimit(for location: CLLocation, fixID: Int) {
+    private func stopActiveSpeedCaptureRecognition(keepStatus: Bool) {
+        speedCaptureRecognitionTask?.cancel()
+        speedCaptureRecognitionTask = nil
+        speedCaptureRecognitionRequest?.endAudio()
+        speedCaptureRecognitionRequest = nil
+        if let engine = speedCaptureAudioEngine {
+            if engine.isRunning {
+                engine.stop()
+            }
+            engine.inputNode.removeTap(onBus: 0)
+        }
+        speedCaptureAudioEngine = nil
+        let session = AVAudioSession.sharedInstance()
+        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        if !keepStatus {
+            localObservationStatus = ""
+        }
+    }
+
+    private func prepareSpeedCaptureRecognizer() async throws {
+        let speechAuth = await requestSpeechRecognitionAuthorization()
+        guard speechAuth == .authorized else {
+            throw ConsumerAppError.io(Self.speechAuthorizationDescription(speechAuth))
+        }
+        let hasMicPermission = await requestMicrophonePermission()
+        guard hasMicPermission else {
+            throw ConsumerAppError.io("Mikrofonberechtigung wurde nicht erteilt.")
+        }
+        guard let locale = Self.resolvePreferredSpeechLocale() else {
+            throw ConsumerAppError.io("Keine deutsche On-Device-Spracherkennung verfuegbar.")
+        }
+        guard let recognizer = SFSpeechRecognizer(locale: locale) else {
+            throw ConsumerAppError.io("SFSpeechRecognizer konnte nicht erstellt werden.")
+        }
+        guard recognizer.supportsOnDeviceRecognition else {
+            throw ConsumerAppError.io("On-Device-Spracherkennung fuer \(locale.identifier) nicht verfuegbar.")
+        }
+        speedCaptureRecognizer = recognizer
+    }
+
+    private func requestSpeechRecognitionAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status)
+            }
+        }
+    }
+
+    private func requestMicrophonePermission() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission(completionHandler: { granted in
+                continuation.resume(returning: granted)
+            })
+        }
+    }
+
+    private static func resolvePreferredSpeechLocale() -> Locale? {
+        let supported = SFSpeechRecognizer.supportedLocales()
+        let preferred = Locale(identifier: speedCaptureSpeechLocaleIdentifier)
+        if supported.contains(preferred) {
+            return preferred
+        }
+        return supported.first { $0.identifier.lowercased().hasPrefix("de") }
+    }
+
+    private static func speechAuthorizationDescription(_ status: SFSpeechRecognizerAuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined:
+            return "Spracherkennung ist noch nicht freigegeben."
+        case .denied:
+            return "Spracherkennung in iOS-Einstellungen aktivieren."
+        case .restricted:
+            return "Spracherkennung ist auf diesem Geraet eingeschraenkt."
+        case .authorized:
+            return "Spracherkennung autorisiert."
+        @unknown default:
+            return "Unbekannter Spracherkennungsstatus."
+        }
+    }
+
+    private static func resolveSpeedCaptureSelection(from transcript: String) -> SpeedCaptureWhitelistEntry? {
+        let normalized = normalizeSpeedCaptureTranscript(transcript)
+        guard !normalized.isEmpty else {
+            return nil
+        }
+
+        var candidates = Set<String>()
+        let nsRange = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
+        if let regex = try? NSRegularExpression(pattern: #"\b([0-9]{2,3})\b"#) {
+            for match in regex.matches(in: normalized, range: nsRange) {
+                guard let range = Range(match.range(at: 1), in: normalized) else {
+                    continue
+                }
+                let token = String(normalized[range])
+                if speedCaptureValueSet.contains(token) {
+                    candidates.insert(token)
+                }
+            }
+        }
+
+        for (phrase, value) in speedCapturePhraseToValue {
+            if normalized.contains(phrase) {
+                candidates.insert(value)
+            }
+        }
+
+        guard !candidates.isEmpty else {
+            return nil
+        }
+
+        for entry in speedCaptureWhitelistByPriority where candidates.contains(entry.value) {
+            return entry
+        }
+        return nil
+    }
+
+    private static func normalizeSpeedCaptureTranscript(_ raw: String) -> String {
+        raw
+            .lowercased()
+            .replacingOccurrences(of: "ä", with: "ae")
+            .replacingOccurrences(of: "ö", with: "oe")
+            .replacingOccurrences(of: "ü", with: "ue")
+            .replacingOccurrences(of: "ß", with: "ss")
+            .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func routeDatabaseForCoordinate(lat: Double, lon: Double, fixTimestamp: String, fixID: Int) async {
+        do {
+            guard let route = try await bundleManager.resolveLocalBundleRoute(
+                lat: lat,
+                lon: lon,
+                fallbackDBPath: activeDBPath.isEmpty ? nil : activeDBPath
+            ) else {
+                return
+            }
+            guard route.dbPath != activeDBPath else {
+                return
+            }
+            activeDBPath = route.dbPath
+            activeBundleVersion = route.bundleVersion
+            speedLimitService = V3SpeedLimitService(dbPath: route.dbPath)
+            await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
+            previousMatchedWayID = nil
+            appendLookupEvent(
+                "\(fixTimestamp) fix=\(fixID) db_switch region=\(route.region) version=\(route.bundleVersion) db=\(URL(fileURLWithPath: route.dbPath).lastPathComponent)"
+            )
+        } catch {
+            Self.logger.warning("regional db route failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    private func updateSpeedLimit(for location: CLLocation, fixID: Int) async {
         let fixTimestamp = Self.lookupTimestampFormatter.string(from: location.timestamp)
         let fixTimestampISO = Self.isoFormatter.string(from: location.timestamp)
         let lat = location.coordinate.latitude
@@ -1155,8 +2310,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let course = (0.0 ... 360.0).contains(rawCourse) ? rawCourse : nil
         let rawCourseAccuracy = location.courseAccuracy
         let courseAccuracy = rawCourseAccuracy >= 0.0 ? rawCourseAccuracy : nil
+
+        await routeDatabaseForCoordinate(lat: lat, lon: lon, fixTimestamp: fixTimestamp, fixID: fixID)
+
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
+            resetTunnelModeTracking()
             appendLookupEvent(
                 "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
             )
@@ -1193,8 +2352,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     horizontalAccuracyM: hAcc
                 )
                 await MainActor.run {
-                    self.lastLocationFixAt = Date()
-                    let localOverride = result.wayID.flatMap { self.localSpeedOverridesByWayID[$0] }
+                    let propagatedOverride = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
+                    let localOverride = propagatedOverride ?? result.wayID.flatMap { self.localSpeedOverridesByWayID[$0] }
                     let effectiveSpeedLimit = localOverride ?? result.speedLimitKmh
                     self.speedLimitKmh = effectiveSpeedLimit
                     if let resolved = effectiveSpeedLimit {
@@ -1202,12 +2361,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     }
                     self.limitWayID = result.wayID
                     self.limitStreetName = result.streetName
+                    self.limitStreetBaseName = result.streetBaseName
+                    self.limitStreetRef = result.streetRef
                     self.limitCityName = result.cityName
-                    self.tunnelModeTracker.consumeFix(
-                        isTunnelSegment: result.isTunnelSegment,
-                        nearTunnelPortal: result.nearTunnelPortal,
-                        tunnelPortalMarkersAvailable: result.tunnelPortalMarkersAvailable
-                    )
+                    self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
                     if let wayID = result.wayID {
                         self.previousMatchedWayID = wayID
@@ -1244,11 +2401,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let nearestSpeedText = result.nearestSpeedCandidateDistanceM.map { String(format: "%.1f", $0) } ?? "nil"
                     let tunnelSegmentText = result.isTunnelSegment ? "1" : "0"
                     let tunnelModeText = self.tunnelModeState.rawValue
-                    let tunnelPortalText = result.nearTunnelPortal ? "1" : "0"
-                    let tunnelPortalDistanceText = result.tunnelPortalDistanceM.map { String(format: "%.1f", $0) } ?? "nil"
                     let localOverrideText = localOverride.map(String.init) ?? "nil"
                     self.appendLookupEvent(
-                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) local_override=\(localOverrideText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText) tunnel_seg=\(tunnelSegmentText) tunnel_mode=\(tunnelModeText) near_portal=\(tunnelPortalText) portal_m=\(tunnelPortalDistanceText)"
+                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) local_override=\(localOverrideText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText) tunnel_seg=\(tunnelSegmentText) tunnel_mode=\(tunnelModeText)"
                     )
                     self.appendGPSFixCSV(
                         fixID: fixID,
@@ -1270,6 +2425,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
                     self.wasDrivingBanWarningActive = false
+                    self.resetTunnelModeTracking()
                     self.appendLookupEvent(
                         "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) lookup_error=\(error.localizedDescription)"
                     )
@@ -1453,10 +2609,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speechText: String
         switch notice.severity {
         case .moneyOnly:
+            let currency = activePenaltyRules.currencyCode
             if let fineEUR = notice.moneyFineEUR {
-                speechText = "\(fineEUR) Euro"
+                speechText = "\(fineEUR) \(currency)"
             } else {
-                speechText = "Euro"
+                speechText = currency
             }
         case .pointsAndFine:
             if let points = notice.penaltyPoints {
@@ -1541,7 +2698,7 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
                 return
             }
             self.awaitingSpeedCapturePromptCompletion = false
-            self.startSpeedCaptureCountdown()
+            self.scheduleSpeedCaptureListeningStart()
         }
     }
 
@@ -1551,7 +2708,7 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
                 return
             }
             self.awaitingSpeedCapturePromptCompletion = false
-            self.startSpeedCaptureCountdown()
+            self.scheduleSpeedCaptureListeningStart()
         }
     }
 }
@@ -1579,20 +2736,19 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             currentSpeedKmh = max(0, location.speed) * 3.6
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
-            lastLocationFixAt = Date()
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()
-            updateSpeedLimit(for: location, fixID: gpsFixCount)
+            let fixID = gpsFixCount
+            Task { @MainActor [weak self] in
+                guard let self else {
+                    return
+                }
+                await updateSpeedLimit(for: location, fixID: fixID)
+            }
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        if tunnelModeTracker.state == .active {
-            tunnelModeTracker.markSignalLost()
-            syncTunnelModePublishedState()
-            lastLookupStatus = "gps_shadow_tunnel"
-            return
-        }
         driveStatus = "location_error"
         lastError = error.localizedDescription
     }

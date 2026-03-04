@@ -7,13 +7,14 @@ This repository has two separate workstreams:
 
 Do not mix these concerns when adding code, tests, or workflows.
 
-## Current overview (as of 2026-02-27)
+## Current overview (as of 2026-03-04)
 
-- `Track B` (consumer app) is now v3-only with hardened startup sync/recovery and token-gated release access paths.
-- `Track A` (paper/benchmark) now includes explicit city-context evaluation (`polycontainment`) in the on-device benchmark matrix.
-- Release safety was tightened with pre-publish v3 regression checks (`scripts/map/validate_v3_release_regressions.py`) and dedicated tests.
-- CI publishing pipelines were hardened for runner disk pressure and large-bundle handling.
-- Besides the Germany rolling pipeline, a separate Karlsruhe development bundle workflow is available.
+- `Track B` (consumer app) is v3-only with startup sync/recovery hardening and multipart DB support.
+- `Track A` (paper/benchmark) includes explicit city-context evaluation (`polycontainment`) in the on-device matrix.
+- Bundle naming is region-scoped (`<region>_manifest.json`, `<region>_speeds.sqlite`) instead of legacy `DEU-latest*`.
+- Country/region targeting is driven by `iphone/SpeedConsumerApp/BundleTargets.top10.json` (10 countries with highest maxspeed availability, including Germany).
+- Country-specific fine/warning rules are bundled by `country_code` and resolved per active region bundle.
+- Publication strategy is editor-mediated for OSM (user exports `.osc` and uploads with personal OSM account); no direct app-side OSM upload path.
 
 ## Shared prerequisites
 
@@ -119,16 +120,29 @@ Goal: ship the real app with a stable `v3` runtime format and independently upda
 - Delivery model:
   - full bundle + incremental SQL patches from GitHub releases
 
+### Implemented runtime behavior (consumer app)
+
+- Per-fix lookup uses RTree candidate prefilter, geometric scoring, and preferred-way continuity.
+- Effective speed precedence is: local override, explicit `maxspeed`, inherited regulatory tags, highway-class prior, legal fallback.
+- In-city decision precedence is: highway class (`residential`, `service`, `crossing`, `living_street`) first, otherwise residential polygon containment.
+- Tunnel mode is intentionally simple: matched way with `tunnel=yes` sets tunnel state; UI shows tunnel icon and penalty warnings are suppressed while active.
+- Bundle routing is location-driven via coverage bbox/poly metadata across downloaded regional bundles, with fallback to the current DB if no coverage match exists.
+
 ### Consumer data model
 
-Latest bundle assets (release tag `deu-v3-data-latest`):
+Germany latest assets (release tag `germany`):
 
-- `DEU-latest.bundle-manifest.v3.json`
-- `DEU-latest.speeds_v3.sqlite` (if under GitHub per-asset limit)
-- `DEU-latest.speeds_v3.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
-- `DEU-latest.delta-index.v3.json`
+- `germany_manifest.json`
+- `germany_speeds.sqlite` (if under GitHub per-asset limit)
+- `germany_speeds.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
+- `germany_delta_index.json`
 - `DEU-YYYY-MM-DD.v3_delta_manifest_from_YYYY-MM-DD.json` (0..30 recent updates)
 - `DEU-YYYY-MM-DD.v3_patch_from_YYYY-MM-DD.sql` (matching delta manifests)
+
+Regional development example:
+
+- `karlsruhe-regbez_manifest.json`
+- `karlsruhe-regbez_speeds.sqlite`
 
 Important policy enforced in app:
 
@@ -145,10 +159,10 @@ FROM_VERSION=YYYY-MM-DD
 TO_VERSION=YYYY-MM-DD
 
 python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite
-python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-${TO_VERSION}.osc.gz --region germany --from-version "${FROM_VERSION}" --to-version "${TO_VERSION}" --out-dir mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION} --patch-file-name DEU-${TO_VERSION}.v3_patch_from_${FROM_VERSION}.sql --manifest-name DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
-python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION}/DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --new-delta-manifest-asset-path DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest --retention-count 30 --output mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json
-python3 scripts/map/publish_v3_bundle.py --region germany --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version "${TO_VERSION}" --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name DEU-latest.speeds_v3.sqlite --manifest-name DEU-latest.bundle-manifest.v3.json --delta-index mapdata/bundles/v3/germany/latest/DEU-latest.delta-index.v3.json --delta-index-file-name DEU-latest.delta-index.v3.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag deu-v3-data-latest
-./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag deu-v3-data-latest --bundle-dir mapdata/bundles/v3/germany/latest
+python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-${TO_VERSION}.osc.gz --region germany --from-version "${FROM_VERSION}" --to-version "${TO_VERSION}" --out-dir mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION} --patch-file-name DEU-${TO_VERSION}.v3_patch_from_${FROM_VERSION}.sql --manifest-name DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany
+python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/germany_delta_index.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION}/DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --new-delta-manifest-asset-path DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/germany --retention-count 30 --output mapdata/bundles/v3/germany/latest/germany_delta_index.json
+python3 scripts/map/publish_v3_bundle.py --region germany --country-code DEU --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version "${TO_VERSION}" --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name germany_speeds.sqlite --manifest-name germany_manifest.json --delta-index mapdata/bundles/v3/germany/latest/germany_delta_index.json --delta-index-file-name germany_delta_index.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany
+./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag germany --bundle-dir mapdata/bundles/v3/germany/latest
 ```
 
 ### Consumer app build command
@@ -188,6 +202,8 @@ YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
 
 - Daily generate + publish latest full bundle and incrementals:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/germany_generate_and_release_latest.yml`
+- On-demand country/region bundle generation for the top-10 availability set:
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/generate_country_bundles.yml`
 - Manual publish helper:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/publish_bundle_release.yml`
 - Manual Karlsruhe development bundle build/release:
@@ -195,7 +211,7 @@ YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
 - Geofabrik diff ingestion and delta analysis:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:
-  - `Germany PBF Diff Update And Release` publishes `deu-pbf-latest`, then `Germany V3 Bundle Build And Release` consumes that release snapshot.
+  - `Germany PBF Diff Update And Release` publishes `deu-pbf-latest`, then `Germany Bundle Build And Release` consumes that release snapshot.
 
 ## Maintenance checklist
 

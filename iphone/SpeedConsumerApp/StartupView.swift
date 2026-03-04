@@ -61,7 +61,7 @@ struct StartupView: View {
 
 struct FirstUserWelcomeView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
-    let onContinue: () -> Void
+    let onContinue: (_ openSettings: Bool) -> Void
 
     var body: some View {
         ZStack {
@@ -89,6 +89,19 @@ struct FirstUserWelcomeView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
 
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Rechtlicher Hinweis")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(.yellow.opacity(0.96))
+                        Text(LegalDisclaimerText.short)
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.86))
+                            .multilineTextAlignment(.leading)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
                     Text("Daten (c) OpenStreetMap - Open Database License 1.0.")
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundStyle(.white.opacity(0.76))
@@ -98,18 +111,17 @@ struct FirstUserWelcomeView: View {
 
                     VStack(spacing: 10) {
                         Button {
-                            viewModel.bootstrapAndSync()
+                            onContinue(true)
                         } label: {
-                            Text(downloadButtonTitle)
+                            Text("Daten laden /  App einstellen")
                                 .frame(maxWidth: .infinity)
                         }
                         .font(.system(size: 17, weight: .bold, design: .rounded))
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
-                        .disabled(viewModel.isSyncingNow)
 
                         Button {
-                            onContinue()
+                            onContinue(false)
                         } label: {
                             Text("Mit vorhandenen Daten fortfahren")
                                 .frame(maxWidth: .infinity)
@@ -119,36 +131,21 @@ struct FirstUserWelcomeView: View {
                         .tint(.white)
                     }
 
-                    if shouldShowSyncProgress {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(viewModel.syncProgressDetail.isEmpty ? "Synchronisierung läuft..." : viewModel.syncProgressDetail)
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.88))
-                            if let progressValue = syncProgressValue {
-                                ProgressView(value: progressValue, total: 1)
-                                    .tint(.red)
-                                Text(syncProgressBytesText)
-                                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                                    .foregroundStyle(.white.opacity(0.72))
-                            } else {
-                                ProgressView()
-                                    .tint(.red)
-                            }
+                    Button {
+                        viewModel.hideWelcomeScreen.toggle()
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: viewModel.hideWelcomeScreen ? "checkmark.square.fill" : "square")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("Nicht mehr anzeigen")
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
+                        .foregroundStyle(.white.opacity(0.92))
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(12)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .padding(.horizontal, 4)
                     }
+                    .buttonStyle(.plain)
 
-                    if viewModel.syncStatus == "sync_failed", !viewModel.lastError.isEmpty {
-                        Text(viewModel.lastError)
-                            .font(.system(size: 12, weight: .regular, design: .rounded))
-                            .foregroundStyle(.red.opacity(0.95))
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                            .background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)
@@ -161,43 +158,9 @@ struct FirstUserWelcomeView: View {
 
     private var scopeDescriptionText: String {
         if viewModel.activeBundleVersion == "seed" || viewModel.activeBundleVersion == "none" {
-            return "Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfügbar."
+            return "Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfügbar. Den Download startest Du in den Einstellungen."
         }
         return "Deutschland-Datensatz aktiv: \(viewModel.activeBundleVersion)"
-    }
-
-    private var downloadButtonTitle: String {
-        if viewModel.activeBundleVersion == "seed" {
-            return "Deutschland-Datensatz herunterladen"
-        }
-        if viewModel.syncStatus == "ready_fullDownload" || viewModel.syncStatus == "ready_upToDate" {
-            return "Deutschland-Datensatz aktualisieren"
-        }
-        return "Deutschland-Datensatz herunterladen"
-    }
-
-    private var shouldShowSyncProgress: Bool {
-        viewModel.syncStatus == "syncing" || viewModel.syncStatus == "bootstrapping"
-    }
-
-    private var syncProgressValue: Double? {
-        let total = viewModel.syncProgressTotalBytes
-        guard total > 0 else {
-            return nil
-        }
-        let completed = min(max(viewModel.syncProgressCompletedBytes, 0), total)
-        return Double(completed) / Double(total)
-    }
-
-    private var syncProgressBytesText: String {
-        let completed = max(viewModel.syncProgressCompletedBytes, 0)
-        let total = max(viewModel.syncProgressTotalBytes, 0)
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        if total > 0 {
-            return "\(formatter.string(fromByteCount: completed)) / \(formatter.string(fromByteCount: total))"
-        }
-        return formatter.string(fromByteCount: completed)
     }
 }
 

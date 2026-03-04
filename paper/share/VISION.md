@@ -20,6 +20,7 @@ The architecture has a deliberate split between what is implemented now and what
 Current scope (implemented baseline):
 - Authoritative runtime baseline comes from OSM snapshots/diffs packaged into app bundles.
 - Runtime is account-free and device-ID based.
+- Runtime can route across multiple downloaded regional bundles using manifest coverage bbox/poly metadata.
 - Local corrections are captured and applied locally first; publication is editor-mediated export (`.osc` package for JOSM/Merkaartor), uploaded by the user with their own OSM account.
 - No direct app upload to OSM API and no centralized backend publication authority in the critical path.
 - Local correction state can be flushed after user-led publication; convergence comes from subsequent OSM daily diffs.
@@ -28,6 +29,14 @@ North-star scope (future phase):
 - Device-observation corroboration at broad install-base scale.
 - Optional internal global cache for cross-device acceleration between OSM refresh cycles.
 - Strict quality gates before any promotion of crowd signals beyond local scope.
+
+## Current Naming and Bundle Scheme
+The repository now uses region-scoped naming for generated v3 bundle artifacts.
+
+- Manifest: `<region>_manifest.json` (for example `germany_manifest.json`, `karlsruhe-regbez_manifest.json`).
+- Database: `<region>_speeds.sqlite` (or `<region>_speeds.sqlite.partNNN` for multipart releases).
+- Bundle metadata includes `region` and `country_code`; app rule selection is derived from `country_code`.
+- Target countries/regions are defined in `iphone/SpeedConsumerApp/BundleTargets.top10.json` (10 countries with highest maxspeed availability, including Germany).
 
 ## Crowdsourced Speed Intelligence
 When the product reaches meaningful adoption, YouSpeed should support two acquisition channels while users are driving.
@@ -44,16 +53,22 @@ The app must apply a deterministic inference order:
 3. Legal rule fallback, which requires city/rural classification.
 
 City/rural classification must combine multiple evidence sources:
-- residential/admin polygon containment,
-- place and administrative context,
-- city-entry/city-exit sign context (`traffic_sign=DE:310/311`).
+- way-type precedence: if `highway` is one of `residential`, `service`, `crossing`, `living_street`, classify as in-city first,
+- otherwise residential polygon containment.
+
+Administrative/place context is used for city naming and traceability, not as the primary in-city classifier.
+`traffic_sign=DE:310/311` is treated as optional enrichment only (not primary) due sparse tag coverage.
 
 City name and street name resolution are first-class outputs, not debug-only metadata, because they are required for user trust, correction review, and export traceability.
 
 ## Tunnel and Multi-Level Road Handling
-Tunnel handling is a dedicated operating mode. The system must avoid confusing tunnel segments with roads above/below by combining geometry and context attributes (`tunnel`, `location`, `layer`, `level`) plus tunnel portal markers.
+Current production strategy is intentionally simple and deterministic:
 
-When entering a tunnel, speed display can switch to tunnel-state signaling if confidence is reduced. Temporary GPS loss inside tunnels is expected; tunnel mode should persist through short GNSS outages and clear only after credible exit evidence (portal proximity and/or restored stable GPS fixes).
+- if the resolved way carries `tunnel=yes`, the app marks tunnel context,
+- speed display remains based on resolved way `maxspeed`,
+- UI highlights tunnel state with an icon instead of showing current-speed-centric emphasis.
+
+This avoids unstable portal-state transitions while preserving correct speed-limit context on tunnel-tagged segments.
 
 ## Parking and Service-Road Policy
 Parking and service contexts require explicit treatment to avoid overconfident rule fallback:
@@ -66,7 +81,8 @@ Parking and service contexts require explicit treatment to avoid overconfident r
 ## Trust Model Without User Accounts
 YouSpeed is intended to work without user authentication. Identity is device-based, using pseudonymous device identifiers rather than personal accounts. This choice lowers friction and supports privacy goals, but it also creates data-quality and abuse-resistance challenges that must be solved in architecture, not policy text alone.
 
-The trust model therefore needs explicit safeguards: source scoring per device, temporal and spatial consistency checks, minimum independent confirmations, and conflict handling when local evidence disagrees with external data. A single device report should never overwrite shared truth. Promotion to global data should require corroboration by independent devices and consistency with map geometry and legal plausibility constraints.
+Current deployment keeps publication editor-mediated and user-owned (JOSM/Merkaartor upload with personal OSM account), so there is no centralized backend write authority in the operational path.
+The future corroboration model still needs explicit safeguards: source scoring per device, temporal/spatial consistency checks, minimum independent confirmations, and conflict handling when local evidence disagrees with external data. A single device report must not overwrite shared truth.
 
 Runtime usage remains account-free. For OSM publication, uploads are attributable to individual contributors via an editor-mediated workflow: the app exports change files, and users upload with their own OSM account in JOSM/Merkaartor.
 
@@ -105,7 +121,7 @@ Core runtime gates (per release):
 - On-device end-to-end inference latency (fix -> displayed result) with reported median and p95.
 - Joint query budget including maxspeed retrieval and polygon containment.
 - Daily-diff update operability (invalidations, patch/apply time, and transfer volume).
-- Stability metrics for tunnel mode transitions and false tunnel activations.
+- Tunnel-mode correctness metrics (false tunnel activations, missed tunnel segments).
 - Correction pipeline metrics: capture success, review completion, export success, and local-overlay retirement after upstream refresh.
 
 Community-enrichment activation gate:

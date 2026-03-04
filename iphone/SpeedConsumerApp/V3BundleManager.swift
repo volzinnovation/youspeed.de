@@ -54,6 +54,203 @@ actor V3BundleManager {
         githubToken = normalized
     }
 
+    func syncFromManifestEndpoints(
+        _ endpoints: [V3ManifestEndpoint],
+        preferredCountryCode: String? = nil,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)? = nil
+    ) async throws -> BundleSyncResult {
+        let preferredCode = preferredCountryCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        let preferredEndpoints = endpoints.filter { endpoint in
+            guard let preferredCode else {
+                return true
+            }
+            return endpoint.countryCode.uppercased() == preferredCode
+        }
+        guard !endpoints.isEmpty else {
+            throw ConsumerAppError.invalidManifest("No embedded manifest endpoints available")
+        }
+
+        func runSequence(_ effectiveEndpoints: [V3ManifestEndpoint], fallbackPass: Bool) async throws -> BundleSyncResult? {
+            var lastSuccess: BundleSyncResult?
+            var firstFailure: Error?
+            let total = effectiveEndpoints.count
+            for (index, endpoint) in effectiveEndpoints.enumerated() {
+                let itemIndex = index + 1
+                let prefix = fallbackPass
+                    ? "[fallback \(itemIndex)/\(total)] \(endpoint.countryCode) \(endpoint.regionID)"
+                    : "[\(itemIndex)/\(total)] \(endpoint.countryCode) \(endpoint.regionID)"
+                Self.logger.notice("sync endpoint begin endpoint=\(prefix, privacy: .public)")
+                do {
+                    let result = try await syncFromManifestURL(endpoint.manifestURL) { progress in
+                        guard let onProgress else {
+                            return
+                        }
+                        onProgress(
+                            BundleSyncProgress(
+                                stage: progress.stage,
+                                detail: "\(prefix): \(progress.detail)",
+                                completedBytes: progress.completedBytes,
+                                totalBytes: progress.totalBytes,
+                                partDownloads: progress.partDownloads
+                            )
+                        )
+                    }
+                    lastSuccess = result
+                    Self.logger.notice(
+                        "sync endpoint success endpoint=\(prefix, privacy: .public) version=\(result.bundleVersion, privacy: .public)"
+                    )
+                } catch {
+                    if firstFailure == nil {
+                        firstFailure = error
+                    }
+                    Self.logger.error("sync endpoint failed endpoint=\(prefix, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                }
+            }
+            if let lastSuccess {
+                return lastSuccess
+            }
+            if let firstFailure {
+                throw firstFailure
+            }
+            return nil
+        }
+
+        let primarySequence = preferredEndpoints.isEmpty ? endpoints : preferredEndpoints
+        if let result = try await runSequence(primarySequence, fallbackPass: false) {
+            return result
+        }
+        if !preferredEndpoints.isEmpty {
+            let fallbackEndpoints = endpoints.filter { endpoint in
+                endpoint.countryCode.uppercased() != (preferredCode ?? "")
+            }
+            if !fallbackEndpoints.isEmpty,
+               let result = try await runSequence(fallbackEndpoints, fallbackPass: true) {
+                return result
+            }
+        }
+        throw ConsumerAppError.invalidManifest("No manifest endpoint could be synchronized")
+    }
+
+    func removeDownloadedBundlesKeepingSeed() throws -> Int {
+        let bundlesRoot = try bundlesDir()
+        let entries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        var removedCount = 0
+        for entry in entries {
+            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey])
+            guard values?.isDirectory == true else {
+                continue
+            }
+            if entry.lastPathComponent == "seed" {
+                continue
+            }
+            try? removeItemIfExists(at: entry)
+            removedCount += 1
+        }
+        if let state = try activeState(),
+           state.bundleVersion.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != "seed" {
+            try? clearActiveState()
+        }
+        cachedCoverageEntries = []
+        coverageCacheUpdatedAt = nil
+        Self.logger.notice("maintenance remove_downloaded_bundles removed=\(removedCount, privacy: .public)")
+        return removedCount
+    }
+
+    func listDownloadedBundles() throws -> [DownloadedBundleInfo] {
+        let bundlesRoot = try bundlesDir()
+        let entries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+
+        var out: [DownloadedBundleInfo] = []
+        for entry in entries {
+            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey])
+            guard values?.isDirectory == true else {
+                continue
+            }
+            if entry.lastPathComponent == "seed" {
+                continue
+            }
+            let manifestURL = entry.appendingPathComponent("bundle-manifest.v3.json")
+            guard let manifest = decodeManifestIfPresent(at: manifestURL) else {
+                continue
+            }
+            let dbURL = entry.appendingPathComponent(manifest.db.file)
+            guard fileManager.fileExists(atPath: dbURL.path) else {
+                continue
+            }
+            out.append(
+                DownloadedBundleInfo(
+                    region: manifest.region,
+                    bundleVersion: manifest.bundleVersion,
+                    countryCode: manifest.countryCode,
+                    dbFileName: manifest.db.file,
+                    dbPath: dbURL.path
+                )
+            )
+        }
+        out.sort { lhs, rhs in
+            if lhs.region != rhs.region {
+                return lhs.region < rhs.region
+            }
+            if lhs.bundleVersion != rhs.bundleVersion {
+                return lhs.bundleVersion > rhs.bundleVersion
+            }
+            return lhs.dbFileName < rhs.dbFileName
+        }
+        return out
+    }
+
+    func removeDownloadedBundles(forManifestRegion region: String) throws -> Int {
+        let normalized = region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else {
+            return 0
+        }
+        let bundlesRoot = try bundlesDir()
+        let entries = try fileManager.contentsOfDirectory(
+            at: bundlesRoot,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        var removed = 0
+        for entry in entries {
+            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey])
+            guard values?.isDirectory == true else {
+                continue
+            }
+            if entry.lastPathComponent == "seed" {
+                continue
+            }
+            let manifestURL = entry.appendingPathComponent("bundle-manifest.v3.json")
+            guard let manifest = decodeManifestIfPresent(at: manifestURL) else {
+                continue
+            }
+            if manifest.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized {
+                try? removeItemIfExists(at: entry)
+                removed += 1
+            }
+        }
+        if removed > 0,
+           let state = try activeState(),
+           state.region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized {
+            try? clearActiveState()
+        }
+        cachedCoverageEntries = []
+        coverageCacheUpdatedAt = nil
+        Self.logger.notice(
+            "maintenance remove_downloaded_region region=\(normalized, privacy: .public) removed=\(removed, privacy: .public)"
+        )
+        return removed
+    }
+
     static func applicationSupportDirectory(fileManager: FileManager = .default) throws -> URL {
         let base = try fileManager.url(
             for: .applicationSupportDirectory,
@@ -430,6 +627,7 @@ actor V3BundleManager {
         do {
             let current = try activeState()
             if current?.bundleVersion == manifest.bundleVersion,
+               current?.region == manifest.region,
                let currentDB = try activeDatabaseURL(),
                fileManager.fileExists(atPath: currentDB.path) {
                 emitProgress(

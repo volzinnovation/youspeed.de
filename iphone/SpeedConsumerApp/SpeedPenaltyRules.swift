@@ -289,6 +289,11 @@ struct SpeedPenaltyRuleSet: Decodable, Sendable {
         throw ConsumerAppError.io("Missing bundled rules file \(fileStem).json")
     }
 
+    static func loadFile(at fileURL: URL) throws -> SpeedPenaltyRuleSet {
+        let data = try Data(contentsOf: fileURL)
+        return try JSONDecoder().decode(SpeedPenaltyRuleSet.self, from: data)
+    }
+
     static func fallbackDEU() -> SpeedPenaltyRuleSet {
         SpeedPenaltyRuleSet(
             format: "youspeed.penalty.rules",

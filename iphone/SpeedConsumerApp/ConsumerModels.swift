@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import OSLog
 import SQLite3
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
@@ -132,9 +133,11 @@ struct V3CountryBundleCatalog: Codable, Sendable {
 
 struct V3BundleTargetRegionConfig: Codable, Sendable {
     let regionID: String
+    let regionName: String?
 
     enum CodingKeys: String, CodingKey {
         case regionID = "region_id"
+        case regionName = "name"
     }
 }
 
@@ -161,6 +164,8 @@ struct V3BundleTargetsConfig: Codable, Sendable {
     let schemaVersion: Int
     let variant: String
     let maxCountryPBFBytes: Int64
+    let githubOwner: String?
+    let githubRepo: String?
     let countries: [V3BundleTargetCountryConfig]
 
     enum CodingKeys: String, CodingKey {
@@ -168,6 +173,8 @@ struct V3BundleTargetsConfig: Codable, Sendable {
         case schemaVersion = "schema_version"
         case variant
         case maxCountryPBFBytes = "max_country_pbf_bytes"
+        case githubOwner = "github_owner"
+        case githubRepo = "github_repo"
         case countries
     }
 
@@ -197,6 +204,151 @@ struct V3BundleTargetsConfig: Codable, Sendable {
         let data = try Data(contentsOf: url)
         return try JSONDecoder().decode(V3BundleTargetsConfig.self, from: data)
     }
+
+    func manifestEndpoints(
+        githubOwner: String? = nil,
+        githubRepo: String? = nil,
+        preferredCountryCode: String? = nil
+    ) -> [V3ManifestEndpoint] {
+        let owner = (githubOwner ?? self.githubOwner)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let repo = (githubRepo ?? self.githubRepo)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let owner, !owner.isEmpty, let repo, !repo.isEmpty else {
+            return []
+        }
+        let preferredCode = preferredCountryCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        let orderedCountries: [V3BundleTargetCountryConfig] = {
+            if let preferredCode,
+               let preferredIndex = countries.firstIndex(where: { $0.countryCode.uppercased() == preferredCode }) {
+                var reordered = countries
+                let preferred = reordered.remove(at: preferredIndex)
+                return [preferred] + reordered
+            }
+            return countries
+        }()
+
+        var out: [V3ManifestEndpoint] = []
+        var seen = Set<URL>()
+        for country in orderedCountries {
+            let countryToken = idToken(country.countryID)
+            guard !countryToken.isEmpty else {
+                continue
+            }
+            let usesRegionalShards = (country.mode == "regional_shards")
+            if !usesRegionalShards {
+                let manifestFile = "\(countryToken)_manifest.json"
+                guard let url = URL(
+                    string: "https://github.com/\(owner)/\(repo)/releases/download/\(countryToken)/\(manifestFile)"
+                ) else {
+                    continue
+                }
+                guard seen.insert(url).inserted else {
+                    continue
+                }
+                out.append(
+                    V3ManifestEndpoint(
+                        countryID: country.countryID,
+                        countryCode: country.countryCode,
+                        regionID: country.countryID,
+                        manifestRegion: countryToken,
+                        regionName: nil,
+                        manifestURL: url
+                    )
+                )
+                continue
+            }
+            for region in country.regions {
+                let regionFullID = expandedRegionID(country: country, regionID: region.regionID)
+                let regionTail = regionFullID.split(separator: "/").last.map(String.init) ?? regionFullID
+                let regionToken = idToken(regionTail)
+                guard !regionToken.isEmpty else {
+                    continue
+                }
+                let releaseTag = regionToken
+                let manifestFile = "\(regionToken)_manifest.json"
+                guard let url = URL(
+                    string: "https://github.com/\(owner)/\(repo)/releases/download/\(releaseTag)/\(manifestFile)"
+                ) else {
+                    continue
+                }
+                guard seen.insert(url).inserted else {
+                    continue
+                }
+                out.append(
+                    V3ManifestEndpoint(
+                        countryID: country.countryID,
+                        countryCode: country.countryCode,
+                        regionID: regionFullID,
+                        manifestRegion: regionToken,
+                        regionName: region.regionName,
+                        manifestURL: url
+                    )
+                )
+            }
+        }
+        return out
+    }
+
+    private func expandedRegionID(country: V3BundleTargetCountryConfig, regionID: String) -> String {
+        let trimmedRegionID = regionID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmedCountryID = country.countryID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !trimmedRegionID.isEmpty else {
+            return trimmedCountryID
+        }
+        if trimmedRegionID.contains("/") {
+            return trimmedRegionID
+        }
+        if country.mode == "regional_shards" && trimmedRegionID != trimmedCountryID {
+            return "\(trimmedCountryID)/\(trimmedRegionID)"
+        }
+        return trimmedRegionID
+    }
+
+    private func idToken(_ raw: String) -> String {
+        raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "_", with: "-")
+            .replacingOccurrences(of: "/", with: "-")
+    }
+}
+
+struct V3ManifestEndpoint: Sendable, Hashable {
+    let countryID: String
+    let countryCode: String
+    let regionID: String
+    let manifestRegion: String
+    let regionName: String?
+    let manifestURL: URL
+
+    init(
+        countryID: String,
+        countryCode: String,
+        regionID: String,
+        manifestRegion: String,
+        regionName: String? = nil,
+        manifestURL: URL
+    ) {
+        self.countryID = countryID
+        self.countryCode = countryCode
+        self.regionID = regionID
+        self.manifestRegion = manifestRegion
+        self.regionName = regionName
+        self.manifestURL = manifestURL
+    }
+}
+
+struct DownloadedBundleInfo: Sendable, Hashable, Identifiable {
+    var id: String { "\(region)|\(bundleVersion)|\(dbFileName)" }
+    let region: String
+    let bundleVersion: String
+    let countryCode: String?
+    let dbFileName: String
+    let dbPath: String
 }
 
 struct LocalBundleRoute: Sendable {
@@ -339,6 +491,8 @@ struct SpeedLimitResult {
     let level: Int?
     let isTunnelSegment: Bool
     let streetName: String?
+    let streetBaseName: String?
+    let streetRef: String?
     let cityName: String?
     let insideCity: Bool?
     let citySource: String?
@@ -455,6 +609,7 @@ struct LocalObservationBulkExportResult: Sendable {
 }
 
 actor LocalObservationStore {
+    private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "local-observations")
     private let fileManager: FileManager
     private let userDefaults: UserDefaults
     private let bundle: Bundle
@@ -515,21 +670,34 @@ actor LocalObservationStore {
 
     func recordSpeedLimitChange(
         oldSpeedKmh: Int?,
-        newSpeedKmh: Int,
+        newMaxspeedValue: String,
         context: LocalObservationCaptureContext
     ) throws -> LocalObservation {
-        guard newSpeedKmh > 0 else {
+        let normalizedValue = newMaxspeedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedValue.isEmpty else {
+            throw ConsumerAppError.io("Recorded maxspeed value must not be empty")
+        }
+        let numericSpeed = Int(normalizedValue)
+        if let numericSpeed, numericSpeed <= 0 {
             throw ConsumerAppError.io("Recorded speed must be > 0 km/h")
         }
-        return try insertObservation(
-            modality: .lock_current_speed,
+        let wayID = context.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines)
+        Self.logger.notice(
+            "local_obs record_speed_change begin value=\(normalizedValue, privacy: .public) old=\(oldSpeedKmh?.description ?? "n/a", privacy: .public) way=\(wayID ?? "n/a", privacy: .public) source=\(context.sourceVersion, privacy: .public)"
+        )
+        let observation = try insertObservation(
+            modality: .voice_command,
             intent: .set_maxspeed,
-            value: String(newSpeedKmh),
+            value: normalizedValue,
             context: context,
             initialState: .localOnly,
             oldSpeedKmh: oldSpeedKmh,
-            newSpeedKmh: newSpeedKmh
+            newSpeedKmh: numericSpeed
         )
+        Self.logger.notice(
+            "local_obs record_speed_change saved id=\(observation.id, privacy: .public) state=\(observation.state.rawValue, privacy: .public) way=\(observation.roadCandidateIDs.first ?? "n/a", privacy: .public) new=\(observation.value ?? "n/a", privacy: .public)"
+        )
+        return observation
     }
 
     func fetchObservations(states: [LocalObservationState]? = nil, limit: Int = 50) throws -> [LocalObservation] {
@@ -622,13 +790,12 @@ actor LocalObservationStore {
         guard let wayID = observation.roadCandidateIDs.first, !wayID.isEmpty else {
             throw ConsumerAppError.io("Observation \(observationID) has no road candidate id")
         }
-        guard let rawValue = observation.value,
-              let maxspeed = Int(rawValue.trimmingCharacters(in: .whitespacesAndNewlines)),
-              maxspeed > 0 else {
-            throw ConsumerAppError.io("Observation \(observationID) does not contain a numeric speed value")
+        guard let rawValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawValue.isEmpty else {
+            throw ConsumerAppError.io("Observation \(observationID) does not contain a maxspeed value")
         }
 
-        let xml = Self.makeOsmChangeXML(wayID: wayID, maxspeed: maxspeed)
+        let xml = Self.makeOsmChangeXML(wayID: wayID, maxspeedValue: rawValue)
         let summary = observation.confidenceCalibrated.map { String(format: "confidence=%.2f", $0) } ?? "confidence=n/a"
         return LocalObservationProposal(
             observationID: observationID,
@@ -723,8 +890,11 @@ actor LocalObservationStore {
         let reduced = observations.reduce(into: [String: LocalObservation]()) { partial, observation in
             guard let wayID = observation.roadCandidateIDs.first,
                   !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let newSpeed = observation.newSpeedKmh,
-                  newSpeed > 0 else {
+                  let maxspeedValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !maxspeedValue.isEmpty else {
+                return
+            }
+            if let newSpeed = observation.newSpeedKmh, newSpeed <= 0 {
                 return
             }
             partial[wayID] = observation
@@ -733,7 +903,7 @@ actor LocalObservationStore {
             lhs.capturedAtUTC < rhs.capturedAtUTC
         }
         guard !payload.isEmpty else {
-            throw ConsumerAppError.io("Keine lokalen Erfassungen mit Way-ID und neuer Geschwindigkeit vorhanden.")
+            throw ConsumerAppError.io("Keine lokalen Erfassungen mit Way-ID und maxspeed-Wert vorhanden.")
         }
 
         let createdAt = nowProvider()
@@ -819,48 +989,59 @@ actor LocalObservationStore {
         let roadIDsData = try JSONEncoder().encode(context.roadCandidateIDs)
         let roadIDsJSON = String(data: roadIDsData, encoding: .utf8) ?? "[]"
 
-        try withDatabase { db in
-            let sql = """
-            INSERT INTO observations (
-              observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
-              city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
-              device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, NULL, ?17, ?18)
-            """
-            var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-                throw sqliteError(db: db, context: "prepare observation insert")
-            }
-            defer { sqlite3_finalize(stmt) }
+        do {
+            try withDatabase { db in
+                let sql = """
+                INSERT INTO observations (
+                  observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+                  city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+                  device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh
+                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, NULL, ?17, ?18)
+                """
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                    throw sqliteError(db: db, context: "prepare observation insert")
+                }
+                defer { sqlite3_finalize(stmt) }
 
-            sqlite3_bind_text(stmt, 1, id, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 2, modality.rawValue, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 3, intent.rawValue, -1, SQLITE_TRANSIENT)
-            if let value {
-                sqlite3_bind_text(stmt, 4, value, -1, SQLITE_TRANSIENT)
-            } else {
-                sqlite3_bind_null(stmt, 4)
-            }
-            bindOptionalDouble(context.lat, stmt: stmt, index: 5)
-            bindOptionalDouble(context.lon, stmt: stmt, index: 6)
-            bindOptionalDouble(context.headingDeg, stmt: stmt, index: 7)
-            sqlite3_bind_text(stmt, 8, roadIDsJSON, -1, SQLITE_TRANSIENT)
-            bindOptionalText(context.cityContext, stmt: stmt, index: 9)
-            bindOptionalText(context.streetContext, stmt: stmt, index: 10)
-            sqlite3_bind_text(stmt, 11, nowUTC, -1, SQLITE_TRANSIENT)
-            bindOptionalDouble(context.confidenceCalibrated, stmt: stmt, index: 12)
-            sqlite3_bind_text(stmt, 13, context.sourceVersion, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 14, initialState.rawValue, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 15, devicePseudoID, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 16, nowUTC, -1, SQLITE_TRANSIENT)
-            bindOptionalInt(oldSpeedKmh, stmt: stmt, index: 17)
-            bindOptionalInt(newSpeedKmh, stmt: stmt, index: 18)
+                sqlite3_bind_text(stmt, 1, id, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 2, modality.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 3, intent.rawValue, -1, SQLITE_TRANSIENT)
+                if let value {
+                    sqlite3_bind_text(stmt, 4, value, -1, SQLITE_TRANSIENT)
+                } else {
+                    sqlite3_bind_null(stmt, 4)
+                }
+                bindOptionalDouble(context.lat, stmt: stmt, index: 5)
+                bindOptionalDouble(context.lon, stmt: stmt, index: 6)
+                bindOptionalDouble(context.headingDeg, stmt: stmt, index: 7)
+                sqlite3_bind_text(stmt, 8, roadIDsJSON, -1, SQLITE_TRANSIENT)
+                bindOptionalText(context.cityContext, stmt: stmt, index: 9)
+                bindOptionalText(context.streetContext, stmt: stmt, index: 10)
+                sqlite3_bind_text(stmt, 11, nowUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalDouble(context.confidenceCalibrated, stmt: stmt, index: 12)
+                sqlite3_bind_text(stmt, 13, context.sourceVersion, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 14, initialState.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 15, devicePseudoID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 16, nowUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalInt(oldSpeedKmh, stmt: stmt, index: 17)
+                bindOptionalInt(newSpeedKmh, stmt: stmt, index: 18)
 
-            guard sqlite3_step(stmt) == SQLITE_DONE else {
-                throw sqliteError(db: db, context: "execute observation insert")
+                guard sqlite3_step(stmt) == SQLITE_DONE else {
+                    throw sqliteError(db: db, context: "execute observation insert")
+                }
             }
+            let observation = try fetchObservation(observationID: id)
+            Self.logger.notice(
+                "local_obs insert saved id=\(observation.id, privacy: .public) modality=\(observation.modality.rawValue, privacy: .public) state=\(observation.state.rawValue, privacy: .public) way=\(observation.roadCandidateIDs.first ?? "n/a", privacy: .public)"
+            )
+            return observation
+        } catch {
+            Self.logger.error(
+                "local_obs insert failed modality=\(modality.rawValue, privacy: .public) intent=\(intent.rawValue, privacy: .public) value=\(value ?? "n/a", privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+            )
+            throw error
         }
-        return try fetchObservation(observationID: id)
     }
 
     private func fetchObservation(observationID: String) throws -> LocalObservation {
@@ -984,13 +1165,13 @@ actor LocalObservationStore {
     - You are responsible for reviewing correctness before upload.
     """
 
-    private static func makeOsmChangeXML(wayID: String, maxspeed: Int) -> String {
+    private static func makeOsmChangeXML(wayID: String, maxspeedValue: String) -> String {
         """
         <?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="youspeed-export-v1">
           <modify>
             <way id="\(xmlEscape(wayID))">
-              <tag k="maxspeed" v="\(maxspeed)"/>
+              <tag k="maxspeed" v="\(xmlEscape(maxspeedValue))"/>
             </way>
           </modify>
         </osmChange>
@@ -1000,12 +1181,13 @@ actor LocalObservationStore {
     private static func makeBulkOsmChangeXML(observations: [LocalObservation]) -> String {
         let body = observations.compactMap { observation -> String? in
             guard let wayID = observation.roadCandidateIDs.first,
-                  let maxspeed = observation.newSpeedKmh else {
+                  let maxspeedValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !maxspeedValue.isEmpty else {
                 return nil
             }
             return """
                 <way id="\(xmlEscape(wayID))">
-                  <tag k="maxspeed" v="\(maxspeed)"/>
+                  <tag k="maxspeed" v="\(xmlEscape(maxspeedValue))"/>
                 </way>
             """
         }.joined(separator: "\n")

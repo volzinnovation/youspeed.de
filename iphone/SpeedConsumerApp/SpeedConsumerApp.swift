@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @main
 struct SpeedConsumerApp: App {
@@ -6,23 +9,36 @@ struct SpeedConsumerApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel = DriveSessionViewModel()
     @State private var dismissedWelcomeThisSession = false
+    @State private var shouldOpenSettingsOnMainAppear = false
 
     var body: some Scene {
         WindowGroup {
-            if shouldPresentWelcome && !dismissedWelcomeThisSession {
-                FirstUserWelcomeView(viewModel: viewModel) {
-                    dismissedWelcomeThisSession = true
+            Group {
+                if shouldPresentWelcome && !dismissedWelcomeThisSession {
+                    FirstUserWelcomeView(viewModel: viewModel) {
+                        openSettings in
+                        dismissedWelcomeThisSession = true
+                        shouldOpenSettingsOnMainAppear = openSettings
+                    }
+                } else if viewModel.isDatabaseReadyForQueries {
+                    MainView(
+                        viewModel: viewModel,
+                        openSettingsOnAppear: shouldOpenSettingsOnMainAppear,
+                        onOpenSettingsConsumed: {
+                            shouldOpenSettingsOnMainAppear = false
+                        }
+                    )
+                } else {
+                    StartupView(viewModel: viewModel)
                 }
-            } else if viewModel.isDatabaseReadyForQueries {
-                MainView(viewModel: viewModel)
-            } else {
-                StartupView(viewModel: viewModel)
             }
+            .onAppear { updateIdleTimer(for: scenePhase) }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
                 dismissedWelcomeThisSession = false
             }
+            updateIdleTimer(for: newPhase)
         }
     }
 
@@ -30,7 +46,16 @@ struct SpeedConsumerApp: App {
         guard viewModel.startupDataState == .ready else {
             return false
         }
+        if viewModel.hideWelcomeScreen {
+            return false
+        }
         return Self.requiresWelcome(bundleVersion: viewModel.activeBundleVersion, now: Date())
+    }
+
+    private func updateIdleTimer(for phase: ScenePhase) {
+        #if canImport(UIKit)
+        UIApplication.shared.isIdleTimerDisabled = (phase == .active)
+        #endif
     }
 
     private static func requiresWelcome(bundleVersion: String, now: Date) -> Bool {

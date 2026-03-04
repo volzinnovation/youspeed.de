@@ -8,8 +8,16 @@ private let speedLimitNumberScale: CGFloat = 0.5
 private let secondaryTextRatio: CGFloat = 9.0 / 16.0
 private let drivingBanPulseCycleSeconds: Double = 2.2
 
+enum LegalDisclaimerText {
+    static let short = "Hinweis: Angezeigte Bußgelder, Punkte und Fahrverbote sind unverbindliche Orientierung und keine Rechtsberatung. Maßgeblich sind amtliche Bescheide und die jeweils gültige Rechtslage."
+
+    static let long = "Die in YouSpeed angezeigten Werte zu Bußgeld, Punkten und Fahrverbot dienen nur der unverbindlichen Orientierung. Sie stellen keine Rechtsberatung und keine verbindliche Rechtsauskunft dar. Maßgeblich sind ausschließlich amtliche Bescheide sowie die zum Tatzeitpunkt geltende Rechtslage; zusätzliche Gebühren und Auslagen können anfallen."
+}
+
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    var openSettingsOnAppear: Bool = false
+    var onOpenSettingsConsumed: (() -> Void)?
     @State private var hasAutoTriggeredSyncForTests = false
     @State private var showingSettings = false
     @State private var showingLegalInfo = false
@@ -86,6 +94,10 @@ struct MainView: View {
             if viewModel.driveStatus == "stopped" {
                 viewModel.startDriving()
             }
+            if openSettingsOnAppear && !showingSettings {
+                showingSettings = true
+                onOpenSettingsConsumed?()
+            }
             guard shouldAutoTapSyncForTests, !hasAutoTriggeredSyncForTests else {
                 return
             }
@@ -100,9 +112,9 @@ struct MainView: View {
             Spacer()
             HStack {
                 Button {
-                    showingLocalRecordings = true
+                    showingLegalInfo = true
                 } label: {
-                    Image(systemName: "ladybug.fill")
+                    Image(systemName: "info.circle.fill")
                         .font(.title3.weight(.semibold))
                         .frame(width: 44, height: 44)
                 }
@@ -120,9 +132,9 @@ struct MainView: View {
     private var topCornerButtons: some View {
         HStack {
             Button {
-                showingLegalInfo = true
+                showingLocalRecordings = true
             } label: {
-                Image(systemName: "info.circle.fill")
+                Image(systemName: "ladybug.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
@@ -164,16 +176,23 @@ struct MainView: View {
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
-                Text(primaryMetricText)
-                    .font(primaryMetricFont(size: primaryFont))
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.45)
-                    .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
-                Text(secondaryMetricText)
-                    .font(.system(size: secondaryFont, weight: .bold, design: .default))
-                    .minimumScaleFactor(0.45)
-                    .padding(.top, -primaryFont * 0.06)
-                    .opacity(secondaryMetricText.isEmpty ? 0 : 1)
+                if shouldShowTunnelCurrentSpeedIcon {
+                    Image(systemName: "tunnel.fill")
+                        .font(.system(size: primaryFont * 0.72, weight: .bold, design: .rounded))
+                    Text("Tunnel")
+                        .font(.system(size: secondaryFont, weight: .bold, design: .default))
+                } else {
+                    Text(primaryMetricText)
+                        .font(primaryMetricFont(size: primaryFont))
+                        .multilineTextAlignment(.center)
+                        .minimumScaleFactor(0.45)
+                        .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
+                    Text(secondaryMetricText)
+                        .font(.system(size: secondaryFont, weight: .bold, design: .default))
+                        .minimumScaleFactor(0.45)
+                        .padding(.top, -primaryFont * 0.06)
+                        .opacity(secondaryMetricText.isEmpty ? 0 : 1)
+                }
             }
             .frame(height: metricBlockHeight, alignment: .center)
 
@@ -221,7 +240,7 @@ struct MainView: View {
 
     private var primaryMetricText: String {
         if viewModel.isInSpeedCaptureMode {
-            return "Erfasse"
+            return viewModel.speedCapturePrimaryMetricText ?? "Jetzt"
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return "\(drivingBanMonths)"
@@ -247,15 +266,18 @@ struct MainView: View {
 
     private var secondaryMetricText: String {
         if viewModel.isInSpeedCaptureMode {
-            return "Geschwindigkeit"
+            return viewModel.speedCaptureSecondaryMetricText ?? "sprechen"
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return drivingBanMonths == 1 ? "Monat Fahrverbot" : "Monate Fahrverbot"
         }
         switch finePresentation?.severity {
         case .moneyOnly:
-            return "Euro"
+            return viewModel.activePenaltyRules.currencyCode
         case .pointsAndFine:
+            if let points = finePresentation?.penaltyPoints {
+                return points == 1 ? "Punkt" : "Punkte"
+            }
             return "Punkte"
         case .none:
             guard !isSearchingSignal else {
@@ -292,9 +314,6 @@ struct MainView: View {
         if let capture = viewModel.speedCaptureSignText {
             return capture
         }
-        if shouldShowTunnelSignIcon {
-            return ""
-        }
         guard let speedLimit = viewModel.speedLimitKmh else {
             return hasUsableGPSFix ? "–" : "?"
         }
@@ -302,6 +321,10 @@ struct MainView: View {
     }
 
     private var shouldShowTunnelSignIcon: Bool {
+        false
+    }
+
+    private var shouldShowTunnelCurrentSpeedIcon: Bool {
         viewModel.isTunnelModeActive && !viewModel.isInSpeedCaptureMode
     }
 
@@ -333,7 +356,9 @@ struct MainView: View {
 
     @ViewBuilder
     private var screenBackgroundView: some View {
-        if isDrivingBanWarningActive {
+        if viewModel.isInSpeedCaptureMode {
+            Color.white
+        } else if isDrivingBanWarningActive {
             TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
                 drivingBanPulseBackgroundColor(at: timeline.date)
             }
@@ -343,6 +368,9 @@ struct MainView: View {
     }
 
     private var primaryForegroundColor: Color {
+        if viewModel.isInSpeedCaptureMode {
+            return .black
+        }
         if usesDarkForeground {
             return .black
         }
@@ -350,6 +378,9 @@ struct MainView: View {
     }
 
     private var buttonBackgroundColor: Color {
+        if viewModel.isInSpeedCaptureMode {
+            return Color.black.opacity(0.08)
+        }
         if usesDarkForeground {
             return Color.black.opacity(0.08)
         }
@@ -577,11 +608,24 @@ private struct LegalInformationView: View {
 
     var body: some View {
         ScrollView {
-            Text(legalText)
-                .font(.system(size: 15, weight: .regular, design: .default))
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Rechtlicher Hinweis")
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    Text(LegalDisclaimerText.long)
+                        .font(.system(size: 14, weight: .regular, design: .default))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(16)
-                .textSelection(.enabled)
+                .background(Color.yellow.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Text(legalText)
+                    .font(.system(size: 15, weight: .regular, design: .default))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .padding(16)
         }
         .navigationTitle("Rechtliche Hinweise")
         .navigationBarTitleDisplayMode(.inline)
@@ -652,6 +696,14 @@ private struct LocalRecordingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            Text("Zur Erfassung von Korrekturen Schild doppelklicken anschliessend die korrekte Geschwindigkeit als Zahl einsprechen")
+                .font(.footnote)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
+
             List {
                 if viewModel.localObservations.isEmpty {
                     Text("Keine lokalen Erfassungen vorhanden.")
@@ -780,7 +832,7 @@ private struct ShareSheet: UIViewControllerRepresentable {
 
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
-    @State private var showingFlushLocalContributionsConfirm = false
+    @State private var showingDeleteDownloadedBundlesConfirm = false
 
     var body: some View {
         Form {
@@ -819,6 +871,13 @@ private struct SettingsView: View {
             Section("Kartendaten-Download") {
                 LabeledContent("Status", value: syncStatusLabel)
                 LabeledContent("Bundle", value: viewModel.activeBundleVersion)
+                LabeledContent("GH Token", value: viewModel.hasGitHubReleaseToken ? "vorhanden" : "fehlt")
+
+                if !viewModel.hasGitHubReleaseToken {
+                    Text("GitHub Release Token fehlt. Downloads aus Releases schlagen fehl (YOUSPEED_RELEASE_READ_TOKEN).")
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
 
                 if let syncMessage = syncMessageLine {
                     Text(syncMessage.text)
@@ -826,15 +885,37 @@ private struct SettingsView: View {
                         .foregroundStyle(syncMessage.color)
                 }
 
-                Button("Neueste Daten herunterladen/synchronisieren") {
-                    viewModel.bootstrapAndSync()
+                Text("Top-10 Laender (A-Z). Bundles koennen einzeln geladen oder geloescht werden.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if viewModel.bundleDownloadSections.isEmpty {
+                    Text("Keine Downloadliste verfuegbar.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.bundleDownloadSections) { country in
+                        if country.options.count == 1, let option = country.options.first {
+                            bundleOptionRow(option, title: country.countryName)
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(country.countryName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+
+                                ForEach(country.options) { option in
+                                    bundleOptionRow(option, title: option.displayName)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
                 }
-                .disabled(viewModel.isSyncingNow)
 
                 Button(role: .destructive) {
-                    showingFlushLocalContributionsConfirm = true
+                    showingDeleteDownloadedBundlesConfirm = true
                 } label: {
-                    Text("Lokale Korrekturen loeschen und neu synchronisieren")
+                    Text("Heruntergeladene Datenbanken loeschen (Seed behalten)")
                 }
                 .disabled(viewModel.isSyncingNow)
 
@@ -844,7 +925,14 @@ private struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if viewModel.syncStatus == "syncing" || viewModel.syncStatus == "bootstrapping" {
+                if !viewModel.lastError.isEmpty {
+                    Text(viewModel.lastError)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
+
+                if (viewModel.syncStatus == "syncing" || viewModel.syncStatus == "bootstrapping"),
+                   viewModel.activeDownloadOptionID == nil {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(viewModel.syncProgressDetail)
                             .font(.caption)
@@ -888,9 +976,19 @@ private struct SettingsView: View {
             }
 
             Section("Bussgeldregeln") {
-                LabeledContent("Aktive Datei", value: "DEU-rules.json")
+                LabeledContent("Aktive Datei", value: viewModel.activePenaltyRulesFile)
                 LabeledContent("Land", value: "\(viewModel.activePenaltyRules.countryName) (\(viewModel.activePenaltyRules.countryCode))")
                 LabeledContent("Stufen", value: "\(viewModel.activePenaltyRules.bands.count)")
+            }
+
+            Section("Startbildschirm") {
+                Toggle("Nicht mehr anzeigen", isOn: $viewModel.hideWelcomeScreen)
+
+                Text(viewModel.hideWelcomeScreen
+                     ? "Der Startbildschirm wird nicht mehr automatisch angezeigt."
+                     : "Der Startbildschirm wird bei Seed-Daten oder veralteten Deutschland-Daten angezeigt.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Debug") {
@@ -901,13 +999,13 @@ private struct SettingsView: View {
         }
         .navigationTitle("Einstellungen")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Lokale Korrekturen loeschen?", isPresented: $showingFlushLocalContributionsConfirm) {
+        .alert("Heruntergeladene Datenbanken loeschen?", isPresented: $showingDeleteDownloadedBundlesConfirm) {
             Button("Abbrechen", role: .cancel) {}
-            Button("Loeschen und synchronisieren", role: .destructive) {
-                viewModel.flushLocalContributionsAndResync()
+            Button("Loeschen", role: .destructive) {
+                viewModel.deleteDownloadedBundlesKeepingSeed()
             }
         } message: {
-            Text("Diese Aktion entfernt lokale Korrektur- und Exportdaten. Anschliessend wird eine neue Datensynchronisierung gestartet.")
+            Text("Alle heruntergeladenen Bundle-Daten werden entfernt. Der Seed-Datensatz bleibt erhalten.")
         }
     }
 
@@ -998,6 +1096,81 @@ private struct SettingsView: View {
         }
         return ""
     }
+
+    @ViewBuilder
+    private func bundleOptionRow(
+        _ option: DriveSessionViewModel.BundleDownloadOption,
+        title: String
+    ) -> some View {
+        let downloaded = viewModel.isBundleDownloaded(option)
+        let statusText = viewModel.downloadedBundleStatusText(option)
+        let isActiveDownload = viewModel.isActiveBundleDownload(option)
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+
+                if !statusText.isEmpty {
+                    Text(statusText)
+                        .font(.caption2)
+                        .foregroundStyle(downloaded ? .green : .secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                if isActiveDownload {
+                    if let progress = viewModel.activeBundleDownloadProgress(option) {
+                        ProgressView(value: progress)
+                    } else {
+                        ProgressView()
+                    }
+                    let progressText = viewModel.activeBundleDownloadBytesText(option)
+                    if !progressText.isEmpty {
+                        Text(progressText)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            if downloaded {
+                Button(role: .destructive) {
+                    viewModel.deleteSelectedBundle(option)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isSyncingNow)
+            } else {
+                if isActiveDownload {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 30, height: 30)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button {
+                        viewModel.downloadSelectedBundle(option)
+                    } label: {
+                        Image(systemName: "arrow.down.circle")
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isSyncingNow || viewModel.hasActiveBundleDownload)
+                }
+            }
+        }
+        .frame(minHeight: 42, alignment: .center)
+        .padding(.vertical, 1)
+    }
 }
 
 private struct DebugInformationView: View {
@@ -1005,235 +1178,46 @@ private struct DebugInformationView: View {
     @State private var showingOSMBrowser = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("YouSpeed Consumer (Debug)")
-                    .font(.title3)
-                    .bold()
-
-                Group {
-                    Text("sync=\(viewModel.syncStatus)")
-                    Text("drive=\(viewModel.driveStatus)")
-                    Text("bundle=\(viewModel.activeBundleVersion)")
-                }
-                .font(.footnote)
-
-                HStack {
-                    Button("Sync Data") {
-                        viewModel.bootstrapAndSync()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(viewModel.isSyncingNow)
-
-                    Button("Start Driving") {
-                        viewModel.startDriving()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("Stop") {
-                        viewModel.stopDriving()
-                    }
-                    .buttonStyle(.bordered)
-                }
-
-                Group {
-                    Text(String(format: "Current speed: %.1f km/h", viewModel.currentSpeedKmh))
-                        .font(.title3)
-                        .bold()
-                    if let limit = viewModel.speedLimitKmh {
-                        Text("Speed limit: \(limit) km/h")
-                            .font(.title3)
-                            .bold()
-                        let delta = Int(round(viewModel.currentSpeedKmh)) - limit
-                        Text("Delta: \(delta >= 0 ? "+" : "")\(delta) km/h")
-                            .foregroundStyle(delta > 0 ? .red : .green)
-                    } else {
-                        Text("Speed limit: n/a")
-                            .font(.title3)
-                    }
-                    if let wayID = viewModel.limitWayID {
-                        Text("Matched way: \(wayID)")
-                            .font(.caption)
-                    }
-                    if let street = viewModel.limitStreetName, !street.isEmpty {
-                        Text("Street: \(street)")
-                            .font(.caption)
-                    }
-                    if let city = viewModel.limitCityName, !city.isEmpty {
-                        Text("City: \(city)")
-                            .font(.caption)
-                    }
-                }
-
-                GroupBox("Lookup Diagnostics") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("strategy=closest_way + prefer_previous_way")
-                        Text("radius=50m (fixed)")
-
-                        Stepper("max candidates \(viewModel.lookupMaxCandidates)", value: $viewModel.lookupMaxCandidates, in: 64...1024, step: 64)
-
-                        Text(
-                            "gps=\(viewModel.currentLatitude.map { String(format: "%.6f", $0) } ?? "nil"),\(viewModel.currentLongitude.map { String(format: "%.6f", $0) } ?? "nil")"
-                        )
-                        Text(
-                            "lookup=\(viewModel.lastLookupStatus) q_ms=\(String(format: "%.3f", viewModel.lastLookupQueryMs)) rows=\(viewModel.lastLookupCandidateCount) speed_rows=\(viewModel.lastLookupSpeedCandidateCount)"
-                        )
-                        Text(
-                            "nearest_m=\(viewModel.lastLookupNearestCandidateM.map { String(format: "%.1f", $0) } ?? "nil") nearest_speed_m=\(viewModel.lastLookupNearestSpeedCandidateM.map { String(format: "%.1f", $0) } ?? "nil")"
-                        )
-                        Text(
-                            "city=\(viewModel.limitCityName ?? "nil") inside_city=\(viewModel.lastLookupInsideCity.map { $0 ? "1" : "0" } ?? "nil") city_src=\(viewModel.lastLookupCitySource)"
-                        )
-                        Text(
-                            "street=\(viewModel.limitStreetName ?? "nil") city_ms=\(String(format: "%.3f", viewModel.lastLookupCityResolveMs)) city_bounds=\(viewModel.lastLookupCityCandidateBoundaries) city_contains=\(viewModel.lastLookupCityContainingBoundaries) city_places=\(viewModel.lastLookupCityPlaceCandidates)"
-                        )
-                        Text("fix_count=\(viewModel.gpsFixCount)")
-                        if !viewModel.gpsLogPath.isEmpty {
-                            Text("gps_log=\(viewModel.gpsLogPath)")
-                                .lineLimit(2)
-                        }
-
-                        Button("Reset Diagnostics") {
-                            viewModel.resetDiagnostics()
-                        }
-                        .buttonStyle(.bordered)
-
-                        ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 4) {
-                                ForEach(Array(viewModel.lookupEventLog.enumerated()), id: \.offset) { _, line in
-                                    Text(line)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                        }
-                        .frame(maxHeight: 140)
-                    }
-                    .font(.caption2.monospaced())
-                }
-
-                GroupBox("Local Corrections (Draft)") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        TextField("Voice command (z. B. Tempo 30)", text: $viewModel.observationDraftVoiceCommand)
-                            .textFieldStyle(.roundedBorder)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-
-                        HStack {
-                            Button("Capture Voice") {
-                                viewModel.captureVoiceObservationDraft()
-                            }
-                            .buttonStyle(.borderedProminent)
-
-                            Button("Lock Current Speed") {
-                                viewModel.lockCurrentSpeedAsObservation()
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        HStack {
-                            Button("Export First Approved") {
-                                viewModel.exportFirstApprovedObservation()
-                            }
-                            .buttonStyle(.bordered)
-
-                            Button("Reload") {
-                                Task { @MainActor in
-                                    await viewModel.refreshLocalObservations()
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        if !viewModel.localObservationStatus.isEmpty {
-                            Text(viewModel.localObservationStatus)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        if !viewModel.lastExportDirectoryPath.isEmpty {
-                            Text("export_dir=\(viewModel.lastExportDirectoryPath)")
-                                .font(.caption2.monospaced())
-                                .lineLimit(2)
-                                .textSelection(.enabled)
-                        }
-
-                        Divider()
-
-                        if viewModel.localObservations.isEmpty {
-                            Text("No local observations yet.")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(viewModel.localObservations) { observation in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("#\(observation.id.prefix(8)) \(observation.modality.rawValue) \(observation.intentType.rawValue)")
-                                    Text("state=\(observation.state.rawValue) value=\(observation.value ?? "n/a")")
-                                    Text("road=\(observation.roadCandidateIDs.first ?? "n/a") city=\(observation.cityContext ?? "n/a") street=\(observation.streetContext ?? "n/a")")
-                                    Text("captured=\(observation.capturedAtUTC)")
-                                    if observation.state == .needsReview {
-                                        HStack {
-                                            Button("Approve") {
-                                                viewModel.approveObservation(observation.id)
-                                            }
-                                            .buttonStyle(.bordered)
-
-                                            Button("Discard") {
-                                                viewModel.discardObservation(observation.id)
-                                            }
-                                            .buttonStyle(.bordered)
-                                        }
-                                    }
-                                }
-                                .font(.caption2.monospaced())
-                                .padding(.vertical, 4)
-                            }
-                        }
-                    }
-                }
-
-                GroupBox("OSM Link") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let target = osmTarget {
-                            Text("way_id=\(target.wayID) lat=\(target.latText) lon=\(target.lonText)")
-                                .font(.caption2.monospaced())
-
-                            let url = target.url
-                            Text(url.absoluteString)
-                                .font(.caption2.monospaced())
-                                .textSelection(.enabled)
-                                .lineLimit(3)
-
-                            HStack {
-                                Link("Open in Browser", destination: url)
-                                    .buttonStyle(.bordered)
-
-                                Button("Open in Browser View") {
-                                    showingOSMBrowser = true
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
-                        } else {
-                            Text("OSM link unavailable (need matched way + current location)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                if !viewModel.activeDBPath.isEmpty {
-                    Text("db=\(viewModel.activeDBPath)")
-                        .font(.caption2)
-                        .lineLimit(3)
+        List {
+            Section("Letzter Fix") {
+                if hasUsableFix {
+                    DebugKeyValueTable(rows: fixRows)
+                } else {
+                    Text("Noch kein verwertbarer GPS-Fix vorhanden.")
                         .foregroundStyle(.secondary)
                 }
+            }
 
-                if !viewModel.lastError.isEmpty {
-                    Text("error=\(viewModel.lastError)")
-                        .font(.caption)
+            if let target = osmTarget {
+                Section("OSM") {
+                    HStack {
+                        Text("Way")
+                        Spacer()
+                        Text(target.wayID)
+                            .font(.body.monospaced())
+                            .textSelection(.enabled)
+                    }
+
+                    HStack(spacing: 12) {
+                        Link("Im Browser öffnen", destination: target.url)
+                            .buttonStyle(.bordered)
+
+                        Button("In App-Browser") {
+                            showingOSMBrowser = true
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+
+            if !viewModel.lastError.isEmpty {
+                Section("Fehler") {
+                    Text(viewModel.lastError)
                         .foregroundStyle(.red)
                 }
             }
-            .padding()
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingOSMBrowser) {
@@ -1248,6 +1232,64 @@ private struct DebugInformationView: View {
         }
     }
 
+    private var hasUsableFix: Bool {
+        viewModel.gpsFixCount > 0 &&
+        viewModel.currentLatitude != nil &&
+        viewModel.currentLongitude != nil
+    }
+
+    private var fixRows: [(key: String, value: String)] {
+        let speed = String(format: "%.1f km/h", viewModel.currentSpeedKmh)
+        let limitText = viewModel.speedLimitKmh.map { "\($0) km/h" } ?? "n/a"
+        let delta: String = {
+            guard let limit = viewModel.speedLimitKmh else { return "n/a" }
+            let value = Int(round(viewModel.currentSpeedKmh)) - limit
+            return "\(value >= 0 ? "+" : "")\(value) km/h"
+        }()
+        let latLon = "\(latText), \(lonText)"
+        return [
+            ("Koordinate", latLon),
+            ("Geschwindigkeit", speed),
+            ("Tempolimit", limitText),
+            ("Delta", delta),
+            ("Aktives Bundle", viewModel.activeBundleVersion),
+            ("Aktive DB", viewModel.activeDatabaseFileName),
+            ("DB-Quelle", viewModel.activeDatabaseOriginLabel),
+            ("DB-Pfad", viewModel.activeDBPath.isEmpty ? "n/a" : viewModel.activeDBPath),
+            ("Way-ID", viewModel.limitWayID ?? "n/a"),
+            ("Straße", normalizedOrNA(viewModel.limitStreetName)),
+            ("Stadt", normalizedOrNA(viewModel.limitCityName)),
+            ("Innerorts", viewModel.lastLookupInsideCity.map { $0 ? "ja" : "nein" } ?? "n/a"),
+            ("Lookup", viewModel.lastLookupStatus),
+            ("Query", String(format: "%.3f ms", viewModel.lastLookupQueryMs)),
+            ("Kandidaten", "\(viewModel.lastLookupCandidateCount)"),
+            ("Mit Limit", "\(viewModel.lastLookupSpeedCandidateCount)"),
+            ("Distanz Weg", viewModel.lastLookupNearestCandidateM.map { String(format: "%.1f m", $0) } ?? "n/a"),
+            ("Distanz Limit-Weg", viewModel.lastLookupNearestSpeedCandidateM.map { String(format: "%.1f m", $0) } ?? "n/a"),
+            ("Stadtquelle", viewModel.lastLookupCitySource),
+            ("Stadt-Resolve", String(format: "%.3f ms", viewModel.lastLookupCityResolveMs)),
+            ("Manifest-Endpunkte", "\(viewModel.configuredManifestEndpointCount)"),
+            ("Manifest-Länder", viewModel.configuredManifestCountryCodes),
+        ]
+    }
+
+    private var latText: String {
+        guard let lat = viewModel.currentLatitude else { return "n/a" }
+        return String(format: "%.6f", lat)
+    }
+
+    private var lonText: String {
+        guard let lon = viewModel.currentLongitude else { return "n/a" }
+        return String(format: "%.6f", lon)
+    }
+
+    private func normalizedOrNA(_ raw: String?) -> String {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+            return "n/a"
+        }
+        return trimmed
+    }
+
     private var osmTarget: (wayID: String, latText: String, lonText: String, url: URL)? {
         guard let wayID = viewModel.limitWayID,
               let lat = viewModel.currentLatitude,
@@ -1260,6 +1302,27 @@ private struct DebugInformationView: View {
             return nil
         }
         return (wayID, latText, lonText, url)
+    }
+}
+
+private struct DebugKeyValueTable: View {
+    let rows: [(key: String, value: String)]
+
+    var body: some View {
+        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                GridRow {
+                    Text(row.key)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(row.value)
+                        .font(.body.monospacedDigit())
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

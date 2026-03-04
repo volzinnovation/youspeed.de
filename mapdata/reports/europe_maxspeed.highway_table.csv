@@ -1,0 +1,661 @@
+country,iso2,rank,highway_tag,interpretation,ways,maxspeed_tagged,maxspeed_share_pct
+Netherlands,NL,1,service,"Access roads to premises, parking, and service areas.",484148,56195,11.6070
+Netherlands,NL,1,residential,Roads primarily serving housing areas.,367805,363307,98.7771
+Netherlands,NL,1,secondary,Secondary inter-settlement connectors in the network hierarchy.,73751,73438,99.5756
+Netherlands,NL,1,tertiary,Tertiary connectors between local centers.,118032,117567,99.6060
+Netherlands,NL,1,unclassified,Minor public through roads (not unknown class).,195421,190515,97.4895
+Netherlands,NL,1,primary,Primary roads with high network importance below trunk/motorway.,48205,48021,99.6183
+Netherlands,NL,1,living_street,Traffic-calmed shared street.,29481,29400,99.7252
+Netherlands,NL,1,motorway,Controlled-access motorway corridor.,13664,13651,99.9049
+Netherlands,NL,1,motorway_link,Motorway ramps/connectors.,13408,13347,99.5450
+Netherlands,NL,1,trunk,Major non-motorway long-distance routes.,8619,8557,99.2807
+Netherlands,NL,1,trunk_link,Connector ramps between trunk and other classes.,3483,3431,98.5070
+Netherlands,NL,1,primary_link,Connector ramps related to primary roads.,2526,2499,98.9311
+Netherlands,NL,1,secondary_link,Connector ramps related to secondary roads.,1213,1188,97.9390
+Netherlands,NL,1,tertiary_link,Connector ramps related to tertiary roads.,324,310,95.6790
+Netherlands,NL,1,road,Temporary placeholder until precise class is surveyed.,21,0,0.0000
+Romania,RO,2,service,"Access roads to premises, parking, and service areas.",166591,42915,25.7607
+Romania,RO,2,residential,Roads primarily serving housing areas.,304541,234475,76.9929
+Romania,RO,2,secondary,Secondary inter-settlement connectors in the network hierarchy.,43830,37297,85.0947
+Romania,RO,2,tertiary,Tertiary connectors between local centers.,37346,28555,76.4607
+Romania,RO,2,unclassified,Minor public through roads (not unknown class).,25673,12274,47.8090
+Romania,RO,2,primary,Primary roads with high network importance below trunk/motorway.,33575,31882,94.9576
+Romania,RO,2,living_street,Traffic-calmed shared street.,34889,10666,30.5712
+Romania,RO,2,motorway,Controlled-access motorway corridor.,3369,3279,97.3286
+Romania,RO,2,motorway_link,Motorway ramps/connectors.,1606,1310,81.5691
+Romania,RO,2,trunk,Major non-motorway long-distance routes.,15382,14008,91.0675
+Romania,RO,2,trunk_link,Connector ramps between trunk and other classes.,1317,841,63.8573
+Romania,RO,2,primary_link,Connector ramps related to primary roads.,1655,1305,78.8520
+Romania,RO,2,secondary_link,Connector ramps related to secondary roads.,956,715,74.7908
+Romania,RO,2,tertiary_link,Connector ramps related to tertiary roads.,510,360,70.5882
+Romania,RO,2,road,Temporary placeholder until precise class is surveyed.,8,2,25.0000
+Luxembourg,LU,3,service,"Access roads to premises, parking, and service areas.",22110,1310,5.9249
+Luxembourg,LU,3,residential,Roads primarily serving housing areas.,14124,10907,77.2232
+Luxembourg,LU,3,secondary,Secondary inter-settlement connectors in the network hierarchy.,7792,7480,95.9959
+Luxembourg,LU,3,tertiary,Tertiary connectors between local centers.,1494,1338,89.5582
+Luxembourg,LU,3,unclassified,Minor public through roads (not unknown class).,2836,1288,45.4161
+Luxembourg,LU,3,primary,Primary roads with high network importance below trunk/motorway.,6101,5805,95.1483
+Luxembourg,LU,3,living_street,Traffic-calmed shared street.,878,799,91.0023
+Luxembourg,LU,3,motorway,Controlled-access motorway corridor.,861,859,99.7677
+Luxembourg,LU,3,motorway_link,Motorway ramps/connectors.,696,576,82.7586
+Luxembourg,LU,3,trunk,Major non-motorway long-distance routes.,137,135,98.5401
+Luxembourg,LU,3,trunk_link,Connector ramps between trunk and other classes.,79,54,68.3544
+Luxembourg,LU,3,primary_link,Connector ramps related to primary roads.,193,150,77.7202
+Luxembourg,LU,3,secondary_link,Connector ramps related to secondary roads.,79,57,72.1519
+Luxembourg,LU,3,tertiary_link,Connector ramps related to tertiary roads.,20,8,40.0000
+Luxembourg,LU,3,road,Temporary placeholder until precise class is surveyed.,1,0,0.0000
+Belgium,BE,4,service,"Access roads to premises, parking, and service areas.",276828,11301,4.0823
+Belgium,BE,4,residential,Roads primarily serving housing areas.,239715,116676,48.6728
+Belgium,BE,4,secondary,Secondary inter-settlement connectors in the network hierarchy.,45399,34775,76.5986
+Belgium,BE,4,tertiary,Tertiary connectors between local centers.,73917,46548,62.9733
+Belgium,BE,4,unclassified,Minor public through roads (not unknown class).,101992,29906,29.3219
+Belgium,BE,4,primary,Primary roads with high network importance below trunk/motorway.,39401,34322,87.1095
+Belgium,BE,4,living_street,Traffic-calmed shared street.,9701,6387,65.8386
+Belgium,BE,4,motorway,Controlled-access motorway corridor.,7705,7598,98.6113
+Belgium,BE,4,motorway_link,Motorway ramps/connectors.,7402,4074,55.0392
+Belgium,BE,4,trunk,Major non-motorway long-distance routes.,8425,7843,93.0920
+Belgium,BE,4,trunk_link,Connector ramps between trunk and other classes.,2676,1499,56.0164
+Belgium,BE,4,primary_link,Connector ramps related to primary roads.,1265,725,57.3123
+Belgium,BE,4,secondary_link,Connector ramps related to secondary roads.,985,504,51.1675
+Belgium,BE,4,tertiary_link,Connector ramps related to tertiary roads.,574,294,51.2195
+Belgium,BE,4,road,Temporary placeholder until precise class is surveyed.,125,0,0.0000
+Sweden,SE,5,service,"Access roads to premises, parking, and service areas.",599182,31157,5.1999
+Sweden,SE,5,residential,Roads primarily serving housing areas.,231711,192068,82.8912
+Sweden,SE,5,secondary,Secondary inter-settlement connectors in the network hierarchy.,43739,42902,98.0864
+Sweden,SE,5,tertiary,Tertiary connectors between local centers.,92289,83546,90.5265
+Sweden,SE,5,unclassified,Minor public through roads (not unknown class).,202122,35447,17.5374
+Sweden,SE,5,primary,Primary roads with high network importance below trunk/motorway.,16866,16781,99.4960
+Sweden,SE,5,living_street,Traffic-calmed shared street.,7480,2169,28.9973
+Sweden,SE,5,motorway,Controlled-access motorway corridor.,8473,8471,99.9764
+Sweden,SE,5,motorway_link,Motorway ramps/connectors.,5851,5667,96.8552
+Sweden,SE,5,trunk,Major non-motorway long-distance routes.,18896,18729,99.1162
+Sweden,SE,5,trunk_link,Connector ramps between trunk and other classes.,4126,3303,80.0533
+Sweden,SE,5,primary_link,Connector ramps related to primary roads.,1997,1530,76.6149
+Sweden,SE,5,secondary_link,Connector ramps related to secondary roads.,1335,1184,88.6891
+Sweden,SE,5,tertiary_link,Connector ramps related to tertiary roads.,525,444,84.5714
+Sweden,SE,5,road,Temporary placeholder until precise class is surveyed.,952,45,4.7269
+Liechtenstein,LI,6,service,"Access roads to premises, parking, and service areas.",3135,97,3.0941
+Liechtenstein,LI,6,residential,Roads primarily serving housing areas.,1230,863,70.1626
+Liechtenstein,LI,6,secondary,Secondary inter-settlement connectors in the network hierarchy.,303,282,93.0693
+Liechtenstein,LI,6,tertiary,Tertiary connectors between local centers.,101,87,86.1386
+Liechtenstein,LI,6,unclassified,Minor public through roads (not unknown class).,321,196,61.0592
+Liechtenstein,LI,6,primary,Primary roads with high network importance below trunk/motorway.,291,286,98.2818
+Liechtenstein,LI,6,living_street,Traffic-calmed shared street.,19,18,94.7368
+Liechtenstein,LI,6,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Liechtenstein,LI,6,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Liechtenstein,LI,6,trunk,Major non-motorway long-distance routes.,0,0,0.0000
+Liechtenstein,LI,6,trunk_link,Connector ramps between trunk and other classes.,0,0,0.0000
+Liechtenstein,LI,6,primary_link,Connector ramps related to primary roads.,3,3,100.0000
+Liechtenstein,LI,6,secondary_link,Connector ramps related to secondary roads.,4,4,100.0000
+Liechtenstein,LI,6,tertiary_link,Connector ramps related to tertiary roads.,0,0,0.0000
+Liechtenstein,LI,6,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Iceland,IS,7,service,"Access roads to premises, parking, and service areas.",33415,1905,5.7010
+Iceland,IS,7,residential,Roads primarily serving housing areas.,10419,7663,73.5483
+Iceland,IS,7,secondary,Secondary inter-settlement connectors in the network hierarchy.,2914,2095,71.8943
+Iceland,IS,7,tertiary,Tertiary connectors between local centers.,3922,2733,69.6838
+Iceland,IS,7,unclassified,Minor public through roads (not unknown class).,5423,1409,25.9819
+Iceland,IS,7,primary,Primary roads with high network importance below trunk/motorway.,2797,2567,91.7769
+Iceland,IS,7,living_street,Traffic-calmed shared street.,179,166,92.7374
+Iceland,IS,7,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Iceland,IS,7,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Iceland,IS,7,trunk,Major non-motorway long-distance routes.,1666,1644,98.6795
+Iceland,IS,7,trunk_link,Connector ramps between trunk and other classes.,369,287,77.7778
+Iceland,IS,7,primary_link,Connector ramps related to primary roads.,188,169,89.8936
+Iceland,IS,7,secondary_link,Connector ramps related to secondary roads.,86,72,83.7209
+Iceland,IS,7,tertiary_link,Connector ramps related to tertiary roads.,55,41,74.5455
+Iceland,IS,7,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Monaco,MC,8,service,"Access roads to premises, parking, and service areas.",399,26,6.5163
+Monaco,MC,8,residential,Roads primarily serving housing areas.,317,59,18.6120
+Monaco,MC,8,secondary,Secondary inter-settlement connectors in the network hierarchy.,202,145,71.7822
+Monaco,MC,8,tertiary,Tertiary connectors between local centers.,132,47,35.6061
+Monaco,MC,8,unclassified,Minor public through roads (not unknown class).,8,3,37.5000
+Monaco,MC,8,primary,Primary roads with high network importance below trunk/motorway.,135,63,46.6667
+Monaco,MC,8,living_street,Traffic-calmed shared street.,1,1,100.0000
+Monaco,MC,8,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Monaco,MC,8,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Monaco,MC,8,trunk,Major non-motorway long-distance routes.,0,0,0.0000
+Monaco,MC,8,trunk_link,Connector ramps between trunk and other classes.,0,0,0.0000
+Monaco,MC,8,primary_link,Connector ramps related to primary roads.,14,1,7.1429
+Monaco,MC,8,secondary_link,Connector ramps related to secondary roads.,13,9,69.2308
+Monaco,MC,8,tertiary_link,Connector ramps related to tertiary roads.,3,1,33.3333
+Monaco,MC,8,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+United Kingdom,GB,9,service,"Access roads to premises, parking, and service areas.",2561705,108225,4.2247
+United Kingdom,GB,9,residential,Roads primarily serving housing areas.,1301644,494346,37.9786
+United Kingdom,GB,9,secondary,Secondary inter-settlement connectors in the network hierarchy.,110831,92778,83.7112
+United Kingdom,GB,9,tertiary,Tertiary connectors between local centers.,227242,158024,69.5400
+United Kingdom,GB,9,unclassified,Minor public through roads (not unknown class).,342518,123507,36.0585
+United Kingdom,GB,9,primary,Primary roads with high network importance below trunk/motorway.,157375,146204,92.9017
+United Kingdom,GB,9,living_street,Traffic-calmed shared street.,11218,3371,30.0499
+United Kingdom,GB,9,motorway,Controlled-access motorway corridor.,10896,10896,100.0000
+United Kingdom,GB,9,motorway_link,Motorway ramps/connectors.,6779,6287,92.7423
+United Kingdom,GB,9,trunk,Major non-motorway long-distance routes.,113805,111128,97.6477
+United Kingdom,GB,9,trunk_link,Connector ramps between trunk and other classes.,15920,12795,80.3706
+United Kingdom,GB,9,primary_link,Connector ramps related to primary roads.,5657,4460,78.8404
+United Kingdom,GB,9,secondary_link,Connector ramps related to secondary roads.,1878,1332,70.9265
+United Kingdom,GB,9,tertiary_link,Connector ramps related to tertiary roads.,3307,1855,56.0931
+United Kingdom,GB,9,road,Temporary placeholder until precise class is surveyed.,281,8,2.8470
+Andorra,AD,10,service,"Access roads to premises, parking, and service areas.",1253,20,1.5962
+Andorra,AD,10,residential,Roads primarily serving housing areas.,902,78,8.6475
+Andorra,AD,10,secondary,Secondary inter-settlement connectors in the network hierarchy.,228,45,19.7368
+Andorra,AD,10,tertiary,Tertiary connectors between local centers.,138,32,23.1884
+Andorra,AD,10,unclassified,Minor public through roads (not unknown class).,127,8,6.2992
+Andorra,AD,10,primary,Primary roads with high network importance below trunk/motorway.,581,414,71.2565
+Andorra,AD,10,living_street,Traffic-calmed shared street.,71,21,29.5775
+Andorra,AD,10,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Andorra,AD,10,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Andorra,AD,10,trunk,Major non-motorway long-distance routes.,317,269,84.8580
+Andorra,AD,10,trunk_link,Connector ramps between trunk and other classes.,57,46,80.7018
+Andorra,AD,10,primary_link,Connector ramps related to primary roads.,33,22,66.6667
+Andorra,AD,10,secondary_link,Connector ramps related to secondary roads.,6,0,0.0000
+Andorra,AD,10,tertiary_link,Connector ramps related to tertiary roads.,1,0,0.0000
+Andorra,AD,10,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Switzerland,CH,11,service,"Access roads to premises, parking, and service areas.",455581,13497,2.9626
+Switzerland,CH,11,residential,Roads primarily serving housing areas.,188384,70566,37.4586
+Switzerland,CH,11,secondary,Secondary inter-settlement connectors in the network hierarchy.,36621,31974,87.3106
+Switzerland,CH,11,tertiary,Tertiary connectors between local centers.,50632,33988,67.1275
+Switzerland,CH,11,unclassified,Minor public through roads (not unknown class).,69776,15030,21.5404
+Switzerland,CH,11,primary,Primary roads with high network importance below trunk/motorway.,34745,32318,93.0148
+Switzerland,CH,11,living_street,Traffic-calmed shared street.,6506,4302,66.1236
+Switzerland,CH,11,motorway,Controlled-access motorway corridor.,8906,8860,99.4835
+Switzerland,CH,11,motorway_link,Motorway ramps/connectors.,5985,4041,67.5188
+Switzerland,CH,11,trunk,Major non-motorway long-distance routes.,2390,2244,93.8912
+Switzerland,CH,11,trunk_link,Connector ramps between trunk and other classes.,1066,636,59.6623
+Switzerland,CH,11,primary_link,Connector ramps related to primary roads.,1103,682,61.8314
+Switzerland,CH,11,secondary_link,Connector ramps related to secondary roads.,681,431,63.2893
+Switzerland,CH,11,tertiary_link,Connector ramps related to tertiary roads.,422,188,44.5498
+Switzerland,CH,11,road,Temporary placeholder until precise class is surveyed.,44,0,0.0000
+Hungary,HU,12,service,"Access roads to premises, parking, and service areas.",190496,8025,4.2127
+Hungary,HU,12,residential,Roads primarily serving housing areas.,184998,43375,23.4462
+Hungary,HU,12,secondary,Secondary inter-settlement connectors in the network hierarchy.,37881,19034,50.2468
+Hungary,HU,12,tertiary,Tertiary connectors between local centers.,25882,12902,49.8493
+Hungary,HU,12,unclassified,Minor public through roads (not unknown class).,24430,3574,14.6296
+Hungary,HU,12,primary,Primary roads with high network importance below trunk/motorway.,28634,23212,81.0645
+Hungary,HU,12,living_street,Traffic-calmed shared street.,8715,6270,71.9449
+Hungary,HU,12,motorway,Controlled-access motorway corridor.,4208,4128,98.0989
+Hungary,HU,12,motorway_link,Motorway ramps/connectors.,2744,1710,62.3178
+Hungary,HU,12,trunk,Major non-motorway long-distance routes.,1996,1910,95.6914
+Hungary,HU,12,trunk_link,Connector ramps between trunk and other classes.,1339,807,60.2689
+Hungary,HU,12,primary_link,Connector ramps related to primary roads.,1843,1077,58.4373
+Hungary,HU,12,secondary_link,Connector ramps related to secondary roads.,639,425,66.5102
+Hungary,HU,12,tertiary_link,Connector ramps related to tertiary roads.,547,265,48.4461
+Hungary,HU,12,road,Temporary placeholder until precise class is surveyed.,50,0,0.0000
+Austria,AT,13,service,"Access roads to premises, parking, and service areas.",701837,21246,3.0272
+Austria,AT,13,residential,Roads primarily serving housing areas.,259137,101817,39.2908
+Austria,AT,13,secondary,Secondary inter-settlement connectors in the network hierarchy.,51836,38527,74.3248
+Austria,AT,13,tertiary,Tertiary connectors between local centers.,56475,33493,59.3059
+Austria,AT,13,unclassified,Minor public through roads (not unknown class).,94981,15190,15.9927
+Austria,AT,13,primary,Primary roads with high network importance below trunk/motorway.,58374,51670,88.5154
+Austria,AT,13,living_street,Traffic-calmed shared street.,5687,1707,30.0158
+Austria,AT,13,motorway,Controlled-access motorway corridor.,14393,14354,99.7290
+Austria,AT,13,motorway_link,Motorway ramps/connectors.,7442,4424,59.4464
+Austria,AT,13,trunk,Major non-motorway long-distance routes.,2689,2560,95.2027
+Austria,AT,13,trunk_link,Connector ramps between trunk and other classes.,1045,585,55.9809
+Austria,AT,13,primary_link,Connector ramps related to primary roads.,3083,1616,52.4165
+Austria,AT,13,secondary_link,Connector ramps related to secondary roads.,389,239,61.4396
+Austria,AT,13,tertiary_link,Connector ramps related to tertiary roads.,327,172,52.5994
+Austria,AT,13,road,Temporary placeholder until precise class is surveyed.,24,0,0.0000
+Czech Republic,CZ,14,service,"Access roads to premises, parking, and service areas.",355123,14497,4.0822
+Czech Republic,CZ,14,residential,Roads primarily serving housing areas.,275254,54748,19.8900
+Czech Republic,CZ,14,secondary,Secondary inter-settlement connectors in the network hierarchy.,52521,35016,66.6705
+Czech Republic,CZ,14,tertiary,Tertiary connectors between local centers.,88327,36779,41.6396
+Czech Republic,CZ,14,unclassified,Minor public through roads (not unknown class).,29272,3570,12.1960
+Czech Republic,CZ,14,primary,Primary roads with high network importance below trunk/motorway.,24634,20892,84.8096
+Czech Republic,CZ,14,living_street,Traffic-calmed shared street.,14835,6255,42.1638
+Czech Republic,CZ,14,motorway,Controlled-access motorway corridor.,6841,6732,98.4067
+Czech Republic,CZ,14,motorway_link,Motorway ramps/connectors.,3595,1713,47.6495
+Czech Republic,CZ,14,trunk,Major non-motorway long-distance routes.,3919,3827,97.6525
+Czech Republic,CZ,14,trunk_link,Connector ramps between trunk and other classes.,2374,1654,69.6714
+Czech Republic,CZ,14,primary_link,Connector ramps related to primary roads.,2012,1114,55.3678
+Czech Republic,CZ,14,secondary_link,Connector ramps related to secondary roads.,1148,575,50.0871
+Czech Republic,CZ,14,tertiary_link,Connector ramps related to tertiary roads.,739,316,42.7605
+Czech Republic,CZ,14,road,Temporary placeholder until precise class is surveyed.,13,1,7.6923
+France,FR,15,service,"Access roads to premises, parking, and service areas.",2954574,93467,3.1635
+France,FR,15,residential,Roads primarily serving housing areas.,1683250,439352,26.1014
+France,FR,15,secondary,Secondary inter-settlement connectors in the network hierarchy.,427491,258682,60.5117
+France,FR,15,tertiary,Tertiary connectors between local centers.,597994,250974,41.9693
+France,FR,15,unclassified,Minor public through roads (not unknown class).,1001000,121758,12.1636
+France,FR,15,primary,Primary roads with high network importance below trunk/motorway.,264564,204135,77.1590
+France,FR,15,living_street,Traffic-calmed shared street.,50343,25748,51.1451
+France,FR,15,motorway,Controlled-access motorway corridor.,30582,29789,97.4070
+France,FR,15,motorway_link,Motorway ramps/connectors.,25347,15977,63.0331
+France,FR,15,trunk,Major non-motorway long-distance routes.,29742,28379,95.4173
+France,FR,15,trunk_link,Connector ramps between trunk and other classes.,18727,10663,56.9392
+France,FR,15,primary_link,Connector ramps related to primary roads.,13570,6579,48.4819
+France,FR,15,secondary_link,Connector ramps related to secondary roads.,6851,2837,41.4100
+France,FR,15,tertiary_link,Connector ramps related to tertiary roads.,5494,1684,30.6516
+France,FR,15,road,Temporary placeholder until precise class is surveyed.,1793,20,1.1154
+Serbia,RS,16,service,"Access roads to premises, parking, and service areas.",115835,4483,3.8702
+Serbia,RS,16,residential,Roads primarily serving housing areas.,143904,16322,11.3423
+Serbia,RS,16,secondary,Secondary inter-settlement connectors in the network hierarchy.,26064,19714,75.6369
+Serbia,RS,16,tertiary,Tertiary connectors between local centers.,17943,9068,50.5378
+Serbia,RS,16,unclassified,Minor public through roads (not unknown class).,44998,1639,3.6424
+Serbia,RS,16,primary,Primary roads with high network importance below trunk/motorway.,20428,16379,80.1792
+Serbia,RS,16,living_street,Traffic-calmed shared street.,1497,341,22.7789
+Serbia,RS,16,motorway,Controlled-access motorway corridor.,4621,4575,99.0045
+Serbia,RS,16,motorway_link,Motorway ramps/connectors.,2110,1804,85.4976
+Serbia,RS,16,trunk,Major non-motorway long-distance routes.,1526,1487,97.4443
+Serbia,RS,16,trunk_link,Connector ramps between trunk and other classes.,552,477,86.4130
+Serbia,RS,16,primary_link,Connector ramps related to primary roads.,1179,682,57.8456
+Serbia,RS,16,secondary_link,Connector ramps related to secondary roads.,710,453,63.8028
+Serbia,RS,16,tertiary_link,Connector ramps related to tertiary roads.,272,164,60.2941
+Serbia,RS,16,road,Temporary placeholder until precise class is surveyed.,2,0,0.0000
+Slovakia,SK,17,service,"Access roads to premises, parking, and service areas.",180544,10153,5.6236
+Slovakia,SK,17,residential,Roads primarily serving housing areas.,109916,16214,14.7513
+Slovakia,SK,17,secondary,Secondary inter-settlement connectors in the network hierarchy.,12563,9911,78.8904
+Slovakia,SK,17,tertiary,Tertiary connectors between local centers.,29042,15331,52.7891
+Slovakia,SK,17,unclassified,Minor public through roads (not unknown class).,8826,1570,17.7884
+Slovakia,SK,17,primary,Primary roads with high network importance below trunk/motorway.,15403,12814,83.1916
+Slovakia,SK,17,living_street,Traffic-calmed shared street.,2790,692,24.8029
+Slovakia,SK,17,motorway,Controlled-access motorway corridor.,3737,3715,99.4113
+Slovakia,SK,17,motorway_link,Motorway ramps/connectors.,1967,1490,75.7499
+Slovakia,SK,17,trunk,Major non-motorway long-distance routes.,622,574,92.2830
+Slovakia,SK,17,trunk_link,Connector ramps between trunk and other classes.,402,340,84.5771
+Slovakia,SK,17,primary_link,Connector ramps related to primary roads.,1112,843,75.8094
+Slovakia,SK,17,secondary_link,Connector ramps related to secondary roads.,349,228,65.3295
+Slovakia,SK,17,tertiary_link,Connector ramps related to tertiary roads.,404,228,56.4356
+Slovakia,SK,17,road,Temporary placeholder until precise class is surveyed.,4,0,0.0000
+Malta,MT,18,service,"Access roads to premises, parking, and service areas.",8406,317,3.7711
+Malta,MT,18,residential,Roads primarily serving housing areas.,9751,2040,20.9209
+Malta,MT,18,secondary,Secondary inter-settlement connectors in the network hierarchy.,1546,500,32.3415
+Malta,MT,18,tertiary,Tertiary connectors between local centers.,1757,519,29.5390
+Malta,MT,18,unclassified,Minor public through roads (not unknown class).,1750,99,5.6571
+Malta,MT,18,primary,Primary roads with high network importance below trunk/motorway.,1005,463,46.0697
+Malta,MT,18,living_street,Traffic-calmed shared street.,486,22,4.5267
+Malta,MT,18,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Malta,MT,18,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Malta,MT,18,trunk,Major non-motorway long-distance routes.,1004,626,62.3506
+Malta,MT,18,trunk_link,Connector ramps between trunk and other classes.,227,51,22.4670
+Malta,MT,18,primary_link,Connector ramps related to primary roads.,60,7,11.6667
+Malta,MT,18,secondary_link,Connector ramps related to secondary roads.,62,7,11.2903
+Malta,MT,18,tertiary_link,Connector ramps related to tertiary roads.,38,7,18.4211
+Malta,MT,18,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Ireland and Northern Ireland,IE,19,service,"Access roads to premises, parking, and service areas.",711640,8570,1.2043
+Ireland and Northern Ireland,IE,19,residential,Roads primarily serving housing areas.,137726,55181,40.0658
+Ireland and Northern Ireland,IE,19,secondary,Secondary inter-settlement connectors in the network hierarchy.,46093,37868,82.1556
+Ireland and Northern Ireland,IE,19,tertiary,Tertiary connectors between local centers.,51625,32063,62.1075
+Ireland and Northern Ireland,IE,19,unclassified,Minor public through roads (not unknown class).,120563,35448,29.4021
+Ireland and Northern Ireland,IE,19,primary,Primary roads with high network importance below trunk/motorway.,11389,10543,92.5718
+Ireland and Northern Ireland,IE,19,living_street,Traffic-calmed shared street.,578,141,24.3945
+Ireland and Northern Ireland,IE,19,motorway,Controlled-access motorway corridor.,1936,1935,99.9483
+Ireland and Northern Ireland,IE,19,motorway_link,Motorway ramps/connectors.,1526,1212,79.4233
+Ireland and Northern Ireland,IE,19,trunk,Major non-motorway long-distance routes.,10443,10189,97.5677
+Ireland and Northern Ireland,IE,19,trunk_link,Connector ramps between trunk and other classes.,1731,1398,80.7626
+Ireland and Northern Ireland,IE,19,primary_link,Connector ramps related to primary roads.,188,167,88.8298
+Ireland and Northern Ireland,IE,19,secondary_link,Connector ramps related to secondary roads.,723,587,81.1895
+Ireland and Northern Ireland,IE,19,tertiary_link,Connector ramps related to tertiary roads.,443,326,73.5892
+Ireland and Northern Ireland,IE,19,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Denmark,DK,20,service,"Access roads to premises, parking, and service areas.",562974,5104,0.9066
+Denmark,DK,20,residential,Roads primarily serving housing areas.,167442,41665,24.8832
+Denmark,DK,20,secondary,Secondary inter-settlement connectors in the network hierarchy.,20871,20731,99.3292
+Denmark,DK,20,tertiary,Tertiary connectors between local centers.,62000,56774,91.5710
+Denmark,DK,20,unclassified,Minor public through roads (not unknown class).,50510,15559,30.8038
+Denmark,DK,20,primary,Primary roads with high network importance below trunk/motorway.,9875,9755,98.7848
+Denmark,DK,20,living_street,Traffic-calmed shared street.,2713,544,20.0516
+Denmark,DK,20,motorway,Controlled-access motorway corridor.,2660,2658,99.9248
+Denmark,DK,20,motorway_link,Motorway ramps/connectors.,2805,1397,49.8039
+Denmark,DK,20,trunk,Major non-motorway long-distance routes.,1168,1138,97.4315
+Denmark,DK,20,trunk_link,Connector ramps between trunk and other classes.,378,238,62.9630
+Denmark,DK,20,primary_link,Connector ramps related to primary roads.,809,551,68.1088
+Denmark,DK,20,secondary_link,Connector ramps related to secondary roads.,1048,784,74.8092
+Denmark,DK,20,tertiary_link,Connector ramps related to tertiary roads.,1155,812,70.3030
+Denmark,DK,20,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Finland,FI,21,service,"Access roads to premises, parking, and service areas.",594258,7454,1.2543
+Finland,FI,21,residential,Roads primarily serving housing areas.,163186,56532,34.6427
+Finland,FI,21,secondary,Secondary inter-settlement connectors in the network hierarchy.,32767,27277,83.2453
+Finland,FI,21,tertiary,Tertiary connectors between local centers.,49508,29978,60.5518
+Finland,FI,21,unclassified,Minor public through roads (not unknown class).,109192,11723,10.7361
+Finland,FI,21,primary,Primary roads with high network importance below trunk/motorway.,13142,12092,92.0103
+Finland,FI,21,living_street,Traffic-calmed shared street.,2801,704,25.1339
+Finland,FI,21,motorway,Controlled-access motorway corridor.,3630,3598,99.1185
+Finland,FI,21,motorway_link,Motorway ramps/connectors.,3303,2198,66.5456
+Finland,FI,21,trunk,Major non-motorway long-distance routes.,14662,13655,93.1319
+Finland,FI,21,trunk_link,Connector ramps between trunk and other classes.,3685,2085,56.5807
+Finland,FI,21,primary_link,Connector ramps related to primary roads.,602,379,62.9568
+Finland,FI,21,secondary_link,Connector ramps related to secondary roads.,433,231,53.3487
+Finland,FI,21,tertiary_link,Connector ramps related to tertiary roads.,145,78,53.7931
+Finland,FI,21,road,Temporary placeholder until precise class is surveyed.,5630,3,0.0533
+Spain,ES,22,service,"Access roads to premises, parking, and service areas.",540927,21039,3.8894
+Spain,ES,22,residential,Roads primarily serving housing areas.,1157088,131896,11.3990
+Spain,ES,22,secondary,Secondary inter-settlement connectors in the network hierarchy.,129704,49106,37.8601
+Spain,ES,22,tertiary,Tertiary connectors between local centers.,261818,64507,24.6381
+Spain,ES,22,unclassified,Minor public through roads (not unknown class).,241058,13801,5.7252
+Spain,ES,22,primary,Primary roads with high network importance below trunk/motorway.,91682,44911,48.9856
+Spain,ES,22,living_street,Traffic-calmed shared street.,82982,15186,18.3004
+Spain,ES,22,motorway,Controlled-access motorway corridor.,44591,38572,86.5018
+Spain,ES,22,motorway_link,Motorway ramps/connectors.,40695,14241,34.9945
+Spain,ES,22,trunk,Major non-motorway long-distance routes.,59021,31856,53.9740
+Spain,ES,22,trunk_link,Connector ramps between trunk and other classes.,21139,4924,23.2934
+Spain,ES,22,primary_link,Connector ramps related to primary roads.,18667,3845,20.5978
+Spain,ES,22,secondary_link,Connector ramps related to secondary roads.,15443,3039,19.6788
+Spain,ES,22,tertiary_link,Connector ramps related to tertiary roads.,15190,2434,16.0237
+Spain,ES,22,road,Temporary placeholder until precise class is surveyed.,36,1,2.7778
+Belarus,BY,23,service,"Access roads to premises, parking, and service areas.",274846,11945,4.3461
+Belarus,BY,23,residential,Roads primarily serving housing areas.,114603,11549,10.0774
+Belarus,BY,23,secondary,Secondary inter-settlement connectors in the network hierarchy.,16234,12071,74.3563
+Belarus,BY,23,tertiary,Tertiary connectors between local centers.,46492,15857,34.1069
+Belarus,BY,23,unclassified,Minor public through roads (not unknown class).,42732,2274,5.3215
+Belarus,BY,23,primary,Primary roads with high network importance below trunk/motorway.,20843,17927,86.0097
+Belarus,BY,23,living_street,Traffic-calmed shared street.,470,159,33.8298
+Belarus,BY,23,motorway,Controlled-access motorway corridor.,1711,1711,100.0000
+Belarus,BY,23,motorway_link,Motorway ramps/connectors.,595,380,63.8655
+Belarus,BY,23,trunk,Major non-motorway long-distance routes.,9791,9190,93.8617
+Belarus,BY,23,trunk_link,Connector ramps between trunk and other classes.,3577,1546,43.2206
+Belarus,BY,23,primary_link,Connector ramps related to primary roads.,1847,1053,57.0114
+Belarus,BY,23,secondary_link,Connector ramps related to secondary roads.,491,204,41.5479
+Belarus,BY,23,tertiary_link,Connector ramps related to tertiary roads.,411,100,24.3309
+Belarus,BY,23,road,Temporary placeholder until precise class is surveyed.,2,0,0.0000
+Croatia,HR,24,service,"Access roads to premises, parking, and service areas.",122033,2044,1.6750
+Croatia,HR,24,residential,Roads primarily serving housing areas.,85447,4800,5.6175
+Croatia,HR,24,secondary,Secondary inter-settlement connectors in the network hierarchy.,21370,13726,64.2302
+Croatia,HR,24,tertiary,Tertiary connectors between local centers.,13175,2640,20.0380
+Croatia,HR,24,unclassified,Minor public through roads (not unknown class).,25585,1352,5.2843
+Croatia,HR,24,primary,Primary roads with high network importance below trunk/motorway.,19160,14840,77.4530
+Croatia,HR,24,living_street,Traffic-calmed shared street.,796,55,6.9095
+Croatia,HR,24,motorway,Controlled-access motorway corridor.,4238,3894,91.8830
+Croatia,HR,24,motorway_link,Motorway ramps/connectors.,2490,1531,61.4859
+Croatia,HR,24,trunk,Major non-motorway long-distance routes.,1334,1016,76.1619
+Croatia,HR,24,trunk_link,Connector ramps between trunk and other classes.,734,359,48.9101
+Croatia,HR,24,primary_link,Connector ramps related to primary roads.,1149,633,55.0914
+Croatia,HR,24,secondary_link,Connector ramps related to secondary roads.,917,399,43.5115
+Croatia,HR,24,tertiary_link,Connector ramps related to tertiary roads.,393,52,13.2316
+Croatia,HR,24,road,Temporary placeholder until precise class is surveyed.,139,1,0.7194
+Norway,NO,25,service,"Access roads to premises, parking, and service areas.",844999,18938,2.2412
+Norway,NO,25,residential,Roads primarily serving housing areas.,150747,44257,29.3585
+Norway,NO,25,secondary,Secondary inter-settlement connectors in the network hierarchy.,43125,42281,98.0429
+Norway,NO,25,tertiary,Tertiary connectors between local centers.,16653,9126,54.8009
+Norway,NO,25,unclassified,Minor public through roads (not unknown class).,84289,10579,12.5509
+Norway,NO,25,primary,Primary roads with high network importance below trunk/motorway.,34923,34528,98.8689
+Norway,NO,25,living_street,Traffic-calmed shared street.,3105,328,10.5636
+Norway,NO,25,motorway,Controlled-access motorway corridor.,3098,3094,99.8709
+Norway,NO,25,motorway_link,Motorway ramps/connectors.,1181,1013,85.7748
+Norway,NO,25,trunk,Major non-motorway long-distance routes.,22486,22189,98.6792
+Norway,NO,25,trunk_link,Connector ramps between trunk and other classes.,2635,2227,84.5161
+Norway,NO,25,primary_link,Connector ramps related to primary roads.,402,379,94.2786
+Norway,NO,25,secondary_link,Connector ramps related to secondary roads.,101,89,88.1188
+Norway,NO,25,tertiary_link,Connector ramps related to tertiary roads.,68,30,44.1176
+Norway,NO,25,road,Temporary placeholder until precise class is surveyed.,71,2,2.8169
+Poland,PL,26,service,"Access roads to premises, parking, and service areas.",1785156,33083,1.8532
+Poland,PL,26,residential,Roads primarily serving housing areas.,597517,97638,16.3406
+Poland,PL,26,secondary,Secondary inter-settlement connectors in the network hierarchy.,114394,83882,73.3273
+Poland,PL,26,tertiary,Tertiary connectors between local centers.,217792,113271,52.0088
+Poland,PL,26,unclassified,Minor public through roads (not unknown class).,141921,19484,13.7288
+Poland,PL,26,primary,Primary roads with high network importance below trunk/motorway.,66314,55762,84.0878
+Poland,PL,26,living_street,Traffic-calmed shared street.,54301,20901,38.4910
+Poland,PL,26,motorway,Controlled-access motorway corridor.,20679,20613,99.6808
+Poland,PL,26,motorway_link,Motorway ramps/connectors.,10428,7303,70.0326
+Poland,PL,26,trunk,Major non-motorway long-distance routes.,9976,7985,80.0421
+Poland,PL,26,trunk_link,Connector ramps between trunk and other classes.,1083,694,64.0813
+Poland,PL,26,primary_link,Connector ramps related to primary roads.,4784,3181,66.4925
+Poland,PL,26,secondary_link,Connector ramps related to secondary roads.,2855,1751,61.3310
+Poland,PL,26,tertiary_link,Connector ramps related to tertiary roads.,3170,1484,46.8139
+Poland,PL,26,road,Temporary placeholder until precise class is surveyed.,14,1,7.1429
+Lithuania,LT,27,service,"Access roads to premises, parking, and service areas.",205120,4444,2.1665
+Lithuania,LT,27,residential,Roads primarily serving housing areas.,53586,11589,21.6269
+Lithuania,LT,27,secondary,Secondary inter-settlement connectors in the network hierarchy.,15695,9765,62.2173
+Lithuania,LT,27,tertiary,Tertiary connectors between local centers.,5053,1865,36.9088
+Lithuania,LT,27,unclassified,Minor public through roads (not unknown class).,25870,3856,14.9053
+Lithuania,LT,27,primary,Primary roads with high network importance below trunk/motorway.,11395,9295,81.5709
+Lithuania,LT,27,living_street,Traffic-calmed shared street.,1706,1532,89.8007
+Lithuania,LT,27,motorway,Controlled-access motorway corridor.,1171,1153,98.4629
+Lithuania,LT,27,motorway_link,Motorway ramps/connectors.,839,132,15.7330
+Lithuania,LT,27,trunk,Major non-motorway long-distance routes.,4840,4409,91.0950
+Lithuania,LT,27,trunk_link,Connector ramps between trunk and other classes.,1524,846,55.5118
+Lithuania,LT,27,primary_link,Connector ramps related to primary roads.,765,474,61.9608
+Lithuania,LT,27,secondary_link,Connector ramps related to secondary roads.,321,118,36.7601
+Lithuania,LT,27,tertiary_link,Connector ramps related to tertiary roads.,67,47,70.1493
+Lithuania,LT,27,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Estonia,EE,28,service,"Access roads to premises, parking, and service areas.",100504,1026,1.0209
+Estonia,EE,28,residential,Roads primarily serving housing areas.,24301,3474,14.2957
+Estonia,EE,28,secondary,Secondary inter-settlement connectors in the network hierarchy.,7021,5314,75.6872
+Estonia,EE,28,tertiary,Tertiary connectors between local centers.,16779,8910,53.1021
+Estonia,EE,28,unclassified,Minor public through roads (not unknown class).,22134,995,4.4953
+Estonia,EE,28,primary,Primary roads with high network importance below trunk/motorway.,2481,2205,88.8755
+Estonia,EE,28,living_street,Traffic-calmed shared street.,3683,532,14.4447
+Estonia,EE,28,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Estonia,EE,28,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Estonia,EE,28,trunk,Major non-motorway long-distance routes.,3139,2774,88.3721
+Estonia,EE,28,trunk_link,Connector ramps between trunk and other classes.,704,281,39.9148
+Estonia,EE,28,primary_link,Connector ramps related to primary roads.,239,138,57.7406
+Estonia,EE,28,secondary_link,Connector ramps related to secondary roads.,607,318,52.3888
+Estonia,EE,28,tertiary_link,Connector ramps related to tertiary roads.,760,276,36.3158
+Estonia,EE,28,road,Temporary placeholder until precise class is surveyed.,12,0,0.0000
+Cyprus,CY,29,service,"Access roads to premises, parking, and service areas.",28511,213,0.7471
+Cyprus,CY,29,residential,Roads primarily serving housing areas.,56374,2882,5.1123
+Cyprus,CY,29,secondary,Secondary inter-settlement connectors in the network hierarchy.,6660,3973,59.6547
+Cyprus,CY,29,tertiary,Tertiary connectors between local centers.,6979,2782,39.8624
+Cyprus,CY,29,unclassified,Minor public through roads (not unknown class).,8494,285,3.3553
+Cyprus,CY,29,primary,Primary roads with high network importance below trunk/motorway.,4528,3136,69.2580
+Cyprus,CY,29,living_street,Traffic-calmed shared street.,104,94,90.3846
+Cyprus,CY,29,motorway,Controlled-access motorway corridor.,1065,1065,100.0000
+Cyprus,CY,29,motorway_link,Motorway ramps/connectors.,643,197,30.6376
+Cyprus,CY,29,trunk,Major non-motorway long-distance routes.,1381,1237,89.5728
+Cyprus,CY,29,trunk_link,Connector ramps between trunk and other classes.,241,104,43.1535
+Cyprus,CY,29,primary_link,Connector ramps related to primary roads.,185,38,20.5405
+Cyprus,CY,29,secondary_link,Connector ramps related to secondary roads.,182,21,11.5385
+Cyprus,CY,29,tertiary_link,Connector ramps related to tertiary roads.,59,11,18.6441
+Cyprus,CY,29,road,Temporary placeholder until precise class is surveyed.,9,0,0.0000
+Bulgaria,BG,30,service,"Access roads to premises, parking, and service areas.",105769,3886,3.6740
+Bulgaria,BG,30,residential,Roads primarily serving housing areas.,197306,23816,12.0706
+Bulgaria,BG,30,secondary,Secondary inter-settlement connectors in the network hierarchy.,8516,3694,43.3772
+Bulgaria,BG,30,tertiary,Tertiary connectors between local centers.,17677,4697,26.5713
+Bulgaria,BG,30,unclassified,Minor public through roads (not unknown class).,21191,1817,8.5744
+Bulgaria,BG,30,primary,Primary roads with high network importance below trunk/motorway.,8295,6306,76.0217
+Bulgaria,BG,30,living_street,Traffic-calmed shared street.,264,23,8.7121
+Bulgaria,BG,30,motorway,Controlled-access motorway corridor.,1921,1911,99.4794
+Bulgaria,BG,30,motorway_link,Motorway ramps/connectors.,1015,815,80.2956
+Bulgaria,BG,30,trunk,Major non-motorway long-distance routes.,1558,1452,93.1964
+Bulgaria,BG,30,trunk_link,Connector ramps between trunk and other classes.,816,361,44.2402
+Bulgaria,BG,30,primary_link,Connector ramps related to primary roads.,1971,662,33.5870
+Bulgaria,BG,30,secondary_link,Connector ramps related to secondary roads.,1177,177,15.0382
+Bulgaria,BG,30,tertiary_link,Connector ramps related to tertiary roads.,752,107,14.2287
+Bulgaria,BG,30,road,Temporary placeholder until precise class is surveyed.,7,0,0.0000
+Italy,IT,31,service,"Access roads to premises, parking, and service areas.",1383663,23661,1.7100
+Italy,IT,31,residential,Roads primarily serving housing areas.,1193732,148088,12.4055
+Italy,IT,31,secondary,Secondary inter-settlement connectors in the network hierarchy.,226824,80916,35.6735
+Italy,IT,31,tertiary,Tertiary connectors between local centers.,318244,81519,25.6153
+Italy,IT,31,unclassified,Minor public through roads (not unknown class).,595655,45297,7.6046
+Italy,IT,31,primary,Primary roads with high network importance below trunk/motorway.,137031,73696,53.7805
+Italy,IT,31,living_street,Traffic-calmed shared street.,17517,1131,6.4566
+Italy,IT,31,motorway,Controlled-access motorway corridor.,25661,24311,94.7391
+Italy,IT,31,motorway_link,Motorway ramps/connectors.,17697,16343,92.3490
+Italy,IT,31,trunk,Major non-motorway long-distance routes.,28573,23076,80.7616
+Italy,IT,31,trunk_link,Connector ramps between trunk and other classes.,28159,12727,45.1969
+Italy,IT,31,primary_link,Connector ramps related to primary roads.,14133,4215,29.8238
+Italy,IT,31,secondary_link,Connector ramps related to secondary roads.,8475,2348,27.7050
+Italy,IT,31,tertiary_link,Connector ramps related to tertiary roads.,9084,2170,23.8882
+Italy,IT,31,road,Temporary placeholder until precise class is surveyed.,944,6,0.6356
+Montenegro,ME,32,service,"Access roads to premises, parking, and service areas.",20941,217,1.0362
+Montenegro,ME,32,residential,Roads primarily serving housing areas.,20524,582,2.8357
+Montenegro,ME,32,secondary,Secondary inter-settlement connectors in the network hierarchy.,2364,1290,54.5685
+Montenegro,ME,32,tertiary,Tertiary connectors between local centers.,1288,282,21.8944
+Montenegro,ME,32,unclassified,Minor public through roads (not unknown class).,4505,114,2.5305
+Montenegro,ME,32,primary,Primary roads with high network importance below trunk/motorway.,5826,4584,78.6818
+Montenegro,ME,32,living_street,Traffic-calmed shared street.,32,2,6.2500
+Montenegro,ME,32,motorway,Controlled-access motorway corridor.,250,240,96.0000
+Montenegro,ME,32,motorway_link,Motorway ramps/connectors.,72,52,72.2222
+Montenegro,ME,32,trunk,Major non-motorway long-distance routes.,50,47,94.0000
+Montenegro,ME,32,trunk_link,Connector ramps between trunk and other classes.,3,2,66.6667
+Montenegro,ME,32,primary_link,Connector ramps related to primary roads.,136,83,61.0294
+Montenegro,ME,32,secondary_link,Connector ramps related to secondary roads.,33,3,9.0909
+Montenegro,ME,32,tertiary_link,Connector ramps related to tertiary roads.,20,0,0.0000
+Montenegro,ME,32,road,Temporary placeholder until precise class is surveyed.,0,0,0.0000
+Macedonia,MK,33,service,"Access roads to premises, parking, and service areas.",12230,293,2.3957
+Macedonia,MK,33,residential,Roads primarily serving housing areas.,34457,1194,3.4652
+Macedonia,MK,33,secondary,Secondary inter-settlement connectors in the network hierarchy.,3845,1433,37.2692
+Macedonia,MK,33,tertiary,Tertiary connectors between local centers.,3690,2056,55.7182
+Macedonia,MK,33,unclassified,Minor public through roads (not unknown class).,5144,389,7.5622
+Macedonia,MK,33,primary,Primary roads with high network importance below trunk/motorway.,1049,705,67.2069
+Macedonia,MK,33,living_street,Traffic-calmed shared street.,4693,908,19.3480
+Macedonia,MK,33,motorway,Controlled-access motorway corridor.,1169,1034,88.4517
+Macedonia,MK,33,motorway_link,Motorway ramps/connectors.,520,154,29.6154
+Macedonia,MK,33,trunk,Major non-motorway long-distance routes.,596,517,86.7450
+Macedonia,MK,33,trunk_link,Connector ramps between trunk and other classes.,233,83,35.6223
+Macedonia,MK,33,primary_link,Connector ramps related to primary roads.,139,44,31.6547
+Macedonia,MK,33,secondary_link,Connector ramps related to secondary roads.,142,17,11.9718
+Macedonia,MK,33,tertiary_link,Connector ramps related to tertiary roads.,309,116,37.5405
+Macedonia,MK,33,road,Temporary placeholder until precise class is surveyed.,3,0,0.0000
+Latvia,LV,34,service,"Access roads to premises, parking, and service areas.",153743,3021,1.9650
+Latvia,LV,34,residential,Roads primarily serving housing areas.,30069,6932,23.0536
+Latvia,LV,34,secondary,Secondary inter-settlement connectors in the network hierarchy.,9088,3470,38.1822
+Latvia,LV,34,tertiary,Tertiary connectors between local centers.,6594,3343,50.6976
+Latvia,LV,34,unclassified,Minor public through roads (not unknown class).,38887,1429,3.6747
+Latvia,LV,34,primary,Primary roads with high network importance below trunk/motorway.,6741,4503,66.8002
+Latvia,LV,34,living_street,Traffic-calmed shared street.,12519,5645,45.0915
+Latvia,LV,34,motorway,Controlled-access motorway corridor.,12,10,83.3333
+Latvia,LV,34,motorway_link,Motorway ramps/connectors.,6,1,16.6667
+Latvia,LV,34,trunk,Major non-motorway long-distance routes.,4316,3850,89.2030
+Latvia,LV,34,trunk_link,Connector ramps between trunk and other classes.,634,426,67.1924
+Latvia,LV,34,primary_link,Connector ramps related to primary roads.,226,168,74.3363
+Latvia,LV,34,secondary_link,Connector ramps related to secondary roads.,186,107,57.5269
+Latvia,LV,34,tertiary_link,Connector ramps related to tertiary roads.,140,62,44.2857
+Latvia,LV,34,road,Temporary placeholder until precise class is surveyed.,2,0,0.0000
+Faroe Islands,FO,35,service,"Access roads to premises, parking, and service areas.",9304,158,1.6982
+Faroe Islands,FO,35,residential,Roads primarily serving housing areas.,2344,521,22.2270
+Faroe Islands,FO,35,secondary,Secondary inter-settlement connectors in the network hierarchy.,398,231,58.0402
+Faroe Islands,FO,35,tertiary,Tertiary connectors between local centers.,503,236,46.9185
+Faroe Islands,FO,35,unclassified,Minor public through roads (not unknown class).,131,23,17.5573
+Faroe Islands,FO,35,primary,Primary roads with high network importance below trunk/motorway.,544,484,88.9706
+Faroe Islands,FO,35,living_street,Traffic-calmed shared street.,0,0,0.0000
+Faroe Islands,FO,35,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Faroe Islands,FO,35,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Faroe Islands,FO,35,trunk,Major non-motorway long-distance routes.,0,0,0.0000
+Faroe Islands,FO,35,trunk_link,Connector ramps between trunk and other classes.,0,0,0.0000
+Faroe Islands,FO,35,primary_link,Connector ramps related to primary roads.,0,0,0.0000
+Faroe Islands,FO,35,secondary_link,Connector ramps related to secondary roads.,1,1,100.0000
+Faroe Islands,FO,35,tertiary_link,Connector ramps related to tertiary roads.,0,0,0.0000
+Faroe Islands,FO,35,road,Temporary placeholder until precise class is surveyed.,1,0,0.0000
+Slovenia,SI,36,service,"Access roads to premises, parking, and service areas.",120916,1800,1.4886
+Slovenia,SI,36,residential,Roads primarily serving housing areas.,47780,7119,14.8995
+Slovenia,SI,36,secondary,Secondary inter-settlement connectors in the network hierarchy.,9381,5557,59.2368
+Slovenia,SI,36,tertiary,Tertiary connectors between local centers.,11566,4888,42.2618
+Slovenia,SI,36,unclassified,Minor public through roads (not unknown class).,49636,2724,5.4880
+Slovenia,SI,36,primary,Primary roads with high network importance below trunk/motorway.,4997,3602,72.0832
+Slovenia,SI,36,living_street,Traffic-calmed shared street.,3052,259,8.4862
+Slovenia,SI,36,motorway,Controlled-access motorway corridor.,2306,2299,99.6964
+Slovenia,SI,36,motorway_link,Motorway ramps/connectors.,1312,698,53.2012
+Slovenia,SI,36,trunk,Major non-motorway long-distance routes.,391,382,97.6982
+Slovenia,SI,36,trunk_link,Connector ramps between trunk and other classes.,256,140,54.6875
+Slovenia,SI,36,primary_link,Connector ramps related to primary roads.,320,191,59.6875
+Slovenia,SI,36,secondary_link,Connector ramps related to secondary roads.,259,133,51.3514
+Slovenia,SI,36,tertiary_link,Connector ramps related to tertiary roads.,276,169,61.2319
+Slovenia,SI,36,road,Temporary placeholder until precise class is surveyed.,39,0,0.0000
+Greece,GR,37,service,"Access roads to premises, parking, and service areas.",258730,5653,2.1849
+Greece,GR,37,residential,Roads primarily serving housing areas.,377281,28835,7.6428
+Greece,GR,37,secondary,Secondary inter-settlement connectors in the network hierarchy.,43261,16457,38.0412
+Greece,GR,37,tertiary,Tertiary connectors between local centers.,60985,13505,22.1448
+Greece,GR,37,unclassified,Minor public through roads (not unknown class).,84521,5021,5.9405
+Greece,GR,37,primary,Primary roads with high network importance below trunk/motorway.,25439,15431,60.6588
+Greece,GR,37,living_street,Traffic-calmed shared street.,6366,299,4.6968
+Greece,GR,37,motorway,Controlled-access motorway corridor.,10408,9294,89.2967
+Greece,GR,37,motorway_link,Motorway ramps/connectors.,5627,2638,46.8811
+Greece,GR,37,trunk,Major non-motorway long-distance routes.,7030,5237,74.4950
+Greece,GR,37,trunk_link,Connector ramps between trunk and other classes.,2047,764,37.3229
+Greece,GR,37,primary_link,Connector ramps related to primary roads.,2802,601,21.4490
+Greece,GR,37,secondary_link,Connector ramps related to secondary roads.,2511,446,17.7618
+Greece,GR,37,tertiary_link,Connector ramps related to tertiary roads.,1344,179,13.3185
+Greece,GR,37,road,Temporary placeholder until precise class is surveyed.,2,0,0.0000
+Portugal,PT,38,service,"Access roads to premises, parking, and service areas.",180218,4820,2.6745
+Portugal,PT,38,residential,Roads primarily serving housing areas.,406095,31993,7.8782
+Portugal,PT,38,secondary,Secondary inter-settlement connectors in the network hierarchy.,44303,12170,27.4699
+Portugal,PT,38,tertiary,Tertiary connectors between local centers.,75631,11329,14.9793
+Portugal,PT,38,unclassified,Minor public through roads (not unknown class).,69110,3801,5.4999
+Portugal,PT,38,primary,Primary roads with high network importance below trunk/motorway.,48965,16123,32.9276
+Portugal,PT,38,living_street,Traffic-calmed shared street.,4221,536,12.6984
+Portugal,PT,38,motorway,Controlled-access motorway corridor.,11056,9761,88.2869
+Portugal,PT,38,motorway_link,Motorway ramps/connectors.,7710,2996,38.8586
+Portugal,PT,38,trunk,Major non-motorway long-distance routes.,9070,6109,67.3539
+Portugal,PT,38,trunk_link,Connector ramps between trunk and other classes.,4716,1405,29.7922
+Portugal,PT,38,primary_link,Connector ramps related to primary roads.,4824,604,12.5207
+Portugal,PT,38,secondary_link,Connector ramps related to secondary roads.,2041,232,11.3670
+Portugal,PT,38,tertiary_link,Connector ramps related to tertiary roads.,2608,204,7.8221
+Portugal,PT,38,road,Temporary placeholder until precise class is surveyed.,11,0,0.0000
+Albania,AL,39,service,"Access roads to premises, parking, and service areas.",47042,723,1.5369
+Albania,AL,39,residential,Roads primarily serving housing areas.,53396,2639,4.9423
+Albania,AL,39,secondary,Secondary inter-settlement connectors in the network hierarchy.,3774,2296,60.8373
+Albania,AL,39,tertiary,Tertiary connectors between local centers.,4273,1241,29.0428
+Albania,AL,39,unclassified,Minor public through roads (not unknown class).,7995,598,7.4797
+Albania,AL,39,primary,Primary roads with high network importance below trunk/motorway.,3292,2032,61.7254
+Albania,AL,39,living_street,Traffic-calmed shared street.,3454,34,0.9844
+Albania,AL,39,motorway,Controlled-access motorway corridor.,612,546,89.2157
+Albania,AL,39,motorway_link,Motorway ramps/connectors.,244,96,39.3443
+Albania,AL,39,trunk,Major non-motorway long-distance routes.,825,730,88.4848
+Albania,AL,39,trunk_link,Connector ramps between trunk and other classes.,235,211,89.7872
+Albania,AL,39,primary_link,Connector ramps related to primary roads.,233,70,30.0429
+Albania,AL,39,secondary_link,Connector ramps related to secondary roads.,102,21,20.5882
+Albania,AL,39,tertiary_link,Connector ramps related to tertiary roads.,14,5,35.7143
+Albania,AL,39,road,Temporary placeholder until precise class is surveyed.,1,0,0.0000
+Ukraine (with Crimea),UA,40,service,"Access roads to premises, parking, and service areas.",581537,17016,2.9260
+Ukraine (with Crimea),UA,40,residential,Roads primarily serving housing areas.,531284,32121,6.0459
+Ukraine (with Crimea),UA,40,secondary,Secondary inter-settlement connectors in the network hierarchy.,32579,13896,42.6532
+Ukraine (with Crimea),UA,40,tertiary,Tertiary connectors between local centers.,78200,14156,18.1023
+Ukraine (with Crimea),UA,40,unclassified,Minor public through roads (not unknown class).,155073,4728,3.0489
+Ukraine (with Crimea),UA,40,primary,Primary roads with high network importance below trunk/motorway.,25281,15218,60.1954
+Ukraine (with Crimea),UA,40,living_street,Traffic-calmed shared street.,11506,667,5.7970
+Ukraine (with Crimea),UA,40,motorway,Controlled-access motorway corridor.,214,211,98.5981
+Ukraine (with Crimea),UA,40,motorway_link,Motorway ramps/connectors.,42,4,9.5238
+Ukraine (with Crimea),UA,40,trunk,Major non-motorway long-distance routes.,16433,13788,83.9043
+Ukraine (with Crimea),UA,40,trunk_link,Connector ramps between trunk and other classes.,4058,1140,28.0927
+Ukraine (with Crimea),UA,40,primary_link,Connector ramps related to primary roads.,2281,632,27.7071
+Ukraine (with Crimea),UA,40,secondary_link,Connector ramps related to secondary roads.,1149,323,28.1114
+Ukraine (with Crimea),UA,40,tertiary_link,Connector ramps related to tertiary roads.,1014,135,13.3136
+Ukraine (with Crimea),UA,40,road,Temporary placeholder until precise class is surveyed.,552,1,0.1812
+Georgia,GE,41,service,"Access roads to premises, parking, and service areas.",59627,412,0.6910
+Georgia,GE,41,residential,Roads primarily serving housing areas.,83104,1996,2.4018
+Georgia,GE,41,secondary,Secondary inter-settlement connectors in the network hierarchy.,5824,2595,44.5570
+Georgia,GE,41,tertiary,Tertiary connectors between local centers.,10110,1338,13.2344
+Georgia,GE,41,unclassified,Minor public through roads (not unknown class).,16747,275,1.6421
+Georgia,GE,41,primary,Primary roads with high network importance below trunk/motorway.,3369,1947,57.7916
+Georgia,GE,41,living_street,Traffic-calmed shared street.,6146,71,1.1552
+Georgia,GE,41,motorway,Controlled-access motorway corridor.,864,821,95.0231
+Georgia,GE,41,motorway_link,Motorway ramps/connectors.,515,66,12.8155
+Georgia,GE,41,trunk,Major non-motorway long-distance routes.,2385,1876,78.6583
+Georgia,GE,41,trunk_link,Connector ramps between trunk and other classes.,322,48,14.9068
+Georgia,GE,41,primary_link,Connector ramps related to primary roads.,268,39,14.5522
+Georgia,GE,41,secondary_link,Connector ramps related to secondary roads.,233,26,11.1588
+Georgia,GE,41,tertiary_link,Connector ramps related to tertiary roads.,181,11,6.0773
+Georgia,GE,41,road,Temporary placeholder until precise class is surveyed.,6,0,0.0000
+Bosnia-Herzegovina,BA,42,service,"Access roads to premises, parking, and service areas.",76722,409,0.5331
+Bosnia-Herzegovina,BA,42,residential,Roads primarily serving housing areas.,96532,2469,2.5577
+Bosnia-Herzegovina,BA,42,secondary,Secondary inter-settlement connectors in the network hierarchy.,4518,1585,35.0819
+Bosnia-Herzegovina,BA,42,tertiary,Tertiary connectors between local centers.,4623,1078,23.3182
+Bosnia-Herzegovina,BA,42,unclassified,Minor public through roads (not unknown class).,18121,442,2.4392
+Bosnia-Herzegovina,BA,42,primary,Primary roads with high network importance below trunk/motorway.,6323,3356,53.0761
+Bosnia-Herzegovina,BA,42,living_street,Traffic-calmed shared street.,5478,183,3.3406
+Bosnia-Herzegovina,BA,42,motorway,Controlled-access motorway corridor.,797,598,75.0314
+Bosnia-Herzegovina,BA,42,motorway_link,Motorway ramps/connectors.,461,217,47.0716
+Bosnia-Herzegovina,BA,42,trunk,Major non-motorway long-distance routes.,218,208,95.4128
+Bosnia-Herzegovina,BA,42,trunk_link,Connector ramps between trunk and other classes.,74,23,31.0811
+Bosnia-Herzegovina,BA,42,primary_link,Connector ramps related to primary roads.,669,144,21.5247
+Bosnia-Herzegovina,BA,42,secondary_link,Connector ramps related to secondary roads.,95,7,7.3684
+Bosnia-Herzegovina,BA,42,tertiary_link,Connector ramps related to tertiary roads.,60,10,16.6667
+Bosnia-Herzegovina,BA,42,road,Temporary placeholder until precise class is surveyed.,10,0,0.0000
+Moldova,MD,43,service,"Access roads to premises, parking, and service areas.",62508,764,1.2222
+Moldova,MD,43,residential,Roads primarily serving housing areas.,78424,2629,3.3523
+Moldova,MD,43,secondary,Secondary inter-settlement connectors in the network hierarchy.,3867,1149,29.7130
+Moldova,MD,43,tertiary,Tertiary connectors between local centers.,5698,725,12.7238
+Moldova,MD,43,unclassified,Minor public through roads (not unknown class).,2830,70,2.4735
+Moldova,MD,43,primary,Primary roads with high network importance below trunk/motorway.,3722,2456,65.9860
+Moldova,MD,43,living_street,Traffic-calmed shared street.,29183,265,0.9081
+Moldova,MD,43,motorway,Controlled-access motorway corridor.,0,0,0.0000
+Moldova,MD,43,motorway_link,Motorway ramps/connectors.,0,0,0.0000
+Moldova,MD,43,trunk,Major non-motorway long-distance routes.,1448,1003,69.2680
+Moldova,MD,43,trunk_link,Connector ramps between trunk and other classes.,258,57,22.0930
+Moldova,MD,43,primary_link,Connector ramps related to primary roads.,267,51,19.1011
+Moldova,MD,43,secondary_link,Connector ramps related to secondary roads.,66,3,4.5455
+Moldova,MD,43,tertiary_link,Connector ramps related to tertiary roads.,40,3,7.5000
+Moldova,MD,43,road,Temporary placeholder until precise class is surveyed.,8,0,0.0000
+Turkey,TR,44,service,"Access roads to premises, parking, and service areas.",223234,2156,0.9658
+Turkey,TR,44,residential,Roads primarily serving housing areas.,1144501,9666,0.8446
+Turkey,TR,44,secondary,Secondary inter-settlement connectors in the network hierarchy.,53587,5995,11.1874
+Turkey,TR,44,tertiary,Tertiary connectors between local centers.,176673,6376,3.6089
+Turkey,TR,44,unclassified,Minor public through roads (not unknown class).,128281,1116,0.8700
+Turkey,TR,44,primary,Primary roads with high network importance below trunk/motorway.,26508,6462,24.3775
+Turkey,TR,44,living_street,Traffic-calmed shared street.,68062,1051,1.5442
+Turkey,TR,44,motorway,Controlled-access motorway corridor.,5257,4758,90.5079
+Turkey,TR,44,motorway_link,Motorway ramps/connectors.,5350,2032,37.9813
+Turkey,TR,44,trunk,Major non-motorway long-distance routes.,31602,12573,39.7855
+Turkey,TR,44,trunk_link,Connector ramps between trunk and other classes.,19250,4364,22.6701
+Turkey,TR,44,primary_link,Connector ramps related to primary roads.,8411,1531,18.2024
+Turkey,TR,44,secondary_link,Connector ramps related to secondary roads.,6181,614,9.9337
+Turkey,TR,44,tertiary_link,Connector ramps related to tertiary roads.,5161,369,7.1498
+Turkey,TR,44,road,Temporary placeholder until precise class is surveyed.,500,0,0.0000

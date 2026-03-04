@@ -3,49 +3,18 @@
   "schema_version": 1,
   "variant": "v3",
   "max_country_pbf_bytes": 1000000000,
+  "github_owner": "volzinnovation",
+  "github_repo": "youspeed.de",
   "countries": [
     {
       "rank": 1,
       "country_id": "netherlands",
       "country_code": "NLD",
       "iso2": "NL",
-      "mode": "regional_shards",
+      "mode": "single_country",
       "regions": [
         {
-          "region_id": "drenthe"
-        },
-        {
-          "region_id": "flevoland"
-        },
-        {
-          "region_id": "friesland"
-        },
-        {
-          "region_id": "gelderland"
-        },
-        {
-          "region_id": "groningen"
-        },
-        {
-          "region_id": "limburg"
-        },
-        {
-          "region_id": "noord-brabant"
-        },
-        {
-          "region_id": "noord-holland"
-        },
-        {
-          "region_id": "overijssel"
-        },
-        {
-          "region_id": "utrecht"
-        },
-        {
-          "region_id": "zeeland"
-        },
-        {
-          "region_id": "zuid-holland"
+          "region_id": "netherlands"
         }
       ]
     },
@@ -129,52 +98,68 @@
       "mode": "regional_shards",
       "regions": [
         {
-          "region_id": "baden-wuerttemberg"
+          "region_id": "baden-wuerttemberg",
+          "name": "Baden-Württemberg"
         },
         {
-          "region_id": "bayern"
+          "region_id": "bayern",
+          "name": "Bayern"
         },
         {
-          "region_id": "berlin"
+          "region_id": "berlin",
+          "name": "Berlin"
         },
         {
-          "region_id": "brandenburg"
+          "region_id": "brandenburg",
+          "name": "Brandenburg"
         },
         {
-          "region_id": "bremen"
+          "region_id": "bremen",
+          "name": "Bremen"
         },
         {
-          "region_id": "hamburg"
+          "region_id": "hamburg",
+          "name": "Hamburg"
         },
         {
-          "region_id": "hessen"
+          "region_id": "hessen",
+          "name": "Hessen"
         },
         {
-          "region_id": "mecklenburg-vorpommern"
+          "region_id": "mecklenburg-vorpommern",
+          "name": "Mecklenburg-Vorpommern"
         },
         {
-          "region_id": "niedersachsen"
+          "region_id": "niedersachsen",
+          "name": "Niedersachsen"
         },
         {
-          "region_id": "nordrhein-westfalen"
+          "region_id": "nordrhein-westfalen",
+          "name": "Nordrhein-Westfalen"
         },
         {
-          "region_id": "rheinland-pfalz"
+          "region_id": "rheinland-pfalz",
+          "name": "Rheinland-Pfalz"
         },
         {
-          "region_id": "saarland"
+          "region_id": "saarland",
+          "name": "Saarland"
         },
         {
-          "region_id": "sachsen"
+          "region_id": "sachsen",
+          "name": "Sachsen"
         },
         {
-          "region_id": "sachsen-anhalt"
+          "region_id": "sachsen-anhalt",
+          "name": "Sachsen-Anhalt"
         },
         {
-          "region_id": "schleswig-holstein"
+          "region_id": "schleswig-holstein",
+          "name": "Schleswig-Holstein"
         },
         {
-          "region_id": "thueringen"
+          "region_id": "thueringen",
+          "name": "Thüringen"
         }
       ]
     },
@@ -195,22 +180,10 @@
       "country_id": "united-kingdom",
       "country_code": "GBR",
       "iso2": "GB",
-      "mode": "regional_shards",
+      "mode": "single_country",
       "regions": [
         {
-          "region_id": "bermuda"
-        },
-        {
-          "region_id": "england"
-        },
-        {
-          "region_id": "falklands"
-        },
-        {
-          "region_id": "scotland"
-        },
-        {
-          "region_id": "wales"
+          "region_id": "united-kingdom"
         }
       ]
     }

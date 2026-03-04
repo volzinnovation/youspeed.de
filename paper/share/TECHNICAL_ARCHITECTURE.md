@@ -7,6 +7,14 @@ Detailed policy and UX behavior for local corrections is documented in:
 
 Policy update: current implementation targets editor-mediated individual-contributor uploads (JOSM/Merkaartor), not direct app uploads and not centralized backend publishing.
 
+## Current implementation status (2026-03-04)
+
+- Production app path is local-first and offline-first: v3 bundle lookup, local overrides, editor-mediated export.
+- Tunnel handling is per-fix and deterministic (`tunnel=yes` on the matched way toggles tunnel mode).
+- In-city classification uses way-class precedence first (`residential`, `service`, `crossing`, `living_street`), then residential polygon containment.
+- Country/region bundle routing is done by coverage bbox/poly metadata across downloaded bundles.
+- The full cloud observation/corroboration stack in the diagram remains north-star architecture, not the current critical path.
+
 Rendered variants for iteration:
 - Full architecture PNG: `paper/share/TECHNICAL_ARCHITECTURE.png`
 - Paper-scope PNG (highlighted): `paper/share/TECHNICAL_ARCHITECTURE_PAPER_SCOPE.png`
@@ -93,8 +101,7 @@ flowchart LR
 
 ## Interaction Summary
 
-1. External baseline data enters through ingestion, is transformed into bundle and delta artifacts, and is published for device sync.
-2. The app performs offline inference from baseline runtime data plus a local confidence overlay.
-3. Drivers contribute candidate observations through vision and voice; observations are normalized and stored locally first.
-4. Candidate observations are synced by device ID (without user accounts) and pass trust, validation, corroboration, and merge steps before entering the global store.
-5. Confirmed global intelligence flows back to devices as updates and can optionally be exported upstream to OSM through a moderated contribution path.
+1. Current critical path: external baseline data is packaged into regional v3 bundles and consumed on-device for offline inference.
+2. Current critical path: local corrections are captured (voice/lock), reviewed, and exported as `.osc` for user upload in JOSM/Merkaartor.
+3. Current critical path: app applies local-first overlay and bundle-based routing, then converges back through daily OSM diff ingestion.
+4. Future path: optional device-observation sync, corroboration, and shared global cache layers can be activated once phase gates are met.

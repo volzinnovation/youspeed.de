@@ -14,6 +14,7 @@
 \usepackage{siunitx}
 \usepackage{pgfplots}
 \usepackage{float}
+\usepackage{longtable}
 \usepgfplotslibrary{statistics}
 \pgfplotsset{compat=1.18}
 
@@ -107,13 +108,134 @@ The central systems challenge is synchronization across truth sources with diffe
 \subsection{App-side integration challenges}
 Computer vision and speech recognition are treated as separate subsystems with independent quality gates, failure modes, and runtime budgets. Integration happens through a shared observation contract so both channels emit comparable events for local storage, synchronization, and trust evaluation.
 
+\subsection{Regional sharding for large countries}
+To control runtime artifact size at country scale, bundle generation follows a threshold rule: if a country PBF exceeds \SI{1}{GB}, the pipeline switches from a monolithic country bundle to regional Geofabrik extracts (for example German Bundeslaender). Each regional v3 bundle carries explicit coverage metadata consisting of a fast bounding box and a region polygon (\texttt{.poly}) artifact.
+
+On device, multiple downloaded regional bundles can coexist. Runtime bundle routing is location-driven: the app first applies bbox prefiltering and then performs polygon containment for the current GPS fix to select the best local DB. This keeps inference fully offline while avoiding mandatory download of a full-country database when regional subsets are sufficient.
+
 \subsection{North-star outcome}
 The intended end state is a trusted open-data ISA retrofit platform that remains offline-capable and low-latency while improving continuously through external baselines and validated community observations. In that state, day-to-day user utility, auditable data operations, and reproducible research claims are aligned.
+
+\subsection{Implemented runtime inference pipeline (current app)}
+To avoid concept drift between architecture text and implementation, this subsection documents the currently implemented per-fix inference order in the iPhone runtime:
+\begin{enumerate}
+\item \textbf{Candidate retrieval (RTree prefilter).} For each GPS fix, the app queries \texttt{ways\_rtree} in a bounded radius and loads way attributes from \texttt{ways}; if available, \texttt{way\_geom} polyline points are used for exact geometry distance.
+\item \textbf{Geometric and directional scoring.} Candidate score is distance plus heading mismatch penalty. Heading contributes only when vehicle speed is at least \SI{8}{km/h} and heading accuracy is better than \(45^\circ\); mismatch is weighted by \(\lambda_h=\SI{1.8}{m/deg}\).
+\item \textbf{Preferred-way continuity.} If a previous matched way is available, the runtime may keep it (hysteresis) when its score remains within a small slack (\SI{12}{m}) and within an accuracy-adjusted distance bound, reducing oscillation between nearby candidates.
+\item \textbf{Speed-source derivation on the selected way.} Speed precedence on the matched way is: explicit \texttt{maxspeed} parse, then inherited regulatory tags (\texttt{maxspeed:type}/\texttt{source:maxspeed}: urban/rural/motorway), then highway-class prior.
+\item \textbf{Inside-city classification (primary rule).} If the matched way class is one of \texttt{residential}, \texttt{service}, \texttt{crossing}, or \texttt{living\_street}, the fix is classified as in-city directly.
+\item \textbf{Inside-city classification (fallback rule).} For other way classes, the runtime evaluates residential polygon containment in \texttt{areas.residential}. This polygon path is also used by the benchmarked polycontainment query.
+\item \textbf{City label resolution for UI and logging.} City name/source metadata is resolved from area/place context (\texttt{areas}, \texttt{city\_boundary}, \texttt{city\_ring}) and attached to the result for traceability; this label path is not the primary in-city classifier.
+\item \textbf{Effective speed output and fallback.} At app level, final speed precedence is local per-way override first, then selected-way speed. If selected speed comes only from coarse highway class and in-city status is known, legal urban/rural default (\SI{50}{km/h}/\SI{100}{km/h}) overrides the class prior. If no way speed exists but a way match and in-city status are available, legal default is applied. If only in-city status is available without a way speed, conservative \SI{50}{km/h} fallback is used.
+\item \textbf{Tunnel context output.} A fix is marked tunnel segment when the selected way has truthy \texttt{tunnel}. The UI switches to tunnel icon emphasis and suppresses penalty notices while tunnel mode is active.
+\item \textbf{Context output for downstream logic.} Each lookup also returns \texttt{way\_id}, street display name (\texttt{street\_name}/\texttt{ref}), city label/source, candidate counts, timing, and tunnel flag.
+\end{enumerate}
+
+\subsection{Tunnel mode state machine}
+Tunnel handling in the current app is intentionally binary and deterministic:
+\begin{itemize}
+\item Session state is \texttt{inactive} or \texttt{active}.
+\item On each fix, \texttt{isTunnelSegment} from matched-way \texttt{tunnel} directly drives the state (\texttt{active} if true, else \texttt{inactive}).
+\item There is no portal-gating, no multi-step entry/exit hysteresis, and no GPS-loss transition state in the current implementation.
+\item If lookup service is unavailable or lookup errors occur, tunnel state is reset to \texttt{inactive}.
+\end{itemize}
+
+\subsection{Runtime bundle structures used by inference}
+The implemented inference stack depends on attributes that are now materialized in scenario bundles (S1--S4), including:
+\begin{itemize}
+\item \textbf{Way-level context in \texttt{ways}:} \texttt{street\_name}, \texttt{ref}, \texttt{approx\_heading\_deg}, \texttt{service}, \texttt{tunnel}, \texttt{highway}, plus speed-related tags.
+\item \textbf{Area context in \texttt{areas}:} \texttt{boundary}, \texttt{admin\_level}, \texttt{residential}, \texttt{parking}, and geometry/bbox data for containment and city-label resolution.
+\item \textbf{Coverage metadata in manifests:} \texttt{coverage.bbox} and optional \texttt{coverage.poly} artifacts for regional bundle routing on device.
+\end{itemize}
+
+\section{International Fine Rules and Country Bundles}
+\subsection{Motivation}
+The architecture now treats speed-limit inference and sanction inference as two coupled but separable concerns. Speed-limit inference is map-driven and query-latency critical. Fine/warning inference is regulation-driven and jurisdiction-specific. For cross-border operation, country-specific legal rules must be versioned and deployed with the corresponding map bundle, otherwise the app can combine correct speed-limit lookup with incorrect warning semantics.
+
+This extension targets the 10 countries with the highest maxspeed availability (Netherlands, Romania, Luxembourg, Belgium, Sweden, Liechtenstein, Iceland, Germany, Monaco, United Kingdom), while keeping the same runtime interface for future country additions.
+
+\subsection{Country-bundle approach}
+In the current repository state, generated v3 manifests carry region-scoped artifact names and explicit region identity:
+\begin{itemize}
+\item \texttt{region}: active bundle region identifier (for example \texttt{germany}, \texttt{karlsruhe-regbez}).
+\item \texttt{country\_code}: ISO alpha-3 identifier for the legal regime of the bundle.
+\item \texttt{db}/\texttt{db\_parts}: main runtime database artifact(s), currently named \texttt{<region>\_speeds.sqlite} (or split \texttt{.partNNN} assets).
+\item \texttt{self}: manifest artifact, currently named \texttt{<region>\_manifest.json}.
+\end{itemize}
+
+For large countries that are region-sharded, all regional manifests share the same \texttt{country\_code}. Rule selection is resolved at runtime from this code; the app loads bundled \texttt{<ISO3>-rules.json} and falls back to DEU rules if country-specific rules are unavailable. The manifest field \texttt{penalty\_rules} is supported by the app parser as an optional override artifact, but the currently generated manifests use bundled rule files as the default.
+
+This makes legal-rule deployment deterministic, cacheable, and auditable in the same way as map artifacts, while preserving offline operation.
+
+\subsection{Common fine-rule data model}
+To support heterogeneous national enforcement schemes with one runtime parser, the fine model is normalized into a shared JSON schema with optional fields. Table~\ref{tab:traffic_fine_model} summarizes the core contract.
+
+\begin{table}[!htbp]
+\centering
+\caption{Common traffic-fine rule model used across country bundles.}
+\label{tab:traffic_fine_model}
+\begin{tabular}{p{3.3cm}p{2.3cm}p{6.0cm}}
+\toprule
+Field & Type & Semantics \\
+\midrule
+\texttt{format}, \texttt{schema\_version} & string, int & Rule-file format/version guard for backward-compatible parsing. \\
+\texttt{country\_code}, \texttt{country\_name} & string & Jurisdiction identity used by app/UI and manifest linkage. \\
+\texttt{currency\_code} & string & Display currency for fine amounts (for example EUR, GBP, SEK). \\
+\texttt{source\_url}, \texttt{source\_checked\_at} & string & Provenance and verification timestamp for legal tables. \\
+\texttt{bands[]} & array & Overspeed bands, each with \texttt{min\_delta\_kmh}/\texttt{max\_delta\_kmh}. \\
+\texttt{severity} & enum & \texttt{money\_only} or \texttt{points\_and\_fine}. \\
+\texttt{money\_fine\_eur} & int? & Legacy numeric fine field consumed by app logic; interpreted together with \texttt{currency\_code} (name kept for backward compatibility). \\
+\texttt{penalty\_points} & int? & Driving-register points when applicable. \\
+\texttt{driving\_ban\_months} & int? & Immediate ban duration when explicitly defined. \\
+\texttt{conditional\_driving\_ban\_months}, \texttt{driving\_ban\_condition} & int?, string? & Conditional sanctions (for example repeat-offense, court discretion). \\
+\texttt{locality\_variants} & object? & Optional in-city/out-city split (\texttt{innerorts}/\texttt{ausserorts} or urban/rural aliases). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The model is intentionally permissive: countries with point systems, court-based escalation, or purely monetary penalties can all be represented without changing app-side decoding logic.
+
+\subsection{Cross-country sanction comparison (top 10)}
+To make cross-country differences explicit for deployment planning, Table~\ref{tab:top10_sanction_matrix} compares indicative sanctions across the 10 countries with the highest maxspeed availability. Overspeed bands are duplicated into in-city and rural rows while keeping a single country-column set.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Indicative speeding-sanction matrix for the 10 countries with highest maxspeed availability (country columns; rows grouped by in-city and rural context, each sorted by excess speed). Cell format is \texttt{fine/ban-months}; currency is fixed per country header, and \texttt{*} marks conditional driving bans. Many countries currently provide one national band set without explicit locality split, so in-city and rural entries are identical there.}
+\label{tab:top10_sanction_matrix}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{l*{10}{c}}
+\toprule
+Excess (km/h) & NLD (EUR) & ROU (RON) & LUX (EUR) & BEL (EUR) & SWE (SEK) & LIE (CHF) & ISL (ISK) & DEU (EUR) & MCO (EUR) & GBR (GBP) \\
+\midrule
+\multicolumn{11}{l}{\textbf{In-city}} \\
+1--10 & 50/0 & 405/0 & 49/0 & 53/0 & 2000/0 & 120/0 & 20000/0 & 30/0 & 68/0 & 100/0 \\
+11--20 & 120/0 & 607/0 & 145/0 & 93/0 & 2800/0 & 250/0 & 30000/0 & 50--70/0 & 68/0 & 100/0 \\
+21--30 & 240/0 & 810/0 & 145/0 & 173/0 & 3200/0 & 600/0 & 45000/0 & 115--180/0--1* & 135/0 & 100/0 \\
+31--40 & 350/0 & 1215/0 & 145/0 & 253/0 & 4000/0 & 900/0 & 65000/0 & 260/1 & 375/1* & 150/0 \\
+41+ & 480+/2* & 1822+/3* & 250+/1--3* & 400+/3* & 5000+/2* & 1200+/3* & 90000+/2* & 400+/1--3 & 750+/2--3* & 1000+/1* \\
+\midrule
+\multicolumn{11}{l}{\textbf{Rural}} \\
+1--10 & 50/0 & 405/0 & 49/0 & 53/0 & 2000/0 & 120/0 & 20000/0 & 20/0 & 68/0 & 100/0 \\
+11--20 & 120/0 & 607/0 & 145/0 & 93/0 & 2800/0 & 250/0 & 30000/0 & 40--60/0 & 68/0 & 100/0 \\
+21--30 & 240/0 & 810/0 & 145/0 & 173/0 & 3200/0 & 600/0 & 45000/0 & 100--150/0--1* & 135/0 & 100/0 \\
+31--40 & 350/0 & 1215/0 & 145/0 & 253/0 & 4000/0 & 900/0 & 65000/0 & 200/0--1* & 375/1* & 150/0 \\
+41+ & 480+/2* & 1822+/3* & 250+/1--3* & 400+/3* & 5000+/2* & 1200+/3* & 90000+/2* & 320+/1--3 & 750+/2--3* & 1000+/1* \\
+\bottomrule
+\end{tabular}%
+}
+\normalsize
+\end{table}
+
+\subsection{Operational semantics and limitations}
+The app uses the rules for \emph{driver warning and context} only. It does not claim legal finality. Rule files are treated as versioned indicative policy tables that require periodic legal verification, especially where sanctions depend on offender history, discretionary court decisions, or local procedural details not observable in map data.
+
+From a systems perspective, this design keeps the query/update trade-off unchanged for geometric inference while adding a low-cost legal-context layer that scales linearly with country coverage.
 
 \section{Methodology}
 
 \subsection{Speed regulations in Germany}
-For passenger-car inference in Germany, this study uses the legal baseline defined in \S3 StVO: \(50\) km/h in built-up areas and \(100\) km/h outside built-up areas unless traffic signs specify otherwise \cite{stvo_3}. This rule is applied only when no explicit map speed value is available for a candidate road segment. The inference order is: user input (if present), then way-level \texttt{maxspeed} retrieval through \texttt{bbox}/\texttt{hybrid}/\texttt{polyline}, and finally legal-rule fallback, which requires city/rural classification via polygon containment.
+For passenger-car inference in Germany, this study uses the legal baseline defined in \S3 StVO: \(50\) km/h in built-up areas and \(100\) km/h outside built-up areas unless traffic signs specify otherwise \cite{stvo_3}. At runtime, final speed precedence is: local user override (if present), explicit way-level \texttt{maxspeed}, inherited regulatory tags, highway-class prior, and finally legal urban/rural fallback. Built-up-area inference follows the implemented app order: highway-class precedence (\texttt{residential}/\texttt{service}/\texttt{crossing}/\texttt{living\_street} \(\Rightarrow\) in-city), then residential polygon containment for all other classes. DE built-up-area sign markers (\texttt{traffic\_sign=DE:310/311}) are retained as optional metadata but are not part of the primary classifier due sparse coverage.
 
 To frame practical impact, Germany also applies escalating sanctions for speeding. Public guidance aligned with the current fine catalog reports, for example, \(+21\) to \(+25\) km/h in urban areas as EUR 115 plus one point in the driving register, and from \(+31\) km/h as EUR 260 plus one point and a one-month driving ban \cite{adac_bussgeld_2025}. These enforcement consequences motivate conservative fallback design in ISA research.
 
@@ -122,6 +244,8 @@ To frame practical impact, Germany also applies escalating sanctions for speedin
 Tables~\ref{tab:highway_distribution} and~\ref{tab:dataset_profile} summarize the Germany OSM input used throughout this study. The dataset contains 7.96 million car-drivable ways and broad coverage of context objects (administrative boundaries, area contexts, and city place tags), which is sufficient to support both direct speed-limit lookup and fallback context inference.
 
 The data also shows strong promise for practical speed-limit inference. More than 2.63 million drivable ways carry explicit \texttt{maxspeed} tagging, while high-volume road classes such as residential, secondary, and tertiary roads contribute substantial additional network coverage for rule-based inference when explicit values are absent. This combination of explicit speed tags and structured road semantics is a key enabler for scalable, offline-capable ISA research on open data.
+
+Beyond classic speed tags, current runtime bundles carry the tunnel and urban-context features required by the implemented app logic: way-level \texttt{tunnel} attributes for tunnel-mode signaling, and area context (\texttt{residential}, \texttt{boundary}, \texttt{admin\_level}, \texttt{parking}) for city/rural fallback and city labeling.
 
 \begin{table}[!htbp]
 \centering
@@ -449,6 +573,36 @@ S4 & + & + \\
 
 \section*{Reproducibility}
 All preprocessing, scenario construction, and benchmark steps are parameterized and versioned in the accompanying research codebase available at \url{https://github.com/volzinnovation/youspeed.de}. The evaluation reported here is tied to the Germany snapshot dated 2026-02-23, with fixed probe location, heading, query modes, and scenario definitions stated in the methodology and evaluation sections. 
+
+\appendix
+\section{European maxspeed-share ranking (including Germany)}
+Table~\ref{tab:europe_maxspeed_ranking_full} reports the full country list used for the Europe-wide maxspeed-tag coverage comparison. Countries are ranked by
+\[
+\text{share} = \frac{\#(\texttt{maxspeed}-tagged drivable ways)}{\#(\text{drivable ways})} \cdot 100
+\]
+using the same drivable \texttt{highway=*} class set as the main evaluation.
+
+\small
+\begin{longtable}{r p{4.2cm} c r r r}
+\caption{European country ranking by \texttt{maxspeed} share (descending), including Germany.}
+\label{tab:europe_maxspeed_ranking_full}\\
+\toprule
+Rank & Country & ISO2 & Drivable ways (\#) & \texttt{maxspeed} tagged (\#) & Share (\%) \\
+\midrule
+\endfirsthead
+\toprule
+Rank & Country & ISO2 & Drivable ways (\#) & \texttt{maxspeed} tagged (\#) & Share (\%) \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{Continued on next page}\\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\input{data/europe_maxspeed_ranking_rows.tex}
+\end{longtable}
+\normalsize
 
 \bibliographystyle{unsrtnat}
 \bibliography{../share/IEEEabrv,../share/references}

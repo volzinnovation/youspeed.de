@@ -89,6 +89,245 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(germany.mode, "regional_shards")
         XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "bayern" }))
         XCTAssertTrue(germany.regions.contains(where: { $0.regionID == "berlin" }))
+
+        let netherlands = try XCTUnwrap(config.country(countryID: "netherlands"))
+        XCTAssertEqual(netherlands.countryCode, "NLD")
+        XCTAssertEqual(netherlands.mode, "single_country")
+
+        let unitedKingdom = try XCTUnwrap(config.country(countryID: "united-kingdom"))
+        XCTAssertEqual(unitedKingdom.countryCode, "GBR")
+        XCTAssertEqual(unitedKingdom.mode, "single_country")
+    }
+
+    func testBundleTargetConfigBuildsTop10ManifestEndpoints() throws {
+        let config = try V3BundleTargetsConfig.loadBundled(bundle: Bundle(for: SpeedConsumerAppDelegate.self))
+        let endpoints = config.manifestEndpoints(preferredCountryCode: "DEU")
+
+        XCTAssertGreaterThanOrEqual(endpoints.count, 20)
+        XCTAssertEqual(endpoints.first?.countryCode, "DEU")
+
+        let germanyBayernURL = URL(
+            string: "https://github.com/volzinnovation/youspeed.de/releases/download/bayern/bayern_manifest.json"
+        )!
+        XCTAssertTrue(endpoints.contains(where: { $0.manifestURL == germanyBayernURL }))
+
+        let netherlandsManifestURL = URL(
+            string: "https://github.com/volzinnovation/youspeed.de/releases/download/netherlands/netherlands_manifest.json"
+        )!
+        XCTAssertTrue(endpoints.contains(where: { $0.manifestURL == netherlandsManifestURL }))
+
+        let netherlandsEndpoints = endpoints.filter { $0.countryCode.uppercased() == "NLD" }
+        XCTAssertEqual(netherlandsEndpoints.count, 1)
+        XCTAssertEqual(netherlandsEndpoints.first?.regionID, "netherlands")
+
+        let germanyEndpoints = endpoints.filter { $0.countryCode.uppercased() == "DEU" }
+        XCTAssertGreaterThan(germanyEndpoints.count, 1)
+        XCTAssertTrue(germanyEndpoints.contains(where: { $0.regionID == "germany/bayern" }))
+    }
+
+    func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-all-bundles-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let sourceDB = tempDir.appendingPathComponent("fixture.sqlite")
+        try createFixtureV3DB(at: sourceDB)
+        let sourceData = try Data(contentsOf: sourceDB)
+        let sourceSHA = sha256Hex(sourceData)
+
+        let config = try V3BundleTargetsConfig.loadBundled(bundle: Bundle(for: SpeedConsumerAppDelegate.self))
+        let endpoints = config.manifestEndpoints(preferredCountryCode: "DEU")
+        XCTAssertFalse(endpoints.isEmpty)
+
+        var responses: [String: (status: Int, body: Data)] = [:]
+        let encoder = JSONEncoder()
+        for (index, endpoint) in endpoints.enumerated() {
+            let dbFile = "\(endpoint.manifestRegion)-\(index).sqlite"
+            let dbURL = URL(string: "https://speedconsumer.test/\(dbFile)")!
+            let manifest = V3BundleManifest(
+                format: "youspeed.v3.bundle.manifest",
+                schemaVersion: 1,
+                variant: "v3",
+                region: endpoint.manifestRegion,
+                countryCode: endpoint.countryCode,
+                bundleVersion: "2026-03-03-\(String(format: "%03d", index))",
+                createdAtUTC: "2026-03-03T00:00:00Z",
+                minAppVersion: "1.0.0",
+                db: BundleArtifact(
+                    file: dbFile,
+                    bytes: Int64(sourceData.count),
+                    sha256: sourceSHA,
+                    url: dbURL.absoluteString
+                ),
+                dbParts: nil,
+                deltaIndex: nil
+            )
+            responses[endpoint.manifestURL.absoluteString] = (status: 200, body: try encoder.encode(manifest))
+            responses[dbURL.absoluteString] = (status: 200, body: sourceData)
+        }
+
+        MockURLProtocol.responses = responses
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let sessionConfig = URLSessionConfiguration.ephemeral
+        sessionConfig.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: sessionConfig)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        for endpoint in endpoints {
+            let result = try await manager.syncFromManifestURL(endpoint.manifestURL)
+            XCTAssertEqual(result.mode, .fullDownload, "Expected full download for \(endpoint.manifestRegion)")
+
+            let removed = try await manager.removeDownloadedBundles(forManifestRegion: endpoint.manifestRegion)
+            XCTAssertEqual(removed, 1, "Expected exactly one removed bundle for \(endpoint.manifestRegion)")
+        }
+
+        let remaining = try await manager.listDownloadedBundles()
+        XCTAssertTrue(remaining.isEmpty, "Expected no remaining bundles after delete cycle")
+    }
+
+    func testDownloadAdjacentBundlesAndCrossOverByB10Way17721265() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-adjacent-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let bwSourceDB = tempDir.appendingPathComponent("bw_fixture.sqlite")
+        let rpSourceDB = tempDir.appendingPathComponent("rp_fixture.sqlite")
+        try createAdjacentBundleFixtureDB(at: bwSourceDB, fixture: .badenWuerttemberg)
+        try createAdjacentBundleFixtureDB(at: rpSourceDB, fixture: .rheinlandPfalz)
+
+        let bwData = try Data(contentsOf: bwSourceDB)
+        let rpData = try Data(contentsOf: rpSourceDB)
+
+        let bwManifestURL = URL(string: "https://speedconsumer.test/baden-wuerttemberg_manifest.json")!
+        let rpManifestURL = URL(string: "https://speedconsumer.test/rheinland-pfalz_manifest.json")!
+        let bwDBURL = URL(string: "https://speedconsumer.test/DEU-bw-latest.speeds_v3.sqlite")!
+        let rpDBURL = URL(string: "https://speedconsumer.test/DEU-rp-latest.speeds_v3.sqlite")!
+
+        let bwManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "baden-wuerttemberg",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-04-bw",
+            createdAtUTC: "2026-03-04T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-bw-latest.speeds_v3.sqlite",
+                bytes: Int64(bwData.count),
+                sha256: sha256Hex(bwData),
+                url: bwDBURL.absoluteString
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.40, minLat: 49.00, maxLon: 8.50, maxLat: 49.20),
+                poly: nil
+            )
+        )
+        let rpManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "rheinland-pfalz",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-04-rp",
+            createdAtUTC: "2026-03-04T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-rp-latest.speeds_v3.sqlite",
+                bytes: Int64(rpData.count),
+                sha256: sha256Hex(rpData),
+                url: rpDBURL.absoluteString
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.50, minLat: 49.00, maxLon: 8.62, maxLat: 49.20),
+                poly: nil
+            )
+        )
+
+        MockURLProtocol.responses = [
+            bwManifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(bwManifest)),
+            rpManifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(rpManifest)),
+            bwDBURL.absoluteString: (status: 200, body: bwData),
+            rpDBURL.absoluteString: (status: 200, body: rpData),
+        ]
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        _ = try await manager.syncFromManifestURL(bwManifestURL)
+        _ = try await manager.syncFromManifestURL(rpManifestURL)
+
+        let fallbackDBPath = try await manager.activeDatabaseURL()?.path
+
+        func lookupAt(lat: Double, lon: Double) async throws -> (LocalBundleRoute, SpeedLimitResult) {
+            guard let route = try await manager.resolveLocalBundleRoute(lat: lat, lon: lon, fallbackDBPath: fallbackDBPath) else {
+                XCTFail("Expected route for lat=\(lat), lon=\(lon)")
+                throw NSError(domain: "SpeedConsumerTests", code: 3001)
+            }
+            let service = V3SpeedLimitService(dbPath: route.dbPath)
+            let result = try service.lookupSpeedLimit(lat: lat, lon: lon, radiusM: 120.0, maxCandidates: 128)
+            return (route, result)
+        }
+
+        let bwLocal = try await lookupAt(lat: 49.060, lon: 8.440)
+        XCTAssertEqual(bwLocal.0.region, "baden-wuerttemberg")
+        XCTAssertEqual(bwLocal.1.wayID, "17721266")
+        XCTAssertEqual(bwLocal.1.speedLimitKmh, 70)
+
+        let bwB10 = try await lookupAt(lat: 49.120, lon: 8.492)
+        XCTAssertEqual(bwB10.0.region, "baden-wuerttemberg")
+        XCTAssertEqual(bwB10.1.wayID, "17721265")
+        XCTAssertEqual(bwB10.1.speedLimitKmh, 30)
+        XCTAssertTrue((bwB10.1.streetName ?? "").contains("B10"))
+
+        let rpB10 = try await lookupAt(lat: 49.120, lon: 8.508)
+        XCTAssertEqual(rpB10.0.region, "rheinland-pfalz")
+        XCTAssertEqual(rpB10.1.wayID, "27721265")
+        XCTAssertEqual(rpB10.1.speedLimitKmh, 50)
+        XCTAssertTrue((rpB10.1.streetName ?? "").contains("B10"))
+
+        let rpLocal = try await lookupAt(lat: 49.070, lon: 8.570)
+        XCTAssertEqual(rpLocal.0.region, "rheinland-pfalz")
+        XCTAssertEqual(rpLocal.1.wayID, "27721266")
+        XCTAssertEqual(rpLocal.1.speedLimitKmh, 80)
+
+        let bwCrossBack = try await lookupAt(lat: 49.120, lon: 8.495)
+        XCTAssertEqual(bwCrossBack.0.region, "baden-wuerttemberg")
+        XCTAssertEqual(bwCrossBack.1.wayID, "17721265")
     }
 
     func testPenaltyRuleEngineUsesInnerortsAusserortsVariants() throws {
@@ -656,8 +895,8 @@ final class SpeedConsumerTests: XCTestCase {
             sourceVersion: "seed"
         )
 
-        let first = try await store.recordSpeedLimitChange(oldSpeedKmh: 30, newSpeedKmh: 40, context: contextA)
-        let second = try await store.recordSpeedLimitChange(oldSpeedKmh: 50, newSpeedKmh: 60, context: contextB)
+        let first = try await store.recordSpeedLimitChange(oldSpeedKmh: 30, newMaxspeedValue: "40", context: contextA)
+        let second = try await store.recordSpeedLimitChange(oldSpeedKmh: 50, newMaxspeedValue: "60", context: contextB)
         XCTAssertEqual(first.oldSpeedKmh, 30)
         XCTAssertEqual(first.newSpeedKmh, 40)
         XCTAssertEqual(second.oldSpeedKmh, 50)
@@ -681,6 +920,48 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(removed, 1)
         let afterDeleteAll = try await store.fetchObservations(limit: 10)
         XCTAssertTrue(afterDeleteAll.isEmpty)
+    }
+
+    func testLocalObservationStoreBulkExportSupportsWalkValue() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("speedconsumer-localobs-walk-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.localobs.walk.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: defaultsName) else {
+            XCTFail("failed to create isolated defaults suite")
+            return
+        }
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fm,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root
+        )
+
+        let context = LocalObservationCaptureContext(
+            lat: 48.8011149,
+            lon: 8.442695,
+            headingDeg: nil,
+            roadCandidateIDs: ["17721265"],
+            cityContext: "Karlsruhe",
+            streetContext: "Dobler Strasse",
+            confidenceCalibrated: 0.9,
+            sourceVersion: "seed"
+        )
+
+        let observation = try await store.recordSpeedLimitChange(oldSpeedKmh: 30, newMaxspeedValue: "walk", context: context)
+        XCTAssertEqual(observation.value, "walk")
+        XCTAssertNil(observation.newSpeedKmh)
+
+        let bulk = try await store.exportAllLocalObservationsAsOsc()
+        let osc = try String(contentsOf: bulk.changesFile, encoding: .utf8)
+        XCTAssertTrue(osc.contains("<way id=\"17721265\">"))
+        XCTAssertTrue(osc.contains("<tag k=\"maxspeed\" v=\"walk\"/>"))
     }
 
     func testResolveLocalSpeedOverridesUsesLatestAndSkipsDiscarded() async {
@@ -1821,6 +2102,84 @@ final class SpeedConsumerTests: XCTestCase {
                 horizontalAccuracyM: 5.0
             )
         )
+    }
+
+    private enum AdjacentBundleFixture {
+        case badenWuerttemberg
+        case rheinlandPfalz
+    }
+
+    private func createAdjacentBundleFixtureDB(at url: URL, fixture: AdjacentBundleFixture) throws {
+        try createFixtureV3DB(at: url)
+        switch fixture {
+        case .badenWuerttemberg:
+            try executeSQL(
+                at: url,
+                sql: """
+                UPDATE ways
+                SET way_id='17721265', highway='primary', street_name='Bundesstrasse 10', ref='B10', maxspeed='30',
+                    min_lon=8.4600, min_lat=49.1000, max_lon=8.4990, max_lat=49.1400
+                WHERE row_id=1;
+                UPDATE ways_rtree
+                SET way_id=17721265, min_lon=8.4600, max_lon=8.4990, min_lat=49.1000, max_lat=49.1400
+                WHERE way_id=100;
+                UPDATE way_geom
+                SET way_id='17721265', points_json='[[49.1000,8.4600],[49.1400,8.4990]]'
+                WHERE row_id=1;
+                UPDATE ways
+                SET way_id='17721266', highway='secondary', street_name='Landstrasse BW', ref='L605', maxspeed='70',
+                    min_lon=8.4300, min_lat=49.0500, max_lon=8.4500, max_lat=49.0700
+                WHERE row_id=2;
+                UPDATE ways_rtree
+                SET way_id=17721266, min_lon=8.4300, max_lon=8.4500, min_lat=49.0500, max_lat=49.0700
+                WHERE way_id=200;
+                UPDATE way_geom
+                SET way_id='17721266', points_json='[[49.0500,8.4300],[49.0700,8.4500]]'
+                WHERE row_id=2;
+                UPDATE areas SET name='Baden-Wuerttemberg Teststadt' WHERE row_id=1;
+                """
+            )
+        case .rheinlandPfalz:
+            try executeSQL(
+                at: url,
+                sql: """
+                UPDATE ways
+                SET way_id='27721265', highway='primary', street_name='Bundesstrasse 10', ref='B10', maxspeed='50',
+                    min_lon=8.5010, min_lat=49.1000, max_lon=8.5400, max_lat=49.1400
+                WHERE row_id=1;
+                UPDATE ways_rtree
+                SET way_id=27721265, min_lon=8.5010, max_lon=8.5400, min_lat=49.1000, max_lat=49.1400
+                WHERE way_id=100;
+                UPDATE way_geom
+                SET way_id='27721265', points_json='[[49.1000,8.5010],[49.1400,8.5400]]'
+                WHERE row_id=1;
+                UPDATE ways
+                SET way_id='27721266', highway='secondary', street_name='Landstrasse RP', ref='L493', maxspeed='80',
+                    min_lon=8.5600, min_lat=49.0600, max_lon=8.5800, max_lat=49.0800
+                WHERE row_id=2;
+                UPDATE ways_rtree
+                SET way_id=27721266, min_lon=8.5600, max_lon=8.5800, min_lat=49.0600, max_lat=49.0800
+                WHERE way_id=200;
+                UPDATE way_geom
+                SET way_id='27721266', points_json='[[49.0600,8.5600],[49.0800,8.5800]]'
+                WHERE row_id=2;
+                UPDATE areas SET name='Rheinland-Pfalz Teststadt' WHERE row_id=1;
+                """
+            )
+        }
+    }
+
+    private func executeSQL(at url: URL, sql: String) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 120, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 121, userInfo: [NSLocalizedDescriptionKey: "sqlite exec failed: \(err)"])
+        }
     }
 
     private func createFixtureV3DB(at url: URL) throws {
