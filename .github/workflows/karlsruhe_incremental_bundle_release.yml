@@ -304,19 +304,7 @@ jobs:
 
             if [[ -n "${prev_version}" && "${prev_version}" != "${new_version}" ]]; then
               prev_db_file="$(python3 -c 'import json; from pathlib import Path; obj=json.loads(Path("'"${prev_manifest_tmp}"'").read_text(encoding="utf-8")); print(((obj.get("db") or {}).get("file")) or "")')"
-              python3 - <<'PY' "${prev_manifest_tmp}" > /tmp/karlsruhe-prev/dbparts.txt
-              import json
-              import sys
-              from pathlib import Path
-
-              payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-              for item in payload.get("db_parts") or []:
-                  if not isinstance(item, dict):
-                      continue
-                  name = str(item.get("file") or "").strip()
-                  if name:
-                      print(name)
-              PY
+              python3 -c 'import json,sys; from pathlib import Path; payload=json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")); [print(str(item.get("file") or "").strip()) for item in (payload.get("db_parts") or []) if isinstance(item, dict) and str(item.get("file") or "").strip()]' "${prev_manifest_tmp}" > /tmp/karlsruhe-prev/dbparts.txt
 
               if [[ -s /tmp/karlsruhe-prev/dbparts.txt ]]; then
                 while IFS= read -r part_name; do
