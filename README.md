@@ -137,7 +137,7 @@ Germany latest assets (release tag `germany`):
 - `germany_speeds.sqlite.partNNN` (if DB exceeds GitHub 2 GB per-asset limit; app reassembles parts)
 - `germany_delta_index.json`
 - `DEU-YYYY-MM-DD.v3_delta_manifest_from_YYYY-MM-DD.json` (0..30 recent updates)
-- `DEU-YYYY-MM-DD.v3_patch_from_YYYY-MM-DD.sql` (matching delta manifests)
+- `DEU-YYYY-MM-DD.v3_patch_from_YYYY-MM-DD.sql.zlib` (matching delta manifests, zlib-compressed SQL)
 
 Regional development example:
 
@@ -159,7 +159,7 @@ FROM_VERSION=YYYY-MM-DD
 TO_VERSION=YYYY-MM-DD
 
 python3 scripts/map/build_spatialite_v3.py --v1-dist mapdata/dist/germany --out-db mapdata/dist-v3/germany/speeds_v3.sqlite
-python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-${TO_VERSION}.osc.gz --region germany --from-version "${FROM_VERSION}" --to-version "${TO_VERSION}" --out-dir mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION} --patch-file-name DEU-${TO_VERSION}.v3_patch_from_${FROM_VERSION}.sql --manifest-name DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany
+python3 scripts/map/build_v3_delta_pack.py --base-db mapdata/dist-v3/germany/speeds_v3.sqlite --diff-file mapdata/reports/deltas/daily/DEU-${TO_VERSION}.osc.gz --region germany --from-version "${FROM_VERSION}" --to-version "${TO_VERSION}" --out-dir mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION} --patch-file-name DEU-${TO_VERSION}.v3_patch_from_${FROM_VERSION}.sql.zlib --patch-compression zlib --manifest-name DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany
 python3 scripts/map/roll_v3_delta_index.py --existing-index mapdata/bundles/v3/germany/latest/germany_delta_index.json --new-delta-manifest mapdata/bundles/v3/germany/latest/deltas/${FROM_VERSION}_to_${TO_VERSION}/DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --new-delta-manifest-asset-path DEU-${TO_VERSION}.v3_delta_manifest_from_${FROM_VERSION}.json --release-asset-base-url https://github.com/volzinnovation/youspeed.de/releases/download/germany --retention-count 30 --output mapdata/bundles/v3/germany/latest/germany_delta_index.json
 python3 scripts/map/publish_v3_bundle.py --region germany --country-code DEU --db mapdata/dist-v3/germany/speeds_v3.sqlite --bundle-version "${TO_VERSION}" --bundle-dir-name latest --out-root mapdata/bundles/v3 --db-file-name germany_speeds.sqlite --manifest-name germany_manifest.json --delta-index mapdata/bundles/v3/germany/latest/germany_delta_index.json --delta-index-file-name germany_delta_index.json --github-owner volzinnovation --github-repo youspeed.de --github-release-tag germany
 ./scripts/map/publish_v3_release_assets.sh --repo volzinnovation/youspeed.de --tag germany --bundle-dir mapdata/bundles/v3/germany/latest

@@ -1141,6 +1141,193 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.insideCity, true)
     }
 
+    func testSeedBundleSyncAppliesZlibCompressedDeltaChain() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesDir = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let seedDir = bundlesDir.appendingPathComponent("seed", isDirectory: true)
+        try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
+
+        let seedDB = seedDir.appendingPathComponent("fixture-seed.sqlite")
+        try createFixtureV3DB(at: seedDB)
+        let seedState = ActiveBundleState(
+            region: "DEU",
+            bundleVersion: "seed",
+            dbFileName: seedDB.lastPathComponent,
+            activatedAtUTC: "2026-03-04T00:00:00Z",
+            dbPath: seedDB.path
+        )
+        try JSONEncoder().encode(seedState).write(
+            to: supportDir.appendingPathComponent("active_bundle.json"),
+            options: .atomic
+        )
+
+        let seedData = try Data(contentsOf: seedDB)
+        let manifestURL = URL(string: "https://speedconsumer.test/DEU-latest.bundle-manifest.v3.json")!
+        let dbURL = URL(string: "https://speedconsumer.test/DEU-latest.speeds_v3.sqlite")!
+        let deltaIndexURL = URL(string: "https://speedconsumer.test/DEU-latest.delta-index.v3.json")!
+        let deltaManifest1URL = URL(string: "https://speedconsumer.test/deltas/seed_to_2026-03-01.json")!
+        let deltaManifest2URL = URL(string: "https://speedconsumer.test/deltas/2026-03-01_to_2026-03-02.json")!
+        let patch1URL = URL(string: "https://speedconsumer.test/deltas/seed_to_2026-03-01.sql.zlib")!
+        let patch2URL = URL(string: "https://speedconsumer.test/deltas/2026-03-01_to_2026-03-02.sql.zlib")!
+
+        let patch1SQL = """
+        BEGIN IMMEDIATE;
+        UPDATE ways
+           SET maxspeed='42',
+               street_name='Delta Step One'
+         WHERE way_id='100';
+        COMMIT;
+        """
+        let patch2SQL = """
+        BEGIN IMMEDIATE;
+        UPDATE ways
+           SET maxspeed='45',
+               street_name='Delta Step Two'
+         WHERE way_id='100';
+        COMMIT;
+        """
+        let patch1Data = try zlibCompressedData(Data(patch1SQL.utf8))
+        let patch2Data = try zlibCompressedData(Data(patch2SQL.utf8))
+
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "DEU",
+            bundleVersion: "2026-03-02",
+            createdAtUTC: "2026-03-02T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-latest.speeds_v3.sqlite",
+                bytes: Int64(seedData.count),
+                sha256: sha256Hex(seedData),
+                url: dbURL.absoluteString
+            ),
+            dbParts: nil,
+            deltaIndex: BundleArtifact(
+                file: "DEU-latest.delta-index.v3.json",
+                bytes: 0,
+                sha256: String(repeating: "0", count: 64),
+                url: deltaIndexURL.absoluteString
+            )
+        )
+        let deltaIndex = V3DeltaIndex(
+            format: "youspeed.v3.delta.index",
+            schemaVersion: 1,
+            count: 2,
+            entries: [
+                V3DeltaIndex.Entry(
+                    fromBundleVersion: "seed",
+                    toBundleVersion: "2026-03-01",
+                    region: "DEU",
+                    deltaManifestFile: "deltas/seed_to_2026-03-01.json"
+                ),
+                V3DeltaIndex.Entry(
+                    fromBundleVersion: "2026-03-01",
+                    toBundleVersion: "2026-03-02",
+                    region: "DEU",
+                    deltaManifestFile: "deltas/2026-03-01_to_2026-03-02.json"
+                ),
+            ]
+        )
+        let deltaManifest1 = """
+        {
+          "format": "youspeed.v3.delta.manifest",
+          "schema_version": 1,
+          "region": "DEU",
+          "from_bundle_version": "seed",
+          "to_bundle_version": "2026-03-01",
+          "created_at_utc": "2026-03-01T01:00:00Z",
+          "patch": {
+            "file": "seed_to_2026-03-01.sql.zlib",
+            "bytes": \(patch1Data.count),
+            "sha256": "\(sha256Hex(patch1Data))",
+            "url": "\(patch1URL.absoluteString)",
+            "compression": "zlib"
+          },
+          "stats": {
+            "changed_way_count": 1,
+            "ways_added": 0,
+            "ways_removed": 0,
+            "ways_modified": 1,
+            "delete_way_count": 0,
+            "insert_way_count": 0,
+            "skipped_insert_way_count": 0
+          }
+        }
+        """
+        let deltaManifest2 = """
+        {
+          "format": "youspeed.v3.delta.manifest",
+          "schema_version": 1,
+          "region": "DEU",
+          "from_bundle_version": "2026-03-01",
+          "to_bundle_version": "2026-03-02",
+          "created_at_utc": "2026-03-02T01:00:00Z",
+          "patch": {
+            "file": "2026-03-01_to_2026-03-02.sql.zlib",
+            "bytes": \(patch2Data.count),
+            "sha256": "\(sha256Hex(patch2Data))",
+            "url": "\(patch2URL.absoluteString)",
+            "compression": "zlib"
+          },
+          "stats": {
+            "changed_way_count": 1,
+            "ways_added": 0,
+            "ways_removed": 0,
+            "ways_modified": 1,
+            "delete_way_count": 0,
+            "insert_way_count": 0,
+            "skipped_insert_way_count": 0
+          }
+        }
+        """
+
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(manifest)),
+            deltaIndexURL.absoluteString: (status: 200, body: try JSONEncoder().encode(deltaIndex)),
+            deltaManifest1URL.absoluteString: (status: 200, body: Data(deltaManifest1.utf8)),
+            deltaManifest2URL.absoluteString: (status: 200, body: Data(deltaManifest2.utf8)),
+            patch1URL.absoluteString: (status: 200, body: patch1Data),
+            patch2URL.absoluteString: (status: 200, body: patch2Data),
+        ]
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        let sync = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(sync.mode, .deltaPatch)
+        XCTAssertEqual(sync.bundleVersion, "2026-03-02")
+
+        guard let activeDB = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active DB after delta chain sync")
+            return
+        }
+        let service = V3SpeedLimitService(dbPath: activeDB.path)
+        let result = try service.lookupSpeedLimit(
+            lat: 52.5205,
+            lon: 13.4055,
+            radiusM: 250.0,
+            maxCandidates: 64
+        )
+        XCTAssertEqual(result.wayID, "100")
+        XCTAssertEqual(result.speedLimitKmh, 45)
+        XCTAssertEqual(result.streetName, "Delta Step Two")
+    }
+
     func testMultipartSyncReusesCachedPartAfterLaterPartFailure() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
@@ -2594,6 +2781,17 @@ final class SpeedConsumerTests: XCTestCase {
 
     private func sha256Hex(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func zlibCompressedData(_ data: Data) throws -> Data {
+        if #available(iOS 13.0, macOS 10.15, *) {
+            return try (data as NSData).compressed(using: .zlib) as Data
+        }
+        throw NSError(
+            domain: "SpeedConsumerTests",
+            code: 109,
+            userInfo: [NSLocalizedDescriptionKey: "zlib compression requires iOS 13+"]
+        )
     }
 
     private func assertDBIntegrity(_ url: URL) throws {

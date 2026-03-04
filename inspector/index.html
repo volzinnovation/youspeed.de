@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YouSpeed Inspector</title>
+    <link rel="icon" href="data:," />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <h1>YouSpeed Inspector</h1>
+        <p class="hint">
+          Arbeitet mit lokaler YouSpeed-SQLite (Seed oder Download). Browser-Standort lesen oder Way-ID eingeben, um direkt auf den Way zu zentrieren.
+        </p>
+
+        <div class="controls">
+          <label for="db-url-input">SQLite DB URL</label>
+          <div class="way-row">
+            <input
+              id="db-url-input"
+              type="text"
+              value="/iphone/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite"
+              placeholder="/path/to/speeds_v3.sqlite"
+            />
+            <button id="db-load-btn" type="button">DB laden</button>
+          </div>
+          <input id="db-file-input" type="file" accept=".sqlite,.db,.sqlite3,application/x-sqlite3" />
+          <button id="locate-btn" type="button">Aktuelle Position lesen</button>
+          <button id="identify-btn" type="button">Straße unter Fadenkreuz</button>
+          <label for="way-id-input">Way-ID</label>
+          <div class="way-row">
+            <input id="way-id-input" type="text" inputmode="numeric" placeholder="z. B. 17721265" />
+            <button id="way-btn" type="button">Way zentrieren</button>
+          </div>
+        </div>
+
+        <div class="meta">
+          <div><span>Lat/Lon:</span> <strong id="coord-value">n/a</strong></div>
+          <div><span>Way:</span> <strong id="way-value">n/a</strong></div>
+          <div><span>Straße:</span> <strong id="street-value">n/a</strong></div>
+          <div><span>Bundle:</span> <strong id="bundle-value">nicht geladen</strong></div>
+        </div>
+        <p id="status" class="status">Bereit.</p>
+      </section>
+      <section class="map-wrap" aria-label="Karte">
+        <div id="map" class="map"></div>
+        <div class="crosshair" aria-hidden="true"></div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

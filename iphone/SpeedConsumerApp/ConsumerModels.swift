@@ -10,6 +10,21 @@ struct BundleArtifact: Codable, Sendable {
     let bytes: Int64
     let sha256: String
     let url: String?
+    let compression: String?
+
+    init(
+        file: String,
+        bytes: Int64,
+        sha256: String,
+        url: String?,
+        compression: String? = nil
+    ) {
+        self.file = file
+        self.bytes = bytes
+        self.sha256 = sha256
+        self.url = url
+        self.compression = compression
+    }
 }
 
 struct BundleCoverageBBox: Codable, Sendable {

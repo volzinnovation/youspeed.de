@@ -8,6 +8,7 @@ import gzip
 import hashlib
 import json
 import sqlite3
+import zlib
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -339,6 +340,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--to-version", required=True, help="Target bundle version")
     parser.add_argument("--out-dir", required=True, help="Output directory for delta manifest + SQL patch")
     parser.add_argument("--patch-file-name", default="v3_patch.sql")
+    parser.add_argument(
+        "--patch-compression",
+        choices=["none", "zlib"],
+        default="zlib",
+        help="Compression for patch artifact payload (default: zlib)",
+    )
     parser.add_argument("--manifest-name", default="v3_delta_manifest.json")
     parser.add_argument("--base-url", default="", help="Optional base URL prefix for patch URL")
     parser.add_argument("--github-owner", default="", help="GitHub owner/org for release asset URLs")
@@ -428,8 +435,15 @@ def main() -> int:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    patch_path = out_dir / args.patch_file_name
-    patch_path.write_text(patch_sql, encoding="utf-8")
+    patch_file_name = args.patch_file_name
+    if args.patch_compression == "zlib" and patch_file_name == "v3_patch.sql":
+        patch_file_name = "v3_patch.sql.zlib"
+
+    patch_path = out_dir / patch_file_name
+    patch_payload = patch_sql.encode("utf-8")
+    if args.patch_compression == "zlib":
+        patch_payload = zlib.compress(patch_payload, level=9)
+    patch_path.write_bytes(patch_payload)
 
     patch_sha = _sha256_path(patch_path)
     use_github_urls = bool(args.github_owner and args.github_repo and args.github_release_tag)
@@ -437,10 +451,10 @@ def main() -> int:
 
     patch_url: Optional[str] = None
     if use_github_urls:
-        asset_name = f"{asset_prefix}/{args.patch_file_name}" if asset_prefix else args.patch_file_name
+        asset_name = f"{asset_prefix}/{patch_file_name}" if asset_prefix else patch_file_name
         patch_url = _github_release_asset_url(args.github_owner, args.github_repo, args.github_release_tag, asset_name)
     elif args.base_url:
-        patch_url = "/".join([args.base_url.rstrip("/"), args.patch_file_name.lstrip("/")])
+        patch_url = "/".join([args.base_url.rstrip("/"), patch_file_name.lstrip("/")])
 
     manifest = {
         "format": "youspeed.v3.delta.manifest",
@@ -451,10 +465,11 @@ def main() -> int:
         "created_at_utc": _now_utc(),
         "source_diff_file": str(diff_file),
         "patch": {
-            "file": args.patch_file_name,
+            "file": patch_file_name,
             "bytes": patch_path.stat().st_size,
             "sha256": patch_sha,
             "url": patch_url,
+            "compression": args.patch_compression,
         },
         "stats": {
             "changed_way_count": len(parsed.ops_by_way),
@@ -473,6 +488,7 @@ def main() -> int:
 
     print(f"Wrote v3 delta pack: {out_dir}")
     print(f"Patch: {patch_path}")
+    print(f"Patch compression: {args.patch_compression}")
     print(f"Manifest: {manifest_path}")
     return 0
 

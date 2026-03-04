@@ -65,6 +65,13 @@
             "string",
             "null"
           ]
+        },
+        "compression": {
+          "type": "string",
+          "enum": [
+            "none",
+            "zlib"
+          ]
         }
       }
     },

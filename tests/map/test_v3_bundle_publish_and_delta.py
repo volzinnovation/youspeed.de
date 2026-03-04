@@ -5,6 +5,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
+import zlib
 from pathlib import Path
 
 
@@ -167,7 +168,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             ]
         )
 
-        patch_path = out_dir / "v3_patch.sql"
+        patch_path = out_dir / "v3_patch.sql.zlib"
         manifest_path = out_dir / "v3_delta_manifest.json"
         self.assertTrue(patch_path.exists())
         self.assertTrue(manifest_path.exists())
@@ -176,6 +177,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         self.assertEqual(manifest["format"], "youspeed.v3.delta.manifest")
         self.assertEqual(manifest["from_bundle_version"], "2026-02-23")
         self.assertEqual(manifest["to_bundle_version"], "2026-02-24")
+        self.assertEqual(manifest["patch"]["compression"], "zlib")
         self.assertIn("github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24", manifest["patch"]["url"])
         self.assertGreater(manifest["stats"]["delete_way_count"], 0)
         self.assertGreater(manifest["stats"]["insert_way_count"], 0)
@@ -183,7 +185,7 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
         # Apply patch and verify changed data.
         db_copy = self.tmpdir / "applied.sqlite"
         db_copy.write_bytes(self.base_db.read_bytes())
-        patch_sql = patch_path.read_text(encoding="utf-8")
+        patch_sql = zlib.decompress(patch_path.read_bytes()).decode("utf-8")
         with sqlite3.connect(db_copy) as conn:
             conn.executescript(patch_sql)
             rows = conn.execute("SELECT way_id, maxspeed, street_name, ref FROM ways ORDER BY way_id").fetchall()

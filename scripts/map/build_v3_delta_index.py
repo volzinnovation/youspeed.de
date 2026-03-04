@@ -55,6 +55,7 @@ def main() -> int:
                 "patch_sha256": payload.get("patch", {}).get("sha256"),
                 "patch_bytes": payload.get("patch", {}).get("bytes"),
                 "patch_url": payload.get("patch", {}).get("url"),
+                "patch_compression": payload.get("patch", {}).get("compression"),
             }
         )
 

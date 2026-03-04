@@ -19,6 +19,11 @@ actor V3BundleManager {
         let rings: [CoverageRing]
     }
 
+    private struct DeltaPathStep {
+        let manifestURL: URL
+        let manifest: V3DeltaManifest
+    }
+
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
@@ -709,61 +714,97 @@ actor V3BundleManager {
             throw ConsumerAppError.invalidManifest("Unexpected delta index format")
         }
 
-        guard let entry = deltaIndex.entries.first(where: {
-            $0.fromBundleVersion == current.bundleVersion && $0.toBundleVersion == manifest.bundleVersion
-                && ($0.region == nil || $0.region == manifest.region)
-        }) else {
+        guard let pathEntries = resolveDeltaPathEntries(
+            in: deltaIndex.entries,
+            fromVersion: current.bundleVersion,
+            toVersion: manifest.bundleVersion,
+            region: manifest.region
+        ) else {
             return nil
         }
+        Self.logger.notice(
+            "delta path selected from=\(current.bundleVersion, privacy: .public) to=\(manifest.bundleVersion, privacy: .public) hops=\(pathEntries.count, privacy: .public)"
+        )
 
-        let deltaManifestURL = URL(string: entry.deltaManifestFile, relativeTo: deltaIndexURL)?.absoluteURL
-        guard let deltaManifestURL else {
-            throw ConsumerAppError.invalidManifest("Unable to resolve delta manifest URL")
+        var expectedFromVersion = current.bundleVersion
+        var deltaSteps: [DeltaPathStep] = []
+        deltaSteps.reserveCapacity(pathEntries.count)
+        for entry in pathEntries {
+            let deltaManifestURL = URL(string: entry.deltaManifestFile, relativeTo: deltaIndexURL)?.absoluteURL
+            guard let deltaManifestURL else {
+                throw ConsumerAppError.invalidManifest("Unable to resolve delta manifest URL")
+            }
+
+            let deltaManifestData = try await downloadData(from: deltaManifestURL)
+            let deltaManifest = try decoder.decode(V3DeltaManifest.self, from: deltaManifestData)
+            guard deltaManifest.format == "youspeed.v3.delta.manifest" else {
+                throw ConsumerAppError.invalidManifest("Unexpected delta manifest format")
+            }
+            guard deltaManifest.fromBundleVersion == expectedFromVersion,
+                  deltaManifest.toBundleVersion == entry.toBundleVersion,
+                  deltaManifest.toBundleVersion != deltaManifest.fromBundleVersion else {
+                throw ConsumerAppError.invalidManifest("Delta manifest version mismatch in update chain")
+            }
+            if deltaManifest.region != manifest.region {
+                throw ConsumerAppError.invalidManifest("Delta manifest region mismatch in update chain")
+            }
+            deltaSteps.append(DeltaPathStep(manifestURL: deltaManifestURL, manifest: deltaManifest))
+            expectedFromVersion = deltaManifest.toBundleVersion
         }
-
-        let deltaManifestData = try await downloadData(from: deltaManifestURL)
-        let deltaManifest = try decoder.decode(V3DeltaManifest.self, from: deltaManifestData)
-        guard deltaManifest.fromBundleVersion == current.bundleVersion,
-              deltaManifest.toBundleVersion == manifest.bundleVersion else {
-            throw ConsumerAppError.invalidManifest("Delta manifest version mismatch")
+        guard expectedFromVersion == manifest.bundleVersion else {
+            throw ConsumerAppError.invalidManifest("Delta path does not terminate at target bundle version")
         }
 
         guard let activeDB = try activeDatabaseURL(), fileManager.fileExists(atPath: activeDB.path) else {
             return nil
         }
         let activeDBBytes = try fileSize(activeDB)
+        let totalPatchBytes = deltaSteps.reduce(Int64(0)) { partial, step in
+            let patchBytes = max(0, step.manifest.patch.bytes)
+            if partial > Int64.max - patchBytes {
+                return Int64.max
+            }
+            return partial + patchBytes
+        }
         try ensureSufficientDiskSpace(
-            requiredBytes: activeDBBytes + deltaManifest.patch.bytes,
+            requiredBytes: activeDBBytes + totalPatchBytes,
             reason: "delta update staging"
         )
 
-        let patchURL = try resolveArtifactURL(deltaManifest.patch, relativeTo: deltaManifestURL)
-        emitProgress(
-            onProgress,
-            stage: .downloading,
-            detail: "Downloading delta patch",
-            completedBytes: 0,
-            totalBytes: deltaManifest.patch.bytes
-        )
-        let patchData = try await downloadData(from: patchURL)
-        try validateSHA256(data: patchData, expectedHex: deltaManifest.patch.sha256, label: "delta patch")
-
         let stagingDB = try stageCopyOfActiveDB(forVersion: manifest.bundleVersion)
-        let patchSQL = String(decoding: patchData, as: UTF8.self)
         do {
-            emitProgress(
-                onProgress,
-                stage: .applyingDelta,
-                detail: "Applying delta patch",
-                completedBytes: deltaManifest.patch.bytes,
-                totalBytes: deltaManifest.patch.bytes
-            )
-            try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
+            var downloadedBytes: Int64 = 0
+            for (index, step) in deltaSteps.enumerated() {
+                let stepNumber = index + 1
+                let patch = step.manifest.patch
+                let patchURL = try resolveArtifactURL(patch, relativeTo: step.manifestURL)
+                emitProgress(
+                    onProgress,
+                    stage: .downloading,
+                    detail: "Downloading delta patch \(stepNumber)/\(deltaSteps.count)",
+                    completedBytes: downloadedBytes,
+                    totalBytes: totalPatchBytes
+                )
+                let patchData = try await downloadData(from: patchURL)
+                try validateSHA256(data: patchData, expectedHex: patch.sha256, label: "delta patch")
+                let patchSQL = try decodePatchSQL(from: patchData, artifact: patch)
+
+                downloadedBytes = min(totalPatchBytes, downloadedBytes + max(0, patch.bytes))
+                emitProgress(
+                    onProgress,
+                    stage: .applyingDelta,
+                    detail: "Applying delta patch \(stepNumber)/\(deltaSteps.count)",
+                    completedBytes: downloadedBytes,
+                    totalBytes: totalPatchBytes
+                )
+                try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
+            }
+            try quickValidateDB(at: stagingDB)
             try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
                 mode: .deltaPatch,
-                details: "applied delta from \(current.bundleVersion)"
+                details: "applied \(deltaSteps.count) delta patch(es) from \(current.bundleVersion)"
             )
         } catch {
             try? removeItemIfExists(at: stagingDB)
@@ -774,8 +815,82 @@ actor V3BundleManager {
             mode: .deltaPatch,
             bundleVersion: manifest.bundleVersion,
             dbPath: try activeDatabaseURL()?.path ?? stagingDB.path,
-            details: "delta applied"
+            details: "delta chain applied"
         )
+    }
+
+    private func resolveDeltaPathEntries(
+        in entries: [V3DeltaIndex.Entry],
+        fromVersion: String,
+        toVersion: String,
+        region: String
+    ) -> [V3DeltaIndex.Entry]? {
+        guard fromVersion != toVersion else {
+            return []
+        }
+        let filtered = entries.filter { entry in
+            entry.fromBundleVersion != entry.toBundleVersion
+                && (entry.region == nil || entry.region == region)
+        }
+        guard !filtered.isEmpty else {
+            return nil
+        }
+
+        var adjacency: [String: [V3DeltaIndex.Entry]] = [:]
+        for entry in filtered {
+            adjacency[entry.fromBundleVersion, default: []].append(entry)
+        }
+        for key in adjacency.keys {
+            adjacency[key]?.sort {
+                if $0.toBundleVersion == $1.toBundleVersion {
+                    return $0.deltaManifestFile < $1.deltaManifestFile
+                }
+                return $0.toBundleVersion < $1.toBundleVersion
+            }
+        }
+
+        var queue: [String] = [fromVersion]
+        var visited: Set<String> = [fromVersion]
+        var parent: [String: V3DeltaIndex.Entry] = [:]
+
+        var idx = 0
+        while idx < queue.count {
+            let version = queue[idx]
+            idx += 1
+            guard let outgoing = adjacency[version] else {
+                continue
+            }
+            for edge in outgoing {
+                let next = edge.toBundleVersion
+                if visited.contains(next) {
+                    continue
+                }
+                visited.insert(next)
+                parent[next] = edge
+                if next == toVersion {
+                    break
+                }
+                queue.append(next)
+            }
+            if visited.contains(toVersion) {
+                break
+            }
+        }
+
+        guard visited.contains(toVersion) else {
+            return nil
+        }
+
+        var path: [V3DeltaIndex.Entry] = []
+        var cursor = toVersion
+        while cursor != fromVersion {
+            guard let edge = parent[cursor] else {
+                return nil
+            }
+            path.append(edge)
+            cursor = edge.fromBundleVersion
+        }
+        return path.reversed()
     }
 
     private func fullDownloadActivate(
@@ -2398,6 +2513,45 @@ actor V3BundleManager {
         }
     }
 
+    private func decodePatchSQL(from patchData: Data, artifact: BundleArtifact) throws -> String {
+        let rawCompression = artifact.compression?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        let compression: String
+        if rawCompression.isEmpty {
+            if artifact.file.lowercased().hasSuffix(".zlib") || artifact.file.lowercased().hasSuffix(".sqlz") {
+                compression = "zlib"
+            } else {
+                compression = "none"
+            }
+        } else {
+            compression = rawCompression
+        }
+
+        let sqlData: Data
+        switch compression {
+        case "none", "identity":
+            sqlData = patchData
+        case "zlib":
+            if #available(iOS 13.0, macOS 10.15, *) {
+                do {
+                    sqlData = try (patchData as NSData).decompressed(using: .zlib) as Data
+                } catch {
+                    throw ConsumerAppError.invalidManifest("Failed to decompress zlib patch \(artifact.file): \(error.localizedDescription)")
+                }
+            } else {
+                throw ConsumerAppError.invalidManifest("zlib delta patch compression requires iOS 13+")
+            }
+        default:
+            throw ConsumerAppError.invalidManifest("Unsupported delta patch compression '\(compression)' for \(artifact.file)")
+        }
+
+        guard let patchSQL = String(data: sqlData, encoding: .utf8) else {
+            throw ConsumerAppError.invalidManifest("Delta patch is not valid UTF-8 SQL text: \(artifact.file)")
+        }
+        return patchSQL
+    }
+
     private func applyPatchSQL(_ patchSQL: String, toDBPath path: String) throws {
         var db: OpaquePointer?
         guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK, let db else {
@@ -2409,10 +2563,6 @@ actor V3BundleManager {
             let msg = String(cString: sqlite3_errmsg(db))
             throw ConsumerAppError.sqlite("delta patch failed: \(msg)")
         }
-        if sqlite3_exec(db, "PRAGMA quick_check", nil, nil, nil) != SQLITE_OK {
-            let msg = String(cString: sqlite3_errmsg(db))
-            throw ConsumerAppError.sqlite("quick_check after patch failed: \(msg)")
-        }
     }
 
     private func nowUTC() -> String {
@@ -2421,6 +2571,11 @@ actor V3BundleManager {
 
     private func shouldForceFullReload(currentVersion: String?, targetVersion: String, maxAgeDays: Int) -> Bool {
         guard let currentVersion else {
+            return false
+        }
+        if currentVersion == "seed" {
+            // Allow incremental promotion from bundled seed when the release provides
+            // an explicit seed -> target (or chained) delta path.
             return false
         }
         if currentVersion == targetVersion {
