@@ -174,18 +174,6 @@
           "region_id": "monaco"
         }
       ]
-    },
-    {
-      "rank": 10,
-      "country_id": "united-kingdom",
-      "country_code": "GBR",
-      "iso2": "GB",
-      "mode": "single_country",
-      "regions": [
-        {
-          "region_id": "united-kingdom"
-        }
-      ]
     }
   ]
 }

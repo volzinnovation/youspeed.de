@@ -12,7 +12,7 @@ Do not mix these concerns when adding code, tests, or workflows.
 - `Track B` (consumer app) is v3-only with startup sync/recovery hardening and multipart DB support.
 - `Track A` (paper/benchmark) includes explicit city-context evaluation (`polycontainment`) in the on-device matrix.
 - Bundle naming is region-scoped (`<region>_manifest.json`, `<region>_speeds.sqlite`) instead of legacy `DEU-latest*`.
-- Country/region targeting is driven by `iphone/SpeedConsumerApp/BundleTargets.top10.json` (10 countries with highest maxspeed availability, including Germany).
+- Country/region targeting is driven by `iphone/SpeedConsumerApp/BundleTargets.top10.json` (seed set excludes UK until mph/UK rules support is implemented).
 - Country-specific fine/warning rules are bundled by `country_code` and resolved per active region bundle.
 - Publication strategy is editor-mediated for OSM (user exports `.osc` and uploads with personal OSM account); no direct app-side OSM upload path.
 
@@ -208,6 +208,10 @@ YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token --hostname github.com)" \
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/publish_bundle_release.yml`
 - Manual Karlsruhe development bundle build/release:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_bundle_build_and_release.yml`
+- Daily Karlsruhe PBF diff maintenance snapshot:
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_pbf_diff_update_and_release.yml`
+- Karlsruhe incremental bundle+delta release from maintained PBF snapshot:
+  - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/karlsruhe_incremental_bundle_release.yml`
 - Geofabrik diff ingestion and delta analysis:
   - `/Users/raphaelvolz/Github/youspeed.de/.github/workflows/daily_geofabrik_diff_update.yml`
 - Workflow dependency:
@@ -232,7 +236,8 @@ Check recent scheduled pipeline health:
 ```bash
 gh run list --workflow "Germany PBF Diff Update And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
 gh run list --workflow "Germany V3 Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
-gh run list --workflow "Karlsruhe V3 Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
+gh run list --workflow "Karlsruhe PBF Diff Update And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
+gh run list --workflow "Karlsruhe Incremental Bundle Build And Release" --limit 5 --json databaseId,status,conclusion,event,createdAt,headSha
 ```
 
 Quick project overview commands:

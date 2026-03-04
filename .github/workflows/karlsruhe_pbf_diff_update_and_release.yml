@@ -1,0 +1,212 @@
+name: Karlsruhe PBF Diff Update And Release
+
+on:
+  schedule:
+    - cron: "35 2 * * *"
+  workflow_dispatch:
+    inputs:
+      pbf_release_tag:
+        description: "Release tag for Karlsruhe PBF snapshot assets"
+        required: false
+        default: "karlsruhe-regbez-pbf"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: karlsruhe-pbf-diff-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      REGION_ID: karlsruhe-regbez
+      DEFAULT_PBF_RELEASE_TAG: karlsruhe-regbez-pbf
+      PBF_ASSET_NAME: karlsruhe-regbez-latest.osm.pbf
+      PBF_PARTS_META_ASSET: karlsruhe-regbez-latest.osm.pbf.parts.json
+      STATE_ASSET_NAME: karlsruhe-regbez.diff_state.json
+      REPORT_ASSET_NAME: diff_update.karlsruhe-regbez.latest.json
+      INPUT_PBF: mapdata/raw/karlsruhe-regbez-latest.osm.pbf
+      STATE_FILE: mapdata/raw/karlsruhe-regbez.diff_state.json
+      REPORT_FILE: mapdata/reports/diff_update.karlsruhe-regbez.latest.json
+      DAILY_DIR: mapdata/reports/deltas/daily
+      CSV_OUT: mapdata/reports/deltas/karlsruhe-regbez.daily-diff-analysis.csv
+      SUMMARY_JSON_OUT: mapdata/reports/deltas/karlsruhe-regbez.daily-diff-analysis.summary.json
+      WORK_DIR: mapdata/build/karlsruhe-regbez/updates
+      UPDATES_URL: https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-updates/
+      LATEST_PBF_URL: https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-latest.osm.pbf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install osmium
+
+      - name: Restore Cached Karlsruhe PBF
+        id: pbf-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            mapdata/raw/karlsruhe-regbez-latest.osm.pbf
+            mapdata/raw/karlsruhe-regbez.diff_state.json
+          key: karlsruhe-regbez-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            karlsruhe-regbez-pbf-${{ runner.os }}-${{ github.ref_name }}-
+            karlsruhe-regbez-pbf-${{ runner.os }}-
+
+      - name: Resolve PBF Release Tag
+        id: tags
+        run: |
+          pbf_tag="${{ github.event.inputs.pbf_release_tag || '' }}"
+          if [[ -z "${pbf_tag}" ]]; then
+            pbf_tag="${DEFAULT_PBF_RELEASE_TAG}"
+          fi
+          echo "pbf_release_tag=${pbf_tag}" >> "${GITHUB_OUTPUT}"
+          echo "Using pbf release tag: ${pbf_tag}"
+
+      - name: Bootstrap Snapshot From GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          mkdir -p mapdata/raw mapdata/reports "${DAILY_DIR}"
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+
+          if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release download "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --pattern "${PBF_ASSET_NAME}" \
+              --pattern "${PBF_ASSET_NAME}.part*" \
+              --pattern "${PBF_PARTS_META_ASSET}" \
+              --pattern "${STATE_ASSET_NAME}" \
+              --pattern "${REPORT_ASSET_NAME}" \
+              --pattern "${REGION_ID}-*.osc.gz" \
+              --dir mapdata/raw \
+              --clobber || true
+
+            if [[ ! -f "${INPUT_PBF}" ]]; then
+              parts=(mapdata/raw/${PBF_ASSET_NAME}.part*)
+              if (( ${#parts[@]} > 0 )); then
+                cat "${parts[@]}" > "${INPUT_PBF}"
+              fi
+            fi
+
+            if [[ -f "mapdata/raw/${REPORT_ASSET_NAME}" ]]; then
+              mv "mapdata/raw/${REPORT_ASSET_NAME}" "${REPORT_FILE}"
+            fi
+            deltas=(mapdata/raw/${REGION_ID}-*.osc.gz)
+            if (( ${#deltas[@]} > 0 )); then
+              mv mapdata/raw/${REGION_ID}-*.osc.gz "${DAILY_DIR}/"
+            fi
+          fi
+
+      - name: Run Daily Diff Pipeline
+        id: pipeline
+        run: |
+          python3 scripts/map/run_daily_diff_pipeline.py \
+            --region "${REGION_ID}" \
+            --updates-url "${UPDATES_URL}" \
+            --latest-pbf-url "${LATEST_PBF_URL}" \
+            --input-pbf "${INPUT_PBF}" \
+            --state-file "${STATE_FILE}" \
+            --report-path "${REPORT_FILE}" \
+            --work-dir "${WORK_DIR}" \
+            --daily-dir "${DAILY_DIR}" \
+            --csv-out "${CSV_OUT}" \
+            --summary-json-out "${SUMMARY_JSON_OUT}" \
+            --v3-db "mapdata/dist-v3/${REGION_ID}/speeds_v3.sqlite" \
+            --v4-db "mapdata/dist-v4/${REGION_ID}/speeds_v4.sqlite"
+
+      - name: Check Whether Snapshot Release Needs Seeding
+        id: release_check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+          need_publish=0
+
+          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            need_publish=1
+          else
+            assets_json="$(gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" --json assets)"
+            missing_required="$(python3 -c 'import json,sys; payload=json.loads(sys.argv[1]); assets=payload.get("assets", []); names={str(a.get("name", "")) for a in assets if isinstance(a, dict)}; pbf_name=sys.argv[2]; state_name=sys.argv[3]; report_name=sys.argv[4]; has_pbf=(pbf_name in names) or any(n.startswith(pbf_name + ".part") for n in names); required={state_name, report_name}; print("1" if ((not has_pbf) or bool(required - names)) else "0")' "${assets_json}" "${PBF_ASSET_NAME}" "${STATE_ASSET_NAME}" "${REPORT_ASSET_NAME}")"
+            if [[ "${missing_required}" == "1" ]]; then
+              need_publish=1
+            fi
+          fi
+
+          echo "need_publish_snapshot=${need_publish}" >> "${GITHUB_OUTPUT}"
+          echo "need_publish_snapshot=${need_publish}"
+
+      - name: Publish Updated Karlsruhe PBF Snapshot
+        if: steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s nullglob
+          pbf_tag="${{ steps.tags.outputs.pbf_release_tag }}"
+
+          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release create "${pbf_tag}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Karlsruhe Regbez PBF Snapshot" \
+              --notes "Rolling Karlsruhe Regbez PBF/state snapshot for incremental seed bundle builds."
+          fi
+
+          test -f "${INPUT_PBF}"
+          test -f "${STATE_FILE}"
+          test -f "${REPORT_FILE}"
+
+          pbf_size_bytes="$(wc -c < "${INPUT_PBF}" | tr -d ' ')"
+          pbf_limit_bytes=2147483648
+          if [[ "${pbf_size_bytes}" -ge "${pbf_limit_bytes}" ]]; then
+            rm -f "mapdata/raw/${PBF_ASSET_NAME}.part"*
+            split -b 1900m -d -a 3 "${INPUT_PBF}" "mapdata/raw/${PBF_ASSET_NAME}.part"
+            parts=(mapdata/raw/${PBF_ASSET_NAME}.part*)
+            if (( ${#parts[@]} == 0 )); then
+              echo "Failed to split large PBF into parts." >&2
+              exit 1
+            fi
+            python3 -c 'import json; from pathlib import Path; pbf=Path("mapdata/raw/karlsruhe-regbez-latest.osm.pbf"); parts=sorted(Path("mapdata/raw").glob("karlsruhe-regbez-latest.osm.pbf.part*")); payload={"asset_name":"karlsruhe-regbez-latest.osm.pbf","size_bytes":pbf.stat().st_size,"parts":[p.name for p in parts]}; Path("mapdata/raw/karlsruhe-regbez-latest.osm.pbf.parts.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")'
+            for part in "${parts[@]}"; do
+              gh release upload "${pbf_tag}" "${part}" --clobber --repo "${GITHUB_REPOSITORY}"
+            done
+            gh release upload "${pbf_tag}" "mapdata/raw/${PBF_PARTS_META_ASSET}" --clobber --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release upload "${pbf_tag}" "${INPUT_PBF}" --clobber --repo "${GITHUB_REPOSITORY}"
+          fi
+
+          gh release upload "${pbf_tag}" "${STATE_FILE}#${STATE_ASSET_NAME}" --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" "${REPORT_FILE}#${REPORT_ASSET_NAME}" --clobber --repo "${GITHUB_REPOSITORY}"
+          gh release upload "${pbf_tag}" "${CSV_OUT}#karlsruhe-regbez.daily-diff-analysis.csv" --clobber --repo "${GITHUB_REPOSITORY}" || true
+          gh release upload "${pbf_tag}" "${SUMMARY_JSON_OUT}#karlsruhe-regbez.daily-diff-analysis.summary.json" --clobber --repo "${GITHUB_REPOSITORY}" || true
+
+          if [[ -n "${{ steps.pipeline.outputs.daily_delta }}" && -f "${{ steps.pipeline.outputs.daily_delta }}" ]]; then
+            daily_delta_path="${{ steps.pipeline.outputs.daily_delta }}"
+            daily_delta_name="$(basename "${daily_delta_path}")"
+            if [[ ! "${daily_delta_name}" =~ ^karlsruhe-regbez-[0-9]{4}-[0-9]{2}-[0-9]{2}\.osc\.gz$ ]]; then
+              processed_date="${{ steps.pipeline.outputs.processed_date }}"
+              daily_delta_name="karlsruhe-regbez-${processed_date}.osc.gz"
+            fi
+            gh release upload "${pbf_tag}" "${daily_delta_path}#${daily_delta_name}" --clobber --repo "${GITHUB_REPOSITORY}"
+          fi
+
+      - name: Save Cached Karlsruhe PBF
+        if: (steps.pipeline.outputs.changed == '1' || steps.release_check.outputs.need_publish_snapshot == '1') && hashFiles('mapdata/raw/karlsruhe-regbez-latest.osm.pbf') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            mapdata/raw/karlsruhe-regbez-latest.osm.pbf
+            mapdata/raw/karlsruhe-regbez.diff_state.json
+          key: karlsruhe-regbez-pbf-${{ runner.os }}-${{ github.ref_name }}-${{ github.run_id }}

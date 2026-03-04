@@ -82,7 +82,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(config.format, "youspeed.v3.bundle.targets")
         XCTAssertEqual(config.schemaVersion, 1)
         XCTAssertEqual(config.variant, "v3")
-        XCTAssertGreaterThanOrEqual(config.countries.count, 10)
+        XCTAssertGreaterThanOrEqual(config.countries.count, 9)
 
         let germany = try XCTUnwrap(config.country(countryID: "germany"))
         XCTAssertEqual(germany.countryCode, "DEU")
@@ -94,9 +94,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(netherlands.countryCode, "NLD")
         XCTAssertEqual(netherlands.mode, "single_country")
 
-        let unitedKingdom = try XCTUnwrap(config.country(countryID: "united-kingdom"))
-        XCTAssertEqual(unitedKingdom.countryCode, "GBR")
-        XCTAssertEqual(unitedKingdom.mode, "single_country")
+        XCTAssertNil(config.country(countryID: "united-kingdom"))
     }
 
     func testBundleTargetConfigBuildsTop10ManifestEndpoints() throws {
