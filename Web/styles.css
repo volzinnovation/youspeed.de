@@ -49,11 +49,21 @@ img {
 }
 a {
   color: var(--amber);
-  text-decoration: none;
-  transition: color 0.2s;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
+  text-decoration-skip-ink: auto;
+  transition:
+    color 0.2s,
+    text-decoration-thickness 0.2s;
 }
 a:hover {
   color: #ffd580;
+  text-decoration-thickness: 0.11em;
+}
+a:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
 }
 h1,
 h2,
@@ -396,6 +406,33 @@ section {
   gap: 1rem;
   grid-template-columns: 1fr;
 }
+.help-banner {
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(52, 211, 153, 0.2);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #dcfce7;
+  font-weight: 600;
+}
+.help-check {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: #22c55e;
+  color: #08210f;
+}
+.help-text {
+  font-size: 0.95rem;
+}
 .pain-card {
   background: var(--bg-card);
   border: 1px solid var(--line);
@@ -447,27 +484,49 @@ section {
 }
 
 /* ---------- CTA Banner ---------- */
-.cta-banner{
-  text-align:center;
-  padding:3rem 1.5rem;
-  border-radius:var(--radius);
-  background:
-    linear-gradient(135deg,rgba(230,60,47,.12),rgba(245,166,35,.08));
-  border:1px solid rgba(230,60,47,.2);
-  backdrop-filter:blur(8px);
+.cta-banner {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    135deg,
+    rgba(230, 60, 47, 0.12),
+    rgba(245, 166, 35, 0.08)
+  );
+  border: 1px solid rgba(230, 60, 47, 0.2);
+  backdrop-filter: blur(8px);
 }
-.cta-banner h2{
-  font-size:clamp(1.5rem,4vw,2.2rem);font-weight:700;
-  margin-bottom:.5rem;
+.cta-banner h2 {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
 }
-.cta-banner p{
-  color:var(--text-muted);font-size:1.05rem;margin-bottom:1.4rem;
+.cta-banner p {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  margin-bottom: 1.4rem;
 }
-.cta-actions{
-  display:flex;flex-wrap:wrap;justify-content:center;gap:.75rem;
+.cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
 }
-.btn-lg{
-  padding:1rem 2rem;font-size:1.05rem;border-radius:16px;
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.05rem;
+  border-radius: 16px;
+}
+#download-bottom .cta-banner {
+  background: linear-gradient(
+    135deg,
+    rgba(22, 22, 26, 0.96),
+    rgba(18, 26, 23, 0.92)
+  );
+  border: 1px solid rgba(52, 211, 153, 0.38);
+}
+#download-bottom .cta-banner p {
+  color: #b7c4bd;
 }
 
 /* ---------- Features ---------- */
@@ -741,7 +800,7 @@ tbody tr.highlight td {
     display: inline-flex;
   }
   .pain-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
   .hero h1 {
     letter-spacing: -0.03em;
