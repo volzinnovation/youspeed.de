@@ -121,23 +121,26 @@ To avoid concept drift between architecture text and implementation, this subsec
 \begin{enumerate}
 \item \textbf{Candidate retrieval (RTree prefilter).} For each GPS fix, the app queries \texttt{ways\_rtree} in a bounded radius and loads way attributes from \texttt{ways}; if available, \texttt{way\_geom} polyline points are used for exact geometry distance.
 \item \textbf{Geometric and directional scoring.} Candidate score is distance plus heading mismatch penalty. Heading contributes only when vehicle speed is at least \SI{8}{km/h} and heading accuracy is better than \(45^\circ\); mismatch is weighted by \(\lambda_h=\SI{1.8}{m/deg}\).
-\item \textbf{Preferred-way continuity.} If a previous matched way is available, the runtime may keep it (hysteresis) when its score remains within a small slack (\SI{12}{m}) and within an accuracy-adjusted distance bound, reducing oscillation between nearby candidates.
+\item \textbf{Continuity context and hysteresis.} The matcher keeps a short continuity context consisting of the previous matched way, recent matched ways, recent street refs, recent tunnel candidates, and a recent GPS-signal-loss flag. If a previous matched way remains plausible, the runtime may keep it within a small slack (\SI{12}{m}) and an accuracy-adjusted distance bound, reducing oscillation between nearby candidates.
+\item \textbf{Same-ref transition handling.} If the current best candidate shares the same normalized \texttt{ref} as the previous way, the matcher may promote a segment transition instead of holding the old segment. This transition is preferred once the old segment is near an endpoint and the alternative segment is not materially farther away. The goal is to stabilize progression along one numbered route while still allowing segment changes at intersections.
 \item \textbf{Speed-source derivation on the selected way.} Speed precedence on the matched way is: explicit \texttt{maxspeed} parse, then inherited regulatory tags (\texttt{maxspeed:type}/\texttt{source:maxspeed}: urban/rural/motorway), then highway-class prior.
 \item \textbf{Inside-city classification (primary rule).} If the matched way class is one of \texttt{residential}, \texttt{service}, \texttt{crossing}, or \texttt{living\_street}, the fix is classified as in-city directly.
 \item \textbf{Inside-city classification (fallback rule).} For other way classes, the runtime evaluates residential polygon containment in \texttt{areas.residential}. This polygon path is also used by the benchmarked polycontainment query.
 \item \textbf{City label resolution for UI and logging.} City name/source metadata is resolved from area/place context (\texttt{areas}, \texttt{city\_boundary}, \texttt{city\_ring}) and attached to the result for traceability; this label path is not the primary in-city classifier.
 \item \textbf{Effective speed output and fallback.} At app level, final speed precedence is local per-way override first, then selected-way speed. If selected speed comes only from coarse highway class and in-city status is known, legal urban/rural default (\SI{50}{km/h}/\SI{100}{km/h}) overrides the class prior. If no way speed exists but a way match and in-city status are available, legal default is applied. If only in-city status is available without a way speed, conservative \SI{50}{km/h} fallback is used.
-\item \textbf{Tunnel context output.} A fix is marked tunnel segment when the selected way has truthy \texttt{tunnel}. The UI switches to tunnel icon emphasis and suppresses penalty notices while tunnel mode is active.
+\item \textbf{Tunnel context gating.} Tunnel candidates are filtered before final selection. A tunnel-tagged way is accepted only if it is the previous matched way, if it is connected through shared route identity (\texttt{ref}) to recent continuity context, or after a recent GPS-signal loss when the tunnel candidate was already observed in the nearby-candidate set. This reduces false switches to unrelated tunnel-tagged geometry.
+\item \textbf{Tunnel context output.} If the selected way passes tunnel gating and carries truthy \texttt{tunnel}, the fix is marked tunnel segment. The UI switches to tunnel icon emphasis, keeps the matched speed limit visible, and suppresses penalty notices while tunnel mode is active.
 \item \textbf{Context output for downstream logic.} Each lookup also returns \texttt{way\_id}, street display name (\texttt{street\_name}/\texttt{ref}), city label/source, candidate counts, timing, and tunnel flag.
 \end{enumerate}
 
 \subsection{Tunnel mode state machine}
-Tunnel handling in the current app is intentionally binary and deterministic:
+Tunnel handling in the current app is deterministic but no longer purely tag-driven:
 \begin{itemize}
 \item Session state is \texttt{inactive} or \texttt{active}.
-\item On each fix, \texttt{isTunnelSegment} from matched-way \texttt{tunnel} directly drives the state (\texttt{active} if true, else \texttt{inactive}).
-\item There is no portal-gating, no multi-step entry/exit hysteresis, and no GPS-loss transition state in the current implementation.
-\item If lookup service is unavailable or lookup errors occur, tunnel state is reset to \texttt{inactive}.
+\item On each fix, \texttt{isTunnelSegment} from the gated matched-way decision drives the state (\texttt{active} if true, else \texttt{inactive}).
+\item Entry into tunnel mode is therefore possible only through continuity to the previous route context or after a recent signal-loss event that still has a remembered tunnel candidate.
+\item If lookup service is unavailable, continuity context records a recent GPS-signal-loss event and tunnel state is reset until the next successful gated match.
+\item There is still no dedicated portal detector, no inertial tunnel tracking, and no explicit exit hysteresis beyond the next successful non-tunnel match.
 \end{itemize}
 
 \subsection{Runtime bundle structures used by inference}
@@ -146,6 +149,7 @@ The implemented inference stack depends on attributes that are now materialized 
 \item \textbf{Way-level context in \texttt{ways}:} \texttt{street\_name}, \texttt{ref}, \texttt{approx\_heading\_deg}, \texttt{service}, \texttt{tunnel}, \texttt{highway}, plus speed-related tags.
 \item \textbf{Area context in \texttt{areas}:} \texttt{boundary}, \texttt{admin\_level}, \texttt{residential}, \texttt{parking}, and geometry/bbox data for containment and city-label resolution.
 \item \textbf{Coverage metadata in manifests:} \texttt{coverage.bbox} and optional \texttt{coverage.poly} artifacts for regional bundle routing on device.
+\item \textbf{Bundle update artifacts:} region-scoped manifests, optional split DB parts, rolling delta-index manifests, and compressed SQL patches for incremental bundle refresh on device.
 \end{itemize}
 
 \section{International Fine Rules and Country Bundles}
