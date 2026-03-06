@@ -333,10 +333,7 @@ jobs:
                 delta_input="${{ steps.version.outputs.delta_path }}"
                 if [[ -z "${delta_input}" || ! -f "${delta_input}" ]]; then
                   delta_input="/tmp/karlsruhe-prev/noop.osc"
-                  cat > "${delta_input}" <<'OSC'
-<osmChange version="0.6" generator="youspeed">
-</osmChange>
-OSC
+                  printf '%s\n' '<osmChange version="0.6" generator="youspeed">' '</osmChange>' > "${delta_input}"
                   echo "No exported daily OSC delta found; using no-op diff input for exact DB delta generation."
                 fi
 
