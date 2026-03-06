@@ -424,7 +424,12 @@ state_before_txt="$work_dir/server_state_before.${run_id}.txt"
 state_after_txt="$work_dir/server_state_after.${run_id}.txt"
 updater_log="$work_dir/updater.${run_id}.log"
 delta_log="$work_dir/delta_export.${run_id}.log"
-updated_tmp="$work_dir/$(basename "$input_pbf").updated.${run_id}.tmp"
+input_pbf_base="$(basename "$input_pbf")"
+if [[ "$input_pbf_base" == *.pbf ]]; then
+  updated_tmp="$work_dir/${input_pbf_base%.pbf}.updated.${run_id}.pbf"
+else
+  updated_tmp="$work_dir/${input_pbf_base}.updated.${run_id}.pbf"
+fi
 
 server_before_seq=""
 server_before_ts=""

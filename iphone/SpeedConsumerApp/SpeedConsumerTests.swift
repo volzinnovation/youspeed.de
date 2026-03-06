@@ -4,6 +4,8 @@ import CryptoKit
 import SQLite3
 import CoreLocation
 
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 final class SpeedConsumerTests: XCTestCase {
     func testParseExplicitSpeed() {
         XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed("30"), 30)
@@ -2135,7 +2137,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(lowSpeedResult.service, "parking_aisle")
     }
 
-    func testLookupMarksTunnelSegmentFromTunnelTag() throws {
+    func testLookupDoesNotMarkTunnelSegmentWithoutContinuationContext() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-tag-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -2158,7 +2160,286 @@ final class SpeedConsumerTests: XCTestCase {
             speedKmh: 20.0,
             horizontalAccuracyM: 5.0
         )
-        XCTAssertTrue(tunnelMatch.isTunnelSegment)
+        XCTAssertFalse(tunnelMatch.isTunnelSegment)
+    }
+
+    func testLookupMarksTunnelSegmentWhenContinuingOnSameRef() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-transition-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("tunnel_transition_fixture.sqlite")
+        try createTunnelTransitionFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0010,
+            radiusM: 80.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "7001",
+                recentWayIDs: ["7001"],
+                preferredStreetRef: "B 10",
+                recentStreetRefs: ["B 10"]
+            ),
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 20.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "7002")
+        XCTAssertTrue(result.isTunnelSegment)
+    }
+
+    func testLookupMarksTunnelSegmentAfterSignalLossWhenTunnelWasRecentCandidate() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-tunnel-transition-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("tunnel_transition_fixture.sqlite")
+        try createTunnelTransitionFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0010,
+            radiusM: 80.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: nil,
+                recentWayIDs: [],
+                preferredStreetRef: nil,
+                recentStreetRefs: [],
+                recentTunnelCandidateWayIDs: ["7002"],
+                recentTunnelCandidateRefs: ["B 10"],
+                hadRecentGPSSignalLoss: true
+            ),
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 20.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "7002")
+        XCTAssertTrue(result.isTunnelSegment)
+    }
+
+    func testLookupPrefersSameRefContinuationWhenPreviousWayDropsOutOfRange() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-continuity-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("continuity_fixture.sqlite")
+        try createMatchContinuityFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let baseline = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0048,
+            radiusM: 40.0,
+            maxCandidates: 32,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(baseline.wayID, "5003")
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0048,
+            radiusM: 40.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "5001",
+                recentWayIDs: ["5001"],
+                preferredStreetRef: "B10",
+                recentStreetRefs: ["B10"]
+            ),
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "5002")
+        XCTAssertEqual(result.streetRef, "B10")
+        XCTAssertEqual(result.speedLimitKmh, 70)
+    }
+
+    func testLookupPrefersRecentWayWhenScoresAreCloseAndNoRefMatches() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-continuity-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("continuity_fixture.sqlite")
+        try createMatchContinuityFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let baseline = try service.lookupSpeedLimit(
+            lat: 52.0100,
+            lon: 13.0048,
+            radiusM: 40.0,
+            maxCandidates: 32,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(baseline.wayID, "6003")
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0100,
+            lon: 13.0048,
+            radiusM: 40.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "6001",
+                recentWayIDs: ["6002", "6001"],
+                preferredStreetRef: nil,
+                recentStreetRefs: []
+            ),
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(result.wayID, "6002")
+        XCTAssertEqual(result.speedLimitKmh, 80)
+    }
+
+    func testBundledL564RouteHysteresisRejectsTemporarySwitchToRisswasenweg() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+        let requiredWayIDs = ["52869774", "1316349759", "206811644", "16657591", "1220097540"]
+        let presentWayIDs = try readPresentWayIDs(dbURL: bundledDB, wayIDs: requiredWayIDs)
+        let missingWayIDs = Set(requiredWayIDs).subtracting(presentWayIDs)
+        if !missingWayIDs.isEmpty {
+            throw XCTSkip("Bundled seed DB does not contain required route ways: \(missingWayIDs.sorted())")
+        }
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        var recentWayIDs: [String] = []
+        var recentStreetRefs: [String] = []
+        var preferredWayID: String?
+
+        func record(_ result: SpeedLimitResult) {
+            if let wayID = result.wayID {
+                recentWayIDs.removeAll(where: { $0 == wayID })
+                recentWayIDs.insert(wayID, at: 0)
+                if recentWayIDs.count > 5 {
+                    recentWayIDs.removeLast(recentWayIDs.count - 5)
+                }
+                preferredWayID = wayID
+            }
+            for ref in V3SpeedLimitService.normalizedRefTokens(result.streetRef) {
+                recentStreetRefs.removeAll(where: { $0 == ref })
+                recentStreetRefs.insert(ref, at: 0)
+                if recentStreetRefs.count > 6 {
+                    recentStreetRefs.removeLast(recentStreetRefs.count - 6)
+                }
+            }
+        }
+
+        func context() -> WayMatchContext? {
+            guard preferredWayID != nil || !recentWayIDs.isEmpty || !recentStreetRefs.isEmpty else {
+                return nil
+            }
+            return WayMatchContext(
+                preferredWayID: preferredWayID,
+                recentWayIDs: recentWayIDs,
+                preferredStreetRef: recentStreetRefs.first,
+                recentStreetRefs: recentStreetRefs
+            )
+        }
+
+        let first = try service.lookupSpeedLimit(
+            lat: 48.77670,
+            lon: 8.40306,
+            radiusM: 40.0,
+            maxCandidates: 64,
+            matchContext: context(),
+            headingDeg: 180.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(first.wayID, "52869774")
+        XCTAssertEqual(first.streetRef, "L 564")
+        record(first)
+
+        let second = try service.lookupSpeedLimit(
+            lat: 48.77632,
+            lon: 8.40311,
+            radiusM: 40.0,
+            maxCandidates: 64,
+            matchContext: context(),
+            headingDeg: 180.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(second.wayID, "1316349759")
+        XCTAssertEqual(second.streetRef, "L 564")
+        record(second)
+
+        let ambiguousCandidateWayIDs = try readCandidateWayIDs(
+            dbURL: bundledDB,
+            lat: 48.77600,
+            lon: 8.40300,
+            radiusM: 40.0,
+            maxCandidates: 16
+        )
+        XCTAssertTrue(
+            ambiguousCandidateWayIDs.contains("16657591"),
+            "Expected the nearby side road candidate to be part of the ambiguous candidate set"
+        )
+        XCTAssertTrue(
+            ambiguousCandidateWayIDs.contains("206811644"),
+            "Expected the intended southbound continuation to be part of the ambiguous candidate set"
+        )
+
+        let ambiguous = try service.lookupSpeedLimit(
+            lat: 48.77600,
+            lon: 8.40300,
+            radiusM: 40.0,
+            maxCandidates: 64,
+            matchContext: context(),
+            headingDeg: 180.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(ambiguous.wayID, "206811644")
+        XCTAssertEqual(ambiguous.streetRef, "L 564")
+        XCTAssertNotEqual(ambiguous.wayID, "16657591")
+        record(ambiguous)
+
+        let fourth = try service.lookupSpeedLimit(
+            lat: 48.77440,
+            lon: 8.40360,
+            radiusM: 50.0,
+            maxCandidates: 64,
+            matchContext: context(),
+            headingDeg: 210.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 45.0,
+            horizontalAccuracyM: 5.0
+        )
+        XCTAssertEqual(fourth.wayID, "1220097540")
+        XCTAssertEqual(fourth.streetRef, "L 564")
     }
 
     func testLookupIgnoresTrafficSignFallbackForCityClassification() throws {
@@ -2519,6 +2800,169 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
             throw NSError(domain: "SpeedConsumerTests", code: 102, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createMatchContinuityFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '5001', 'primary', 'Bundesstrasse 10 West', 'B10', '70', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.0001, 13.0040, 52.0001);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (5001, 13.0000, 13.0040, 52.0001, 52.0001);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '5001', '[[52.0001,13.0000],[52.0001,13.0040]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '5002', 'primary', 'Bundesstrasse 10 East', 'B10', '70', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0043, 52.0001, 13.0100, 52.0001);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (5002, 13.0043, 13.0100, 52.0001, 52.0001);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, '5002', '[[52.0001,13.0043],[52.0001,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (3, '5003', 'residential', 'Nearby Side Road', NULL, '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0043, 52.00004, 13.0100, 52.00004);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (5003, 13.0043, 13.0100, 52.00004, 52.00004);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (3, '5003', '[[52.00004,13.0043],[52.00004,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (4, '6001', 'secondary', 'History West', NULL, '80', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.0100, 13.0040, 52.0100);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (6001, 13.0000, 13.0040, 52.0100, 52.0100);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (4, '6001', '[[52.0100,13.0000],[52.0100,13.0040]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (5, '6002', 'secondary', 'History East', NULL, '80', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0043, 52.01009, 13.0100, 52.01009);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (6002, 13.0043, 13.0100, 52.01009, 52.01009);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (5, '6002', '[[52.01009,13.0043],[52.01009,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (6, '6003', 'tertiary', 'Competing Road', NULL, '60', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0043, 52.01006, 13.0100, 52.01006);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (6003, 13.0043, 13.0100, 52.01006, 52.01006);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (6, '6003', '[[52.01006,13.0043],[52.01006,13.0100]]');
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 105, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createTunnelTransitionFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 122, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '7001', 'primary', 'Surface Approach', 'B 10', '70', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 51.99995, 13.0009, 52.00005);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (7001, 13.0000, 13.0009, 51.99995, 52.00005);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '7001', '[[52.0000,13.0000],[52.0000,13.0009]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '7002', 'primary', 'Tunnel Section', 'B 10', '70', NULL, NULL, NULL, NULL, 90.0, 'main', 'yes', NULL, NULL, 'underground', '-1', NULL, 13.0010, 51.99995, 13.0020, 52.00005);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (7002, 13.0010, 13.0020, 51.99995, 52.00005);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, '7002', '[[52.0000,13.0010],[52.0000,13.0020]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (3, '7003', 'primary', 'Surface Parallel', 'B 36', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0010, 52.00020, 13.0020, 52.00030);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (7003, 13.0010, 13.0020, 52.00020, 52.00030);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (3, '7003', '[[52.00025,13.0010],[52.00025,13.0020]]');
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 123, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 
@@ -2908,6 +3352,40 @@ final class SpeedConsumerTests: XCTestCase {
         let maxspeedType = sqlite3_column_text(stmt, 2).map { String(cString: $0) }
         let sourceMaxspeed = sqlite3_column_text(stmt, 3).map { String(cString: $0) }
         return (highway: highway, maxspeed: maxspeed, maxspeedType: maxspeedType, sourceMaxspeed: sourceMaxspeed)
+    }
+
+    private func readPresentWayIDs(dbURL: URL, wayIDs: [String]) throws -> Set<String> {
+        let uniqueWayIDs = Array(Set(wayIDs))
+        guard !uniqueWayIDs.isEmpty else {
+            return []
+        }
+        var db: OpaquePointer?
+        let encodedPath = dbURL.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? dbURL.path
+        let uri = "file:\(encodedPath)?mode=ro&immutable=1"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 35, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed for \(dbURL.path)"])
+        }
+        defer { sqlite3_close(db) }
+
+        let placeholders = uniqueWayIDs.enumerated().map { "?\($0.offset + 1)" }.joined(separator: ",")
+        let sql = "SELECT way_id FROM ways WHERE way_id IN (\(placeholders))"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw NSError(domain: "SpeedConsumerTests", code: 36, userInfo: [NSLocalizedDescriptionKey: "prepare present way query failed"])
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        for (index, wayID) in uniqueWayIDs.enumerated() {
+            sqlite3_bind_text(stmt, Int32(index + 1), wayID, -1, SQLITE_TRANSIENT)
+        }
+
+        var out: Set<String> = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let value = sqlite3_column_text(stmt, 0).map({ String(cString: $0) }) {
+                out.insert(value)
+            }
+        }
+        return out
     }
 
     private func readCandidateWayIDs(

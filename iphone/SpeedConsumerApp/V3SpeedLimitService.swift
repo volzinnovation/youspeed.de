@@ -15,7 +15,13 @@ final class V3SpeedLimitService {
         let speedKmh: Int?
         let speedSource: DerivedSpeedSource
         let distanceM: Double
+        let endpointProximityM: Double
         let score: Double
+    }
+
+    private struct PolylineMetrics {
+        let distanceM: Double
+        let endpointProximityM: Double
     }
 
     private enum DerivedSpeedSource {
@@ -63,6 +69,16 @@ final class V3SpeedLimitService {
         let resolveMs: Double
     }
 
+    private struct NormalizedMatchContext {
+        let preferredWayID: String?
+        let recentWayIDs: Set<String>
+        let preferredStreetRefs: Set<String>
+        let recentStreetRefs: Set<String>
+        let recentTunnelCandidateWayIDs: Set<String>
+        let recentTunnelCandidateRefs: Set<String>
+        let hadRecentGPSSignalLoss: Bool
+    }
+
     private static let placeRank: [String: Int] = [
         "city": 0,
         "town": 1,
@@ -76,6 +92,14 @@ final class V3SpeedLimitService {
     private static let preferredWayScoreSlackM: Double = 12.0
     private static let preferredWayDistanceMultiplier: Double = 1.6
     private static let preferredWayDistanceFloorM: Double = 70.0
+    private static let sameRefScoreSlackM: Double = 7.0
+    private static let sameRefDistanceMultiplier: Double = 1.35
+    private static let sameRefDistanceFloorM: Double = 60.0
+    private static let recentWayScoreSlackM: Double = 4.0
+    private static let recentWayDistanceMultiplier: Double = 1.2
+    private static let recentWayDistanceFloorM: Double = 45.0
+    private static let segmentTransitionEndpointThresholdM: Double = 12.0
+    private static let segmentTransitionDistanceSlackM: Double = 12.0
     private static let inCityHighwayClasses: Set<String> = [
         "residential",
         "service",
@@ -92,6 +116,7 @@ final class V3SpeedLimitService {
         lon: Double,
         radiusM: Double = 50.0,
         maxCandidates: Int = 256,
+        matchContext: WayMatchContext? = nil,
         preferredWayID: String? = nil,
         headingDeg: Double? = nil,
         headingAccuracyDeg: Double? = nil,
@@ -140,13 +165,22 @@ final class V3SpeedLimitService {
             headingAccuracyDeg: headingAccuracyDeg,
             speedKmh: speedKmh
         ) ? resolvedHeading : nil
+        let normalizedMatchContext = normalizedMatchContext(
+            from: matchContext,
+            fallbackPreferredWayID: preferredWayID
+        )
 
         var bestCandidate: WayCandidate?
         var preferredCandidate: WayCandidate?
+        var sameRefCandidate: WayCandidate?
+        var sameRefTransitionCandidate: WayCandidate?
+        var recentWayCandidate: WayCandidate?
         var candidateCount = 0
         var speedCandidateCount = 0
         var nearestCandidateDistance = Double.infinity
         var nearestSpeedCandidateDistance = Double.infinity
+        var nearbyTunnelCandidateWayIDs: [String] = []
+        var nearbyTunnelCandidateRefs: Set<String> = []
 
         while true {
             let rc = sqlite3_step(stmt)
@@ -183,8 +217,8 @@ final class V3SpeedLimitService {
                 maxLon: maxLon,
                 maxLat: maxLat
             )
-            let polylineDistance = polylineDistanceM(lat: lat, lon: lon, points: points)
-            let distance = polylineDistance ?? bboxDistance
+            let polylineMetrics = polylineMetrics(lat: lat, lon: lon, points: points)
+            let distance = polylineMetrics?.distanceM ?? bboxDistance
             if distance < nearestCandidateDistance {
                 nearestCandidateDistance = distance
             }
@@ -222,8 +256,18 @@ final class V3SpeedLimitService {
                 speedKmh: parsed,
                 speedSource: parsedResult.source,
                 distanceM: distance,
+                endpointProximityM: polylineMetrics?.endpointProximityM ?? .infinity,
                 score: score
             )
+            if isTruthyOSMTag(tunnel) {
+                if let candidateWayID = normalizedWayID(wayID) {
+                    nearbyTunnelCandidateWayIDs.append(candidateWayID)
+                }
+                nearbyTunnelCandidateRefs.formUnion(Self.normalizedRefTokens(streetRef))
+                if !isTunnelCandidateSelectable(candidate, matchContext: normalizedMatchContext) {
+                    continue
+                }
+            }
             if let currentBest = bestCandidate {
                 if isBetterCandidate(candidate, than: currentBest) {
                     bestCandidate = candidate
@@ -231,7 +275,8 @@ final class V3SpeedLimitService {
             } else {
                 bestCandidate = candidate
             }
-            if let preferredWayID, wayID == preferredWayID {
+            switch continuityClass(for: candidate, matchContext: normalizedMatchContext) {
+            case .preferredWay:
                 if let existingPreferred = preferredCandidate {
                     if isBetterCandidate(candidate, than: existingPreferred) {
                         preferredCandidate = candidate
@@ -239,25 +284,92 @@ final class V3SpeedLimitService {
                 } else {
                     preferredCandidate = candidate
                 }
+            case .sameRef:
+                if let existingSameRef = sameRefCandidate {
+                    if isBetterCandidate(candidate, than: existingSameRef) {
+                        sameRefCandidate = candidate
+                    }
+                } else {
+                    sameRefCandidate = candidate
+                }
+                if normalizedWayID(candidate.wayID) != normalizedMatchContext.preferredWayID {
+                    if let existingTransition = sameRefTransitionCandidate {
+                        if isBetterCandidate(candidate, than: existingTransition) {
+                            sameRefTransitionCandidate = candidate
+                        }
+                    } else {
+                        sameRefTransitionCandidate = candidate
+                    }
+                }
+            case .recentWay:
+                if let existingRecentWay = recentWayCandidate {
+                    if isBetterCandidate(candidate, than: existingRecentWay) {
+                        recentWayCandidate = candidate
+                    }
+                } else {
+                    recentWayCandidate = candidate
+                }
+            case .none:
+                break
             }
         }
 
         let selected: WayCandidate?
-        if let bestCandidate, let preferredCandidate {
+        if let bestCandidate {
             let accuracyBuffer = max(horizontalAccuracyM ?? 0.0, 0.0)
-            let maxPreferredDistance = max(
-                radiusM * Self.preferredWayDistanceMultiplier,
-                Self.preferredWayDistanceFloorM
-            ) + accuracyBuffer
-            let keepPreferred = preferredCandidate.distanceM <= maxPreferredDistance &&
-                preferredCandidate.score <= bestCandidate.score + Self.preferredWayScoreSlackM
-            if keepPreferred {
+            if let preferredCandidate,
+               shouldPreferSameRefAlternative(
+                overPreferred: preferredCandidate,
+                alternativeCandidate: bestCandidate,
+                accuracyBufferM: accuracyBuffer
+               ) {
+                selected = bestCandidate
+            } else if let preferredCandidate,
+               let sameRefTransitionCandidate,
+               shouldPromoteSameRefTransition(
+                from: preferredCandidate,
+                to: sameRefTransitionCandidate,
+                accuracyBufferM: accuracyBuffer
+               ) {
+                selected = sameRefTransitionCandidate
+            } else if let preferredCandidate,
+               shouldKeepContinuityCandidate(
+                preferredCandidate,
+                over: bestCandidate,
+                radiusM: radiusM,
+                accuracyBufferM: accuracyBuffer,
+                scoreSlackM: Self.preferredWayScoreSlackM,
+                distanceMultiplier: Self.preferredWayDistanceMultiplier,
+                distanceFloorM: Self.preferredWayDistanceFloorM
+               ) {
                 selected = preferredCandidate
+            } else if let sameRefCandidate,
+                      shouldKeepContinuityCandidate(
+                        sameRefCandidate,
+                        over: bestCandidate,
+                        radiusM: radiusM,
+                        accuracyBufferM: accuracyBuffer,
+                        scoreSlackM: Self.sameRefScoreSlackM,
+                        distanceMultiplier: Self.sameRefDistanceMultiplier,
+                        distanceFloorM: Self.sameRefDistanceFloorM
+                      ) {
+                selected = sameRefCandidate
+            } else if let recentWayCandidate,
+                      shouldKeepContinuityCandidate(
+                        recentWayCandidate,
+                        over: bestCandidate,
+                        radiusM: radiusM,
+                        accuracyBufferM: accuracyBuffer,
+                        scoreSlackM: Self.recentWayScoreSlackM,
+                        distanceMultiplier: Self.recentWayDistanceMultiplier,
+                        distanceFloorM: Self.recentWayDistanceFloorM
+                      ) {
+                selected = recentWayCandidate
             } else {
                 selected = bestCandidate
             }
         } else {
-            selected = preferredCandidate ?? bestCandidate
+            selected = preferredCandidate ?? sameRefCandidate ?? recentWayCandidate
         }
 
         let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
@@ -329,7 +441,9 @@ final class V3SpeedLimitService {
             candidateCount: candidateCount,
             speedCandidateCount: speedCandidateCount,
             nearestCandidateDistanceM: nearestCandidateDistance.isFinite ? nearestCandidateDistance : nil,
-            nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil
+            nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil,
+            nearbyTunnelCandidateWayIDs: nearbyTunnelCandidateWayIDs,
+            nearbyTunnelCandidateRefs: Array(nearbyTunnelCandidateRefs).sorted()
         )
     }
 
@@ -553,19 +667,28 @@ final class V3SpeedLimitService {
         return out
     }
 
-    private func polylineDistanceM(lat: Double, lon: Double, points: [(Double, Double)]) -> Double? {
+    private func polylineMetrics(lat: Double, lon: Double, points: [(Double, Double)]) -> PolylineMetrics? {
         if points.isEmpty {
             return nil
         }
         if points.count == 1 {
             let point = points[0]
-            return haversineM(lat1: lat, lon1: lon, lat2: point.0, lon2: point.1)
+            return PolylineMetrics(
+                distanceM: haversineM(lat1: lat, lon1: lon, lat2: point.0, lon2: point.1),
+                endpointProximityM: 0.0
+            )
         }
         var best = Double.infinity
+        var bestEndpointProximity = Double.infinity
+        let segmentLengths = zip(points, points.dropFirst()).map {
+            haversineM(lat1: $0.0.0, lon1: $0.0.1, lat2: $0.1.0, lon2: $0.1.1)
+        }
+        let totalLength = segmentLengths.reduce(0.0, +)
+        var cumulativeLength = 0.0
         for i in 0..<(points.count - 1) {
             let p1 = points[i]
             let p2 = points[i + 1]
-            let distance = pointToSegmentDistanceM(
+            let projection = pointToSegmentProjection(
                 lat: lat,
                 lon: lon,
                 lat1: p1.0,
@@ -573,21 +696,30 @@ final class V3SpeedLimitService {
                 lat2: p2.0,
                 lon2: p2.1
             )
-            if distance < best {
-                best = distance
+            if projection.distanceM < best {
+                best = projection.distanceM
+                let alongPolylineM = cumulativeLength + (projection.fraction * segmentLengths[i])
+                bestEndpointProximity = min(alongPolylineM, max(totalLength - alongPolylineM, 0.0))
             }
+            cumulativeLength += segmentLengths[i]
         }
-        return best.isFinite ? best : nil
+        guard best.isFinite else {
+            return nil
+        }
+        return PolylineMetrics(
+            distanceM: best,
+            endpointProximityM: bestEndpointProximity
+        )
     }
 
-    private func pointToSegmentDistanceM(
+    private func pointToSegmentProjection(
         lat: Double,
         lon: Double,
         lat1: Double,
         lon1: Double,
         lat2: Double,
         lon2: Double
-    ) -> Double {
+    ) -> (distanceM: Double, fraction: Double) {
         let origin = toXYMeters(lat: lat, lon: lon, originLat: lat, originLon: lon)
         let start = toXYMeters(lat: lat1, lon: lon1, originLat: lat, originLon: lon)
         let end = toXYMeters(lat: lat2, lon: lon2, originLat: lat, originLon: lon)
@@ -595,14 +727,14 @@ final class V3SpeedLimitService {
         let dy = end.y - start.y
 
         if dx == 0.0 && dy == 0.0 {
-            return hypot(origin.x - start.x, origin.y - start.y)
+            return (hypot(origin.x - start.x, origin.y - start.y), 0.0)
         }
         let tNumerator = (origin.x - start.x) * dx + (origin.y - start.y) * dy
         let tDenominator = (dx * dx) + (dy * dy)
         let t = min(max(tNumerator / tDenominator, 0.0), 1.0)
         let projectionX = start.x + (t * dx)
         let projectionY = start.y + (t * dy)
-        return hypot(origin.x - projectionX, origin.y - projectionY)
+        return (hypot(origin.x - projectionX, origin.y - projectionY), t)
     }
 
     private func toXYMeters(lat: Double, lon: Double, originLat: Double, originLon: Double) -> (x: Double, y: Double) {
@@ -622,6 +754,189 @@ final class V3SpeedLimitService {
         }
         return (lhs.wayID ?? "~") < (rhs.wayID ?? "~")
     }
+
+    private enum ContinuityClass {
+        case preferredWay
+        case sameRef
+        case recentWay
+        case none
+    }
+
+    private func normalizedMatchContext(
+        from matchContext: WayMatchContext?,
+        fallbackPreferredWayID: String?
+    ) -> NormalizedMatchContext {
+        let preferredWayID = normalizedWayID(matchContext?.preferredWayID) ?? normalizedWayID(fallbackPreferredWayID)
+        var recentWayIDs = Set(
+            (matchContext?.recentWayIDs ?? []).compactMap { normalizedWayID($0) }
+        )
+        if let preferredWayID {
+            recentWayIDs.insert(preferredWayID)
+        }
+
+        var preferredStreetRefs = Set(Self.normalizedRefTokens(matchContext?.preferredStreetRef))
+        if preferredStreetRefs.isEmpty {
+            preferredStreetRefs = Set(
+                (matchContext?.recentStreetRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
+            )
+        }
+        var recentStreetRefs = Set(
+            (matchContext?.recentStreetRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
+        )
+        recentStreetRefs.formUnion(preferredStreetRefs)
+        let recentTunnelCandidateWayIDs = Set(
+            (matchContext?.recentTunnelCandidateWayIDs ?? []).compactMap { normalizedWayID($0) }
+        )
+        let recentTunnelCandidateRefs = Set(
+            (matchContext?.recentTunnelCandidateRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
+        )
+
+        return NormalizedMatchContext(
+            preferredWayID: preferredWayID,
+            recentWayIDs: recentWayIDs,
+            preferredStreetRefs: preferredStreetRefs,
+            recentStreetRefs: recentStreetRefs,
+            recentTunnelCandidateWayIDs: recentTunnelCandidateWayIDs,
+            recentTunnelCandidateRefs: recentTunnelCandidateRefs,
+            hadRecentGPSSignalLoss: matchContext?.hadRecentGPSSignalLoss ?? false
+        )
+    }
+
+    private func continuityClass(for candidate: WayCandidate, matchContext: NormalizedMatchContext) -> ContinuityClass {
+        if let candidateWayID = normalizedWayID(candidate.wayID),
+           let preferredWayID = matchContext.preferredWayID,
+           candidateWayID == preferredWayID {
+            return .preferredWay
+        }
+
+        let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+        if !candidateRefTokens.isEmpty,
+           (!matchContext.preferredStreetRefs.isDisjoint(with: candidateRefTokens) ||
+            !matchContext.recentStreetRefs.isDisjoint(with: candidateRefTokens)) {
+            return .sameRef
+        }
+
+        if let candidateWayID = normalizedWayID(candidate.wayID),
+           matchContext.recentWayIDs.contains(candidateWayID) {
+            return .recentWay
+        }
+
+        return .none
+    }
+
+    private func shouldKeepContinuityCandidate(
+        _ continuityCandidate: WayCandidate,
+        over bestCandidate: WayCandidate,
+        radiusM: Double,
+        accuracyBufferM: Double,
+        scoreSlackM: Double,
+        distanceMultiplier: Double,
+        distanceFloorM: Double
+    ) -> Bool {
+        let maxDistance = max(radiusM * distanceMultiplier, distanceFloorM) + accuracyBufferM
+        return continuityCandidate.distanceM <= maxDistance &&
+            continuityCandidate.score <= bestCandidate.score + scoreSlackM
+    }
+
+    private func shouldPromoteSameRefTransition(
+        from preferredCandidate: WayCandidate,
+        to transitionCandidate: WayCandidate,
+        accuracyBufferM: Double
+    ) -> Bool {
+        guard normalizedWayID(preferredCandidate.wayID) != normalizedWayID(transitionCandidate.wayID) else {
+            return false
+        }
+        let preferredRefTokens = Set(Self.normalizedRefTokens(preferredCandidate.streetRef))
+        let transitionRefTokens = Set(Self.normalizedRefTokens(transitionCandidate.streetRef))
+        guard !preferredRefTokens.isEmpty,
+              !preferredRefTokens.isDisjoint(with: transitionRefTokens) else {
+            return false
+        }
+
+        let endpointThreshold = Self.segmentTransitionEndpointThresholdM + accuracyBufferM
+        let preferredAtEndpoint = preferredCandidate.endpointProximityM <= endpointThreshold
+        let transitionNearEndpoint = transitionCandidate.endpointProximityM <= (endpointThreshold * 2.0)
+        let transitionNotFarther = transitionCandidate.distanceM <= preferredCandidate.distanceM + Self.segmentTransitionDistanceSlackM + accuracyBufferM
+        return preferredAtEndpoint && transitionNearEndpoint && transitionNotFarther
+    }
+
+    private func shouldPreferSameRefAlternative(
+        overPreferred preferredCandidate: WayCandidate,
+        alternativeCandidate: WayCandidate,
+        accuracyBufferM: Double
+    ) -> Bool {
+        guard normalizedWayID(preferredCandidate.wayID) != normalizedWayID(alternativeCandidate.wayID) else {
+            return false
+        }
+        let preferredRefTokens = Set(Self.normalizedRefTokens(preferredCandidate.streetRef))
+        let alternativeRefTokens = Set(Self.normalizedRefTokens(alternativeCandidate.streetRef))
+        guard !preferredRefTokens.isEmpty,
+              !preferredRefTokens.isDisjoint(with: alternativeRefTokens) else {
+            return false
+        }
+        if alternativeCandidate.distanceM + accuracyBufferM + 10.0 < preferredCandidate.distanceM {
+            return true
+        }
+        return shouldPromoteSameRefTransition(
+            from: preferredCandidate,
+            to: alternativeCandidate,
+            accuracyBufferM: accuracyBufferM
+        )
+    }
+
+    private func normalizedWayID(_ raw: String?) -> String? {
+        let normalized = raw?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let normalized, !normalized.isEmpty else {
+            return nil
+        }
+        return normalized
+    }
+
+    private func isTunnelCandidateSelectable(
+        _ candidate: WayCandidate,
+        matchContext: NormalizedMatchContext
+    ) -> Bool {
+        guard isTruthyOSMTag(candidate.tunnel) else {
+            return true
+        }
+        let candidateWayID = normalizedWayID(candidate.wayID)
+        let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+        if let candidateWayID,
+           candidateWayID == matchContext.preferredWayID {
+            return true
+        }
+        if !candidateRefTokens.isEmpty,
+           (!candidateRefTokens.isDisjoint(with: matchContext.preferredStreetRefs) ||
+            !candidateRefTokens.isDisjoint(with: matchContext.recentStreetRefs)) {
+            return true
+        }
+        if matchContext.hadRecentGPSSignalLoss {
+            if let candidateWayID, matchContext.recentTunnelCandidateWayIDs.contains(candidateWayID) {
+                return true
+            }
+            if !candidateRefTokens.isEmpty,
+               !candidateRefTokens.isDisjoint(with: matchContext.recentTunnelCandidateRefs) {
+                return true
+            }
+        }
+        return false
+    }
+
+    static func normalizedRefTokens(_ raw: String?) -> [String] {
+        guard let raw else {
+            return []
+        }
+        return raw
+            .split(separator: ";")
+            .map { token in
+                String(token)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .uppercased()
+                    .replacingOccurrences(of: " ", with: "")
+            }
+            .filter { !$0.isEmpty }
+    }
+
 
     private func haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
         let r = 6_371_008.8

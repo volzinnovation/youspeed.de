@@ -102,7 +102,7 @@ struct FirstUserWelcomeView: View {
                     .padding(12)
                     .background(Color.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                    Text("Daten (c) OpenStreetMap - Open Database License 1.0.")
+                    Text("Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright")
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundStyle(.white.opacity(0.76))
                         .multilineTextAlignment(.leading)

@@ -250,6 +250,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var wasDrivingBanWarningActive = false
     private var lastDrivingBanWarningAt = Date.distantPast
     private var previousMatchedWayID: String?
+    private var recentMatchedWayIDs: [String] = []
+    private var recentMatchedStreetRefs: [String] = []
+    private var recentNearbyTunnelWayIDs: [String] = []
+    private var recentNearbyTunnelRefs: [String] = []
+    private var hadRecentGPSSignalLoss = false
     private var speedCapturePromptFallbackTask: Task<Void, Never>?
     private var speedCaptureListeningTimeoutTask: Task<Void, Never>?
     private var awaitingSpeedCapturePromptCompletion = false
@@ -278,6 +283,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let maxLookupRadiusM: Double = 160.0
     private static let lookupRadiusAccuracyMultiplier: Double = 2.2
     private static let startupSeedActivationFloorProgress: Double = 0.92
+    private static let recentMatchedWayHistoryLimit = 5
+    private static let recentMatchedStreetRefHistoryLimit = 6
     private static let speedCaptureSpeechLocaleIdentifier = "de-DE"
     private static let speedCaptureListeningWindowSeconds: UInt64 = 4
     private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
@@ -1211,7 +1218,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             do {
                 let removed = try await bundleManager.flushLocalContributionState()
-                previousMatchedWayID = nil
+                resetWayMatchContinuity()
                 localSpeedOverridesByWayID.removeAll(keepingCapacity: false)
                 maintenanceMessage = removed > 0
                     ? "Lokale Korrekturen geloescht (\(removed) Eintraege). Starte Synchronisierung."
@@ -1489,7 +1496,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         lastAnnouncedSpeechText = nil
         wasDrivingBanWarningActive = false
         lastDrivingBanWarningAt = .distantPast
-        previousMatchedWayID = nil
+        resetWayMatchContinuity()
         activeLocalSpeedCorrection = nil
         limitStreetBaseName = nil
         limitStreetRef = nil
@@ -1512,7 +1519,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func resetDiagnostics() {
         lookupEventLog.removeAll(keepingCapacity: false)
         gpsFixCount = 0
-        previousMatchedWayID = nil
+        resetWayMatchContinuity()
         activeLocalSpeedCorrection = nil
         limitStreetBaseName = nil
         limitStreetRef = nil
@@ -1538,6 +1545,85 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             try Data(header.utf8).write(to: logURL, options: .atomic)
         } catch {
             lastError = "gps log reset failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func currentWayMatchContext() -> WayMatchContext? {
+        guard previousMatchedWayID != nil ||
+                !recentMatchedWayIDs.isEmpty ||
+                !recentMatchedStreetRefs.isEmpty ||
+                !recentNearbyTunnelWayIDs.isEmpty ||
+                !recentNearbyTunnelRefs.isEmpty ||
+                hadRecentGPSSignalLoss else {
+            return nil
+        }
+        return WayMatchContext(
+            preferredWayID: previousMatchedWayID,
+            recentWayIDs: recentMatchedWayIDs,
+            preferredStreetRef: recentMatchedStreetRefs.first,
+            recentStreetRefs: recentMatchedStreetRefs,
+            recentTunnelCandidateWayIDs: recentNearbyTunnelWayIDs,
+            recentTunnelCandidateRefs: recentNearbyTunnelRefs,
+            hadRecentGPSSignalLoss: hadRecentGPSSignalLoss
+        )
+    }
+
+    private func recordWayMatch(result: SpeedLimitResult) {
+        guard let wayID = normalizedWayID(result.wayID) else {
+            return
+        }
+        previousMatchedWayID = wayID
+        pushUniqueFront(
+            wayID,
+            into: &recentMatchedWayIDs,
+            limit: Self.recentMatchedWayHistoryLimit
+        )
+        for refToken in V3SpeedLimitService.normalizedRefTokens(result.streetRef) {
+            pushUniqueFront(
+                refToken,
+                into: &recentMatchedStreetRefs,
+                limit: Self.recentMatchedStreetRefHistoryLimit
+            )
+        }
+        for tunnelWayID in result.nearbyTunnelCandidateWayIDs {
+            pushUniqueFront(
+                tunnelWayID,
+                into: &recentNearbyTunnelWayIDs,
+                limit: Self.recentMatchedWayHistoryLimit
+            )
+        }
+        for refToken in result.nearbyTunnelCandidateRefs {
+            pushUniqueFront(
+                refToken,
+                into: &recentNearbyTunnelRefs,
+                limit: Self.recentMatchedStreetRefHistoryLimit
+            )
+        }
+        hadRecentGPSSignalLoss = false
+    }
+
+    private func resetWayMatchContinuity() {
+        previousMatchedWayID = nil
+        recentMatchedWayIDs.removeAll(keepingCapacity: false)
+        recentMatchedStreetRefs.removeAll(keepingCapacity: false)
+        recentNearbyTunnelWayIDs.removeAll(keepingCapacity: false)
+        recentNearbyTunnelRefs.removeAll(keepingCapacity: false)
+        hadRecentGPSSignalLoss = false
+    }
+
+    private func normalizedWayID(_ raw: String?) -> String? {
+        let normalized = raw?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let normalized, !normalized.isEmpty else {
+            return nil
+        }
+        return normalized
+    }
+
+    private func pushUniqueFront(_ value: String, into values: inout [String], limit: Int) {
+        values.removeAll(where: { $0 == value })
+        values.insert(value, at: 0)
+        if values.count > limit {
+            values.removeLast(values.count - limit)
         }
     }
 
@@ -2289,7 +2375,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             activeBundleVersion = route.bundleVersion
             speedLimitService = V3SpeedLimitService(dbPath: route.dbPath)
             await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
-            previousMatchedWayID = nil
+            resetWayMatchContinuity()
             appendLookupEvent(
                 "\(fixTimestamp) fix=\(fixID) db_switch region=\(route.region) version=\(route.bundleVersion) db=\(URL(fileURLWithPath: route.dbPath).lastPathComponent)"
             )
@@ -2316,6 +2402,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
             resetTunnelModeTracking()
+            hadRecentGPSSignalLoss = true
             appendLookupEvent(
                 "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
             )
@@ -2336,7 +2423,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         let radiusM = Self.lookupRadius(forHorizontalAccuracy: hAcc)
         let maxCandidates = lookupMaxCandidates
-        let preferredWayID = previousMatchedWayID
+        let matchContext = currentWayMatchContext()
 
         Task.detached(priority: .utility) {
             do {
@@ -2345,7 +2432,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     lon: lon,
                     radiusM: radiusM,
                     maxCandidates: maxCandidates,
-                    preferredWayID: preferredWayID,
+                    matchContext: matchContext,
                     headingDeg: course,
                     headingAccuracyDeg: courseAccuracy,
                     speedKmh: gpsKmh,
@@ -2366,9 +2453,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.limitCityName = result.cityName
                     self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
-                    if let wayID = result.wayID {
-                        self.previousMatchedWayID = wayID
-                    }
+                    self.recordWayMatch(result: result)
                     self.maybeNotifyDrivingBanWarning()
                     self.maybeSpeakOverspeedWarning()
                     let lookupStatus: String

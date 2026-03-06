@@ -1,42 +1,71 @@
 Impressum
-Angaben gemäß § 5 DDG
+Angaben gemaess Paragraph 5 DDG
 
+Anbieter:
 [Unternehmensname / Name]
 [Rechtsform]
 Vertreten durch: [Vor- und Nachname]
-Anschrift: [Straße, Nr., PLZ, Ort, Land]
+Anschrift: [Strasse, Nr., PLZ, Ort, Land]
 E-Mail: [E-Mail-Adresse]
 Telefon: [Telefonnummer]
 
-Registereintrag: [Handelsregister + Registernummer, falls vorhanden]
-USt-IdNr.: [Nummer, falls vorhanden]
-Aufsichtsbehörde: [Behörde, falls zulassungspflichtige Tätigkeit]
+Registereintrag (falls vorhanden):
+[Handelsregister + Registernummer]
 
-Datenschutz (Art. 13 DSGVO)
+USt-IdNr. (falls vorhanden):
+[Nummer]
+
+Verantwortlich fuer redaktionelle Inhalte gemaess Paragraph 18 Abs. 2 MStV:
+[Vor- und Nachname, Anschrift]
+
+Datenschutzinformation (Art. 13 DSGVO)
 Verantwortlicher: [Name/Anschrift/Kontakt]
-Zwecke der Verarbeitung: [z. B. Betrieb der App, Support, Abrechnung]
+Zwecke der Verarbeitung: [Betrieb der App, Bereitstellung von Karten-/Regeldaten, Support]
 Rechtsgrundlagen: [Art. 6 Abs. 1 lit. b/c/f DSGVO; ggf. lit. a]
-Empfänger: [Dienstleisterkategorien]
-Drittlandübermittlung: [ja/nein + Grundlage]
+Empfaenger: [Dienstleisterkategorien, z. B. Hosting/CDN]
+Drittlanduebermittlung: [ja/nein + Rechtsgrundlage]
 Speicherdauer: [konkrete Fristen/Kriterien]
-Ihre Rechte: Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch, Datenübertragbarkeit
-Beschwerderecht: bei einer Datenschutzaufsichtsbehörde
+Betroffenenrechte: Auskunft, Berichtigung, Loeschung, Einschraenkung, Widerspruch, Datenuebertragbarkeit
+Beschwerderecht: bei einer Datenschutzaufsichtsbehoerde
 Kontakt Datenschutz: [E-Mail/Adresse DSB, falls benannt]
 
+DSA-Kontaktstellen (Verordnung (EU) 2022/2065)
+Kontaktstelle fuer Behoerden gemaess Art. 11 DSA:
+E-Mail: [DSA-Behordenkontakt]
+Sprachen: [Deutsch, Englisch]
+
+Kontaktstelle fuer Nutzer gemaess Art. 12 DSA:
+E-Mail: [DSA-Nutzerkontakt]
+Sprachen: [Deutsch, Englisch]
+
+Hinweis: Falls ein nicht in der EU niedergelassener Anbieter einen Vermittlungsdienst in der EU anbietet,
+ist zusaetzlich ein gesetzlicher Vertreter in der EU gemaess Art. 13 DSA zu benennen.
+
 Datenquelle, Urheberrecht und Lizenz (OpenStreetMap)
-Diese App verwendet Geodaten aus OpenStreetMap sowie daraus abgeleitete Datensätze.
-Urheberrecht: © OpenStreetMap-Mitwirkende.
-
-Lizenz der Daten:
-Open Database License (ODbL) v1.0
+Diese App verwendet Geodaten aus OpenStreetMap sowie daraus abgeleitete Datensaetze.
+Kartendaten: Copyright OpenStreetMap-Mitwirkende.
+Lizenz: Open Database License (ODbL) v1.0
 https://opendatacommons.org/licenses/odbl/1-0/
+Attribution/Urheberhinweis:
+https://www.openstreetmap.org/copyright
 
-Namensnennung:
-Bei öffentlicher Nutzung, Weitergabe oder Veröffentlichung der Daten ist
-"OpenStreetMap-Mitwirkende" als Quelle anzugeben.
+Erforderliche Namensnennung:
+"OpenStreetMap-Mitwirkende"
 
 Hinweis zur Weiterverwendung:
-Die in der App bereitgestellten Datensätze (z. B. Deutschland-Datensatz und Seed-Datensatz)
-basieren auf OSM-Daten. Bei Weitergabe bearbeiteter Datenbanken können nach ODbL
-zusätzliche Pflichten gelten (insbesondere Quellenhinweis und ggf. Share-Alike für
-abgeleitete Datenbanken).
+Bei oeffentlicher Nutzung, Weitergabe oder Veroeffentlichung von OSM-basierten Datenbanken
+koennen nach ODbL zusaetzliche Pflichten gelten (insbesondere Quellenhinweis und
+Share-Alike fuer abgeleitete Datenbanken).
+
+Open-Source-Komponenten und Lizenzen
+Die iOS-App verwendet derzeit keine zusaetzlich eingebetteten Drittanbieter-SDKs
+ueber Swift Package Manager, CocoaPods oder Carthage.
+
+Verwendete Systemkomponenten:
+- Apple-Systemframeworks (iOS SDK) gemaess Apple-Lizenzbedingungen.
+- SQLite3 (Systembibliothek): Public Domain
+  https://www.sqlite.org/copyright.html
+
+Projektlizenz (Repository):
+GNU Affero General Public License v3.0 (AGPL-3.0), siehe LICENSE im Projekt.
+Quellcode-URL: [Repository-URL]

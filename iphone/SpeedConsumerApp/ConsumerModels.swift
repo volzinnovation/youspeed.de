@@ -493,6 +493,34 @@ struct PartDownloadProgress: Sendable, Identifiable {
     let totalBytes: Int64
 }
 
+struct WayMatchContext: Sendable {
+    let preferredWayID: String?
+    let recentWayIDs: [String]
+    let preferredStreetRef: String?
+    let recentStreetRefs: [String]
+    let recentTunnelCandidateWayIDs: [String]
+    let recentTunnelCandidateRefs: [String]
+    let hadRecentGPSSignalLoss: Bool
+
+    init(
+        preferredWayID: String?,
+        recentWayIDs: [String],
+        preferredStreetRef: String?,
+        recentStreetRefs: [String],
+        recentTunnelCandidateWayIDs: [String] = [],
+        recentTunnelCandidateRefs: [String] = [],
+        hadRecentGPSSignalLoss: Bool = false
+    ) {
+        self.preferredWayID = preferredWayID
+        self.recentWayIDs = recentWayIDs
+        self.preferredStreetRef = preferredStreetRef
+        self.recentStreetRefs = recentStreetRefs
+        self.recentTunnelCandidateWayIDs = recentTunnelCandidateWayIDs
+        self.recentTunnelCandidateRefs = recentTunnelCandidateRefs
+        self.hadRecentGPSSignalLoss = hadRecentGPSSignalLoss
+    }
+}
+
 struct SpeedLimitResult {
     let speedLimitKmh: Int?
     let wayID: String?
@@ -520,6 +548,8 @@ struct SpeedLimitResult {
     let speedCandidateCount: Int
     let nearestCandidateDistanceM: Double?
     let nearestSpeedCandidateDistanceM: Double?
+    let nearbyTunnelCandidateWayIDs: [String]
+    let nearbyTunnelCandidateRefs: [String]
 }
 
 enum ConsumerAppError: Error, LocalizedError {

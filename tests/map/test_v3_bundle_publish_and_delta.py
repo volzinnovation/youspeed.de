@@ -80,6 +80,28 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                   points_json TEXT NOT NULL
                 );
 
+                CREATE TABLE areas (
+                  row_id INTEGER PRIMARY KEY,
+                  area_id TEXT NOT NULL UNIQUE,
+                  geometry_type TEXT,
+                  name TEXT,
+                  place TEXT,
+                  boundary TEXT,
+                  admin_level TEXT,
+                  residential TEXT,
+                  points_json TEXT,
+                  min_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL,
+                  max_lon REAL NOT NULL,
+                  max_lat REAL NOT NULL
+                );
+
+                CREATE VIRTUAL TABLE areas_rtree USING rtree(
+                  row_id,
+                  min_lon, max_lon,
+                  min_lat, max_lat
+                );
+
                 INSERT INTO ways(way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, min_lon, min_lat, max_lon, max_lat)
                 VALUES
                   (100, 'residential', 'Fixture Street', 'L 605', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, 13.0000, 52.0000, 13.0010, 52.0010),
@@ -94,6 +116,16 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 VALUES
                   (100, '[[52.0000,13.0000],[52.0010,13.0010]]'),
                   (300, '[[52.0100,13.0100],[52.0110,13.0110]]');
+
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES
+                  (1, 'a:1', 'Polygon', 'Fixture City', 'city', NULL, '8', NULL, '[[13.0000,52.0000],[13.0020,52.0000],[13.0020,52.0020],[13.0000,52.0020],[13.0000,52.0000]]', 13.0000, 52.0000, 13.0020, 52.0020),
+                  (2, 'a:2', 'Polygon', NULL, NULL, NULL, NULL, 'landuse', '[[13.0100,52.0100],[13.0110,52.0100],[13.0110,52.0110],[13.0100,52.0110],[13.0100,52.0100]]', 13.0100, 52.0100, 13.0110, 52.0110);
+
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES
+                  (1, 13.0000, 13.0020, 52.0000, 52.0020),
+                  (2, 13.0100, 13.0110, 52.0100, 52.0110);
                 """
             )
             conn.commit()
@@ -197,6 +229,159 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             self.assertEqual(row_map.get(200, {}).get("ref"), "K 2")
             self.assertNotIn(300, row_map)
 
+    def test_build_v3_delta_pack_exact_target_db_no_drift(self):
+        target_db = self.tmpdir / "target.sqlite"
+        target_db.write_bytes(self.base_db.read_bytes())
+
+        with sqlite3.connect(target_db) as conn:
+            conn.executescript(
+                """
+                UPDATE ways
+                SET maxspeed='40', street_name='Exact Updated Street', ref='B 7'
+                WHERE way_id=100;
+
+                DELETE FROM way_geom WHERE way_id=300;
+                DELETE FROM ways_rtree WHERE way_id=300;
+                DELETE FROM ways WHERE way_id=300;
+
+                INSERT INTO ways(
+                  way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel,
+                  min_lon, min_lat, max_lon, max_lat
+                ) VALUES(
+                  400, 'secondary', 'Target Added Road', 'L 9', '70', NULL, NULL,
+                  NULL, NULL, 45.0, NULL, 'yes',
+                  13.2000, 52.2000, 13.2010, 52.2010
+                );
+                INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES(400, 13.2000, 13.2010, 52.2000, 52.2010);
+                INSERT INTO way_geom(way_id, points_json)
+                VALUES(400, '[[52.2000,13.2000],[52.2010,13.2010]]');
+
+                UPDATE areas
+                SET points_json='[[13.0000,52.0000],[13.0030,52.0000],[13.0030,52.0030],[13.0000,52.0030],[13.0000,52.0000]]',
+                    max_lon=13.0030,
+                    max_lat=52.0030
+                WHERE area_id='a:1';
+                DELETE FROM areas_rtree WHERE row_id=2;
+                DELETE FROM areas WHERE area_id='a:2';
+                INSERT INTO areas(
+                  row_id, area_id, geometry_type, name, place, boundary, admin_level, residential,
+                  points_json, min_lon, min_lat, max_lon, max_lat
+                ) VALUES(
+                  3, 'a:3', 'Polygon', NULL, NULL, NULL, NULL, 'landuse',
+                  '[[13.3000,52.3000],[13.3010,52.3000],[13.3010,52.3010],[13.3000,52.3010],[13.3000,52.3000]]',
+                  13.3000, 52.3000, 13.3010, 52.3010
+                );
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES(3, 13.3000, 13.3010, 52.3000, 52.3010);
+                """
+            )
+            conn.commit()
+
+        out_dir = self.tmpdir / "delta_pack_exact"
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V3_DELTA),
+                "--base-db",
+                str(self.base_db),
+                "--target-db",
+                str(target_db),
+                "--diff-file",
+                str(self.diff_file),
+                "--region",
+                "germany",
+                "--from-version",
+                "2026-02-23",
+                "--to-version",
+                "2026-02-24",
+                "--out-dir",
+                str(out_dir),
+                "--validate-on-copy",
+            ]
+        )
+
+        patch_path = out_dir / "v3_patch.sql.zlib"
+        patch_sql = zlib.decompress(patch_path.read_bytes()).decode("utf-8")
+
+        db_copy = self.tmpdir / "applied_exact.sqlite"
+        db_copy.write_bytes(self.base_db.read_bytes())
+        with sqlite3.connect(db_copy) as conn:
+            conn.executescript(patch_sql)
+            conn.execute("PRAGMA quick_check")
+
+        with sqlite3.connect(":memory:") as conn:
+            conn.execute("ATTACH DATABASE ? AS applied", (str(db_copy),))
+            conn.execute("ATTACH DATABASE ? AS target", (str(target_db),))
+
+            way_extra = conn.execute(
+                "SELECT COUNT(*) FROM applied.ways aw LEFT JOIN target.ways tw USING(way_id) WHERE tw.way_id IS NULL"
+            ).fetchone()[0]
+            way_missing = conn.execute(
+                "SELECT COUNT(*) FROM target.ways tw LEFT JOIN applied.ways aw USING(way_id) WHERE aw.way_id IS NULL"
+            ).fetchone()[0]
+            way_attr_diff = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM applied.ways aw JOIN target.ways tw USING(way_id)
+                WHERE
+                  COALESCE(aw.highway,'') != COALESCE(tw.highway,'') OR
+                  COALESCE(aw.street_name,'') != COALESCE(tw.street_name,'') OR
+                  COALESCE(aw.ref,'') != COALESCE(tw.ref,'') OR
+                  COALESCE(aw.maxspeed,'') != COALESCE(tw.maxspeed,'') OR
+                  COALESCE(aw.maxspeed_type,'') != COALESCE(tw.maxspeed_type,'') OR
+                  COALESCE(aw.source_maxspeed,'') != COALESCE(tw.source_maxspeed,'') OR
+                  COALESCE(aw.service,'') != COALESCE(tw.service,'') OR
+                  COALESCE(aw.tunnel,'') != COALESCE(tw.tunnel,'') OR
+                  ABS(aw.min_lon - tw.min_lon) > 1e-12 OR
+                  ABS(aw.min_lat - tw.min_lat) > 1e-12 OR
+                  ABS(aw.max_lon - tw.max_lon) > 1e-12 OR
+                  ABS(aw.max_lat - tw.max_lat) > 1e-12
+                """
+            ).fetchone()[0]
+            geom_diff = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM applied.way_geom ag JOIN target.way_geom tg USING(way_id)
+                WHERE COALESCE(ag.points_json,'') != COALESCE(tg.points_json,'')
+                """
+            ).fetchone()[0]
+
+            self.assertEqual(way_extra, 0)
+            self.assertEqual(way_missing, 0)
+            self.assertEqual(way_attr_diff, 0)
+            self.assertEqual(geom_diff, 0)
+
+            area_extra = conn.execute(
+                "SELECT COUNT(*) FROM applied.areas aa LEFT JOIN target.areas ta ON aa.area_id=ta.area_id WHERE ta.area_id IS NULL"
+            ).fetchone()[0]
+            area_missing = conn.execute(
+                "SELECT COUNT(*) FROM target.areas ta LEFT JOIN applied.areas aa ON ta.area_id=aa.area_id WHERE aa.area_id IS NULL"
+            ).fetchone()[0]
+            area_attr_diff = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM applied.areas aa JOIN target.areas ta ON aa.area_id=ta.area_id
+                WHERE
+                  COALESCE(aa.geometry_type,'') != COALESCE(ta.geometry_type,'') OR
+                  COALESCE(aa.name,'') != COALESCE(ta.name,'') OR
+                  COALESCE(aa.place,'') != COALESCE(ta.place,'') OR
+                  COALESCE(aa.boundary,'') != COALESCE(ta.boundary,'') OR
+                  COALESCE(aa.admin_level,'') != COALESCE(ta.admin_level,'') OR
+                  COALESCE(aa.residential,'') != COALESCE(ta.residential,'') OR
+                  COALESCE(aa.points_json,'') != COALESCE(ta.points_json,'') OR
+                  ABS(aa.min_lon - ta.min_lon) > 1e-12 OR
+                  ABS(aa.min_lat - ta.min_lat) > 1e-12 OR
+                  ABS(aa.max_lon - ta.max_lon) > 1e-12 OR
+                  ABS(aa.max_lat - ta.max_lat) > 1e-12
+                """
+            ).fetchone()[0]
+
+            self.assertEqual(area_extra, 0)
+            self.assertEqual(area_missing, 0)
+            self.assertEqual(area_attr_diff, 0)
+
     def test_publish_v3_bundle_with_github_release_urls(self):
         delta_index = self.tmpdir / "delta-index.v3.json"
         delta_index.write_text(
@@ -238,15 +423,15 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 str(self.rules_json),
             ]
         )
-        manifest_path = self.tmpdir / "bundles" / "germany" / "2026-02-24" / "DEU-latest.bundle-manifest.v3.json"
+        manifest_path = self.tmpdir / "bundles" / "germany" / "2026-02-24" / "germany_manifest.json"
         self.assertTrue(manifest_path.exists())
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(manifest["format"], "youspeed.v3.bundle.manifest")
         self.assertEqual(manifest["variant"], "v3")
         self.assertEqual(manifest["country_code"], "NLD")
-        self.assertEqual(manifest["db"]["file"], "DEU-latest.speeds_v3.sqlite")
+        self.assertEqual(manifest["db"]["file"], "germany_speeds.sqlite")
         self.assertIn("github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24", manifest["db"]["url"])
-        self.assertIn("DEU-latest.delta-index.v3.json", manifest["delta_index"]["file"])
+        self.assertIn("germany_delta_index.json", manifest["delta_index"]["file"])
         self.assertEqual(manifest["penalty_rules"]["file"], "NLD-rules.json")
         self.assertIn(
             "github.com/volzinnovation/youspeed.de/releases/download/v3-data-2026-02-24",
@@ -271,10 +456,10 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
                 str(out_root),
             ]
         )
-        manifest_path = out_root / "germany" / "latest" / "DEU-latest.bundle-manifest.v3.json"
+        manifest_path = out_root / "germany" / "latest" / "germany_manifest.json"
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertEqual(payload["bundle_version"], "2026-02-24")
-        self.assertEqual(payload["db"]["file"], "DEU-latest.speeds_v3.sqlite")
+        self.assertEqual(payload["db"]["file"], "germany_speeds.sqlite")
 
     def test_publish_v3_bundle_splits_large_db_into_parts(self):
         out_root = self.tmpdir / "bundles"
@@ -303,14 +488,14 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             ]
         )
         bundle_dir = out_root / "germany" / "latest"
-        manifest_path = bundle_dir / "DEU-latest.bundle-manifest.v3.json"
+        manifest_path = bundle_dir / "germany_manifest.json"
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.assertIn("db_parts", payload)
         self.assertGreater(len(payload["db_parts"]), 1)
         self.assertIsNone(payload["db"]["url"])
         self.assertEqual(payload["db"]["bytes"], self.base_db.stat().st_size)
 
-        part_files = sorted(bundle_dir.glob("DEU-latest.speeds_v3.sqlite.part*"))
+        part_files = sorted(bundle_dir.glob("germany_speeds.sqlite.part*"))
         self.assertEqual(len(part_files), len(payload["db_parts"]))
         self.assertGreater(sum(p.stat().st_size for p in part_files), 0)
         for part in payload["db_parts"]:
