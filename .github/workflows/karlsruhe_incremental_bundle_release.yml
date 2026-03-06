@@ -298,7 +298,7 @@ jobs:
           new_delta_manifest=""
           new_delta_asset_path=""
 
-          if [[ -f "${prev_manifest_tmp}" && "${{ steps.version.outputs.diff_changed }}" == "1" && -f "${{ steps.version.outputs.delta_path }}" ]]; then
+          if [[ -f "${prev_manifest_tmp}" ]]; then
             prev_version="$(python3 -c 'import json; from pathlib import Path; obj=json.loads(Path("'"${prev_manifest_tmp}"'").read_text(encoding="utf-8")); print(obj.get("bundle_version") or "")')"
             new_version="${{ steps.version.outputs.bundle_version }}"
 
@@ -330,16 +330,27 @@ jobs:
                 delta_dir="${BUNDLE_DIR}/deltas/${prev_version}_to_${new_version}"
                 patch_name="${REGION}_${new_version}.v3_patch_from_${prev_version}.sql"
                 manifest_name="${REGION}_${new_version}.v3_delta_manifest_from_${prev_version}.json"
+                delta_input="${{ steps.version.outputs.delta_path }}"
+                if [[ -z "${delta_input}" || ! -f "${delta_input}" ]]; then
+                  delta_input="/tmp/karlsruhe-prev/noop.osc"
+                  cat > "${delta_input}" <<'OSC'
+<osmChange version="0.6" generator="youspeed">
+</osmChange>
+OSC
+                  echo "No exported daily OSC delta found; using no-op diff input for exact DB delta generation."
+                fi
 
                 python3 scripts/map/build_v3_delta_pack.py \
                   --base-db "${prev_db_tmp}" \
-                  --diff-file "${{ steps.version.outputs.delta_path }}" \
+                  --target-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+                  --diff-file "${delta_input}" \
                   --region "${REGION}" \
                   --from-version "${prev_version}" \
                   --to-version "${new_version}" \
                   --out-dir "${delta_dir}" \
                   --patch-file-name "${patch_name}" \
                   --manifest-name "${manifest_name}" \
+                  --validate-on-copy \
                   --github-owner "${GITHUB_REPOSITORY%/*}" \
                   --github-repo "${GITHUB_REPOSITORY#*/}" \
                   --github-release-tag "${{ steps.params.outputs.release_tag }}"
