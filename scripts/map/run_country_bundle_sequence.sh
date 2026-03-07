@@ -6,11 +6,15 @@ usage() {
 Usage:
   scripts/map/run_country_bundle_sequence.sh [options]
 
-Runs country bundle generation sequentially on GitHub Actions with cooldown and retry logic.
+Runs country PBF snapshot and bundle generation sequentially on GitHub Actions
+with cooldown and retry logic.
 Countries are read from BundleTargets.top10.json by default.
 
 Options:
-  --workflow <file>           Workflow file name (default: generate_country_bundles.yml)
+  --workflow <file>           Bundle workflow file name
+                              (default: generate_country_bundles.yml)
+  --pbf-workflow <file>       PBF snapshot workflow file name
+                              (default: country_pbf_diff_update.yml)
   --config <path>             Bundle target config JSON
                               (default: iphone/SpeedConsumerApp/BundleTargets.top10.json)
   --cooldown-sec <n>          Seconds to wait between countries (default: 120)
@@ -20,12 +24,16 @@ Options:
   --countries <csv>           Optional comma-separated country ids override
                               (example: germany,netherlands,romania)
   --ref <branch>              Git ref (default: main)
-  --skip-release-urls <bool>  true/false, passed to workflow input (default: true)
+  --skip-release-urls <bool>  true/false, passed to bundle workflow input
+                              (default: false)
+  --skip-pbf-step             Skip the PBF snapshot workflow
+  --skip-bundle-step          Skip the bundle workflow
   -h, --help                  Show this help
 USAGE
 }
 
 workflow_file="generate_country_bundles.yml"
+pbf_workflow_file="country_pbf_diff_update.yml"
 config_path="iphone/SpeedConsumerApp/BundleTargets.top10.json"
 cooldown_sec=120
 retry_attempts=10
@@ -33,7 +41,9 @@ retry_delay_sec=15
 poll_sec=30
 countries_csv=""
 git_ref="main"
-skip_release_urls="true"
+skip_release_urls="false"
+run_pbf_step="true"
+run_bundle_step="true"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +53,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --config)
       config_path="${2:-}"
+      shift 2
+      ;;
+    --pbf-workflow)
+      pbf_workflow_file="${2:-}"
       shift 2
       ;;
     --cooldown-sec)
@@ -72,6 +86,14 @@ while [[ $# -gt 0 ]]; do
     --skip-release-urls)
       skip_release_urls="${2:-}"
       shift 2
+      ;;
+    --skip-pbf-step)
+      run_pbf_step="false"
+      shift
+      ;;
+    --skip-bundle-step)
+      run_bundle_step="false"
+      shift
       ;;
     -h|--help)
       usage
@@ -125,25 +147,36 @@ if [[ ${#countries[@]} -eq 0 ]]; then
   exit 1
 fi
 
-dispatch_country() {
-  local country="$1"
+if [[ "$run_pbf_step" != "true" && "$run_bundle_step" != "true" ]]; then
+  echo "Nothing to do: both PBF and bundle steps are disabled" >&2
+  exit 1
+fi
+
+dispatch_workflow() {
+  local workflow="$1"
+  shift
   local attempt
   local out
   local run_id=""
   for attempt in $(seq 1 "$retry_attempts"); do
-    if out="$(gh workflow run "$workflow_file" \
-      --ref "$git_ref" \
-      --field "bundle_country=$country" \
-      --field "execute=true" \
-      --field "skip_release_urls=$skip_release_urls" 2>&1)"; then
+    local cmd=(
+      gh workflow run "$workflow"
+      --ref "$git_ref"
+    )
+    local field
+    for field in "$@"; do
+      cmd+=(--field "$field")
+    done
+
+    if out="$("${cmd[@]}" 2>&1)"; then
       run_id="$(echo "$out" | sed -nE 's#^.*/actions/runs/([0-9]+)$#\1#p' | tail -n1)"
       if [[ -n "$run_id" ]]; then
         echo "$run_id"
         return 0
       fi
-      echo "[dispatch] $country succeeded but run id could not be parsed; output: $out" >&2
+      echo "[dispatch] workflow=${workflow} succeeded but run id could not be parsed; output: $out" >&2
     else
-      echo "[dispatch] $country attempt $attempt/$retry_attempts failed" >&2
+      echo "[dispatch] workflow=${workflow} attempt $attempt/$retry_attempts failed" >&2
       echo "$out" >&2
     fi
     sleep "$retry_delay_sec"
@@ -153,7 +186,7 @@ dispatch_country() {
 
 wait_for_run() {
   local run_id="$1"
-  local country="$2"
+  local label="$2"
   local status=""
   local conclusion=""
   local line=""
@@ -170,14 +203,14 @@ wait_for_run() {
     done
 
     if [[ -z "$line" ]]; then
-      echo "[monitor] $country run=$run_id API unreachable; continuing polling" >&2
+      echo "[monitor] $label run=$run_id API unreachable; continuing polling" >&2
       sleep "$poll_sec"
       continue
     fi
 
     status="$(echo "$line" | cut -f1)"
     conclusion="$(echo "$line" | cut -f2)"
-    echo "[monitor] $country run=$run_id status=$status conclusion=${conclusion:-n/a}"
+    echo "[monitor] $label run=$run_id status=$status conclusion=${conclusion:-n/a}"
 
     if [[ "$status" == "completed" ]]; then
       if [[ "$conclusion" == "success" ]]; then
@@ -195,6 +228,8 @@ echo "Cooldown: ${cooldown_sec}s, retries: ${retry_attempts}, retry delay: ${ret
 
 failed_countries=()
 successful_countries=()
+pbf_failed_countries=()
+bundle_failed_countries=()
 
 for country in "${countries[@]}"; do
   country="$(echo "$country" | xargs)"
@@ -202,32 +237,77 @@ for country in "${countries[@]}"; do
 
   echo
   echo "=== Country: $country ==="
-  run_id=""
-  if ! run_id="$(dispatch_country "$country")"; then
-    echo "[result] $country dispatch failed"
-    failed_countries+=("$country")
+
+  country_failed=0
+
+  if [[ "$run_pbf_step" == "true" ]]; then
+    run_id=""
+    if ! run_id="$(dispatch_workflow "$pbf_workflow_file" "bundle_country=$country")"; then
+      echo "[result] $country pbf dispatch failed"
+      failed_countries+=("$country")
+      pbf_failed_countries+=("$country")
+      country_failed=1
+    else
+      echo "[dispatch] $country pbf run=$run_id"
+      if wait_for_run "$run_id" "$country:pbf"; then
+        echo "[result] $country pbf success"
+      else
+        echo "[result] $country pbf failed"
+        failed_countries+=("$country")
+        pbf_failed_countries+=("$country")
+        country_failed=1
+      fi
+    fi
+
     echo "[cooldown] ${cooldown_sec}s"
     sleep "$cooldown_sec"
+  fi
+
+  if [[ "$country_failed" == "1" ]]; then
     continue
   fi
 
-  echo "[dispatch] $country run=$run_id"
-  if wait_for_run "$run_id" "$country"; then
-    echo "[result] $country success"
-    successful_countries+=("$country")
-  else
-    echo "[result] $country failed"
-    failed_countries+=("$country")
+  if [[ "$run_bundle_step" == "true" ]]; then
+    run_id=""
+    if ! run_id="$(dispatch_workflow "$workflow_file" \
+      "bundle_country=$country" \
+      "execute=true" \
+      "skip_release_urls=$skip_release_urls")"; then
+      echo "[result] $country bundle dispatch failed"
+      failed_countries+=("$country")
+      bundle_failed_countries+=("$country")
+      country_failed=1
+    else
+      echo "[dispatch] $country bundle run=$run_id"
+      if wait_for_run "$run_id" "$country:bundle"; then
+        echo "[result] $country bundle success"
+      else
+        echo "[result] $country bundle failed"
+        failed_countries+=("$country")
+        bundle_failed_countries+=("$country")
+        country_failed=1
+      fi
+    fi
+
+    echo "[cooldown] ${cooldown_sec}s"
+    sleep "$cooldown_sec"
   fi
 
-  echo "[cooldown] ${cooldown_sec}s"
-  sleep "$cooldown_sec"
+  if [[ "$country_failed" == "0" ]]; then
+    successful_countries+=("$country")
+  fi
 done
 
 echo
 echo "=== Summary ==="
 echo "Succeeded (${#successful_countries[@]}): ${successful_countries[*]:-}"
 echo "Failed (${#failed_countries[@]}): ${failed_countries[*]:-}"
+if [[ "$run_pbf_step" == "true" ]]; then
+  echo "PBF failed (${#pbf_failed_countries[@]}): ${pbf_failed_countries[*]:-}"
+fi
+if [[ "$run_bundle_step" == "true" ]]; then
+  echo "Bundle failed (${#bundle_failed_countries[@]}): ${bundle_failed_countries[*]:-}"
+fi
 
 if [[ ${#failed_countries[@]} -gt 0 ]]; then
   exit 1
