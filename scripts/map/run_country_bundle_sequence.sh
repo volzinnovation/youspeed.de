@@ -26,6 +26,8 @@ Options:
   --ref <branch>              Git ref (default: main)
   --skip-release-urls <bool>  true/false, passed to bundle workflow input
                               (default: false)
+  --force-publish <bool>      true/false, passed to bundle workflow input
+                              (default: false)
   --skip-pbf-step             Skip the PBF snapshot workflow
   --skip-bundle-step          Skip the bundle workflow
   -h, --help                  Show this help
@@ -42,6 +44,7 @@ poll_sec=30
 countries_csv=""
 git_ref="main"
 skip_release_urls="false"
+force_publish="false"
 run_pbf_step="true"
 run_bundle_step="true"
 
@@ -85,6 +88,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-release-urls)
       skip_release_urls="${2:-}"
+      shift 2
+      ;;
+    --force-publish)
+      force_publish="${2:-}"
       shift 2
       ;;
     --skip-pbf-step)
@@ -225,6 +232,7 @@ wait_for_run() {
 echo "Workflow: $workflow_file"
 echo "Countries (${#countries[@]}): ${countries[*]}"
 echo "Cooldown: ${cooldown_sec}s, retries: ${retry_attempts}, retry delay: ${retry_delay_sec}s"
+echo "Force publish: ${force_publish}"
 
 failed_countries=()
 successful_countries=()
@@ -272,7 +280,8 @@ for country in "${countries[@]}"; do
     if ! run_id="$(dispatch_workflow "$workflow_file" \
       "bundle_country=$country" \
       "execute=true" \
-      "skip_release_urls=$skip_release_urls")"; then
+      "skip_release_urls=$skip_release_urls" \
+      "force_publish=$force_publish")"; then
       echo "[result] $country bundle dispatch failed"
       failed_countries+=("$country")
       bundle_failed_countries+=("$country")

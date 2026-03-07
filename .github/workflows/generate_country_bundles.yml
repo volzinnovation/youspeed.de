@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       bundle_country:
-        description: "Geofabrik country id from BundleTargets.top10.json (for example: netherlands)"
+        description: "Country, region, or shard id from BundleTargets.top10.json / Geofabrik (for example: netherlands or baden-wuerttemberg)"
         required: false
         default: "netherlands"
         type: string

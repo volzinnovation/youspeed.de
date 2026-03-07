@@ -1,0 +1,91 @@
+name: Germany Regional Incremental Release Sequence
+
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "all, states, germany, all-root, or comma-separated region/shard ids"
+        required: false
+        default: "all"
+        type: string
+      ref:
+        description: "Git ref to dispatch"
+        required: false
+        default: "main"
+        type: string
+      cooldown_sec:
+        description: "Cooldown between workflow runs in seconds"
+        required: false
+        default: "120"
+        type: string
+      skip_pbf_step:
+        description: "Skip the regional PBF snapshot workflow"
+        required: false
+        default: false
+        type: boolean
+      skip_release_urls:
+        description: "Skip release URLs in generated manifests"
+        required: false
+        default: false
+        type: boolean
+      force_publish:
+        description: "Force full bundle rebuild/release even when no diff change was detected"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: germany-regional-incremental-release-sequence
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 960
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve Germany Targets
+        id: targets
+        run: |
+          set -euo pipefail
+          chmod +x scripts/map/list_germany_release_targets.py
+          targets_csv="$(
+            python3 scripts/map/list_germany_release_targets.py \
+              --selector "${{ github.event.inputs.targets || 'all' }}" \
+              --format csv
+          )"
+          echo "targets_csv=${targets_csv}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved targets: ${targets_csv}"
+
+      - name: Run Germany Regional Incremental Dispatcher
+        run: |
+          set -euo pipefail
+          chmod +x scripts/map/run_country_bundle_sequence.sh
+
+          ref_input="${{ github.event.inputs.ref || '' }}"
+          if [[ -z "${ref_input}" ]]; then
+            ref_input="${{ github.event.repository.default_branch }}"
+          fi
+
+          cmd=(
+            ./scripts/map/run_country_bundle_sequence.sh
+            --ref "${ref_input}"
+            --countries "${{ steps.targets.outputs.targets_csv }}"
+            --cooldown-sec "${{ github.event.inputs.cooldown_sec || '120' }}"
+            --skip-release-urls "${{ github.event.inputs.skip_release_urls || 'false' }}"
+            --force-publish "${{ github.event.inputs.force_publish || 'false' }}"
+          )
+
+          if [[ "${{ github.event.inputs.skip_pbf_step || 'false' }}" == "true" ]]; then
+            cmd+=(--skip-pbf-step)
+          fi
+
+          "${cmd[@]}"
