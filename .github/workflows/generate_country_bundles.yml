@@ -343,15 +343,15 @@ jobs:
               "${prev_manifest_tmp}"
           )"
 
-          if [[ "${diff_changed}" != "1" && -n "${prev_version}" && "${prev_version}" == "${new_version}" ]]; then
-            echo "needs_publish=0" >> "${GITHUB_OUTPUT}"
-            echo "No daily diff change and bundle already up to date (${new_version}); skipping build/release."
-            exit 0
-          fi
-
           if [[ "${diff_changed}" != "1" ]]; then
-            echo "needs_publish=0" >> "${GITHUB_OUTPUT}"
-            echo "No daily diff change detected; skipping build/release."
+            if [[ -n "${prev_version}" && "${prev_version}" == "${new_version}" ]]; then
+              echo "needs_publish=0" >> "${GITHUB_OUTPUT}"
+              echo "No daily diff change and bundle already up to date (${new_version}); skipping build/release."
+              exit 0
+            fi
+
+            echo "needs_publish=1" >> "${GITHUB_OUTPUT}"
+            echo "Refreshing full bundle baseline to ${new_version} from the maintained PBF snapshot."
             exit 0
           fi
 
@@ -377,7 +377,7 @@ jobs:
             --out-db "mapdata/dist-v3/${{ steps.plan.outputs.region_slug }}/speeds_v3.sqlite"
 
       - name: Build New Incremental Delta (If Possible)
-        if: ${{ inputs.execute && steps.compare.outputs.needs_publish == '1' }}
+        if: ${{ inputs.execute && steps.compare.outputs.needs_publish == '1' && steps.version.outputs.diff_changed == '1' }}
         id: delta
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
