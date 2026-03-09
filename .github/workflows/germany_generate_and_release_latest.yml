@@ -26,7 +26,7 @@ on:
       max_geom_points:
         description: "Max sampled geometry points for v1 preprocessing"
         required: false
-        default: "8"
+        default: "24"
         type: string
       force_publish:
         description: "Force full bundle rebuild/publish even when upstream diff changed!=1"
@@ -52,7 +52,7 @@ jobs:
       DEFAULT_RELEASE_TAG: germany
       DEFAULT_PBF_RELEASE_TAG: deu-pbf-latest
       RETENTION_UPDATES: ${{ inputs.retention_updates || '30' }}
-      MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '8' }}
+      MAX_GEOM_POINTS: ${{ inputs.max_geom_points || '24' }}
       FORCE_PUBLISH: ${{ inputs.force_publish && '1' || '0' }}
       INPUT_PBF: mapdata/raw/DEU-latest.osm.pbf
       INPUT_STATE: mapdata/raw/DEU.diff_state.json

@@ -21,7 +21,7 @@ on:
       max_geom_points:
         description: "Max sampled geometry points for preprocessing"
         required: false
-        default: "8"
+        default: "24"
         type: string
 
 permissions:
@@ -77,7 +77,7 @@ jobs:
 
           max_geom_points="${{ github.event.inputs.max_geom_points || '' }}"
           if [[ -z "${max_geom_points}" ]]; then
-            max_geom_points="8"
+            max_geom_points="24"
           fi
 
           {

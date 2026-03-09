@@ -21,7 +21,7 @@ on:
       max_geom_points:
         description: "Max sampled geometry points for preprocessing"
         required: false
-        default: "8"
+        default: "24"
         type: string
       release_tag:
         description: "Optional bundle release tag override. Empty = resolved country bundle tag."
@@ -370,7 +370,7 @@ jobs:
             --region "${{ steps.plan.outputs.region_slug }}" \
             --input "${{ steps.plan.outputs.input_pbf_path }}" \
             --engine pyosmium \
-            --max-geom-points "${{ inputs.max_geom_points || '8' }}"
+            --max-geom-points "${{ inputs.max_geom_points || '24' }}"
 
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${{ steps.plan.outputs.region_slug }}" \

@@ -58,6 +58,8 @@ curl -L --fail https://download.geofabrik.de/europe/germany-latest.osm.pbf -o ma
 ./scripts/map/build_region_artifacts.sh --region germany --input mapdata/raw/DEU-latest.osm.pbf --engine pyosmium --max-geom-points 8
 ```
 
+This explicit `8`-point cap reproduces the historical paper baseline. Consumer bundle workflows now default to `24`.
+
 3. Build `v2`, `v3`, `v4`:
 
 ```bash
@@ -148,9 +150,9 @@ Important policy enforced in app:
 
 - If installed data is older than 30 days relative to target bundle version, skip incremental patching and do full bundle reload.
 
-Open TODO (IRL validation):
+Geometry-sampling note:
 
-- Run real-world on-road validation for geometry sampling setting `--max-geom-points 8` and compare match quality/latency against higher values (for example `12`, `16`, `24`) before locking production defaults.
+- Consumer bundle generation now defaults to `--max-geom-points 24`. Karlsruhe seed and Netherlands release scans on the retained drivable-way subset showed that only `1.80%` and `1.94%` of ways exceed that cap, while a lower knee remains near `16` for future field validation.
 
 ### Local v3 bundle build/publish commands
 

@@ -655,7 +655,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--iso2", default="", help="Optional ISO2 override for --bundle-region mode")
     parser.add_argument("--bundle-version", default="", help="Bundle version (default: UTC date)")
-    parser.add_argument("--max-geom-points", type=int, default=8)
+    parser.add_argument("--max-geom-points", type=int, default=24)
     parser.add_argument(
         "--bundle-target-config",
         default="iphone/SpeedConsumerApp/BundleTargets.top10.json",
