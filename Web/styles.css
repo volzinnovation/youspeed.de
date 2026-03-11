@@ -766,6 +766,9 @@ tbody tr.highlight td {
 .reveal-d4 {
   transition-delay: 0.35s;
 }
+.reveal-d5 {
+  transition-delay: 0.45s;
+}
 
 /* ---------- Responsive ---------- */
 
@@ -784,7 +787,7 @@ tbody tr.highlight td {
     grid-template-columns: repeat(2, 1fr);
   }
   .shots-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }
 
