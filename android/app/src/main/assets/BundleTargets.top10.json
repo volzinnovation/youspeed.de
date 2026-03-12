@@ -1,0 +1,179 @@
+{
+  "format": "youspeed.v3.bundle.targets",
+  "schema_version": 1,
+  "variant": "v3",
+  "max_country_pbf_bytes": 1000000000,
+  "github_owner": "volzinnovation",
+  "github_repo": "youspeed.de",
+  "countries": [
+    {
+      "rank": 1,
+      "country_id": "netherlands",
+      "country_code": "NLD",
+      "iso2": "NL",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "netherlands"
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "country_id": "romania",
+      "country_code": "ROU",
+      "iso2": "RO",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "romania"
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "country_id": "luxembourg",
+      "country_code": "LUX",
+      "iso2": "LU",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "luxembourg"
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "country_id": "belgium",
+      "country_code": "BEL",
+      "iso2": "BE",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "belgium"
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "country_id": "sweden",
+      "country_code": "SWE",
+      "iso2": "SE",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "sweden"
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "country_id": "liechtenstein",
+      "country_code": "LIE",
+      "iso2": "LI",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "liechtenstein"
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "country_id": "iceland",
+      "country_code": "ISL",
+      "iso2": "IS",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "iceland"
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "country_id": "germany",
+      "country_code": "DEU",
+      "iso2": "DE",
+      "mode": "regional_shards",
+      "regions": [
+        {
+          "region_id": "baden-wuerttemberg",
+          "name": "Baden-Württemberg"
+        },
+        {
+          "region_id": "bayern",
+          "name": "Bayern"
+        },
+        {
+          "region_id": "berlin",
+          "name": "Berlin"
+        },
+        {
+          "region_id": "brandenburg",
+          "name": "Brandenburg"
+        },
+        {
+          "region_id": "bremen",
+          "name": "Bremen"
+        },
+        {
+          "region_id": "hamburg",
+          "name": "Hamburg"
+        },
+        {
+          "region_id": "hessen",
+          "name": "Hessen"
+        },
+        {
+          "region_id": "mecklenburg-vorpommern",
+          "name": "Mecklenburg-Vorpommern"
+        },
+        {
+          "region_id": "niedersachsen",
+          "name": "Niedersachsen"
+        },
+        {
+          "region_id": "nordrhein-westfalen",
+          "name": "Nordrhein-Westfalen"
+        },
+        {
+          "region_id": "rheinland-pfalz",
+          "name": "Rheinland-Pfalz"
+        },
+        {
+          "region_id": "saarland",
+          "name": "Saarland"
+        },
+        {
+          "region_id": "sachsen",
+          "name": "Sachsen"
+        },
+        {
+          "region_id": "sachsen-anhalt",
+          "name": "Sachsen-Anhalt"
+        },
+        {
+          "region_id": "schleswig-holstein",
+          "name": "Schleswig-Holstein"
+        },
+        {
+          "region_id": "thueringen",
+          "name": "Thüringen"
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "country_id": "monaco",
+      "country_code": "MCO",
+      "iso2": "MC",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "monaco"
+        }
+      ]
+    }
+  ]
+}

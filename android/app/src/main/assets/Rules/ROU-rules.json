@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "ROU",
+  "country_name": "Romania",
+  "currency_code": "RON",
+  "default_language": "en",
+  "source_url": "https://www.politiaromana.ro/ro/utile/intrebari-frecvente/circulatie/radare-si-viteza",
+  "source_checked_at": "2026-03-02",
+  "note": "Indicative warning bands based on point-fine categories; values vary with the legal point amount.",
+  "bands": [
+    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely category: 2-3 points (from about 405 {currency})", "money_fine_eur": 405 },
+    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely category: 3-4 points (from about 607 {currency})", "money_fine_eur": 607 },
+    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "points_and_fine", "title_template": "High overspeed", "detail_template": "Likely category: 4-5 points (from about 810 {currency})", "money_fine_eur": 810, "penalty_points": 4 },
+    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "points_and_fine", "title_template": "High overspeed", "detail_template": "Likely category: 6-8 points (from about 1215 {currency})", "money_fine_eur": 1215, "penalty_points": 6 },
+    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely category: 9-20 points and possible suspension", "money_fine_eur": 1822, "penalty_points": 9, "conditional_driving_ban_months": 3, "driving_ban_condition": "license_suspension_possible" }
+  ]
+}

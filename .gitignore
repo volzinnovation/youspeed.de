@@ -83,3 +83,8 @@ iphone/SpeedDBBench.xcodeproj/xcuserdata/
 # Xcode and test bundles
 *.xcresult
 DerivedData/
+
+# Android build outputs
+android/.gradle/
+android/local.properties
+android/**/build/

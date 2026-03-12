@@ -1,0 +1,18 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "LIE",
+  "country_name": "Liechtenstein",
+  "currency_code": "CHF",
+  "default_language": "en",
+  "source_url": "https://www.llv.li/inhalt/11327/amtsstellen/landespolizei",
+  "source_checked_at": "2026-03-02",
+  "note": "Indicative warning bands for passenger cars; sanctions depend on context and prosecutorial escalation.",
+  "bands": [
+    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 120 {currency}", "money_fine_eur": 120 },
+    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 250 {currency}", "money_fine_eur": 250 },
+    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely fine from about 600 {currency}", "money_fine_eur": 600 },
+    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely fine from about 900 {currency}", "money_fine_eur": 900 },
+    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely prosecutor/court handling and possible suspension", "money_fine_eur": 1200, "penalty_points": 0, "conditional_driving_ban_months": 3, "driving_ban_condition": "court_discretion" }
+  ]
+}

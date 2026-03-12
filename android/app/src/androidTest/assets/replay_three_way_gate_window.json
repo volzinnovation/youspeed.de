@@ -1,0 +1,255 @@
+[
+  {
+    "fix_id": 34,
+    "timestamp_utc": "2026-03-10T13:35:22.999Z",
+    "lat": 48.767967258743916,
+    "lon": 8.335692245028502,
+    "speed_kmh": 25.019435740522027,
+    "horizontal_acc_m": 2.0000686840376574,
+    "course_deg": 348.8814697265625,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "1251752490",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 5.432465960897179
+    }
+  },
+  {
+    "fix_id": 35,
+    "timestamp_utc": "2026-03-10T13:35:23.999Z",
+    "lat": 48.76805556549571,
+    "lon": 8.33572057057458,
+    "speed_kmh": 30.1905520850051,
+    "horizontal_acc_m": 2.0000524261284434,
+    "course_deg": 3.608769178390503,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "209270485",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 4.512924463200667
+    }
+  },
+  {
+    "fix_id": 36,
+    "timestamp_utc": "2026-03-10T13:35:24.999Z",
+    "lat": 48.76815917363811,
+    "lon": 8.335754516698723,
+    "speed_kmh": 36.98568356850671,
+    "horizontal_acc_m": 2.00003324144821,
+    "course_deg": 13.98326587677002,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "209270485",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 0
+    }
+  },
+  {
+    "fix_id": 37,
+    "timestamp_utc": "2026-03-10T13:35:25.999Z",
+    "lat": 48.76827618100307,
+    "lon": 8.335787980909922,
+    "speed_kmh": 42.857012309061076,
+    "horizontal_acc_m": 2.0000180515982366,
+    "course_deg": 10.953356742858887,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "1037006038",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 11.06744998647759
+    }
+  },
+  {
+    "fix_id": 38,
+    "timestamp_utc": "2026-03-10T13:35:26.999Z",
+    "lat": 48.768398429308384,
+    "lon": 8.335824648498907,
+    "speed_kmh": 46.80609626220474,
+    "horizontal_acc_m": 2.0000090258640886,
+    "course_deg": 10.953356742858887,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "1037006038",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 0
+    }
+  },
+  {
+    "fix_id": 39,
+    "timestamp_utc": "2026-03-10T13:35:27.999Z",
+    "lat": 48.768523367868454,
+    "lon": 8.335866532879509,
+    "speed_kmh": 49.18545858508748,
+    "horizontal_acc_m": 2.0000042930806377,
+    "course_deg": 11.35338020324707,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 17.30358403051153
+    }
+  },
+  {
+    "fix_id": 40,
+    "timestamp_utc": "2026-03-10T13:35:28.999Z",
+    "lat": 48.76864681485434,
+    "lon": 8.335910923226379,
+    "speed_kmh": 49.96986078768187,
+    "horizontal_acc_m": 2.0000019836367176,
+    "course_deg": 12.749626159667969,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 31.40859437248389
+    }
+  },
+  {
+    "fix_id": 41,
+    "timestamp_utc": "2026-03-10T13:35:29.999Z",
+    "lat": 48.76876930186102,
+    "lon": 8.335948604371119,
+    "speed_kmh": 49.86850501531896,
+    "horizontal_acc_m": 2.000000894460389,
+    "course_deg": 12.749626159667969,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 20.452960239546886
+    }
+  },
+  {
+    "fix_id": 42,
+    "timestamp_utc": "2026-03-10T13:35:30.999Z",
+    "lat": 48.76888948314254,
+    "lon": 8.335986085670323,
+    "speed_kmh": 49.29711323666708,
+    "horizontal_acc_m": 2.000000376786584,
+    "course_deg": 12.749626159667969,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 6.7905736648842545
+    }
+  },
+  {
+    "fix_id": 43,
+    "timestamp_utc": "2026-03-10T13:35:31.999Z",
+    "lat": 48.76900841551671,
+    "lon": 8.336024030872418,
+    "speed_kmh": 48.90927367904703,
+    "horizontal_acc_m": 2.0000001294019367,
+    "course_deg": 11.832486139843276,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 0
+    }
+  },
+  {
+    "fix_id": 44,
+    "timestamp_utc": "2026-03-10T13:35:32.999Z",
+    "lat": 48.76912569399009,
+    "lon": 8.336072408710566,
+    "speed_kmh": 48.715606551204345,
+    "horizontal_acc_m": 2.000000019528169,
+    "course_deg": 13.731417892142343,
+    "gps_signal_bars": 4,
+    "result": {
+      "way_id": "16634524",
+      "highway": "tertiary",
+      "street_ref": null,
+      "is_tunnel_segment": false,
+      "nearby_tunnel_candidate_way_ids": [
+        "4287421"
+      ],
+      "nearby_tunnel_candidate_refs": [
+        "B462"
+      ],
+      "matched_endpoint_proximity_m": 0
+    }
+  }
+]

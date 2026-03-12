@@ -1,0 +1,66 @@
+Impressum
+Angaben gemaess Paragraph 5 DDG
+
+Anbieter:
+Moonshots Studios GmbH
+GmbH
+Vertreten durch: Alexander Gerhart
+Anschrift: Auguststr. 2, 10117 Berlin
+E-Mail: alexander@moonshots.gmbh
+Telefon: +493050956343
+
+Registereintrag (falls vorhanden):
+Amtsgericht Charlottenburg HRB 248039 B
+USt-IdNr. (falls vorhanden):
+DE259968336
+
+Verantwortlich fuer redaktionelle Inhalte gemaess Paragraph 18 Abs. 2 MStV:
+Alexander Gerhart, Auguststr. 2, 10117 Berlin
+
+Datenschutzinformation (Art. 13 DSGVO)
+Verantwortlicher: Alexander Gerhart, Auguststr. 2, 10117 Berlin, alexander@moonshots.gmbh
+Zwecke der Verarbeitung: Betrieb der App, Bereitstellung von Karten- und Regeldaten sowie Support-Anfragen
+Rechtsgrundlagen: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) sowie lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb)
+Empfaenger: IT-Hosting-Dienstleister sowie Content Delivery Networks (CDN) zur Auslieferung der App-Inhalte.
+Drittlanduebermittlung: Nein
+Speicherdauer: Personenbezogene Daten werden nur so lange gespeichert, wie es für den Zweck (z. B. Support-Anfrage) oder gesetzliche Aufbewahrungsfristen nötig ist
+Betroffenenrechte: Auskunft, Berichtigung, Loeschung, Einschraenkung, Widerspruch, Datenuebertragbarkeit
+Beschwerderecht: bei einer Datenschutzaufsichtsbehoerde
+Kontakt Datenschutz: alexander@moonshots.gmbh
+
+DSA-Kontaktstellen (Verordnung (EU) 2022/2065)
+Kontaktstelle fuer Behoerden gemaess Art. 11 DSA:
+E-Mail: alexander@moonshots.gmbh
+Sprachen: Deutsch, Englisch
+
+Kontaktstelle fuer Nutzer gemaess Art. 12 DSA:
+E-Mail: alexander@moonshots.gmbh
+Sprachen: Deutsch, Englisch
+
+Hinweis: Falls ein nicht in der EU niedergelassener Anbieter einen Vermittlungsdienst in der EU anbietet,
+ist zusaetzlich ein gesetzlicher Vertreter in der EU gemaess Art. 13 DSA zu benennen.
+
+Datenquelle, Urheberrecht und Lizenz (OpenStreetMap)
+Diese App verwendet Geodaten aus OpenStreetMap sowie daraus abgeleitete Datensaetze.
+Kartendaten: Copyright OpenStreetMap-Mitwirkende.
+Lizenz: Open Database License (ODbL) v1.0
+https://opendatacommons.org/licenses/odbl/1-0/
+Attribution/Urheberhinweis:
+https://www.openstreetmap.org/copyright
+
+Erforderliche Namensnennung:
+"OpenStreetMap-Mitwirkende"
+
+Hinweis zur Weiterverwendung:
+Bei oeffentlicher Nutzung, Weitergabe oder Veroeffentlichung von OSM-basierten Datenbanken
+koennen nach ODbL zusaetzliche Pflichten gelten (insbesondere Quellenhinweis und
+Share-Alike fuer abgeleitete Datenbanken).
+
+Open-Source-Komponenten und Lizenzen
+Die iOS-App verwendet derzeit keine zusaetzlich eingebetteten Drittanbieter-SDKs
+ueber Swift Package Manager, CocoaPods oder Carthage.
+
+Verwendete Systemkomponenten:
+- Apple-Systemframeworks (iOS SDK) gemaess Apple-Lizenzbedingungen.
+- SQLite3 (Systembibliothek): Public Domain
+  https://www.sqlite.org/copyright.html

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">YouSpeed Android Alpha</string>
+    <string name="header_title">Android Alpha</string>
+    <string name="header_summary">Bundled targets, real Germany shard manifest fetch, and full-bundle bootstrap against the iPhone launch contract.</string>
+    <string name="action_refresh">Reload bundled targets</string>
+    <string name="action_fetch_manifest">Fetch first Germany manifest</string>
+    <string name="action_bootstrap">Bootstrap first Germany shard</string>
+</resources>

@@ -1,0 +1,14 @@
+[
+  {
+    "expected_way_id": "100",
+    "expected_speed_kmh": 30
+  },
+  {
+    "expected_way_id": "200",
+    "expected_speed_kmh": 50
+  },
+  {
+    "expected_way_id": null,
+    "expected_speed_kmh": null
+  }
+]

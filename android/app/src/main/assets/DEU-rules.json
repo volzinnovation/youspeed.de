@@ -1,0 +1,158 @@
+{
+  "format": "youspeed.bussgeld.regeln",
+  "schema_version": 1,
+  "land_code": "DEU",
+  "land_name": "Deutschland",
+  "waehrung_code": "EUR",
+  "standardsprache": "de",
+  "quelle_url": "https://www.adac.de/verkehr/recht/bussgeld-punkte/geschwindigkeitsueberschreitung/",
+  "quelle_geprueft_am": "2026-02-25",
+  "hinweis": "Werte nach ADAC-Tabelle fuer Pkw, mit Unterscheidung innerorts und ausserorts. Einige Fahrverbote gelten nur unter Voraussetzungen (Wiederholungstat).",
+  "stufen": [
+    {
+      "min_ueber_kmh": 1,
+      "max_ueber_kmh": 10,
+      "schweregrad": "nur_geldbusse",
+      "titel_vorlage": "Zu schnell um {delta} km/h",
+      "detail_vorlage": "Voraussichtliches Bussgeld: innerorts 30 {waehrung}, ausserorts 20 {waehrung}",
+      "geldbusse_eur": 30,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 30, "punkte": 0, "fahrverbot_monate": 0 },
+        "ausserorts": { "geldbusse_eur": 20, "punkte": 0, "fahrverbot_monate": 0 }
+      }
+    },
+    {
+      "min_ueber_kmh": 11,
+      "max_ueber_kmh": 15,
+      "schweregrad": "nur_geldbusse",
+      "titel_vorlage": "Zu schnell um {delta} km/h",
+      "detail_vorlage": "Voraussichtliches Bussgeld: innerorts 50 {waehrung}, ausserorts 40 {waehrung}",
+      "geldbusse_eur": 50,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 50, "punkte": 0, "fahrverbot_monate": 0 },
+        "ausserorts": { "geldbusse_eur": 40, "punkte": 0, "fahrverbot_monate": 0 }
+      }
+    },
+    {
+      "min_ueber_kmh": 16,
+      "max_ueber_kmh": 20,
+      "schweregrad": "nur_geldbusse",
+      "titel_vorlage": "Zu schnell um {delta} km/h",
+      "detail_vorlage": "Voraussichtliches Bussgeld: innerorts 70 {waehrung}, ausserorts 60 {waehrung}",
+      "geldbusse_eur": 70,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 70, "punkte": 0, "fahrverbot_monate": 0 },
+        "ausserorts": { "geldbusse_eur": 60, "punkte": 0, "fahrverbot_monate": 0 }
+      }
+    },
+    {
+      "min_ueber_kmh": 21,
+      "max_ueber_kmh": 25,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Punkte-Risiko",
+      "detail_vorlage": "Voraussichtlich 1 Punkt und Bussgeld: innerorts 115 {waehrung}, ausserorts 100 {waehrung}",
+      "geldbusse_eur": 115,
+      "punkte": 1,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 115, "punkte": 1, "fahrverbot_monate": 0 },
+        "ausserorts": { "geldbusse_eur": 100, "punkte": 1, "fahrverbot_monate": 0 }
+      }
+    },
+    {
+      "min_ueber_kmh": 26,
+      "max_ueber_kmh": 30,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Hoher Verstoss",
+      "detail_vorlage": "Voraussichtlich 1 Punkt und Bussgeld: innerorts 180 {waehrung}, ausserorts 150 {waehrung}; 1 Monat Fahrverbot nur bei zweiter Tat >25 km/h innerhalb von 12 Monaten",
+      "geldbusse_eur": 180,
+      "punkte": 1,
+      "ortsvarianten": {
+        "innerorts": {
+          "geldbusse_eur": 180,
+          "punkte": 1,
+          "fahrverbot_monate": 0,
+          "bedingtes_fahrverbot_monate": 1,
+          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
+        },
+        "ausserorts": {
+          "geldbusse_eur": 150,
+          "punkte": 1,
+          "fahrverbot_monate": 0,
+          "bedingtes_fahrverbot_monate": 1,
+          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
+        }
+      }
+    },
+    {
+      "min_ueber_kmh": 31,
+      "max_ueber_kmh": 40,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Schwerer Verstoss",
+      "detail_vorlage": "Voraussichtlich innerorts: 260 {waehrung}, 2 Punkte, 1 Monat Fahrverbot; ausserorts: 200 {waehrung}, 1 Punkt, 1 Monat Fahrverbot nur bei zweiter Tat >25 km/h innerhalb von 12 Monaten",
+      "geldbusse_eur": 260,
+      "punkte": 2,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 260, "punkte": 2, "fahrverbot_monate": 1 },
+        "ausserorts": {
+          "geldbusse_eur": 200,
+          "punkte": 1,
+          "fahrverbot_monate": 0,
+          "bedingtes_fahrverbot_monate": 1,
+          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
+        }
+      }
+    },
+    {
+      "min_ueber_kmh": 41,
+      "max_ueber_kmh": 50,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Schwerer Verstoss",
+      "detail_vorlage": "Voraussichtlich 2 Punkte und 1 Monat Fahrverbot: innerorts 400 {waehrung}, ausserorts 320 {waehrung}",
+      "geldbusse_eur": 400,
+      "punkte": 2,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 400, "punkte": 2, "fahrverbot_monate": 1 },
+        "ausserorts": { "geldbusse_eur": 320, "punkte": 2, "fahrverbot_monate": 1 }
+      }
+    },
+    {
+      "min_ueber_kmh": 51,
+      "max_ueber_kmh": 60,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Schwerer Verstoss",
+      "detail_vorlage": "Voraussichtlich: innerorts 560 {waehrung}, 2 Punkte, 2 Monate Fahrverbot; ausserorts 480 {waehrung}, 2 Punkte, 1 Monat Fahrverbot",
+      "geldbusse_eur": 560,
+      "punkte": 2,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 560, "punkte": 2, "fahrverbot_monate": 2 },
+        "ausserorts": { "geldbusse_eur": 480, "punkte": 2, "fahrverbot_monate": 1 }
+      }
+    },
+    {
+      "min_ueber_kmh": 61,
+      "max_ueber_kmh": 70,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Extremer Verstoss",
+      "detail_vorlage": "Voraussichtlich: innerorts 700 {waehrung}, 2 Punkte, 3 Monate Fahrverbot; ausserorts 600 {waehrung}, 2 Punkte, 2 Monate Fahrverbot",
+      "geldbusse_eur": 700,
+      "punkte": 2,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 700, "punkte": 2, "fahrverbot_monate": 3 },
+        "ausserorts": { "geldbusse_eur": 600, "punkte": 2, "fahrverbot_monate": 2 }
+      }
+    },
+    {
+      "min_ueber_kmh": 71,
+      "max_ueber_kmh": null,
+      "schweregrad": "punkte_und_geldbusse",
+      "titel_vorlage": "Extremer Verstoss",
+      "detail_vorlage": "Voraussichtlich: innerorts 800 {waehrung}, 2 Punkte, 3 Monate Fahrverbot; ausserorts 700 {waehrung}, 2 Punkte, 3 Monate Fahrverbot",
+      "geldbusse_eur": 800,
+      "punkte": 2,
+      "ortsvarianten": {
+        "innerorts": { "geldbusse_eur": 800, "punkte": 2, "fahrverbot_monate": 3 },
+        "ausserorts": { "geldbusse_eur": 700, "punkte": 2, "fahrverbot_monate": 3 }
+      }
+    }
+  ]
+}
