@@ -14,7 +14,9 @@ struct SpeedConsumerApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if shouldPresentWelcome && !dismissedWelcomeThisSession {
+                if viewModel.isScreenshotMode {
+                    MainView(viewModel: viewModel)
+                } else if shouldPresentWelcome && !dismissedWelcomeThisSession {
                     FirstUserWelcomeView(viewModel: viewModel) {
                         openSettings in
                         dismissedWelcomeThisSession = true

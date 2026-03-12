@@ -10,8 +10,16 @@ __pycache__/
 
 # Local build/runtime outputs
 .tmp/
+tmp/
 *.tmp
 *.log
+main.aux
+main.fdb_latexmk
+main.fls
+
+# Local driving logs with personal data
+inspector/*.ndjson
+inspector/logs/
 
 # Map data generated artifacts (very large)
 mapdata/raw/*.osm.pbf
@@ -24,9 +32,12 @@ mapdata/dist-v4/**
 mapdata/bundles/**/*.sqlite
 mapdata/bundles/**/*.sql
 mapdata/bundles/**/*.sql.gz
+mapdata/bundles/**/deltas/
+mapdata/bench/**
 
 # Keep lightweight mapdata metadata/spec/docs
 !mapdata/build/.gitkeep
+!mapdata/bench/.gitkeep
 !mapdata/dist/.gitkeep
 !mapdata/raw/.gitkeep
 !mapdata/README.md
@@ -56,9 +67,12 @@ paper/techreport/*.log
 paper/techreport/*.out
 paper/techreport/*.synctex.gz
 paper/techreport/data/.device_benchmark_report*.swp
+paper/techreport/tmp/
 
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite
+iphone/SpeedDBBenchSketch/BenchmarkAssets/*.sqlite
+iphone/SpeedDBBenchSketch/BenchmarkAssets/*.json
 iphone/SpeedConsumerApp/speeds_v3.sqlite
 iphone/.derived/
 iphone/DerivedData*/

@@ -47,6 +47,7 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
         cls.input_osm = cls.tmpdir / "fixture.osm"
         cls.dist_v1 = cls.tmpdir / "dist_v1"
         cls.db_v3 = cls.tmpdir / "speeds_v3.sqlite"
+        cls.db_v3_waylinks = cls.tmpdir / "speeds_v3_waylinks.sqlite"
         cls.db_v4 = cls.tmpdir / "speeds_v4.sqlite"
         cls.dist_v1.mkdir(parents=True, exist_ok=True)
         cls.input_osm.write_text(cls._fixture_osm(), encoding="utf-8")
@@ -73,6 +74,17 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
                 str(cls.dist_v1),
                 "--out-db",
                 str(cls.db_v3),
+            ]
+        )
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V3),
+                "--v1-dist",
+                str(cls.dist_v1),
+                "--out-db",
+                str(cls.db_v3_waylinks),
+                "--build-way-links",
             ]
         )
         run_cmd(
@@ -106,6 +118,8 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
               <node id='6' lat='49.0500' lon='8.0520'/>
               <node id='7' lat='49.0310' lon='8.0310'/>
               <node id='8' lat='49.0320' lon='8.0320'/>
+              <node id='9' lat='49.0310' lon='8.0330'/>
+              <node id='10' lat='49.0320' lon='8.0340'/>
               <node id='301' lat='49.0340' lon='8.0340'/>
               <node id='302' lat='49.0340' lon='8.0350'/>
               <node id='303' lat='49.0350' lon='8.0350'/>
@@ -137,11 +151,20 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
                 <nd ref='4'/>
                 <tag k='highway' v='residential'/>
                 <tag k='maxspeed' v='30'/>
+                <tag k='ref' v='L 1'/>
               </way>
               <way id='102'>
+                <nd ref='4'/>
                 <nd ref='5'/>
                 <nd ref='6'/>
                 <tag k='highway' v='service'/>
+                <tag k='ref' v='L 1'/>
+              </way>
+              <way id='103'>
+                <nd ref='4'/>
+                <nd ref='9'/>
+                <nd ref='10'/>
+                <tag k='highway' v='secondary'/>
               </way>
               <way id='109'>
                 <nd ref='601'/>
@@ -227,9 +250,74 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
 
     def test_build_outputs_databases(self):
         self.assertTrue(self.db_v3.exists())
+        self.assertTrue(self.db_v3_waylinks.exists())
         self.assertTrue(self.db_v4.exists())
         self.assertGreater(self.db_v3.stat().st_size, 0)
+        self.assertGreater(self.db_v3_waylinks.stat().st_size, 0)
         self.assertGreater(self.db_v4.stat().st_size, 0)
+
+    def test_v3_way_links_table_is_optional(self):
+        with sqlite3.connect(self.db_v3) as conn:
+            self.assertEqual(
+                conn.execute(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='way_links'"
+                ).fetchone()[0],
+                0,
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT value FROM metadata WHERE key='way_links_mode'"
+                ).fetchone()[0],
+                "none",
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='corridor_progress'"
+                ).fetchone()[0],
+                0,
+            )
+
+        with sqlite3.connect(self.db_v3_waylinks) as conn:
+            self.assertEqual(
+                conn.execute(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='way_links'"
+                ).fetchone()[0],
+                1,
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT value FROM metadata WHERE key='way_links_mode'"
+                ).fetchone()[0],
+                "shared_endpoint",
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='corridor_progress'"
+                ).fetchone()[0],
+                1,
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT value FROM metadata WHERE key='corridor_progress_mode'"
+                ).fetchone()[0],
+                "portal_chain_v1",
+            )
+            links = conn.execute(
+                """
+                SELECT linked_way_id, shared_ref, link_kind
+                FROM way_links
+                WHERE way_id = 101
+                ORDER BY linked_way_id
+                """
+            ).fetchall()
+
+        self.assertEqual(
+            links,
+            [
+                (102, 1, "shared_endpoint"),
+                (103, 0, "shared_endpoint"),
+            ],
+        )
 
     def test_non_car_ways_not_present_in_v3_v4(self):
         with sqlite3.connect(self.db_v3) as conn:

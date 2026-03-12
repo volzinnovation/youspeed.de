@@ -44,7 +44,8 @@ struct MainView: View {
                     SpeedLimitSignView(
                         limitText: limitText,
                         numberFontSize: primaryMetricFontSize,
-                        showsTunnelIcon: shouldShowTunnelSignIcon
+                        showsTunnelIcon: shouldShowTunnelSignIcon,
+                        showsUnlimitedIcon: showsUnlimitedAutobahnSign
                     )
                         .frame(width: signSize, height: signSize)
                         .frame(maxWidth: .infinity)
@@ -68,6 +69,7 @@ struct MainView: View {
                 )
 
                 bugButton(bottomPadding: bottomPadding, horizontalPadding: screenInset)
+                settingsButton(bottomPadding: bottomPadding, horizontalPadding: screenInset)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -119,12 +121,41 @@ struct MainView: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
-                .background(buttonBackgroundColor, in: Circle())
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
+                }
                 .foregroundStyle(primaryForegroundColor)
 
                 Spacer()
             }
             .padding(.leading, horizontalPadding)
+            .padding(.bottom, bottomPadding + 4)
+        }
+    }
+
+    private func settingsButton(bottomPadding: CGFloat, horizontalPadding: CGFloat) -> some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .background(actionButtonBackgroundColor, in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
+                }
+                .foregroundStyle(primaryForegroundColor)
+            }
+            .padding(.trailing, horizontalPadding)
             .padding(.bottom, bottomPadding + 4)
         }
     }
@@ -139,19 +170,19 @@ struct MainView: View {
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .background(buttonBackgroundColor, in: Circle())
+            .background(actionButtonBackgroundColor, in: Circle())
+            .overlay {
+                Circle()
+                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
+            }
 
             Spacer()
 
-            Button {
-                showingSettings = true
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .background(buttonBackgroundColor, in: Circle())
+            GPSSignalBadge(
+                bars: viewModel.gpsSignalBars,
+                accuracyText: viewModel.gpsHorizontalAccuracyM.map { String(format: "%.0f m", $0) } ?? nil,
+                foregroundColor: primaryForegroundColor
+            )
         }
         .foregroundStyle(primaryForegroundColor)
     }
@@ -324,6 +355,10 @@ struct MainView: View {
         false
     }
 
+    private var showsUnlimitedAutobahnSign: Bool {
+        viewModel.isUnlimitedSpeedLimitActive && !viewModel.isInSpeedCaptureMode
+    }
+
     private var shouldShowTunnelCurrentSpeedIcon: Bool {
         viewModel.isTunnelModeActive && !viewModel.isInSpeedCaptureMode
     }
@@ -348,6 +383,9 @@ struct MainView: View {
     }
 
     private var screenBackgroundColor: Color {
+        if showsUnlimitedAutobahnSign {
+            return Color(red: 0.03, green: 0.33, blue: 0.78)
+        }
         guard let progress = overspeedBackgroundProgress else {
             return .black
         }
@@ -359,8 +397,12 @@ struct MainView: View {
         if viewModel.isInSpeedCaptureMode {
             Color.white
         } else if isDrivingBanWarningActive {
-            TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
-                drivingBanPulseBackgroundColor(at: timeline.date)
+            if viewModel.isScreenshotMode {
+                drivingBanPulseBackgroundColor(at: Date(timeIntervalSinceReferenceDate: 0))
+            } else {
+                TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { timeline in
+                    drivingBanPulseBackgroundColor(at: timeline.date)
+                }
             }
         } else {
             screenBackgroundColor
@@ -377,7 +419,7 @@ struct MainView: View {
         return .white
     }
 
-    private var buttonBackgroundColor: Color {
+    private var actionButtonBackgroundColor: Color {
         if viewModel.isInSpeedCaptureMode {
             return Color.black.opacity(0.08)
         }
@@ -385,6 +427,10 @@ struct MainView: View {
             return Color.black.opacity(0.08)
         }
         return Color.white.opacity(0.14)
+    }
+
+    private var actionButtonBorderColor: Color {
+        primaryForegroundColor.opacity(0.95)
     }
 
     private var isSearchingSignal: Bool {
@@ -438,6 +484,9 @@ struct MainView: View {
     }
 
     private var usesDarkForeground: Bool {
+        if showsUnlimitedAutobahnSign {
+            return true
+        }
         guard let progress = overspeedBackgroundProgress else {
             return false
         }
@@ -550,43 +599,102 @@ private struct SpeedLimitSignView: View {
     let limitText: String
     let numberFontSize: CGFloat
     let showsTunnelIcon: Bool
+    let showsUnlimitedIcon: Bool
 
     var body: some View {
         GeometryReader { proxy in
             let size = min(proxy.size.width, proxy.size.height)
-            // Based on Zeichen 274 geometry: black border 7.875 / 450, red band 60.301 / 450.
-            let blackBorderWidth = max(1, size * 0.0175)
-            let redBandWidth = max(2, size * 0.134)
-            let innerDiameter = max(1, size - (2 * (blackBorderWidth + redBandWidth)))
+            let unlimitedBorderWidth = max(2, size * 0.028)
+            let unlimitedFaceDiameter = max(1, size - (2 * unlimitedBorderWidth))
+            let standardBlackBorderWidth = max(1, size * 0.0175)
+            let standardRedBandWidth = max(2, size * 0.134)
+            let standardInnerDiameter = max(1, size - (2 * (standardBlackBorderWidth + standardRedBandWidth)))
             ZStack {
-                Circle()
-                    .fill(Color.white)
+                if showsUnlimitedIcon {
+                    Circle()
+                        .fill(Color.white)
 
-                Circle()
-                    .strokeBorder(Color.black.opacity(0.75), lineWidth: blackBorderWidth)
+                    Circle()
+                        .strokeBorder(Color.black.opacity(0.82), lineWidth: unlimitedBorderWidth)
 
-                Circle()
-                    .inset(by: blackBorderWidth)
-                    .strokeBorder(Color(red: 0.76, green: 0.07, blue: 0.11), lineWidth: redBandWidth)
-
-                if showsTunnelIcon {
-                    Image(systemName: "tunnel.fill")
-                        .font(.system(size: innerDiameter * 0.42, weight: .bold))
-                        .foregroundStyle(.black)
+                    ZStack {
+                        ForEach(0..<5, id: \.self) { index in
+                            Rectangle()
+                                .fill(Color.black.opacity(0.34))
+                                .frame(width: max(3, size * 0.028), height: unlimitedFaceDiameter * 1.65)
+                                .rotationEffect(.degrees(51))
+                                .offset(x: (CGFloat(index) - 2) * unlimitedFaceDiameter * 0.07)
+                        }
+                    }
+                    .frame(width: unlimitedFaceDiameter, height: unlimitedFaceDiameter)
+                    .clipShape(
+                        Circle().inset(by: unlimitedBorderWidth * 0.22)
+                    )
                 } else {
-                    Text(limitText)
-                        .font(trafficSignNumberFont(size: numberFontSize))
-                        .frame(width: innerDiameter * 0.86, height: innerDiameter * 0.66, alignment: .center)
-                        .minimumScaleFactor(0.28)
-                        .allowsTightening(true)
-                        .foregroundStyle(.black)
-                        .lineLimit(1)
+                    // Based on Zeichen 274 geometry: black border 7.875 / 450, red band 60.301 / 450.
+                    Circle()
+                        .fill(Color.white)
+
+                    Circle()
+                        .strokeBorder(Color.black.opacity(0.75), lineWidth: standardBlackBorderWidth)
+
+                    Circle()
+                        .inset(by: standardBlackBorderWidth)
+                        .strokeBorder(Color(red: 0.76, green: 0.07, blue: 0.11), lineWidth: standardRedBandWidth)
+
+                    if showsTunnelIcon {
+                        Image(systemName: "tunnel.fill")
+                            .font(.system(size: standardInnerDiameter * 0.42, weight: .bold))
+                            .foregroundStyle(.black)
+                    } else {
+                        Text(limitText)
+                            .font(trafficSignNumberFont(size: numberFontSize))
+                            .frame(width: standardInnerDiameter * 0.86, height: standardInnerDiameter * 0.66, alignment: .center)
+                            .minimumScaleFactor(0.28)
+                            .allowsTightening(true)
+                            .foregroundStyle(.black)
+                            .lineLimit(1)
+                    }
                 }
             }
             .frame(width: size, height: size)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+private struct GPSSignalBadge: View {
+    let bars: Int
+    let accuracyText: String?
+    let foregroundColor: Color
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Image(systemName: signalSymbolName)
+                .font(.title3.weight(.semibold))
+                .frame(width: 44, height: 44)
+            if let accuracyText {
+                Text(accuracyText)
+                    .font(.caption2.monospacedDigit())
+            }
+        }
+        .foregroundStyle(foregroundColor)
+    }
+
+    private var signalSymbolName: String {
+        switch bars {
+        case 4:
+            return "wifi"
+        case 3:
+            return "wifi"
+        case 2:
+            return "wifi.exclamationmark"
+        case 1:
+            return "wifi.slash"
+        default:
+            return "wifi.slash"
+        }
     }
 }
 
@@ -1176,6 +1284,13 @@ private struct SettingsView: View {
 private struct DebugInformationView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @State private var showingOSMBrowser = false
+    @State private var shareItem: LocalDebugShareItem?
+    @State private var showingClearDrivingLogConfirm = false
+
+    private struct LocalDebugShareItem: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
 
     var body: some View {
         List {
@@ -1185,6 +1300,67 @@ private struct DebugInformationView: View {
                 } else {
                     Text("Noch kein verwertbarer GPS-Fix vorhanden.")
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Logs") {
+                if let gpsLogURL {
+                    Button("GPS-CSV teilen") {
+                        shareItem = LocalDebugShareItem(url: gpsLogURL)
+                    }
+                }
+                if let matchLogURL {
+                    Button("Matcher-Log teilen") {
+                        shareItem = LocalDebugShareItem(url: matchLogURL)
+                    }
+                }
+                if gpsLogURL != nil || matchLogURL != nil {
+                    Button("Fahrlog leeren", role: .destructive) {
+                        showingClearDrivingLogConfirm = true
+                    }
+                }
+                if gpsLogURL == nil && matchLogURL == nil {
+                    Text("Noch keine Logdateien vorhanden.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !viewModel.lastCandidateTraces.isEmpty {
+                Section("Matcher-Kandidaten") {
+                    ForEach(Array(viewModel.lastCandidateTraces.enumerated()), id: \.offset) { _, trace in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("#\(trace.rank) \(trace.streetName ?? trace.wayID ?? "n/a")")
+                                .font(.subheadline.weight(.semibold))
+                            Text(
+                                trace.geometryScore.map { geometryScore in
+                                    "way \(trace.wayID ?? "n/a") score \(String(format: "%.1f", trace.score)) geom \(String(format: "%.1f", geometryScore)) dist \(String(format: "%.1f m", trace.distanceM))"
+                                } ?? "way \(trace.wayID ?? "n/a") score \(String(format: "%.1f", trace.score)) dist \(String(format: "%.1f m", trace.distanceM))"
+                            )
+                                .font(.caption.monospacedDigit())
+                            Text(
+                                "continuity \(trace.continuityClass) corridor \((trace.corridorSelectable ?? true) ? "ok" : "blocked") tunnel \(trace.tunnelSelectable ? "ok" : "blocked")\(trace.isSelected ? " selected" : "")"
+                            )
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(trace.isSelected ? .green : .secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+
+            if !viewModel.lastSelectionTrace.isEmpty {
+                Section("Inference Chain") {
+                    ForEach(Array(viewModel.lastSelectionTrace.enumerated()), id: \.offset) { _, item in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.step)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Text(item.detail)
+                                .font(.caption.monospaced())
+                                .textSelection(.enabled)
+                        }
+                        .padding(.vertical, 2)
+                    }
                 }
             }
 
@@ -1220,6 +1396,14 @@ private struct DebugInformationView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
+        .alert("Fahrlog leeren?", isPresented: $showingClearDrivingLogConfirm) {
+            Button("Abbrechen", role: .cancel) {}
+            Button("Leeren", role: .destructive) {
+                viewModel.clearDrivingLogs()
+            }
+        } message: {
+            Text("GPS-CSV und Matcher-Log werden geleert. Neue Fahrdaten werden anschliessend wieder normal aufgezeichnet.")
+        }
         .sheet(isPresented: $showingOSMBrowser) {
             if let target = osmTarget {
                 OSMBrowserView(url: target.url)
@@ -1229,6 +1413,9 @@ private struct DebugInformationView: View {
                     .font(.footnote)
                     .padding()
             }
+        }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.url])
         }
     }
 
@@ -1259,18 +1446,38 @@ private struct DebugInformationView: View {
             ("Way-ID", viewModel.limitWayID ?? "n/a"),
             ("Straße", normalizedOrNA(viewModel.limitStreetName)),
             ("Stadt", normalizedOrNA(viewModel.limitCityName)),
+            ("GPS-Signal", "\(viewModel.gpsSignalBars)/4"),
+            ("Horizontal", viewModel.gpsHorizontalAccuracyM.map { String(format: "%.1f m", $0) } ?? "n/a"),
+            ("Tunnel-Modus", viewModel.tunnelModeState.rawValue),
             ("Innerorts", viewModel.lastLookupInsideCity.map { $0 ? "ja" : "nein" } ?? "n/a"),
             ("Lookup", viewModel.lastLookupStatus),
             ("Query", String(format: "%.3f ms", viewModel.lastLookupQueryMs)),
             ("Kandidaten", "\(viewModel.lastLookupCandidateCount)"),
             ("Mit Limit", "\(viewModel.lastLookupSpeedCandidateCount)"),
+            ("Trace-Kandidaten", "\(viewModel.lastCandidateTraces.count)"),
             ("Distanz Weg", viewModel.lastLookupNearestCandidateM.map { String(format: "%.1f m", $0) } ?? "n/a"),
             ("Distanz Limit-Weg", viewModel.lastLookupNearestSpeedCandidateM.map { String(format: "%.1f m", $0) } ?? "n/a"),
             ("Stadtquelle", viewModel.lastLookupCitySource),
             ("Stadt-Resolve", String(format: "%.3f ms", viewModel.lastLookupCityResolveMs)),
+            ("GPS-Log", viewModel.gpsLogPath.isEmpty ? "n/a" : viewModel.gpsLogPath),
+            ("Matcher-Log", viewModel.matchLogPath.isEmpty ? "n/a" : viewModel.matchLogPath),
             ("Manifest-Endpunkte", "\(viewModel.configuredManifestEndpointCount)"),
             ("Manifest-Länder", viewModel.configuredManifestCountryCodes),
         ]
+    }
+
+    private var gpsLogURL: URL? {
+        guard !viewModel.gpsLogPath.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: viewModel.gpsLogPath)
+    }
+
+    private var matchLogURL: URL? {
+        guard !viewModel.matchLogPath.isEmpty else {
+            return nil
+        }
+        return URL(fileURLWithPath: viewModel.matchLogPath)
     }
 
     private var latText: String {

@@ -108,6 +108,113 @@ private final class ConfirmationTonePlayer {
     }
 }
 
+enum AppScreenshotState: String {
+    case warnLevel0 = "warn-level-0"
+    case warnLevel1 = "warn-level-1"
+    case warnLevel2 = "warn-level-2"
+    case warnLevel3 = "warn-level-3"
+    case autobahnUnlimitedAbove130 = "autobahn-unlimited-above-130"
+
+    struct Fixture {
+        let currentSpeedKmh: Double
+        let speedLimitKmh: Int?
+        let isUnlimitedSpeedLimitActive: Bool
+        let streetName: String
+        let cityName: String
+        let wayID: String
+        let insideCity: Bool
+        let latitude: Double
+        let longitude: Double
+        let gpsHorizontalAccuracyM: Double
+        let gpsSignalBars: Int
+    }
+
+    static func current(processInfo: ProcessInfo = .processInfo) -> AppScreenshotState? {
+        let raw = processInfo.environment["YOUSPEED_SCREENSHOT_STATE"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        guard let raw, !raw.isEmpty else {
+            return nil
+        }
+        return AppScreenshotState(rawValue: raw)
+    }
+
+    var fixture: Fixture {
+        switch self {
+        case .warnLevel0:
+            return Fixture(
+                currentSpeedKmh: 47,
+                speedLimitKmh: 50,
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Durlacher Allee",
+                cityName: "Karlsruhe",
+                wayID: "karlsruhe-warn-0",
+                insideCity: true,
+                latitude: 49.0102,
+                longitude: 8.4266,
+                gpsHorizontalAccuracyM: 6,
+                gpsSignalBars: 4
+            )
+        case .warnLevel1:
+            return Fixture(
+                currentSpeedKmh: 67,
+                speedLimitKmh: 50,
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Durlacher Allee",
+                cityName: "Karlsruhe",
+                wayID: "karlsruhe-warn-1",
+                insideCity: true,
+                latitude: 49.0102,
+                longitude: 8.4266,
+                gpsHorizontalAccuracyM: 6,
+                gpsSignalBars: 4
+            )
+        case .warnLevel2:
+            return Fixture(
+                currentSpeedKmh: 73,
+                speedLimitKmh: 50,
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Durlacher Allee",
+                cityName: "Karlsruhe",
+                wayID: "karlsruhe-warn-2",
+                insideCity: true,
+                latitude: 49.0102,
+                longitude: 8.4266,
+                gpsHorizontalAccuracyM: 6,
+                gpsSignalBars: 4
+            )
+        case .warnLevel3:
+            return Fixture(
+                currentSpeedKmh: 86,
+                speedLimitKmh: 50,
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Durlacher Allee",
+                cityName: "Karlsruhe",
+                wayID: "karlsruhe-warn-3",
+                insideCity: true,
+                latitude: 49.0102,
+                longitude: 8.4266,
+                gpsHorizontalAccuracyM: 6,
+                gpsSignalBars: 4
+            )
+        case .autobahnUnlimitedAbove130:
+            return Fixture(
+                currentSpeedKmh: 142,
+                speedLimitKmh: nil,
+                isUnlimitedSpeedLimitActive: true,
+                streetName: "A 5",
+                cityName: "Karlsruhe",
+                wayID: "autobahn-unlimited-130-plus",
+                insideCity: false,
+                latitude: 49.0180,
+                longitude: 8.3501,
+                gpsHorizontalAccuracyM: 5,
+                gpsSignalBars: 4
+            )
+        }
+    }
+}
+
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
@@ -160,6 +267,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lastError: String = ""
     @Published var currentLatitude: Double?
     @Published var currentLongitude: Double?
+    @Published var gpsHorizontalAccuracyM: Double?
+    @Published var gpsSignalBars: Int = 0
     @Published var lookupMaxCandidates: Int = 512
     @Published var lastLookupStatus: String = "idle"
     @Published var lastLookupQueryMs: Double = 0
@@ -176,6 +285,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var lookupEventLog: [String] = []
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
+    @Published var matchLogPath: String = ""
+    @Published var lastCandidateTraces: [MatchCandidateTrace] = []
+    @Published var lastSelectionTrace: [MatchSelectionTrace] = []
     @Published var startupDataState: StartupDataState = .loading
     @Published var startupProgress: Double = 0
     @Published var startupDetail: String = "Lokale Daten werden vorbereitet"
@@ -192,6 +304,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var activeDownloadOptionID: String?
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
+    @Published private(set) var isUnlimitedSpeedLimitActive: Bool = false
+    @Published private(set) var appScreenshotState: AppScreenshotState?
     @Published private(set) var activePenaltyRules: SpeedPenaltyRuleSet
     @Published private(set) var activePenaltyRulesFile: String
     @Published var audioAlertThresholdKmh: Int {
@@ -238,6 +352,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedLimitService: V3SpeedLimitService?
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
+    private var preparedMatchLogURL: URL?
     private var lastProgressUIUpdate = Date.distantPast
     private var lastLoggedSyncProgressSignature: String = ""
     private var lastDownloadProgressAt: Date?
@@ -250,10 +365,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var wasDrivingBanWarningActive = false
     private var lastDrivingBanWarningAt = Date.distantPast
     private var previousMatchedWayID: String?
+    private var previousMatchedHighway: String?
+    private var previousMatchedEndpointProximityM: Double?
     private var recentMatchedWayIDs: [String] = []
+    private var recentMatchedFixes: [WayMatchRecentFix] = []
     private var recentMatchedStreetRefs: [String] = []
     private var recentNearbyTunnelWayIDs: [String] = []
     private var recentNearbyTunnelRefs: [String] = []
+    private var recentTunnelApproachWayIDs: [String] = []
+    private var recentTunnelApproachRefs: [String] = []
+    private var tunnelApproachFixCount = 0
+    private var tunnelApproachBaselineAccuracyM: Double?
+    private var tunnelApproachBaselineSignalBars: Int?
+    private var motorwayModeActive = false
+    private var activeCorridorState: CorridorMatchState?
+    private var approachCorridorState: CorridorMatchState?
+    private var approachCorridorFixCount = 0
+    private var approachCorridorStartDepthM: Double?
+    private var approachCorridorStartDepthNodes: Int?
+    private var recentMatchHypotheses: [WayMatchHypothesis] = []
+    private var matchedFixCount = 0
     private var hadRecentGPSSignalLoss = false
     private var speedCapturePromptFallbackTask: Task<Void, Never>?
     private var speedCaptureListeningTimeoutTask: Task<Void, Never>?
@@ -289,6 +420,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let speedCaptureListeningWindowSeconds: UInt64 = 4
     private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
     private static let speedCaptureStartDelayNanos: UInt64 = 300_000_000
+    private static let gpsLogCSVHeader = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
     private struct SpeedCaptureWhitelistEntry {
         let value: String
         let count: Int
@@ -371,6 +503,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let exportTimestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyyMMdd_HHmmss_SSS"
         return formatter
     }()
 
@@ -667,6 +807,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return code
     }
 
+    private func isGermanAutobahnUnlimitedMatch(result: SpeedLimitResult, localOverride: Int?) -> Bool {
+        guard localOverride == nil,
+              result.isUnlimitedSpeedLimit == true,
+              normalizedCountryCode(activePenaltyRules.countryCode) == "DEU" else {
+            return false
+        }
+        return result.highway?.lowercased() == "motorway"
+    }
+
     private func inferCountryCodeFromDBPath(_ dbPath: String) -> String? {
         let fileName = URL(fileURLWithPath: dbPath).lastPathComponent.uppercased()
         if fileName.count >= 3 {
@@ -731,6 +880,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        if let screenshotState = AppScreenshotState.current() {
+            configureForScreenshotMode(screenshotState)
+            return
+        }
         bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
@@ -747,6 +900,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var isDatabaseReadyForQueries: Bool {
         startupDataState == .ready && speedLimitService != nil && !activeDBPath.isEmpty
+    }
+
+    var isScreenshotMode: Bool {
+        appScreenshotState != nil
     }
 
     var isSyncingNow: Bool {
@@ -1363,6 +1520,41 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func configureForScreenshotMode(_ screenshotState: AppScreenshotState) {
+        let fixture = screenshotState.fixture
+        appScreenshotState = screenshotState
+        driveStatus = "running"
+        activeBundleVersion = "screenshot"
+        activeDBPath = screenshotState.rawValue
+        currentSpeedKmh = fixture.currentSpeedKmh
+        speedLimitKmh = fixture.speedLimitKmh
+        limitWayID = fixture.wayID
+        limitStreetName = fixture.streetName
+        limitCityName = fixture.cityName
+        lastError = ""
+        currentLatitude = fixture.latitude
+        currentLongitude = fixture.longitude
+        gpsHorizontalAccuracyM = fixture.gpsHorizontalAccuracyM
+        gpsSignalBars = fixture.gpsSignalBars
+        lastLookupInsideCity = fixture.insideCity
+        lastLookupCitySource = fixture.insideCity ? "residential_polygon" : "road_class"
+        gpsFixCount = 24
+        startupDataState = .ready
+        startupProgress = 1
+        startupDetail = "Screenshot mode"
+        syncStatus = "ready_screenshot"
+        syncProgressStage = "completed"
+        syncProgressDetail = "Screenshot mode"
+        isUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive
+        audioAlertsEnabled = false
+        hideWelcomeScreen = true
+        speedLimitService = nil
+        bundleDownloadSections = []
+        downloadedBundleCountByRegion = [:]
+        downloadedBundleLatestVersionByRegion = [:]
+        expectedBundleBytesByRegion = [:]
+    }
+
     private func beginSyncBackgroundTask() {
         guard syncBackgroundTaskID == .invalid else {
             return
@@ -1472,6 +1664,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             ensureSeedBootstrapIfNeeded()
         }
         isDriving = true
+        isUnlimitedSpeedLimitActive = false
         resetTunnelModeTracking()
         driveStatus = "requesting_location"
         let auth = locationManager.authorizationStatus
@@ -1491,6 +1684,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         locationManager.stopUpdatingLocation()
         driveStatus = "stopped"
         cancelSpeedCapture(reason: nil)
+        isUnlimitedSpeedLimitActive = false
         resetTunnelModeTracking()
         lastAudioFeedbackAt = .distantPast
         lastAnnouncedSpeechText = nil
@@ -1519,6 +1713,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func resetDiagnostics() {
         lookupEventLog.removeAll(keepingCapacity: false)
         gpsFixCount = 0
+        gpsHorizontalAccuracyM = nil
+        gpsSignalBars = 0
+        lastCandidateTraces.removeAll(keepingCapacity: false)
+        lastSelectionTrace.removeAll(keepingCapacity: false)
         resetWayMatchContinuity()
         activeLocalSpeedCorrection = nil
         limitStreetBaseName = nil
@@ -1535,16 +1733,35 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         lastLookupCityCandidateBoundaries = 0
         lastLookupCityContainingBoundaries = 0
         lastLookupCityPlaceCandidates = 0
+        isUnlimitedSpeedLimitActive = false
         resetTunnelModeTracking()
 
         guard let logURL = prepareGPSLogFileIfNeeded() else {
             return
         }
         do {
-            let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
-            try Data(header.utf8).write(to: logURL, options: .atomic)
+            try Data(Self.gpsLogCSVHeader.utf8).write(to: logURL, options: .atomic)
+            resetPreparedMatchLogFile()
+            if let matchLogURL = prepareMatchLogFileIfNeeded() {
+                try Data().write(to: matchLogURL, options: .atomic)
+            }
         } catch {
             lastError = "gps log reset failed: \(error.localizedDescription)"
+        }
+    }
+
+    func clearDrivingLogs() {
+        do {
+            if let gpsLogURL = prepareGPSLogFileIfNeeded() {
+                try Data(Self.gpsLogCSVHeader.utf8).write(to: gpsLogURL, options: .atomic)
+            }
+            resetPreparedMatchLogFile()
+            if let matchLogURL = prepareMatchLogFileIfNeeded() {
+                try Data().write(to: matchLogURL, options: .atomic)
+            }
+            lastError = ""
+        } catch {
+            lastError = "driving log clear failed: \(error.localizedDescription)"
         }
     }
 
@@ -1554,30 +1771,69 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 !recentMatchedStreetRefs.isEmpty ||
                 !recentNearbyTunnelWayIDs.isEmpty ||
                 !recentNearbyTunnelRefs.isEmpty ||
+                !recentTunnelApproachWayIDs.isEmpty ||
+                !recentTunnelApproachRefs.isEmpty ||
+                tunnelApproachFixCount > 0 ||
+                motorwayModeActive ||
+                activeCorridorState != nil ||
+                approachCorridorState != nil ||
+                approachCorridorStartDepthM != nil ||
+                approachCorridorStartDepthNodes != nil ||
+                !recentMatchHypotheses.isEmpty ||
                 hadRecentGPSSignalLoss else {
             return nil
         }
         return WayMatchContext(
             preferredWayID: previousMatchedWayID,
+            preferredHighway: previousMatchedHighway,
+            preferredEndpointProximityM: previousMatchedEndpointProximityM,
             recentWayIDs: recentMatchedWayIDs,
+            recentFixes: recentMatchedFixes,
             preferredStreetRef: recentMatchedStreetRefs.first,
             recentStreetRefs: recentMatchedStreetRefs,
             recentTunnelCandidateWayIDs: recentNearbyTunnelWayIDs,
             recentTunnelCandidateRefs: recentNearbyTunnelRefs,
-            hadRecentGPSSignalLoss: hadRecentGPSSignalLoss
+            recentTunnelApproachWayIDs: recentTunnelApproachWayIDs,
+            recentTunnelApproachRefs: recentTunnelApproachRefs,
+            tunnelApproachFixCount: tunnelApproachFixCount,
+            tunnelApproachBaselineAccuracyM: tunnelApproachBaselineAccuracyM,
+            tunnelApproachBaselineSignalBars: tunnelApproachBaselineSignalBars,
+            recentHypotheses: recentMatchHypotheses,
+            matchedFixCount: matchedFixCount,
+            hadRecentGPSSignalLoss: hadRecentGPSSignalLoss,
+            isInTunnelMode: tunnelModeTracker.isTunnelModeActive,
+            isInMotorwayMode: motorwayModeActive,
+            activeCorridorState: activeCorridorState,
+            approachCorridorState: approachCorridorState,
+            approachCorridorFixCount: approachCorridorFixCount,
+            approachCorridorStartDepthM: approachCorridorStartDepthM,
+            approachCorridorStartDepthNodes: approachCorridorStartDepthNodes
         )
     }
 
-    private func recordWayMatch(result: SpeedLimitResult) {
+    private func recordWayMatch(
+        result: SpeedLimitResult,
+        lat: Double,
+        lon: Double,
+        horizontalAccuracyM: Double,
+        gpsSignalBars: Int
+    ) {
         guard let wayID = normalizedWayID(result.wayID) else {
             return
         }
+        matchedFixCount += 1
         previousMatchedWayID = wayID
+        previousMatchedHighway = result.highway
+        previousMatchedEndpointProximityM = result.matchedEndpointProximityM
         pushUniqueFront(
             wayID,
             into: &recentMatchedWayIDs,
             limit: Self.recentMatchedWayHistoryLimit
         )
+        recentMatchedFixes.insert(WayMatchRecentFix(lat: lat, lon: lon), at: 0)
+        if recentMatchedFixes.count > 3 {
+            recentMatchedFixes.removeLast(recentMatchedFixes.count - 3)
+        }
         for refToken in V3SpeedLimitService.normalizedRefTokens(result.streetRef) {
             pushUniqueFront(
                 refToken,
@@ -1599,16 +1855,174 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 limit: Self.recentMatchedStreetRefHistoryLimit
             )
         }
+        updateTunnelApproachState(
+            result: result,
+            horizontalAccuracyM: horizontalAccuracyM,
+            gpsSignalBars: gpsSignalBars
+        )
+        updateApproachCorridorState(result: result)
+        activeCorridorState = result.activeCorridorState
+        let resultHighway = result.highway?.lowercased()
+        if resultHighway == "motorway" {
+            motorwayModeActive = true
+        } else if resultHighway == "motorway_link" {
+            motorwayModeActive = motorwayModeActive || result.activeCorridorState?.kind == "motorway"
+        } else {
+            motorwayModeActive = false
+        }
+        recentMatchHypotheses = result.matchHypotheses
         hadRecentGPSSignalLoss = false
     }
 
     private func resetWayMatchContinuity() {
         previousMatchedWayID = nil
+        previousMatchedHighway = nil
+        previousMatchedEndpointProximityM = nil
         recentMatchedWayIDs.removeAll(keepingCapacity: false)
+        recentMatchedFixes.removeAll(keepingCapacity: false)
         recentMatchedStreetRefs.removeAll(keepingCapacity: false)
         recentNearbyTunnelWayIDs.removeAll(keepingCapacity: false)
         recentNearbyTunnelRefs.removeAll(keepingCapacity: false)
+        resetTunnelApproachState()
+        resetApproachCorridorState()
+        motorwayModeActive = false
+        activeCorridorState = nil
+        recentMatchHypotheses.removeAll(keepingCapacity: false)
+        matchedFixCount = 0
         hadRecentGPSSignalLoss = false
+    }
+
+    private func resetTunnelApproachState() {
+        recentTunnelApproachWayIDs.removeAll(keepingCapacity: false)
+        recentTunnelApproachRefs.removeAll(keepingCapacity: false)
+        tunnelApproachFixCount = 0
+        tunnelApproachBaselineAccuracyM = nil
+        tunnelApproachBaselineSignalBars = nil
+    }
+
+    private func resetApproachCorridorState() {
+        approachCorridorState = nil
+        approachCorridorFixCount = 0
+        approachCorridorStartDepthM = nil
+        approachCorridorStartDepthNodes = nil
+    }
+
+    private func updateTunnelApproachState(
+        result: SpeedLimitResult,
+        horizontalAccuracyM: Double,
+        gpsSignalBars: Int
+    ) {
+        let approachTraces = result.candidateTraces.filter(Self.isTunnelApproachCandidateTrace)
+        guard !result.isTunnelSegment, !approachTraces.isEmpty else {
+            resetTunnelApproachState()
+            return
+        }
+
+        tunnelApproachFixCount += 1
+        if horizontalAccuracyM.isFinite, horizontalAccuracyM >= 0 {
+            if let baseline = tunnelApproachBaselineAccuracyM {
+                tunnelApproachBaselineAccuracyM = min(baseline, horizontalAccuracyM)
+            } else {
+                tunnelApproachBaselineAccuracyM = horizontalAccuracyM
+            }
+        }
+        tunnelApproachBaselineSignalBars = max(tunnelApproachBaselineSignalBars ?? gpsSignalBars, gpsSignalBars)
+
+        recentTunnelApproachWayIDs.removeAll(keepingCapacity: false)
+        recentTunnelApproachRefs.removeAll(keepingCapacity: false)
+        for trace in approachTraces {
+            if let wayID = normalizedWayID(trace.wayID) {
+                pushUniqueFront(
+                    wayID,
+                    into: &recentTunnelApproachWayIDs,
+                    limit: Self.recentMatchedWayHistoryLimit
+                )
+            }
+            for refToken in V3SpeedLimitService.normalizedRefTokens(trace.streetRef) {
+                pushUniqueFront(
+                    refToken,
+                    into: &recentTunnelApproachRefs,
+                    limit: Self.recentMatchedStreetRefHistoryLimit
+                )
+            }
+        }
+    }
+
+    private func updateApproachCorridorState(result: SpeedLimitResult) {
+        guard result.activeCorridorState == nil else {
+            resetApproachCorridorState()
+            return
+        }
+        let corridorTrace = result.candidateTraces.first(where: { trace in
+            guard trace.corridorKind != nil,
+                  trace.corridorID != nil,
+                  trace.corridorSideNodeKey != nil,
+                  trace.corridorDepthM != nil,
+                  trace.corridorRemainingM != nil,
+                  trace.corridorDepthNodes != nil,
+                  trace.corridorRemainingNodes != nil else {
+                return false
+            }
+            guard trace.corridorKind == "tunnel" || trace.corridorKind == "motorway" else {
+                return false
+            }
+            return trace.corridorEntryZone == true
+        }) ?? approachCorridorState.flatMap { currentState in
+            result.candidateTraces.first(where: { trace in
+                guard trace.corridorKind == currentState.kind,
+                      trace.corridorID == currentState.corridorID,
+                      trace.corridorSideNodeKey == currentState.sideNodeKey,
+                      let depthM = trace.corridorDepthM,
+                      trace.corridorRemainingM != nil,
+                      trace.corridorDepthNodes != nil,
+                      trace.corridorRemainingNodes != nil else {
+                    return false
+                }
+                return depthM + 6.0 >= currentState.depthM
+            })
+        }
+        guard let trace = corridorTrace,
+              let corridorKind = trace.corridorKind,
+              let corridorID = trace.corridorID,
+              let sideNodeKey = trace.corridorSideNodeKey,
+              let depthM = trace.corridorDepthM,
+              let remainingM = trace.corridorRemainingM,
+        let depthNodes = trace.corridorDepthNodes,
+        let remainingNodes = trace.corridorRemainingNodes else {
+            resetApproachCorridorState()
+            return
+        }
+
+        let nextState = CorridorMatchState(
+            kind: corridorKind,
+            corridorID: corridorID,
+            sideNodeKey: sideNodeKey,
+            depthM: depthM,
+            spanM: depthM + remainingM,
+            depthNodes: depthNodes,
+            spanNodes: depthNodes + remainingNodes
+        )
+        if let currentState = approachCorridorState,
+           currentState.kind == nextState.kind,
+           currentState.corridorID == nextState.corridorID,
+           currentState.sideNodeKey == nextState.sideNodeKey,
+           nextState.depthM + 6.0 >= currentState.depthM {
+            approachCorridorFixCount += 1
+            let startDepthM = approachCorridorStartDepthM ?? currentState.depthM
+            approachCorridorStartDepthM = min(startDepthM, nextState.depthM)
+            let startDepthNodes = approachCorridorStartDepthNodes ?? currentState.depthNodes
+            approachCorridorStartDepthNodes = min(startDepthNodes, nextState.depthNodes)
+        } else {
+            approachCorridorFixCount = 1
+            approachCorridorStartDepthM = nextState.depthM
+            approachCorridorStartDepthNodes = nextState.depthNodes
+        }
+        approachCorridorState = nextState
+    }
+
+    private static func isTunnelApproachCandidateTrace(_ trace: MatchCandidateTrace) -> Bool {
+        let isTunnel = (trace.tunnel ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "yes"
+        return isTunnel && trace.portalEligible == true
     }
 
     private func normalizedWayID(_ raw: String?) -> String? {
@@ -2080,6 +2494,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if limitWayID == wayID {
                         speedLimitKmh = numericSpeed
                         lastKnownSpeedLimitKmh = numericSpeed
+                        isUnlimitedSpeedLimitActive = false
                     }
                 }
                 let way = observation.roadCandidateIDs.first ?? "n/a"
@@ -2392,6 +2807,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let gpsKmh = max(0, location.speed) * 3.6
         let hAcc = location.horizontalAccuracy
         let vAcc = location.verticalAccuracy
+        gpsHorizontalAccuracyM = hAcc >= 0 ? hAcc : nil
+        gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: hAcc)
         let rawCourse = location.course
         let course = (0.0 ... 360.0).contains(rawCourse) ? rawCourse : nil
         let rawCourseAccuracy = location.courseAccuracy
@@ -2401,7 +2818,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
+            isUnlimitedSpeedLimitActive = false
             resetTunnelModeTracking()
+            matchedFixCount = 0
             hadRecentGPSSignalLoss = true
             appendLookupEvent(
                 "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
@@ -2424,6 +2843,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let radiusM = Self.lookupRadius(forHorizontalAccuracy: hAcc)
         let maxCandidates = lookupMaxCandidates
         let matchContext = currentWayMatchContext()
+        let gpsBars = gpsSignalBars
 
         Task.detached(priority: .utility) {
             do {
@@ -2436,13 +2856,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     headingDeg: course,
                     headingAccuracyDeg: courseAccuracy,
                     speedKmh: gpsKmh,
-                    horizontalAccuracyM: hAcc
+                    horizontalAccuracyM: hAcc,
+                    gpsSignalBars: gpsBars
                 )
                 await MainActor.run {
                     let propagatedOverride = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
                     let localOverride = propagatedOverride ?? result.wayID.flatMap { self.localSpeedOverridesByWayID[$0] }
                     let effectiveSpeedLimit = localOverride ?? result.speedLimitKmh
+                    let unlimitedMatch = self.isGermanAutobahnUnlimitedMatch(result: result, localOverride: localOverride)
                     self.speedLimitKmh = effectiveSpeedLimit
+                    self.isUnlimitedSpeedLimitActive = unlimitedMatch
                     if let resolved = effectiveSpeedLimit {
                         self.lastKnownSpeedLimitKmh = resolved
                     }
@@ -2453,11 +2876,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.limitCityName = result.cityName
                     self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
-                    self.recordWayMatch(result: result)
+                    self.recordWayMatch(
+                        result: result,
+                        lat: lat,
+                        lon: lon,
+                        horizontalAccuracyM: hAcc,
+                        gpsSignalBars: gpsBars
+                    )
                     self.maybeNotifyDrivingBanWarning()
                     self.maybeSpeakOverspeedWarning()
                     let lookupStatus: String
-                    if effectiveSpeedLimit == nil {
+                    if unlimitedMatch {
+                        lookupStatus = "matched_unlimited"
+                    } else if effectiveSpeedLimit == nil {
                         lookupStatus = "no_match"
                     } else if localOverride != nil {
                         lookupStatus = "matched_local_override"
@@ -2476,6 +2907,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.lastLookupCityCandidateBoundaries = result.cityCandidateBoundaries
                     self.lastLookupCityContainingBoundaries = result.cityContainingBoundaries
                     self.lastLookupCityPlaceCandidates = result.cityPlaceCandidates
+                    self.lastCandidateTraces = result.candidateTraces
+                    self.lastSelectionTrace = result.selectionTrace
                     let speedText = effectiveSpeedLimit.map(String.init) ?? "nil"
                     let wayText = result.wayID ?? "nil"
                     let streetText = result.streetName ?? "nil"
@@ -2504,13 +2937,32 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         speedLimitOverrideKmh: effectiveSpeedLimit,
                         errorText: nil
                     )
+                    self.appendMatchLog(
+                        fixID: fixID,
+                        timestampISO: fixTimestampISO,
+                        lat: lat,
+                        lon: lon,
+                        speedKmh: gpsKmh,
+                        horizontalAccM: hAcc,
+                        verticalAccM: vAcc,
+                        courseDeg: rawCourse,
+                        status: lookupStatus,
+                        gpsSignalBars: self.gpsSignalBars,
+                        tunnelModeState: self.tunnelModeState.rawValue,
+                        result: result,
+                        speedLimitOverrideKmh: effectiveSpeedLimit,
+                        errorText: nil
+                    )
                 }
             } catch {
                 await MainActor.run {
+                    self.isUnlimitedSpeedLimitActive = false
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
                     self.wasDrivingBanWarningActive = false
                     self.resetTunnelModeTracking()
+                    self.lastCandidateTraces = []
+                    self.lastSelectionTrace = []
                     self.appendLookupEvent(
                         "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) lookup_error=\(error.localizedDescription)"
                     )
@@ -2527,6 +2979,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         result: nil,
                         errorText: error.localizedDescription
                     )
+                    self.appendMatchLog(
+                        fixID: fixID,
+                        timestampISO: fixTimestampISO,
+                        lat: lat,
+                        lon: lon,
+                        speedKmh: gpsKmh,
+                        horizontalAccM: hAcc,
+                        verticalAccM: vAcc,
+                        courseDeg: rawCourse,
+                        status: "lookup_error",
+                        gpsSignalBars: self.gpsSignalBars,
+                        tunnelModeState: self.tunnelModeState.rawValue,
+                        result: nil,
+                        errorText: error.localizedDescription
+                    )
                 }
             }
         }
@@ -2538,6 +3005,62 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         let radius = (horizontalAccuracyM * lookupRadiusAccuracyMultiplier) + 20.0
         return min(max(radius, minLookupRadiusM), maxLookupRadiusM)
+    }
+
+    private static func gpsSignalBars(horizontalAccuracyM: Double) -> Int {
+        guard horizontalAccuracyM.isFinite, horizontalAccuracyM >= 0 else {
+            return 0
+        }
+        switch horizontalAccuracyM {
+        case ..<8:
+            return 4
+        case ..<15:
+            return 3
+        case ..<30:
+            return 2
+        case ..<60:
+            return 1
+        default:
+            return 0
+        }
+    }
+
+    nonisolated static func filteredDisplaySpeedKmh(
+        rawSpeedKmh: Double,
+        speedAccuracyKmh: Double?,
+        previousDisplaySpeedKmh: Double
+    ) -> Double {
+        let standstillEnterThresholdKmh = 4.0
+        let standstillExitThresholdKmh = 6.0
+        let standstillAccuracyMarginKmh = 1.0
+
+        guard rawSpeedKmh.isFinite, rawSpeedKmh > 0 else {
+            return 0
+        }
+
+        let normalizedAccuracyKmh: Double? = {
+            guard let speedAccuracyKmh, speedAccuracyKmh.isFinite, speedAccuracyKmh >= 0 else {
+                return nil
+            }
+            return speedAccuracyKmh
+        }()
+
+        if previousDisplaySpeedKmh <= 0.5, rawSpeedKmh < standstillExitThresholdKmh {
+            return 0
+        }
+
+        let enterThreshold = min(
+            standstillExitThresholdKmh,
+            max(
+                standstillEnterThresholdKmh,
+                (normalizedAccuracyKmh ?? 0) + standstillAccuracyMarginKmh
+            )
+        )
+        if rawSpeedKmh <= enterThreshold {
+            return 0
+        }
+
+        return rawSpeedKmh
     }
 
     private func appendLookupEvent(_ line: String) {
@@ -2621,6 +3144,52 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func appendMatchLog(
+        fixID: Int,
+        timestampISO: String,
+        lat: Double,
+        lon: Double,
+        speedKmh: Double,
+        horizontalAccM: Double,
+        verticalAccM: Double,
+        courseDeg: Double,
+        status: String,
+        gpsSignalBars: Int,
+        tunnelModeState: String,
+        result: SpeedLimitResult?,
+        speedLimitOverrideKmh: Int? = nil,
+        errorText: String?
+    ) {
+        guard let logURL = prepareMatchLogFileIfNeeded() else {
+            return
+        }
+        let entry = DriveMatchLogEntry(
+            fixID: fixID,
+            timestampUTC: timestampISO,
+            lat: lat,
+            lon: lon,
+            speedKmh: speedKmh,
+            horizontalAccM: horizontalAccM,
+            verticalAccM: verticalAccM,
+            courseDeg: courseDeg,
+            gpsSignalBars: gpsSignalBars,
+            status: status,
+            speedLimitOverrideKmh: speedLimitOverrideKmh,
+            tunnelModeState: tunnelModeState,
+            result: result,
+            error: errorText
+        )
+        do {
+            let payload = try JSONEncoder().encode(entry) + Data("\n".utf8)
+            let handle = try FileHandle(forWritingTo: logURL)
+            try handle.seekToEnd()
+            try handle.write(contentsOf: payload)
+            try handle.close()
+        } catch {
+            // Keep lookup flow unaffected if file logging fails.
+        }
+    }
+
     private func csvEscape(_ field: String) -> String {
         if field.contains(",") || field.contains("\"") || field.contains("\n") || field.contains("\r") {
             return "\"\(field.replacingOccurrences(of: "\"", with: "\"\""))\""
@@ -2639,8 +3208,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
             if !hasPreparedGPSLogFile {
                 if !FileManager.default.fileExists(atPath: logURL.path) {
-                    let header = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,course_deg,status,way_id,street_name,city_name,inside_city,city_source,city_resolve_ms,city_candidate_boundaries,city_containing_boundaries,city_place_candidates,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
-                    try Data(header.utf8).write(to: logURL, options: .atomic)
+                    try Data(Self.gpsLogCSVHeader.utf8).write(to: logURL, options: .atomic)
                 }
                 hasPreparedGPSLogFile = true
             }
@@ -2652,15 +3220,61 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func prepareMatchLogFileIfNeeded() -> URL? {
+        do {
+            let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
+            if !FileManager.default.fileExists(atPath: base.path) {
+                try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+            }
+            let logURL: URL
+            if let preparedMatchLogURL {
+                logURL = preparedMatchLogURL
+            } else {
+                logURL = makeTimestampedMatchLogURL(in: base)
+                preparedMatchLogURL = logURL
+            }
+            matchLogPath = logURL.path
+            if !FileManager.default.fileExists(atPath: logURL.path) {
+                try Data().write(to: logURL, options: .atomic)
+            }
+            return logURL
+        } catch {
+            lastError = "match log init failed: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    private func resetPreparedMatchLogFile() {
+        preparedMatchLogURL = nil
+        matchLogPath = ""
+    }
+
+    private func makeTimestampedMatchLogURL(in base: URL) -> URL {
+        let prefix = Self.exportTimestampFormatter.string(from: Date())
+        for suffix in 0...999 {
+            let filename: String
+            if suffix == 0 {
+                filename = "\(prefix)_drive_match_log.ndjson"
+            } else {
+                filename = "\(prefix)_\(suffix)_drive_match_log.ndjson"
+            }
+            let url = base.appendingPathComponent(filename)
+            if !FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+        return base.appendingPathComponent("\(prefix)_\(UUID().uuidString.lowercased())_drive_match_log.ndjson")
+    }
+
     var currentOverspeedKmh: Int {
-        guard let speedLimitKmh else {
+        guard !isUnlimitedSpeedLimitActive, let speedLimitKmh else {
             return 0
         }
         return max(0, Int(round(currentSpeedKmh)) - speedLimitKmh)
     }
 
     var currentPenaltyNotice: SpeedPenaltyNotice? {
-        guard !isTunnelModeActive else {
+        guard !isTunnelModeActive, !isUnlimitedSpeedLimitActive else {
             return nil
         }
         return SpeedPenaltyRuleEngine.resolveNotice(
@@ -2818,7 +3432,13 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             return
         }
         for location in locations {
-            currentSpeedKmh = max(0, location.speed) * 3.6
+            let rawSpeedKmh = max(0, location.speed) * 3.6
+            let speedAccuracyKmh = location.speedAccuracy >= 0 ? location.speedAccuracy * 3.6 : nil
+            currentSpeedKmh = Self.filteredDisplaySpeedKmh(
+                rawSpeedKmh: rawSpeedKmh,
+                speedAccuracyKmh: speedAccuracyKmh,
+                previousDisplaySpeedKmh: currentSpeedKmh
+            )
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
             gpsFixCount += 1

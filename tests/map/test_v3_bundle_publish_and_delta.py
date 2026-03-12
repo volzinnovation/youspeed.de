@@ -133,6 +133,72 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             conn.close()
 
     @staticmethod
+    def _create_way_links_fixture_db(path: Path) -> None:
+        conn = sqlite3.connect(path)
+        try:
+            conn.executescript(
+                """
+                CREATE TABLE ways (
+                  way_id INTEGER PRIMARY KEY,
+                  highway TEXT,
+                  street_name TEXT,
+                  ref TEXT,
+                  maxspeed TEXT,
+                  maxspeed_type TEXT,
+                  source_maxspeed TEXT,
+                  zone_maxspeed TEXT,
+                  traffic_sign TEXT,
+                  approx_heading_deg REAL,
+                  service TEXT,
+                  tunnel TEXT,
+                  min_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL,
+                  max_lon REAL NOT NULL,
+                  max_lat REAL NOT NULL
+                );
+                CREATE VIRTUAL TABLE ways_rtree USING rtree(
+                  way_id,
+                  min_lon, max_lon,
+                  min_lat, max_lat
+                );
+                CREATE TABLE way_geom (
+                  way_id INTEGER PRIMARY KEY,
+                  points_json TEXT NOT NULL
+                );
+                CREATE TABLE way_links (
+                  way_id INTEGER NOT NULL,
+                  linked_way_id INTEGER NOT NULL,
+                  shared_ref INTEGER NOT NULL DEFAULT 0,
+                  link_kind TEXT NOT NULL,
+                  PRIMARY KEY(way_id, linked_way_id)
+                );
+
+                INSERT INTO ways(way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, min_lon, min_lat, max_lon, max_lat)
+                VALUES
+                  (100, 'primary', 'Base 100', 'B 3', '70', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, 13.0000, 52.0000, 13.0010, 52.0010),
+                  (300, 'primary', 'Base 300', 'K 1', '50', NULL, NULL, NULL, NULL, 0.0, 'main', NULL, 13.0100, 52.0100, 13.0110, 52.0110);
+
+                INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES
+                  (100, 13.0000, 13.0010, 52.0000, 52.0010),
+                  (300, 13.0100, 13.0110, 52.0100, 52.0110);
+
+                INSERT INTO way_geom(way_id, points_json)
+                VALUES
+                  (100, '[[52.0000,13.0000],[52.0010,13.0010]]'),
+                  (300, '[[52.0100,13.0100],[52.0110,13.0110]]');
+
+                INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind)
+                VALUES
+                  (100, 300, 0, 'shared_endpoint'),
+                  (300, 100, 0, 'shared_endpoint');
+                """
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    @staticmethod
     def _fixture_diff() -> str:
         return textwrap.dedent(
             """\
@@ -381,6 +447,146 @@ class V3BundlePublishAndDeltaTests(unittest.TestCase):
             self.assertEqual(area_extra, 0)
             self.assertEqual(area_missing, 0)
             self.assertEqual(area_attr_diff, 0)
+
+    def test_build_v3_delta_pack_exact_target_db_preserves_way_links(self):
+        base_db = self.tmpdir / "base_way_links.sqlite"
+        target_db = self.tmpdir / "target_way_links.sqlite"
+        self._create_way_links_fixture_db(base_db)
+        target_db.write_bytes(base_db.read_bytes())
+
+        with sqlite3.connect(target_db) as conn:
+            conn.executescript(
+                """
+                DELETE FROM way_links WHERE way_id IN (100, 300) OR linked_way_id IN (100, 300);
+
+                UPDATE ways
+                SET street_name='Updated Base 100', ref='B 7'
+                WHERE way_id=100;
+
+                DELETE FROM way_geom WHERE way_id=300;
+                DELETE FROM ways_rtree WHERE way_id=300;
+                DELETE FROM ways WHERE way_id=300;
+
+                INSERT INTO ways(
+                  way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed,
+                  zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel,
+                  min_lon, min_lat, max_lon, max_lat
+                ) VALUES(
+                  400, 'primary', 'Target Added Road', 'B 7', '70', NULL, NULL,
+                  NULL, NULL, 45.0, 'main', NULL,
+                  13.2000, 52.2000, 13.2010, 52.2010
+                );
+                INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES(400, 13.2000, 13.2010, 52.2000, 52.2010);
+                INSERT INTO way_geom(way_id, points_json)
+                VALUES(400, '[[52.2000,13.2000],[52.2010,13.2010]]');
+
+                INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind)
+                VALUES
+                  (100, 400, 1, 'shared_endpoint'),
+                  (400, 100, 1, 'shared_endpoint');
+                """
+            )
+            conn.commit()
+
+        out_dir = self.tmpdir / "delta_pack_way_links_exact"
+        run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V3_DELTA),
+                "--base-db",
+                str(base_db),
+                "--target-db",
+                str(target_db),
+                "--diff-file",
+                str(self.diff_file),
+                "--region",
+                "karlsruhe",
+                "--from-version",
+                "2026-02-23",
+                "--to-version",
+                "2026-02-24",
+                "--out-dir",
+                str(out_dir),
+                "--validate-on-copy",
+            ]
+        )
+
+        manifest = json.loads((out_dir / "v3_delta_manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["stats"]["way_links_mode"], "enabled")
+        self.assertGreater(manifest["stats"]["delete_way_link_count"], 0)
+        self.assertGreater(manifest["stats"]["insert_way_link_count"], 0)
+
+        patch_sql = zlib.decompress((out_dir / "v3_patch.sql.zlib").read_bytes()).decode("utf-8")
+        db_copy = self.tmpdir / "applied_way_links.sqlite"
+        db_copy.write_bytes(base_db.read_bytes())
+        with sqlite3.connect(db_copy) as conn:
+            conn.executescript(patch_sql)
+
+        with sqlite3.connect(":memory:") as conn:
+            conn.execute("ATTACH DATABASE ? AS applied", (str(db_copy),))
+            conn.execute("ATTACH DATABASE ? AS target", (str(target_db),))
+            link_extra = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM applied.way_links pl
+                LEFT JOIN target.way_links tl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE tl.way_id IS NULL
+                """
+            ).fetchone()[0]
+            link_missing = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM target.way_links tl
+                LEFT JOIN applied.way_links pl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE pl.way_id IS NULL
+                """
+            ).fetchone()[0]
+            link_attr_diff = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM applied.way_links pl
+                JOIN target.way_links tl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE
+                  COALESCE(pl.shared_ref,0) != COALESCE(tl.shared_ref,0) OR
+                  COALESCE(pl.link_kind,'') != COALESCE(tl.link_kind,'')
+                """
+            ).fetchone()[0]
+            self.assertEqual(link_extra, 0)
+            self.assertEqual(link_missing, 0)
+            self.assertEqual(link_attr_diff, 0)
+
+    def test_build_v3_delta_pack_rejects_heuristic_mode_for_way_links_db(self):
+        way_links_db = self.tmpdir / "heuristic_way_links.sqlite"
+        self._create_way_links_fixture_db(way_links_db)
+        out_dir = self.tmpdir / "delta_pack_way_links_heuristic"
+        proc = run_cmd(
+            [
+                sys.executable,
+                str(BUILD_V3_DELTA),
+                "--base-db",
+                str(way_links_db),
+                "--diff-file",
+                str(self.diff_file),
+                "--region",
+                "karlsruhe",
+                "--from-version",
+                "2026-02-23",
+                "--to-version",
+                "2026-02-24",
+                "--out-dir",
+                str(out_dir),
+            ],
+            check=False,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("does not support way_links", proc.stderr)
 
     def test_publish_v3_bundle_with_github_release_urls(self):
         delta_index = self.tmpdir / "delta-index.v3.json"

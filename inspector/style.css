@@ -32,6 +32,7 @@ body {
   border-right: 1px solid var(--border);
   background: var(--panel);
   padding: 1rem;
+  overflow: auto;
 }
 
 h1 {
@@ -105,6 +106,174 @@ input {
   color: var(--danger);
 }
 
+.log-panel,
+.trace-panel {
+  margin-top: 1.2rem;
+}
+
+.log-panel h2,
+.trace-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.log-list,
+.trace-block {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.6rem;
+}
+
+.overview-grid,
+.breakdown-grid {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.overview-grid {
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+}
+
+.breakdown-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.log-entry,
+.trace-entry,
+.candidate-entry,
+.overview-card,
+.breakdown-card,
+.raw-block {
+  background: #0b111d;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.log-entry {
+  cursor: pointer;
+}
+
+.log-entry.active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(93, 169, 255, 0.4);
+}
+
+.log-entry-header,
+.trace-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.log-entry strong,
+.candidate-entry strong,
+.trace-entry strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.mono {
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pill.ok {
+  color: #9af5aa;
+  border-color: rgba(154, 245, 170, 0.3);
+  background: rgba(30, 98, 41, 0.2);
+}
+
+.pill.warn {
+  color: #ffd37a;
+  border-color: rgba(255, 211, 122, 0.3);
+  background: rgba(105, 69, 9, 0.2);
+}
+
+.pill.neutral {
+  color: var(--muted);
+}
+
+.overview-card .label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
+.overview-card .value {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.overview-card .subvalue {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.breakdown-card h3,
+.trace-section-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.breakdown-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.breakdown-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.breakdown-row strong {
+  margin: 0;
+}
+
+.trace-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.candidate-entry.selected {
+  border-color: #7fda8b;
+}
+
+.raw-block {
+  margin-top: 0.6rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .map-wrap {
   position: relative;
   width: 100%;
@@ -160,5 +329,17 @@ input {
   .panel {
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  .overview-grid,
+  .breakdown-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .overview-grid,
+  .breakdown-grid {
+    grid-template-columns: 1fr;
   }
 }

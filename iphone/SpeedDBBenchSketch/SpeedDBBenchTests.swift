@@ -8,6 +8,11 @@ final class SpeedDBBenchTests: XCTestCase {
         let report: BenchmarkReport
     }
 
+    private struct RouteLogPayload: Codable {
+        let datasetKind: String
+        let report: KarlsruheVariantReport
+    }
+
     func testBenchmarkRunnerOnSyntheticDB() throws {
         let (dbURL, datasetKind, cleanup) = try prepareBenchmarkDB()
         defer { cleanup() }
@@ -54,6 +59,46 @@ final class SpeedDBBenchTests: XCTestCase {
         XCTAssertTrue(report.hasWayTileTable)
     }
 
+    func testKarlsruheVariantRouteBenchmarksIfPrepared() throws {
+        let prepared = try preparedKarlsruheVariantDatabases()
+        if prepared.isEmpty {
+            throw XCTSkip("Prepared Karlsruhe benchmark variants not bundled in SpeedDBBench target")
+        }
+
+        let scenarios = [
+            RouteScenario.karlsruheL564,
+            RouteScenario.gernsbachTunnelSurface,
+        ]
+
+        for preparedDB in prepared {
+            let runner = RouteScenarioBenchmarkRunner(dbPath: preparedDB.url.path)
+            let report = try runner.run(
+                scenarios: scenarios,
+                repeats: 20,
+                mode: preparedDB.mode
+            )
+            let payload = RouteLogPayload(datasetKind: preparedDB.datasetKind, report: report)
+            if let data = try? JSONEncoder().encode(payload),
+               let json = String(data: data, encoding: .utf8) {
+                print("ROUTE_BENCHMARK_JSON=\(json)")
+            }
+
+            for scenario in report.scenarios {
+                XCTAssertEqual(
+                    scenario.mismatchedWayCount,
+                    0,
+                    "Unexpected way mismatches for \(preparedDB.datasetKind) / \(scenario.scenarioID)"
+                )
+                XCTAssertEqual(
+                    scenario.tunnelMismatchCount,
+                    0,
+                    "Unexpected tunnel mismatches for \(preparedDB.datasetKind) / \(scenario.scenarioID)"
+                )
+                XCTAssertGreaterThan(scenario.timing.avgFixMs, 0)
+            }
+        }
+    }
+
     private func prepareBenchmarkDB() throws -> (URL, String, () -> Void) {
         let fm = FileManager.default
         let tempCountryDB = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("speeds_v4_germany.sqlite")
@@ -70,6 +115,37 @@ final class SpeedDBBenchTests: XCTestCase {
             .appendingPathComponent("speeddbbench-unit-\(UUID().uuidString).sqlite")
         try createSyntheticDB(at: dbURL)
         return (dbURL, "synthetic_fixture", { try? fm.removeItem(at: dbURL) })
+    }
+
+    private func preparedKarlsruheVariantDatabases() throws -> [(url: URL, datasetKind: String, mode: RouteBenchmarkMode)] {
+        let variants: [(resource: String, fileName: String, datasetKind: String, mode: RouteBenchmarkMode)] = [
+            ("karlsruhe_v3_A_geom16", "karlsruhe_v3_A_geom16.sqlite", "karlsruhe_v3_A_geom16", .baseline),
+            ("karlsruhe_v3_B_waylinks", "karlsruhe_v3_B_waylinks.sqlite", "karlsruhe_v3_B_waylinks", .wayLinks),
+        ]
+
+        var out: [(url: URL, datasetKind: String, mode: RouteBenchmarkMode)] = []
+        let fm = FileManager.default
+        let appSupport = try AssetStore.applicationSupportDirectory()
+        if !fm.fileExists(atPath: appSupport.path) {
+            try fm.createDirectory(at: appSupport, withIntermediateDirectories: true)
+        }
+        let candidateBundles = [Bundle.main, Bundle(for: type(of: self))] + Bundle.allBundles
+        for variant in variants {
+            let src = candidateBundles.lazy.compactMap { bundle in
+                bundle.url(forResource: variant.resource, withExtension: "sqlite") ??
+                bundle.url(forResource: variant.resource, withExtension: "sqlite", subdirectory: "BenchmarkAssets")
+            }.first
+            guard let src else {
+                continue
+            }
+            let dst = appSupport.appendingPathComponent(variant.fileName)
+            if fm.fileExists(atPath: dst.path) {
+                try fm.removeItem(at: dst)
+            }
+            try fm.copyItem(at: src, to: dst)
+            out.append((dst, variant.datasetKind, variant.mode))
+        }
+        return out
     }
 
     private func createSyntheticDB(at url: URL) throws {

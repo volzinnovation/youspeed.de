@@ -12,10 +12,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sqlite3
 import sys
+from collections import defaultdict, deque
+from heapq import heappop, heappush
 from pathlib import Path
-from typing import Iterator, List, Tuple
+from typing import Dict, Iterator, List, Set, Tuple
 
 
 def _iter_jsonl(path: Path) -> Iterator[dict]:
@@ -48,12 +51,523 @@ def _try_load_spatialite(conn: sqlite3.Connection) -> str:
     return backend
 
 
+def _is_truthy_osm_tag(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"yes", "true", "1"}
+
+
+def _coord_key(lon: float, lat: float) -> str:
+    return f"{round(lon * 10_000_000)}:{round(lat * 10_000_000)}"
+
+
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    earth_radius_m = 6_371_000.0
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(delta_phi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
+    )
+    return earth_radius_m * (2.0 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a))))
+
+
+def _points_length_m(points: list) -> float:
+    total = 0.0
+    for first, second in zip(points, points[1:]):
+        if (
+            not isinstance(first, list)
+            or not isinstance(second, list)
+            or len(first) < 2
+            or len(second) < 2
+        ):
+            continue
+        lat1, lon1 = first[0], first[1]
+        lat2, lon2 = second[0], second[1]
+        if not all(isinstance(value, (int, float)) for value in (lat1, lon1, lat2, lon2)):
+            continue
+        total += _haversine_m(float(lat1), float(lon1), float(lat2), float(lon2))
+    return total
+
+
+def _build_corridor_progress(conn: sqlite3.Connection) -> tuple[int, int, int]:
+    conn.executescript(
+        """
+        CREATE TABLE corridor_progress (
+          corridor_kind TEXT NOT NULL,
+          corridor_id INTEGER NOT NULL,
+          side_node_key TEXT NOT NULL,
+          way_id INTEGER NOT NULL,
+          start_depth_m REAL NOT NULL,
+          end_depth_m REAL NOT NULL,
+          start_depth_nodes INTEGER NOT NULL,
+          end_depth_nodes INTEGER NOT NULL,
+          corridor_span_m REAL NOT NULL,
+          corridor_span_nodes INTEGER NOT NULL,
+          PRIMARY KEY(corridor_kind, corridor_id, side_node_key, way_id)
+        );
+        CREATE INDEX idx_corridor_progress_way_id ON corridor_progress(way_id);
+        CREATE INDEX idx_corridor_progress_corridor ON corridor_progress(corridor_kind, corridor_id, side_node_key);
+
+        CREATE TABLE corridor_pairs (
+          corridor_kind TEXT NOT NULL,
+          corridor_id INTEGER NOT NULL,
+          side_node_key TEXT NOT NULL,
+          paired_kind TEXT NOT NULL,
+          paired_corridor_id INTEGER NOT NULL,
+          PRIMARY KEY(corridor_kind, corridor_id, side_node_key, paired_kind, paired_corridor_id)
+        );
+        CREATE INDEX idx_corridor_pairs_main ON corridor_pairs(corridor_kind, corridor_id, side_node_key);
+        CREATE INDEX idx_corridor_pairs_paired ON corridor_pairs(paired_kind, paired_corridor_id);
+        """
+    )
+
+    way_rows = conn.execute(
+        """
+        SELECT
+          way_id,
+          ref_norm,
+          highway,
+          tunnel_flag,
+          start_node_key,
+          end_node_key,
+          way_length_m
+        FROM way_endpoints
+        """
+    ).fetchall()
+    if not way_rows:
+        return (0, 0, 0)
+
+    way_info: Dict[int, dict] = {}
+    node_to_way_ids: Dict[str, Set[int]] = defaultdict(set)
+    for way_id, ref_norm, highway, tunnel_flag, start_node_key, end_node_key, way_length_m in way_rows:
+        normalized_way_id = int(way_id)
+        way_info[normalized_way_id] = {
+            "ref_norm": ref_norm or "",
+            "highway": (highway or "").strip().lower(),
+            "tunnel_flag": int(tunnel_flag or 0),
+            "start_node_key": start_node_key,
+            "end_node_key": end_node_key,
+            "length_m": float(way_length_m or 0.0),
+        }
+        node_to_way_ids[start_node_key].add(normalized_way_id)
+        node_to_way_ids[end_node_key].add(normalized_way_id)
+
+    link_rows = conn.execute(
+        """
+        SELECT
+          wl.way_id,
+          wl.linked_way_id,
+          wl.shared_node_key
+        FROM way_links wl
+        """
+    ).fetchall()
+
+    neighbors_by_way: Dict[int, Set[int]] = defaultdict(set)
+    linked_nodes_by_way: Dict[int, Dict[str, Set[int]]] = defaultdict(lambda: defaultdict(set))
+    for source_way_id, linked_way_id, shared_node_key in link_rows:
+        source_way_id = int(source_way_id)
+        linked_way_id = int(linked_way_id)
+        if source_way_id == linked_way_id:
+            continue
+        neighbors_by_way[source_way_id].add(linked_way_id)
+        if shared_node_key:
+            linked_nodes_by_way[source_way_id][shared_node_key].add(linked_way_id)
+
+    def other_node_key(way_id: int, node_key: str) -> str:
+        info = way_info[way_id]
+        return info["end_node_key"] if info["start_node_key"] == node_key else info["start_node_key"]
+
+    def way_node_keys(way_id: int) -> tuple[str, str]:
+        info = way_info[way_id]
+        return (info["start_node_key"], info["end_node_key"])
+
+    def corridor_kind_for_way(way_id: int) -> str | None:
+        info = way_info[way_id]
+        if info["tunnel_flag"] == 1:
+            return "tunnel"
+        if info["highway"] == "motorway":
+            return "motorway"
+        return None
+
+    def compatible_main_way(source_way_id: int, target_way_id: int, corridor_kind: str) -> bool:
+        source = way_info[source_way_id]
+        target = way_info[target_way_id]
+        if corridor_kind == "tunnel":
+            if source["tunnel_flag"] != 1 or target["tunnel_flag"] != 1:
+                return False
+        elif corridor_kind == "motorway":
+            if source["highway"] != "motorway" or target["highway"] != "motorway":
+                return False
+        else:
+            return False
+        source_ref = source["ref_norm"]
+        target_ref = target["ref_norm"]
+        return not (source_ref and target_ref and source_ref != target_ref)
+
+    def paired_kind_for_main_kind(main_kind: str) -> str:
+        return "surface" if main_kind == "tunnel" else "motorway_link"
+
+    def paired_way_allowed(main_kind: str, way_id: int, main_ref_norms: Set[str]) -> bool:
+        info = way_info[way_id]
+        if main_kind == "tunnel":
+            if info["tunnel_flag"] == 1:
+                return False
+            if info["highway"] in {"motorway", "motorway_link"}:
+                return False
+            if main_ref_norms:
+                return info["ref_norm"] in main_ref_norms
+            return True
+        if main_kind == "motorway":
+            return info["highway"] == "motorway_link"
+        return False
+
+    def collect_component_way_ids(seed_way_id: int, corridor_kind: str, remaining_way_ids: Set[int]) -> Set[int]:
+        component_way_ids = {seed_way_id}
+        pending_way_ids = [seed_way_id]
+        while pending_way_ids:
+            current_way_id = pending_way_ids.pop()
+            for neighbor_way_id in neighbors_by_way.get(current_way_id, set()):
+                if neighbor_way_id not in remaining_way_ids:
+                    continue
+                if not compatible_main_way(current_way_id, neighbor_way_id, corridor_kind):
+                    continue
+                remaining_way_ids.remove(neighbor_way_id)
+                component_way_ids.add(neighbor_way_id)
+                pending_way_ids.append(neighbor_way_id)
+        return component_way_ids
+
+    def component_node_index(component_way_ids: Set[int]) -> Dict[str, Set[int]]:
+        index: Dict[str, Set[int]] = defaultdict(set)
+        for way_id in component_way_ids:
+            start_node_key, end_node_key = way_node_keys(way_id)
+            index[start_node_key].add(way_id)
+            index[end_node_key].add(way_id)
+        return index
+
+    def component_portal_nodes(component_way_ids: Set[int], corridor_kind: str) -> Set[str]:
+        portals: Set[str] = set()
+        for way_id in component_way_ids:
+            for shared_node_key, linked_way_ids in linked_nodes_by_way.get(way_id, {}).items():
+                for linked_way_id in linked_way_ids:
+                    if linked_way_id in component_way_ids:
+                        continue
+                    linked_info = way_info.get(linked_way_id)
+                    if linked_info is None:
+                        continue
+                    if corridor_kind == "tunnel":
+                        if linked_info["tunnel_flag"] == 0:
+                            portals.add(shared_node_key)
+                    elif corridor_kind == "motorway":
+                        if linked_info["highway"] == "motorway_link":
+                            portals.add(shared_node_key)
+            if corridor_kind == "motorway":
+                start_node_key, end_node_key = way_node_keys(way_id)
+                for node_key in (start_node_key, end_node_key):
+                    linked_mainline = [
+                        linked_way_id
+                        for linked_way_id in linked_nodes_by_way.get(way_id, {}).get(node_key, set())
+                        if linked_way_id in component_way_ids
+                    ]
+                    if not linked_mainline:
+                        portals.add(node_key)
+        return portals
+
+    def dijkstra_distances(graph: Dict[str, list[tuple[str, float]]], start_node_key: str) -> Dict[str, float]:
+        distances: Dict[str, float] = {start_node_key: 0.0}
+        queue: list[tuple[float, str]] = [(0.0, start_node_key)]
+        while queue:
+            current_distance, node_key = heappop(queue)
+            if current_distance > distances.get(node_key, math.inf):
+                continue
+            for neighbor_node_key, edge_weight in graph.get(node_key, []):
+                next_distance = current_distance + edge_weight
+                if next_distance < distances.get(neighbor_node_key, math.inf):
+                    distances[neighbor_node_key] = next_distance
+                    heappush(queue, (next_distance, neighbor_node_key))
+        return distances
+
+    def bfs_node_distances(graph: Dict[str, list[tuple[str, float]]], start_node_key: str) -> Dict[str, int]:
+        distances: Dict[str, int] = {start_node_key: 0}
+        queue: deque[str] = deque([start_node_key])
+        while queue:
+            node_key = queue.popleft()
+            current_distance = distances[node_key]
+            for neighbor_node_key, _ in graph.get(node_key, []):
+                if neighbor_node_key in distances:
+                    continue
+                distances[neighbor_node_key] = current_distance + 1
+                queue.append(neighbor_node_key)
+        return distances
+
+    def graph_for_way_ids(component_way_ids: Set[int]) -> Dict[str, list[tuple[str, float]]]:
+        graph: Dict[str, list[tuple[str, float]]] = defaultdict(list)
+        for way_id in component_way_ids:
+            start_node_key, end_node_key = way_node_keys(way_id)
+            edge_length_m = max(float(way_info[way_id]["length_m"]), 0.1)
+            graph[start_node_key].append((end_node_key, edge_length_m))
+            graph[end_node_key].append((start_node_key, edge_length_m))
+        return graph
+
+    def insert_progress_rows(corridor_kind: str, corridor_id: int, corridor_way_ids: Set[int], side_node_keys: Set[str]) -> list[tuple]:
+        if not corridor_way_ids or not side_node_keys:
+            return []
+        graph = graph_for_way_ids(corridor_way_ids)
+        sorted_side_node_keys = sorted(side_node_keys)
+        rows: list[tuple] = []
+        for side_node_key in sorted_side_node_keys:
+            distances = dijkstra_distances(graph, side_node_key)
+            node_distances = bfs_node_distances(graph, side_node_key)
+            span_m = max(
+                (distances.get(other_node_key, 0.0) for other_node_key in sorted_side_node_keys if other_node_key != side_node_key),
+                default=max(distances.values(), default=0.0),
+            )
+            span_nodes = max(
+                (node_distances.get(other_node_key, 0) for other_node_key in sorted_side_node_keys if other_node_key != side_node_key),
+                default=max(node_distances.values(), default=0),
+            )
+            for way_id in corridor_way_ids:
+                start_node_key, end_node_key = way_node_keys(way_id)
+                start_depth_m = distances.get(start_node_key)
+                end_depth_m = distances.get(end_node_key)
+                start_depth_nodes = node_distances.get(start_node_key)
+                end_depth_nodes = node_distances.get(end_node_key)
+                if (
+                    start_depth_m is None
+                    or end_depth_m is None
+                    or start_depth_nodes is None
+                    or end_depth_nodes is None
+                ):
+                    continue
+                rows.append(
+                    (
+                        corridor_kind,
+                        corridor_id,
+                        side_node_key,
+                        way_id,
+                        start_depth_m,
+                        end_depth_m,
+                        start_depth_nodes,
+                        end_depth_nodes,
+                        span_m,
+                        span_nodes,
+                    )
+                )
+        return rows
+
+    def decompose_linear_segments(component_way_ids: Set[int], portal_nodes: Set[str]) -> List[dict]:
+        component_nodes = component_node_index(component_way_ids)
+        boundary_nodes = set(portal_nodes)
+        for node_key, node_way_ids in component_nodes.items():
+            if len(node_way_ids) != 2:
+                boundary_nodes.add(node_key)
+        if not boundary_nodes:
+            boundary_nodes = set(component_nodes.keys())
+
+        visited_way_ids: Set[int] = set()
+        segments: List[dict] = []
+        for start_node_key in sorted(boundary_nodes):
+            for start_way_id in sorted(component_nodes.get(start_node_key, set())):
+                if start_way_id in visited_way_ids:
+                    continue
+                segment_way_ids: Set[int] = set()
+                current_node_key = start_node_key
+                current_way_id = start_way_id
+                end_node_key = start_node_key
+                while True:
+                    if current_way_id in segment_way_ids:
+                        break
+                    segment_way_ids.add(current_way_id)
+                    visited_way_ids.add(current_way_id)
+                    next_node_key = other_node_key(current_way_id, current_node_key)
+                    end_node_key = next_node_key
+                    next_way_ids = [
+                        neighbor_way_id
+                        for neighbor_way_id in component_nodes.get(next_node_key, set())
+                        if neighbor_way_id != current_way_id
+                    ]
+                    if next_node_key in boundary_nodes or len(next_way_ids) != 1:
+                        break
+                    current_node_key = next_node_key
+                    current_way_id = next_way_ids[0]
+                if segment_way_ids:
+                    segments.append(
+                        {
+                            "way_ids": segment_way_ids,
+                            "side_node_keys": {start_node_key, end_node_key},
+                        }
+                    )
+        for way_id in sorted(component_way_ids - visited_way_ids):
+            start_node_key, end_node_key = way_node_keys(way_id)
+            segments.append({"way_ids": {way_id}, "side_node_keys": {start_node_key, end_node_key}})
+        return segments
+
+    def trace_paired_chain(
+        portal_node_key: str,
+        seed_way_id: int,
+        main_kind: str,
+        main_ref_norms: Set[str],
+    ) -> dict | None:
+        if not paired_way_allowed(main_kind, seed_way_id, main_ref_norms):
+            return None
+        segment_way_ids: Set[int] = set()
+        current_node_key = portal_node_key
+        current_way_id = seed_way_id
+        end_node_key = portal_node_key
+        while True:
+            if current_way_id in segment_way_ids:
+                break
+            segment_way_ids.add(current_way_id)
+            next_node_key = other_node_key(current_way_id, current_node_key)
+            end_node_key = next_node_key
+            next_way_ids = [
+                neighbor_way_id
+                for neighbor_way_id in node_to_way_ids.get(next_node_key, set())
+                if neighbor_way_id != current_way_id and paired_way_allowed(main_kind, neighbor_way_id, main_ref_norms)
+            ]
+            if len(next_way_ids) != 1:
+                break
+            current_node_key = next_node_key
+            current_way_id = next_way_ids[0]
+        if not segment_way_ids:
+            return None
+        return {"way_ids": segment_way_ids, "side_node_keys": {portal_node_key, end_node_key}}
+
+    insert_rows: list[tuple] = []
+    pair_rows: Set[tuple] = set()
+    corridor_count = 0
+    next_corridor_id = 1
+    main_corridors: List[dict] = []
+    corridor_cache: Dict[tuple[str, frozenset[int], frozenset[str]], int] = {}
+
+    def ensure_corridor(corridor_kind: str, segment: dict) -> int:
+        nonlocal next_corridor_id, corridor_count
+        cache_key = (
+            corridor_kind,
+            frozenset(segment["way_ids"]),
+            frozenset(segment["side_node_keys"]),
+        )
+        cached_corridor_id = corridor_cache.get(cache_key)
+        if cached_corridor_id is not None:
+            return cached_corridor_id
+        corridor_id = next_corridor_id
+        next_corridor_id += 1
+        corridor_count += 1
+        corridor_cache[cache_key] = corridor_id
+        insert_rows.extend(
+            insert_progress_rows(
+                corridor_kind,
+                corridor_id,
+                set(segment["way_ids"]),
+                set(segment["side_node_keys"]),
+            )
+        )
+        return corridor_id
+
+    for corridor_kind in ("tunnel", "motorway"):
+        eligible_way_ids = {
+            way_id
+            for way_id in way_info
+            if corridor_kind_for_way(way_id) == corridor_kind
+        }
+        remaining_way_ids = set(eligible_way_ids)
+        while remaining_way_ids:
+            seed_way_id = remaining_way_ids.pop()
+            component_way_ids = collect_component_way_ids(seed_way_id, corridor_kind, remaining_way_ids)
+            portal_nodes = component_portal_nodes(component_way_ids, corridor_kind)
+            if not portal_nodes:
+                continue
+            for segment in decompose_linear_segments(component_way_ids, portal_nodes):
+                corridor_id = ensure_corridor(corridor_kind, segment)
+                main_corridors.append(
+                    {
+                        "kind": corridor_kind,
+                        "corridor_id": corridor_id,
+                        "way_ids": set(segment["way_ids"]),
+                        "side_node_keys": set(segment["side_node_keys"]),
+                        "ref_norms": {
+                            way_info[way_id]["ref_norm"]
+                            for way_id in segment["way_ids"]
+                            if way_info[way_id]["ref_norm"]
+                        },
+                    }
+                )
+
+    for main_corridor in main_corridors:
+        main_kind = main_corridor["kind"]
+        paired_kind = paired_kind_for_main_kind(main_kind)
+        main_ref_norms: Set[str] = main_corridor["ref_norms"]
+        for side_node_key in sorted(main_corridor["side_node_keys"]):
+            seed_way_ids: Set[int] = set()
+            for main_way_id in main_corridor["way_ids"]:
+                for linked_way_id in linked_nodes_by_way.get(main_way_id, {}).get(side_node_key, set()):
+                    if linked_way_id in main_corridor["way_ids"]:
+                        continue
+                    if paired_way_allowed(main_kind, linked_way_id, main_ref_norms):
+                        seed_way_ids.add(linked_way_id)
+            for seed_way_id in sorted(seed_way_ids):
+                segment = trace_paired_chain(side_node_key, seed_way_id, main_kind, main_ref_norms)
+                if segment is None:
+                    continue
+                paired_corridor_id = ensure_corridor(paired_kind, segment)
+                pair_rows.add(
+                    (
+                        main_kind,
+                        int(main_corridor["corridor_id"]),
+                        side_node_key,
+                        paired_kind,
+                        paired_corridor_id,
+                    )
+                )
+
+    if insert_rows:
+        conn.executemany(
+            """
+            INSERT INTO corridor_progress(
+              corridor_kind, corridor_id, side_node_key, way_id,
+              start_depth_m, end_depth_m, start_depth_nodes, end_depth_nodes,
+              corridor_span_m, corridor_span_nodes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            insert_rows,
+        )
+    if pair_rows:
+        conn.executemany(
+            """
+            INSERT INTO corridor_pairs(
+              corridor_kind, corridor_id, side_node_key, paired_kind, paired_corridor_id
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            sorted(pair_rows),
+        )
+    if insert_rows or pair_rows:
+        conn.commit()
+    return (corridor_count, len(insert_rows), len(pair_rows))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build v3 SQLite/SpatiaLite-style speed map DB")
     parser.add_argument("--v1-dist", required=True, help="Path to mapdata/dist/<region>")
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--batch-size", type=int, default=20000, help="Insert batch size (default: 20000)")
     parser.add_argument("--progress-every", type=int, default=250000, help="Progress logging interval")
+    parser.add_argument(
+        "--build-way-links",
+        action="store_true",
+        help="Build endpoint-based way_links topology table",
+    )
+    parser.add_argument(
+        "--way-links-schema",
+        choices=("minimal", "detailed"),
+        default="detailed",
+        help="Topology schema for way_links: minimal=way pairs only, detailed=pair + shared_ref + shared_node_key",
+    )
+    parser.add_argument(
+        "--corridor-mode",
+        choices=("none", "paired"),
+        default="paired",
+        help="Corridor precompute mode (requires detailed way-links for paired)",
+    )
     return parser.parse_args()
 
 
@@ -63,6 +577,12 @@ def main() -> int:
     out_db = Path(args.out_db)
     if args.batch_size < 100:
         print("--batch-size must be >= 100", file=sys.stderr)
+        return 1
+    if args.corridor_mode != "none" and not args.build_way_links:
+        print("--corridor-mode requires --build-way-links", file=sys.stderr)
+        return 1
+    if args.corridor_mode == "paired" and args.way_links_schema != "detailed":
+        print("--corridor-mode paired requires --way-links-schema detailed", file=sys.stderr)
         return 1
 
     ways_meta = v1_dist / "ways.meta"
@@ -78,8 +598,8 @@ def main() -> int:
         out_db.unlink()
 
     conn = sqlite3.connect(str(out_db))
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA journal_mode=MEMORY")
+    conn.execute("PRAGMA synchronous=OFF")
     conn.execute("PRAGMA temp_store=MEMORY")
     conn.execute("PRAGMA cache_size=-200000")
 
@@ -145,18 +665,75 @@ def main() -> int:
         """
     )
 
+    if args.build_way_links:
+        if args.way_links_schema == "detailed":
+            conn.executescript(
+                """
+                CREATE TABLE way_endpoints (
+                  way_id INTEGER PRIMARY KEY,
+                  ref_norm TEXT,
+                  highway TEXT,
+                  tunnel_flag INTEGER NOT NULL DEFAULT 0,
+                  start_node_key TEXT NOT NULL,
+                  start_lon REAL NOT NULL,
+                  start_lat REAL NOT NULL,
+                  end_node_key TEXT NOT NULL,
+                  end_lon REAL NOT NULL,
+                  end_lat REAL NOT NULL,
+                  way_length_m REAL NOT NULL
+                );
+
+                CREATE TABLE way_links (
+                  way_id INTEGER NOT NULL,
+                  linked_way_id INTEGER NOT NULL,
+                  shared_ref INTEGER NOT NULL DEFAULT 0,
+                  shared_node_key TEXT NOT NULL,
+                  PRIMARY KEY(way_id, linked_way_id, shared_node_key)
+                );
+                """
+            )
+        else:
+            conn.executescript(
+                """
+                CREATE TABLE way_endpoints (
+                  way_id INTEGER PRIMARY KEY,
+                  ref_norm TEXT,
+                  highway TEXT,
+                  tunnel_flag INTEGER NOT NULL DEFAULT 0,
+                  start_node_key TEXT NOT NULL,
+                  start_lon REAL NOT NULL,
+                  start_lat REAL NOT NULL,
+                  end_node_key TEXT NOT NULL,
+                  end_lon REAL NOT NULL,
+                  end_lat REAL NOT NULL,
+                  way_length_m REAL NOT NULL
+                );
+
+                CREATE TABLE way_links (
+                  way_id INTEGER NOT NULL,
+                  linked_way_id INTEGER NOT NULL,
+                  PRIMARY KEY(way_id, linked_way_id)
+                );
+                """
+            )
+
     conn.executemany(
         "INSERT INTO metadata(key, value) VALUES(?, ?)",
         [
             ("schema_version", "1"),
             ("backend", backend),
             ("source_v1_dist", str(v1_dist)),
+            (
+                "way_links_mode",
+                f"shared_endpoint_{args.way_links_schema}" if args.build_way_links else "none",
+            ),
         ],
     )
 
     ways_batch: List[Tuple] = []
     ways_rtree_batch: List[Tuple] = []
     geom_batch: List[Tuple] = []
+    endpoints_batch: List[Tuple] = []
     way_rows = 0
 
     with ways_meta.open("r", encoding="utf-8") as fm, ways_geom.open("r", encoding="utf-8") as fg:
@@ -216,6 +793,27 @@ def main() -> int:
                 )
             )
             geom_batch.append((way_id, json.dumps(points, separators=(",", ":"))))
+            if args.build_way_links:
+                ref_norm = (meta.get("ref") or "").replace(" ", "").upper()
+                first_lon = float(meta["first_lon"])
+                first_lat = float(meta["first_lat"])
+                last_lon = float(meta["last_lon"])
+                last_lat = float(meta["last_lat"])
+                endpoints_batch.append(
+                    (
+                        way_id,
+                        ref_norm,
+                        meta.get("highway"),
+                        1 if _is_truthy_osm_tag(meta.get("tunnel")) else 0,
+                        _coord_key(first_lon, first_lat),
+                        first_lon,
+                        first_lat,
+                        _coord_key(last_lon, last_lat),
+                        last_lon,
+                        last_lat,
+                        _points_length_m(points),
+                    )
+                )
 
             if len(ways_batch) >= args.batch_size:
                 conn.executemany(
@@ -236,10 +834,22 @@ def main() -> int:
                     "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
                     geom_batch,
                 )
+                if args.build_way_links and endpoints_batch:
+                    conn.executemany(
+                        """
+                        INSERT INTO way_endpoints(
+                          way_id, ref_norm, highway, tunnel_flag,
+                          start_node_key, start_lon, start_lat,
+                          end_node_key, end_lon, end_lat, way_length_m
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        endpoints_batch,
+                    )
                 conn.commit()
                 ways_batch.clear()
                 ways_rtree_batch.clear()
                 geom_batch.clear()
+                endpoints_batch.clear()
 
             if way_rows % args.progress_every == 0:
                 print(f"  ways inserted: {way_rows}", file=sys.stderr)
@@ -263,9 +873,125 @@ def main() -> int:
             "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
             geom_batch,
         )
+        if args.build_way_links and endpoints_batch:
+            conn.executemany(
+                """
+                INSERT INTO way_endpoints(
+                  way_id, ref_norm, highway, tunnel_flag,
+                  start_node_key, start_lon, start_lat,
+                  end_node_key, end_lon, end_lat, way_length_m
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                endpoints_batch,
+            )
         conn.commit()
 
     print(f"Ways done: {way_rows}", file=sys.stderr)
+
+    if args.build_way_links:
+        conn.executescript(
+            """
+            CREATE TEMP TABLE endpoint_nodes AS
+            SELECT
+              way_id,
+              ref_norm,
+              'start' AS endpoint_side,
+              start_node_key AS node_key,
+              start_lon AS lon,
+              start_lat AS lat
+            FROM way_endpoints
+            UNION ALL
+            SELECT
+              way_id,
+              ref_norm,
+              'end' AS endpoint_side,
+              end_node_key AS node_key,
+              end_lon AS lon,
+              end_lat AS lat
+            FROM way_endpoints;
+
+            CREATE INDEX idx_endpoint_nodes_key ON endpoint_nodes(node_key);
+            """
+        )
+        if args.way_links_schema == "detailed":
+            conn.executescript(
+                """
+                INSERT OR IGNORE INTO way_links(
+                  way_id, linked_way_id, shared_ref, shared_node_key
+                )
+                SELECT
+                  e1.way_id,
+                  e2.way_id,
+                  CASE
+                    WHEN e1.ref_norm <> '' AND e1.ref_norm = e2.ref_norm THEN 1
+                    ELSE 0
+                  END,
+                  e1.node_key
+                FROM endpoint_nodes e1
+                JOIN endpoint_nodes e2
+                  ON e1.node_key = e2.node_key
+                 AND e1.way_id <> e2.way_id;
+
+                CREATE INDEX idx_way_links_way_id ON way_links(way_id);
+                """
+            )
+        else:
+            conn.executescript(
+                """
+                INSERT OR IGNORE INTO way_links(
+                  way_id, linked_way_id
+                )
+                SELECT DISTINCT
+                  e1.way_id,
+                  e2.way_id
+                FROM endpoint_nodes e1
+                JOIN endpoint_nodes e2
+                  ON e1.node_key = e2.node_key
+                 AND e1.way_id <> e2.way_id;
+
+                CREATE INDEX idx_way_links_way_id ON way_links(way_id);
+                """
+            )
+
+        corridor_count = 0
+        corridor_progress_count = 0
+        corridor_pair_count = 0
+        if args.corridor_mode == "paired":
+            corridor_count, corridor_progress_count, corridor_pair_count = _build_corridor_progress(conn)
+        conn.executescript(
+            """
+            DROP TABLE endpoint_nodes;
+            DROP TABLE way_endpoints;
+            """
+        )
+        way_links_count = conn.execute("SELECT COUNT(*) FROM way_links").fetchone()[0]
+        conn.execute(
+            "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+            ("way_links_count", str(way_links_count)),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+            ("corridor_progress_mode", "paired_portal_chain_v1" if args.corridor_mode == "paired" else "none"),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+            ("corridor_count", str(corridor_count)),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+            ("corridor_progress_count", str(corridor_progress_count)),
+        )
+        conn.execute(
+            "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+            ("corridor_pair_count", str(corridor_pair_count)),
+        )
+        conn.commit()
+        print(f"Way links done: {way_links_count}", file=sys.stderr)
+        if args.corridor_mode == "paired":
+            print(
+                f"Corridor progress done: components={corridor_count} rows={corridor_progress_count} pairs={corridor_pair_count}",
+                file=sys.stderr,
+            )
 
     areas_payload = json.loads(areas_idx.read_text(encoding="utf-8"))
     areas = areas_payload.get("areas", [])

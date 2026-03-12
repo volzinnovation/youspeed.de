@@ -1,0 +1,21 @@
+{
+  "bundle_version": "2026-03-11-shared-node-corridor-hmm",
+  "country_code": "DEU",
+  "created_at_utc": "2026-03-11T23:05:15Z",
+  "db": {
+    "bytes": 134434816,
+    "file": "karlsruhe-regbez_speeds.sqlite",
+    "sha256": "90b8fa6148f002d2bfcfc4e2f4bcfa32c785fc9979775b8de097a5da049b7a79",
+    "url": null
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.0.0",
+  "region": "karlsruhe-regbez",
+  "schema_version": 1,
+  "self": {
+    "file": "karlsruhe-regbez_manifest.json",
+    "url": null
+  },
+  "variant": "v3"
+}

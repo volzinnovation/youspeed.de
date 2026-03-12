@@ -75,6 +75,13 @@ AREA_COLS = [
     "max_lat",
 ]
 
+WAY_LINK_COLS = [
+    "way_id",
+    "linked_way_id",
+    "shared_ref",
+    "link_kind",
+]
+
 
 @dataclass
 class WayOp:
@@ -144,6 +151,19 @@ def _id_sort_key(raw_id: str) -> Tuple[int, int | str]:
     if raw_id.isdigit():
         return (0, int(raw_id))
     return (1, raw_id)
+
+
+def _coerce_way_link_ids(way_ids: Sequence[str]) -> List[int]:
+    out: List[int] = []
+    for raw_id in way_ids:
+        text = str(raw_id).strip()
+        if not text:
+            continue
+        try:
+            out.append(int(text))
+        except ValueError as exc:
+            raise SystemExit(f"way_links requires numeric OSM way IDs, got: {raw_id!r}") from exc
+    return out
 
 
 def _table_exists(conn: sqlite3.Connection, db_alias: str, table: str) -> bool:
@@ -322,6 +342,55 @@ def _fetch_way_payload_rows(conn: sqlite3.Connection, db_alias: str, way_ids: Se
                 }
             )
     return out
+
+
+def _fetch_way_link_payload_rows(conn: sqlite3.Connection, db_alias: str, way_ids: Sequence[str]) -> List[dict]:
+    out: List[dict] = []
+    int_way_ids = _coerce_way_link_ids(way_ids)
+    if not int_way_ids:
+        return out
+    for chunk in _iter_chunks(int_way_ids, 500):
+        placeholders = ",".join(["?"] * len(chunk))
+        sql = f"""
+        SELECT
+          way_id,
+          linked_way_id,
+          shared_ref,
+          link_kind
+        FROM {db_alias}.way_links
+        WHERE way_id IN ({placeholders})
+           OR linked_way_id IN ({placeholders})
+        ORDER BY way_id, linked_way_id
+        """
+        params = list(chunk) + list(chunk)
+        for row in conn.execute(sql, params):
+            out.append(
+                {
+                    "way_id": int(row[0]),
+                    "linked_way_id": int(row[1]),
+                    "shared_ref": int(row[2]),
+                    "link_kind": row[3],
+                }
+            )
+    return out
+
+
+def _count_way_link_rows(conn: sqlite3.Connection, db_alias: str, way_ids: Sequence[str]) -> int:
+    int_way_ids = _coerce_way_link_ids(way_ids)
+    if not int_way_ids:
+        return 0
+    total = 0
+    for chunk in _iter_chunks(int_way_ids, 500):
+        placeholders = ",".join(["?"] * len(chunk))
+        sql = f"""
+        SELECT COUNT(*)
+        FROM {db_alias}.way_links
+        WHERE way_id IN ({placeholders})
+           OR linked_way_id IN ({placeholders})
+        """
+        params = list(chunk) + list(chunk)
+        total += int(conn.execute(sql, params).fetchone()[0])
+    return total
 
 
 def _bbox_from_nodes(node_refs: Sequence[str], node_coords: Dict[str, Tuple[float, float]]) -> Optional[Tuple[float, float, float, float]]:
@@ -598,11 +667,37 @@ def _compute_exact_area_delta(base_conn: sqlite3.Connection, target_alias: str) 
     return list(area_deletes.values()), area_inserts, stats
 
 
+def _compute_exact_way_link_delta(
+    base_conn: sqlite3.Connection,
+    target_alias: str,
+    changed_way_ids: Sequence[str],
+) -> Tuple[List[str], List[dict], dict]:
+    has_base = _table_exists(base_conn, "main", "way_links")
+    has_target = _table_exists(base_conn, target_alias, "way_links")
+    if not has_base and not has_target:
+        return [], [], {"delete_way_link_count": 0, "insert_way_link_count": 0, "way_links_mode": "disabled"}
+    if has_base != has_target:
+        raise SystemExit("Schema mismatch: way_links table must exist in both base and target DBs")
+    if not changed_way_ids:
+        return [], [], {"delete_way_link_count": 0, "insert_way_link_count": 0, "way_links_mode": "enabled"}
+
+    change_ids = sorted(set(changed_way_ids), key=_id_sort_key)
+    delete_count = _count_way_link_rows(base_conn, "main", change_ids)
+    inserts = _fetch_way_link_payload_rows(base_conn, target_alias, change_ids)
+    stats = {
+        "delete_way_link_count": delete_count,
+        "insert_way_link_count": len(inserts),
+        "exact_way_link_touch_way_count": len(change_ids),
+        "way_links_mode": "enabled",
+    }
+    return change_ids, inserts, stats
+
+
 def _compute_exact_delta(
     base_db: Path,
     target_db: Path,
     parsed: DiffParseResult,
-) -> Tuple[List[str], List[dict], List[dict], List[dict], dict]:
+) -> Tuple[List[str], List[dict], List[str], List[dict], List[dict], List[dict], dict]:
     conn = sqlite3.connect(str(base_db))
     conn.row_factory = sqlite3.Row
     try:
@@ -617,6 +712,7 @@ def _compute_exact_delta(
                 raise SystemExit(f"Invalid schema in {alias}. Missing table(s): {', '.join(missing)}")
 
         delete_ids, inserts, way_stats = _compute_exact_way_delta(conn, "targetdb")
+        way_link_delete_ids, way_link_inserts, way_link_stats = _compute_exact_way_link_delta(conn, "targetdb", delete_ids)
         area_deletes, area_inserts, area_stats = _compute_exact_area_delta(conn, "targetdb")
     finally:
         conn.close()
@@ -631,16 +727,19 @@ def _compute_exact_delta(
         "maxspeed_tag_changes": parsed.maxspeed_tag_changes,
     }
     stats.update(way_stats)
+    stats.update(way_link_stats)
     stats.update(area_stats)
     stats["skipped_insert_way_count"] = 0
     stats["skipped_non_drivable_way_count"] = 0
     stats["target_db"] = str(target_db)
-    return delete_ids, inserts, area_deletes, area_inserts, stats
+    return delete_ids, inserts, way_link_delete_ids, way_link_inserts, area_deletes, area_inserts, stats
 
 
 def _build_sql_patch(
     delete_ids: Sequence[str],
     inserts: Sequence[dict],
+    way_link_delete_ids: Sequence[str],
+    way_link_inserts: Sequence[dict],
     area_deletes: Sequence[dict],
     area_inserts: Sequence[dict],
     *,
@@ -658,6 +757,14 @@ def _build_sql_patch(
     lines.append(f"-- generated_at_utc={_now_utc()}")
     lines.append("BEGIN IMMEDIATE;")
     lines.append("PRAGMA foreign_keys=OFF;")
+
+    for chunk in _iter_chunks(sorted(set(way_link_delete_ids), key=_id_sort_key), 500):
+        int_chunk = _coerce_way_link_ids(chunk)
+        if not int_chunk:
+            continue
+        id_list = ",".join(str(v) for v in int_chunk)
+        lines.append(f"DELETE FROM way_links WHERE way_id IN ({id_list});")
+        lines.append(f"DELETE FROM way_links WHERE linked_way_id IN ({id_list});")
 
     for way_id in sorted(set(delete_ids), key=_id_sort_key):
         way_lit = _sql_literal(way_id)
@@ -697,6 +804,13 @@ def _build_sql_patch(
         lines.append(
             "INSERT INTO way_geom(way_id, points_json) "
             f"VALUES({way_lit}, {_sql_literal(ins['points_json'])});"
+        )
+
+    for ins in way_link_inserts:
+        lines.append(
+            "INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind) "
+            f"VALUES({int(ins['way_id'])}, {int(ins['linked_way_id'])}, "
+            f"{_sql_literal(ins['shared_ref'])}, {_sql_literal(ins['link_kind'])});"
         )
 
     for item in area_deletes:
@@ -818,6 +932,46 @@ def _assert_target_equivalence(patched_db: Path, target_db: Path) -> None:
                 f"(ways extra={way_extra} missing={way_missing} attr_diff={way_attr_diff} geom_diff={way_geom_diff})"
             )
 
+        has_way_links = _table_exists(conn, "p", "way_links") and _table_exists(conn, "t", "way_links")
+        if has_way_links:
+            way_link_extra = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM p.way_links pl
+                LEFT JOIN t.way_links tl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE tl.way_id IS NULL
+                """
+            ).fetchone()[0]
+            way_link_missing = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM t.way_links tl
+                LEFT JOIN p.way_links pl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE pl.way_id IS NULL
+                """
+            ).fetchone()[0]
+            way_link_attr_diff = conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM p.way_links pl
+                JOIN t.way_links tl
+                  ON pl.way_id = tl.way_id
+                 AND pl.linked_way_id = tl.linked_way_id
+                WHERE
+                  COALESCE(pl.shared_ref,0) != COALESCE(tl.shared_ref,0) OR
+                  COALESCE(pl.link_kind,'') != COALESCE(tl.link_kind,'')
+                """
+            ).fetchone()[0]
+            if any(v > 0 for v in (way_link_extra, way_link_missing, way_link_attr_diff)):
+                raise SystemExit(
+                    "Patch drift against target DB "
+                    f"(way_links extra={way_link_extra} missing={way_link_missing} attr_diff={way_link_attr_diff})"
+                )
+
         has_areas = (
             _table_exists(conn, "p", "areas")
             and _table_exists(conn, "p", "areas_rtree")
@@ -890,7 +1044,7 @@ def main() -> int:
     parsed = _parse_daily_diff(diff_file)
 
     if target_db is not None:
-        delete_ids, inserts, area_deletes, area_inserts, stats = _compute_exact_delta(base_db, target_db, parsed)
+        delete_ids, inserts, way_link_delete_ids, way_link_inserts, area_deletes, area_inserts, stats = _compute_exact_delta(base_db, target_db, parsed)
         generation_mode = "exact_db_diff"
     else:
         conn = sqlite3.connect(str(base_db))
@@ -902,14 +1056,20 @@ def main() -> int:
             missing = sorted(required - present)
             if missing:
                 raise SystemExit(f"Invalid v3 DB schema. Missing table(s): {', '.join(missing)}")
+            if _table_exists(conn, "main", "way_links"):
+                raise SystemExit("Heuristic OSC mode does not support way_links; rebuild target DB and use --target-db")
             delete_ids, inserts, area_deletes, area_inserts, stats = _compute_heuristic_delta(conn, parsed)
         finally:
             conn.close()
         generation_mode = "heuristic_osc"
+        way_link_delete_ids = []
+        way_link_inserts = []
 
     patch_sql = _build_sql_patch(
         delete_ids=delete_ids,
         inserts=inserts,
+        way_link_delete_ids=way_link_delete_ids,
+        way_link_inserts=way_link_inserts,
         area_deletes=area_deletes,
         area_inserts=area_inserts,
         from_version=args.from_version,

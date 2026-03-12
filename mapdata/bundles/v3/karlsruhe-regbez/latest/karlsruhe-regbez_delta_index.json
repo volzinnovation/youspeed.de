@@ -1,0 +1,32 @@
+{
+  "count": 2,
+  "entries": [
+    {
+      "delta_manifest_file": "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_2026-03-06.v3_delta_manifest_from_2026-03-03.json",
+      "from_bundle_version": "2026-03-03",
+      "patch_bytes": 193,
+      "patch_compression": "zlib",
+      "patch_file": "karlsruhe-regbez_2026-03-06.v3_patch_from_2026-03-03.sql",
+      "patch_sha256": "dc1186cb61a409ff62f05a956c6bd6c6828ee8a075f15aa4ba0033392a8b1241",
+      "patch_url": "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_2026-03-06.v3_patch_from_2026-03-03.sql",
+      "region": "karlsruhe-regbez",
+      "to_bundle_version": "2026-03-06"
+    },
+    {
+      "delta_manifest_file": "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_2026-03-09.v3_delta_manifest_from_2026-03-06.json",
+      "from_bundle_version": "2026-03-06",
+      "patch_bytes": 10391671,
+      "patch_compression": "zlib",
+      "patch_file": "karlsruhe-regbez_2026-03-09.v3_patch_from_2026-03-06.sql",
+      "patch_sha256": "e07345963584a3b534645e76d7549c6faee0607cfe7cbb8e5b9e239c17d6ef18",
+      "patch_url": "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_2026-03-09.v3_patch_from_2026-03-06.sql",
+      "region": "karlsruhe-regbez",
+      "to_bundle_version": "2026-03-09"
+    }
+  ],
+  "format": "youspeed.v3.delta.index",
+  "generated_at_utc": "2026-03-09T21:18:11Z",
+  "retention_count": 30,
+  "retention_days": 30,
+  "schema_version": 1
+}

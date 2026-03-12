@@ -40,6 +40,8 @@
             <input id="way-id-input" type="text" inputmode="numeric" placeholder="z. B. 17721265" />
             <button id="way-btn" type="button">Way zentrieren</button>
           </div>
+          <label for="log-file-input">Drive-Log</label>
+          <input id="log-file-input" type="file" accept=".ndjson,.jsonl,.json,application/json" />
         </div>
 
         <div class="meta">
@@ -49,6 +51,23 @@
           <div><span>Bundle:</span> <strong id="bundle-value">nicht geladen</strong></div>
         </div>
         <p id="status" class="status">Bereit.</p>
+
+        <section class="log-panel">
+          <h2>Drive-Log</h2>
+          <div id="log-summary" class="hint">Noch kein Log geladen.</div>
+          <div id="log-overview" class="overview-grid"></div>
+          <div id="log-breakdowns" class="breakdown-grid"></div>
+          <div id="log-list" class="log-list"></div>
+        </section>
+
+        <section class="trace-panel">
+          <h2>Ausgewaehlter Fix</h2>
+          <div id="trace-meta" class="hint">Kein Fix ausgewählt.</div>
+          <div id="trace-metrics" class="overview-grid"></div>
+          <div id="selection-trace" class="trace-block"></div>
+          <div id="candidate-trace" class="trace-block"></div>
+          <pre id="raw-entry" class="raw-block"></pre>
+        </section>
       </section>
       <section class="map-wrap" aria-label="Karte">
         <div id="map" class="map"></div>

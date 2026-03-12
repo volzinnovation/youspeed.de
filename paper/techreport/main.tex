@@ -18,7 +18,7 @@
 \usepgfplotslibrary{statistics}
 \pgfplotsset{compat=1.18}
 
-\title{Scalable Runtime Data Architectures for Low-Latency On-Device Speed-Limit Inference}
+\title{Youspeed.de Technical Report}
 
 \author{
   Raphael Volz \\
@@ -56,6 +56,8 @@ Subsequent work strengthened route-level inference in sparse regimes. \citet{rah
 This structure is mirrored in production engines. OSRM, Valhalla (Meili), and Mapbox map matching expose candidate emission controls, transition plausibility settings (including tunable GPS uncertainty or search radii), and confidence-style outputs for downstream consumers \citep{osrm_match_service,valhalla_meili,mapbox_map_matching_api}. To reduce online transition-check cost, precomputed transition structures have been proposed: FMM uses a UBODT-style table that turns many route-distance transition checks into fast lookups during inference \citep{yang2018fmm}.
 
 These studies primarily optimize candidate selection and path inference given an available road graph. In contrast, our contribution focuses on the systems layer around map data itself: physically tiled, content-addressed assets with independent update delivery and bounded local IO at query time. This targets a complementary bottleneck that is critical for country-scale, offline-first mobile speed-limit inference.
+
+The implemented app runtime is deliberately simpler than full route-level HMM inference. It uses per-fix geometric scoring plus lightweight continuity heuristics (preferred-way hysteresis, same-ref segment promotion, and tunnel gating tied to recent route context) rather than a multi-step probabilistic sequence model. The related-work discussion is therefore used here as architectural context and benchmark motivation, not as a claim that the implementation reproduces the full model class used by prior map-matching systems.
 
 Spatial access methods are central to this systems layer. The R-tree introduced by \citet{guttman1984} established the foundational dynamic index for multi-dimensional range search and remains a standard basis for geographic candidate retrieval in database systems. Here, R-tree-based indexing is evaluated not as a new algorithmic contribution, but as an architectural instrument to control candidate fan-out and improve practical query latency at country scale.
 
@@ -116,35 +118,70 @@ On device, multiple downloaded regional bundles can coexist. Runtime bundle rout
 \subsection{North-star outcome}
 The intended end state is a trusted open-data ISA retrofit platform that remains offline-capable and low-latency while improving continuously through external baselines and validated community observations. In that state, day-to-day user utility, auditable data operations, and reproducible research claims are aligned.
 
-\subsection{Implemented runtime inference pipeline (current app)}
-To avoid concept drift between architecture text and implementation, this subsection documents the currently implemented per-fix inference order in the iPhone runtime:
+\subsection{Implemented runtime inference pipeline}
+To avoid concept drift between architecture text and implementation, this subsection documents the implemented per-fix inference order in the iPhone runtime:
+\[
+\text{for fix } t,\quad C_t = \{\text{retrieved candidate ways for fix } t\}
+\]
+\[
+s_{\mathrm{geom}}(t,i)=
+\begin{cases}
+d_{t,i} + \lambda_h \cdot \Delta\theta_{t,i}, & \text{if } v_t \ge \SI{8}{km/h} \text{ and } a_t < 45^\circ \\
+d_{t,i}, & \text{otherwise}
+\end{cases}
+\]
+where \(i \in C_t\), \(d_{t,i}\) is the exact geometry distance from fix \(t\) to candidate way \(i\), \(\Delta\theta_{t,i}\) is the bidirectional heading mismatch in degrees, \(v_t\) is vehicle speed, \(a_t\) is heading accuracy, and \(\lambda_h=\SI{1.8}{m/deg}\).
+
+For candidate-trace ranking and diagnostics, the runtime derives a second score that applies continuity class before geometry:
+\[
+\beta(c)=
+\begin{cases}
+0 & \text{preferredWay}\\
+1 & \text{sameRef}\\
+2 & \text{linkedWay}\\
+3 & \text{recentWay}\\
+4 & \text{none}
+\end{cases}
+\qquad
+W_t = 1 + \max_{k \in C_t} s_{\mathrm{geom}}(t,k)
+\]
+\[
+s_{\mathrm{trace}}(t,i) = \beta(c_{t,i})\cdot W_t + s_{\mathrm{geom}}(t,i)
+\]
+Here \(c_{t,i}\) is the continuity class assigned to candidate \(i\) at fix \(t\). Because \(s_{\mathrm{geom}}(t,i) < W_t\) for every \(i \in C_t\), a one-band change in \(\beta(\cdot)\) always dominates any geometric-score difference within the same fix. The resulting order is therefore lexicographic by continuity class first and raw geometry second: every \texttt{preferredWay} candidate ranks ahead of every \texttt{sameRef} candidate, every \texttt{sameRef} candidate ranks ahead of every \texttt{linkedWay} candidate, and so on; within the same continuity band, lower geometric score still wins.
 \begin{enumerate}
 \item \textbf{Candidate retrieval (RTree prefilter).} For each GPS fix, the app queries \texttt{ways\_rtree} in a bounded radius and loads way attributes from \texttt{ways}; if available, \texttt{way\_geom} polyline points are used for exact geometry distance.
-\item \textbf{Geometric and directional scoring.} Candidate score is distance plus heading mismatch penalty. Heading contributes only when vehicle speed is at least \SI{8}{km/h} and heading accuracy is better than \(45^\circ\); mismatch is weighted by \(\lambda_h=\SI{1.8}{m/deg}\).
+\item \textbf{Geometric and directional scoring.} The raw per-candidate score used by the matcher is \(s_{\mathrm{geom}}\): distance plus heading mismatch penalty. Heading contributes only when vehicle speed is at least \SI{8}{km/h} and heading accuracy is better than \(45^\circ\); mismatch is weighted by \(\lambda_h=\SI{1.8}{m/deg}\).
 \item \textbf{Continuity context and hysteresis.} The matcher keeps a short continuity context consisting of the previous matched way, recent matched ways, recent street refs, recent tunnel candidates, and a recent GPS-signal-loss flag. If a previous matched way remains plausible, the runtime may keep it within a small slack (\SI{12}{m}) and an accuracy-adjusted distance bound, reducing oscillation between nearby candidates.
 \item \textbf{Same-ref transition handling.} If the current best candidate shares the same normalized \texttt{ref} as the previous way, the matcher may promote a segment transition instead of holding the old segment. This transition is preferred once the old segment is near an endpoint and the alternative segment is not materially farther away. The goal is to stabilize progression along one numbered route while still allowing segment changes at intersections.
+\item \textbf{Connected-transition gate.} If the bundle contains \texttt{way\_links}, the runtime derives a directed adjacency graph \(E \subseteq W \times W\) from exact shared endpoints. After a warm start of three matched fixes and in the absence of recent GPS loss, candidate selection is restricted to
+\[
+\widetilde{C}_t=\left\{i \in C_t \mid i=p_t \;\lor\; i \in R_t \;\lor\; \exists j \in R_t:(j,i)\in E \right\},
+\]
+where \(p_t\) is the preferred way and \(R_t\) is the recent matched-way set. This gate is applied before heuristic ranking and before mini-HMM expansion, which makes disconnected hops impossible once continuity has stabilized while still leaving the first few fixes unconstrained.
+\item \textbf{Continuity-aware candidate trace scoring.} For logs, inspector output, and candidate-trace visualization, the runtime computes \(s_{\mathrm{trace}}\) from continuity band plus \(s_{\mathrm{geom}}\). This makes the reported candidate order reflect the effective continuity preference: \texttt{preferredWay} \(<\) \texttt{sameRef} \(<\) \texttt{linkedWay} \(<\) \texttt{recentWay} \(<\) \texttt{none}. As a result, a geometrically good but non-continuous alternative can still rank below a continuity-preserving candidate, while a non-continuous candidate that is not the best geometric option will rank behind both better geometric peers in the same \texttt{none} band and all candidates in stronger continuity bands.
 \item \textbf{Speed-source derivation on the selected way.} Speed precedence on the matched way is: explicit \texttt{maxspeed} parse, then inherited regulatory tags (\texttt{maxspeed:type}/\texttt{source:maxspeed}: urban/rural/motorway), then highway-class prior.
 \item \textbf{Inside-city classification (primary rule).} If the matched way class is one of \texttt{residential}, \texttt{service}, \texttt{crossing}, or \texttt{living\_street}, the fix is classified as in-city directly.
 \item \textbf{Inside-city classification (fallback rule).} For other way classes, the runtime evaluates residential polygon containment in \texttt{areas.residential}. This polygon path is also used by the benchmarked polycontainment query.
 \item \textbf{City label resolution for UI and logging.} City name/source metadata is resolved from area/place context (\texttt{areas}, \texttt{city\_boundary}, \texttt{city\_ring}) and attached to the result for traceability; this label path is not the primary in-city classifier.
 \item \textbf{Effective speed output and fallback.} At app level, final speed precedence is local per-way override first, then selected-way speed. If selected speed comes only from coarse highway class and in-city status is known, legal urban/rural default (\SI{50}{km/h}/\SI{100}{km/h}) overrides the class prior. If no way speed exists but a way match and in-city status are available, legal default is applied. If only in-city status is available without a way speed, conservative \SI{50}{km/h} fallback is used.
-\item \textbf{Tunnel context gating.} Tunnel candidates are filtered before final selection. A tunnel-tagged way is accepted only if it is the previous matched way, if it is connected through shared route identity (\texttt{ref}) to recent continuity context, or after a recent GPS-signal loss when the tunnel candidate was already observed in the nearby-candidate set. This reduces false switches to unrelated tunnel-tagged geometry.
+\item \textbf{Tunnel context gating.} Tunnel candidates are filtered before final selection. A tunnel-tagged way is accepted only if it is the previous matched way, if it is connected through shared route identity (\texttt{ref}) and available topology links to recent continuity context, or after a recent GPS-signal loss when the tunnel candidate was already observed in the nearby-candidate set. This reduces false switches to unrelated tunnel-tagged geometry, but it also means that bundles without \texttt{way\_links} topology cannot validate shared-ref portal entry from geometry alone.
 \item \textbf{Tunnel context output.} If the selected way passes tunnel gating and carries truthy \texttt{tunnel}, the fix is marked tunnel segment. The UI switches to tunnel icon emphasis, keeps the matched speed limit visible, and suppresses penalty notices while tunnel mode is active.
 \item \textbf{Context output for downstream logic.} Each lookup also returns \texttt{way\_id}, street display name (\texttt{street\_name}/\texttt{ref}), city label/source, candidate counts, timing, and tunnel flag.
 \end{enumerate}
 
 \subsection{Tunnel mode state machine}
-Tunnel handling in the current app is deterministic but no longer purely tag-driven:
+Tunnel handling in the app is deterministic and not purely tag-driven:
 \begin{itemize}
 \item Session state is \texttt{inactive} or \texttt{active}.
 \item On each fix, \texttt{isTunnelSegment} from the gated matched-way decision drives the state (\texttt{active} if true, else \texttt{inactive}).
-\item Entry into tunnel mode is therefore possible only through continuity to the previous route context or after a recent signal-loss event that still has a remembered tunnel candidate.
+\item Entry into tunnel mode is therefore possible only through continuity to the previous route context, through shared-ref portal validation backed by optional \texttt{way\_links} topology, or after a recent signal-loss event that still has a remembered tunnel candidate.
 \item If lookup service is unavailable, continuity context records a recent GPS-signal-loss event and tunnel state is reset until the next successful gated match.
-\item There is still no dedicated portal detector, no inertial tunnel tracking, and no explicit exit hysteresis beyond the next successful non-tunnel match.
+\item There is no dedicated portal detector, no inertial tunnel tracking, and no explicit exit hysteresis beyond the next successful non-tunnel match.
 \end{itemize}
 
 \subsection{Runtime bundle structures used by inference}
-The implemented inference stack depends on attributes that are now materialized in scenario bundles (S1--S4), including:
+The implemented inference stack depends on attributes materialized in scenario bundles (S1--S4), including:
 \begin{itemize}
 \item \textbf{Way-level context in \texttt{ways}:} \texttt{street\_name}, \texttt{ref}, \texttt{approx\_heading\_deg}, \texttt{service}, \texttt{tunnel}, \texttt{highway}, plus speed-related tags.
 \item \textbf{Area context in \texttt{areas}:} \texttt{boundary}, \texttt{admin\_level}, \texttt{residential}, \texttt{parking}, and geometry/bbox data for containment and city-label resolution.
@@ -154,20 +191,20 @@ The implemented inference stack depends on attributes that are now materialized 
 
 \section{International Fine Rules and Country Bundles}
 \subsection{Motivation}
-The architecture now treats speed-limit inference and sanction inference as two coupled but separable concerns. Speed-limit inference is map-driven and query-latency critical. Fine/warning inference is regulation-driven and jurisdiction-specific. For cross-border operation, country-specific legal rules must be versioned and deployed with the corresponding map bundle, otherwise the app can combine correct speed-limit lookup with incorrect warning semantics.
+The architecture treats speed-limit inference and sanction inference as two coupled but separable concerns. Speed-limit inference is map-driven and query-latency critical. Fine/warning inference is regulation-driven and jurisdiction-specific. For cross-border operation, country-specific legal rules must be versioned and deployed with the corresponding map bundle, otherwise the app can combine correct speed-limit lookup with incorrect warning semantics.
 
 This extension targets the 10 countries with the highest maxspeed availability (Netherlands, Romania, Luxembourg, Belgium, Sweden, Liechtenstein, Iceland, Germany, Monaco, United Kingdom), while keeping the same runtime interface for future country additions.
 
 \subsection{Country-bundle approach}
-In the current repository state, generated v3 manifests carry region-scoped artifact names and explicit region identity:
+Generated v3 manifests carry region-scoped artifact names and explicit region identity:
 \begin{itemize}
 \item \texttt{region}: active bundle region identifier (for example \texttt{germany}, \texttt{karlsruhe-regbez}).
 \item \texttt{country\_code}: ISO alpha-3 identifier for the legal regime of the bundle.
-\item \texttt{db}/\texttt{db\_parts}: main runtime database artifact(s), currently named \texttt{<region>\_speeds.sqlite} (or split \texttt{.partNNN} assets).
-\item \texttt{self}: manifest artifact, currently named \texttt{<region>\_manifest.json}.
+\item \texttt{db}/\texttt{db\_parts}: main runtime database artifact(s), named \texttt{<region>\_speeds.sqlite} (or split \texttt{.partNNN} assets).
+\item \texttt{self}: manifest artifact, named \texttt{<region>\_manifest.json}.
 \end{itemize}
 
-For large countries that are region-sharded, all regional manifests share the same \texttt{country\_code}. Rule selection is resolved at runtime from this code; the app loads bundled \texttt{<ISO3>-rules.json} and falls back to DEU rules if country-specific rules are unavailable. The manifest field \texttt{penalty\_rules} is supported by the app parser as an optional override artifact, but the currently generated manifests use bundled rule files as the default.
+For large countries that are region-sharded, all regional manifests share the same \texttt{country\_code}. Rule selection is resolved at runtime from this code; the app loads bundled \texttt{<ISO3>-rules.json} and falls back to DEU rules if country-specific rules are unavailable. The manifest field \texttt{penalty\_rules} is supported by the app parser as an optional override artifact, and generated manifests use bundled rule files by default.
 
 This makes legal-rule deployment deterministic, cacheable, and auditable in the same way as map artifacts, while preserving offline operation.
 
@@ -356,14 +393,16 @@ Table~\ref{tab:speed_limit_provenance} separates explicit and implicit speed-lim
 
 \subsubsection{Shared preprocessing and scope}
 All four scenarios are generated from the same OSM extract (Geofabrik \texttt{germany-latest.osm.pbf}) \cite{geofabrik2026}. Preprocessing follows a file-based parsing workflow \cite{pyosmium} and does not rely on a separately deployed database server. The retained road network includes car-drivable \texttt{highway=*} categories (major roads, local roads, and connector links), ensuring that scenario differences arise from runtime data architecture and query execution rather than from differing road subsets.
+For current bundle generation, retained way geometries are serialized with endpoint-preserving downsampling and a conservative cap of 24 points per way. This cap was selected after inspecting raw node-count distributions on the same retained drivable-way subset for both the Karlsruhe seed PBF and the Netherlands release PBF: the empirical \(p95\) was 16 and 17 nodes, only 1.80\% and 1.94\% of retained ways exceeded 24 nodes, and the cap preserved 95.6\% and 95.9\% of raw polyline points, respectively. A lower knee exists near 16 points, but 24 was chosen as the cross-region default to reduce long-tail truncation in production bundles.
 
 
 \subsection{Three query types}
-We use typical location-based queries to lookup speed limits for a vehicle in motion. All queries use the same score:
+We use typical location-based queries to lookup speed limits for a vehicle in motion. For the scenario benchmark, all queries use the same geometric score:
 \[
 \text{score} = d + \lambda_h \cdot \Delta\theta + p_u
 \]
 where \(d\) is the geometry term, \(\lambda_h\) heading weight (\si{m/deg}), \(\Delta\theta\) bidirectional heading mismatch, and \(p_u\) optional unknown-highway penalty.
+This benchmark score intentionally excludes the runtime continuity-band term \(s_{\mathrm{trace}}\): the benchmark compares geometry-query architectures, whereas continuity-aware ordering is an app-level matching and trace-interpretation layer applied after candidate retrieval.
 
 \textbf{bbox query.} \(d\) is haversine distance from the probe to the clamped point on a candidate bbox. It is the fastest approximation and is used as the coarse filter in every scenario.
 
@@ -524,6 +563,42 @@ Based on current results, \textbf{S3} is selected as default on-device runtime: 
 
 For polygon containment (in-city/out-city classification), the measured city-context retrieval stage is \(3.14\) ms (S1), \(0.81\) ms (S2), \(0.74\) ms (S3), and \(2.79\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
 
+\subsection{Field-log reassessment: tunnels, Autobahn corridors, and model selection}
+Replaying the nine bundled inspector logs yields 11{,}259 matched fixes. This corpus includes motorway entry and exit behavior, tunnel approaches, and the corrected Loffenau sequence. The disconnected hop from L 564 onto service way 16654539 stays eliminated after warmup because the shared-endpoint graph gate removes candidates that are not connected to the recent path.
+
+Two matcher profiles were evaluated on the same S3 query layer. The first is a \emph{connected baseline}: nearest-distance selection with connected-way continuity, low-speed heading-change transitions, and tunnel/motorway lock modes that only admit entry or exit at shared nodes. Its bundle stores \texttt{way\_links\_mode=shared\_endpoint\_minimal} with 433{,}504 directed adjacency pairs and no corridor tables, for a file size of 113{,}795{,}072 bytes. The second is the selected \emph{shared-node corridor HMM}: a detailed shared-endpoint graph with \texttt{way\_links\_mode=shared\_endpoint\_detailed}, 435{,}372 directed adjacency edges, 2{,}345 corridor chains, 11{,}961 \texttt{corridor\_progress} rows, and 1{,}656 explicit \texttt{corridor\_pairs}, for a file size of 134{,}434{,}816 bytes.
+
+The corridor precompute uses only shared nodes and branch nodes as legal entry, exit, and split points. Let \(G_k=(V_k,E_k)\) denote the subgraph induced by ways of corridor kind \(k \in \{\text{tunnel},\text{motorway}\}\). Let \(P_k \subseteq V_k\) be the set of nodes shared with admissible outside ways: surface ways for tunnels and \texttt{motorway\_link} ways for motorways. The boundary-node set is
+\[
+B_k = P_k \cup \{v \in V_k \mid \deg_{G_k}(v) \neq 2\}.
+\]
+A corridor \(c\) is then a maximal chain of ways in \(G_k\) between two nodes in \(B_k\). For each side node \(p \in B_k\), the bundle attaches a paired approach chain: a local surface chain for tunnels or a \texttt{motorway\_link} chain for motorways, both starting at the same shared node \(p\). This representation captures the ``multiple nodes at entry and exit'' semantics without treating an entire motorway network or an entire same-ref surface network as one corridor.
+
+The selected runtime augments candidate identity \(i \in C_t\) with both corridor identity \(c_t\) and corridor phase \(z_t\), where
+\[
+Z=\{\text{surface},\text{tunnelEntry},\text{tunnelInside},\text{tunnelExit},\text{motorwayEntry},\text{motorwayInside},\text{motorwayExit}\}.
+\]
+The mini-HMM recurrence is
+\[
+J_t(i,c,z)= s_{\mathrm{geom}}(t,i) + \phi_t(i,c,z) + \min_{(j,c',z')} \left[J_{t-1}(j,c',z') + \tau\big((j,c',z'),(i,c,z)\big)\right].
+\]
+Here \(\phi_t(i,c,z)\) is low only when way \(i\) belongs to corridor \(c\) or to one of its paired approach chains compatible with phase \(z\). The transition term \(\tau\) forbids or heavily penalizes moves that violate shared-node legality, such as \(\text{surface}\rightarrow\text{tunnelInside}\) without a paired portal chain or \(\text{motorwayInside}\rightarrow\text{surface}\) without a paired exit ramp.
+
+Model selection uses a common score that balances replay accuracy, query time, and bundle size. Let \(a\) be hindsight accuracy, \(r\) changed-example recall, and \(u\) unchanged-example accuracy. The accuracy composite is
+\[
+A = 0.5a + 0.25r + 0.25u.
+\]
+Let \(t\) be service-query \(p95\) latency and \(b\) bundle bytes, with \(t_{\min}\) and \(b_{\min}\) the best values across compared models. The final selection score is
+\[
+S = 100 \left(0.7A + 0.2\frac{t_{\min}}{t} + 0.1\frac{b_{\min}}{b}\right).
+\]
+
+Under this protocol, the connected baseline yields \(a=93.37\%\), \(r=49.45\%\), \(u=96.67\%\), \(A=0.8321\), geom-log agreement \(80.45\%\), service-query \(p95=0.151\) ms, and \(S=88.25\). The shared-node corridor HMM yields \(a=96.13\%\), \(r=72.51\%\), \(u=97.90\%\), \(A=0.9066\), geom-log agreement \(85.80\%\), service-query \(p95=0.156\) ms, and \(S=91.21\). The corridor model is therefore selected despite an \(18.1\%\) larger bundle and a modest latency increase, because its replay accuracy and stability are materially better.
+
+The tunnel-specific evidence also separates the two models clearly. On the two geom logs, the connected baseline enters tunnels 82 times although the recorded app selections contain 0 tunnel fixes there, whereas the corridor HMM records 0 tunnel selections and avoids those false commits. Across the nine inspector logs, the selected corridor model records 103 tunnel fixes, all concentrated in \texttt{drive\_match\_log-3}; both profiles keep way 313127285 confined to that log and select it 0 times in the other driving logs.
+
+The remaining gap is under-commitment in the geom tunnel logs: the shared-node corridor HMM still does not recover those real tunnel traversals, even though it models legal entry and exit correctly. The field data indicate that tunnel traversal often retains GPS fixes while horizontal accuracy and signal bars deteriorate only later inside the tunnel. The next model improvement therefore belongs in the emission side of the corridor HMM: along-chain portal progress and delayed signal-quality deterioration inside the committed tunnel corridor.
+
 \section{Incremental Data Updates}
 Incremental update behavior was evaluated on a 30-day daily-diff window ending immediately before the baseline snapshot date (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\)). The analysis quantifies daily network churn, speed-tag churn, and scenario-specific refresh effort under a common observation period for the Germany subset of OSM.
 
@@ -574,6 +649,8 @@ S4 & + & + \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+The next development cycle targets corridor-HMM emissions rather than another topology expansion. Priority 1 is to keep the shared-node corridor representation and publish the same \texttt{way\_links}/\texttt{corridor\_pairs} topology in every S3 region. Priority 2 is to add stronger tunnel-commit evidence inside already selected corridor chains, especially delayed signal-quality deterioration and along-chain progress after portal entry. Priority 3 is to evaluate whether a learned corridor-transition gate adds measurable benefit over the selected shared-node corridor HMM and the simpler connected baseline on the expanded field-log corpus.
 
 \section*{Reproducibility}
 All preprocessing, scenario construction, and benchmark steps are parameterized and versioned in the accompanying research codebase available at \url{https://github.com/volzinnovation/youspeed.de}. The evaluation reported here is tied to the Germany snapshot dated 2026-02-23, with fixed probe location, heading, query modes, and scenario definitions stated in the methodology and evaluation sections. 

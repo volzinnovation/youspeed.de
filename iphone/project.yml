@@ -25,6 +25,18 @@ targets:
         buildPhase: resources
       - path: SpeedConsumerApp/Rules
         buildPhase: resources
+      - path: SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib
+        buildPhase: resources
+    preBuildScripts:
+      - name: Inflate seed bundle
+        script: |
+          python3 "${PROJECT_DIR}/../scripts/iphone/inflate_bundled_seed.py" \
+            "${PROJECT_DIR}/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib" \
+            "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/karlsruhe-regbez_speeds.sqlite"
+        inputFiles:
+          - $(PROJECT_DIR)/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/karlsruhe-regbez_speeds.sqlite
     settings:
       base:
         DEVELOPMENT_TEAM: F4CT29PZS5
@@ -54,9 +66,8 @@ targets:
           - "SpeedDBBenchUITests.swift"
           - "SpeedDBBenchTests.swift"
           - "README.md"
-      - path: SpeedDBBenchSketch/speeds_v3.sqlite
-        buildPhase: resources
-      - path: SpeedDBBenchSketch/speeds_v4.sqlite
+      - path: SpeedConsumerApp/V3SpeedLimitService.swift
+      - path: SpeedDBBenchSketch/BenchmarkAssets
         buildPhase: resources
     settings:
       base:

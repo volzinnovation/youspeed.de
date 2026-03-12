@@ -543,8 +543,8 @@ actor V3BundleManager {
     }
 
     func bootstrapSeedIfNeeded(resourceName: String = "karlsruhe-regbez_speeds", bundle: Bundle = .main) throws -> BundleSyncResult {
-        let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite")
         let seedDBFileName = "\(resourceName).sqlite"
+        let bundledSeed = bundle.url(forResource: resourceName, withExtension: "sqlite")
 
         if let state = try activeState() {
             let dbURL = try resolveDatabaseURL(for: state)
@@ -576,7 +576,7 @@ actor V3BundleManager {
             try? clearActiveState()
         }
 
-        guard let source = bundledSeed else {
+        guard let bundledSeed else {
             // Bundled seed is optional; app can continue with manifest/release download flow.
             return BundleSyncResult(
                 mode: .upToDate,
@@ -585,7 +585,7 @@ actor V3BundleManager {
                 details: "no bundled seed resource"
             )
         }
-        try quickValidateDB(at: source, runQuickCheck: false)
+        try quickValidateDB(at: bundledSeed, runQuickCheck: false)
 
         try writeActiveState(
             ActiveBundleState(
@@ -593,7 +593,7 @@ actor V3BundleManager {
                 bundleVersion: "seed",
                 dbFileName: seedDBFileName,
                 activatedAtUTC: nowUTC(),
-                dbPath: source.path
+                dbPath: bundledSeed.path
             )
         )
         let seedDir = try bundlesDir().appendingPathComponent("seed", isDirectory: true)
@@ -602,7 +602,7 @@ actor V3BundleManager {
         return BundleSyncResult(
             mode: .bootstrap,
             bundleVersion: "seed",
-            dbPath: source.path,
+            dbPath: bundledSeed.path,
             details: "seed bundle referenced"
         )
     }
