@@ -1,359 +1,228 @@
-# YouSpeed Project Plan
+# Aggressive Germany Launch Plan
 
 Date: 2026-03-12
 
-Purpose: turn the original bootstrap vision into a concrete execution plan for the next months.
+Public goal: YouSpeed is live in the German App Store by `2026-05-22`.
 
 Visual timeline:
+- [PROJECT_GANTT_2026-03-12.html](./PROJECT_GANTT_2026-03-12.html)
 - [PROJECT_GANTT_2026-03-12.md](./PROJECT_GANTT_2026-03-12.md)
 
-This plan is based on:
-- `RESEARCH_IMPLEMENTATION_PLAN.md` (`2026-02-22`)
+Execution threads:
+- [launch_threads/README.md](./launch_threads/README.md)
+- [launch_threads/TRACK_A_PAPER.md](./launch_threads/TRACK_A_PAPER.md)
+- [launch_threads/TRACK_B_SEED_AND_MATCHER.md](./launch_threads/TRACK_B_SEED_AND_MATCHER.md)
+- [launch_threads/TRACK_C_GERMANY_PIPELINE.md](./launch_threads/TRACK_C_GERMANY_PIPELINE.md)
+- [launch_threads/TRACK_D_IPHONE_LAUNCH.md](./launch_threads/TRACK_D_IPHONE_LAUNCH.md)
+- [launch_threads/TRACK_E_ANDROID_ALPHA.md](./launch_threads/TRACK_E_ANDROID_ALPHA.md)
+- [launch_threads/TRACK_F_RELEASE_SURFACE.md](./launch_threads/TRACK_F_RELEASE_SURFACE.md)
+
+This plan is grounded in:
+- `RESEARCH_IMPLEMENTATION_PLAN.md`
 - `paper/share/VISION.md`
-- `sprint_review.md`
 - `docs/KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`
 - `iphone/SpeedConsumerApp/README.md`
+- `iphone/SpeedConsumerApp/BundleTargets.top10.json`
 - `docs/STANDUP_2026-03-06.md`
 
-## 1) Strategic decision order
+## Summary
 
-The project sequence must stay strict. We should not blur phases just because partial code exists.
+Launch assumptions:
+- public App Store launch on `2026-05-22`, not TestFlight or private beta
+- Germany-wide launch using the existing regional-shard architecture
+- full bundles only at launch across Germany; incremental updates are not a launch requirement
+- paper deadline outranks noncritical launch polish if the two compete
+- Android runs in parallel now as an internal-alpha track, but Android release parity does not block May 22
 
-1. iPhone first, Karlsruhe seed first.
-2. Only after Karlsruhe seed is stable do we expand to more regions with full bundles.
-3. Only after multi-region full-bundle delivery is stable do we operationalize incremental updates across regions.
-4. Only after the iPhone product and data contract are stable do we port to Android.
-5. Only after iPhone and Android are both real deliverables do we expose public store links on the website.
-6. Papers must be aligned with the actually validated system state, not the aspirational architecture.
+Launch contract:
+- Germany launch uses the shard model already defined in `BundleTargets.top10.json`
+- launch-day data promise is full-bundle download support for every Germany shard
+- `delta_index` remains optional in launch manifests; its absence must not block download, activation, or routing
+- the iPhone app must stop behaving like a Karlsruhe-only product; Karlsruhe remains the seed and validation baseline, not the public coverage boundary
+- website launch copy must be Germany-only and iPhone-only; no Android public CTA before Android release parity exists
 
-This means:
-- the current website is still ahead of the product and must not drive scope,
-- GitHub release manifests/assets remain the primary update transport for now,
-- "website-based incremental update" is not a separate phase-1 protocol; it is a later packaging/distribution decision on top of the validated bundle contract.
+Existing interfaces to keep:
+- keep `V3BundleManifest`, `V3BundleTargetsConfig`, `BundleArtifact`, and current coverage metadata as the launch contract
+- do not introduce a new wire format before launch
+- keep `YouSpeedV3ManifestURL` as a dev override only; launch behavior must prefer bundled Germany endpoint discovery
+- Android alpha must consume the same manifest and target contract as iPhone
 
-## 2) Current state on 2026-03-12
+## Tracks
 
-### Already in place
+### Track A: Paper-critical evidence
 
-- `v3` is the selected runtime format.
-- The iPhone consumer app exists and uses a bundled Karlsruhe seed DB.
-- The app already contains manifest sync, full-bundle download, and delta-patch application code paths.
-- Karlsruhe PBF maintenance and incremental bundle workflows exist in CI.
-- Matching quality improved materially with continuity scoring, tunnel gating, and `way_links`.
-- The architecture/pipeline paper track already exists (`ITSC` draft + tech report).
+Window: `2026-03-12` to `2026-04-05`
 
-### Not yet done in a release-grade sense
+Objectives:
+- refresh route-level evaluation from real drives and regression corpora
+- freeze claims to what the evidence supports
+- produce submit/defer decision by `2026-04-05`
 
-- no freshly regenerated Karlsruhe seed bundle has been treated as the locked product baseline,
-- no full end-to-end public-quality validation of seed -> manifest -> delta patch -> active DB has been completed on device,
-- no multi-region release set has been stabilized,
-- no cross-region incremental update operation has been proven over time,
-- no Android consumer app exists,
-- no real App Store / Google Play release exists,
-- the website still contains placeholder download CTAs and therefore must stay non-public or be reduced to non-store messaging.
+Deliverables:
+- paper artifact refresh completed
+- route-level metrics tied to the current matcher implementation
+- explicit submit or defer outcome
 
-## 3) Phase gates
+### Track B: Karlsruhe seed and matcher hardening
 
-We should use explicit gates and stop advancing until each gate is met.
+Window: `2026-03-12` to `2026-03-23`
 
-### Gate A: Karlsruhe seed product gate
+Objectives:
+- regenerate Karlsruhe full bundle and seed baseline
+- rebuild bundled seed DB
+- run seed-specific regression and real-drive validation
+- fix legal fallback, startup recovery, and route-continuity defects
 
-Required before any regional scale-out:
-- generate a fresh Karlsruhe full bundle from the current pipeline,
-- embed the corresponding seed DB in the iPhone app,
-- validate startup, driving, recovery, and route continuity on device,
-- fix any legal fallback or route-matching defects found during field drives,
-- freeze one Karlsruhe seed baseline for downstream work.
+Deliverables:
+- accepted Karlsruhe seed baseline
+- bundled seed DB rebuilt from that exact artifact lineage
+- launch-critical matcher defects fixed or triaged out of scope
 
-### Gate B: Karlsruhe incremental-update gate
+### Track C: Germany shard data pipeline
 
-Required before multi-region incrementals:
-- produce at least one real seed -> dated-version delta chain from the maintained Karlsruhe snapshot,
-- validate on-device full sync and delta sync against real release assets,
-- verify fallback from invalid/old delta chain to full bundle,
-- verify retention, checksum, resume/retry, and background download behavior.
+Window: `2026-03-12` to `2026-04-20`
 
-### Gate C: Multi-region full-bundle gate
+Objectives:
+- generate and publish full-bundle assets for all Germany shards
+- validate manifest correctness, coverage metadata, multipart handling, and release naming
+- keep all non-Germany country work out of scope before launch
+- keep shard incrementals out of the launch requirement
 
-Required before multi-region incrementals:
-- publish a small supported region set with full bundles only,
-- verify bundle discovery/selection/routing between regions,
-- verify operational costs: build time, artifact size, release time, device storage.
+Deliverables:
+- Germany shard full-bundle release set
+- validated shard manifests and coverage metadata
+- launch decision that Germany support is nationwide via shards
 
-### Gate D: Multi-region incremental gate
+### Track D: iPhone Germany launch path
 
-Required before Android and public release:
-- prove daily or frequent update operation across the supported region set,
-- verify per-region state handling, stale-chain fallback, and asset retention,
-- demonstrate stable operations for at least two weeks without manual repair.
+Window: `2026-03-20` to `2026-05-01`
 
-### Gate E: Product parity gate
+Objectives:
+- switch app behavior from Karlsruhe-first to Germany-shard-first discovery
+- validate bundle picker, expected size display, activation, coverage routing, and first-run UX
+- ensure launch-time install/update succeeds without `delta_index`
+- produce a launch candidate by `2026-05-01`
 
-Required before public store release:
-- Android app reaches functional parity with the validated iPhone bundle/update contract,
-- both apps pass the supported-region smoke matrix,
-- store/legal/support assets are ready.
+Deliverables:
+- iPhone launch candidate
+- Germany shard discovery working from bundled targets
+- full-bundle-only launch path validated
 
-## 4) Milestone plan and timing
+### Track E: Android internal alpha
 
-Dates below are internal target windows, not guarantees. They are chosen to enforce sequence.
+Window: `2026-03-12` to `2026-05-22`
+
+Objectives:
+- build Android shell, shared manifest parser, target loader, seed/bootstrap flow, and one-shard full-bundle sync prototype
+- reuse shared fixtures where possible
+- reach a real internal alpha by `2026-05-22`, without turning Android into a public launch gate
+
+Deliverables:
+- Android app shell in active use
+- manifest and target parsing against the same contract as iPhone
+- one-shard full-bundle bootstrap path proven end to end
+
+### Track F: App Store, website, and release surface
+
+Window: `2026-04-21` to `2026-05-22`
+
+Objectives:
+- prepare App Store package, screenshots, support text, and FAQ
+- correct website to iPhone-only Germany launch wording
+- remove or hide Android public download path
+- submit by `2026-05-08` to leave review and fix buffer before `2026-05-22`
+
+Deliverables:
+- App Store submission completed
+- Germany-only, iPhone-only launch copy
+- release FAQ and support copy ready
+
+## Timeline
+
+### Phase 1: now to `2026-03-23`
+
+- lock May 22 as public Germany App Store launch
+- lock Germany-wide shard scope and full-bundles-only launch policy
+- freeze Karlsruhe seed baseline
+- start Android alpha foundation immediately
+- start paper artifact refresh immediately
+
+### Phase 2: `2026-03-24` to `2026-04-05`
+
+- finish paper evidence and submit/defer decision
+- validate Karlsruhe full-bundle sync and active-DB recovery on device
+- begin Germany shard publish runs and app-side multi-shard integration
+
+### Phase 3: `2026-04-06` to `2026-04-20`
+
+- publish and validate all Germany shard full bundles
+- freeze Germany launch shard set as all Germany shards supported
+- retain Karlsruhe seed only as baseline and safety fallback
+- finish border-crossing and coverage-routing tests
+- freeze app-side Germany launch behavior
+
+### Phase 4: `2026-04-21` to `2026-05-01`
+
+- produce iPhone launch candidate
+- finish launch screenshots, support copy, FAQ, and website rewrite
+- keep Android alpha moving, but do not allow Android churn to destabilize the iPhone/runtime contract
+
+### Phase 5: `2026-05-02` to `2026-05-22`
+
+- submit iPhone build by `2026-05-08`
+- use `2026-05-09` to `2026-05-22` for App Store review fixes, release polish, and staged go-live preparation
+- preferred go-live window: `2026-05-15` to `2026-05-16`
+- hard go-live deadline: `2026-05-22`
+
+## Milestones
 
 | Milestone | Window | Goal | Exit criteria |
 |---|---|---|---|
-| `M0` Baseline lock | 2026-03-12 to 2026-03-16 | Freeze scope and stop pretending the website or Android are current deliverables | this plan accepted; website/store scope deferred; Karlsruhe seed becomes top priority |
-| `M1` Karlsruhe seed RC | 2026-03-12 to 2026-03-23 | Fresh Karlsruhe full bundle and iPhone seed baseline | regenerated bundle published, bundled seed rebuilt, device smoke passes, first real drives logged |
-| `M2` Karlsruhe incremental validation | 2026-03-24 to 2026-04-05 | Prove real seed -> delta update on device | delta chain generated from maintained snapshot, app applies it correctly, full-bundle fallback works |
-| `M3` Supported-region expansion | 2026-04-06 to 2026-04-26 | Add first non-Karlsruhe regions with full bundles only | 3-5 supported regions/countries published and usable on device |
-| `M4` Cross-region incremental operations | 2026-04-27 to 2026-05-31 | Make incremental delivery reliable across the supported set | multi-region delta flow stable for 2 weeks, release retention and recovery verified |
-| `M5` Android parity | 2026-06-01 to 2026-07-12 | Port the validated iPhone product/data contract to Android | Android runs Karlsruhe seed first, then supported-region set, with equivalent sync behavior |
-| `M6` Public release prep | 2026-07-13 to 2026-08-16 | Stores, legal copy, release QA, website correction | real App Store / Play assets exist, website CTAs point to real stores only |
-| `M7` Public launch window | 2026-08-17 to 2026-08-31 | Public release if prior gates hold | stores live, website updated, support/docs aligned |
+| `M0` Launch contract locked | `2026-03-12` to `2026-03-14` | Lock public Germany App Store launch assumptions | Germany-wide shards, full bundles only, paper priority, Android internal alpha accepted |
+| `M1` Karlsruhe seed baseline frozen | `2026-03-12` to `2026-03-23` | Fresh Karlsruhe seed baseline accepted | regenerated bundle published, bundled seed rebuilt, seed regressions and real-drive validation completed |
+| `M2` Paper submit or defer | `2026-03-12` to `2026-04-05` | Fit the paper deadline | route-level evidence collected and explicit submit/defer decision made |
+| `M3` Karlsruhe full-bundle recovery validated | `2026-03-24` to `2026-04-05` | Prove launch-safe bundle recovery on device | full-bundle sync and active-DB recovery validated without requiring `delta_index` |
+| `M4` Germany shard release set validated | `2026-04-06` to `2026-04-20` | Freeze Germany-wide launch coverage | all Germany shards published and validated with manifest correctness and coverage routing |
+| `M5` iPhone launch candidate | `2026-04-21` to `2026-05-01` | Produce launch candidate | candidate stable, Germany discovery and routing frozen, launch-facing UX ready |
+| `M6` App Store submission | `2026-05-02` to `2026-05-08` | Submit launch package | App Store package submitted and website copy aligned to actual scope |
+| `M7` Preferred go-live | `2026-05-15` to `2026-05-16` | Preferred live window | app approved and ready for public Germany launch |
+| `M7b` Hard go-live deadline | `2026-05-22` | Last acceptable launch date | public Germany App Store launch live by this date |
+| `M8` Android internal alpha checkpoint | `2026-05-22` | Confirm Android parallel work is real | Android shell, manifest/target parsing, and one-shard bootstrap prototype working |
 
-## 5) Detailed work items by milestone
+## Test Plan
 
-### `M1` Karlsruhe seed release candidate
+### Launch-critical iPhone scenarios
 
-Primary objective: get one iPhone seed product baseline that we trust.
+- seed bootstrap from bundled Karlsruhe DB succeeds on clean install
+- Germany shard discovery loads the full Germany shard set from bundled targets
+- full-bundle download works for every Germany shard, including multipart DB assets where needed
+- app activates a downloaded shard without requiring `delta_index`
+- coverage routing works across at least three German state-border scenarios
+- recovery works after interrupted full-bundle download
+- recovery works after invalid manifest, missing asset, or checksum mismatch
+- app continues to function when only the seed bundle is available
+- website and app copy expose only Germany and iPhone launch promises
 
-Work items:
-- regenerate Karlsruhe bundle artifacts from the current map pipeline and schema,
-- rebuild the bundled seed DB in `SpeedConsumerApp` from that exact artifact lineage,
-- run device tests and seed-specific regression tests,
-- perform repeated real-drive validation:
-  - urban transitions,
-  - motorway / Autobahn,
-  - tunnel-adjacent segments,
-  - difficult continuity cases already represented in Karlsruhe traces,
-- close high-risk runtime issues before further scope:
-  - legal fallback inconsistencies,
-  - startup/sync recovery edge cases,
-  - seed-only UX issues.
+### Paper-critical scenarios
 
-Deliverables:
-- one published Karlsruhe full bundle,
-- one matching bundled seed in the iPhone app,
-- a short validation note with the accepted baseline version.
+- route-level evaluation covers Karlsruhe plus difficult continuity, tunnel, and motorway transitions
+- metrics are regenerated from current logs and tied to the actual matcher implementation
+- final manuscript makes no unsupported claim about broader deployment or safety impact
 
-### `M2` Karlsruhe incremental update validation
+### Android alpha scenarios
 
-Primary objective: prove that the update story works in reality, not just in tests and workflows.
+- Android parses the same bundled target config as iPhone
+- Android fetches at least one real Germany shard manifest
+- Android completes one full-bundle bootstrap path end to end
+- Android stores enough artifact metadata to align later with iPhone release parity
 
-Work items:
-- generate at least one new Karlsruhe dated full bundle and one real delta chain,
-- test seed -> delta and dated-version -> dated-version upgrades on device,
-- verify failure paths:
-  - checksum failure,
-  - missing delta asset,
-  - stale chain,
-  - interrupted download,
-  - background resume,
-- verify that the app can recover cleanly to a valid active DB,
-- decide the production transport contract:
-  - GitHub releases remain the source of truth first,
-  - website/CDN mirroring is optional later and must not fork the update protocol.
+## Assumptions and defaults
 
-Deliverables:
-- validated Karlsruhe incremental sync path,
-- release-operations checklist for bundle + delta publishing,
-- explicit decision on whether website distribution is still needed after GitHub validation.
-
-### `M3` Supported-region expansion
-
-Primary objective: expand only after the seed flow is solid.
-
-Recommended order:
-1. Baden-Württemberg and one adjacent German region relevant to real driving.
-2. One or two compact single-country targets from `BundleTargets.top10.json` for artifact simplicity.
-3. Only then broaden to the rest of the first supported set.
-
-Work items:
-- generate fresh full bundles for the first supported regions,
-- validate region selection/routing in app,
-- measure bundle sizes, first-download time, and on-device storage impact,
-- test bundle switching and routing at region boundaries,
-- keep incrementals disabled outside Karlsruhe until the full-bundle set is stable.
-
-Deliverables:
-- first supported public region list,
-- full-bundle-only regional release set,
-- device validation across region boundaries.
-
-### `M4` Cross-region incremental operations
-
-Primary objective: move from "one region can update" to "the product has a reliable update system."
-
-Work items:
-- enable per-region incremental generation for the supported set,
-- verify retention policy and stale-chain reset behavior,
-- monitor artifact growth and patch-apply time by region,
-- verify recovery after missing assets or invalid state,
-- decide whether a website or CDN front door adds value beyond GitHub assets.
-
-Deliverables:
-- operating incremental update service for supported regions,
-- documented recovery policy,
-- stable asset naming and retention policy.
-
-### `M5` Android parity
-
-Primary objective: port the validated product contract, not the current moving target.
-
-Work items:
-- define Android app architecture around the same `v3` bundle manifest and delta contract,
-- port bundle manager, active DB handling, and update flow,
-- port speed-limit runtime and field-test the same Karlsruhe seed baseline first,
-- add parity tests against shared seed/incremental fixtures,
-- only after Karlsruhe parity add supported-region parity.
-
-Deliverables:
-- Android seed build,
-- Android supported-region build,
-- parity checklist against iPhone behavior.
-
-### `M6` Public release prep
-
-Primary objective: release what exists, not mock it.
-
-Work items:
-- privacy/legal/store metadata,
-- screenshots and store listings,
-- crash and startup QA,
-- internal beta / TestFlight / Play testing,
-- remove placeholder CTAs from the website and replace them with real links only after store availability,
-- if Android slips, decide explicitly whether launch is dual-platform or iPhone-first public beta.
-
-Deliverables:
-- real store submissions,
-- corrected website,
-- support and release notes.
-
-## 6) Research and publication track
-
-The paper track must follow the validated product milestones, but not every paper needs the same system maturity.
-
-### Paper A: Matching approach paper
-
-Current working folder:
-- `paper/personalized_matching_arxiv`
-
-Internal intent:
-- explain the matcher as a lightweight sequence-aware mobile matcher,
-- evaluate route continuity and difficult transitions,
-- keep the claims narrower than the architecture paper.
-
-Important date anchor checked on 2026-03-12:
-- `ICITT 2026` full-paper deadline: 2026-04-05
-- acceptance notification: 2026-05-05
-- camera-ready: 2026-05-20
-
-Implication:
-- if we target `ICITT 2026`, the matching paper must be scoped to Karlsruhe/iPhone-seed evidence and written during `M1` and `M2`,
-- it cannot wait for multi-region incremental maturity,
-- if `M1` slips badly, we should explicitly defer venue submission instead of forcing weak evidence into the paper.
-
-Suggested plan:
-- 2026-03-12 to 2026-03-22: freeze method section and refresh experimental artifact generation from current logs,
-- 2026-03-23 to 2026-03-29: add route-level evaluation from real drives and regression corpora,
-- 2026-03-30 to 2026-04-04: write, trim claims, submit or consciously defer.
-
-### Paper B: State of the Map application/system paper or talk
-
-Target:
-- `State of the Map 2026`, Paris, 2026-08-28 to 2026-08-30
-
-Planning note:
-- the conference date is confirmed,
-- the public site links to the call pages, but the submission deadline was not extracted during this planning pass,
-- therefore we should work with an internal readiness deadline rather than wait for the call to surprise us.
-
-Intended story:
-- offline-first smartphone ISA with OSM baseline,
-- seed-first rollout,
-- update architecture,
-- local correction/export path,
-- lessons from turning OSM speed data into a consumer app.
-
-Suggested plan:
-- draft abstract outline during `M3`,
-- freeze talk/paper story during `M4`,
-- target internal submission readiness by 2026-05-31,
-- submit as soon as the official SotM call deadline is confirmed.
-
-### Existing architecture paper track
-
-Status:
-- the main architecture paper already exists in the ITSC/tech-report track.
-
-Needed follow-up:
-- keep it aligned with the product claims,
-- use the scientific review feedback,
-- do not overclaim safety or end-to-end ISA impact from storage microbenchmarks alone.
-
-## 7) Workstream orientation
-
-To keep day-to-day work aligned, every task should be filed into one of these workstreams.
-
-### `W1` Seed data and bundle generation
-
-- Karlsruhe full bundle regeneration
-- seed DB embedding
-- manifest and asset verification
-
-### `W2` iPhone runtime quality
-
-- matcher correctness
-- legal fallback correctness
-- startup and recovery
-- seed-only and active-bundle UX
-
-### `W3` Incremental update system
-
-- PBF maintenance
-- delta pack generation
-- delta index correctness
-- on-device patch apply and fallback
-
-### `W4` Regional scale-out
-
-- supported-region selection
-- region bundle generation
-- bundle-routing validation
-- operational cost tracking
-
-### `W5` Distribution and release
-
-- GitHub release operations
-- optional website/CDN front door
-- store metadata
-- release website
-
-### `W6` Android
-
-- runtime parity
-- update parity
-- validation parity
-
-### `W7` Publications
-
-- matching paper
-- SotM application/system paper or talk
-- architecture paper maintenance
-
-## 8) Immediate next actions
-
-These are the highest-priority tasks right now.
-
-1. Generate a new Karlsruhe full bundle and lock the seed baseline.
-2. Rebuild the bundled iPhone seed DB from that exact bundle.
-3. Run device validation and real-drive logging on the fresh seed.
-4. Fix any seed-breaking runtime or legal-fallback defects.
-5. Generate and validate the first real Karlsruhe incremental update chain.
-6. Keep Android, store links, and public website CTAs out of the critical path until steps 1-5 are done.
-
-## 9) Explicit non-goals until the gates are cleared
-
-- No public Android download promise before an Android app exists.
-- No public App Store / Play Store CTAs before store artifacts exist.
-- No multi-region incremental rollout before Karlsruhe incremental sync is proven.
-- No website-specific update protocol before the GitHub-based bundle contract is stable.
-- No broad scientific claims before route-level evidence supports them.
+- launch country is Germany only
+- launch platform is iPhone only
+- Germany launch is nationwide via shards, not Baden-Wuerttemberg-only
+- launch-day update promise is full bundles only
+- incremental updates are a post-launch expansion, not a public May 22 promise
+- Android is a parallel internal alpha by May 22, not a store launch
+- paper deadline outranks noncritical launch polish if the two conflict
+- weekends and long-day execution are assumed available, so the schedule intentionally maximizes parallel tracks instead of protecting a narrow single critical path

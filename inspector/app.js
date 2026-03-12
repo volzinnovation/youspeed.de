@@ -18,6 +18,7 @@ const logBreakdownsEl = document.getElementById("log-breakdowns");
 const logListEl = document.getElementById("log-list");
 const traceMetaEl = document.getElementById("trace-meta");
 const traceMetricsEl = document.getElementById("trace-metrics");
+const traceDebugEl = document.getElementById("trace-debug");
 const selectionTraceEl = document.getElementById("selection-trace");
 const candidateTraceEl = document.getElementById("candidate-trace");
 const rawEntryEl = document.getElementById("raw-entry");
@@ -35,13 +36,20 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let locationMarker = null;
-let wayLayer = null;
+let wayLayers = [];
 let drivePathLayer = null;
 let selectedFixMarker = null;
 let sqlModulePromise = null;
 let sqlDatabase = null;
 let loadedDriveLogEntries = [];
 let selectedDriveLogIndex = -1;
+
+const replayWayColors = {
+  logged: "#00e4ff",
+  replay: "#ffb454",
+  replayError: "#ff6a6a",
+  hindsight: "#7fda8b"
+};
 
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
@@ -89,6 +97,100 @@ function streetDisplay(streetName, ref) {
     return `${name} (${normalizedRef})`;
   }
   return name ?? normalizedRef ?? null;
+}
+
+function resultStreetLabel(result) {
+  return streetDisplay(result?.streetName, result?.streetRef) ?? safeString(result?.streetBaseName) ?? null;
+}
+
+function replayDebug(entry) {
+  return entry?.replayDebug && typeof entry.replayDebug === "object" ? entry.replayDebug : null;
+}
+
+function replayResult(entry) {
+  const debug = replayDebug(entry);
+  return debug?.replayResult && typeof debug.replayResult === "object" ? debug.replayResult : null;
+}
+
+function replayHindsight(entry) {
+  const debug = replayDebug(entry);
+  return debug?.hindsight && typeof debug.hindsight === "object" ? debug.hindsight : null;
+}
+
+function replayOutcomeLabel(outcome) {
+  switch (safeString(outcome)) {
+    case "stable_correct":
+      return "korrekt stabil";
+    case "recovered":
+      return "korrigiert";
+    case "regressed":
+      return "Regression";
+    case "still_wrong":
+      return "weiter falsch";
+    case "diverged":
+      return "abweichend";
+    case "stable":
+      return "stabil";
+    default:
+      return "annotiert";
+  }
+}
+
+function replayOutcomeClass(outcome) {
+  switch (safeString(outcome)) {
+    case "stable_correct":
+      return "ok";
+    case "recovered":
+    case "diverged":
+      return "warn";
+    case "regressed":
+    case "still_wrong":
+      return "error";
+    default:
+      return "neutral";
+  }
+}
+
+function replayOutcomeSortKey(outcome) {
+  switch (safeString(outcome)) {
+    case "still_wrong":
+      return 0;
+    case "regressed":
+      return 1;
+    case "recovered":
+      return 2;
+    case "diverged":
+      return 3;
+    case "stable_correct":
+      return 4;
+    case "stable":
+      return 5;
+    default:
+      return 6;
+  }
+}
+
+function selectedTrace(result) {
+  const traces = Array.isArray(result?.candidateTraces) ? result.candidateTraces : [];
+  return traces.find((candidate) => candidate?.isSelected) ?? null;
+}
+
+function candidateRankForWay(result, wayID) {
+  const normalizedWayID = safeString(wayID);
+  if (!normalizedWayID) {
+    return null;
+  }
+  const traces = Array.isArray(result?.candidateTraces) ? result.candidateTraces : [];
+  return finiteNumber(traces.find((candidate) => safeString(candidate?.wayID) === normalizedWayID)?.rank);
+}
+
+function describeWay(result, wayID) {
+  const normalizedWayID = safeString(wayID ?? result?.wayID);
+  return {
+    wayID: normalizedWayID,
+    street: resultStreetLabel(result) ?? normalizedWayID ?? "n/a",
+    ref: safeString(result?.streetRef)
+  };
 }
 
 function basenameFromPath(path) {
@@ -332,7 +434,7 @@ function parseDriveLogEntries(rawText) {
 }
 
 function driveLogStreetLabel(entry) {
-  const result = entry?.result ?? {};
+  const result = entry?.result ?? replayResult(entry) ?? {};
   return (
     streetDisplay(result.streetName, result.streetRef) ??
     safeString(result.streetBaseName) ??
@@ -358,8 +460,19 @@ function computeDriveLogStats(entries) {
     streetCounts: new Map(),
     cityCounts: new Map(),
     limitCounts: new Map(),
+    replayOutcomeCounts: new Map(),
     firstTimestamp: null,
-    lastTimestamp: null
+    lastTimestamp: null,
+    annotatedCount: 0,
+    replayErrorCount: 0,
+    replayDeltaCount: 0,
+    replayGateCount: 0,
+    hindsightCount: 0,
+    hindsightReplayCorrectCount: 0,
+    hindsightLoggedCorrectCount: 0,
+    recoveredCount: 0,
+    regressedCount: 0,
+    stillWrongCount: 0
   };
 
   let previousPoint = null;
@@ -408,6 +521,41 @@ function computeDriveLogStats(entries) {
       stats.distinctWays.add(wayID);
     }
 
+    const debug = replayDebug(entry);
+    if (debug) {
+      stats.annotatedCount += 1;
+      const outcome = safeString(debug.outcome) ?? "annotated";
+      stats.replayOutcomeCounts.set(outcome, (stats.replayOutcomeCounts.get(outcome) ?? 0) + 1);
+      if (debug.isError) {
+        stats.replayErrorCount += 1;
+      }
+      if (debug.loggedMatchesReplay === false) {
+        stats.replayDeltaCount += 1;
+      }
+      if (debug.replayUsedThreeWayGate) {
+        stats.replayGateCount += 1;
+      }
+
+      const hindsight = replayHindsight(entry);
+      if (hindsight?.wayID) {
+        stats.hindsightCount += 1;
+        if (hindsight.replayMatches) {
+          stats.hindsightReplayCorrectCount += 1;
+        }
+        if (hindsight.loggedMatches) {
+          stats.hindsightLoggedCorrectCount += 1;
+        }
+      }
+
+      if (outcome === "recovered") {
+        stats.recoveredCount += 1;
+      } else if (outcome === "regressed") {
+        stats.regressedCount += 1;
+      } else if (outcome === "still_wrong") {
+        stats.stillWrongCount += 1;
+      }
+    }
+
     const lat = finiteNumber(entry.lat);
     const lon = finiteNumber(entry.lon);
     if (lat != null && lon != null) {
@@ -433,6 +581,15 @@ function computeDriveLogStats(entries) {
   stats.topStreets = sortEntries(stats.streetCounts);
   stats.topCities = sortEntries(stats.cityCounts);
   stats.topLimits = sortEntries(stats.limitCounts).map(([label, count]) => [`${label} km/h`, count]);
+  stats.topReplayOutcomes = Array.from(stats.replayOutcomeCounts.entries())
+    .sort((left, right) => right[1] - left[1] || replayOutcomeSortKey(left[0]) - replayOutcomeSortKey(right[0]))
+    .map(([label, count]) => [replayOutcomeLabel(label), count]);
+  stats.hindsightReplayAccuracy = stats.hindsightCount
+    ? (stats.hindsightReplayCorrectCount / stats.hindsightCount) * 100
+    : null;
+  stats.hindsightLoggedAccuracy = stats.hindsightCount
+    ? (stats.hindsightLoggedCorrectCount / stats.hindsightCount) * 100
+    : null;
 
   return stats;
 }
@@ -481,7 +638,10 @@ function updateDriveLogSummary() {
   const stats = computeDriveLogStats(loadedDriveLogEntries);
   const first = stats.firstTimestamp != null ? formatTimestamp(stats.firstTimestamp) : "n/a";
   const last = stats.lastTimestamp != null ? formatTimestamp(stats.lastTimestamp) : "n/a";
-  logSummaryEl.textContent = `${stats.totalEntries} Fixes geladen (${first} bis ${last}).`;
+  const replaySuffix = stats.annotatedCount
+    ? ` · ${stats.replayErrorCount} Replay-Fehler markiert`
+    : "";
+  logSummaryEl.textContent = `${stats.totalEntries} Fixes geladen (${first} bis ${last})${replaySuffix}.`;
 }
 
 function renderDriveLogOverview() {
@@ -492,7 +652,7 @@ function renderDriveLogOverview() {
   }
 
   const stats = computeDriveLogStats(loadedDriveLogEntries);
-  logOverviewEl.innerHTML = renderOverviewCards([
+  const overviewItems = [
     {
       label: "Fixes",
       value: formatCount(stats.totalEntries),
@@ -513,14 +673,33 @@ function renderDriveLogOverview() {
       value: formatSpeed(stats.maxSpeedKmh),
       subvalue: `${formatCount(stats.speedLimitChanges)} Limitwechsel`
     }
-  ]);
+  ];
+  if (stats.annotatedCount) {
+    overviewItems.push(
+      {
+        label: "Replay",
+        value: formatCount(stats.annotatedCount),
+        subvalue: `${formatCount(stats.replayErrorCount)} Fehler · ${formatCount(stats.recoveredCount)} korrigiert`
+      },
+      {
+        label: "Hindsight",
+        value: formatCount(stats.hindsightCount),
+        subvalue: `Replay ${formatPercent(stats.hindsightReplayAccuracy)} · Log ${formatPercent(stats.hindsightLoggedAccuracy)}`
+      }
+    );
+  }
+  logOverviewEl.innerHTML = renderOverviewCards(overviewItems);
 
-  logBreakdownsEl.innerHTML = [
+  const breakdowns = [
     renderBreakdownCard("Status", stats.topStatuses),
     renderBreakdownCard("Haeufige Strassen", stats.topStreets),
     renderBreakdownCard("Orte", stats.topCities),
     renderBreakdownCard("Limits", stats.topLimits)
-  ].join("");
+  ];
+  if (stats.annotatedCount) {
+    breakdowns.unshift(renderBreakdownCard("Replay", stats.topReplayOutcomes));
+  }
+  logBreakdownsEl.innerHTML = breakdowns.join("");
 }
 
 function renderDriveLogList() {
@@ -532,21 +711,35 @@ function renderDriveLogList() {
   logListEl.innerHTML = loadedDriveLogEntries
     .map((entry, index) => {
       const selectedClass = index === selectedDriveLogIndex ? " active" : "";
+      const debug = replayDebug(entry);
+      const replay = replayResult(entry);
+      const baseResult = entry.result ?? replay ?? {};
+      const debugClass = debug?.isError ? " debug-error" : debug ? " debug-annotated" : "";
       const status = safeString(entry.status) ?? "unknown";
       const street = driveLogStreetLabel(entry);
-      const city = safeString(entry.result?.cityName) ?? "n/a";
-      const limit = entry.speedLimitOverrideKmh ?? entry.result?.speedLimitKmh ?? "n/a";
-      const continuity =
-        entry.result?.candidateTraces?.find((candidate) => candidate?.isSelected)?.continuityClass ?? "n/a";
+      const city = safeString(baseResult.cityName) ?? "n/a";
+      const limit = entry.speedLimitOverrideKmh ?? baseResult.speedLimitKmh ?? "n/a";
+      const continuity = selectedTrace(baseResult)?.continuityClass ?? "n/a";
+      const hindsight = replayHindsight(entry);
+      const replayPill = debug
+        ? `<span class="pill ${replayOutcomeClass(debug.outcome)}">${escapeHTML(replayOutcomeLabel(debug.outcome))}</span>`
+        : "";
+      const replaySummary = debug
+        ? `<div class="muted">Replay ${escapeHTML(replay?.wayID ?? "n/a")} · Hindsight ${escapeHTML(hindsight?.wayID ?? "n/a")} · ${escapeHTML(debug.replayUsedThreeWayGate ? "three-way gate" : "kein gate")}</div>`
+        : "";
       return `
-        <button type="button" class="log-entry${selectedClass}" data-log-index="${index}">
+        <button type="button" class="log-entry${selectedClass}${debugClass}" data-log-index="${index}">
           <div class="log-entry-header">
             <strong>${escapeHTML(formatTimestamp(entry.timestampUTC))}</strong>
-            <span class="pill ${driveLogStatusClass(status)}">${escapeHTML(status)}</span>
+            <div class="pill-row">
+              <span class="pill ${driveLogStatusClass(status)}">${escapeHTML(status)}</span>
+              ${replayPill}
+            </div>
           </div>
           <div class="mono">${escapeHTML(street)}</div>
-          <div class="muted">Fix ${escapeHTML(entry.fixID ?? "n/a")} · ${escapeHTML(city)} · Way ${escapeHTML(entry.result?.wayID ?? "n/a")}</div>
+          <div class="muted">Fix ${escapeHTML(entry.fixID ?? "n/a")} · ${escapeHTML(city)} · Way ${escapeHTML(baseResult.wayID ?? "n/a")}</div>
           <div class="muted">Limit ${escapeHTML(limit)} · Tempo ${escapeHTML(formatSpeed(entry.speedKmh))} · Kontinuitaet ${escapeHTML(continuity)}</div>
+          ${replaySummary}
         </button>
       `;
     })
@@ -565,6 +758,157 @@ function renderTraceSection(title, items, renderItem) {
   `;
 }
 
+function renderReplayWayChip(label, color, way, subtitle = null) {
+  return `
+    <div class="way-chip">
+      <span class="swatch" style="background:${escapeHTML(color)}"></span>
+      <div class="way-chip-copy">
+        <span class="label">${escapeHTML(label)}</span>
+        <strong>${escapeHTML(way.street)}</strong>
+        <span class="muted mono">Way ${escapeHTML(way.wayID ?? "n/a")}${subtitle ? ` · ${escapeHTML(subtitle)}` : ""}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderReplayDebugPanel(entry) {
+  const debug = replayDebug(entry);
+  if (!debug) {
+    return "";
+  }
+
+  const logged = describeWay(entry.result);
+  const replay = describeWay(replayResult(entry));
+  const hindsight = replayHindsight(entry);
+  const hindsightCandidate =
+    (Array.isArray(entry.result?.candidateTraces)
+      ? entry.result.candidateTraces.find((candidate) => safeString(candidate?.wayID) === safeString(hindsight?.wayID))
+      : null) ??
+    (Array.isArray(replayResult(entry)?.candidateTraces)
+      ? replayResult(entry).candidateTraces.find((candidate) => safeString(candidate?.wayID) === safeString(hindsight?.wayID))
+      : null);
+  const hindsightWay = describeWay(
+    hindsightCandidate,
+    hindsight?.wayID
+  );
+
+  const cards = [
+    renderReplayWayChip(
+      "Logged",
+      replayWayColors.logged,
+      logged,
+      debug.loggedSelectedRank != null ? `Rank ${debug.loggedSelectedRank}` : null
+    ),
+    renderReplayWayChip(
+      "Replay",
+      debug.isError ? replayWayColors.replayError : replayWayColors.replay,
+      replay,
+      debug.replaySelectedRank != null ? `Rank ${debug.replaySelectedRank}` : null
+    )
+  ];
+  if (hindsight?.wayID) {
+    const subtitleParts = [];
+    if (hindsight.loggedCandidateRank != null) {
+      subtitleParts.push(`Log Rank ${hindsight.loggedCandidateRank}`);
+    }
+    if (hindsight.replayCandidateRank != null) {
+      subtitleParts.push(`Replay Rank ${hindsight.replayCandidateRank}`);
+    }
+    cards.push(renderReplayWayChip("Hindsight", replayWayColors.hindsight, hindsightWay, subtitleParts.join(" · ")));
+  }
+
+  const hindsightSummary = hindsight?.wayID
+    ? `Log ${hindsight.loggedMatches ? "korrekt" : "falsch"} · Replay ${hindsight.replayMatches ? "korrekt" : "falsch"}`
+    : "Kein hindsight-Label fuer diesen Fix";
+
+  return `
+    <section class="debug-panel">
+      <div class="debug-panel-head">
+        <div class="debug-panel-title">Replay Debug</div>
+        <span class="pill ${replayOutcomeClass(debug.outcome)}">${escapeHTML(replayOutcomeLabel(debug.outcome))}</span>
+      </div>
+      <div class="debug-summary">
+        <div class="debug-row">
+          <span class="label">Vergleich</span>
+          <span class="value muted">${escapeHTML(debug.loggedMatchesReplay ? "Log und Replay gleich" : "Replay weicht vom Log ab")}</span>
+        </div>
+        <div class="debug-row">
+          <span class="label">Hindsight</span>
+          <span class="value muted">${escapeHTML(hindsightSummary)}</span>
+        </div>
+        <div class="debug-row">
+          <span class="label">Gate</span>
+          <span class="value muted">${escapeHTML(debug.replayUsedThreeWayGate ? "three-way gate aktiv" : "kein three-way gate")}</span>
+        </div>
+      </div>
+      <div class="way-legend">
+        ${cards.join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderSelectionTraceBlock(title, items) {
+  return renderTraceSection(title, items ?? [], (item) => `
+    <div class="trace-entry${item?.step === "three_way_gate" ? " replay-emphasis" : ""}">
+      <strong>${escapeHTML(item?.step ?? "step")}</strong>
+      <div class="mono">${escapeHTML(item?.detail ?? "")}</div>
+    </div>
+  `);
+}
+
+function renderCandidateTraceBlock(title, result, expectedWayID) {
+  return renderTraceSection(title, result?.candidateTraces ?? [], (item) => {
+    const isExpected = safeString(item?.wayID) != null && safeString(item?.wayID) === safeString(expectedWayID);
+    const chips = [
+      item?.isSelected ? '<span class="pill ok">selected</span>' : "",
+      isExpected ? '<span class="pill expect">hindsight</span>' : ""
+    ]
+      .filter(Boolean)
+      .join("");
+    return `
+      <div class="candidate-entry${item?.isSelected ? " selected" : ""}${isExpected ? " expected" : ""}">
+        <div class="trace-section-head">
+          <strong>#${escapeHTML(item?.rank ?? "n/a")} ${escapeHTML(streetDisplay(item?.streetName, item?.streetRef) ?? item?.wayID ?? "n/a")}</strong>
+          <div class="pill-row">${chips}</div>
+        </div>
+        <div class="mono">way ${escapeHTML(item?.wayID ?? "n/a")} · ${escapeHTML(formatScorePair(item?.score, item?.geometryScore))} · dist ${escapeHTML(formatDistance(item?.distanceM))}</div>
+        <div class="muted">continuity ${escapeHTML(item?.continuityClass ?? "n/a")} · endpoint ${escapeHTML(formatDistance(item?.endpointProximityM))} · corridor ${(item?.corridorSelectable ?? true) ? "ok" : "blocked"} · tunnel ${item?.tunnelSelectable ? "ok" : "blocked"}</div>
+      </div>
+    `;
+  });
+}
+
+function renderHypothesisTraceBlock(title, result) {
+  return renderTraceSection(title, result?.matchHypotheses ?? [], (item) => `
+    <div class="trace-entry">
+      <strong>${escapeHTML(streetDisplay(item?.streetName, item?.streetRef) ?? item?.wayID ?? "n/a")}</strong>
+      <div class="mono">way ${escapeHTML(item?.wayID ?? "n/a")} · emission ${escapeHTML(formatNumber(item?.emissionScore, 1))} · cumulative ${escapeHTML(formatNumber(item?.cumulativeCost, 1))}</div>
+      <div class="muted">endpoint ${escapeHTML(formatDistance(item?.endpointProximityM))} · ${escapeHTML(item?.highway ?? "n/a")} · tunnel ${item?.isTunnel ? "yes" : "no"}</div>
+    </div>
+  `);
+}
+
+function selectedMarkerStyle(entry) {
+  const debug = replayDebug(entry);
+  if (debug?.isError) {
+    return {
+      color: "#ffe5e5",
+      fillColor: replayWayColors.replayError
+    };
+  }
+  if (debug) {
+    return {
+      color: "#fff4dd",
+      fillColor: replayWayColors.replay
+    };
+  }
+  return {
+    color: "#f8fafc",
+    fillColor: "#ff8f40"
+  };
+}
+
 function clearSelectedFixMarker() {
   if (selectedFixMarker) {
     selectedFixMarker.remove();
@@ -578,18 +922,24 @@ function renderSelectedDriveLogEntry(options = {}) {
   if (!entry) {
     traceMetaEl.textContent = "Kein Fix ausgewählt.";
     traceMetricsEl.innerHTML = "";
+    traceDebugEl.innerHTML = "";
     selectionTraceEl.innerHTML = "";
     candidateTraceEl.innerHTML = "";
     rawEntryEl.textContent = "";
+    clearWayLayers();
     clearSelectedFixMarker();
     return;
   }
 
-  const result = entry.result ?? {};
+  const debug = replayDebug(entry);
+  const replay = replayResult(entry);
+  const result = entry.result ?? replay ?? {};
+  const hindsight = replayHindsight(entry);
   const street = driveLogStreetLabel(entry);
-  traceMetaEl.textContent = `Fix ${entry.fixID ?? "n/a"} · ${entry.status ?? "unknown"} · ${street} · Way ${result.wayID ?? "n/a"}`;
+  const traceMetaSuffix = debug ? ` · ${replayOutcomeLabel(debug.outcome)}` : "";
+  traceMetaEl.textContent = `Fix ${entry.fixID ?? "n/a"} · ${entry.status ?? "unknown"} · ${street} · Way ${result.wayID ?? "n/a"}${traceMetaSuffix}`;
 
-  traceMetricsEl.innerHTML = renderOverviewCards([
+  const metricCards = [
     {
       label: "Tempo / Limit",
       value: `${formatSpeed(entry.speedKmh)} / ${result.speedLimitKmh ?? entry.speedLimitOverrideKmh ?? "n/a"} km/h`,
@@ -620,34 +970,44 @@ function renderSelectedDriveLogEntry(options = {}) {
       value: `${entry.courseDeg ?? "n/a"} deg`,
       subvalue: `Tunnel ${entry.tunnelModeState ?? "n/a"}`
     }
-  ]);
+  ];
+  if (debug) {
+    metricCards.push(
+      {
+        label: "Replay",
+        value: `${replay?.wayID ?? "n/a"} / ${replay?.speedLimitKmh ?? "n/a"} km/h`,
+        subvalue: debug.replayUsedThreeWayGate ? "three-way gate aktiv" : "kein three-way gate"
+      },
+      {
+        label: "Hindsight",
+        value: hindsight?.wayID ?? "n/a",
+        subvalue: hindsight?.wayID
+          ? `Log ${hindsight.loggedMatches ? "korrekt" : "falsch"} · Replay ${hindsight.replayMatches ? "korrekt" : "falsch"}`
+          : "kein Label"
+      }
+    );
+  }
+  traceMetricsEl.innerHTML = renderOverviewCards(metricCards);
+  traceDebugEl.innerHTML = renderReplayDebugPanel(entry);
 
-  selectionTraceEl.innerHTML = renderTraceSection("Selection Trace", result.selectionTrace ?? [], (item) => `
-    <div class="trace-entry">
-      <strong>${escapeHTML(item.step ?? "step")}</strong>
-      <div class="mono">${escapeHTML(item.detail ?? "")}</div>
-    </div>
-  `);
+  selectionTraceEl.innerHTML = debug
+    ? [
+        renderSelectionTraceBlock("Logged Selection Trace", result.selectionTrace ?? []),
+        renderSelectionTraceBlock("Replay Selection Trace", replay?.selectionTrace ?? [])
+      ].join("")
+    : renderSelectionTraceBlock("Selection Trace", result.selectionTrace ?? []);
 
-  candidateTraceEl.innerHTML = [
-    renderTraceSection("Kandidaten", result.candidateTraces ?? [], (item) => `
-      <div class="candidate-entry${item.isSelected ? " selected" : ""}">
-        <div class="trace-section-head">
-          <strong>#${escapeHTML(item.rank ?? "n/a")} ${escapeHTML(streetDisplay(item.streetName, item.streetRef) ?? item.wayID ?? "n/a")}</strong>
-          ${item.isSelected ? '<span class="pill ok">selected</span>' : ""}
-        </div>
-        <div class="mono">way ${escapeHTML(item.wayID ?? "n/a")} · ${escapeHTML(formatScorePair(item.score, item.geometryScore))} · dist ${escapeHTML(formatDistance(item.distanceM))}</div>
-        <div class="muted">continuity ${escapeHTML(item.continuityClass ?? "n/a")} · endpoint ${escapeHTML(formatDistance(item.endpointProximityM))} · corridor ${(item.corridorSelectable ?? true) ? "ok" : "blocked"} · tunnel ${item.tunnelSelectable ? "ok" : "blocked"}</div>
-      </div>
-    `),
-    renderTraceSection("Hypothesen", result.matchHypotheses ?? [], (item) => `
-      <div class="trace-entry">
-        <strong>${escapeHTML(streetDisplay(item.streetName, item.streetRef) ?? item.wayID ?? "n/a")}</strong>
-        <div class="mono">way ${escapeHTML(item.wayID ?? "n/a")} · emission ${escapeHTML(formatNumber(item.emissionScore, 1))} · cumulative ${escapeHTML(formatNumber(item.cumulativeCost, 1))}</div>
-        <div class="muted">endpoint ${escapeHTML(formatDistance(item.endpointProximityM))} · ${escapeHTML(item.highway ?? "n/a")} · tunnel ${item.isTunnel ? "yes" : "no"}</div>
-      </div>
-    `)
-  ].join("");
+  candidateTraceEl.innerHTML = debug
+    ? [
+        renderCandidateTraceBlock("Logged Kandidaten", result, hindsight?.wayID),
+        renderCandidateTraceBlock("Replay Kandidaten", replay, hindsight?.wayID),
+        renderHypothesisTraceBlock("Logged Hypothesen", result),
+        renderHypothesisTraceBlock("Replay Hypothesen", replay)
+      ].join("")
+    : [
+        renderCandidateTraceBlock("Kandidaten", result, null),
+        renderHypothesisTraceBlock("Hypothesen", result)
+      ].join("");
 
   rawEntryEl.textContent = JSON.stringify(entry, null, 2);
 
@@ -655,17 +1015,22 @@ function renderSelectedDriveLogEntry(options = {}) {
   const lon = finiteNumber(entry.lon);
   if (lat != null && lon != null) {
     setCoordinateValue(lat, lon);
+    const markerStyle = selectedMarkerStyle(entry);
 
     if (!selectedFixMarker) {
       selectedFixMarker = L.circleMarker([lat, lon], {
         radius: 8,
-        color: "#f8fafc",
+        color: markerStyle.color,
         weight: 2,
-        fillColor: "#ff8f40",
+        fillColor: markerStyle.fillColor,
         fillOpacity: 0.95
       }).addTo(map);
     } else {
       selectedFixMarker.setLatLng([lat, lon]);
+      selectedFixMarker.setStyle({
+        color: markerStyle.color,
+        fillColor: markerStyle.fillColor
+      });
     }
 
     if (focusMap) {
@@ -680,12 +1045,40 @@ function renderSelectedDriveLogEntry(options = {}) {
     wayInput.value = result.wayID != null ? String(result.wayID) : wayInput.value;
   }
 
-  const selectedWayID = normalizeWayID(result.wayID);
-  if (selectedWayID != null && sqlDatabase) {
-    const row = queryWayByID(selectedWayID);
-    if (row) {
-      drawWay(parseWayPoints(row.points_json));
+  if (sqlDatabase) {
+    const specs = [];
+    if (safeString(result.wayID)) {
+      specs.push({
+        wayID: result.wayID,
+        label: "logged",
+        color: replayWayColors.logged,
+        weight: 6,
+        opacity: 0.9
+      });
     }
+    if (safeString(replay?.wayID)) {
+      specs.push({
+        wayID: replay.wayID,
+        label: "replay",
+        color: debug?.isError ? replayWayColors.replayError : replayWayColors.replay,
+        weight: 5,
+        opacity: 0.95,
+        dashArray: "10 8"
+      });
+    }
+    if (safeString(hindsight?.wayID)) {
+      specs.push({
+        wayID: hindsight.wayID,
+        label: "hindsight",
+        color: replayWayColors.hindsight,
+        weight: 4,
+        opacity: 0.95,
+        dashArray: "4 8"
+      });
+    }
+    drawWayHighlights(specs);
+  } else {
+    clearWayLayers();
   }
 }
 
@@ -846,19 +1239,72 @@ function polylineDistanceM(lat, lon, points) {
   return Number.isFinite(best) ? best : null;
 }
 
-function drawWay(points) {
-  if (wayLayer) {
-    wayLayer.remove();
-    wayLayer = null;
+function clearWayLayers() {
+  for (const layer of wayLayers) {
+    layer.remove();
   }
+  wayLayers = [];
+}
+
+function drawWay(points) {
+  clearWayLayers();
   if (points.length < 2) {
     return;
   }
-  wayLayer = L.polyline(points, {
+  const layer = L.polyline(points, {
     color: "#00e4ff",
     weight: 6,
     opacity: 0.85
   }).addTo(map);
+  wayLayers = [layer];
+}
+
+function drawWayHighlights(specs) {
+  clearWayLayers();
+  if (!sqlDatabase || !Array.isArray(specs) || !specs.length) {
+    return;
+  }
+
+  const mergedSpecs = new Map();
+  for (const spec of specs) {
+    const wayID = normalizeWayID(spec?.wayID);
+    if (wayID == null) {
+      continue;
+    }
+    const existing = mergedSpecs.get(wayID);
+    if (existing) {
+      existing.labels.push(spec.label);
+      existing.weight = Math.max(existing.weight, spec.weight ?? 5);
+      existing.opacity = Math.max(existing.opacity, spec.opacity ?? 0.9);
+      continue;
+    }
+    mergedSpecs.set(wayID, {
+      ...spec,
+      wayID,
+      labels: [spec.label]
+    });
+  }
+
+  for (const spec of mergedSpecs.values()) {
+    const row = queryWayByID(spec.wayID);
+    if (!row) {
+      continue;
+    }
+    const points = parseWayPoints(row.points_json);
+    if (points.length < 2) {
+      continue;
+    }
+    const layer = L.polyline(points, {
+      color: spec.color ?? replayWayColors.logged,
+      weight: spec.weight ?? 5,
+      opacity: spec.opacity ?? 0.9,
+      dashArray: spec.dashArray
+    }).addTo(map);
+    if (spec.labels?.length) {
+      layer.bindTooltip(spec.labels.join(" + "));
+    }
+    wayLayers.push(layer);
+  }
 }
 
 function drawDriveLogPath() {
@@ -1023,9 +1469,9 @@ function loadAndCenterWay(rawWayID) {
   setStreetAndWay(street, wayID);
   wayInput.value = String(wayID);
 
-  if (points.length >= 2 && wayLayer) {
-    map.fitBounds(wayLayer.getBounds(), { padding: [32, 32] });
-    const center = wayLayer.getBounds().getCenter();
+  if (points.length >= 2 && wayLayers[0]) {
+    map.fitBounds(wayLayers[0].getBounds(), { padding: [32, 32] });
+    const center = wayLayers[0].getBounds().getCenter();
     setCoordinateValue(center.lat, center.lng);
   } else {
     const centerLat = (Number(row.min_lat) + Number(row.max_lat)) / 2;
@@ -1060,8 +1506,8 @@ function identifyStreetUnderCrosshair() {
   setStreetAndWay(street, wayID);
   wayInput.value = String(wayID);
 
-  if (wayLayer) {
-    map.fitBounds(wayLayer.getBounds(), { padding: [32, 32] });
+  if (wayLayers[0]) {
+    map.fitBounds(wayLayers[0].getBounds(), { padding: [32, 32] });
   }
 
   setStatus(`Identifiziert: ${street} (Way ${wayID}, ~${Math.round(best.distanceM)} m).`);

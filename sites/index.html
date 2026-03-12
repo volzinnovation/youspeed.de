@@ -3,231 +3,436 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouSpeed Forschungsprojekt</title>
+    <title>
+      YouSpeed – Intelligent Speed Assistant für iPhone in Deutschland
+    </title>
     <meta
       name="description"
-      content="One-Page zum Forschungsprojekt YouSpeed: Live-Tempolimit, Warnstufen und Kundennutzen."
+      content="YouSpeed ist dein Intelligent Speed Assistant (ISA) für den Deutschland-Start auf dem iPhone: Live-Tempolimit, Bußgeld-Warnung und Führerschein-Schutz."
     />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="YouSpeed – Intelligent Speed Assistant (ISA)"
+    />
+    <meta
+      property="og:description"
+      content="Live-Tempolimit, Warnstufen und Bußgeld-Warnung für den iPhone-Start in Deutschland."
+    />
+    <meta property="og:type" content="website" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="page-glow page-glow-a"></div>
-    <div class="page-glow page-glow-b"></div>
+    <!-- ========== Navigation ========== -->
+    <nav class="nav" id="navbar">
+      <div class="nav-brand"><span class="logo-dot"></span>YouSpeed</div>
+      <div class="nav-links" id="nav-links">
+        <a href="#features">Funktionen</a>
+        <a href="#warnstufen">Warnstufen</a>
+        <a href="#daten">Daten</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Menü öffnen">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+
+    <!-- Mobile flyout -->
+    <div class="mobile-menu" id="mobile-menu">
+      <a href="#features">Funktionen</a>
+      <a href="#warnstufen">Warnstufen</a>
+      <a href="#daten">Daten</a>
+    </div>
 
     <main>
-      <section class="hero reveal">
-        <p class="kicker">Forschungsprojekt</p>
-        <h1>YouSpeed</h1>
+      <!-- ========== Hero ========== -->
+      <section class="hero" id="hero">
+        <span class="hero-badge">
+          <span class="dot"></span> Deutschland-Start · iPhone zuerst
+        </span>
+        <h1>Dein Tempo im Blick.</h1>
         <p class="lead">
-          YouSpeed zeigt Autofahrerinnen und Autofahrern live das Tempolimit,
-          die aktuelle Geschwindigkeit und die risikobezogene Warnstufe bei
-          Überschreitung. Ziel ist bessere Orientierung im Alltag, weniger
-          unbewusste Verstöße und mehr Verkehrssicherheit.
+          YouSpeed zeigt dir live das geltende Tempolimit und warnt dich
+          rechtzeitig vor Bußgeldern, Punkten und Fahrverboten. Dein
+          persönlicher Geschwindigkeitsassistent für den Deutschland-Start auf
+          dem iPhone.
         </p>
 
-        <div class="hero-actions">
-          <button type="button" class="btn btn-primary" disabled aria-disabled="true">
-            App Download (bald verfügbar)
-          </button>
-          <a class="btn btn-secondary" href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">
-            Repository (derzeit privat)
-          </a>
+        <div class="launch-scope" id="download">
+          <span class="launch-pill">Launch-Ziel: 22. Mai 2026</span>
+          <span class="launch-pill">Deutschlandweit via Regionen</span>
+          <span class="launch-pill">App Store Link folgt zum Launch</span>
         </div>
 
-        <div class="hero-meta">
-          <span>Domain: <strong>youspeed.de</strong></span>
-          <span>Hosting: <strong>GitHub Pages</strong></span>
-        </div>
-      </section>
-
-      <section class="project reveal">
-        <h2>Was End-Kunden sehen</h2>
-        <div class="project-grid">
-          <article>
-            <h3>Live-Anzeige</h3>
-            <p>
-              Klare Hauptanzeige mit Tempolimit-Schild, aktueller
-              Geschwindigkeit oder unmittelbarer Konsequenz bei Überschreitung.
-            </p>
-          </article>
-          <article>
-            <h3>Warnstufen</h3>
-            <p>
-              Farbliche Eskalation von normaler Fahrt bis zu kritischen
-              Verstößen mit Punkten/Fahrverbot-Risiko.
-            </p>
-          </article>
-          <article>
-            <h3>Ortsbezug</h3>
-            <p>
-              Standortbezogene Bewertung über lokale Kartendaten. Beispiel unten
-              am Teststandort in Pforzheim.
-            </p>
-          </article>
-          <article>
-            <h3>Korrektur per Spracherkennung</h3>
-            <p>
-              Geschwindigkeitskorrekturen können direkt in der App per
-              Spracherkennung erfasst und als lokale Korrektur dokumentiert
-              werden.
-            </p>
-          </article>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="num">4</div>
+            <div class="label">Warnstufen</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">100 %</div>
+            <div class="label">Offline-fähig</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num">0 %</div>
+            <div class="label">Tracking</div>
+          </div>
         </div>
       </section>
 
-      <section class="speech reveal">
-        <h2>Spracherkennung und Korrektur-Workflow</h2>
+      <!-- ========== Screenshots / Warnstufen ========== -->
+      <section class="container shots-section" id="warnstufen">
+        <div class="section-header reveal">
+          <h2>Warnstufen &amp; Autobahn frei</h2>
+          <p>
+            Je schneller du fährst, desto ernster wird die Warnung. Von
+            entspannt bis kritisch – und auf deutschen Autobahnen auch freie
+            Fahrt ohne Tempolimit über 130 km/h.
+          </p>
+        </div>
+
+        <div class="shots-grid">
+          <figure class="shot-card reveal reveal-d1">
+            <img
+              src="./assets/screenshots/warn-level-0-no-violation.png"
+              alt="Warnstufe 0: keine Überschreitung"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Stufe 0 – Alles ok</strong>
+              <span>Keine Überschreitung, schwarzer Hintergrund</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot-card reveal reveal-d2">
+            <img
+              src="./assets/screenshots/warn-level-1-money.png"
+              alt="Warnstufe 1: Geldbuße"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Stufe 1 – Bußgeld</strong>
+              <span>Geldbuße droht, gelber Hintergrund</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot-card reveal reveal-d3">
+            <img
+              src="./assets/screenshots/warn-level-2-points.png"
+              alt="Warnstufe 2: Punkte"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Stufe 2 – Punkte</strong>
+              <span>Punkte in Flensburg, oranger Hintergrund</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot-card reveal reveal-d4">
+            <img
+              src="./assets/screenshots/warn-level-3-driving-ban.png"
+              alt="Warnstufe 3: Fahrverbot"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Stufe 3 – Fahrverbot</strong>
+              <span>Kritisch: Fahrverbot droht, dunkelrot pulsierend</span>
+            </figcaption>
+          </figure>
+
+          <figure class="shot-card reveal reveal-d5">
+            <img
+              src="./assets/screenshots/autobahn-unlimited-over-130.png"
+              alt="Autobahn ohne Tempolimit über 130 km/h"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Autobahn frei</strong>
+              <span>Über 130 km/h ohne Tempolimit, blauer Hintergrund</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ========== Pain points ========== -->
+      <section class="container" id="problem">
+        <div class="section-header reveal">
+          <h2>Warum YouSpeed?</h2>
+          <p>
+            Millionen Menschen kassieren jedes Jahr Bußgelder, Punkte oder sogar
+            ein Fahrverbot – meist ungewollt, oft ohne es zu merken, aber die
+            Abrechnung kommt später.
+          </p>
+        </div>
+
+        <div class="help-banner reveal">
+          <span class="help-check">✓</span>
+          <span class="help-text">YouSpeed hilft dir rechtzeitig.</span>
+        </div>
+
+        <div class="pain-grid">
+          <article class="pain-card reveal reveal-d1">
+            <div class="pain-icon money">💶</div>
+            <h3>Bußgelder ab 20 €</h3>
+            <p>
+              Schon 1 km/h zu viel innerorts kostet. Bei 21 km/h drüber sind es
+              schnell 115 € oder mehr.
+            </p>
+          </article>
+          <article class="pain-card reveal reveal-d2">
+            <div class="pain-icon points">📍</div>
+            <h3>Punkte in Flensburg</h3>
+            <p>
+              Ab 21 km/h Überschreitung innerorts gibt es einen Punkt. Ab 31
+              km/h sogar zwei – und deinen Führerschein riskierst du ab 8
+              Punkten.
+            </p>
+          </article>
+          <article class="pain-card reveal reveal-d3">
+            <div class="pain-icon ban">🚫</div>
+            <h3>Fahrverbot droht</h3>
+            <p>
+              Ab 31 km/h innerorts droht 1 Monat Fahrverbot. Außerorts ab 41
+              km/h. Für Berufspendler eine Katastrophe.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== Features ========== -->
+      <section class="container" id="features">
+        <div class="section-header reveal">
+          <h2>Was YouSpeed kann</h2>
+          <p>
+            Alles, was du brauchst, um sicher und stressfrei unterwegs zu sein.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card reveal reveal-d1">
+            <div class="icon">🚗</div>
+            <h3>Live-Tempolimit</h3>
+            <p>
+              Klare Anzeige mit dem aktuellen Tempolimit-Schild und deiner
+              Geschwindigkeit – auf einen Blick.
+            </p>
+          </article>
+          <article class="feature-card reveal reveal-d2">
+            <div class="icon">⚠️</div>
+            <h3>4 Warnstufen</h3>
+            <p>
+              Von schwarz (alles ok) über gelb (Bußgeld) und orange (Punkte) bis
+              dunkelrot (Fahrverbot) – du siehst sofort, was droht.
+            </p>
+          </article>
+          <article class="feature-card reveal reveal-d3">
+            <div class="icon">📡</div>
+            <h3>Offline-fähig</h3>
+            <p>
+              Funktioniert komplett ohne Internet. Die Kartendaten werden lokal
+              auf deinem Gerät gespeichert.
+            </p>
+          </article>
+          <article class="feature-card reveal reveal-d4">
+            <div class="icon">🎤</div>
+            <h3>Sprachkorrektur</h3>
+            <p>
+              Stimmt ein Tempolimit nicht? Doppeltipp & Geschwindigkeit
+              einsprechen – die Korrektur wird lokal gespeichert.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ========== CTA Banner ========== -->
+      <section class="container reveal" id="cta-mid">
+        <div class="cta-banner">
+          <h2>Schütze deinen Führerschein.</h2>
+          <p>Deutschland-Start für iPhone. Der App Store Link wird zum Launch ergänzt.</p>
+        </div>
+      </section>
+
+      <!-- ========== Speech / Workflow ========== -->
+      <section class="container" id="sprachkorrektur">
+        <div class="section-header reveal">
+          <h2>Spracherkennung &amp; Korrektur</h2>
+          <p>
+            Wenn ein Tempolimit nicht stimmt, korrigierst du es einfach selbst –
+            direkt beim Fahren, per Sprache.
+          </p>
+        </div>
+
         <div class="speech-grid">
-          <article class="speech-card">
-            <h3>Spracherkennung im Fahrbetrieb</h3>
+          <article class="speech-card reveal reveal-d1">
+            <h3>So funktioniert's</h3>
             <p>
-              Die Korrekturerfassung läuft direkt in der App über On-Device-
-              Spracherkennung (Deutsch). Start per Doppeltipp auf das
-              Tempolimitschild; danach wird der erkannte Wert als Zahl
-              eingesprochen.
+              Die Korrektur läuft direkt auf dem Gerät über
+              On-Device-Spracherkennung (Deutsch). Start per Doppeltipp auf das
+              Tempolimitschild, dann den erkannten Wert als Zahl einsprechen.
             </p>
             <p>
-              Der Sprachparser ist auf verkehrsrelevante Werte begrenzt:
-              10-130 km/h sowie Fussgaengerzone. Dadurch werden Fehleingaben
-              reduziert.
+              Der Sprachparser akzeptiert verkehrsrelevante Werte: 10–130 km/h
+              sowie Fußgängerzone. So werden Fehleingaben minimiert.
             </p>
           </article>
-          <article class="speech-card">
-            <h3>Workflow zur Erfassung von Korrekturen</h3>
+          <article class="speech-card reveal reveal-d2">
+            <h3>Korrektur-Workflow</h3>
             <ol class="workflow-list">
-              <li>Doppeltipp auf das Tempolimitschild startet die Erfassung.</li>
+              <li>
+                Doppeltipp auf das Tempolimitschild startet die Erfassung.
+              </li>
               <li>Die App lauscht kurz und wertet das Transkript lokal aus.</li>
-              <li>Bei gültigem Wert wird eine lokale Beobachtung mit Alt-/Neu-Wert und Way-ID gespeichert.</li>
-              <li>Die Korrektur wird im aktuellen Straßenkontext direkt als lokale Übersteuerung genutzt.</li>
-              <li>Unter „Lokale Erfassungen“ können Einträge geprüft, gelöscht oder als <code>changes.osc</code> exportiert werden.</li>
-              <li>Fehler können in OpenStreetMap manuell korrigiert und mit späteren Datenupdates übernommen werden.</li>
+              <li>
+                Bei gültigem Wert wird eine lokale Beobachtung mit Alt-/Neu-Wert
+                und Way-ID gespeichert.
+              </li>
+              <li>
+                Die Korrektur wird direkt als lokale Übersteuerung genutzt.
+              </li>
+              <li>
+                Unter „Lokale Erfassungen" können Einträge geprüft, gelöscht
+                oder als <code>changes.osc</code> exportiert werden.
+              </li>
+              <li>Fehler können in OpenStreetMap manuell korrigiert werden.</li>
             </ol>
           </article>
         </div>
       </section>
 
-      <section class="data reveal">
-        <h2>Datenquelle, Lizenz und Offline-Betrieb</h2>
-        <div class="data-grid">
-          <article class="data-card">
-            <h3>OpenStreetMap als Datenquelle</h3>
+      <!-- ========== Data & Trust ========== -->
+      <section class="container" id="daten">
+        <div class="section-header reveal">
+          <h2>Vertrauenswürdige Daten</h2>
+          <p>
+            YouSpeed nutzt offene Kartendaten und funktioniert komplett ohne
+            Cloud.
+          </p>
+        </div>
+
+        <div class="trust-grid">
+          <article class="trust-card reveal reveal-d1">
+            <h3>📂 OpenStreetMap</h3>
             <p>
               Die Geschwindigkeitsinformationen basieren auf OpenStreetMap
-              (OSM), insbesondere auf Straßentags wie
-              <code>maxspeed</code>, <code>maxspeed:type</code> und
-              <code>source:maxspeed</code>.
+              (OSM), insbesondere Tags wie <code>maxspeed</code>,
+              <code>maxspeed:type</code> und <code>source:maxspeed</code>.
             </p>
           </article>
-          <article class="data-card">
-            <h3>Datenlizenz und Korrekturen</h3>
+          <article class="trust-card reveal reveal-d2">
+            <h3>📜 Offene Lizenz</h3>
             <p>
               Datenlizenz:
-              <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">
-                ODbL 1.0
-              </a>,
-              Attribution:
-              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
-                © OpenStreetMap-Mitwirkende
-              </a>.
-              Wenn Fehler auffallen, können diese in OpenStreetMap manuell
-              korrigiert werden (z. B. über den OSM-iD-Editor); spätere
-              Datenupdates übernehmen die Korrekturen in die App.
+              <a
+                href="https://opendatacommons.org/licenses/odbl/1-0/"
+                target="_blank"
+                rel="noreferrer"
+                >ODbL 1.0</a
+              >, Attribution:
+              <a
+                href="https://www.openstreetmap.org/copyright"
+                target="_blank"
+                rel="noreferrer"
+                >© OpenStreetMap-Mitwirkende</a
+              >. Fehler können im OSM-iD-Editor korrigiert werden.
             </p>
           </article>
-          <article class="data-card">
-            <h3>Offline-fähig</h3>
+          <article class="trust-card reveal reveal-d3">
+            <h3>✈️ Offline-Betrieb</h3>
             <p>
-              YouSpeed funktioniert im Fahrbetrieb offline mit lokal
-              gespeicherten Kartendaten auf dem Gerät. Internet wird nur für
-              optionale Datenaktualisierungen benötigt.
+              YouSpeed funktioniert im Fahrbetrieb vollständig offline mit lokal
+              gespeicherten Kartendaten. Internet wird nur für optionale
+              Datenaktualisierungen benötigt.
             </p>
           </article>
         </div>
       </section>
 
-      <section class="ranking reveal">
-        <h2>Top 10 Länder mit MaxSpeed-Abdeckung (Anhang A)</h2>
-        <p class="location">
-          Quelle: Tech Report, Anhang A (Europäisches
-          <code>maxspeed</code>-Ranking inklusive Deutschland).
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Rang</th>
-                <th>Land</th>
-                <th>ISO2</th>
-                <th>Befahrbare Ways</th>
-                <th><code>maxspeed</code> getaggt</th>
-                <th>Anteil</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>1</td><td>Niederlande</td><td>NL</td><td>1.360.101</td><td>921.426</td><td>67,75 %</td></tr>
-              <tr><td>2</td><td>Rumänien</td><td>RO</td><td>671.248</td><td>419.884</td><td>62,55 %</td></tr>
-              <tr><td>3</td><td>Luxemburg</td><td>LU</td><td>57.401</td><td>30.766</td><td>53,60 %</td></tr>
-              <tr><td>4</td><td>Belgien</td><td>BE</td><td>816.110</td><td>302.452</td><td>37,06 %</td></tr>
-              <tr><td>5</td><td>Schweden</td><td>SE</td><td>1.235.544</td><td>443.443</td><td>35,89 %</td></tr>
-              <tr><td>6</td><td>Liechtenstein</td><td>LI</td><td>5.407</td><td>1.836</td><td>33,96 %</td></tr>
-              <tr><td>7</td><td>Island</td><td>IS</td><td>61.433</td><td>20.751</td><td>33,78 %</td></tr>
-              <tr><td>8</td><td>Deutschland</td><td>DE</td><td>7.964.480</td><td>2.637.436</td><td>33,12 %</td></tr>
-              <tr><td>9</td><td>Monaco</td><td>MC</td><td>1.224</td><td>355</td><td>29,00 %</td></tr>
-              <tr><td>10</td><td>Vereinigtes Königreich</td><td>GB</td><td>4.871.056</td><td>1.275.216</td><td>26,18 %</td></tr>
-            </tbody>
-          </table>
+      <!-- ========== Final CTA ========== -->
+      <section class="container reveal" id="download-bottom">
+        <div class="cta-banner">
+          <h2>Deutschland-Launch für iPhone.</h2>
+          <p>Kein Abo, keine Werbung. Der App Store Link kommt erst mit dem realen Release.</p>
         </div>
       </section>
-
-      <section class="shots reveal">
-        <h2>Warnstufen am Standort</h2>
-        <p class="location">Tiefenbronner Str. 65, Pforzheim (Simulator-Aufnahmen im direkten Umfeld)</p>
-
-        <div class="shots-grid">
-          <figure class="shot-card">
-            <img src="./assets/screenshots/warn-level-0-no-violation.png" alt="Warnstufe 0: keine Überschreitung" loading="lazy" />
-            <figcaption>
-              <strong>Warnstufe 0</strong>
-              <span>Keine Überschreitung (schwarzer Hintergrund)</span>
-            </figcaption>
-          </figure>
-
-          <figure class="shot-card">
-            <img src="./assets/screenshots/warn-level-1-money.png" alt="Warnstufe 1: Geldbuße" loading="lazy" />
-            <figcaption>
-              <strong>Warnstufe 1</strong>
-              <span>Geldbuße-Risiko (gelber Hintergrund)</span>
-            </figcaption>
-          </figure>
-
-          <figure class="shot-card">
-            <img src="./assets/screenshots/warn-level-2-points.png" alt="Warnstufe 2: Punkte" loading="lazy" />
-            <figcaption>
-              <strong>Warnstufe 2</strong>
-              <span>Punkte-Risiko (Punkte werden angezeigt)</span>
-            </figcaption>
-          </figure>
-
-          <figure class="shot-card">
-            <img src="./assets/screenshots/warn-level-3-driving-ban.png" alt="Warnstufe 3: Fahrverbot-Risiko" loading="lazy" />
-            <figcaption>
-              <strong>Warnstufe 3</strong>
-              <span>Kritisch: Fahrverbot-Risiko (dunkelrot pulsierend)</span>
-            </figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <footer class="imprint reveal">
-        <h2>Impressum</h2>
-        <p>Prof. Dr. Raphael Volz<br />Hochschule Pforzheim</p>
-      </footer>
     </main>
+
+    <!-- ========== Footer ========== -->
+    <footer class="site-footer">
+      <div class="container">
+        <p><strong>Impressum</strong></p>
+        <p><a href="https://www.raphaelvolz.de">Prof. Dr. Raphael Volz</a></p>
+        <p>Labor für intelligente Mobilität und autonome Systeme (IMAS)</p>
+        <p>
+          <a href="https://techpf.hs-pforzheim.de"
+            >TechPF - Fakultät für Technik</a
+          >
+        </p>
+        <p>
+          <a href="https://www.hs-pforzheim.de"
+            >Hochschule Pforzheim - Pforzheim University</a
+          >
+        </p>
+        <p>Tiefenbronner Str. 65, 75175 Pforzheim</p>
+        <p>
+          E-Mail:
+          <a href="mailto:raphael.volz@hs-pforzheim.de"
+            >raphael.volz@hs-pforzheim.de</a
+          >
+        </p>
+        <p style="margin-top: 0.6rem">
+          <a
+            href="https://github.com/volzinnovation/youspeed.de"
+            target="_blank"
+            rel="noreferrer"
+            >Open Source auf GitHub</a
+          >
+        </p>
+      </div>
+    </footer>
+
+    <!-- ========== JS: reveal + hamburger ========== -->
+    <script>
+      // Scroll-reveal via Intersection Observer
+      const reveals = document.querySelectorAll(".reveal");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible");
+              observer.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12 },
+      );
+      reveals.forEach((el) => observer.observe(el));
+
+      // Hamburger menu
+      const hamburger = document.getElementById("hamburger");
+      const mobileMenu = document.getElementById("mobile-menu");
+      hamburger.addEventListener("click", () => {
+        hamburger.classList.toggle("open");
+        mobileMenu.classList.toggle("open");
+      });
+      mobileMenu.querySelectorAll("a").forEach((a) => {
+        a.addEventListener("click", () => {
+          hamburger.classList.remove("open");
+          mobileMenu.classList.remove("open");
+        });
+      });
+
+      // Shrink nav on scroll
+      const nav = document.getElementById("navbar");
+      window.addEventListener("scroll", () => {
+        nav.classList.toggle("scrolled", window.scrollY > 60);
+      });
+    </script>
   </body>
 </html>

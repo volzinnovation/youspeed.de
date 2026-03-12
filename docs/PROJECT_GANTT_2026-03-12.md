@@ -2,60 +2,48 @@
 
 Date: 2026-03-12
 
-This chart visualizes the workstreams and milestone deadlines defined in `PROJECT_PLAN_2026-03-12.md`.
+This chart visualizes the aggressive Germany launch plan defined in `PROJECT_PLAN_2026-03-12.md`.
 
 ```mermaid
 gantt
-    title YouSpeed workstreams and milestone deadlines
+    title YouSpeed aggressive Germany launch plan
     dateFormat  YYYY-MM-DD
     axisFormat  %b %d
-    excludes weekends
 
     section Milestones
-    M0 Baseline lock                   :milestone, m0, 2026-03-16, 1d
-    M1 Karlsruhe seed RC               :milestone, m1, 2026-03-23, 1d
-    M2 Karlsruhe incremental validated :milestone, m2, 2026-04-05, 1d
-    M3 Supported-region set live       :milestone, m3, 2026-04-26, 1d
-    M4 Cross-region incrementals live  :milestone, m4, 2026-05-31, 1d
-    M5 Android parity                  :milestone, m5, 2026-07-12, 1d
-    M6 Release prep complete           :milestone, m6, 2026-08-16, 1d
-    M7 Launch window closes            :milestone, m7, 2026-08-31, 1d
+    M0 Launch contract locked          :milestone, m0, 2026-03-14, 1d
+    M1 Karlsruhe seed baseline frozen  :milestone, m1, 2026-03-23, 1d
+    M2 Paper submit or defer           :milestone, m2, 2026-04-05, 1d
+    M3 Full-bundle recovery validated  :milestone, m3, 2026-04-05, 1d
+    M4 Germany shard set validated     :milestone, m4, 2026-04-20, 1d
+    M5 iPhone launch candidate         :milestone, m5, 2026-05-01, 1d
+    M6 App Store submission            :milestone, m6, 2026-05-08, 1d
+    M7 Preferred go-live               :milestone, m7, 2026-05-15, 1d
+    M7b Hard go-live deadline          :milestone, m7b, 2026-05-22, 1d
+    M8 Android alpha checkpoint        :milestone, m8, 2026-05-22, 1d
 
-    section W1 Seed data and bundle generation
-    Karlsruhe full-bundle regeneration :active, w1a, 2026-03-12, 2026-03-18
-    Seed DB rebuild and baseline lock  :w1b, 2026-03-18, 2026-03-23
-    Supported-region full bundles      :w1c, 2026-04-06, 2026-04-26
+    section Track A Paper-critical evidence
+    Route evaluation and paper decision :crit, a1, 2026-03-12, 2026-04-05
 
-    section W2 iPhone runtime quality
-    Device validation and drive tests  :active, w2a, 2026-03-12, 2026-03-23
-    Seed-breaking fixes                :w2b, 2026-03-16, 2026-03-23
-    Incremental-sync hardening         :w2c, 2026-03-24, 2026-04-05
+    section Track B Karlsruhe seed and matcher hardening
+    Seed rebuild and hardening          :active, b1, 2026-03-12, 2026-03-23
 
-    section W3 Incremental update system
-    Karlsruhe delta-chain validation   :w3a, 2026-03-24, 2026-04-05
-    Cross-region incremental rollout   :w3b, 2026-04-27, 2026-05-31
+    section Track C Germany shard data pipeline
+    Germany shard full-bundle pipeline  :c1, 2026-03-12, 2026-04-20
 
-    section W4 Regional scale-out
-    Supported-region expansion         :w4a, 2026-04-06, 2026-04-26
-    Regional operations stabilization  :w4b, 2026-04-27, 2026-05-31
+    section Track D iPhone Germany launch path
+    Germany discovery and launch path   :d1, 2026-03-20, 2026-05-01
 
-    section W7 Publications
-    Matching paper submit or defer     :crit, w7a, 2026-03-12, 2026-04-05
-    Architecture paper alignment       :w7b, 2026-03-12, 2026-05-31
-    SotM application/system prep       :w7c, 2026-04-06, 2026-05-31
+    section Track E Android internal alpha
+    Android alpha foundation            :e1, 2026-03-12, 2026-05-22
 
-    section W6 Android
-    Android architecture and seed port :w6a, 2026-06-01, 2026-06-21
-    Android supported-region parity    :w6b, 2026-06-22, 2026-07-12
-
-    section W5 Distribution and release
-    Store, legal, and release QA       :w5a, 2026-07-13, 2026-08-16
-    Website correction to real links   :w5b, 2026-07-27, 2026-08-16
-    Public launch window               :w5c, 2026-08-17, 2026-08-31
+    section Track F App Store and release surface
+    Store package, website, FAQ         :f1, 2026-04-21, 2026-05-22
 ```
 
 ## Notes
 
-- `W5` starts after Android parity because the public website and store CTAs should only follow real store deliverables.
-- `W7` starts early because the matching paper depends on the Karlsruhe seed phase, not on the later multi-region product rollout.
-- `W3` and `W4` overlap intentionally after Karlsruhe validation; by then the work shifts from proving one region to operating a supported set.
+- Launch is public, Germany-only, and iPhone-only on `2026-05-22`.
+- Germany launch is nationwide via shards, but launch-day update policy is full bundles only.
+- Android starts immediately as a parallel internal-alpha track, but Android release parity is not a May 22 gate.
+- Paper work keeps priority over noncritical launch polish if time conflicts emerge.

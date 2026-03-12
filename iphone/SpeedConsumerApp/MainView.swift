@@ -165,7 +165,7 @@ struct MainView: View {
             Button {
                 showingLocalRecordings = true
             } label: {
-                Image(systemName: "ladybug.fill")
+                Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
@@ -750,11 +750,15 @@ private struct LegalInformationView: View {
 
 private enum LegalTextLoader {
     static func load(bundle: Bundle = .main) -> String {
-        guard let url = bundle.url(forResource: "legal", withExtension: "txt"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else {
-            return "Rechtliche Hinweise konnten nicht geladen werden."
+        let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
+        for candidateBundle in bundles {
+            guard let url = candidateBundle.url(forResource: "legal", withExtension: "txt"),
+                  let text = try? String(contentsOf: url, encoding: .utf8) else {
+                continue
+            }
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return "Rechtliche Hinweise konnten nicht geladen werden."
     }
 }
 

@@ -2,41 +2,40 @@ Impressum
 Angaben gemaess Paragraph 5 DDG
 
 Anbieter:
-[Unternehmensname / Name]
-[Rechtsform]
-Vertreten durch: [Vor- und Nachname]
-Anschrift: [Strasse, Nr., PLZ, Ort, Land]
-E-Mail: [E-Mail-Adresse]
-Telefon: [Telefonnummer]
+Moonshots Studios GmbH
+GmbH
+Vertreten durch: Alexander Gerhart
+Anschrift: Auguststr. 2, 10117 Berlin
+E-Mail: alexander@moonshots.gmbh
+Telefon: +493050956343
 
 Registereintrag (falls vorhanden):
-[Handelsregister + Registernummer]
-
+Amtsgericht Charlottenburg HRB 248039 B
 USt-IdNr. (falls vorhanden):
-[Nummer]
+DE259968336
 
 Verantwortlich fuer redaktionelle Inhalte gemaess Paragraph 18 Abs. 2 MStV:
-[Vor- und Nachname, Anschrift]
+Alexander Gerhart, Auguststr. 2, 10117 Berlin
 
 Datenschutzinformation (Art. 13 DSGVO)
-Verantwortlicher: [Name/Anschrift/Kontakt]
-Zwecke der Verarbeitung: [Betrieb der App, Bereitstellung von Karten-/Regeldaten, Support]
-Rechtsgrundlagen: [Art. 6 Abs. 1 lit. b/c/f DSGVO; ggf. lit. a]
-Empfaenger: [Dienstleisterkategorien, z. B. Hosting/CDN]
-Drittlanduebermittlung: [ja/nein + Rechtsgrundlage]
-Speicherdauer: [konkrete Fristen/Kriterien]
+Verantwortlicher: Alexander Gerhart, Auguststr. 2, 10117 Berlin, alexander@moonshots.gmbh
+Zwecke der Verarbeitung: Betrieb der App, Bereitstellung von Karten- und Regeldaten sowie Support-Anfragen
+Rechtsgrundlagen: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) sowie lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb)
+Empfaenger: IT-Hosting-Dienstleister sowie Content Delivery Networks (CDN) zur Auslieferung der App-Inhalte.
+Drittlanduebermittlung: Nein
+Speicherdauer: Personenbezogene Daten werden nur so lange gespeichert, wie es für den Zweck (z. B. Support-Anfrage) oder gesetzliche Aufbewahrungsfristen nötig ist
 Betroffenenrechte: Auskunft, Berichtigung, Loeschung, Einschraenkung, Widerspruch, Datenuebertragbarkeit
 Beschwerderecht: bei einer Datenschutzaufsichtsbehoerde
-Kontakt Datenschutz: [E-Mail/Adresse DSB, falls benannt]
+Kontakt Datenschutz: alexander@moonshots.gmbh
 
 DSA-Kontaktstellen (Verordnung (EU) 2022/2065)
 Kontaktstelle fuer Behoerden gemaess Art. 11 DSA:
-E-Mail: [DSA-Behordenkontakt]
-Sprachen: [Deutsch, Englisch]
+E-Mail: alexander@moonshots.gmbh
+Sprachen: Deutsch, Englisch
 
 Kontaktstelle fuer Nutzer gemaess Art. 12 DSA:
-E-Mail: [DSA-Nutzerkontakt]
-Sprachen: [Deutsch, Englisch]
+E-Mail: alexander@moonshots.gmbh
+Sprachen: Deutsch, Englisch
 
 Hinweis: Falls ein nicht in der EU niedergelassener Anbieter einen Vermittlungsdienst in der EU anbietet,
 ist zusaetzlich ein gesetzlicher Vertreter in der EU gemaess Art. 13 DSA zu benennen.
@@ -66,6 +65,4 @@ Verwendete Systemkomponenten:
 - SQLite3 (Systembibliothek): Public Domain
   https://www.sqlite.org/copyright.html
 
-Projektlizenz (Repository):
-GNU Affero General Public License v3.0 (AGPL-3.0), siehe LICENSE im Projekt.
-Quellcode-URL: [Repository-URL]
+    

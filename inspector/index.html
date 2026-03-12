@@ -42,6 +42,7 @@
           </div>
           <label for="log-file-input">Drive-Log</label>
           <input id="log-file-input" type="file" accept=".ndjson,.jsonl,.json,application/json" />
+          <div class="hint compact">Unterstützt auch annotierte Replay-/Benchmark-NDJSONs mit hervorgehobenen Matcher-Fehlern.</div>
         </div>
 
         <div class="meta">
@@ -64,6 +65,7 @@
           <h2>Ausgewaehlter Fix</h2>
           <div id="trace-meta" class="hint">Kein Fix ausgewählt.</div>
           <div id="trace-metrics" class="overview-grid"></div>
+          <div id="trace-debug" class="trace-block"></div>
           <div id="selection-trace" class="trace-block"></div>
           <div id="candidate-trace" class="trace-block"></div>
           <pre id="raw-entry" class="raw-block"></pre>

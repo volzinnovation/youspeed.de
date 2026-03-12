@@ -395,6 +395,11 @@ final class V3SpeedLimitService {
     private static let headingWeightMPerDeg: Double = 1.8
     private static let headingMinSpeedKmh: Double = 8.0
     private static let headingMaxAccuracyDeg: Double = 45.0
+    private static let walkingTurnSwitchMaxSpeedKmh: Double = 7.0
+    private static let walkingTurnSwitchPreferredDistanceM: Double = 10.0
+    private static let walkingTurnSwitchBestDistanceM: Double = 5.0
+    private static let walkingTurnSwitchMinGapM: Double = 8.0
+    private static let walkingTurnSwitchEndpointM: Double = 4.0
     private static let preferredWayScoreSlackM: Double = 18.0
     private static let preferredWayDistanceMultiplier: Double = 1.9
     private static let preferredWayDistanceFloorM: Double = 85.0
@@ -662,6 +667,11 @@ final class V3SpeedLimitService {
         } else {
             selectableCandidates = rankedCandidates
         }
+        let nearestAlternativeDistanceCandidate = selectableCandidates
+            .filter { normalizedWayID($0.wayID) != normalizedWayID(normalizedMatchContext.preferredWayID) }
+            .min { lhs, rhs in
+                isBetterDistanceCandidate(lhs, than: rhs)
+            }
         let graphSelectableCandidates: [WayCandidate]
         if shouldApplyConnectedTransitionGate(
             matchContext: normalizedMatchContext,
@@ -738,12 +748,16 @@ final class V3SpeedLimitService {
             if finalSelected?.isUnlimitedSpeedLimit == true {
                 effectiveSpeed = nil
             } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
-                if finalSelected.speedSource == .highwayClass, let insideCity = insideCityDecision.insideCity {
+                if finalSelected.speedSource == .highwayClass,
+                   Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+                   let insideCity = insideCityDecision.insideCity {
                     effectiveSpeed = insideCity ? 50 : 100
                 } else {
                     effectiveSpeed = matchedSpeed
                 }
-            } else if finalSelected != nil, let insideCity = insideCityDecision.insideCity {
+            } else if let finalSelected,
+                      Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+                      let insideCity = insideCityDecision.insideCity {
                 effectiveSpeed = insideCity ? 50 : 100
             } else if insideCityDecision.insideCity == true {
                 effectiveSpeed = 50
@@ -951,6 +965,25 @@ final class V3SpeedLimitService {
                       ) {
                 heuristicSelected = linkedWayCandidate
                 lockHeuristicSelection = true
+            } else if let preferredCandidate,
+                      let nearestAlternativeDistanceCandidate,
+                      shouldForceGeometricCandidateAtWalkingSpeed(
+                        preferredCandidate: preferredCandidate,
+                        geometricCandidate: nearestAlternativeDistanceCandidate,
+                        observedHeadingDeg: headingForScoring,
+                        speedKmh: speedKmh,
+                        accuracyBufferM: accuracyBuffer,
+                        matchContext: normalizedMatchContext,
+                        wayLinks: wayLinksContext
+                      ) {
+                heuristicSelected = nearestAlternativeDistanceCandidate
+                lockHeuristicSelection = true
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "low_speed_rule",
+                        detail: "selected geometric turn \(nearestAlternativeDistanceCandidate.wayID ?? "nil") over preferred \(preferredCandidate.wayID ?? "nil") at walking speed"
+                    )
+                )
             } else if let preferredCandidate,
                shouldKeepContinuityCandidate(
                 preferredCandidate,
@@ -1245,6 +1278,8 @@ final class V3SpeedLimitService {
                 tunnelCandidate: tunnelContinuityCandidate,
                 over: selected,
                 matchContext: normalizedMatchContext,
+                wayLinks: wayLinksContext,
+                progressContext: corridorProgressContext,
                 horizontalAccuracyM: horizontalAccuracyM,
                 gpsSignalBars: gpsSignalBars,
                 accuracyBufferM: accuracyBuffer
@@ -1332,13 +1367,17 @@ final class V3SpeedLimitService {
         if finalSelected?.isUnlimitedSpeedLimit == true {
             effectiveSpeed = nil
         } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
-            if finalSelected.speedSource == .highwayClass, let insideCity = insideCityDecision.insideCity {
+            if finalSelected.speedSource == .highwayClass,
+               Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+               let insideCity = insideCityDecision.insideCity {
                 // Highway class alone is weaker than explicit city/rural context.
                 effectiveSpeed = insideCity ? 50 : 100
             } else {
                 effectiveSpeed = matchedSpeed
             }
-        } else if finalSelected != nil, let insideCity = insideCityDecision.insideCity {
+        } else if let finalSelected,
+                  Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+                  let insideCity = insideCityDecision.insideCity {
             // Keep inherited defaults only when a way match exists.
             effectiveSpeed = insideCity ? 50 : 100
         } else if insideCityDecision.insideCity == true {
@@ -1508,6 +1547,15 @@ final class V3SpeedLimitService {
         ).speed
     }
 
+    private static func allowsResidentialAreaFallback(highway: String?) -> Bool {
+        switch highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "motorway", "motorway_link":
+            return false
+        default:
+            return true
+        }
+    }
+
     private static func deriveSpeedLimitWithSource(
         maxspeed: String?,
         maxspeedType: String?,
@@ -1529,12 +1577,12 @@ final class V3SpeedLimitService {
             return (100, .inheritedTag, false)
         }
         if inherited.contains("motorway") {
-            return (130, .inheritedTag, false)
+            return (nil, .inheritedTag, false)
         }
 
         switch highway?.lowercased() {
         case "motorway", "motorway_link":
-            return (130, .highwayClass, false)
+            return (nil, .highwayClass, false)
         case "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link":
             return (100, .highwayClass, false)
         case "living_street":
@@ -4656,18 +4704,24 @@ final class V3SpeedLimitService {
         ) else {
             return false
         }
-        guard let corridorState = candidateCorridorState(
+        let corridorState = candidateCorridorState(
             for: candidate,
             matchContext: matchContext,
             wayLinks: wayLinks,
             progressContext: progressContext
-        ),
-        corridorState.snapshot.kind == "tunnel",
-        corridorState.entryZone else {
-            return false
+        )
+        if let corridorState {
+            guard corridorState.snapshot.kind == "tunnel",
+                  corridorState.entryZone else {
+                return false
+            }
         }
         let motionScore = portalMotionProgressScore(for: candidate, matchContext: matchContext)
-        let endpointDistance = corridorState.snapshot.depthM
+        let endpointDistance = corridorState?.snapshot.depthM ?? candidate.endpointProximityM
+        let portalDistanceThreshold = Self.tunnelPortalEntryEndpointThresholdM + accuracyBufferM
+        guard endpointDistance.isFinite, endpointDistance <= portalDistanceThreshold else {
+            return false
+        }
         let directSnapThreshold = max(4.0, min(accuracyBufferM * 0.35, 10.0))
         if endpointDistance <= directSnapThreshold {
             if matchContext.recentFixes.isEmpty {
@@ -5286,6 +5340,59 @@ final class V3SpeedLimitService {
             continuityCandidate.score <= bestCandidate.score + scoreSlackM
     }
 
+    private func shouldForceGeometricCandidateAtWalkingSpeed(
+        preferredCandidate: WayCandidate,
+        geometricCandidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        accuracyBufferM: Double,
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext
+    ) -> Bool {
+        _ = observedHeadingDeg
+        guard let speedKmh,
+              speedKmh.isFinite,
+              speedKmh <= Self.walkingTurnSwitchMaxSpeedKmh,
+              matchContext.matchedFixCount >= 3 else {
+            return false
+        }
+        guard normalizedWayID(preferredCandidate.wayID) != normalizedWayID(geometricCandidate.wayID) else {
+            return false
+        }
+        guard geometricCandidate.service != "driveway" else {
+            return false
+        }
+        let requiredEndpointProximity = max(
+            Self.walkingTurnSwitchEndpointM,
+            min(accuracyBufferM, 6.0)
+        )
+        guard preferredCandidate.endpointProximityM <= requiredEndpointProximity else {
+            return false
+        }
+        let requiredPreferredDistance = max(
+            Self.walkingTurnSwitchPreferredDistanceM,
+            accuracyBufferM + 4.0
+        )
+        guard preferredCandidate.distanceM >= requiredPreferredDistance else {
+            return false
+        }
+        let allowedBestDistance = max(
+            Self.walkingTurnSwitchBestDistanceM,
+            min(accuracyBufferM + 1.0, 6.0)
+        )
+        guard geometricCandidate.distanceM <= allowedBestDistance else {
+            return false
+        }
+        let requiredGap = max(
+            Self.walkingTurnSwitchMinGapM,
+            accuracyBufferM + 1.5
+        )
+        guard preferredCandidate.distanceM >= geometricCandidate.distanceM + requiredGap else {
+            return false
+        }
+        return preferredCandidate.distanceM >= geometricCandidate.distanceM * 2.5
+    }
+
     private func scaledAccuracyBufferM(_ horizontalAccuracyM: Double?) -> Double {
         guard let horizontalAccuracyM, horizontalAccuracyM.isFinite, horizontalAccuracyM >= 0 else {
             return 0.0
@@ -5467,13 +5574,22 @@ final class V3SpeedLimitService {
         tunnelCandidate: WayCandidate,
         over surfaceCandidate: WayCandidate,
         matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext,
+        progressContext: CorridorProgressContext,
         horizontalAccuracyM: Double?,
         gpsSignalBars: Int?,
         accuracyBufferM: Double
     ) -> Bool {
+        let portalEligible = isPortalEligibleTunnelCandidate(
+            tunnelCandidate,
+            matchContext: matchContext,
+            wayLinks: wayLinks,
+            progressContext: progressContext,
+            accuracyBufferM: accuracyBufferM
+        )
         guard isTruthyOSMTag(tunnelCandidate.tunnel),
               !isTruthyOSMTag(surfaceCandidate.tunnel),
-              hasCommittedTunnelApproachEvidence(
+              portalEligible || hasCommittedTunnelApproachEvidence(
                 for: tunnelCandidate,
                 matchContext: matchContext,
                 horizontalAccuracyM: horizontalAccuracyM,

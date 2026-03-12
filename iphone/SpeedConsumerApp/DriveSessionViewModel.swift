@@ -1206,6 +1206,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         tunnelModeTracker.isTunnelModeActive
     }
 
+    var isLowSpeedMatchingRuleActive: Bool {
+        lastSelectionTrace.contains { $0.step == "low_speed_rule" }
+    }
+
     var speedCaptureSignText: String? {
         switch speedCaptureMode {
         case .idle:

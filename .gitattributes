@@ -1,0 +1,2 @@
+iphone/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite filter=lfs diff=lfs merge=lfs -text
+mapdata/bundles/v3/karlsruhe-regbez/2026-03-11-geomlinks-unlimited/karlsruhe-regbez_speeds.sqlite filter=lfs diff=lfs merge=lfs -text

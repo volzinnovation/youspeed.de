@@ -683,6 +683,32 @@ struct MatchSelectionTrace: Codable, Sendable {
     let detail: String
 }
 
+struct DriveMatchReplayHindsightDebug: Codable, Sendable {
+    let wayID: String
+    let futureWindow: Int
+    let minFutureRunLength: Int
+    let minAgreementRatio: Double
+    let loggedMatches: Bool
+    let replayMatches: Bool
+    let loggedCandidateRank: Int?
+    let replayCandidateRank: Int?
+}
+
+struct DriveMatchReplayDebug: Codable, Sendable {
+    let annotationVersion: Int
+    let replayKind: String
+    let sourceLogName: String
+    let outcome: String
+    let isError: Bool
+    let issueKinds: [String]
+    let loggedMatchesReplay: Bool
+    let loggedSelectedRank: Int?
+    let replaySelectedRank: Int?
+    let replayUsedThreeWayGate: Bool
+    let hindsight: DriveMatchReplayHindsightDebug?
+    let replayResult: SpeedLimitResult
+}
+
 struct SpeedLimitResult: Codable, Sendable {
     let speedLimitKmh: Int?
     let isUnlimitedSpeedLimit: Bool?
@@ -737,6 +763,41 @@ struct DriveMatchLogEntry: Codable, Sendable {
     let tunnelModeState: String
     let result: SpeedLimitResult?
     let error: String?
+    let replayDebug: DriveMatchReplayDebug?
+
+    init(
+        fixID: Int,
+        timestampUTC: String,
+        lat: Double,
+        lon: Double,
+        speedKmh: Double,
+        horizontalAccM: Double,
+        verticalAccM: Double,
+        courseDeg: Double,
+        gpsSignalBars: Int,
+        status: String,
+        speedLimitOverrideKmh: Int?,
+        tunnelModeState: String,
+        result: SpeedLimitResult?,
+        error: String?,
+        replayDebug: DriveMatchReplayDebug? = nil
+    ) {
+        self.fixID = fixID
+        self.timestampUTC = timestampUTC
+        self.lat = lat
+        self.lon = lon
+        self.speedKmh = speedKmh
+        self.horizontalAccM = horizontalAccM
+        self.verticalAccM = verticalAccM
+        self.courseDeg = courseDeg
+        self.gpsSignalBars = gpsSignalBars
+        self.status = status
+        self.speedLimitOverrideKmh = speedLimitOverrideKmh
+        self.tunnelModeState = tunnelModeState
+        self.result = result
+        self.error = error
+        self.replayDebug = replayDebug
+    }
 }
 
 enum ConsumerAppError: Error, LocalizedError {

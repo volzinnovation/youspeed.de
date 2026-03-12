@@ -16,7 +16,18 @@ final class SpeedConsumerTests: XCTestCase {
     func testDeriveSpeedLimitFallbacks() {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: "DE:urban", sourceMaxspeed: nil, highway: nil), 50)
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: "DE:rural", highway: nil), 100)
-        XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"), 130)
+        XCTAssertNil(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"))
+    }
+
+    func testDeriveSpeedLimitDoesNotInventMandatoryMotorwayLimitFromInheritedTags() {
+        XCTAssertNil(
+            V3SpeedLimitService.deriveSpeedLimitKmh(
+                maxspeed: nil,
+                maxspeedType: "DE:motorway",
+                sourceMaxspeed: nil,
+                highway: "motorway"
+            )
+        )
     }
 
     func testExplicitUnlimitedTagSuppressesMotorwayFallback() {
@@ -174,6 +185,16 @@ final class SpeedConsumerTests: XCTestCase {
         let germanyEndpoints = endpoints.filter { $0.countryCode.uppercased() == "DEU" }
         XCTAssertGreaterThan(germanyEndpoints.count, 1)
         XCTAssertTrue(germanyEndpoints.contains(where: { $0.regionID == "germany/bayern" }))
+    }
+
+    func testLegalTextIsBundledIntoAppResources() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let url = try XCTUnwrap(
+            bundle.url(forResource: "legal", withExtension: "txt"),
+            "Bundled legal.txt not found in app resources"
+        )
+        let text = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(text.contains("OpenStreetMap"), "Expected bundled legal text contents")
     }
 
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
@@ -713,7 +734,7 @@ final class SpeedConsumerTests: XCTestCase {
     func testDefaultManifestURLIgnoresPlaceholderAndInvalidScheme() {
         let placeholder = DriveSessionViewModel.defaultManifestURL(
             infoDictionary: [
-                "YouSpeedV3ManifestURL": "$(YOSPEED_MANIFEST_URL)",
+                "YouSpeedV3ManifestURL": "$(YOUSPEED_V3_MANIFEST_URL)",
             ]
         )
         XCTAssertNil(placeholder)
@@ -724,6 +745,23 @@ final class SpeedConsumerTests: XCTestCase {
             ]
         )
         XCTAssertNil(invalidScheme)
+    }
+
+    @MainActor
+    func testDefaultManifestEndpointsPreferBundledGermanyTargetsWhenExplicitOverrideIsUnset() {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+
+        let endpoints = DriveSessionViewModel.defaultManifestEndpoints(
+            bundle: bundle,
+            preferredCountryCode: "DEU"
+        )
+        XCTAssertFalse(endpoints.isEmpty)
+        XCTAssertEqual(endpoints.first?.countryCode, "DEU")
+
+        let config = try? V3BundleTargetsConfig.loadBundled(bundle: bundle)
+        let bundledEndpoints = config?.manifestEndpoints(preferredCountryCode: "DEU") ?? []
+        XCTAssertFalse(bundledEndpoints.isEmpty)
+        XCTAssertTrue(endpoints.starts(with: bundledEndpoints, by: { $0.manifestURL == $1.manifestURL }))
     }
 
     @MainActor
@@ -1265,6 +1303,53 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.isUnlimitedSpeedLimit, true)
         XCTAssertEqual(result.streetName, "Autobahn 8 (A 8)")
         XCTAssertEqual(result.speedCandidateCount, 1)
+    }
+
+    func testLookupDoesNotCollapseUnsignedMotorwayToGenericOutOfCityFallback() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-unsigned-motorway-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("fixture.sqlite")
+        try createFixtureV3DB(at: dbURL)
+        try executeSQL(
+            at: dbURL,
+            sql: """
+            UPDATE ways
+            SET highway='motorway',
+                street_name='Autobahn 8',
+                ref='A 8',
+                maxspeed=NULL,
+                maxspeed_type='DE:motorway',
+                source_maxspeed=NULL
+            WHERE way_id='100';
+
+            UPDATE areas
+            SET points_json='[[13.4050,52.5200],[13.4062,52.5200],[13.4062,52.5204],[13.4054,52.5204],[13.4054,52.5212],[13.4050,52.5212],[13.4050,52.5200]]'
+            WHERE row_id=2;
+            """
+        )
+
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+        let result = try service.lookupSpeedLimit(
+            lat: 52.5205,
+            lon: 13.4055,
+            radiusM: 250.0,
+            maxCandidates: 64,
+            headingDeg: 45.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 118.0,
+            horizontalAccuracyM: 5.0
+        )
+
+        XCTAssertEqual(result.wayID, "100")
+        XCTAssertEqual(result.highway, "motorway")
+        XCTAssertEqual(result.insideCity, false)
+        XCTAssertNil(result.speedLimitKmh)
+        XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
     }
 
     func testSeedBundleSyncAppliesZlibCompressedDeltaChain() async throws {
@@ -2540,6 +2625,177 @@ final class SpeedConsumerTests: XCTestCase {
         print("GEOM_REPLAY_LOGS \(perLogSummaries.joined(separator: " | "))")
 
         XCTAssertGreaterThan(aggregate.replayedFixCount, 0)
+    }
+
+    func testBenchmarkWalkingSpeedReplayDiagnostics() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let logURL = try driveMatchLogURL(named: "20260312_000427_801_drive_match_log.ndjson")
+        let entries = try loadDriveMatchLogEntries(url: logURL)
+            .sorted {
+                if $0.fixID != $1.fixID {
+                    return $0.fixID < $1.fixID
+                }
+                return $0.timestampUTC < $1.timestampUTC
+            }
+        XCTAssertFalse(entries.isEmpty, "Expected non-empty walking drive log at \(logURL.lastPathComponent)")
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        let lowSpeedThresholdKmh = 8.0
+        var state = BundledMatchContextState()
+        var logComparable = 0
+        var logAgreement = 0
+        var lowSpeedFixCount = 0
+        var loggedStickyCount = 0
+        var replayStickyCount = 0
+        var loggedStrongStickyCount = 0
+        var replayStrongStickyCount = 0
+        var loggedContinuityCounter: [String: Int] = [:]
+        var replayContinuityCounter: [String: Int] = [:]
+        var samples: [String] = []
+
+        func nearestTrace(in traces: [MatchCandidateTrace]) -> MatchCandidateTrace? {
+            traces.min {
+                if $0.distanceM != $1.distanceM {
+                    return $0.distanceM < $1.distanceM
+                }
+                let lhsGeometry = $0.geometryScore ?? .infinity
+                let rhsGeometry = $1.geometryScore ?? .infinity
+                if lhsGeometry != rhsGeometry {
+                    return lhsGeometry < rhsGeometry
+                }
+                return ($0.wayID ?? "") < ($1.wayID ?? "")
+            }
+        }
+
+        func continuityName(for trace: MatchCandidateTrace?) -> String {
+            trace?.continuityClass ?? "none"
+        }
+
+        func recordStickyEvent(
+            label: String,
+            speedKmh: Double,
+            entry: DriveMatchLogEntry,
+            selected: MatchCandidateTrace?,
+            best: MatchCandidateTrace?,
+            counter: inout [String: Int],
+            stickyCount: inout Int,
+            strongStickyCount: inout Int
+        ) {
+            guard let selected, let best, selected.wayID != best.wayID else {
+                return
+            }
+            guard continuityName(for: selected) != "none" else {
+                return
+            }
+            stickyCount += 1
+            counter[continuityName(for: selected), default: 0] += 1
+            let selectedDistance = selected.distanceM
+            let bestDistance = best.distanceM
+            if selectedDistance >= bestDistance + 10.0 {
+                strongStickyCount += 1
+            }
+            if samples.count < 8 {
+                let speedText = String(format: "%.2f", speedKmh)
+                let selectedDistanceText = String(format: "%.2f", selectedDistance)
+                let bestDistanceText = String(format: "%.2f", bestDistance)
+                let selectedScoreText = String(format: "%.2f", selected.geometryScore ?? selected.distanceM)
+                let bestScoreText = String(format: "%.2f", best.geometryScore ?? best.distanceM)
+                let sample =
+                    "\(label) fix \(entry.fixID)"
+                    + " speed=\(speedText)"
+                    + " selected=\(selected.wayID ?? "nil")/\(continuityName(for: selected))"
+                    + " dist=\(selectedDistanceText)"
+                    + " raw=\(selectedScoreText)"
+                    + " best=\(best.wayID ?? "nil")/\(continuityName(for: best))"
+                    + " bestDist=\(bestDistanceText)"
+                    + " bestRaw=\(bestScoreText)"
+                    + " logged=\(entry.result?.wayID ?? "nil")"
+                samples.append(sample)
+            }
+        }
+
+        for entry in entries {
+            let result = try service.lookupSpeedLimit(
+                lat: entry.lat,
+                lon: entry.lon,
+                radiusM: 50.0,
+                maxCandidates: 64,
+                matchContext: state.context,
+                headingDeg: entry.courseDeg,
+                headingAccuracyDeg: 10.0,
+                speedKmh: entry.speedKmh,
+                horizontalAccuracyM: entry.horizontalAccM,
+                gpsSignalBars: entry.gpsSignalBars
+            )
+
+            if let loggedWayID = entry.result?.wayID {
+                logComparable += 1
+                if loggedWayID == result.wayID {
+                    logAgreement += 1
+                }
+            }
+
+            if entry.speedKmh <= lowSpeedThresholdKmh {
+                lowSpeedFixCount += 1
+                let loggedSelected = entry.result?.candidateTraces.first(where: { $0.isSelected })
+                let loggedBest = nearestTrace(in: entry.result?.candidateTraces ?? [])
+                recordStickyEvent(
+                    label: "logged",
+                    speedKmh: entry.speedKmh,
+                    entry: entry,
+                    selected: loggedSelected,
+                    best: loggedBest,
+                    counter: &loggedContinuityCounter,
+                    stickyCount: &loggedStickyCount,
+                    strongStickyCount: &loggedStrongStickyCount
+                )
+
+                let replaySelected = result.candidateTraces.first(where: { $0.isSelected })
+                let replayBest = nearestTrace(in: result.candidateTraces)
+                recordStickyEvent(
+                    label: "replay",
+                    speedKmh: entry.speedKmh,
+                    entry: entry,
+                    selected: replaySelected,
+                    best: replayBest,
+                    counter: &replayContinuityCounter,
+                    stickyCount: &replayStickyCount,
+                    strongStickyCount: &replayStrongStickyCount
+                )
+            }
+
+            state.record(
+                result,
+                lat: entry.lat,
+                lon: entry.lon,
+                horizontalAccuracyM: entry.horizontalAccM,
+                gpsSignalBars: entry.gpsSignalBars
+            )
+        }
+
+        let logAgreementRatio = logComparable > 0 ? Double(logAgreement) / Double(logComparable) : 0.0
+        func formatCounter(_ counter: [String: Int]) -> String {
+            counter.keys.sorted().map { "\($0)=\(counter[$0] ?? 0)" }.joined(separator: ",")
+        }
+
+        print(
+            "WALKING_REPLAY"
+                + " fixes=\(entries.count)"
+                + " low_speed_fixes=\(lowSpeedFixCount)"
+                + " logAgree=\(String(format: "%.4f", logAgreementRatio))"
+                + " loggedSticky=\(loggedStickyCount)"
+                + " replaySticky=\(replayStickyCount)"
+                + " loggedStrongSticky=\(loggedStrongStickyCount)"
+                + " replayStrongSticky=\(replayStrongStickyCount)"
+                + " loggedContinuity=\(formatCounter(loggedContinuityCounter))"
+                + " replayContinuity=\(formatCounter(replayContinuityCounter))"
+        )
+        print("WALKING_REPLAY_SAMPLES \(samples.isEmpty ? "none" : samples.joined(separator: " | "))")
+
+        XCTAssertGreaterThan(entries.count, 0)
     }
 
     func testBenchmarkMatchingProfiles_commonScoreComparison() throws {

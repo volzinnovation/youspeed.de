@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouSpeed Project Gantt</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f1ea;
+        --panel: #fffdf8;
+        --ink: #1d2328;
+        --muted: #59636d;
+        --line: #d8d0c4;
+        --accent: #9f2f22;
+        --accent-soft: #f3ddd6;
+        --accent-strong: #7f241a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+          Palatino, Georgia, serif;
+        background:
+          radial-gradient(circle at top left, rgba(159, 47, 34, 0.1), transparent 24rem),
+          linear-gradient(180deg, #f7f3ec 0%, var(--bg) 100%);
+        color: var(--ink);
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+      }
+
+      .hero {
+        padding: 1.25rem 0 1.5rem;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin: 0 0 0.75rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        font:
+          600 0.8rem/1.1 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+
+      .lead {
+        max-width: 56rem;
+        margin: 0.85rem 0 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+        line-height: 1.6;
+      }
+
+      .meta {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        font:
+          500 0.92rem/1.3 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .meta a,
+      .meta span {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        background: rgba(255, 253, 248, 0.88);
+        color: var(--ink);
+        text-decoration: none;
+      }
+
+      .layout {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel {
+        background: rgba(255, 253, 248, 0.92);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 20px 60px rgba(54, 43, 31, 0.08);
+      }
+
+      .panel-header {
+        padding: 1.1rem 1.2rem 0;
+      }
+
+      .panel-header h2 {
+        font-size: 1.15rem;
+      }
+
+      .panel-header p {
+        margin: 0.45rem 0 0;
+        color: var(--muted);
+        font:
+          400 0.94rem/1.5 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .chart-wrap {
+        padding: 0.4rem 0.6rem 1.25rem;
+        overflow-x: auto;
+      }
+
+      .mermaid {
+        min-width: 980px;
+        background: transparent;
+      }
+
+      .milestone-table {
+        width: 100%;
+        border-collapse: collapse;
+        font:
+          400 0.92rem/1.45 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .milestone-table th,
+      .milestone-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 0.75rem 0.9rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .milestone-table th {
+        color: var(--accent-strong);
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .milestone-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .notes {
+        padding: 0 1.2rem 1.2rem;
+      }
+
+      .notes ul {
+        margin: 0.75rem 0 0;
+        padding-left: 1.2rem;
+        color: var(--muted);
+        font:
+          400 0.94rem/1.55 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .notes li + li {
+        margin-top: 0.4rem;
+      }
+
+      .footer {
+        margin-top: 1rem;
+        color: var(--muted);
+        font:
+          400 0.86rem/1.5 "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      .footer code {
+        color: var(--ink);
+      }
+
+      @media (min-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+          align-items: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">YouSpeed roadmap</p>
+        <h1>Project Gantt Chart</h1>
+        <p class="lead">
+          Aggressive workstreams and milestone deadlines aligned to the March
+          12, 2026 Germany launch plan. The public target is a Germany-only,
+          iPhone-only App Store launch by 2026-05-22, with Android running in
+          parallel as an internal-alpha track that does not block launch.
+        </p>
+        <div class="meta">
+          <span>Date: 2026-03-12</span>
+          <a href="./PROJECT_PLAN_2026-03-12.md">Open project plan</a>
+          <a href="./PROJECT_GANTT_2026-03-12.md">Open markdown source</a>
+        </div>
+      </section>
+
+      <section class="layout">
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Rendered timeline</h2>
+            <p>
+              Mermaid renders the same chart definition stored in the markdown
+              source. The milestone markers show the aggressive Germany launch
+              deadlines.
+            </p>
+          </div>
+          <div class="chart-wrap">
+            <pre class="mermaid">
+gantt
+    title YouSpeed aggressive Germany launch plan
+    dateFormat  YYYY-MM-DD
+    axisFormat  %b %d
+
+    section Milestones
+    M0 Launch contract locked          :milestone, m0, 2026-03-14, 1d
+    M1 Karlsruhe seed baseline frozen  :milestone, m1, 2026-03-23, 1d
+    M2 Paper submit or defer           :milestone, m2, 2026-04-05, 1d
+    M3 Full-bundle recovery validated  :milestone, m3, 2026-04-05, 1d
+    M4 Germany shard set validated     :milestone, m4, 2026-04-20, 1d
+    M5 iPhone launch candidate         :milestone, m5, 2026-05-01, 1d
+    M6 App Store submission            :milestone, m6, 2026-05-08, 1d
+    M7 Preferred go-live               :milestone, m7, 2026-05-15, 1d
+    M7b Hard go-live deadline          :milestone, m7b, 2026-05-22, 1d
+    M8 Android alpha checkpoint        :milestone, m8, 2026-05-22, 1d
+
+    section Track A Paper-critical evidence
+    Route evaluation and paper decision :crit, a1, 2026-03-12, 2026-04-05
+
+    section Track B Karlsruhe seed and matcher hardening
+    Seed rebuild and hardening          :active, b1, 2026-03-12, 2026-03-23
+
+    section Track C Germany shard data pipeline
+    Germany shard full-bundle pipeline  :c1, 2026-03-12, 2026-04-20
+
+    section Track D iPhone Germany launch path
+    Germany discovery and launch path   :d1, 2026-03-20, 2026-05-01
+
+    section Track E Android internal alpha
+    Android alpha foundation            :e1, 2026-03-12, 2026-05-22
+
+    section Track F App Store and release surface
+    Store package, website, FAQ         :f1, 2026-04-21, 2026-05-22
+            </pre>
+          </div>
+        </article>
+
+        <aside class="panel">
+          <div class="panel-header">
+            <h2>Milestone deadlines</h2>
+            <p>Internal target dates from the project plan.</p>
+          </div>
+          <div class="notes">
+            <table class="milestone-table">
+              <thead>
+                <tr>
+                  <th>Milestone</th>
+                  <th>Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>M0 Launch contract locked</td>
+                  <td>2026-03-14</td>
+                </tr>
+                <tr>
+                  <td>M1 Karlsruhe seed baseline frozen</td>
+                  <td>2026-03-23</td>
+                </tr>
+                <tr>
+                  <td>M2 Paper submit or defer</td>
+                  <td>2026-04-05</td>
+                </tr>
+                <tr>
+                  <td>M3 Full-bundle recovery validated</td>
+                  <td>2026-04-05</td>
+                </tr>
+                <tr>
+                  <td>M4 Germany shard set validated</td>
+                  <td>2026-04-20</td>
+                </tr>
+                <tr>
+                  <td>M5 iPhone launch candidate</td>
+                  <td>2026-05-01</td>
+                </tr>
+                <tr>
+                  <td>M6 App Store submission complete</td>
+                  <td>2026-05-08</td>
+                </tr>
+                <tr>
+                  <td>M7 Preferred go-live</td>
+                  <td>2026-05-15</td>
+                </tr>
+                <tr>
+                  <td>M7b Hard live deadline</td>
+                  <td>2026-05-22</td>
+                </tr>
+                <tr>
+                  <td>M8 Android alpha checkpoint</td>
+                  <td>2026-05-22</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <ul>
+              <li>Launch is public, Germany-only, and iPhone-only on 2026-05-22.</li>
+              <li>Germany launch is nationwide via shards, but launch-day update policy is full bundles only.</li>
+              <li>Android starts immediately as a parallel internal-alpha track, but Android release parity is not a May 22 gate.</li>
+              <li>Paper work keeps priority over noncritical launch polish if time conflicts emerge.</li>
+            </ul>
+
+            <p class="footer">
+              If Mermaid fails to load, the milestone table above still provides
+              the deadline overview. Serve this file over HTTP for the most
+              reliable browser rendering.
+            </p>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "base",
+        securityLevel: "loose",
+        themeVariables: {
+          primaryColor: "#d97c6e",
+          primaryTextColor: "#1d2328",
+          primaryBorderColor: "#9f2f22",
+          lineColor: "#8e8578",
+          sectionBkgColor: "#f7eee9",
+          sectionBkgColor2: "#f3ede2",
+          sectionTextColor: "#1d2328",
+          taskTextColor: "#1d2328",
+          taskBorderColor: "#9f2f22",
+          gridColor: "#d8d0c4",
+          cScale0: "#c44d3f",
+          cScale1: "#d88353",
+          cScale2: "#e3b55c",
+          cScale3: "#6f8f5e"
+        }
+      });
+    </script>
+  </body>
+</html>

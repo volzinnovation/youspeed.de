@@ -10,7 +10,8 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 
 ## Update flow
 1. Bootstrap bundled seed `karlsruhe-regbez_speeds.sqlite`.
-2. Fetch `<ID>_manifest.json` from GitHub release tag `<ID>` using fixed plist key `YouSpeedV3ManifestURL`.
+2. Discover manifests from bundled `BundleTargets.top10.json`, preferring Germany shard endpoints for launch.
+   - `YouSpeedV3ManifestURL` remains available as a build-time dev override.
 3. If delta path exists from active version to target: download + verify + apply SQL patch.
 4. Otherwise download full `speeds_v3.sqlite` bundle.
    - If manifest provides `db_parts`, download parts and assemble local DB before activation.
@@ -24,7 +25,7 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 - Private-release token injection (no in-app UI field):
   - Build-time key: `YOUSPEED_RELEASE_READ_TOKEN`
   - The app reads this value from Info.plist key `YouSpeedGitHubReleaseToken` at startup.
-  - Manifest URL is also plist-configured via `YouSpeedV3ManifestURL` (no in-app URL field).
+  - Manifest discovery comes from bundled targets by default; `YouSpeedV3ManifestURL` is only a build-time override for development.
   - Example local build:
     - `TOKEN="$(gh auth token --hostname github.com)"`
-    - `xcodebuild ... YOUSPEED_RELEASE_READ_TOKEN="$TOKEN"`
+    - `xcodebuild ... YOUSPEED_RELEASE_READ_TOKEN="$TOKEN" YOUSPEED_V3_MANIFEST_URL="https://example.test/custom_manifest.json"`
