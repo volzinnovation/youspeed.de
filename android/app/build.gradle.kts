@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "de.youspeed.android.alpha"
-        minSdk = 26
+        minSdk = 34
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0-alpha"
@@ -73,6 +73,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("com.alphacephei:vosk-android:0.3.75")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     testImplementation("junit:junit:4.13.2")

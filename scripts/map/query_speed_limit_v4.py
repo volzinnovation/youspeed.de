@@ -16,6 +16,10 @@ from typing import Dict, Iterable, List, Optional, Tuple
 DEFAULT_DE_URBAN = 50
 DEFAULT_DE_RURAL_CAR = 100
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
+CITY_BOUNDARY_PRIORITY = {8: 0, 6: 1}
+PRIMARY_PLACE_MAX_RANK = 1
+NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M = 5000.0
 NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
 DRIVABLE_HIGHWAYS_CAR = {
     "motorway",
@@ -76,6 +80,16 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlon / 2) ** 2
     return 2 * r * math.asin(math.sqrt(a))
+
+
+def _select_nearest_place_fallback(candidates: List[Tuple[int, float, str]]) -> Optional[Tuple[int, float, str]]:
+    within_threshold = [candidate for candidate in candidates if candidate[1] <= NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M]
+    if not within_threshold:
+        return None
+    primary = [candidate for candidate in within_threshold if candidate[0] <= PRIMARY_PLACE_MAX_RANK]
+    if primary:
+        return sorted(primary, key=lambda row: (row[1], row[0], row[2]))[0]
+    return sorted(within_threshold, key=lambda row: (row[0], row[1], row[2]))[0]
 
 
 def distance_to_bbox_m(lat: float, lon: float, row: dict) -> float:
@@ -513,6 +527,7 @@ def _resolve_city_context(
         JOIN city_boundary b ON b.row_id = t.boundary_row_id
         WHERE r.min_lon <= ? AND r.max_lon >= ?
           AND r.min_lat <= ? AND r.max_lat >= ?
+          AND b.admin_level IN (6, 8)
         LIMIT 2048
         """,
         (
@@ -537,10 +552,10 @@ def _resolve_city_context(
             containing.append((admin_level, name, bbox_area))
 
     if containing:
-        containing.sort(key=lambda r: (r[0], r[2], (r[1] or "~")))
+        containing.sort(key=lambda r: (CITY_BOUNDARY_PRIORITY.get(r[0], 99), r[2], (r[1] or "~")))
         best_level, best_name, _ = containing[0]
         return {
-            "inside_city": best_level in {8, 9},
+            "inside_city": True,
             "city_name": best_name,
             "city_admin_level": best_level,
             "city_source": "admin_polygon",
@@ -564,16 +579,23 @@ def _resolve_city_context(
         (lon + 0.3, lon - 0.3, lat + 0.3, lat - 0.3, lon, lon, lat, lat),
     ).fetchall()
 
-    if place_candidates:
-        best = place_candidates[0]
+    ranked_candidates = []
+    for place, name, place_lon, place_lat in place_candidates:
+        rank = PLACE_RANK.get(place)
+        if rank is None or not name:
+            continue
+        ranked_candidates.append((rank, haversine_m(lat, lon, float(place_lat), float(place_lon)), str(name)))
+
+    best = _select_nearest_place_fallback(ranked_candidates)
+    if best:
         return {
             "inside_city": False,
-            "city_name": best[1],
+            "city_name": best[2],
             "city_admin_level": None,
             "city_source": "place_fallback",
             "city_candidate_boundaries": len(candidates),
             "city_containing_boundaries": 0,
-            "city_place_candidates": len(place_candidates),
+            "city_place_candidates": len(ranked_candidates),
             "city_mode": "admin_polygons_plus_places",
         }
 

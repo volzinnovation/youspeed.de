@@ -7,6 +7,33 @@ import org.junit.Test
 
 class V3SpeedLimitLookupTests {
     @Test
+    fun computesAxisHeadingWithoutRecursing() {
+        val northbound = V3SpeedLimitLookup.computeAxisHeadingDegOrNull(
+            lat1 = 48.7990507,
+            lon1 = 8.4382557,
+            lat2 = 48.8090507,
+            lon2 = 8.4382557,
+        )
+        val eastbound = V3SpeedLimitLookup.computeAxisHeadingDegOrNull(
+            lat1 = 48.7990507,
+            lon1 = 8.4382557,
+            lat2 = 48.7990507,
+            lon2 = 8.4482557,
+        )
+
+        assertEquals(0.0, northbound ?: Double.NaN, 0.5)
+        assertEquals(90.0, eastbound ?: Double.NaN, 0.5)
+        assertNull(
+            V3SpeedLimitLookup.computeAxisHeadingDegOrNull(
+                lat1 = 48.7990507,
+                lon1 = 8.4382557,
+                lat2 = 48.7990507,
+                lon2 = 8.4382557,
+            ),
+        )
+    }
+
+    @Test
     fun derivesUnlimitedMotorwayFromExplicitNoneTag() {
         val derived = V3SpeedLimitLookup.deriveSpeedLimitWithSource(
             maxspeed = "none",

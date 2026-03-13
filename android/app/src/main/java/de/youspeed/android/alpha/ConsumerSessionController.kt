@@ -2,24 +2,16 @@ package de.youspeed.android.alpha
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.media.ToneGenerator
-import android.os.Build
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.speech.ModelDownloadListener
-import android.speech.RecognitionListener
-import android.speech.RecognitionSupport
-import android.speech.RecognitionSupportCallback
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.compose.runtime.getValue
@@ -42,12 +34,13 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.InflaterInputStream
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import org.json.JSONArray
+import org.json.JSONObject
+import org.vosk.Model
 
 enum class StartupDataState {
     LOADING,
@@ -99,6 +92,15 @@ private data class ActiveLocalSpeedCorrection(
     val wayIds: Set<String>,
 )
 
+private data class PendingStartupData(
+    val startupDetail: String,
+    val activeBundleVersion: String,
+    val activeDBPath: String,
+    val activePenaltyRules: ActivePenaltyRules,
+    val syncStatus: String,
+    val localObservations: List<LocalObservation>,
+)
+
 data class ConsumerUiState(
     val startupDataState: StartupDataState = StartupDataState.LOADING,
     val startupProgress: Double = 0.0,
@@ -146,6 +148,8 @@ data class ConsumerUiState(
     val localObservationStatus: String = "",
     val speedCaptureMode: SpeedCaptureModeState = SpeedCaptureModeState.IDLE,
     val speedCaptureTranscript: String = "",
+    val germanSpeechModelState: GermanSpeechModelState = GermanSpeechModelState.CHECKING,
+    val germanSpeechModelStatus: String = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet.",
     val lastExportDirectoryPath: String = "",
     val appScreenshotState: AppScreenshotState? = null,
     val lastLookupInsideCity: Boolean? = null,
@@ -262,6 +266,7 @@ class ConsumerSessionController(
     private val lookupToken = AtomicLong(0L)
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val wayMatchTracker = WayMatchSessionTracker()
+    private val bundledVoskModelStore = BundledVoskModelStore(appContext, rootDir)
 
     private var host: ConsumerHost? = null
     private var isDriving = false
@@ -274,12 +279,17 @@ class ConsumerSessionController(
     private var lastDrivingBanWarningAtMs = 0L
     private var textToSpeech: TextToSpeech? = null
     private var textToSpeechReady = false
-    private var speechRecognizer: SpeechRecognizer? = null
-    private var speechRecognizerIntent: Intent? = null
+    private var bundledVoskModel: Model? = null
+    private var bundledVoskModelPath: String? = null
+    private var activeVoskSpeedCaptureSession: VoskSpeedCaptureSession? = null
     private var speedCapturePromptUtteranceId: String? = null
     private var isAwaitingSpeedCapturePromptCompletion = false
     private var isSpeedCaptureResolved = false
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection? = null
+    private var pendingStartupData: PendingStartupData? = null
+    private var isStartupWaitingForSpeechModel = false
+    private var isGermanSpeechModelCheckInFlight = false
+    private var shouldResumeSpeedCaptureAfterSpeechModelReady = false
     private var confirmationToneGenerator: ToneGenerator? = null
     private val speedCapturePromptFallbackRunnable = Runnable {
         if (isAwaitingSpeedCapturePromptCompletion) {
@@ -291,52 +301,6 @@ class ConsumerSessionController(
         if (uiState.speedCaptureMode == SpeedCaptureModeState.SPEAKING_PROMPT) {
             startSpeedCaptureListening()
         }
-    }
-    private val speedCaptureListeningTimeoutRunnable = Runnable {
-        finishSpeedCaptureListening(source = "timeout")
-    }
-
-    private val recognitionListener = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) = Unit
-
-        override fun onBeginningOfSpeech() = Unit
-
-        override fun onRmsChanged(rmsdB: Float) = Unit
-
-        override fun onBufferReceived(buffer: ByteArray?) = Unit
-
-        override fun onEndOfSpeech() = Unit
-
-        override fun onError(error: Int) {
-            if (uiState.speedCaptureTranscript.isNotBlank()) {
-                finishSpeedCaptureListening(source = "recognition_error_with_transcript")
-                return
-            }
-            showManualSpeedCapture(reason = speechRecognitionErrorText(error))
-        }
-
-        override fun onResults(results: Bundle) {
-            val transcript = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()
-                ?.trim()
-                .orEmpty()
-            if (transcript.isNotEmpty()) {
-                updateState { copy(speedCaptureTranscript = transcript) }
-            }
-            finishSpeedCaptureListening(source = "final_result")
-        }
-
-        override fun onPartialResults(partialResults: Bundle) {
-            val transcript = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()
-                ?.trim()
-                .orEmpty()
-            if (transcript.isNotEmpty()) {
-                updateState { copy(speedCaptureTranscript = transcript) }
-            }
-        }
-
-        override fun onEvent(eventType: Int, params: Bundle?) = Unit
     }
 
     private val locationListener = object : LocationListener {
@@ -388,7 +352,7 @@ class ConsumerSessionController(
         stopDriving()
         closeLookupService()
         stopActiveSpeedCaptureRecognition(clearStatus = false)
-        destroySpeechRecognizer()
+        closeBundledVoskModel()
         textToSpeech?.stop()
         textToSpeech?.shutdown()
         textToSpeech = null
@@ -401,12 +365,17 @@ class ConsumerSessionController(
         if (!force && uiState.startupDataState == StartupDataState.READY) {
             return
         }
+        pendingStartupData = null
+        isStartupWaitingForSpeechModel = false
         updateState {
             copy(
                 startupDataState = StartupDataState.LOADING,
                 startupProgress = 0.08,
                 startupDetail = "Lokale Daten werden vorbereitet",
                 lastError = "",
+                speedCaptureMode = SpeedCaptureModeState.IDLE,
+                speedCaptureTranscript = "",
+                localObservationStatus = "",
             )
         }
         executor.execute {
@@ -418,15 +387,28 @@ class ConsumerSessionController(
                 val active = bootstrapper.activeState()
                 replaceLookupService(active?.dbPath)
                 val nextRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(active?.dbPath) ?: "DEU")
+                pendingStartupData = PendingStartupData(
+                    startupDetail = when {
+                        active?.bundleVersion == "seed" -> "Karlsruhe-Seed und Offline-Spracherkennung sind bereit"
+                        active?.dbPath?.isNotBlank() == true -> "Lokale Daten und Offline-Spracherkennung sind bereit"
+                        else -> "Noch kein lokales Bundle aktiv"
+                    },
+                    activeBundleVersion = active?.bundleVersion ?: "none",
+                    activeDBPath = active?.dbPath ?: "",
+                    activePenaltyRules = nextRules,
+                    syncStatus = when {
+                        active?.bundleVersion == "seed" -> "seed_only"
+                        active?.dbPath?.isNotBlank() == true -> "ready_fullDownload"
+                        else -> "not_synced"
+                    },
+                    localObservations = observations,
+                )
+                isStartupWaitingForSpeechModel = true
                 postState {
                     copy(
-                        startupDataState = StartupDataState.READY,
-                        startupProgress = 1.0,
-                        startupDetail = when {
-                            active?.bundleVersion == "seed" -> "Karlsruhe-Seed ist bereit"
-                            active?.dbPath?.isNotBlank() == true -> "Lokale Daten sind bereit"
-                            else -> "Noch kein lokales Bundle aktiv"
-                        },
+                        startupDataState = StartupDataState.LOADING,
+                        startupProgress = 0.62,
+                        startupDetail = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet",
                         activeBundleVersion = active?.bundleVersion ?: "none",
                         activeDBPath = active?.dbPath ?: "",
                         activePenaltyRules = nextRules,
@@ -439,7 +421,12 @@ class ConsumerSessionController(
                         driveStatus = "stopped",
                     )
                 }
+                mainHandler.post {
+                    ensureGermanSpeechModelPrepared(force = true, userInitiated = false)
+                }
             } catch (error: Exception) {
+                pendingStartupData = null
+                isStartupWaitingForSpeechModel = false
                 postState {
                     copy(
                         startupDataState = StartupDataState.FAILED,
@@ -517,7 +504,15 @@ class ConsumerSessionController(
             return
         }
         if (uiState.appScreenshotState != null) {
-            showManualSpeedCapture(reason = "Spracherkennung ist im Screenshot-Modus deaktiviert.")
+            host?.showTransientMessage("Spracherkennung ist im Screenshot-Modus deaktiviert.")
+            return
+        }
+        if (uiState.germanSpeechModelState != GermanSpeechModelState.READY) {
+            host?.showTransientMessage(
+                uiState.germanSpeechModelStatus.ifBlank {
+                    "Gebuendeltes deutsches Offline-Sprachmodell ist nicht bereit."
+                },
+            )
             return
         }
         if (!hasMicrophonePermission()) {
@@ -536,7 +531,9 @@ class ConsumerSessionController(
 
     fun onMicrophonePermissionResult(granted: Boolean) {
         if (!granted) {
-            showManualSpeedCapture(reason = "Mikrofonberechtigung wurde nicht erteilt.")
+            shouldResumeSpeedCaptureAfterSpeechModelReady = false
+            host?.showTransientMessage("Mikrofonberechtigung wurde nicht erteilt.")
+            cancelSpeedCapture(reason = null)
             return
         }
         if (uiState.speedCaptureMode == SpeedCaptureModeState.REQUESTING_MIC_PERMISSION) {
@@ -544,31 +541,22 @@ class ConsumerSessionController(
         }
     }
 
-    fun confirmManualSpeedCapture(rawValue: String) {
-        val selection = SpeedCaptureSpeech.selectionForValue(rawValue)
-            ?: return showManualSpeedCapture(reason = "Erlaubt sind 10 bis 130 oder Fussgaengerzone.")
-        persistSpeedCaptureSelection(selection)
+    fun retrySpeedCapture() {
+        if (uiState.speedCaptureMode == SpeedCaptureModeState.SAVING) {
+            return
+        }
+        cancelSpeedCapture(reason = null)
+        beginSpeedCapture()
     }
 
-    fun confirmPedestrianZoneCapture() {
-        val selection = SpeedCaptureSpeech.selectionForValue("walk")
-            ?: return showManualSpeedCapture(reason = "Fussgaengerzone konnte nicht vorbereitet werden.")
-        persistSpeedCaptureSelection(selection)
-    }
-
-    fun openManualSpeedCapture() {
-        showManualSpeedCapture(reason = uiState.localObservationStatus.ifBlank { null })
+    fun prepareGermanSpeechModel() {
+        ensureGermanSpeechModelPrepared(force = true, userInitiated = true)
     }
 
     fun cancelSpeedCapture(reason: String?) {
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         textToSpeech?.stop()
-        mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
-        mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
-        mainHandler.removeCallbacks(speedCaptureListeningTimeoutRunnable)
-        isAwaitingSpeedCapturePromptCompletion = false
-        isSpeedCaptureResolved = false
-        speedCapturePromptUtteranceId = null
+        resetSpeedCaptureTransientState()
         updateState {
             copy(
                 speedCaptureMode = SpeedCaptureModeState.IDLE,
@@ -728,10 +716,6 @@ class ConsumerSessionController(
         }
     }
 
-    fun captureLocalObservation(newSpeedKmh: Int) {
-        confirmManualSpeedCapture(newSpeedKmh.toString())
-    }
-
     private fun persistSpeedCaptureSelection(selection: SpeedCaptureSelection) {
         val selectedValue = selection.value
         executor.execute {
@@ -753,6 +737,7 @@ class ConsumerSessionController(
                 val wayId = savedObservation.wayId
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
                 activateLocalSpeedCorrectionIfPossible(selection, savedObservation)
+                resetSpeedCaptureTransientState()
                 postState {
                     copy(
                         localObservations = updated,
@@ -767,7 +752,7 @@ class ConsumerSessionController(
                 }
                 playSpeedCaptureConfirmationTone()
             } catch (error: Exception) {
-                showManualSpeedCapture(reason = "Lokale Erfassung konnte nicht gespeichert werden: ${error.message}")
+                showSpeedCaptureFailure(reason = "Lokale Erfassung konnte nicht gespeichert werden: ${error.message}")
             }
         }
     }
@@ -1116,6 +1101,8 @@ class ConsumerSessionController(
             appScreenshotState = state,
             lastLookupInsideCity = fixture.insideCity,
             localObservationStatus = "",
+            germanSpeechModelState = GermanSpeechModelState.READY,
+            germanSpeechModelStatus = "Screenshot-Modus verwendet kein Live-Audio.",
             gpsLogPath = gpsLogFile().absolutePath,
             matchLogPath = matchLogFile().absolutePath,
         )
@@ -1264,16 +1251,20 @@ class ConsumerSessionController(
                 wayMatchTracker.reset()
                 ensureDrivingLogsExist()
                 appendGpsFixRow(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = "no_database",
                     result = null,
                 )
                 appendMatchLogEntry(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = "no_database",
                     result = null,
+                    matchContext = null,
+                    gpsSignalBars = gpsSignalBars,
                     errorText = null,
                 )
                 postState {
@@ -1326,6 +1317,7 @@ class ConsumerSessionController(
 
                 ensureDrivingLogsExist()
                 appendGpsFixRow(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = when {
@@ -1338,6 +1330,7 @@ class ConsumerSessionController(
                     overrideSpeedKmh = effectiveSpeed,
                 )
                 appendMatchLogEntry(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = when {
@@ -1347,6 +1340,8 @@ class ConsumerSessionController(
                         else -> "no_match"
                     },
                     result = result,
+                    matchContext = matchContext,
+                    gpsSignalBars = gpsSignalBars,
                     overrideSpeedKmh = effectiveSpeed,
                     errorText = null,
                 )
@@ -1391,6 +1386,7 @@ class ConsumerSessionController(
                 wayMatchTracker.noteGpsSignalLoss(horizontalAccuracyM = gpsHorizontalAccuracyM, gpsSignalBars = gpsSignalBars)
                 ensureDrivingLogsExist()
                 appendGpsFixRow(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = "lookup_error",
@@ -1398,10 +1394,13 @@ class ConsumerSessionController(
                     errorText = error.message ?: error.javaClass.simpleName,
                 )
                 appendMatchLogEntry(
+                    fixId = gpsFixCount,
                     location = location,
                     speedKmh = filteredSpeedKmh,
                     status = "lookup_error",
                     result = null,
+                    matchContext = wayMatchTracker.snapshotOrNull(),
+                    gpsSignalBars = gpsSignalBars,
                     errorText = error.message ?: error.javaClass.simpleName,
                 )
                 postState {
@@ -1524,140 +1523,19 @@ class ConsumerSessionController(
             copy(
                 speedCaptureMode = SpeedCaptureModeState.PREPARING,
                 speedCaptureTranscript = "",
-                localObservationStatus = "On-Device-Spracherkennung wird vorbereitet.",
+                localObservationStatus = "Offline-Spracherkennung wird vorbereitet.",
             )
         }
-        if (!SpeechRecognizer.isRecognitionAvailable(appContext)) {
-            showManualSpeedCapture(reason = "Keine Spracherkennung auf diesem Geraet verfuegbar.")
+        if (uiState.germanSpeechModelState != GermanSpeechModelState.READY) {
+            shouldResumeSpeedCaptureAfterSpeechModelReady = true
+            ensureGermanSpeechModelPrepared(force = true, userInitiated = true)
             return
         }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            showManualSpeedCapture(reason = "On-Device-Spracherkennung benoetigt Android 12 oder neuer.")
+        if (bundledVoskModel == null) {
+            showSpeedCaptureFailure(reason = "Gebuendeltes Offline-Sprachmodell ist noch nicht bereit.")
             return
         }
-        val recognizerIntent = buildSpeedCaptureRecognizerIntent()
-        speechRecognizerIntent = recognizerIntent
-        if (!ensureSpeechRecognizer()) {
-            showManualSpeedCapture(reason = "On-Device-Spracherkennung konnte nicht initialisiert werden.")
-            return
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            checkSpeedCaptureRecognitionSupport(recognizerIntent)
-        } else {
-            startSpeedCapturePromptSpeech()
-        }
-    }
-
-    private fun ensureSpeechRecognizer(): Boolean {
-        if (speechRecognizer != null) {
-            return true
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return false
-        }
-        if (!SpeechRecognizer.isOnDeviceRecognitionAvailable(appContext)) {
-            return false
-        }
-        return runCatching {
-            SpeechRecognizer.createOnDeviceSpeechRecognizer(appContext).also {
-                it.setRecognitionListener(recognitionListener)
-                speechRecognizer = it
-            }
-        }.isSuccess
-    }
-
-    private fun destroySpeechRecognizer() {
-        runCatching { speechRecognizer?.destroy() }
-        speechRecognizer = null
-    }
-
-    private fun buildSpeedCaptureRecognizerIntent(): Intent {
-        return Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, SpeedCaptureSpeech.speechLocaleTag)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, SpeedCaptureSpeech.speechLocaleTag)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-            putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, SpeedCaptureSpeech.contextualStrings)
-        }
-    }
-
-    private fun checkSpeedCaptureRecognitionSupport(recognizerIntent: Intent) {
-        val recognizer = speechRecognizer ?: return showManualSpeedCapture(reason = "Spracherkennung nicht initialisiert.")
-        recognizer.checkRecognitionSupport(
-            recognizerIntent,
-            appContext.mainExecutor,
-            object : RecognitionSupportCallback {
-                override fun onSupportResult(recognitionSupport: RecognitionSupport) {
-                    val installed = recognitionSupport.installedOnDeviceLanguages.any(::isGermanSpeechLanguageTag)
-                    if (installed) {
-                        startSpeedCapturePromptSpeech()
-                        return
-                    }
-                    val downloadable = recognitionSupport.supportedOnDeviceLanguages.any(::isGermanSpeechLanguageTag)
-                    if (downloadable) {
-                        triggerSpeedCaptureModelDownload(recognizerIntent)
-                        return
-                    }
-                    val pending = recognitionSupport.pendingOnDeviceLanguages.any(::isGermanSpeechLanguageTag)
-                    if (pending) {
-                        showManualSpeedCapture(reason = "Sprachmodell fuer Deutsch wird bereits heruntergeladen. Spaeter erneut versuchen.")
-                        return
-                    }
-                    showManualSpeedCapture(reason = "Keine deutsche On-Device-Spracherkennung verfuegbar.")
-                }
-
-                override fun onError(error: Int) {
-                    startSpeedCapturePromptSpeech()
-                }
-            },
-        )
-    }
-
-    private fun triggerSpeedCaptureModelDownload(recognizerIntent: Intent) {
-        val recognizer = speechRecognizer ?: return showManualSpeedCapture(reason = "Spracherkennung nicht initialisiert.")
-        updateState {
-            copy(
-                speedCaptureMode = SpeedCaptureModeState.PREPARING,
-                localObservationStatus = "Sprachmodell fuer Deutsch wird heruntergeladen.",
-            )
-        }
-        if (Build.VERSION.SDK_INT >= 34) {
-            recognizer.triggerModelDownload(
-                recognizerIntent,
-                appContext.mainExecutor,
-                object : ModelDownloadListener {
-                    override fun onProgress(completedPercent: Int) {
-                        updateState {
-                            copy(localObservationStatus = "Sprachmodell wird heruntergeladen ($completedPercent%).")
-                        }
-                    }
-
-                    override fun onSuccess() {
-                        startSpeedCapturePromptSpeech()
-                    }
-
-                    override fun onScheduled() {
-                        showManualSpeedCapture(reason = "Modell-Download wurde eingeplant. Bitte spaeter erneut versuchen.")
-                    }
-
-                    override fun onError(error: Int) {
-                        showManualSpeedCapture(reason = speechRecognitionErrorText(error))
-                    }
-                },
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            runCatching { recognizer.triggerModelDownload(recognizerIntent) }
-                .onSuccess {
-                    showManualSpeedCapture(reason = "Modell-Download angestossen. Bitte spaeter erneut versuchen.")
-                }
-                .onFailure {
-                    showManualSpeedCapture(reason = "Modell-Download fehlgeschlagen: ${it.message ?: it.javaClass.simpleName}")
-                }
-        } else {
-            showManualSpeedCapture(reason = "Deutsches Sprachmodell fehlt. Bitte manuell eingeben.")
-        }
+        startSpeedCapturePromptSpeech()
     }
 
     private fun startSpeedCapturePromptSpeech() {
@@ -1696,8 +1574,7 @@ class ConsumerSessionController(
         if (isSpeedCaptureResolved) {
             return
         }
-        val recognizer = speechRecognizer ?: return showManualSpeedCapture(reason = "Spracherkennung nicht initialisiert.")
-        val recognizerIntent = speechRecognizerIntent ?: buildSpeedCaptureRecognizerIntent().also { speechRecognizerIntent = it }
+        val model = bundledVoskModel ?: return showSpeedCaptureFailure(reason = "Offline-Sprachmodell ist nicht geladen.")
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         isSpeedCaptureResolved = false
         updateState {
@@ -1707,34 +1584,62 @@ class ConsumerSessionController(
                 localObservationStatus = "Jetzt sprechen: 10 bis 130 oder Fussgaengerzone.",
             )
         }
-        runCatching { recognizer.startListening(recognizerIntent) }
-            .onFailure {
-                showManualSpeedCapture(reason = "Spracherkennung konnte nicht gestartet werden: ${it.message ?: it.javaClass.simpleName}")
-                return
-            }
-        mainHandler.removeCallbacks(speedCaptureListeningTimeoutRunnable)
-        mainHandler.postDelayed(
-            speedCaptureListeningTimeoutRunnable,
-            SpeedCaptureSpeech.listeningWindowMs + SpeedCaptureSpeech.timeoutPaddingMs,
-        )
+        val session = runCatching {
+            VoskSpeedCaptureSession(model, SpeedCaptureSpeech.voskGrammarJson)
+        }.getOrElse {
+            showSpeedCaptureFailure(reason = "Offline-Spracherkennung konnte nicht initialisiert werden: ${it.message ?: it.javaClass.simpleName}")
+            return
+        }
+        activeVoskSpeedCaptureSession = session
+        val started = runCatching {
+            session.start(
+                timeoutMs = SpeedCaptureSpeech.listeningWindowMs + SpeedCaptureSpeech.timeoutPaddingMs,
+                listener = object : VoskSpeedCaptureSession.Listener {
+                    override fun onPartialTranscript(transcript: String) {
+                        if (transcript.isNotBlank()) {
+                            updateState { copy(speedCaptureTranscript = transcript) }
+                            if (SpeedCaptureSpeech.resolveSelection(transcript) != null) {
+                                finishSpeedCaptureListening(source = "partial_result", transcripts = listOf(transcript))
+                            }
+                        }
+                    }
+
+                    override fun onCompleted(transcripts: List<String>, source: String) {
+                        finishSpeedCaptureListening(source = source, transcripts = transcripts)
+                    }
+
+                    override fun onError(message: String) {
+                        showSpeedCaptureFailure(reason = "Offline-Spracherkennung fehlgeschlagen: $message")
+                    }
+                },
+            )
+        }.getOrElse {
+            showSpeedCaptureFailure(reason = "Spracherkennung konnte nicht gestartet werden: ${it.message ?: it.javaClass.simpleName}")
+            return
+        }
+        if (!started) {
+            showSpeedCaptureFailure(reason = "Spracherkennung ist bereits aktiv.")
+        }
     }
 
-    private fun finishSpeedCaptureListening(source: String) {
+    private fun finishSpeedCaptureListening(@Suppress("UNUSED_PARAMETER") source: String, transcripts: List<String> = emptyList()) {
         if (isSpeedCaptureResolved) {
             return
         }
         isSpeedCaptureResolved = true
         updateState { copy(speedCaptureMode = SpeedCaptureModeState.EVALUATING) }
-        mainHandler.removeCallbacks(speedCaptureListeningTimeoutRunnable)
         stopActiveSpeedCaptureRecognition(clearStatus = false)
-        val transcript = uiState.speedCaptureTranscript.trim()
-        if (transcript.isEmpty()) {
-            showManualSpeedCapture(reason = "Keine Sprache erkannt ($source). Bitte erneut starten oder manuell eingeben.")
+        val candidates = (transcripts + uiState.speedCaptureTranscript)
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
+        if (candidates.isEmpty()) {
+            cancelSpeedCapture(reason = null)
             return
         }
-        val selection = SpeedCaptureSpeech.resolveSelection(transcript)
+        val selection = candidates.firstNotNullOfOrNull(SpeedCaptureSpeech::resolveSelection)
         if (selection == null) {
-            showManualSpeedCapture(reason = "Nicht verstanden ($source). Erlaubt sind 10 bis 130 oder Fussgaengerzone.")
+            cancelSpeedCapture(reason = null)
             return
         }
         persistSpeedCaptureSelection(selection)
@@ -1743,24 +1648,205 @@ class ConsumerSessionController(
     private fun stopActiveSpeedCaptureRecognition(clearStatus: Boolean) {
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
-        mainHandler.removeCallbacks(speedCaptureListeningTimeoutRunnable)
-        runCatching { speechRecognizer?.cancel() }
+        runCatching { activeVoskSpeedCaptureSession?.close() }
+        activeVoskSpeedCaptureSession = null
         if (clearStatus) {
             updateState { copy(localObservationStatus = "") }
         }
     }
 
-    private fun showManualSpeedCapture(reason: String?) {
+    private fun showSpeedCaptureFailure(reason: String?) {
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         textToSpeech?.stop()
-        isAwaitingSpeedCapturePromptCompletion = false
-        isSpeedCaptureResolved = false
+        resetSpeedCaptureTransientState()
+        if (!reason.isNullOrBlank()) {
+            host?.showTransientMessage(reason)
+        }
         updateState {
             copy(
-                speedCaptureMode = SpeedCaptureModeState.MANUAL_ENTRY,
-                speedCaptureTranscript = speedCaptureTranscript,
-                localObservationStatus = reason ?: localObservationStatus,
+                speedCaptureMode = SpeedCaptureModeState.IDLE,
+                speedCaptureTranscript = "",
             )
+        }
+    }
+
+    private fun resetSpeedCaptureTransientState() {
+        mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
+        mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
+        isAwaitingSpeedCapturePromptCompletion = false
+        isSpeedCaptureResolved = false
+        shouldResumeSpeedCaptureAfterSpeechModelReady = false
+        speedCapturePromptUtteranceId = null
+    }
+
+    private fun ensureGermanSpeechModelPrepared(
+        force: Boolean,
+        userInitiated: Boolean,
+    ) {
+        if (isGermanSpeechModelCheckInFlight) {
+            return
+        }
+        if (!force && uiState.germanSpeechModelState == GermanSpeechModelState.READY) {
+            return
+        }
+        isGermanSpeechModelCheckInFlight = true
+        setGermanSpeechModelState(
+            state = GermanSpeechModelState.DOWNLOADING,
+            status = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet.",
+            updateCaptureStatus = userInitiated || uiState.speedCaptureMode == SpeedCaptureModeState.PREPARING,
+        )
+        executor.execute {
+            runCatching { bundledVoskModelStore.prepareModel() }
+                .onSuccess { handle ->
+                    replaceBundledVoskModel(handle)
+                    markGermanSpeechModelReady("Gebuendeltes deutsches Offline-Sprachmodell ist bereit.")
+                    if (shouldResumeSpeedCaptureAfterSpeechModelReady) {
+                        mainHandler.post { continuePendingSpeedCaptureIfPossible() }
+                    }
+                }
+                .onFailure { error ->
+                    val message = "Gebuendeltes Offline-Sprachmodell konnte nicht vorbereitet werden: ${error.message ?: error.javaClass.simpleName}"
+                    isGermanSpeechModelCheckInFlight = false
+                    setGermanSpeechModelState(
+                        state = GermanSpeechModelState.UNAVAILABLE,
+                        status = message,
+                        updateCaptureStatus = userInitiated || shouldResumeSpeedCaptureAfterSpeechModelReady,
+                    )
+                    if (isStartupWaitingForSpeechModel) {
+                        failStartupForSpeechModel(message)
+                    } else if (userInitiated || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
+                        mainHandler.post {
+                            showSpeedCaptureFailure(reason = message)
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun markGermanSpeechModelReady(status: String) {
+        isGermanSpeechModelCheckInFlight = false
+        setGermanSpeechModelState(
+            state = GermanSpeechModelState.READY,
+            status = status,
+            updateCaptureStatus = false,
+        )
+        if (isStartupWaitingForSpeechModel) {
+            finishStartupAfterSpeechModelReady()
+        }
+    }
+
+    private fun continuePendingSpeedCaptureIfPossible() {
+        if (!shouldResumeSpeedCaptureAfterSpeechModelReady) {
+            return
+        }
+        if (!hasMicrophonePermission()) {
+            updateState {
+                copy(
+                    speedCaptureMode = SpeedCaptureModeState.REQUESTING_MIC_PERMISSION,
+                    speedCaptureTranscript = "",
+                    localObservationStatus = "Mikrofonberechtigung wird angefragt.",
+                )
+            }
+            host?.requestMicrophonePermission()
+            return
+        }
+        shouldResumeSpeedCaptureAfterSpeechModelReady = false
+        prepareSpeedCaptureRecognizerAndMaybeStart()
+    }
+
+    private fun setGermanSpeechModelState(
+        state: GermanSpeechModelState,
+        status: String,
+        updateCaptureStatus: Boolean = false,
+    ) {
+        postState {
+            copy(
+                germanSpeechModelState = state,
+                germanSpeechModelStatus = status,
+                startupProgress = if (startupDataState == StartupDataState.LOADING && isStartupWaitingForSpeechModel) {
+                    startupProgressForSpeechModelState(state)
+                } else {
+                    startupProgress
+                },
+                startupDetail = if (startupDataState == StartupDataState.LOADING && isStartupWaitingForSpeechModel) {
+                    status
+                } else {
+                    startupDetail
+                },
+                localObservationStatus = if (updateCaptureStatus && speedCaptureMode != SpeedCaptureModeState.IDLE) {
+                    status
+                } else {
+                    localObservationStatus
+                },
+            )
+        }
+    }
+
+    private fun finishStartupAfterSpeechModelReady() {
+        val prepared = pendingStartupData ?: return
+        pendingStartupData = null
+        isStartupWaitingForSpeechModel = false
+        postState {
+            copy(
+                startupDataState = StartupDataState.READY,
+                startupProgress = 1.0,
+                startupDetail = prepared.startupDetail,
+                activeBundleVersion = prepared.activeBundleVersion,
+                activeDBPath = prepared.activeDBPath,
+                activePenaltyRules = prepared.activePenaltyRules,
+                syncStatus = prepared.syncStatus,
+                localObservations = prepared.localObservations,
+                driveStatus = "stopped",
+                speedCaptureMode = SpeedCaptureModeState.IDLE,
+                speedCaptureTranscript = "",
+                localObservationStatus = "",
+                lastError = "",
+            )
+        }
+    }
+
+    private fun failStartupForSpeechModel(message: String) {
+        pendingStartupData = null
+        isStartupWaitingForSpeechModel = false
+        isGermanSpeechModelCheckInFlight = false
+        postState {
+            copy(
+                startupDataState = StartupDataState.FAILED,
+                startupProgress = 1.0,
+                startupDetail = "Deutsches Sprachmodell konnte nicht vorbereitet werden",
+                speedCaptureMode = SpeedCaptureModeState.IDLE,
+                speedCaptureTranscript = "",
+                localObservationStatus = "",
+                lastError = message,
+            )
+        }
+    }
+
+    private fun startupProgressForSpeechModelState(state: GermanSpeechModelState): Double {
+        return when (state) {
+            GermanSpeechModelState.CHECKING -> 0.70
+            GermanSpeechModelState.DOWNLOADING -> 0.82
+            GermanSpeechModelState.PENDING -> 0.78
+            GermanSpeechModelState.READY -> 1.0
+            GermanSpeechModelState.UNAVAILABLE -> 1.0
+        }
+    }
+
+    private fun replaceBundledVoskModel(handle: BundledVoskModelHandle) {
+        val previousModel = bundledVoskModel
+        bundledVoskModel = handle.model
+        bundledVoskModelPath = handle.modelPath
+        if (previousModel != null && previousModel !== handle.model) {
+            runCatching { previousModel.close() }
+        }
+    }
+
+    private fun closeBundledVoskModel() {
+        val model = bundledVoskModel
+        bundledVoskModel = null
+        bundledVoskModelPath = null
+        if (model != null) {
+            runCatching { model.close() }
         }
     }
 
@@ -1861,29 +1947,6 @@ class ConsumerSessionController(
             ?.replace(Regex("\\s+"), " ")
             .orEmpty()
         return normalized.ifBlank { null }
-    }
-
-    private fun speechRecognitionErrorText(error: Int): String {
-        return when (error) {
-            SpeechRecognizer.ERROR_AUDIO -> "Audioaufnahme fehlgeschlagen."
-            SpeechRecognizer.ERROR_CLIENT -> "Spracherkennung wurde abgebrochen."
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Mikrofonberechtigung fehlt."
-            SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED -> "Deutsch wird von der On-Device-Spracherkennung nicht unterstuetzt."
-            SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "Deutsches Sprachmodell ist derzeit nicht verfuegbar."
-            SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "On-Device-Spracherkennung reagiert nicht."
-            SpeechRecognizer.ERROR_NO_MATCH -> "Keine passende Geschwindigkeit erkannt."
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Spracherkennung ist bereits aktiv."
-            SpeechRecognizer.ERROR_SERVER, SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "Spracherkennung ist derzeit nicht erreichbar."
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Zeitfenster abgelaufen. Bitte erneut sprechen."
-            SpeechRecognizer.ERROR_TOO_MANY_REQUESTS -> "Zu viele Sprachanfragen. Bitte kurz warten."
-            SpeechRecognizer.ERROR_CANNOT_CHECK_SUPPORT -> "Sprachsupport konnte nicht geprueft werden."
-            SpeechRecognizer.ERROR_CANNOT_LISTEN_TO_DOWNLOAD_EVENTS -> "Sprachmodell-Download kann nicht verfolgt werden."
-            else -> "Spracherkennung fehlgeschlagen."
-        }
-    }
-
-    private fun isGermanSpeechLanguageTag(raw: String?): Boolean {
-        return raw?.trim()?.lowercase(Locale.US)?.startsWith("de") == true
     }
 
     private fun hasLocationPermission(): Boolean {
@@ -1998,6 +2061,7 @@ class ConsumerSessionController(
     private fun matchLogFile(): File = File(rootDir, "logs/drive_match_log.ndjson")
 
     private fun appendGpsFixRow(
+        fixId: Int,
         location: Location,
         speedKmh: Double,
         status: String,
@@ -2006,7 +2070,7 @@ class ConsumerSessionController(
         errorText: String? = null,
     ) {
         val row = listOf(
-            uiState.gpsFixCount.toString(),
+            fixId.toString(),
             Instant.ofEpochMilli(location.time).toString(),
             String.format(Locale.US, "%.7f", location.latitude),
             String.format(Locale.US, "%.7f", location.longitude),
@@ -2032,36 +2096,230 @@ class ConsumerSessionController(
     }
 
     private fun appendMatchLogEntry(
+        fixId: Int,
         location: Location,
         speedKmh: Double,
         status: String,
         result: SpeedLookupResult?,
+        matchContext: WayMatchContext?,
+        gpsSignalBars: Int,
         overrideSpeedKmh: Int? = null,
         errorText: String? = null,
     ) {
-        val entry = buildJsonObject {
-            put("timestamp_utc", Instant.ofEpochMilli(location.time).toString())
+        val timestampUtc = Instant.ofEpochMilli(location.time).toString()
+        val horizontalAccM = location.accuracy.toDouble().takeIf { it >= 0.0 } ?: 0.0
+        val verticalAccM = if (location.hasVerticalAccuracy()) location.verticalAccuracyMeters.toDouble() else 0.0
+        val courseDeg = if (location.hasBearing()) location.bearing.toDouble() else -1.0
+        val tunnelModeState = when {
+            result?.isTunnelSegment == true || matchContext?.isInTunnelMode == true -> "active"
+            else -> "inactive"
+        }
+
+        val entry = JSONObject().apply {
+            put("fixID", fixId)
+            put("timestampUTC", timestampUtc)
             put("lat", location.latitude)
             put("lon", location.longitude)
-            put("speed_kmh", speedKmh)
+            put("speedKmh", speedKmh)
+            put("horizontalAccM", horizontalAccM)
+            put("verticalAccM", verticalAccM)
+            put("courseDeg", courseDeg)
+            put("gpsSignalBars", gpsSignalBars)
             put("status", status)
-            put("gps_signal_bars", uiState.gpsSignalBars)
-            put("way_id", result?.wayId)
-            put("street_name", result?.streetName)
-            put("city_name", result?.cityName)
-            put("inside_city", result?.insideCity)
-            put("city_source", result?.citySource)
-            put("speed_limit_kmh", overrideSpeedKmh)
-            put("query_ms", result?.queryTimeMs)
-            put("candidate_count", result?.candidateCount)
-            put("speed_candidate_count", result?.speedCandidateCount)
-            put("nearest_candidate_m", result?.nearestCandidateDistanceM)
-            put("nearest_speed_candidate_m", result?.nearestSpeedCandidateDistanceM)
-            if (errorText != null) {
-                put("error", errorText)
+            overrideSpeedKmh?.let { put("speedLimitOverrideKmh", it) }
+            put("tunnelModeState", tunnelModeState)
+            result?.let { put("result", buildRichMatchResultJson(it, matchContext, horizontalAccM)) }
+            errorText?.let { put("error", it) }
+
+            // Preserve the old Android flat schema for existing tooling.
+            put("timestamp_utc", timestampUtc)
+            put("speed_kmh", speedKmh)
+            put("gps_signal_bars", gpsSignalBars)
+            result?.wayId?.let { put("way_id", it) }
+            result?.streetName?.let { put("street_name", it) }
+            result?.cityName?.let { put("city_name", it) }
+            result?.insideCity?.let { put("inside_city", it) }
+            result?.citySource?.let { put("city_source", it) }
+            overrideSpeedKmh?.let { put("speed_limit_kmh", it) }
+            result?.queryTimeMs?.let { put("query_ms", it) }
+            result?.candidateCount?.let { put("candidate_count", it) }
+            result?.speedCandidateCount?.let { put("speed_candidate_count", it) }
+            result?.nearestCandidateDistanceM?.let { put("nearest_candidate_m", it) }
+            result?.nearestSpeedCandidateDistanceM?.let { put("nearest_speed_candidate_m", it) }
+        }
+
+        matchLogFile().appendText(entry.toString() + "\n")
+    }
+
+    private fun buildRichMatchResultJson(
+        result: SpeedLookupResult,
+        matchContext: WayMatchContext?,
+        horizontalAccM: Double,
+    ): JSONObject {
+        val selectedTrace = result.candidateTraces.firstOrNull { it.isSelected }
+        return JSONObject().apply {
+            result.speedLimitKmh?.let { put("speedLimitKmh", it) }
+            put("isUnlimitedSpeedLimit", result.isUnlimitedSpeedLimit)
+            result.wayId?.let { put("wayID", it) }
+            result.highway?.let { put("highway", it) }
+            selectedTrace?.service?.let { put("service", it) }
+            selectedTrace?.tunnel?.let { put("tunnel", it) }
+            put("isTunnelSegment", result.isTunnelSegment)
+            result.streetName?.let { put("streetName", it) }
+            result.streetBaseName?.let { put("streetBaseName", it) }
+            result.streetRef?.let { put("streetRef", it) }
+            result.matchedEndpointProximityM?.let { put("matchedEndpointProximityM", it) }
+            result.cityName?.let { put("cityName", it) }
+            result.insideCity?.let { put("insideCity", it) }
+            result.citySource?.let { put("citySource", it) }
+            put("cityResolveMs", 0.0)
+            put("cityCandidateBoundaries", 0)
+            put("cityContainingBoundaries", 0)
+            put("cityPlaceCandidates", 0)
+            put("queryTimeMs", result.queryTimeMs)
+            put("candidateCount", result.candidateCount)
+            put("speedCandidateCount", result.speedCandidateCount)
+            result.nearestCandidateDistanceM?.let { put("nearestCandidateDistanceM", it) }
+            result.nearestSpeedCandidateDistanceM?.let { put("nearestSpeedCandidateDistanceM", it) }
+            put("nearbyTunnelCandidateWayIDs", jsonStringArray(result.nearbyTunnelCandidateWayIds.sorted()))
+            put("nearbyTunnelCandidateRefs", jsonStringArray(result.nearbyTunnelCandidateRefs.sorted()))
+            put("usedMiniHMM", result.usedMiniHMM)
+            put("miniHMMCandidateCount", result.miniHMMCandidateCount)
+            put("matchHypotheses", JSONArray().apply {
+                result.matchHypotheses.forEach { put(buildHypothesisJson(it)) }
+            })
+            put("candidateTraces", JSONArray().apply {
+                result.candidateTraces.forEach { put(buildCandidateTraceJson(it)) }
+            })
+            val selectionTrace = if (result.selectionTrace.isNotEmpty()) {
+                buildSelectionTraceJson(result.selectionTrace)
+            } else {
+                buildFallbackSelectionTraceJson(matchContext, result, horizontalAccM)
+            }
+            put("selectionTrace", selectionTrace)
+            result.activeCorridorState?.let { put("activeCorridorState", buildCorridorStateJson(it)) }
+        }
+    }
+
+    private fun buildHypothesisJson(hypothesis: WayMatchHypothesis): JSONObject {
+        return JSONObject().apply {
+            put("wayID", hypothesis.wayId)
+            hypothesis.streetRef?.let { put("streetRef", it) }
+            hypothesis.highway?.let { put("highway", it) }
+            hypothesis.corridorState?.let { put("corridorState", it) }
+            hypothesis.corridorKind?.let { put("corridorKind", it) }
+            hypothesis.corridorId?.let { put("corridorID", it) }
+            hypothesis.corridorSideNodeKey?.let { put("corridorSideNodeKey", it) }
+            put("cumulativeCost", hypothesis.cumulativeCost)
+            put("emissionScore", hypothesis.emissionScore)
+            put("endpointProximityM", hypothesis.endpointProximityM)
+            hypothesis.startLat?.let { put("startLat", it) }
+            hypothesis.startLon?.let { put("startLon", it) }
+            hypothesis.endLat?.let { put("endLat", it) }
+            hypothesis.endLon?.let { put("endLon", it) }
+            put("isTunnel", hypothesis.isTunnel)
+        }
+    }
+
+    private fun buildCandidateTraceJson(trace: MatcherCandidateTrace): JSONObject {
+        return JSONObject().apply {
+            put("rank", trace.rank)
+            trace.wayId?.let { put("wayID", it) }
+            trace.streetName?.let { put("streetName", it) }
+            trace.streetRef?.let { put("streetRef", it) }
+            trace.highway?.let { put("highway", it) }
+            trace.service?.let { put("service", it) }
+            trace.tunnel?.let { put("tunnel", it) }
+            put("distanceM", trace.distanceM)
+            put("endpointProximityM", trace.endpointProximityM)
+            put("score", trace.score)
+            trace.geometryScore?.let { put("geometryScore", it) }
+            put("portalEligible", trace.portalEligible)
+            put("continuityClass", trace.continuityClass)
+            put("tunnelSelectable", trace.tunnelSelectable)
+            put("corridorSelectable", trace.corridorSelectable)
+            put("isSelected", trace.isSelected)
+        }
+    }
+
+    private fun buildSelectionTraceJson(traces: List<MatchSelectionTrace>): JSONArray {
+        return JSONArray().apply {
+            traces.forEach { trace ->
+                put(selectionTraceStep(step = trace.step, detail = trace.detail))
             }
         }
-        matchLogFile().appendText(entry.toString() + "\n")
+    }
+
+    private fun buildFallbackSelectionTraceJson(
+        matchContext: WayMatchContext?,
+        result: SpeedLookupResult,
+        horizontalAccM: Double,
+    ): JSONArray {
+        val selectedTrace = result.candidateTraces.firstOrNull { it.isSelected }
+        val accuracyText = String.format(Locale.US, "%.1f", horizontalAccM)
+        return JSONArray().apply {
+            put(
+                selectionTraceStep(
+                    step = "context",
+                    detail = buildString {
+                        append("preferred=").append(matchContext?.preferredWayId ?: "nil")
+                        append(" tunnel_mode=").append(matchContext?.isInTunnelMode == true)
+                        append(" gps_loss=").append(matchContext?.hadRecentGpsSignalLoss == true)
+                        append(" tunnel_approach=").append(matchContext?.tunnelApproachFixCount ?: 0)
+                        append(" corridor_approach=").append(matchContext?.approachCorridorFixCount ?: 0)
+                        append(" match_streak=").append(matchContext?.matchedFixCount ?: 0)
+                        append(" accuracy_m=").append(accuracyText)
+                    },
+                ),
+            )
+            if (selectedTrace != null) {
+                put(
+                    selectionTraceStep(
+                        step = "heuristic",
+                        detail = "selected ${result.wayId ?: "nil"} continuity=${selectedTrace.continuityClass}",
+                    ),
+                )
+            }
+            if (result.usedWalkingTurnSwitch) {
+                put(
+                    selectionTraceStep(
+                        step = "walking_turn_switch",
+                        detail = "selected ${result.wayId ?: "nil"} due to low-speed geometric switch",
+                    ),
+                )
+            }
+            put(
+                selectionTraceStep(
+                    step = "final",
+                    detail = "selected ${result.wayId ?: "nil"} tunnel=${result.isTunnelSegment} corridor=${result.activeCorridorState?.kind ?: "none"}",
+                ),
+            )
+        }
+    }
+
+    private fun selectionTraceStep(step: String, detail: String): JSONObject {
+        return JSONObject().apply {
+            put("step", step)
+            put("detail", detail)
+        }
+    }
+
+    private fun buildCorridorStateJson(state: CorridorMatchState): JSONObject {
+        return JSONObject().apply {
+            put("kind", state.kind)
+            put("corridorID", state.corridorId)
+            put("sideNodeKey", state.sideNodeKey)
+            put("depthM", state.depthM)
+            put("spanM", state.spanM)
+            put("depthNodes", state.depthNodes)
+            put("spanNodes", state.spanNodes)
+        }
+    }
+
+    private fun jsonStringArray(values: Iterable<String>): JSONArray {
+        return JSONArray().apply {
+            values.forEach { put(it) }
+        }
     }
 
     private fun csvEscape(value: String): String {

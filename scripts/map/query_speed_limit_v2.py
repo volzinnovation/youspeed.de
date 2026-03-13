@@ -17,6 +17,7 @@ from city_polygon_resolver import resolve_city_context
 
 DEFAULT_DE_URBAN = 50
 DEFAULT_DE_RURAL_CAR = 100
+CITY_BOUNDARY_PRIORITY = {8: 0, 6: 1}
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
 PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
 NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
@@ -169,6 +170,13 @@ def point_in_bbox(lat: float, lon: float, row: dict) -> bool:
     return row["min_lat"] <= lat <= row["max_lat"] and row["min_lon"] <= lon <= row["max_lon"]
 
 
+def _city_boundary_priority(admin_level: object) -> Optional[int]:
+    try:
+        return CITY_BOUNDARY_PRIORITY.get(int(admin_level))
+    except (TypeError, ValueError):
+        return None
+
+
 def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict]) -> bool:
     for area in area_candidates:
         if not point_in_bbox(lat, lon, area):
@@ -176,7 +184,7 @@ def inside_built_up_guess(lat: float, lon: float, area_candidates: Iterable[dict
         place = area.get("place")
         if place in PLACE_VALUES:
             return True
-        if area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}:
+        if area.get("boundary") == "administrative" and _city_boundary_priority(area.get("admin_level")) is not None:
             return True
     return False
 
@@ -186,7 +194,7 @@ def _bbox_area(area: dict) -> float:
 
 
 def _resolve_city_context_from_areas(lat: float, lon: float, area_candidates: Iterable[dict]) -> dict:
-    containing_admin: List[Tuple[int, float, str]] = []
+    containing_admin: List[Tuple[int, int, float, str]] = []
     containing_places: List[Tuple[int, float, str]] = []
     nearby_places: List[Tuple[int, float, str]] = []
 
@@ -195,12 +203,14 @@ def _resolve_city_context_from_areas(lat: float, lon: float, area_candidates: It
         if not isinstance(name, str) or not name.strip():
             continue
         place = area.get("place")
-        area_is_admin = area.get("boundary") == "administrative" and area.get("admin_level") in {"8", "9"}
+        admin_level = area.get("admin_level")
+        admin_priority = _city_boundary_priority(admin_level)
+        area_is_admin = area.get("boundary") == "administrative" and admin_priority is not None
         inside_bbox = point_in_bbox(lat, lon, area)
         area_size = _bbox_area(area)
 
         if area_is_admin and inside_bbox:
-            containing_admin.append((int(area["admin_level"]), area_size, name))
+            containing_admin.append((int(admin_priority), int(admin_level), area_size, name))
 
         if place in PLACE_VALUES:
             center_lat = (float(area["min_lat"]) + float(area["max_lat"])) / 2.0
@@ -212,12 +222,12 @@ def _resolve_city_context_from_areas(lat: float, lon: float, area_candidates: It
                 containing_places.append((rank, d, name))
 
     if containing_admin:
-        containing_admin.sort(key=lambda x: (x[0], x[1], x[2]))
+        containing_admin.sort(key=lambda x: (x[0], x[2], x[3]))
         best = containing_admin[0]
         return {
             "inside_city": True,
-            "city_name": best[2],
-            "city_admin_level": best[0],
+            "city_name": best[3],
+            "city_admin_level": best[1],
             "city_source": "admin_bbox",
             "city_candidate_boundaries": len(containing_admin),
             "city_place_candidates": len(nearby_places),

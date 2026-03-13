@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
+import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import java.io.File
 import java.time.Clock
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity(), ConsumerHost {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         sessionController.bindHost(this)
         setContent {
@@ -58,6 +61,10 @@ class MainActivity : ComponentActivity(), ConsumerHost {
 
     override fun requestMicrophonePermission() {
         microphonePermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
+
+    override fun showTransientMessage(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun openExternalUrl(url: String) {

@@ -1088,6 +1088,45 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(osc.contains("<tag k=\"maxspeed\" v=\"walk\"/>"))
     }
 
+    @MainActor
+    func testSpeedCaptureCanSucceedTwiceInARow() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testResetLocalObservationStore()
+
+        viewModel.speedLimitKmh = 50
+        viewModel.limitWayID = "17721265"
+        viewModel.limitStreetName = "Dobler Strasse"
+        viewModel.limitCityName = "Bad Herrenalb"
+        viewModel.currentLatitude = 48.797626
+        viewModel.currentLongitude = 8.437309
+        viewModel.activeBundleVersion = "seed"
+
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "dreissig")
+
+        XCTAssertEqual(viewModel.speedCaptureMode, .idle)
+        XCTAssertFalse(viewModel.testSpeedCaptureDidResolve)
+        XCTAssertEqual(viewModel.testSpeedCaptureLatestTranscript, "")
+
+        let afterFirstCapture = try await viewModel.testStoredLocalObservations()
+        XCTAssertEqual(afterFirstCapture.count, 1)
+        XCTAssertEqual(afterFirstCapture.first?.value, "30")
+        XCTAssertEqual(afterFirstCapture.first?.roadCandidateIDs, ["17721265"])
+
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "vierzig")
+
+        XCTAssertEqual(viewModel.speedCaptureMode, .idle)
+        XCTAssertFalse(viewModel.testSpeedCaptureDidResolve)
+        XCTAssertEqual(viewModel.testSpeedCaptureLatestTranscript, "")
+
+        let afterSecondCapture = try await viewModel.testStoredLocalObservations()
+        XCTAssertEqual(afterSecondCapture.count, 2)
+        XCTAssertEqual(afterSecondCapture.first?.value, "40")
+        XCTAssertEqual(afterSecondCapture.first?.roadCandidateIDs, ["17721265"])
+        XCTAssertEqual(afterSecondCapture.dropFirst().first?.value, "30")
+
+        try await viewModel.testResetLocalObservationStore()
+    }
+
     func testResolveLocalSpeedOverridesUsesLatestAndSkipsDiscarded() async {
         let base = "2026-03-08T00:00:00.000Z"
         let observations: [LocalObservation] = [
@@ -4899,6 +4938,205 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
+    func testLookupCityNearestFallbackPrefersCityOverCloserVillage() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-nearest-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_nearest_fixture.sqlite")
+        try createNearestPlaceFallbackFixtureDB(
+            at: dbURL,
+            fixLat: 48.9205,
+            fixLon: 8.6692,
+            primaryPlaceName: "Pforzheim",
+            primaryPlaceType: "city",
+            primaryLon: 8.7025509,
+            primaryLat: 48.890934,
+            secondaryPlaceName: "Ispringen",
+            secondaryPlaceType: "village",
+            secondaryLon: 8.6690154,
+            secondaryLat: 48.9205599
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.9205,
+            lon: 8.6692,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.insideCity, false)
+        XCTAssertEqual(result.citySource, "place_nearest")
+    }
+
+    func testLookupCityNearestFallbackPrefersTownOverCloserHamlet() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-nearest-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_nearest_fixture.sqlite")
+        try createNearestPlaceFallbackFixtureDB(
+            at: dbURL,
+            fixLat: 48.8101,
+            fixLon: 8.4426,
+            primaryPlaceName: "Bad Herrenalb",
+            primaryPlaceType: "town",
+            primaryLon: 8.4382557,
+            primaryLat: 48.7990507,
+            secondaryPlaceName: "Kullenmühle",
+            secondaryPlaceType: "hamlet",
+            secondaryLon: 8.442564,
+            secondaryLat: 48.8101385
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.8101,
+            lon: 8.4426,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Bad Herrenalb")
+        XCTAssertEqual(result.insideCity, false)
+        XCTAssertEqual(result.citySource, "place_nearest")
+    }
+
+    func testLookupCityPolygonUsesAdminLevel6BoundaryWhenNoLevel8Exists() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.890934,
+            fixLon: 8.7025509,
+            adminLevel6Name: "Pforzheim"
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.890934,
+            lon: 8.7025509,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupCityPolygonPrefersAdminLevel8BoundaryOverLevel6() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.9233,
+            fixLon: 8.6735,
+            adminLevel6Name: "Enzkreis",
+            adminLevel8Name: "Ispringen"
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.9233,
+            lon: 8.6735,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Ispringen")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupCityPolygonPrefersAdminLevel8Boundary() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.890934,
+            fixLon: 8.7025509,
+            adminLevel8Name: "Pforzheim",
+            adminLevel9Name: "Buechenbronn"
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.890934,
+            lon: 8.7025509,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupCityPolygonIgnoresAdminLevel9AndFallsBackToPlace() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.8101,
+            fixLon: 8.4426,
+            adminLevel8Name: nil,
+            adminLevel9Name: "Kullenmühle",
+            fallbackPlaceName: "Bad Herrenalb",
+            fallbackPlaceType: "town",
+            fallbackPlaceLon: 8.4382557,
+            fallbackPlaceLat: 48.7990507
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.8101,
+            lon: 8.4426,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Bad Herrenalb")
+        XCTAssertEqual(result.insideCity, false)
+        XCTAssertEqual(result.citySource, "place_fallback")
+        XCTAssertEqual(result.speedLimitKmh, 100)
+    }
+
     func testLookupFailsForLegacySchemaWithoutWayGeomAndApproxHeading() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-legacy-\(UUID().uuidString)", isDirectory: true)
@@ -6490,6 +6728,314 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
             throw NSError(domain: "SpeedConsumerTests", code: 108, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createNearestPlaceFallbackFixtureDB(
+        at url: URL,
+        fixLat: Double,
+        fixLon: Double,
+        primaryPlaceName: String,
+        primaryPlaceType: String,
+        primaryLon: Double,
+        primaryLat: Double,
+        secondaryPlaceName: String,
+        secondaryPlaceType: String,
+        secondaryLon: Double,
+        secondaryLat: Double
+    ) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 109, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let minLon = String(format: "%.7f", fixLon - 0.0010)
+        let maxLon = String(format: "%.7f", fixLon + 0.0010)
+        let minLat = String(format: "%.7f", fixLat - 0.0002)
+        let maxLat = String(format: "%.7f", fixLat + 0.0002)
+        let startLon = String(format: "%.7f", fixLon - 0.0010)
+        let endLon = String(format: "%.7f", fixLon + 0.0010)
+        let wayLat = String(format: "%.7f", fixLat)
+        let primaryLonText = String(format: "%.7f", primaryLon)
+        let primaryLatText = String(format: "%.7f", primaryLat)
+        let secondaryLonText = String(format: "%.7f", secondaryLon)
+        let secondaryLatText = String(format: "%.7f", secondaryLat)
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+        CREATE TABLE areas (
+          row_id INTEGER PRIMARY KEY,
+          area_id TEXT NOT NULL UNIQUE,
+          geometry_type TEXT,
+          name TEXT,
+          place TEXT,
+          boundary TEXT,
+          admin_level TEXT,
+          residential TEXT,
+          parking TEXT,
+          traffic_sign TEXT,
+          points_json TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE areas_rtree USING rtree(
+          row_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '5001', 'secondary', 'Fallback Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, \(minLon), \(minLat), \(maxLon), \(maxLat));
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (5001, \(minLon), \(maxLon), \(minLat), \(maxLat));
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '5001', '[[\(wayLat),\(startLon)],[\(wayLat),\(endLon)]]');
+
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, 'n:primary', 'Point', '\(primaryPlaceName)', '\(primaryPlaceType)', NULL, NULL, NULL, NULL, NULL, NULL, \(primaryLonText), \(primaryLatText), \(primaryLonText), \(primaryLatText));
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (1, \(primaryLonText), \(primaryLonText), \(primaryLatText), \(primaryLatText));
+
+        INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, 'n:secondary', 'Point', '\(secondaryPlaceName)', '\(secondaryPlaceType)', NULL, NULL, NULL, NULL, NULL, NULL, \(secondaryLonText), \(secondaryLatText), \(secondaryLonText), \(secondaryLatText));
+        INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (2, \(secondaryLonText), \(secondaryLonText), \(secondaryLatText), \(secondaryLatText));
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 110, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createCityPolygonFixtureDB(
+        at url: URL,
+        fixLat: Double,
+        fixLon: Double,
+        adminLevel6Name: String? = nil,
+        adminLevel8Name: String? = nil,
+        adminLevel9Name: String? = nil,
+        fallbackPlaceName: String? = nil,
+        fallbackPlaceType: String? = nil,
+        fallbackPlaceLon: Double? = nil,
+        fallbackPlaceLat: Double? = nil
+    ) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 111, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let wayMinLon = String(format: "%.7f", fixLon - 0.0010)
+        let wayMaxLon = String(format: "%.7f", fixLon + 0.0010)
+        let wayMinLat = String(format: "%.7f", fixLat - 0.0002)
+        let wayMaxLat = String(format: "%.7f", fixLat + 0.0002)
+        let wayLat = String(format: "%.7f", fixLat)
+        let wayStartLon = String(format: "%.7f", fixLon - 0.0010)
+        let wayEndLon = String(format: "%.7f", fixLon + 0.0010)
+
+        let admin6Ring = "[[\(String(format: "%.7f", fixLon - 0.0300)),\(String(format: "%.7f", fixLat - 0.0300))],[\(String(format: "%.7f", fixLon + 0.0300)),\(String(format: "%.7f", fixLat - 0.0300))],[\(String(format: "%.7f", fixLon + 0.0300)),\(String(format: "%.7f", fixLat + 0.0300))],[\(String(format: "%.7f", fixLon - 0.0300)),\(String(format: "%.7f", fixLat + 0.0300))],[\(String(format: "%.7f", fixLon - 0.0300)),\(String(format: "%.7f", fixLat - 0.0300))]]"
+        let admin8Ring = "[[\(String(format: "%.7f", fixLon - 0.0200)),\(String(format: "%.7f", fixLat - 0.0200))],[\(String(format: "%.7f", fixLon + 0.0200)),\(String(format: "%.7f", fixLat - 0.0200))],[\(String(format: "%.7f", fixLon + 0.0200)),\(String(format: "%.7f", fixLat + 0.0200))],[\(String(format: "%.7f", fixLon - 0.0200)),\(String(format: "%.7f", fixLat + 0.0200))],[\(String(format: "%.7f", fixLon - 0.0200)),\(String(format: "%.7f", fixLat - 0.0200))]]"
+        let admin9Ring = "[[\(String(format: "%.7f", fixLon - 0.0030)),\(String(format: "%.7f", fixLat - 0.0030))],[\(String(format: "%.7f", fixLon + 0.0030)),\(String(format: "%.7f", fixLat - 0.0030))],[\(String(format: "%.7f", fixLon + 0.0030)),\(String(format: "%.7f", fixLat + 0.0030))],[\(String(format: "%.7f", fixLon - 0.0030)),\(String(format: "%.7f", fixLat + 0.0030))],[\(String(format: "%.7f", fixLon - 0.0030)),\(String(format: "%.7f", fixLat - 0.0030))]]"
+
+        var statements: [String] = [
+            """
+            CREATE TABLE ways (
+              row_id INTEGER PRIMARY KEY,
+              way_id TEXT NOT NULL UNIQUE,
+              highway TEXT,
+              street_name TEXT,
+              ref TEXT,
+              maxspeed TEXT,
+              maxspeed_type TEXT,
+              source_maxspeed TEXT,
+              zone_maxspeed TEXT,
+              traffic_sign TEXT,
+              approx_heading_deg REAL,
+              service TEXT,
+              tunnel TEXT,
+              bridge TEXT,
+              covered TEXT,
+              location TEXT,
+              layer TEXT,
+              level TEXT,
+              min_lon REAL NOT NULL,
+              min_lat REAL NOT NULL,
+              max_lon REAL NOT NULL,
+              max_lat REAL NOT NULL
+            );
+            CREATE VIRTUAL TABLE ways_rtree USING rtree(
+              way_id,
+              min_lon, max_lon,
+              min_lat, max_lat
+            );
+            CREATE TABLE way_geom (
+              row_id INTEGER PRIMARY KEY,
+              way_id TEXT NOT NULL UNIQUE,
+              points_json TEXT NOT NULL
+            );
+            CREATE TABLE areas (
+              row_id INTEGER PRIMARY KEY,
+              area_id TEXT NOT NULL UNIQUE,
+              geometry_type TEXT,
+              name TEXT,
+              place TEXT,
+              boundary TEXT,
+              admin_level TEXT,
+              residential TEXT,
+              parking TEXT,
+              traffic_sign TEXT,
+              points_json TEXT,
+              min_lon REAL NOT NULL,
+              min_lat REAL NOT NULL,
+              max_lon REAL NOT NULL,
+              max_lat REAL NOT NULL
+            );
+            CREATE VIRTUAL TABLE areas_rtree USING rtree(
+              row_id,
+              min_lon, max_lon,
+              min_lat, max_lat
+            );
+            CREATE TABLE city_boundary (
+              row_id INTEGER PRIMARY KEY,
+              osm_type TEXT NOT NULL,
+              osm_id INTEGER NOT NULL,
+              admin_level INTEGER NOT NULL,
+              name TEXT,
+              min_lon REAL NOT NULL,
+              min_lat REAL NOT NULL,
+              max_lon REAL NOT NULL,
+              max_lat REAL NOT NULL
+            );
+            CREATE VIRTUAL TABLE city_boundary_rtree USING rtree(
+              row_id,
+              min_lon, max_lon,
+              min_lat, max_lat
+            );
+            CREATE TABLE city_ring (
+              boundary_row_id INTEGER NOT NULL,
+              ring_index INTEGER NOT NULL,
+              outer_index INTEGER NOT NULL,
+              is_hole INTEGER NOT NULL,
+              points_json TEXT NOT NULL
+            );
+            CREATE TABLE city_place (
+              row_id INTEGER PRIMARY KEY,
+              place TEXT NOT NULL,
+              name TEXT NOT NULL,
+              lon REAL NOT NULL,
+              lat REAL NOT NULL
+            );
+            CREATE VIRTUAL TABLE city_place_rtree USING rtree(
+              row_id,
+              min_lon, max_lon,
+              min_lat, max_lat
+            );
+
+            INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+            VALUES (1, '6001', 'secondary', 'Polygon Test Way', NULL, NULL, NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, \(wayMinLon), \(wayMinLat), \(wayMaxLon), \(wayMaxLat));
+            INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+            VALUES (6001, \(wayMinLon), \(wayMaxLon), \(wayMinLat), \(wayMaxLat));
+            INSERT INTO way_geom(row_id, way_id, points_json)
+            VALUES (1, '6001', '[[\(wayLat),\(wayStartLon)],[\(wayLat),\(wayEndLon)]]');
+            """
+        ]
+
+        if let adminLevel6Name {
+            statements.append(
+                """
+                INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
+                VALUES (1, 'relation', 6001, 6, '\(adminLevel6Name)', \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
+                INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (1, \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
+                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                VALUES (1, 0, 0, 0, '\(admin6Ring)');
+                """
+            )
+        }
+
+        if let adminLevel8Name {
+            statements.append(
+                """
+                INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
+                VALUES (2, 'relation', 8001, 8, '\(adminLevel8Name)', \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
+                INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (2, \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
+                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                VALUES (2, 0, 0, 0, '\(admin8Ring)');
+                """
+            )
+        }
+
+        if let adminLevel9Name {
+            statements.append(
+                """
+                INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
+                VALUES (3, 'relation', 9001, 9, '\(adminLevel9Name)', \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
+                INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (3, \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
+                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                VALUES (3, 0, 0, 0, '\(admin9Ring)');
+                """
+            )
+        }
+
+        if let fallbackPlaceName,
+           let fallbackPlaceType,
+           let fallbackPlaceLon,
+           let fallbackPlaceLat {
+            let lonText = String(format: "%.7f", fallbackPlaceLon)
+            let latText = String(format: "%.7f", fallbackPlaceLat)
+            statements.append(
+                """
+                INSERT INTO city_place(row_id, place, name, lon, lat)
+                VALUES (1, '\(fallbackPlaceType)', '\(fallbackPlaceName)', \(lonText), \(latText));
+                INSERT INTO city_place_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (1, \(lonText), \(lonText), \(latText), \(latText));
+                """
+            )
+        }
+
+        let sql = statements.joined(separator: "\n")
+        guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 112, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 

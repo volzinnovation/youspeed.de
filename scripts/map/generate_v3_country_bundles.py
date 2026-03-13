@@ -534,6 +534,8 @@ def _bundle_commands(
             str(v1_dist),
             "--out-db",
             str(db_path),
+            "--input-pbf",
+            str(pbf_path),
         ],
         [
             "python3",

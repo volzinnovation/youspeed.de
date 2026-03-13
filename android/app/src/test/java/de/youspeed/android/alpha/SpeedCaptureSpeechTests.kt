@@ -24,6 +24,17 @@ class SpeedCaptureSpeechTests {
     }
 
     @Test
+    fun resolvesUmlautTranscriptVariantsFromVosk() {
+        val speedSelection = SpeedCaptureSpeech.resolveSelection("bitte hier hundert dreißig")
+        val walkSelection = SpeedCaptureSpeech.resolveSelection("das ist eine fußgängerzone")
+
+        requireNotNull(speedSelection)
+        requireNotNull(walkSelection)
+        assertEquals("130", speedSelection.value)
+        assertEquals("walk", walkSelection.value)
+    }
+
+    @Test
     fun manualSelectionAcceptsWalkAlias() {
         val selection = SpeedCaptureSpeech.selectionForValue("Fussgaengerzone")
 

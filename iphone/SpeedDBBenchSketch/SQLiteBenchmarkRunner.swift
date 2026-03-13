@@ -436,9 +436,17 @@ final class SQLiteBenchmarkRunner {
         FROM areas_rtree r
         JOIN areas a ON a.row_id = r.row_id
         WHERE a.boundary='administrative'
-          AND a.admin_level IN ('8','9')
+          AND CAST(a.admin_level AS INTEGER) IN (6, 8)
           AND r.min_lon <= ?1 AND r.max_lon >= ?2
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        ORDER BY
+          CASE CAST(a.admin_level AS INTEGER)
+            WHEN 8 THEN 0
+            WHEN 6 THEN 1
+            ELSE 9
+          END ASC,
+          ((a.max_lon - a.min_lon) * (a.max_lat - a.min_lat)) ASC,
+          COALESCE(a.name, '') ASC
         LIMIT 1
         """
         var stmt: OpaquePointer?

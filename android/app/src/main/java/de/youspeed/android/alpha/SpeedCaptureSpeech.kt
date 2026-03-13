@@ -10,7 +10,15 @@ enum class SpeedCaptureModeState {
     LISTENING,
     EVALUATING,
     SAVING,
-    MANUAL_ENTRY,
+    FAILED,
+}
+
+enum class GermanSpeechModelState {
+    CHECKING,
+    DOWNLOADING,
+    PENDING,
+    READY,
+    UNAVAILABLE,
 }
 
 data class SpeedCaptureSelection(
@@ -26,7 +34,7 @@ data class SpeedCaptureSelection(
 object SpeedCaptureSpeech {
     const val speechLocaleTag: String = "de-DE"
     const val promptText: String = "Geschwindigkeit erfassen. Jetzt sprechen."
-    const val listeningWindowMs: Long = 4_000L
+    const val listeningWindowMs: Long = 30_000L
     const val timeoutPaddingMs: Long = 350L
     const val startDelayMs: Long = 300L
     const val promptFallbackDelayMs: Long = 3_800L
@@ -65,6 +73,63 @@ object SpeedCaptureSpeech {
             }
         }
     }
+
+    val voskGrammarJson: String = listOf(
+            "10",
+            "20",
+            "30",
+            "40",
+            "50",
+            "60",
+            "70",
+            "80",
+            "90",
+            "100",
+            "110",
+            "120",
+            "130",
+            "zehn",
+            "zwanzig",
+            "dreissig",
+            "dreißig",
+            "vierzig",
+            "fuenfzig",
+            "fünfzig",
+            "sechzig",
+            "siebzig",
+            "achtzig",
+            "neunzig",
+            "hundert",
+            "hundert zehn",
+            "hundertzehn",
+            "einhundert zehn",
+            "einhundertzehn",
+            "hundert zwanzig",
+            "hundertzwanzig",
+            "einhundert zwanzig",
+            "einhundertzwanzig",
+            "hundert dreissig",
+            "hundertdreißig",
+            "hundertdreissig",
+            "einhundert dreissig",
+            "einhundertdreißig",
+            "einhundertdreissig",
+            "fussgaengerzone",
+            "fußgängerzone",
+            "fussgaenger zone",
+            "fußgänger zone",
+            "fussgaengerbereich",
+            "fußgängerbereich",
+            "walk",
+            "[unk]",
+        )
+        .joinToString(
+            separator = ",",
+            prefix = "[",
+            postfix = "]",
+        ) { phrase ->
+            "\"${phrase.replace("\\", "\\\\").replace("\"", "\\\"")}\""
+        }
 
     private val valueSet: Set<String> = whitelistByPriority.mapTo(linkedSetOf(), SpeedCaptureSelection::value)
 

@@ -28,7 +28,8 @@ echo "Building v3_A (max-geom-points=16)" >&2
 
 python3 "${repo_root}/scripts/map/build_spatialite_v3.py" \
   --v1-dist "${repo_root}/mapdata/dist/${variant_a_region}" \
-  --out-db "${variant_a_db}"
+  --out-db "${variant_a_db}" \
+  --input-pbf "${raw_pbf}"
 
 echo "Building v3_B (way_links)" >&2
 "${repo_root}/scripts/map/build_region_artifacts.sh" \
@@ -40,6 +41,7 @@ echo "Building v3_B (way_links)" >&2
 python3 "${repo_root}/scripts/map/build_spatialite_v3.py" \
   --v1-dist "${repo_root}/mapdata/dist/${variant_b_region}" \
   --out-db "${variant_b_db}" \
+  --input-pbf "${raw_pbf}" \
   --build-way-links
 
 cp -f "${variant_a_db}" "${assets_dir}/karlsruhe_v3_A_geom16.sqlite"

@@ -42,7 +42,7 @@ object ConsumerMainScreenLogic {
                 SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> "Jetzt"
                 SpeedCaptureModeState.EVALUATING -> "Pruefe"
                 SpeedCaptureModeState.SAVING -> "Speichere"
-                SpeedCaptureModeState.MANUAL_ENTRY -> "Manuell"
+                SpeedCaptureModeState.FAILED -> "Erneut"
                 SpeedCaptureModeState.IDLE -> ""
             }
         }
@@ -62,11 +62,11 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return when (state.speedCaptureMode) {
                 SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> "erlauben"
-                SpeedCaptureModeState.PREPARING -> "On-Device"
+                SpeedCaptureModeState.PREPARING -> "Offline"
                 SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> "sprechen"
                 SpeedCaptureModeState.EVALUATING -> "Eingabe"
                 SpeedCaptureModeState.SAVING -> "Wert"
-                SpeedCaptureModeState.MANUAL_ENTRY -> "eintragen"
+                SpeedCaptureModeState.FAILED -> "sprechen"
                 SpeedCaptureModeState.IDLE -> ""
             }
         }
@@ -165,6 +165,9 @@ object ConsumerMainScreenLogic {
     }
 
     fun usesDarkForeground(state: ConsumerUiState): Boolean {
+        if (isInSpeedCaptureMode(state)) {
+            return true
+        }
         if (state.isUnlimitedSpeedLimitActive && !isInSpeedCaptureMode(state)) {
             return true
         }

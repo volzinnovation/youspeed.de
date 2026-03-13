@@ -150,7 +150,7 @@ class _CityContextExtractor(osmium.SimpleHandler):
         if tags.get("boundary") != "administrative":
             return
         admin_level_raw = tags.get("admin_level")
-        if admin_level_raw not in {"8", "9"}:
+        if admin_level_raw not in {"6", "8"}:
             return
 
         ring_rows_local: List[Tuple[int, int, int, str]] = []

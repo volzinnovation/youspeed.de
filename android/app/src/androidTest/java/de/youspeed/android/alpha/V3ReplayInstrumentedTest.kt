@@ -2,11 +2,15 @@ package de.youspeed.android.alpha
 
 import android.content.res.AssetManager
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import android.util.Xml
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
+import java.util.zip.InflaterInputStream
 import kotlin.math.ceil
 import org.json.JSONArray
 import org.json.JSONObject
@@ -32,6 +36,75 @@ class V3ReplayInstrumentedTest {
         val track = parseKmlTrackAsset("replay_track.kml")
         val expected = loadReplayExpectations("replay_expected.json")
         runReplayAssertion(track = track, expected = expected, radiusM = 120.0)
+    }
+
+    @Test
+    fun benchmarkEndToEndLookupLatency_usingBundledDBAndReplayTrack() {
+        val dbFile = resolveBundledSeedDbFile()
+        val track = parseGpxTrackAsset("replay_track.gpx")
+        assertTrue("Replay track fixture must contain at least one point", track.isNotEmpty())
+
+        val e2eMs = ArrayList<Double>(track.size * 20)
+        val serviceMs = ArrayList<Double>(track.size * 20)
+        var projectedPayloadBytes = 0
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            // Warmup pass to stabilize caches and first-open effects.
+            track.forEach { point ->
+                lookup.lookup(
+                    lat = point.lat,
+                    lon = point.lon,
+                    radiusM = 120.0,
+                    maxCandidates = 64,
+                    headingDeg = null,
+                )
+            }
+
+            repeat(20) {
+                track.forEach { point ->
+                    val startedAtNs = System.nanoTime()
+                    val result = lookup.lookup(
+                        lat = point.lat,
+                        lon = point.lon,
+                        radiusM = 120.0,
+                        maxCandidates = 64,
+                        headingDeg = null,
+                    )
+
+                    // Include app-facing projection so this approximates fix->UI payload cost.
+                    val speedText = result.speedLimitKmh?.toString() ?: "nil"
+                    val wayText = result.wayId ?: "nil"
+                    val streetText = result.streetName ?: "nil"
+                    val cityText = result.cityName ?: "nil"
+                    val insideCityText = result.insideCity?.let { if (it) "1" else "0" } ?: "nil"
+                    projectedPayloadBytes += "$speedText|$wayText|$streetText|$cityText|$insideCityText".length
+
+                    val elapsedMs = (System.nanoTime() - startedAtNs) / 1_000_000.0
+                    e2eMs += elapsedMs
+                    serviceMs += result.queryTimeMs
+                }
+            }
+        }
+
+        val e2eMedian = percentile(e2eMs, 0.50)
+        val e2eP95 = percentile(e2eMs, 0.95)
+        val serviceMedian = percentile(serviceMs, 0.50)
+        val serviceP95 = percentile(serviceMs, 0.95)
+
+        val benchmarkLine = String.format(
+            "ANDROID_APP_E2E_BENCH n=%d e2e_ms_median=%.3f e2e_ms_p95=%.3f service_ms_median=%.3f service_ms_p95=%.3f payload_bytes=%d",
+            e2eMs.size,
+            e2eMedian,
+            e2eP95,
+            serviceMedian,
+            serviceP95,
+            projectedPayloadBytes,
+        )
+        println(benchmarkLine)
+        Log.i(LOG_TAG, benchmarkLine)
+
+        assertTrue("Expected positive median end-to-end latency", e2eMedian > 0.0)
+        assertTrue("Expected projected payload work to run", projectedPayloadBytes > 0)
     }
 
     @Test
@@ -674,6 +747,31 @@ class V3ReplayInstrumentedTest {
         return candidate
     }
 
+    private fun resolveBundledSeedDbFile(): File {
+        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val seedDir = File(targetContext.filesDir, "benchmark")
+        if (!seedDir.exists()) {
+            seedDir.mkdirs()
+        }
+        val seedFile = File(seedDir, BUNDLED_SEED_DB_FILE_NAME)
+        val tempFile = File(seedDir, "$BUNDLED_SEED_DB_FILE_NAME.tmp")
+        tempFile.delete()
+        targetContext.assets.open(BUNDLED_SEED_ASSET_NAME).use { input ->
+            InflaterInputStream(BufferedInputStream(input)).use { inflater ->
+                FileOutputStream(tempFile).use { output ->
+                    inflater.copyTo(output)
+                }
+            }
+        }
+        seedFile.delete()
+        check(tempFile.renameTo(seedFile)) { "Failed to atomically place bundled benchmark DB" }
+        assumeTrue(
+            "Bundled benchmark DB missing after asset inflate",
+            seedFile.exists() && seedFile.isFile && seedFile.length() > 0L,
+        )
+        return seedFile
+    }
+
     private fun resolveReplayTraceDir(): File {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         val arguments = InstrumentationRegistry.getArguments()
@@ -765,6 +863,10 @@ class V3ReplayInstrumentedTest {
             activeCorridorState = null,
             approachCorridorStateCandidate = null,
             usedWalkingTurnSwitch = false,
+            usedMiniHMM = false,
+            miniHMMCandidateCount = 0,
+            matchHypotheses = emptyList(),
+            selectionTrace = emptyList(),
         )
     }
 
@@ -1100,6 +1202,18 @@ class V3ReplayInstrumentedTest {
 
     private fun formatRatio(value: Double): String = String.format("%.4f", value)
 
+    private fun percentile(
+        values: List<Double>,
+        p: Double,
+    ): Double {
+        if (values.isEmpty()) {
+            return 0.0
+        }
+        val sorted = values.sorted()
+        val index = ((sorted.size - 1).toDouble() * p).toInt()
+        return sorted[index.coerceIn(0, sorted.size - 1)]
+    }
+
     private fun JSONArray?.toStringList(): List<String> {
         if (this == null) {
             return emptyList()
@@ -1239,5 +1353,11 @@ class V3ReplayInstrumentedTest {
             unchangedExampleCount += other.unchangedExampleCount
             unchangedCorrectCount += other.unchangedCorrectCount
         }
+    }
+
+    private companion object {
+        private const val BUNDLED_SEED_ASSET_NAME = "karlsruhe-regbez_speeds.sqlite.zlib"
+        private const val BUNDLED_SEED_DB_FILE_NAME = "karlsruhe-regbez_speeds.sqlite"
+        private const val LOG_TAG = "V3ReplayInstrumentedTest"
     }
 }

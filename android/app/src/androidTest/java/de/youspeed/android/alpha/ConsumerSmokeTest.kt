@@ -50,14 +50,7 @@ class ConsumerSmokeTest {
         waitByRes("primary-metric", 10_000)
 
         doubleTapByRes("speed-sign")
-        waitByRes("speed-capture-dialog", 10_000)
-        if (device.hasObject(By.res(PACKAGE_NAME, "speed-capture-manual-button")) || device.hasObject(By.res("speed-capture-manual-button"))) {
-            clickByRes("speed-capture-manual-button")
-            waitByRes("speed-capture-input", 10_000)
-        }
-        setTextByRes("speed-capture-input", "80")
-        clickByRes("speed-capture-save-button")
-        waitUntilGoneByRes("speed-capture-dialog", 10_000)
+        waitByRes("main-root", 10_000)
     }
 
     @Test
@@ -177,7 +170,7 @@ class ConsumerSmokeTest {
             "settings-button" -> "Einstellungen"
             "legal-button" -> "Rechtliche Hinweise"
             "open-debug-button" -> "Debug-Informationen oeffnen"
-            "speed-capture-save-button" -> "Speichern"
+            "speed-capture-retry-button" -> "Erneut"
             else -> null
         }
     }

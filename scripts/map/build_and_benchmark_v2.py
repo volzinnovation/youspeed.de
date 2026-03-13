@@ -457,6 +457,8 @@ def main() -> int:
                 str(v1_dist_dir),
                 "--out-db",
                 str(v3_db_path),
+                "--input-pbf",
+                str(Path(args.input_pbf)),
             ]
         )
         executed_steps.append("build_v3")

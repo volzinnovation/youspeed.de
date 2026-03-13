@@ -40,10 +40,10 @@ osmium tags-filter \
 # Layer 2: built-up area context for inside/outside default speed logic.
 osmium tags-filter \
   "$input_pbf" \
-  r/boundary=administrative \
   r/admin_level=8 \
-  r/admin_level=9 \
-  w/boundary=administrative \
+  r/admin_level=6 \
+  w/admin_level=8 \
+  w/admin_level=6 \
   r/residential \
   w/residential \
   r/landuse=residential \

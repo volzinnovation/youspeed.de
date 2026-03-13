@@ -31,9 +31,11 @@ internal data class WayMatchContext(
     val tunnelApproachFixCount: Int = 0,
     val tunnelApproachBaselineAccuracyM: Double? = null,
     val tunnelApproachBaselineSignalBars: Int? = null,
+    val recentHypotheses: List<WayMatchHypothesis> = emptyList(),
     val matchedFixCount: Int = 0,
     val hadRecentGpsSignalLoss: Boolean = false,
     val isInTunnelMode: Boolean = false,
+    val isInMotorwayMode: Boolean = false,
     val activeCorridorState: CorridorMatchState? = null,
     val approachCorridorState: CorridorMatchState? = null,
     val approachCorridorFixCount: Int = 0,
@@ -56,9 +58,11 @@ internal class WayMatchSessionTracker {
     private var tunnelApproachFixCount = 0
     private var tunnelApproachBaselineAccuracyM: Double? = null
     private var tunnelApproachBaselineSignalBars: Int? = null
+    private var recentHypotheses: List<WayMatchHypothesis> = emptyList()
     private var matchedFixCount = 0
     private var hadRecentGpsSignalLoss = false
     private var isInTunnelMode = false
+    private var isInMotorwayMode = false
     private var activeCorridorState: CorridorMatchState? = null
     private var approachCorridorState: CorridorMatchState? = null
     private var approachCorridorFixCount = 0
@@ -75,8 +79,10 @@ internal class WayMatchSessionTracker {
             recentTunnelApproachWayIds.isEmpty() &&
             recentTunnelApproachRefs.isEmpty() &&
             tunnelApproachFixCount <= 0 &&
+            recentHypotheses.isEmpty() &&
             !hadRecentGpsSignalLoss &&
             !isInTunnelMode &&
+            !isInMotorwayMode &&
             activeCorridorState == null &&
             approachCorridorState == null
         ) {
@@ -98,9 +104,11 @@ internal class WayMatchSessionTracker {
             tunnelApproachFixCount = tunnelApproachFixCount,
             tunnelApproachBaselineAccuracyM = tunnelApproachBaselineAccuracyM,
             tunnelApproachBaselineSignalBars = tunnelApproachBaselineSignalBars,
+            recentHypotheses = recentHypotheses,
             matchedFixCount = matchedFixCount,
             hadRecentGpsSignalLoss = hadRecentGpsSignalLoss,
             isInTunnelMode = isInTunnelMode,
+            isInMotorwayMode = isInMotorwayMode,
             activeCorridorState = activeCorridorState,
             approachCorridorState = approachCorridorState,
             approachCorridorFixCount = approachCorridorFixCount,
@@ -128,6 +136,7 @@ internal class WayMatchSessionTracker {
         result.streetRefTokens.forEach { pushFrontUnique(recentStreetRefs, it, RECENT_STREET_REF_LIMIT) }
         replaceLinkedSet(recentTunnelCandidateWayIds, result.nearbyTunnelCandidateWayIds, RECENT_WAY_LIMIT)
         replaceLinkedSet(recentTunnelCandidateRefs, result.nearbyTunnelCandidateRefs, RECENT_STREET_REF_LIMIT)
+        recentHypotheses = result.matchHypotheses
         recentFixes.addFirst(WayMatchRecentFix(lat = lat, lon = lon))
         while (recentFixes.size > 3) {
             recentFixes.removeLast()
@@ -136,6 +145,12 @@ internal class WayMatchSessionTracker {
         updateApproachCorridorState(result)
         activeCorridorState = result.activeCorridorState
         isInTunnelMode = result.isTunnelSegment
+        val resultHighway = result.highway?.trim()?.lowercase()
+        isInMotorwayMode = when (resultHighway) {
+            "motorway" -> true
+            "motorway_link" -> isInMotorwayMode || result.activeCorridorState?.kind == "motorway"
+            else -> false
+        }
         hadRecentGpsSignalLoss = false
     }
 
@@ -155,9 +170,11 @@ internal class WayMatchSessionTracker {
         recentTunnelCandidateRefs.clear()
         resetTunnelApproachState()
         resetApproachCorridorState()
+        recentHypotheses = emptyList()
         matchedFixCount = 0
         hadRecentGpsSignalLoss = false
         isInTunnelMode = false
+        isInMotorwayMode = false
         activeCorridorState = null
     }
 

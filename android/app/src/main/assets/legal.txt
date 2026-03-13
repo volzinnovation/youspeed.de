@@ -57,10 +57,19 @@ koennen nach ODbL zusaetzliche Pflichten gelten (insbesondere Quellenhinweis und
 Share-Alike fuer abgeleitete Datenbanken).
 
 Open-Source-Komponenten und Lizenzen
-Die iOS-App verwendet derzeit keine zusaetzlich eingebetteten Drittanbieter-SDKs
-ueber Swift Package Manager, CocoaPods oder Carthage.
+Die Android-App verwendet eingebettete Open-Source-Komponenten.
 
 Verwendete Systemkomponenten:
-- Apple-Systemframeworks (iOS SDK) gemaess Apple-Lizenzbedingungen.
+- Android-Systemframeworks gemaess den Lizenzbedingungen des Android SDK.
 - SQLite3 (Systembibliothek): Public Domain
   https://www.sqlite.org/copyright.html
+
+Spracherkennung:
+- Vosk Android / Vosk Speech Recognition Toolkit (Alpha Cephei Inc.): Apache License 2.0
+  Quelle: https://github.com/alphacep/vosk-api
+- Vosk German model "vosk-model-small-de-0.15" (Alpha Cephei Inc.): Apache License 2.0
+  Quelle: https://alphacephei.com/vosk/models
+
+Zusatzschrift:
+- u_DIN 1451 Mittelschrift Regular (Peter Wiegel): SIL Open Font License 1.1
+  Quelle: https://fontlibrary.org/en/font/u-din-1451-mittelschrift

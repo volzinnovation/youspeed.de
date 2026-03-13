@@ -391,6 +391,11 @@ final class V3SpeedLimitService {
         "village": 2,
         "hamlet": 3,
     ]
+    private static let cityBoundaryLevelPriority: [Int: Int] = [
+        8: 0,
+        6: 1,
+    ]
+    private static let primaryPlaceMaxRank = 1
     private static let nearestPlaceFallbackMaxDistanceM: Double = 5_000
     private static let headingWeightMPerDeg: Double = 1.8
     private static let headingMinSpeedKmh: Double = 8.0
@@ -428,6 +433,46 @@ final class V3SpeedLimitService {
     private static let transitionHeadingBonusM: Double = 4.0
     private static let transitionSharpTurnPenaltyM: Double = 10.0
     private static let transitionVerySharpTurnPenaltyM: Double = 16.0
+
+    private static func primaryPlaceCandidates(
+        from candidates: [(rank: Int, distanceM: Double, name: String)]
+    ) -> [(rank: Int, distanceM: Double, name: String)] {
+        candidates.filter { $0.rank <= primaryPlaceMaxRank }
+    }
+
+    private static func selectContainingPlace(
+        from candidates: [(rank: Int, distanceM: Double, name: String)]
+    ) -> (rank: Int, distanceM: Double, name: String)? {
+        let primary = primaryPlaceCandidates(from: candidates)
+        let effective = primary.isEmpty ? candidates : primary
+        return effective.sorted(by: {
+            if $0.rank != $1.rank { return $0.rank < $1.rank }
+            if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
+            return $0.name < $1.name
+        }).first
+    }
+
+    private static func selectNearestPlaceFallback(
+        from candidates: [(rank: Int, distanceM: Double, name: String)]
+    ) -> (rank: Int, distanceM: Double, name: String)? {
+        let withinThreshold = candidates.filter { $0.distanceM <= nearestPlaceFallbackMaxDistanceM }
+        guard !withinThreshold.isEmpty else {
+            return nil
+        }
+        let primary = primaryPlaceCandidates(from: withinThreshold)
+        if !primary.isEmpty {
+            return primary.sorted(by: {
+                if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
+                if $0.rank != $1.rank { return $0.rank < $1.rank }
+                return $0.name < $1.name
+            }).first
+        }
+        return withinThreshold.sorted(by: {
+            if $0.rank != $1.rank { return $0.rank < $1.rank }
+            if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
+            return $0.name < $1.name
+        }).first
+    }
     private static let tunnelPortalEntryEndpointThresholdM: Double = 24.0
     private static let tunnelPortalExitEndpointThresholdM: Double = 28.0
     private static let tunnelPortalScoreSlackM: Double = 12.0
@@ -738,7 +783,7 @@ final class V3SpeedLimitService {
                 if let insideCity = residentialContext.insideCity {
                     insideCityDecision = (insideCity, "residential_polygon")
                 } else {
-                    insideCityDecision = (nil, nil)
+                    insideCityDecision = (cityContext.insideCity, cityContext.citySource)
                 }
             }
 
@@ -1356,7 +1401,7 @@ final class V3SpeedLimitService {
             if let insideCity = residentialContext.insideCity {
                 insideCityDecision = (insideCity, "residential_polygon")
             } else {
-                insideCityDecision = (nil, nil)
+                insideCityDecision = (cityContext.insideCity, cityContext.citySource)
             }
         }
 
@@ -5892,23 +5937,6 @@ final class V3SpeedLimitService {
     private func resolveCityContext(db: OpaquePointer, lat: Double, lon: Double) -> CityContext {
         let startNs = DispatchTime.now().uptimeNanoseconds
 
-        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
-        if hasAreasTables {
-            let areaResult = resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
-            return CityContext(
-                insideCity: areaResult.insideCity,
-                cityName: areaResult.cityName,
-                citySource: areaResult.citySource,
-                candidateBoundaries: areaResult.candidateBoundaries,
-                containingBoundaries: areaResult.containingBoundaries,
-                placeCandidates: areaResult.placeCandidates,
-                resolveMs: elapsed
-            )
-        }
-
-        // Compatibility fallback for older datasets that still expose dedicated
-        // city boundary polygons instead of the consolidated areas table.
         let hasBoundaryTables = tableExists(db: db, name: "city_boundary") &&
             tableExists(db: db, name: "city_boundary_rtree") &&
             tableExists(db: db, name: "city_ring")
@@ -5932,6 +5960,21 @@ final class V3SpeedLimitService {
                     resolveMs: elapsed
                 )
             }
+        }
+
+        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
+        if hasAreasTables {
+            let areaResult = resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
+            return CityContext(
+                insideCity: areaResult.insideCity,
+                cityName: areaResult.cityName,
+                citySource: areaResult.citySource,
+                candidateBoundaries: areaResult.candidateBoundaries,
+                containingBoundaries: areaResult.containingBoundaries,
+                placeCandidates: areaResult.placeCandidates,
+                resolveMs: elapsed
+            )
         }
 
         let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
@@ -6026,6 +6069,7 @@ final class V3SpeedLimitService {
         JOIN city_boundary b ON b.row_id = r.row_id
         WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
+          AND b.admin_level IN (6, 8)
         LIMIT ?5
         """
 
@@ -6065,12 +6109,14 @@ final class V3SpeedLimitService {
         }
 
         if let best = containing.sorted(by: {
-            if $0.adminLevel != $1.adminLevel { return $0.adminLevel < $1.adminLevel }
+            let lhsPriority = Self.cityBoundaryLevelPriority[$0.adminLevel] ?? Int.max
+            let rhsPriority = Self.cityBoundaryLevelPriority[$1.adminLevel] ?? Int.max
+            if lhsPriority != rhsPriority { return lhsPriority < rhsPriority }
             if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
             return ($0.name ?? "~") < ($1.name ?? "~")
         }).first {
             return (
-                insideCity: best.adminLevel == 8 || best.adminLevel == 9,
+                insideCity: true,
                 cityName: best.name,
                 citySource: "admin_polygon",
                 candidateBoundaries: boundaries.count,
@@ -6081,7 +6127,7 @@ final class V3SpeedLimitService {
 
         if hasPlaceTables {
             let placeSQL = """
-            SELECT p.name
+            SELECT p.place, p.name, p.lon, p.lat
             FROM city_place_rtree r
             JOIN city_place p ON p.row_id = r.row_id
             WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
@@ -6101,20 +6147,27 @@ final class V3SpeedLimitService {
                 sqlite3_bind_double(placeStmt, 7, lat)
                 sqlite3_bind_double(placeStmt, 8, lat)
 
-                var names: [String] = []
+                var candidates: [(rank: Int, distanceM: Double, name: String)] = []
                 while sqlite3_step(placeStmt) == SQLITE_ROW {
-                    if let name = cStringOptional(sqlite3_column_text(placeStmt, 0)), !name.isEmpty {
-                        names.append(name)
+                    guard let place = cStringOptional(sqlite3_column_text(placeStmt, 0)),
+                          let rank = Self.placeRank[place],
+                          let name = cStringOptional(sqlite3_column_text(placeStmt, 1)),
+                          !name.isEmpty else {
+                        continue
                     }
+                    let placeLon = sqlite3_column_double(placeStmt, 2)
+                    let placeLat = sqlite3_column_double(placeStmt, 3)
+                    let distance = haversineM(lat1: lat, lon1: lon, lat2: placeLat, lon2: placeLon)
+                    candidates.append((rank: rank, distanceM: distance, name: name))
                 }
-                if let cityName = names.first {
+                if let best = Self.selectNearestPlaceFallback(from: candidates) {
                     return (
                         insideCity: false,
-                        cityName: cityName,
+                        cityName: best.name,
                         citySource: "place_fallback",
                         candidateBoundaries: boundaries.count,
                         containingBoundaries: 0,
-                        placeCandidates: names.count
+                        placeCandidates: candidates.count
                     )
                 }
             }
@@ -6185,7 +6238,7 @@ final class V3SpeedLimitService {
             )
         }
 
-        var containingAdmin: [(adminLevel: Int, bboxArea: Double, name: String)] = []
+        var containingAdmin: [(priority: Int, adminLevel: Int, bboxArea: Double, name: String)] = []
         var containingPlaces: [(rank: Int, distanceM: Double, name: String)] = []
         var nearbyPlaces: [(rank: Int, distanceM: Double, name: String)] = []
 
@@ -6196,8 +6249,11 @@ final class V3SpeedLimitService {
             let inside = pointInBBox(lat: lat, lon: lon, minLon: area.minLon, minLat: area.minLat, maxLon: area.maxLon, maxLat: area.maxLat)
             let areaSize = max(area.maxLon - area.minLon, 0) * max(area.maxLat - area.minLat, 0)
 
-            if area.boundary == "administrative", let level = area.adminLevel, (level == 8 || level == 9), inside {
-                containingAdmin.append((adminLevel: level, bboxArea: areaSize, name: name))
+            if area.boundary == "administrative",
+               let level = area.adminLevel,
+               let priority = Self.cityBoundaryLevelPriority[level],
+               inside {
+                containingAdmin.append((priority: priority, adminLevel: level, bboxArea: areaSize, name: name))
             }
 
             if let place = area.place,
@@ -6213,7 +6269,7 @@ final class V3SpeedLimitService {
         }
 
         if let best = containingAdmin.sorted(by: {
-            if $0.adminLevel != $1.adminLevel { return $0.adminLevel < $1.adminLevel }
+            if $0.priority != $1.priority { return $0.priority < $1.priority }
             if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
             return $0.name < $1.name
         }).first {
@@ -6227,11 +6283,7 @@ final class V3SpeedLimitService {
             )
         }
 
-        if let best = containingPlaces.sorted(by: {
-            if $0.rank != $1.rank { return $0.rank < $1.rank }
-            if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
-            return $0.name < $1.name
-        }).first {
+        if let best = Self.selectContainingPlace(from: containingPlaces) {
             return (
                 true,
                 best.name,
@@ -6242,11 +6294,7 @@ final class V3SpeedLimitService {
             )
         }
 
-        if let best = nearbyPlaces.sorted(by: {
-            if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
-            if $0.rank != $1.rank { return $0.rank < $1.rank }
-            return $0.name < $1.name
-        }).first, best.distanceM <= Self.nearestPlaceFallbackMaxDistanceM {
+        if let best = Self.selectNearestPlaceFallback(from: nearbyPlaces) {
             return (
                 false,
                 best.name,

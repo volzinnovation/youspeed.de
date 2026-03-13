@@ -4,8 +4,14 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from typing import Dict, List, Optional, Tuple
+
+CITY_BOUNDARY_PRIORITY = {8: 0, 6: 1}
+PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
+PRIMARY_PLACE_MAX_RANK = 1
+NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M = 5000.0
 
 
 def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
@@ -89,6 +95,37 @@ def boundary_contains_point(conn: sqlite3.Connection, boundary_row_id: int, lon:
     return False
 
 
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius_m = 6371008.8
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(delta_phi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
+    )
+    return 2.0 * radius_m * math.asin(math.sqrt(a))
+
+
+def _primary_place_candidates(
+    candidates: List[Tuple[int, float, str]],
+) -> List[Tuple[int, float, str]]:
+    return [candidate for candidate in candidates if candidate[0] <= PRIMARY_PLACE_MAX_RANK]
+
+
+def _select_nearest_place_fallback(
+    candidates: List[Tuple[int, float, str]],
+) -> Optional[Tuple[int, float, str]]:
+    within_threshold = [candidate for candidate in candidates if candidate[1] <= NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M]
+    if not within_threshold:
+        return None
+    primary = _primary_place_candidates(within_threshold)
+    if primary:
+        return sorted(primary, key=lambda record: (record[1], record[0], record[2]))[0]
+    return sorted(within_threshold, key=lambda record: (record[0], record[1], record[2]))[0]
+
+
 def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit_rows: int = 2048) -> Dict[str, object]:
     has_boundary_tables = all(
         table_exists(conn, table_name)
@@ -125,6 +162,7 @@ def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit
         JOIN city_boundary b ON b.row_id = r.row_id
         WHERE r.min_lon <= ? AND r.max_lon >= ?
           AND r.min_lat <= ? AND r.max_lat >= ?
+          AND b.admin_level IN (6, 8)
         LIMIT ?
         """,
         (lon, lon, lat, lat, limit_rows),
@@ -140,10 +178,10 @@ def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit
             containing.append((admin_level, name, bbox_area))
 
     if containing:
-        containing.sort(key=lambda record: (record[0], record[2], (record[1] or "~")))
+        containing.sort(key=lambda record: (CITY_BOUNDARY_PRIORITY.get(record[0], 99), record[2], (record[1] or "~")))
         best_level, best_name, _ = containing[0]
         return {
-            "inside_city": best_level in {8, 9},
+            "inside_city": True,
             "city_name": best_name,
             "city_admin_level": best_level,
             "city_source": "admin_polygon",
@@ -166,15 +204,22 @@ def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit
             """,
             (lon + 0.3, lon - 0.3, lat + 0.3, lat - 0.3, lon, lon, lat, lat),
         ).fetchall()
-        if place_candidates:
+        ranked_candidates = []
+        for place, name, place_lon, place_lat in place_candidates:
+            rank = PLACE_RANK.get(place)
+            if rank is None or not name:
+                continue
+            ranked_candidates.append((rank, _haversine_m(lat, lon, float(place_lat), float(place_lon)), str(name)))
+        best_place = _select_nearest_place_fallback(ranked_candidates)
+        if best_place:
             return {
                 "inside_city": False,
-                "city_name": place_candidates[0][1],
+                "city_name": best_place[2],
                 "city_admin_level": None,
                 "city_source": "place_fallback",
                 "city_candidate_boundaries": len(candidates),
                 "city_containing_boundaries": 0,
-                "city_place_candidates": len(place_candidates),
+                "city_place_candidates": len(ranked_candidates),
                 "city_mode": "admin_polygons_plus_places",
             }
 

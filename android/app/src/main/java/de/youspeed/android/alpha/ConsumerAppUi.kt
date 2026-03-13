@@ -2,6 +2,9 @@
 
 package de.youspeed.android.alpha
 
+import android.graphics.Paint as AndroidPaint
+import android.graphics.Typeface
+import androidx.core.content.res.ResourcesCompat
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -14,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -44,10 +48,11 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -81,14 +86,20 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -99,6 +110,7 @@ import androidx.compose.ui.window.DialogProperties
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 private val Paper = Color(0xFFFDF8F0)
@@ -113,6 +125,12 @@ private val BrightYellow = Color(0xFFF9D950)
 private val SoftOrange = Color(0xFFF39A24)
 private val SoftRed = Color(0xFFC5212E)
 private const val DRIVING_BAN_PULSE_CYCLE_SECONDS = 2.2f
+private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
+private const val SECONDARY_TEXT_RATIO = 9f / 16f
+private const val DEBUG_WIDTH_REFERENCE = "N00.0000 O000.0000"
+private val TrafficSignFontFamily = FontFamily(
+    Font(R.font.u_din_1451_mittelschrift_regular, weight = FontWeight.Normal),
+)
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -175,7 +193,10 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                 }
 
                 else -> {
-                    StartupScreen(ui = ui, onRetry = controller::retryStartupDataPreparation)
+                    StartupScreen(
+                        ui = ui,
+                        onRetry = controller::retryStartupDataPreparation,
+                    )
                 }
             }
 
@@ -194,12 +215,6 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             }
             if (openLocalRecordings) {
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
-            }
-            if (ui.speedCaptureMode != SpeedCaptureModeState.IDLE) {
-                SpeedCaptureDialog(
-                    controller = controller,
-                    onDismiss = { controller.cancelSpeedCapture(reason = null) },
-                )
             }
         }
     }
@@ -223,19 +238,33 @@ private fun StartupScreen(
             verticalArrangement = Arrangement.spacedBy(18.dp),
             modifier = Modifier.widthIn(max = 420.dp),
         ) {
-            Text("YouSpeed", color = Color.White, fontSize = 42.sp, fontWeight = FontWeight.Bold)
-            Text("Lade lokale Kartendaten", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text("YouSpeed", color = Color.White, style = roundedUiTextStyle(size = 42.sp, weight = FontWeight.Bold))
+            Text("Lade lokale Kartendaten", color = Color.White, style = roundedUiTextStyle(size = 20.sp, weight = FontWeight.SemiBold))
             LinearProgress(ui.startupProgress)
-            Text("${(ui.startupProgress.coerceIn(0.0, 1.0) * 100).toInt()}%", color = Color.White, fontWeight = FontWeight.Bold)
-            Text(ui.startupDetail, color = Color.White.copy(alpha = 0.85f), textAlign = TextAlign.Center)
+            Text(
+                "${(ui.startupProgress.coerceIn(0.0, 1.0) * 100).toInt()}%",
+                color = Color.White.copy(alpha = 0.92f),
+                style = roundedUiTextStyle(size = 18.sp, weight = FontWeight.Bold),
+            )
+            Text(
+                ui.startupDetail,
+                color = Color.White.copy(alpha = 0.85f),
+                textAlign = TextAlign.Center,
+                style = roundedUiTextStyle(size = 16.sp, weight = FontWeight.Medium),
+            )
             if (ui.startupDataState == StartupDataState.FAILED && ui.lastError.isNotBlank()) {
-                Text(ui.lastError, color = Color.White.copy(alpha = 0.75f), textAlign = TextAlign.Center)
+                Text(
+                    ui.lastError,
+                    color = Color.White.copy(alpha = 0.75f),
+                    textAlign = TextAlign.Center,
+                    style = roundedUiTextStyle(size = 14.sp, weight = FontWeight.Normal),
+                )
                 Button(
                     onClick = onRetry,
                     colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                     modifier = Modifier.testTag("startup-retry-button"),
                 ) {
-                    Text("Erneut versuchen")
+                    Text("Erneut versuchen", style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold))
                 }
             }
         }
@@ -257,25 +286,25 @@ private fun WelcomeScreen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .widthIn(max = 560.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Text(
                 "Willkommen bei YouSpeed",
                 color = Color.White,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
+                style = roundedUiTextStyle(size = 34.sp, weight = FontWeight.Bold),
             )
             Text(
                 "Geld sparen. Fahrverbot vermeiden. Sicher ankommen. YouSpeed zeigt dir live, was Dich Dein zu schnelles Fahren kostet. Achtung: Auch YouSpeed kann Fehler machen - Augen auf die Strasse!",
                 color = Color.White.copy(alpha = 0.92f),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
+                style = roundedUiTextStyle(size = 18.sp, weight = FontWeight.SemiBold),
             )
             CoverageCard(activeBundleVersion = ui.activeBundleVersion)
             Text(
@@ -286,11 +315,20 @@ private fun WelcomeScreen(
                 },
                 color = Color.White.copy(alpha = 0.88f),
                 textAlign = TextAlign.Center,
+                style = roundedUiTextStyle(size = 15.sp, weight = FontWeight.Medium),
             )
             Card(colors = CardDefaults.cardColors(containerColor = Color(0x33FFD54F))) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Rechtlicher Hinweis", color = Color.Yellow, fontWeight = FontWeight.Bold)
-                    Text(LegalDisclaimer.short, color = Color.White.copy(alpha = 0.86f))
+                    Text(
+                        "Rechtlicher Hinweis",
+                        color = Color.Yellow,
+                        style = roundedUiTextStyle(size = 14.sp, weight = FontWeight.Bold),
+                    )
+                    Text(
+                        LegalDisclaimer.short,
+                        color = Color.White.copy(alpha = 0.86f),
+                        style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
+                    )
                 }
             }
             Card(colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))) {
@@ -298,6 +336,7 @@ private fun WelcomeScreen(
                     "Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright",
                     color = Color.White.copy(alpha = 0.76f),
                     modifier = Modifier.padding(12.dp),
+                    style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
                 )
             }
             Button(
@@ -306,14 +345,18 @@ private fun WelcomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("welcome-open-settings-button"),
-            ) { Text("Daten laden / App einstellen") }
+            ) { Text("Daten laden / App einstellen", style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold)) }
             OutlinedButton(
                 onClick = onContinue,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("welcome-continue-button"),
             ) {
-                Text("Mit vorhandenen Daten fortfahren", color = Color.White)
+                Text(
+                    "Mit vorhandenen Daten fortfahren",
+                    color = Color.White,
+                    style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold),
+                )
             }
             Row(
                 modifier = Modifier
@@ -323,7 +366,11 @@ private fun WelcomeScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 androidx.compose.material3.Checkbox(checked = ui.hideWelcomeScreen, onCheckedChange = onHideWelcomeChanged)
-                Text("Nicht mehr anzeigen", color = Color.White.copy(alpha = 0.92f))
+                Text(
+                    "Nicht mehr anzeigen",
+                    color = Color.White.copy(alpha = 0.92f),
+                    style = roundedUiTextStyle(size = 15.sp, weight = FontWeight.SemiBold),
+                )
             }
         }
     }
@@ -374,14 +421,64 @@ private fun CoverageCard(activeBundleVersion: String) {
                     style = Stroke(width = 3f),
                 )
             }
-            Text("Deutschland", color = Color.White.copy(alpha = 0.84f), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+            Text(
+                "Deutschland",
+                color = Color.White.copy(alpha = 0.84f),
+                style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
+            )
             Text(
                 if (hasGermanyDataset) "Daten fuer Deutschland" else "Nur Karlsruhe Regierungsbezirk",
                 color = if (hasGermanyDataset) Color(0xFF6FB0FF) else Color.White.copy(alpha = 0.72f),
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
+                style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
             )
         }
+    }
+}
+
+private fun roundedUiTextStyle(
+    size: androidx.compose.ui.unit.TextUnit,
+    weight: FontWeight,
+): TextStyle = TextStyle(
+    fontSize = size,
+    fontWeight = weight,
+    fontFamily = FontFamily.SansSerif,
+)
+
+private fun trafficSignTextStyle(size: androidx.compose.ui.unit.TextUnit): TextStyle = TextStyle(
+    fontSize = size,
+    fontWeight = FontWeight.Normal,
+    fontFamily = TrafficSignFontFamily,
+    letterSpacing = (-0.01f * size.value).sp,
+)
+
+private fun primaryMetricTextStyle(
+    ui: ConsumerUiState,
+    baseSize: androidx.compose.ui.unit.TextUnit,
+): TextStyle = when {
+    ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) -> roundedUiTextStyle(size = baseSize * 0.42f, weight = FontWeight.Bold)
+    ConsumerMainScreenLogic.isSearchingSignal(ui) -> roundedUiTextStyle(size = baseSize, weight = FontWeight.Bold)
+    else -> trafficSignTextStyle(baseSize)
+}
+
+private fun sharedSecondaryScale(
+    baseSecondaryFontSp: Float,
+    availableWidthSp: Float,
+): Float {
+    val estimatedWidth = DEBUG_WIDTH_REFERENCE.length * baseSecondaryFontSp * 0.58f
+    if (estimatedWidth <= 0f) {
+        return 0.45f
+    }
+    val adaptive = availableWidthSp / estimatedWidth
+    return min(0.5f, max(0.35f, adaptive))
+}
+
+@Composable
+private fun rememberTrafficSignTypeface(): Typeface {
+    val context = LocalContext.current
+    return remember(context) {
+        ResourcesCompat.getFont(context, R.font.u_din_1451_mittelschrift_regular)
+            ?: Typeface.create("sans-serif-condensed", Typeface.NORMAL)
+            ?: Typeface.SANS_SERIF
     }
 }
 
@@ -415,18 +512,32 @@ private fun MainScreen(
     val limitText = ConsumerMainScreenLogic.limitText(ui)
     val runtimeBanner = runtimeBanner(ui)
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(background)
             .testTag("main-root")
             .padding(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding()),
     ) {
+        val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
+        val screenInset = (minDimensionDp.value * 0.02f).dp
+        val signSize = min(maxWidth.value * 0.74f, maxWidth.value - (screenInset.value * 2f)).dp
+        val primaryMetricFont = (signSize.value * SPEED_LIMIT_NUMBER_SCALE).sp
+        val secondaryScale = sharedSecondaryScale(
+            baseSecondaryFontSp = primaryMetricFont.value * SECONDARY_TEXT_RATIO,
+            availableWidthSp = maxWidth.value - (max(12f, maxWidth.value * 0.04f) * 2f),
+        )
+        val secondaryFont = primaryMetricFont * (SECONDARY_TEXT_RATIO * secondaryScale)
+        val debugFont = secondaryFont * 0.6f
+        val metricDebugGap = max(12f, minDimensionDp.value * 0.024f).dp
+        val debugSpacing = max(2f, minDimensionDp.value * 0.004f).dp
+        val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
+
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = screenInset, vertical = screenInset),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 PillIconButton(
@@ -438,22 +549,7 @@ private fun MainScreen(
                     Icon(Icons.Default.BugReport, contentDescription = "Lokale Erfassungen", tint = foreground)
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                Surface(shape = RoundedCornerShape(999.dp), color = buttonBg) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                            .testTag("gps-badge"),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Default.GpsFixed, contentDescription = null, tint = foreground)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("${ui.gpsSignalBars}/4", color = foreground, fontWeight = FontWeight.SemiBold)
-                        ui.gpsHorizontalAccuracyM?.let {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(String.format(Locale.US, "%.0f m", it), color = foreground.copy(alpha = 0.82f))
-                        }
-                    }
-                }
+                GpsSignalBadge(bars = ui.gpsSignalBars, accuracyM = ui.gpsHorizontalAccuracyM, foreground = foreground)
             }
 
             Column(
@@ -465,43 +561,61 @@ private fun MainScreen(
             ) {
                 SpeedLimitSign(
                     limitText = limitText,
+                    signSize = signSize,
+                    numberFontSize = primaryMetricFont,
                     showsUnlimitedIcon = ui.isUnlimitedSpeedLimitActive && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                     onDoubleTap = onCapture,
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(screenInset))
 
                 Column(
-                    modifier = Modifier.padding(horizontal = 18.dp),
+                    modifier = Modifier.padding(horizontal = contentHorizontalPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(debugSpacing),
                 ) {
                     Text(
                         primaryMetric,
                         color = foreground,
-                        fontSize = if (primaryMetric.length > 8) 48.sp else 88.sp,
-                        fontWeight = FontWeight.Black,
+                        style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.testTag("primary-metric"),
                     )
                     Text(
                         secondaryMetric,
                         color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.testTag("secondary-metric"),
                     )
+                    Spacer(modifier = Modifier.height(metricDebugGap))
                     if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
                         CityBadge(
                             streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
                             cityName = ConsumerMainScreenLogic.cityBadgeCityText(ui).orEmpty(),
                             onOpenDebug = onOpenDebug,
+                            maxWidth = signSize * 0.86f,
                         )
                     } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.testTag("debug-fix-summary")) {
-                            Text(ConsumerMainScreenLogic.debugCoordinateText(ui), color = foreground.copy(alpha = 0.92f), fontSize = 16.sp)
-                            Text(ConsumerMainScreenLogic.debugWayIdText(ui), color = foreground.copy(alpha = 0.82f), fontSize = 16.sp)
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(debugSpacing),
+                            modifier = Modifier.testTag("debug-fix-summary"),
+                        ) {
+                            Text(
+                                ConsumerMainScreenLogic.debugCoordinateText(ui),
+                                color = foreground.copy(alpha = 0.92f),
+                                fontSize = debugFont,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            Text(
+                                ConsumerMainScreenLogic.debugWayIdText(ui),
+                                color = foreground.copy(alpha = 0.82f),
+                                fontSize = debugFont,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace,
+                            )
                         }
                     }
                     runtimeBanner?.let { banner ->
@@ -535,7 +649,7 @@ private fun MainScreen(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(metricDebugGap))
             }
         }
 
@@ -597,7 +711,7 @@ private fun PillIconButton(
         color = background,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, border),
     ) {
-        IconButton(onClick = onClick) {
+        IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
             content()
         }
     }
@@ -606,13 +720,18 @@ private fun PillIconButton(
 @Composable
 private fun SpeedLimitSign(
     limitText: String,
+    signSize: androidx.compose.ui.unit.Dp,
+    numberFontSize: androidx.compose.ui.unit.TextUnit,
     showsUnlimitedIcon: Boolean,
     onDoubleTap: () -> Unit,
 ) {
+    val density = LocalDensity.current
+    val numberFontPx = with(density) { numberFontSize.toPx() }
+    val trafficSignTypeface = rememberTrafficSignTypeface()
     Box(
         modifier = Modifier
             .padding(top = 8.dp)
-            .size(288.dp)
+            .size(signSize)
             .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleTap() }) }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
@@ -640,15 +759,26 @@ private fun SpeedLimitSign(
                     color = Color(0xFFD21B24),
                     style = Stroke(width = size.minDimension * 0.134f),
                 )
+                val standardBlackBorderWidth = size.minDimension * 0.018f
+                val standardRedBandWidth = size.minDimension * 0.134f
+                val standardInnerDiameter = max(1f, size.minDimension - (2f * (standardBlackBorderWidth + standardRedBandWidth)))
+                val targetWidth = standardInnerDiameter * 0.86f
+                val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+                    color = android.graphics.Color.BLACK
+                    textAlign = AndroidPaint.Align.CENTER
+                    textSize = numberFontPx
+                    typeface = trafficSignTypeface
+                    isFakeBoldText = false
+                    style = AndroidPaint.Style.FILL
+                }
+                val measuredWidth = textPaint.measureText(limitText)
+                if (measuredWidth > targetWidth && measuredWidth > 0f) {
+                    textPaint.textSize *= targetWidth / measuredWidth
+                }
+                val metrics = textPaint.fontMetrics
+                val baseline = center.y - ((metrics.ascent + metrics.descent) / 2f)
+                drawContext.canvas.nativeCanvas.drawText(limitText, center.x, baseline, textPaint)
             }
-        }
-        if (!showsUnlimitedIcon) {
-            Text(
-                limitText,
-                color = Color.Black,
-                fontSize = 92.sp,
-                fontWeight = FontWeight.Black,
-            )
         }
     }
 }
@@ -658,9 +788,11 @@ private fun CityBadge(
     streetName: String,
     cityName: String,
     onOpenDebug: () -> Unit,
+    maxWidth: androidx.compose.ui.unit.Dp,
 ) {
     Card(
         modifier = Modifier
+            .widthIn(max = maxWidth)
             .clickable { onOpenDebug() }
             .testTag("city-badge"),
         colors = CardDefaults.cardColors(containerColor = BrightYellow),
@@ -671,11 +803,62 @@ private fun CityBadge(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (streetName.isNotBlank()) {
-                Text(streetName, color = Color.Black, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(
+                    streetName,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                )
             }
             if (cityName.isNotBlank()) {
-                Text(cityName, color = Color.Black, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(
+                    cityName,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center,
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun GpsSignalBadge(
+    bars: Int,
+    accuracyM: Double?,
+    foreground: Color,
+) {
+    Column(
+        modifier = Modifier.testTag("gps-badge"),
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (bars >= 2) Icons.Default.Wifi else Icons.Default.WifiOff,
+                contentDescription = null,
+                tint = foreground,
+                modifier = Modifier.size(44.dp),
+            )
+            if (bars == 2) {
+                Text(
+                    "!",
+                    color = foreground,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+        }
+        accuracyM?.let {
+            Text(
+                String.format(Locale.US, "%.0f m", it),
+                color = foreground.copy(alpha = 0.82f),
+                fontSize = 11.sp,
+                fontFamily = FontFamily.Monospace,
+            )
         }
     }
 }
@@ -728,6 +911,24 @@ private fun SettingsSheet(
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
                     )
+                }
+            }
+            item {
+                SectionCard("Offline-Spracherkennung") {
+                    DebugLabel("Plattform", "Vosk (gebuendelt)")
+                    DebugLabel("Status", speechModelStateLabel(ui.germanSpeechModelState))
+                    Text(
+                        ui.germanSpeechModelStatus,
+                        color = if (ui.germanSpeechModelState == GermanSpeechModelState.READY) Color(0xFF555555) else SignalOrange,
+                        fontSize = 13.sp,
+                    )
+                    Button(
+                        onClick = controller::prepareGermanSpeechModel,
+                        colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
+                        modifier = Modifier.testTag("speech-model-install-button"),
+                    ) {
+                        Text("Offline-Modell neu laden")
+                    }
                 }
             }
             item {
@@ -1163,93 +1364,12 @@ private fun runtimeBanner(ui: ConsumerUiState): RuntimeBanner? {
     }
 }
 
-@Composable
-private fun SpeedCaptureDialog(
-    controller: ConsumerSessionController,
-    onDismiss: () -> Unit,
-) {
-    val ui = controller.uiState
-    var value by rememberSaveable(ui.speedCaptureMode) {
-        mutableStateOf(
-            ui.speedLimitKmh?.toString().orEmpty().takeIf { ui.speedCaptureMode == SpeedCaptureModeState.MANUAL_ENTRY }.orEmpty(),
-        )
-    }
-    val isBusy = ui.speedCaptureMode != SpeedCaptureModeState.MANUAL_ENTRY
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            Button(
-                onClick = {
-                    controller.confirmManualSpeedCapture(value)
-                },
-                enabled = ui.speedCaptureMode == SpeedCaptureModeState.MANUAL_ENTRY,
-                modifier = Modifier.testTag("speed-capture-save-button"),
-            ) {
-                Text("Speichern")
-            }
-        },
-        dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (ui.speedCaptureMode != SpeedCaptureModeState.MANUAL_ENTRY) {
-                    OutlinedButton(
-                        onClick = controller::openManualSpeedCapture,
-                        modifier = Modifier.testTag("speed-capture-manual-button"),
-                    ) {
-                        Text("Manuell")
-                    }
-                }
-                OutlinedButton(onClick = onDismiss) { Text("Abbrechen") }
-            }
-        },
-        title = { Text("Geschwindigkeit erfassen") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier
-                    .semantics { testTagsAsResourceId = true }
-                    .testTag("speed-capture-dialog"),
-            ) {
-                Text(
-                    when (ui.speedCaptureMode) {
-                        SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> "Mikrofonberechtigung wird angefragt."
-                        SpeedCaptureModeState.PREPARING -> "On-Device-Spracherkennung wird vorbereitet."
-                        SpeedCaptureModeState.SPEAKING_PROMPT -> "Prompt wird abgespielt."
-                        SpeedCaptureModeState.LISTENING -> "Jetzt sprechen: 10 bis 130 oder Fussgaengerzone."
-                        SpeedCaptureModeState.EVALUATING -> "Eingabe wird geprueft."
-                        SpeedCaptureModeState.SAVING -> "Lokale Korrektur wird gespeichert."
-                        SpeedCaptureModeState.MANUAL_ENTRY -> "Korrekte Geschwindigkeit manuell eintragen oder Fussgaengerzone waehlen."
-                        SpeedCaptureModeState.IDLE -> ""
-                    },
-                )
-                if (isBusy) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                if (ui.speedCaptureTranscript.isNotBlank()) {
-                    Text("Erkannt: ${ui.speedCaptureTranscript}", color = Color(0xFF555555), fontSize = 13.sp)
-                }
-                if (ui.localObservationStatus.isNotBlank()) {
-                    Text(ui.localObservationStatus, color = Color(0xFF555555), fontSize = 13.sp)
-                }
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it.filter(Char::isDigit).take(3) },
-                    label = { Text("Neue Geschwindigkeit (km/h)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    enabled = ui.speedCaptureMode == SpeedCaptureModeState.MANUAL_ENTRY,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("speed-capture-input"),
-                )
-                OutlinedButton(
-                    onClick = controller::confirmPedestrianZoneCapture,
-                    enabled = ui.speedCaptureMode == SpeedCaptureModeState.MANUAL_ENTRY,
-                    modifier = Modifier.testTag("speed-capture-walk-button"),
-                ) {
-                    Text("Fussgaengerzone")
-                }
-            }
-        },
-    )
+private fun speechModelStateLabel(state: GermanSpeechModelState): String = when (state) {
+    GermanSpeechModelState.CHECKING -> "prueft"
+    GermanSpeechModelState.DOWNLOADING -> "entpackt"
+    GermanSpeechModelState.PENDING -> "wartet"
+    GermanSpeechModelState.READY -> "bereit"
+    GermanSpeechModelState.UNAVAILABLE -> "nicht verfuegbar"
 }
 
 @Composable
@@ -1363,6 +1483,9 @@ private fun syncMessageLine(ui: ConsumerUiState): Pair<String, Color>? {
 }
 
 private fun mainBackgroundColor(ui: ConsumerUiState, pulseFraction: Float): Color {
+    if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+        return Paper
+    }
     if (ui.isUnlimitedSpeedLimitActive) {
         return HighwayBlue
     }

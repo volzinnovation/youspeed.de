@@ -3394,6 +3394,50 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 }
 
+#if DEBUG
+extension DriveSessionViewModel {
+    func testResetLocalObservationStore() async throws {
+        _ = try await localObservationStore.deleteAllObservations()
+        await refreshLocalObservations()
+        localObservationStatus = ""
+        lastError = ""
+        localObservationShareURL = nil
+        lastExportDirectoryPath = ""
+    }
+
+    func testStoredLocalObservations(limit: Int = 50) async throws -> [LocalObservation] {
+        try await localObservationStore.fetchObservations(limit: limit)
+    }
+
+    func testSimulateRecognizedSpeedCapture(transcript: String, source: String = "unit_test") async throws {
+        speedCaptureMode = .listening
+        speedCaptureLatestTranscript = transcript
+        speedCaptureDidResolve = false
+        finishSpeedCaptureListening(source: source)
+        try await waitForTestSpeedCaptureToBecomeIdle()
+    }
+
+    var testSpeedCaptureDidResolve: Bool {
+        speedCaptureDidResolve
+    }
+
+    var testSpeedCaptureLatestTranscript: String {
+        speedCaptureLatestTranscript
+    }
+
+    private func waitForTestSpeedCaptureToBecomeIdle(timeoutNanoseconds: UInt64 = 2_000_000_000) async throws {
+        let startedAt = DispatchTime.now().uptimeNanoseconds
+        while DispatchTime.now().uptimeNanoseconds - startedAt < timeoutNanoseconds {
+            if speedCaptureMode == .idle {
+                return
+            }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        throw ConsumerAppError.io("Timed out waiting for speed capture to become idle")
+    }
+}
+#endif
+
 extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor [weak self] in

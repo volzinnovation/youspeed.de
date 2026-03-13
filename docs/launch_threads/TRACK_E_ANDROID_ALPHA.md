@@ -19,8 +19,8 @@ Start Android immediately as a real internal-alpha track using the same manifest
   - v3 SQLite lookup loop with way/city/basic speed-limit inference
   - deeper matcher continuity with same-ref/link promotion, same-ref bounce suppression, tunnel portal continuity, and corridor-state carryover modeled after iPhone `V3SpeedLimitService`
   - spoken overspeed and driving-ban warnings
-  - speech-driven local speed capture with on-device Android `SpeechRecognizer`
-  - microphone permission flow, model-support checks, and manual fallback for emulator / unsupported devices
+  - speech-driven local speed capture with bundled offline Vosk recognition (`vosk-android` + `vosk-model-small-de-0.15`)
+  - microphone permission flow with app-bundled German offline model preparation at startup instead of Google speech-model handoff
   - road-corridor continuation for captured local corrections, including `walk` / `Fussgaengerzone` export support
   - SQLite-backed local observation capture/review/export flow with approval, discard, single-export package generation, and bulk OSC export
   - debug log export/share and OSM browser handoff
@@ -71,7 +71,7 @@ Start Android immediately as a real internal-alpha track using the same manifest
 
 - `2026-03-12` status:
   - alpha shell parity, emulator automation, smoke tests, screenshot evidence, seed bootstrap, and first live runtime layers are in place
-  - speech-driven capture is now implemented on Android with on-device recognition checks and emulator-safe fallback
+  - speech-driven capture is now implemented on Android with a bundled Vosk-based German offline recognizer and no Google speech-model dependency
   - deeper matcher continuity/tunnel behavior and the SQLite review/export observation model are now implemented and emulator-tested
   - Android now also has a host-generated replay DB path and compact replay trace bundle for emulator/device regression without depending on `rtree` support inside the test process
   - live GitHub release bootstrap against the real `baden-wuerttemberg` shard now passes on emulator/device under instrumentation, and the large-file path no longer OOMs because DB assets stream to disk with chunked SHA validation
