@@ -5,20 +5,24 @@
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
 \usepackage{url}
-\usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{nicefrac}
 \usepackage{microtype}
-\usepackage{lipsum}
 \usepackage{siunitx}
-\usepackage{pgfplots}
-\usepackage{float}
+\usepackage{graphicx}
 \usepackage{longtable}
+\usepackage{pgfplots}
 \usepgfplotslibrary{statistics}
 \pgfplotsset{compat=1.18}
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
 
-\title{Youspeed.de Technical Report}
+\input{../personalized_matching_arxiv/data/metrics_macros.tex}
+\input{../personalized_matching_arxiv/data/model_benchmark_rows.tex}
+
+\title{YouSpeed Technical Report: System Architecture, Jurisdiction Handling, Bundle Generation, and Lightweight Matching Benchmarks for Offline Smartphone Speed-Limit Assistance}
 
 \author{
   Raphael Volz \\
@@ -30,479 +34,354 @@
 \maketitle
 
 \begin{abstract}
-This paper evaluates runtime data architectures for low-latency, offline-capable smartphone speed-limit inference using country-scale OpenStreetMap (OSM) data. We identify four data processing scenarios that are compared to find an optimal query and update scenario along three typical query conditions. Hence, we identify the preferred operating point for practical deployment for on-device speed-limit inference as required for Intelligent speed assistance (ISA) applications that are mandatory for new vehicles in the EU since 2022 and open the way for a smartphone and open data based retrofitting approach for vehicles that are already in traffic. Thereby we can strongly support the EU traffic safety vision of reduced crash severity.
+This technical report documents the current YouSpeed system for offline smartphone speed-limit assistance. The system couples regional OpenStreetMap-derived bundles, on-device area-context lookup, bounded local map matching, and jurisdiction-aware warning logic across two mobile clients: the iPhone release-track application and the Android internal alpha. The report treats four connected questions. First, it documents the current local-first architecture, bundle contract, and mobile-client feature scope. Second, it characterizes regulation handling and maxspeed provenance, including a Germany-specific provenance decomposition and a cross-country explicit-tag analysis over 45 European extracts. Third, it describes the actual bundle-generation and iterative-update pipeline, including country selection, regional sharding, delta-pack publication, and the current v3 database schema. Fourth, it reports the benchmark evidence for four runtime data architectures, ten investigated matcher approaches on a retained hindsight corpus, and two deployable matcher profiles on closed-loop replay corpora. S3, a single-file spatially indexed database, remains the stable data-layer choice. In the offline matcher ladder, the three-way fixed-lag smoother attains the best accuracy and changed-example recall, while the current conservative matcher maximizes keep-current accuracy. In the deployable runtime comparison, the corridor-aware profile improves replay quality but increases bundle size, service-query latency, and oscillation counts, leaving the present size/latency-weighted product score slightly in favor of the smaller connected baseline. The current system is therefore asymmetric: the bundle and data architecture are stable, jurisdiction-aware warning logic is broader than jurisdiction-aware legal-default inference, and matcher selection remains an explicit trade-off between conservative stability and richer corridor state.
 \end{abstract}
 
-\keywords{Open Data \and OpenStreetMap \and map matching \and mobile GIS \and offline-first \and spatial indexing \and file-based preprocessing}
+\keywords{intelligent speed assistance \and offline-first \and OpenStreetMap \and map matching \and mobile GIS \and smartphone systems}
 
 \section{Introduction}
-Excessive speed remains a major factor in crash severity, making reliable speed-limit assistance a core road-safety problem. For intelligent speed assistance (ISA), this creates a practical requirement for map context retrieval that remains accurate and low-latency under storage, memory, and connectivity constraints.
+Intelligent speed assistance (ISA) is now a regulatory requirement for new vehicle types in the European Union, yet the installed vehicle base remains far larger than annual new registrations \cite{eu2019_2144,eu2021_1958,eu_mandatory_safety_2024,eurostat_passenger_cars_2026,acea_registrations_2024}. This keeps the retrofit question open: practical speed-limit assistance still needs to run on devices that drivers already carry. Smartphone deployment is therefore relevant not as a theoretical alternative to integrated vehicle systems, but as a current path to broad availability.
 
-European regulation has made ISA deployment operationally mandatory. Article 6 of Regulation (EU) 2019/2144 requires ISA in new motor vehicles of categories M and N \cite{eu2019_2144}, and Delegated Regulation (EU) 2021/1958 specifies detailed ISA performance and test rules \cite{eu2021_1958}. The rollout is phased: the requirement applies to new vehicle types from July 2022 and to all newly registered cars, vans, trucks, and buses from July 2024 \cite{eu_mandatory_safety_2024}. The European Commission estimates that the broader General Safety Regulation package can prevent approximately 25{,}000 deaths and at least 140{,}000 serious injuries in the EU by 2038 \cite{eu_mandatory_safety_2024}.
+YouSpeed addresses that path with a local runtime that keeps map data, area-context lookup, matching, and local correction handling on device. The current codebase spans a shared preprocessing and bundle-publication pipeline, an iPhone client on the launch path, and an Android internal alpha that follows the same bundle contract and runtime logic. The engineering question is no longer whether offline inference is possible in principle. The current question is which architecture and which lightweight matching approach best fit the present product and evidence state, while remaining honest about jurisdiction-specific regulation handling and update logistics.
 
-A large legacy-vehicle gap remains. Eurostat reports that EU passenger-car stock exceeded 260 million vehicles in 2024 \cite{eurostat_passenger_cars_2026}, while ACEA reports 10.6 million new EU car registrations in 2024 \cite{acea_registrations_2024}. Using registration year as a coarse proxy, even an optimistic post-2024 assumption still leaves roughly 249 million pre-2024 vehicles (about 96\% of the fleet) as potential retrofit targets.
-
-This gap motivates a broad deployment approach based on smartphone sensing and open geospatial data. Eurostat reports mobile-phone internet use of 89\% in cities and 82\% in rural areas in 2024 \cite{eurostat_mobile_internet_2024}, and OpenStreetMap (OSM) offers large-scale, continuously updated road-network attributes relevant for speed-limit inference \cite{osmwiki_highways,osmwiki_maxspeed}.
-
-Against this background, this study examines runtime data architecture as the primary systems bottleneck. We compare four scenarios built from the same national OSM extract: global country-scale indexes (S1), tiled file packs (S2), a single-file spatially indexed database (S3), and a spatially indexed database with additional tile-window prefiltering (S4). The objective is to quantify latency and update-operability trade-offs under both cloud-like and on-device conditions.
+This report reflects that current scope. It does not present a future architecture roadmap, and it does not treat unimplemented crowd synchronization as a central result. Instead, it documents the current system and compares the approaches that are active in the codebase today:
+\begin{enumerate}
+\item the implemented local-first system architecture and mobile-client feature scope,
+\item the way the runtime currently handles jurisdiction identity, warning rules, and speed-limit provenance,
+\item the bundle-generation and iterative-update machinery that turns country-scale OSM data into mobile artifacts,
+\item four runtime data architectures (S1--S4) for local geospatial lookup,
+\item a broader ladder of lightweight matching approaches on a retained hindsight benchmark,
+\item two deployable matcher profiles on closed-loop replay corpora.
+\end{enumerate}
 
 \section{Related Work}
-Map matching has been studied extensively for GPS trajectories under measurement noise and sampling sparsity. A foundational survey by \citet{quddus2007} systematized geometric, topological, and probabilistic matching strategies and outlined scaling challenges that remain relevant for mobile deployment.
+Map matching has long been framed as a trade-off between geometric simplicity and sequence-aware robustness. The classic survey by \citet{quddus2007} organizes the field into geometric, topological, and probabilistic families. Sequence models then become the dominant answer to noisy and sparse trajectories: the HMM formulation of \citet{newson2009}, ST-matching by \citet{lou2009}, online HMM variants for streaming data \citep{goh2012,he2013}, low-latency path inference by \citet{hunter2014}, and faster precomputed transition schemes such as FMM \citep{yang2018fmm}. These methods demonstrate that later context is powerful, but they also assume a route-inference budget that is larger than the one targeted by the current YouSpeed runtime.
 
-Probabilistic sequence models became dominant for noisy and sparse data. \citet{newson2009} introduced a Hidden Markov Model (HMM) formulation that combines emission and transition probabilities, while \citet{lou2009} proposed ST-matching to jointly model spatial and temporal consistency for low-sampling trajectories. Real-time variants for streaming probe data were then explored in online HMM frameworks \citep{goh2012,he2013}.
+Smartphone-specific work confirms that this literature transfers to consumer sensing, but again usually in a richer probabilistic setting than the one used here. \citet{bierlaire2013smartphone} evaluate a probabilistic matcher directly on smartphone GPS traces, and production engines such as OSRM, Valhalla Meili, and Mapbox expose candidate radiuses, transition controls, and confidence-style outputs as first-class API concepts \citep{osrm_match_service,valhalla_meili,mapbox_map_matching_api}. The present report borrows the scientific lesson that sequence context matters, while keeping the implementation target smaller and fully local.
 
-Subsequent work strengthened route-level inference in sparse regimes. \citet{rahmani2013} formulated path inference from sparse floating-car data on urban networks, and the Path Inference Filter by \citet{hunter2014} provided a model-based low-latency approach for probe vehicles. Across these HMM/sequence families, the common effect is to keep trajectories on the current road unless turn transitions are sufficiently plausible under topology and motion evidence \citep{newson2009,hunter2014,goh2012,he2013}. Hybrid designs combining shortest-path priors with trajectory evidence further improved low-frequency matching \citep{quddus2015}, and route-choice-aware HMM approaches improved robustness for noisy sparse traces \citep{jagadeesh2017}. Enhanced HMM models that explicitly incorporate topology and traffic constraints also reported improved accuracy and consistency on floating-car data \citep{che2018}.
+Recent learning-based work pushes map matching further toward transfer learning, personalization, and adaptation under limited labels. Transformer transfer learning \citep{jin2022transformer}, deep inverse reinforcement learning with multi-intention modeling \citep{safarzadeh2024midirl}, preference-aware HMMs \citep{zhang2025pphmm}, and meta-learning approaches \citep{meng2026mpm} all show that richer models can exploit driver- or context-specific structure. These lines are important context for YouSpeed, but they sit one layer above the current report. The present system still prioritizes bounded local state, auditable heuristics, and direct replay evaluation on device-shaped corpora.
 
-This structure is mirrored in production engines. OSRM, Valhalla (Meili), and Mapbox map matching expose candidate emission controls, transition plausibility settings (including tunable GPS uncertainty or search radii), and confidence-style outputs for downstream consumers \citep{osrm_match_service,valhalla_meili,mapbox_map_matching_api}. To reduce online transition-check cost, precomputed transition structures have been proposed: FMM uses a UBODT-style table that turns many route-distance transition checks into fast lookups during inference \citep{yang2018fmm}.
+The report also sits close to deployment-oriented packaging work rather than only to inference models. Single-archive spatial delivery formats such as MBTiles and PMTiles show that packaging choices are themselves a mature systems topic \citep{mbtiles_spec,pmtiles_docs}. That point matters because YouSpeed currently compares not only matching logic but also how map data is physically packaged, updated, and routed at country scale. The distinctive contribution of this report is therefore the joint treatment of lightweight matching, jurisdiction handling, mobile-client runtime scope, runtime data architecture, and bundle publication under present product constraints.
 
-These studies primarily optimize candidate selection and path inference given an available road graph. In contrast, our contribution focuses on the systems layer around map data itself: physically tiled, content-addressed assets with independent update delivery and bounded local IO at query time. This targets a complementary bottleneck that is critical for country-scale, offline-first mobile speed-limit inference.
+\section{System Architecture}
+\subsection{Current end-to-end architecture}
+The implemented YouSpeed path is local-first and offline-first. OSM snapshot ingestion and preprocessing run off device. The build pipeline emits regional v3 bundles that package road geometries, speed tags, area-context polygons, coverage metadata, and optional corridor tables in a single runtime artifact. Mobile clients load bundled target manifests, choose country or regional artifacts, verify checksums, and activate bundles atomically. During driving, each fix is routed to the best downloaded bundle through a coverage bounding-box prefilter followed by coverage-polygon containment. The selected bundle then executes local lookup, speed derivation, and way selection without a route-level cloud dependency.
 
-The implemented app runtime is deliberately simpler than full route-level HMM inference. It uses per-fix geometric scoring plus lightweight continuity heuristics (preferred-way hysteresis, same-ref segment promotion, and tunnel gating tied to recent route context) rather than a multi-step probabilistic sequence model. The related-work discussion is therefore used here as architectural context and benchmark motivation, not as a claim that the implementation reproduces the full model class used by prior map-matching systems.
+Figure~\ref{fig:architecture_scope} summarizes the current paper-scope architecture. The broader cloud corroboration stack that appears in internal architecture documents remains a north-star extension, not the present critical path. The evaluated critical path is snapshot-to-bundle publication, local bundle activation, on-device inference, and editor-mediated export of reviewed local observations.
 
-Spatial access methods are central to this systems layer. The R-tree introduced by \citet{guttman1984} established the foundational dynamic index for multi-dimensional range search and remains a standard basis for geographic candidate retrieval in database systems. Here, R-tree-based indexing is evaluated not as a new algorithmic contribution, but as an architectural instrument to control candidate fan-out and improve practical query latency at country scale.
-
-\section{Technical Vision}
-\subsection{Purpose}
-YouSpeed exists to make intelligent speed assistance practical for vehicles already on the road, not only for newly manufactured cars. The product target is an offline-first smartphone assistant that infers local speed limits with low latency, high availability, and transparent data provenance. The project target is broader: to show, with reproducible evidence, that open geospatial data combined with robust runtime architecture can provide safety-relevant functionality at consumer scale.
-
-This work is intentionally dual-track. One track is scientific and publication-oriented, where architecture decisions are benchmarked and documented under controlled conditions. The second track is product-oriented, where validated architecture choices are integrated into an iPhone app under real update, reliability, and operational constraints.
-
-\subsection{Strategic phases}
-The system evolution is explicitly phased:
-\begin{enumerate}
-\item \textbf{Open-data bootstrap:} initialize the platform from OpenStreetMap and rule-aware defaults for country-scale baseline coverage.
-\item \textbf{Product stabilization:} prioritize fast offline inference, deterministic updates, and measurable reliability on consumer devices.
-\item \textbf{Community enrichment:} add user-observed speed-sign signals once install base and observation density are sufficient.
-\end{enumerate}
-Crowdsourcing is defined as an augmentation layer, not a replacement for OSM baseline data.
+The benchmark harness sits beside this runtime rather than replacing it. The S1--S4 latency benchmark reuses the same Germany-derived artifacts and query primitives but isolates spatial lookup and area-context retrieval at one fixed probe point. The replay benchmarks reuse the same runtime matcher implementations and logs, but they remove the user-interface lifecycle so that candidate arbitration, tunnel handling, and oscillation behavior can be measured directly.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=\linewidth]{../share/TECHNICAL_ARCHITECTURE.png}
-\caption{Technical architecture overview for baseline ingestion, on-device inference, local observation capture, and global merge/publish loops.}
-\label{fig:tech_architecture_overview}
+\includegraphics[width=\linewidth]{../share/TECHNICAL_ARCHITECTURE_PAPER_SCOPE.png}
+\caption{Current paper-scope system architecture. The implemented critical path is local-first: regional bundle publication, on-device inference, and editor-mediated observation export.}
+\label{fig:architecture_scope}
 \end{figure}
 
-\subsection{Crowdsourced speed intelligence}
-With sufficient adoption, two user-facing observation channels are introduced while driving. The first is on-device computer vision, where the smartphone camera detects speed-relevant signs when road-forward view is available. The second is voice input with speech recognition for hands-free reporting of sign changes, temporary restrictions, or map inconsistencies. Both channels generate candidate observations rather than immediate shared truth.
+\subsection{iPhone application}
+The iPhone application is the current release-track client. It bootstraps from a bundled Karlsruhe seed, discovers Germany shard manifests from the bundled \texttt{BundleTargets.top10.json} contract, downloads full bundles or verified SQL delta chains when available, assembles multipart database payloads when needed, and activates bundles atomically. The runtime uses plain \texttt{SQLite3} rather than runtime \texttt{mod\_spatialite} loading, with an RTree bounding-box prefilter, polyline distance refinement, optional heading-aware scoring, deterministic tunnel handling, and bundle-coverage routing across downloaded regions.
 
-Each observation first updates a local device layer with confidence and decay semantics. Observations are then queued for deferred synchronization and promotion only after cross-device corroboration and validation.
+The same client also carries the current driver-facing feature surface. It presents current speed, inferred limit, street and city context, tunnel state, and penalty-aware overspeed warnings. It captures local speed-limit observations through an on-device speech-recognition workflow, stores them in a review queue, and exports approved proposals as editor-oriented \texttt{.osc} packages rather than publishing directly from the app. The iPhone codebase is also the main source of inspector logs and replay corpora used in the matching benchmarks reported later in this report.
 
-\subsection{Trust model without user accounts}
-YouSpeed is designed to operate without account authentication. Identity is pseudonymous and device-based. This lowers user friction and supports privacy goals, but shifts quality assurance into architecture: per-device source scoring, temporal/spatial consistency checks, minimum independent confirmations, and explicit conflict resolution.
+\subsection{Android application}
+The Android application is an internal alpha that follows the same bundle and manifest contract as the iPhone client, but it is not the current public release gate. It bootstraps from a bundled seed, derives the same Germany shard endpoints, verifies and activates full bundles or multipart bundle payloads, and mirrors the same local lookup contract. The Android matcher adopts the same bounded-history logic family as the iPhone runtime: same-reference promotion, linked-way continuity, same-reference bounce suppression, tunnel-portal continuity, and corridor-state carryover. It also includes a fallback path for Android builds that expose stored RTree tables without exposing the SQLite RTree module at runtime.
 
-A single-device report must not overwrite shared truth. Promotion to global data requires corroboration and consistency with geometry and legal plausibility constraints.
-
-\subsection{Layered data ownership and feedback loops}
-The data model is layered rather than monolithic:
-\begin{itemize}
-\item \textbf{External baseline layer:} imported from OSM and related official/open sources.
-\item \textbf{Internal global cache layer:} confirmed community observations maintained by YouSpeed.
-\item \textbf{Local device layer:} unconfirmed and recently confirmed observations relevant to one user.
-\item \textbf{Publication layer:} quality-gated candidates eligible for upstream contribution.
-\end{itemize}
-
-Confirmed findings follow two outbound paths: immediate use in the internal global cache and optional moderated feedback to OpenStreetMap via controlled export.
-
-\subsection{Synchronization as a core systems challenge}
-The central systems challenge is synchronization across truth sources with different latency and trust levels: local observations, globally confirmed internal data, external map updates, and periodic app bundles. Required capabilities include deterministic merge rules, versioned records, conflict precedence, rollback-safe activation, bandwidth-aware delta sync, offline accumulation, delayed upload, and eventual convergence without destructive overwrite.
-
-\subsection{App-side integration challenges}
-Computer vision and speech recognition are treated as separate subsystems with independent quality gates, failure modes, and runtime budgets. Integration happens through a shared observation contract so both channels emit comparable events for local storage, synchronization, and trust evaluation.
-
-\subsection{Regional sharding for large countries}
-To control runtime artifact size at country scale, bundle generation follows a threshold rule: if a country PBF exceeds \SI{1}{GB}, the pipeline switches from a monolithic country bundle to regional Geofabrik extracts (for example German Bundeslaender). Each regional v3 bundle carries explicit coverage metadata consisting of a fast bounding box and a region polygon (\texttt{.poly}) artifact.
-
-On device, multiple downloaded regional bundles can coexist. Runtime bundle routing is location-driven: the app first applies bbox prefiltering and then performs polygon containment for the current GPS fix to select the best local DB. This keeps inference fully offline while avoiding mandatory download of a full-country database when regional subsets are sufficient.
-
-\subsection{North-star outcome}
-The intended end state is a trusted open-data ISA retrofit platform that remains offline-capable and low-latency while improving continuously through external baselines and validated community observations. In that state, day-to-day user utility, auditable data operations, and reproducible research claims are aligned.
-
-\subsection{Implemented runtime inference pipeline}
-To avoid concept drift between architecture text and implementation, this subsection documents the implemented per-fix inference order in the iPhone runtime:
-\[
-\text{for fix } t,\quad C_t = \{\text{retrieved candidate ways for fix } t\}
-\]
-\[
-s_{\mathrm{geom}}(t,i)=
-\begin{cases}
-d_{t,i} + \lambda_h \cdot \Delta\theta_{t,i}, & \text{if } v_t \ge \SI{8}{km/h} \text{ and } a_t < 45^\circ \\
-d_{t,i}, & \text{otherwise}
-\end{cases}
-\]
-where \(i \in C_t\), \(d_{t,i}\) is the exact geometry distance from fix \(t\) to candidate way \(i\), \(\Delta\theta_{t,i}\) is the bidirectional heading mismatch in degrees, \(v_t\) is vehicle speed, \(a_t\) is heading accuracy, and \(\lambda_h=\SI{1.8}{m/deg}\).
-
-For candidate-trace ranking and diagnostics, the runtime derives a second score that applies continuity class before geometry:
-\[
-\beta(c)=
-\begin{cases}
-0 & \text{preferredWay}\\
-1 & \text{sameRef}\\
-2 & \text{linkedWay}\\
-3 & \text{recentWay}\\
-4 & \text{none}
-\end{cases}
-\qquad
-W_t = 1 + \max_{k \in C_t} s_{\mathrm{geom}}(t,k)
-\]
-\[
-s_{\mathrm{trace}}(t,i) = \beta(c_{t,i})\cdot W_t + s_{\mathrm{geom}}(t,i)
-\]
-Here \(c_{t,i}\) is the continuity class assigned to candidate \(i\) at fix \(t\). Because \(s_{\mathrm{geom}}(t,i) < W_t\) for every \(i \in C_t\), a one-band change in \(\beta(\cdot)\) always dominates any geometric-score difference within the same fix. The resulting order is therefore lexicographic by continuity class first and raw geometry second: every \texttt{preferredWay} candidate ranks ahead of every \texttt{sameRef} candidate, every \texttt{sameRef} candidate ranks ahead of every \texttt{linkedWay} candidate, and so on; within the same continuity band, lower geometric score still wins.
-\begin{enumerate}
-\item \textbf{Candidate retrieval (RTree prefilter).} For each GPS fix, the app queries \texttt{ways\_rtree} in a bounded radius and loads way attributes from \texttt{ways}; if available, \texttt{way\_geom} polyline points are used for exact geometry distance.
-\item \textbf{Geometric and directional scoring.} The raw per-candidate score used by the matcher is \(s_{\mathrm{geom}}\): distance plus heading mismatch penalty. Heading contributes only when vehicle speed is at least \SI{8}{km/h} and heading accuracy is better than \(45^\circ\); mismatch is weighted by \(\lambda_h=\SI{1.8}{m/deg}\).
-\item \textbf{Continuity context and hysteresis.} The matcher keeps a short continuity context consisting of the previous matched way, recent matched ways, recent street refs, recent tunnel candidates, and a recent GPS-signal-loss flag. If a previous matched way remains plausible, the runtime may keep it within a small slack (\SI{12}{m}) and an accuracy-adjusted distance bound, reducing oscillation between nearby candidates.
-\item \textbf{Same-ref transition handling.} If the current best candidate shares the same normalized \texttt{ref} as the previous way, the matcher may promote a segment transition instead of holding the old segment. This transition is preferred once the old segment is near an endpoint and the alternative segment is not materially farther away. The goal is to stabilize progression along one numbered route while still allowing segment changes at intersections.
-\item \textbf{Connected-transition gate.} If the bundle contains \texttt{way\_links}, the runtime derives a directed adjacency graph \(E \subseteq W \times W\) from exact shared endpoints. After a warm start of three matched fixes and in the absence of recent GPS loss, candidate selection is restricted to
-\[
-\widetilde{C}_t=\left\{i \in C_t \mid i=p_t \;\lor\; i \in R_t \;\lor\; \exists j \in R_t:(j,i)\in E \right\},
-\]
-where \(p_t\) is the preferred way and \(R_t\) is the recent matched-way set. This gate is applied before heuristic ranking and before mini-HMM expansion, which makes disconnected hops impossible once continuity has stabilized while still leaving the first few fixes unconstrained.
-\item \textbf{Continuity-aware candidate trace scoring.} For logs, inspector output, and candidate-trace visualization, the runtime computes \(s_{\mathrm{trace}}\) from continuity band plus \(s_{\mathrm{geom}}\). This makes the reported candidate order reflect the effective continuity preference: \texttt{preferredWay} \(<\) \texttt{sameRef} \(<\) \texttt{linkedWay} \(<\) \texttt{recentWay} \(<\) \texttt{none}. As a result, a geometrically good but non-continuous alternative can still rank below a continuity-preserving candidate, while a non-continuous candidate that is not the best geometric option will rank behind both better geometric peers in the same \texttt{none} band and all candidates in stronger continuity bands.
-\item \textbf{Speed-source derivation on the selected way.} Speed precedence on the matched way is: explicit \texttt{maxspeed} parse, then inherited regulatory tags (\texttt{maxspeed:type}/\texttt{source:maxspeed}: urban/rural/motorway), then highway-class prior.
-\item \textbf{Inside-city classification (primary rule).} If the matched way class is one of \texttt{residential}, \texttt{service}, \texttt{crossing}, or \texttt{living\_street}, the fix is classified as in-city directly.
-\item \textbf{Inside-city classification (fallback rule).} For other way classes, the runtime evaluates residential polygon containment in \texttt{areas.residential}. This polygon path is also used by the benchmarked polycontainment query.
-\item \textbf{City label resolution for UI and logging.} City name/source metadata is resolved from area/place context (\texttt{areas}, \texttt{city\_boundary}, \texttt{city\_ring}) and attached to the result for traceability; this label path is not the primary in-city classifier.
-\item \textbf{Effective speed output and fallback.} At app level, final speed precedence is local per-way override first, then selected-way speed. If selected speed comes only from coarse highway class and in-city status is known, legal urban/rural default (\SI{50}{km/h}/\SI{100}{km/h}) overrides the class prior. If no way speed exists but a way match and in-city status are available, legal default is applied. If only in-city status is available without a way speed, conservative \SI{50}{km/h} fallback is used.
-\item \textbf{Tunnel context gating.} Tunnel candidates are filtered before final selection. A tunnel-tagged way is accepted only if it is the previous matched way, if it is connected through shared route identity (\texttt{ref}) and available topology links to recent continuity context, or after a recent GPS-signal loss when the tunnel candidate was already observed in the nearby-candidate set. This reduces false switches to unrelated tunnel-tagged geometry, but it also means that bundles without \texttt{way\_links} topology cannot validate shared-ref portal entry from geometry alone.
-\item \textbf{Tunnel context output.} If the selected way passes tunnel gating and carries truthy \texttt{tunnel}, the fix is marked tunnel segment. The UI switches to tunnel icon emphasis, keeps the matched speed limit visible, and suppresses penalty notices while tunnel mode is active.
-\item \textbf{Context output for downstream logic.} Each lookup also returns \texttt{way\_id}, street display name (\texttt{street\_name}/\texttt{ref}), city label/source, candidate counts, timing, and tunnel flag.
-\end{enumerate}
-
-\subsection{Tunnel mode state machine}
-Tunnel handling in the app is deterministic and not purely tag-driven:
-\begin{itemize}
-\item Session state is \texttt{inactive} or \texttt{active}.
-\item On each fix, \texttt{isTunnelSegment} from the gated matched-way decision drives the state (\texttt{active} if true, else \texttt{inactive}).
-\item Entry into tunnel mode is therefore possible only through continuity to the previous route context, through shared-ref portal validation backed by optional \texttt{way\_links} topology, or after a recent signal-loss event that still has a remembered tunnel candidate.
-\item If lookup service is unavailable, continuity context records a recent GPS-signal-loss event and tunnel state is reset until the next successful gated match.
-\item There is no dedicated portal detector, no inertial tunnel tracking, and no explicit exit hysteresis beyond the next successful non-tunnel match.
-\end{itemize}
-
-\subsection{Runtime bundle structures used by inference}
-The implemented inference stack depends on attributes materialized in scenario bundles (S1--S4), including:
-\begin{itemize}
-\item \textbf{Way-level context in \texttt{ways}:} \texttt{street\_name}, \texttt{ref}, \texttt{approx\_heading\_deg}, \texttt{service}, \texttt{tunnel}, \texttt{highway}, plus speed-related tags.
-\item \textbf{Area context in \texttt{areas}:} \texttt{boundary}, \texttt{admin\_level}, \texttt{residential}, \texttt{parking}, and geometry/bbox data for containment and city-label resolution.
-\item \textbf{Coverage metadata in manifests:} \texttt{coverage.bbox} and optional \texttt{coverage.poly} artifacts for regional bundle routing on device.
-\item \textbf{Bundle update artifacts:} region-scoped manifests, optional split DB parts, rolling delta-index manifests, and compressed SQL patches for incremental bundle refresh on device.
-\end{itemize}
-
-\section{International Fine Rules and Country Bundles}
-\subsection{Motivation}
-The architecture treats speed-limit inference and sanction inference as two coupled but separable concerns. Speed-limit inference is map-driven and query-latency critical. Fine/warning inference is regulation-driven and jurisdiction-specific. For cross-border operation, country-specific legal rules must be versioned and deployed with the corresponding map bundle, otherwise the app can combine correct speed-limit lookup with incorrect warning semantics.
-
-This extension targets the 10 countries with the highest maxspeed availability (Netherlands, Romania, Luxembourg, Belgium, Sweden, Liechtenstein, Iceland, Germany, Monaco, United Kingdom), while keeping the same runtime interface for future country additions.
-
-\subsection{Country-bundle approach}
-Generated v3 manifests carry region-scoped artifact names and explicit region identity:
-\begin{itemize}
-\item \texttt{region}: active bundle region identifier (for example \texttt{germany}, \texttt{karlsruhe-regbez}).
-\item \texttt{country\_code}: ISO alpha-3 identifier for the legal regime of the bundle.
-\item \texttt{db}/\texttt{db\_parts}: main runtime database artifact(s), named \texttt{<region>\_speeds.sqlite} (or split \texttt{.partNNN} assets).
-\item \texttt{self}: manifest artifact, named \texttt{<region>\_manifest.json}.
-\end{itemize}
-
-For large countries that are region-sharded, all regional manifests share the same \texttt{country\_code}. Rule selection is resolved at runtime from this code; the app loads bundled \texttt{<ISO3>-rules.json} and falls back to DEU rules if country-specific rules are unavailable. The manifest field \texttt{penalty\_rules} is supported by the app parser as an optional override artifact, and generated manifests use bundled rule files by default.
-
-This makes legal-rule deployment deterministic, cacheable, and auditable in the same way as map artifacts, while preserving offline operation.
-
-\subsection{Common fine-rule data model}
-To support heterogeneous national enforcement schemes with one runtime parser, the fine model is normalized into a shared JSON schema with optional fields. Table~\ref{tab:traffic_fine_model} summarizes the core contract.
-
-\begin{table}[!htbp]
-\centering
-\caption{Common traffic-fine rule model used across country bundles.}
-\label{tab:traffic_fine_model}
-\begin{tabular}{p{3.3cm}p{2.3cm}p{6.0cm}}
-\toprule
-Field & Type & Semantics \\
-\midrule
-\texttt{format}, \texttt{schema\_version} & string, int & Rule-file format/version guard for backward-compatible parsing. \\
-\texttt{country\_code}, \texttt{country\_name} & string & Jurisdiction identity used by app/UI and manifest linkage. \\
-\texttt{currency\_code} & string & Display currency for fine amounts (for example EUR, GBP, SEK). \\
-\texttt{source\_url}, \texttt{source\_checked\_at} & string & Provenance and verification timestamp for legal tables. \\
-\texttt{bands[]} & array & Overspeed bands, each with \texttt{min\_delta\_kmh}/\texttt{max\_delta\_kmh}. \\
-\texttt{severity} & enum & \texttt{money\_only} or \texttt{points\_and\_fine}. \\
-\texttt{money\_fine\_eur} & int? & Legacy numeric fine field consumed by app logic; interpreted together with \texttt{currency\_code} (name kept for backward compatibility). \\
-\texttt{penalty\_points} & int? & Driving-register points when applicable. \\
-\texttt{driving\_ban\_months} & int? & Immediate ban duration when explicitly defined. \\
-\texttt{conditional\_driving\_ban\_months}, \texttt{driving\_ban\_condition} & int?, string? & Conditional sanctions (for example repeat-offense, court discretion). \\
-\texttt{locality\_variants} & object? & Optional in-city/out-city split (\texttt{innerorts}/\texttt{ausserorts} or urban/rural aliases). \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The model is intentionally permissive: countries with point systems, court-based escalation, or purely monetary penalties can all be represented without changing app-side decoding logic.
-
-\subsection{Cross-country sanction comparison (top 10)}
-To make cross-country differences explicit for deployment planning, Table~\ref{tab:top10_sanction_matrix} compares indicative sanctions across the 10 countries with the highest maxspeed availability. Overspeed bands are duplicated into in-city and rural rows while keeping a single country-column set.
+The Android alpha emphasizes parity experiments that are useful for architecture validation. It adds spoken overspeed and driving-ban warnings, a bundled German offline Vosk recognizer for local speed capture, SQLite-backed review and export of local observations, debug log export, OSM browser handoff, and emulator or device instrumentation for replay and live bundle bootstrap. This makes Android scientifically relevant even before public launch because it exercises the shared bundle contract and runtime logic under a second mobile platform.
 
 \begin{table}[!htbp]
 \centering
 \scriptsize
-\caption{Indicative speeding-sanction matrix for the 10 countries with highest maxspeed availability (country columns; rows grouped by in-city and rural context, each sorted by excess speed). Cell format is \texttt{fine/ban-months}; currency is fixed per country header, and \texttt{*} marks conditional driving bans. Many countries currently provide one national band set without explicit locality split, so in-city and rural entries are identical there.}
-\label{tab:top10_sanction_matrix}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{l*{10}{c}}
+\caption{Current mobile-client feature scope.}
+\label{tab:client_features}
+\begin{tabular}{p{2.4cm}p{4.8cm}p{4.8cm}}
 \toprule
-Excess (km/h) & NLD (EUR) & ROU (RON) & LUX (EUR) & BEL (EUR) & SWE (SEK) & LIE (CHF) & ISL (ISK) & DEU (EUR) & MCO (EUR) & GBR (GBP) \\
+Capability & iPhone release-track app & Android internal alpha \\
 \midrule
-\multicolumn{11}{l}{\textbf{In-city}} \\
-1--10 & 50/0 & 405/0 & 49/0 & 53/0 & 2000/0 & 120/0 & 20000/0 & 30/0 & 68/0 & 100/0 \\
-11--20 & 120/0 & 607/0 & 145/0 & 93/0 & 2800/0 & 250/0 & 30000/0 & 50--70/0 & 68/0 & 100/0 \\
-21--30 & 240/0 & 810/0 & 145/0 & 173/0 & 3200/0 & 600/0 & 45000/0 & 115--180/0--1* & 135/0 & 100/0 \\
-31--40 & 350/0 & 1215/0 & 145/0 & 253/0 & 4000/0 & 900/0 & 65000/0 & 260/1 & 375/1* & 150/0 \\
-41+ & 480+/2* & 1822+/3* & 250+/1--3* & 400+/3* & 5000+/2* & 1200+/3* & 90000+/2* & 400+/1--3 & 750+/2--3* & 1000+/1* \\
-\midrule
-\multicolumn{11}{l}{\textbf{Rural}} \\
-1--10 & 50/0 & 405/0 & 49/0 & 53/0 & 2000/0 & 120/0 & 20000/0 & 20/0 & 68/0 & 100/0 \\
-11--20 & 120/0 & 607/0 & 145/0 & 93/0 & 2800/0 & 250/0 & 30000/0 & 40--60/0 & 68/0 & 100/0 \\
-21--30 & 240/0 & 810/0 & 145/0 & 173/0 & 3200/0 & 600/0 & 45000/0 & 100--150/0--1* & 135/0 & 100/0 \\
-31--40 & 350/0 & 1215/0 & 145/0 & 253/0 & 4000/0 & 900/0 & 65000/0 & 200/0--1* & 375/1* & 150/0 \\
-41+ & 480+/2* & 1822+/3* & 250+/1--3* & 400+/3* & 5000+/2* & 1200+/3* & 90000+/2* & 320+/1--3 & 750+/2--3* & 1000+/1* \\
-\bottomrule
-\end{tabular}%
-}
-\normalsize
-\end{table}
-
-\subsection{Operational semantics and limitations}
-The app uses the rules for \emph{driver warning and context} only. It does not claim legal finality. Rule files are treated as versioned indicative policy tables that require periodic legal verification, especially where sanctions depend on offender history, discretionary court decisions, or local procedural details not observable in map data.
-
-From a systems perspective, this design keeps the query/update trade-off unchanged for geometric inference while adding a low-cost legal-context layer that scales linearly with country coverage.
-
-\section{Methodology}
-
-\subsection{Speed regulations in Germany}
-For passenger-car inference in Germany, this study uses the legal baseline defined in \S3 StVO: \(50\) km/h in built-up areas and \(100\) km/h outside built-up areas unless traffic signs specify otherwise \cite{stvo_3}. At runtime, final speed precedence is: local user override (if present), explicit way-level \texttt{maxspeed}, inherited regulatory tags, highway-class prior, and finally legal urban/rural fallback. Built-up-area inference follows the implemented app order: highway-class precedence (\texttt{residential}/\texttt{service}/\texttt{crossing}/\texttt{living\_street} \(\Rightarrow\) in-city), then residential polygon containment for all other classes. DE built-up-area sign markers (\texttt{traffic\_sign=DE:310/311}) are retained as optional metadata but are not part of the primary classifier due sparse coverage.
-
-To frame practical impact, Germany also applies escalating sanctions for speeding. Public guidance aligned with the current fine catalog reports, for example, \(+21\) to \(+25\) km/h in urban areas as EUR 115 plus one point in the driving register, and from \(+31\) km/h as EUR 260 plus one point and a one-month driving ban \cite{adac_bussgeld_2025}. These enforcement consequences motivate conservative fallback design in ISA research.
-
-
-\subsection{OpenStreetMap dataset potential for speed-limit inference}
-Tables~\ref{tab:highway_distribution} and~\ref{tab:dataset_profile} summarize the Germany OSM input used throughout this study. The dataset contains 7.96 million car-drivable ways and broad coverage of context objects (administrative boundaries, area contexts, and city place tags), which is sufficient to support both direct speed-limit lookup and fallback context inference.
-
-The data also shows strong promise for practical speed-limit inference. More than 2.63 million drivable ways carry explicit \texttt{maxspeed} tagging, while high-volume road classes such as residential, secondary, and tertiary roads contribute substantial additional network coverage for rule-based inference when explicit values are absent. This combination of explicit speed tags and structured road semantics is a key enabler for scalable, offline-capable ISA research on open data.
-
-Beyond classic speed tags, current runtime bundles carry the tunnel and urban-context features required by the implemented app logic: way-level \texttt{tunnel} attributes for tunnel-mode signaling, and area context (\texttt{residential}, \texttt{boundary}, \texttt{admin\_level}, \texttt{parking}) for city/rural fallback and city labeling.
-
-\begin{table}[!htbp]
-\centering
-\caption{Way counts by \texttt{highway} tag, with OSM-wiki interpretation and \texttt{maxspeed} tag occurrences \cite{osmwiki_highways,osmwiki_maxspeed}.}
-\label{tab:highway_distribution}
-\scriptsize
-\begin{tabular}{p{1.8cm}p{5.2cm}rr}
-\toprule
-\texttt{highway} tag & Human-readable interpretation (OSM wiki) & \texttt{maxspeed} tagged (\#) & Ways (\#) \\
-\midrule
-\texttt{service} & Access roads to premises, parking, and service areas. & 144{,}112 & 3{,}928{,}743 \\
-\texttt{residential} & Roads primarily serving housing areas. & 1{,}183{,}710 & 2{,}011{,}658 \\
-\texttt{secondary} & Secondary inter-settlement connectors in the network hierarchy. & 425{,}993 & 506{,}931 \\
-\texttt{tertiary} & Tertiary connectors between local centers. & 351{,}790 & 477{,}476 \\
-\texttt{unclassified} & Minor public through roads (not ``unknown class''). & 152{,}237 & 417{,}457 \\
-\texttt{primary} & Primary roads with high network importance below trunk/motorway. & 215{,}400 & 240{,}674 \\
-\texttt{living\_street} & Traffic-calmed shared street (Wohnstra{\ss}e / verkehrsberuhigter Bereich). & 13{,}543 & 173{,}199 \\
-\texttt{motorway} & Controlled-access motorway (Autobahn-type) corridor. & 69{,}075 & 70{,}200 \\
-\texttt{motorway\_link} & Motorway ramps/connectors. & 17{,}736 & 43{,}213 \\
-\texttt{trunk} & Major non-motorway long-distance routes. & 31{,}594 & 33{,}284 \\
-\texttt{trunk\_link} & Connector ramps between trunk and other classes. & 10{,}486 & 21{,}538 \\
-\texttt{primary\_link} & Connector ramps related to primary roads. & 8{,}861 & 17{,}140 \\
-\texttt{secondary\_link} & Connector ramps related to secondary roads. & 8{,}262 & 13{,}854 \\
-\texttt{tertiary\_link} & Connector ramps related to tertiary roads. & 4{,}207 & 7{,}839 \\
-\texttt{road} & Temporary placeholder until precise class is surveyed. & 14 & 275 \\
-\midrule
-\textbf{Total} & \textbf{All evaluated drivable \texttt{highway} categories in this study.} & \textbf{2{,}637{,}020} & \textbf{7{,}963{,}481} \\
+Bundle lifecycle & Bundled seed, Germany shard discovery, full-bundle or SQL-delta updates, multipart assembly, atomic activation. & Bundled seed, shared shard discovery, full-bundle bootstrap, multipart assembly, atomic activation. \\
+Lookup and matching & S3 \texttt{SQLite3} lookup, heading-aware ranking, coverage-based regional routing, deterministic tunnel handling. & Shared v3 lookup contract, iPhone-shaped continuity logic, corridor-state carryover, bbox fallback when Android lacks live RTree support. \\
+Warning surface & Driver-facing speed or limit UI, tunnel state, penalty-aware overspeed presentation, haptic and speech driving-ban alerts. & Compose parity UI, spoken overspeed and driving-ban alerts, tunnel and matcher debug state. \\
+Local observations & On-device speech capture, review queue, single or bulk \texttt{.osc} editor export. & Bundled Vosk offline speech capture, SQLite review queue, single or bulk \texttt{.osc} export, OSM browser handoff. \\
+Verification & Unit tests, route replay, tunnel regressions, geometry-stress analysis on iPhone logs. & Emulator or device instrumentation, live Germany-shard bootstrap test, replay regressions, runtime fallback checks. \\
 \bottomrule
 \end{tabular}
-\normalsize
 \end{table}
+
+\section{Jurisdiction Handling and Maxspeed Provenance}
+\subsection{Separation of bundle identity, speed inference, and warning semantics}
+The current system handles jurisdiction-specific behavior in layers rather than through one monolithic legal model. At bundle level, the manifest can carry a three-letter \texttt{country\_code}, optional coverage metadata, and an optional country-specific penalty-rule artifact. At inference level, the way table stores explicit \texttt{maxspeed}, inherited \texttt{maxspeed:type}, and inherited \texttt{source:maxspeed} strings alongside road class and area-context inputs. At consumer-warning level, the app loads country-specific penalty-rule JSON that can encode different currencies, languages, locality variants, penalty points, and conditional driving-ban logic. This separation makes the runtime robust to incomplete map tagging, but it also means that jurisdiction handling is broader in the warning layer than in the unsigned-road legal-default layer.
 
 \begin{table}[!htbp]
 \centering
-\caption{Germany dataset profile for evaluation.}
-\label{tab:dataset_profile}
-\begin{tabular}{p{7.8cm}r}
+\scriptsize
+\caption{Current jurisdiction-handling layers in the runtime.}
+\label{tab:jurisdiction_layers}
+\begin{tabular}{p{2.8cm}p{5.0cm}p{3.7cm}}
+\toprule
+Layer & Mechanism & Current scope and limitation \\
+\midrule
+Bundle identity & Manifest \texttt{country\_code}, coverage bbox or polygon, country bundle catalog. & Multi-country and multi-region routing is supported in the artifact contract. \\
+Speed-tag ingestion & \texttt{maxspeed}, \texttt{maxspeed:type}, \texttt{source:maxspeed}, road class, tunnel tag, service tag. & Works wherever explicit or inherited tags exist. \\
+Locality split & \texttt{insideCity} derived from way-class precedence first, then residential polygons, then city-context fallback. & Supports inner/outer locality warnings, but the legal-default use is strongest for Germany. \\
+Warning semantics & Country-specific penalty JSON with currency, language, bands, locality variants, and conditional driving-ban metadata. & Present in both mobile apps and broader than the current legal-default inference layer. \\
+Unsigned-road defaults & Inherited \texttt{urban}/\texttt{rural}/\texttt{motorway} parsing, then road-class heuristics with residential override. & Implemented locally, but current semantics are still validated mainly for Germany. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two current examples show how this split works in practice. The German ruleset encodes separate inner-city and outer-city penalty variants and conditional driving bans for repeat offenses. The Netherlands ruleset uses simpler national bands without a locality split, but it still carries jurisdiction-specific currency, source metadata, and high-overspeed conditions. The runtime resolves these rule differences after overspeed estimation through \texttt{country\_code} and \texttt{insideCity}, not by changing the map-matching core itself.
+
+The currently packaged rule portfolio spans ten jurisdictions: Belgium, Germany, Great Britain, Iceland, Liechtenstein, Luxembourg, Monaco, the Netherlands, Romania, and Sweden. This means that jurisdiction-specific warning semantics already cover a broader set of countries than the present country-specific legal-default inference layer.
+
+The current speed-derivation logic is more conservative. Explicit numeric \texttt{maxspeed=*} tags take precedence. If they are absent, the runtime checks inherited tags for strings containing \texttt{urban}, \texttt{rural}, or \texttt{motorway}. If neither explicit nor inherited tags are decisive, it falls back to road-class heuristics and then optionally overrides those heuristics with the current \texttt{insideCity} decision. This logic keeps the code auditable and fast, but it is not yet a full country-by-country legal-default engine.
+
+\subsection{Germany provenance decomposition}
+All evaluated artifacts derive from the same Germany OSM snapshot (\texttt{germany-latest.osm.pbf}, \SI{4.70}{GB}) \cite{geofabrik2026}. Table~\ref{tab:germany_provenance} summarizes the current Germany dataset profile and the provenance decomposition that the runtime sees after rule-aware fusion.
+
+\begin{table}[!htbp]
+\centering
+\caption{Germany dataset profile and speed-limit provenance used by the current runtime.}
+\label{tab:germany_provenance}
+\begin{tabular}{p{7.9cm}r}
 \toprule
 Metric & Value \\
 \midrule
-Input file size (\texttt{germany-latest.osm.pbf}) & \SI{4.70}{GB} \\
-Car-drivable ways in evaluated classes & 7{,}963{,}481 \\
-Ways with \texttt{maxspeed=*} tag & 2{,}637{,}020 \\
-Ways with \texttt{zone:maxspeed=*} tag & 172{,}116 \\
-Ways with explicit speed-limit tag (\texttt{maxspeed} or \texttt{zone:maxspeed}) & 2{,}639{,}693 \\
-Administrative city-boundary candidates (\texttt{boundary=administrative}, \texttt{admin\_level} 8/9) & 44{,}621 \\
-Total area-context objects & 129{,}459 \\
-Place objects tagged \texttt{city} & 84 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The \texttt{maxspeed} counts in Table~\ref{tab:dataset_profile} refer to the base OSM key \texttt{maxspeed=*} on road ways (not derived keys such as \texttt{maxspeed:type}); they are distinct from area-context objects used for built-up-area inference.
-
-\begin{table}[!htbp]
-\centering
-\caption{Speed-limit provenance in the Germany dataset.}
-\label{tab:speed_limit_provenance}
-\begin{tabular}{lrr}
-\toprule
-Category & Ways (\#) & Share (\%) \\
+Input file size & \SI{4.70}{GB} \\
+Car-drivable ways & 7{,}963{,}481 \\
+Ways with \texttt{maxspeed=*} & 2{,}637{,}020 \\
+Ways with \texttt{zone:maxspeed=*} & 172{,}116 \\
+Ways with explicit speed-limit tag & 2{,}639{,}693 \\
+Area-context objects & 129{,}459 \\
 \midrule
-Explicit tagged limit (\texttt{maxspeed} or \texttt{zone:maxspeed}) & 2{,}639{,}693 & 33.15 \\
-Implicit regulatory tag (\texttt{maxspeed:type}/\texttt{source:maxspeed} = DE urban/rural) & 78{,}147 & 0.98 \\
-Default-rule fallback (context-based legal default) & 5{,}245{,}641 & 65.87 \\
+Explicit tagged limit share & 33.15\% \\
+Implicit regulatory tag share & 0.98\% \\
+Context-based legal fallback share & 65.87\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:speed_limit_provenance} separates explicit and implicit speed-limit sources under German rule-aware inference. Beyond static snapshot downloads, OSM also supports incremental maintenance through replication diffs. In this study, daily diffs are used to quantify update feasibility and update workload for country-scale operation.
+The Germany profile is the central reason the report keeps provenance explicit. Roughly one third of car-drivable ways already carry explicit speed limits in OSM. Another 0.98\% contribute inherited regulatory context through rule-bearing tags. The remaining 65.87\% depend on default interpretation or area context. That asymmetry is exactly why the product has to couple map matching with area-context lookup and why pure explicit-tag retrieval would be insufficient even before matching errors are considered.
 
-\begin{figure}[!htbp]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-  width=\linewidth,
-  height=0.34\textheight,
-  xlabel={Date (UTC)},
-  ylabel={Count per daily diff},
-  xmin=1,
-  xmax=30,
-  ymin=0,
-  ymax=27000,
-  xtick={1,4,7,10,13,16,19,22,25,28},
-  xticklabels={2026-01-22,2026-01-25,2026-01-28,2026-01-31,2026-02-03,2026-02-06,2026-02-09,2026-02-12,2026-02-15,2026-02-18},
-  xticklabel style={rotate=35,anchor=east,font=\scriptsize},
-  ymajorgrids=true,
-  grid style={gray!25},
-  legend style={at={(0.02,0.98)},anchor=north west,font=\small,fill=none,draw=none},
-  ylabel near ticks
-]
-\addplot[thick,color={rgb,255:red,27;green,158;blue,119}] coordinates {(1,18013) (2,19254) (3,18260) (4,17438) (5,21334) (6,24457) (7,23643) (8,22933) (9,21015) (10,16429) (11,14368) (12,16727) (13,19650) (14,19698) (15,16405) (16,17607) (17,16965) (18,15923) (19,19745) (20,23371) (21,21608) (22,19435) (23,19166) (24,18455) (25,18826) (26,19617) (27,17806) (28,16920) (29,17859) (30,17969)};
-\addplot[thick,color={rgb,255:red,217;green,95;blue,2}] coordinates {(1,1900) (2,1937) (3,1782) (4,1747) (5,1853) (6,2117) (7,2201) (8,1885) (9,1702) (10,1541) (11,1413) (12,1756) (13,2702) (14,2526) (15,4186) (16,4405) (17,1693) (18,1323) (19,1475) (20,1969) (21,2012) (22,1936) (23,1872) (24,1795) (25,1786) (26,1936) (27,3133) (28,2973) (29,1735) (30,2180)};
-\addplot[thick,color={rgb,255:red,117;green,112;blue,179}] coordinates {(1,4212) (2,4148) (3,4556) (4,5214) (5,5037) (6,4353) (7,4596) (8,4683) (9,4603) (10,4868) (11,5615) (12,5668) (13,4810) (14,5071) (15,4701) (16,4029) (17,4915) (18,5310) (19,4822) (20,4997) (21,4906) (22,4330) (23,4009) (24,4185) (25,4223) (26,4496) (27,4237) (28,3894) (29,4465) (30,5046)};
-\addplot[thick,color=black,densely dashed,mark=*,mark size=1pt] coordinates {(1,42) (2,30) (3,49) (4,75) (5,50) (6,66) (7,110) (8,79) (9,49) (10,55) (11,42) (12,37) (13,27) (14,33) (15,35) (16,40) (17,40) (18,39) (19,50) (20,60) (21,67) (22,61) (23,66) (24,58) (25,68) (26,68) (27,24) (28,30) (29,26) (30,17)};
-\legend{ways added,ways removed,maxspeed tag changes,admin-boundary way changes}
-\end{axis}
-\end{tikzpicture}
-\caption{Daily update dynamics in the 30-day window: ways added, ways removed, \texttt{maxspeed}-tag changes, and administrative-boundary way changes per daily diff.}
-\label{fig:monthly_updates}
-\end{figure}
+The current area-context logic is also deliberately narrower than administrative-jurisdiction modeling. For limit inference, the runtime first uses way-class precedence (\texttt{residential}, \texttt{service}, \texttt{crossing}, \texttt{living\_street}) to assert built-up context where appropriate. If that does not decide the case, it resolves residential polygons. Only then does it use broader city context as a fallback signal. This means that \texttt{insideCity} in the current runtime is a built-up-driving proxy, not a general administrative-boundary classifier.
 
-\subsection{Data processing scenarios (S1--S4)}
+\subsection{Cross-country explicit-tag statistics}
+The repository also contains a Europe-wide comparative statistic over 45 country extracts. This analysis counts car-drivable ways and explicit \texttt{maxspeed=*} coverage per country, using the same drivable-highway definition as the bundle generator. It is therefore a cross-country provenance statistic for explicit-tag availability, not a full country-by-country decomposition into explicit, inherited, and fallback classes.
 
-\subsubsection{Shared preprocessing and scope}
-All four scenarios are generated from the same OSM extract (Geofabrik \texttt{germany-latest.osm.pbf}) \cite{geofabrik2026}. Preprocessing follows a file-based parsing workflow \cite{pyosmium} and does not rely on a separately deployed database server. The retained road network includes car-drivable \texttt{highway=*} categories (major roads, local roads, and connector links), ensuring that scenario differences arise from runtime data architecture and query execution rather than from differing road subsets.
-For current bundle generation, retained way geometries are serialized with endpoint-preserving downsampling and a conservative cap of 24 points per way. This cap was selected after inspecting raw node-count distributions on the same retained drivable-way subset for both the Karlsruhe seed PBF and the Netherlands release PBF: the empirical \(p95\) was 16 and 17 nodes, only 1.80\% and 1.94\% of retained ways exceeded 24 nodes, and the cap preserved 95.6\% and 95.9\% of raw polyline points, respectively. A lower knee exists near 16 points, but 24 was chosen as the cross-region default to reduce long-tail truncation in production bundles.
-
-
-\subsection{Three query types}
-We use typical location-based queries to lookup speed limits for a vehicle in motion. For the scenario benchmark, all queries use the same geometric score:
-\[
-\text{score} = d + \lambda_h \cdot \Delta\theta + p_u
-\]
-where \(d\) is the geometry term, \(\lambda_h\) heading weight (\si{m/deg}), \(\Delta\theta\) bidirectional heading mismatch, and \(p_u\) optional unknown-highway penalty.
-This benchmark score intentionally excludes the runtime continuity-band term \(s_{\mathrm{trace}}\): the benchmark compares geometry-query architectures, whereas continuity-aware ordering is an app-level matching and trace-interpretation layer applied after candidate retrieval.
-
-\textbf{bbox query.} \(d\) is haversine distance from the probe to the clamped point on a candidate bbox. It is the fastest approximation and is used as the coarse filter in every scenario.
-
-\textbf{polyline query.} \(d\) is minimum point-to-segment distance across the full candidate geometry. This gives the highest geometric fidelity, especially on curved and elongated ways.
-
-\textbf{hybrid query.} Candidates are first ranked with bbox distance. A limited top-\(N\) subset is then refined with polyline distance, combining near-polyline quality with lower compute cost.
-
-
-\subsubsection{Data processing architectures (S1-S4)}
 \begin{table}[!htbp]
 \centering
-\caption{Compared runtime scenarios (same input data, different runtime packaging/query path).}
+\caption{Descriptive statistics for explicit \texttt{maxspeed=*} share across 45 European extracts.}
+\label{tab:europe_maxspeed_summary}
+\begin{tabular}{p{7.2cm}r}
+\toprule
+Statistic & Value \\
+\midrule
+Countries analyzed & 45 \\
+Minimum country share & 3.10\% \\
+First quartile & 13.11\% \\
+Median & 16.15\% \\
+Arithmetic mean & 20.83\% \\
+Way-weighted mean & 22.61\% \\
+Third quartile & 25.35\% \\
+Maximum country share & 67.75\% \\
+Germany rank in Europe-wide ordering & 8 \\
+Germany explicit-tag share & 33.12\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The heterogeneity is substantial. The explicit-share range spans from 3.10\% (Turkey) to 67.75\% (Netherlands), with a median of only 16.15\%. Germany sits above both the European median and the European weighted mean, but it is still far from the top of the distribution. This matters for system design: a country portfolio chosen purely by map size would not necessarily align with a country portfolio chosen by explicit-tag completeness.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Current bundle-target countries and their explicit \texttt{maxspeed=*} coverage.}
+\label{tab:target_country_shares}
+\begin{tabular}{r p{3.4cm} c r p{2.2cm}}
+\toprule
+Rank & Country & ISO2 & Share & Bundle mode \\
+\midrule
+1 & Netherlands & NL & 67.75\% & single country \\
+2 & Romania & RO & 62.55\% & single country \\
+3 & Luxembourg & LU & 53.60\% & single country \\
+4 & Belgium & BE & 37.06\% & single country \\
+5 & Sweden & SE & 35.89\% & single country \\
+6 & Liechtenstein & LI & 33.96\% & single country \\
+7 & Iceland & IS & 33.78\% & single country \\
+8 & Germany & DE & 33.12\% & regional shards \\
+9 & Monaco & MC & 29.00\% & single country \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The current bundled target set is therefore not arbitrary. Its mean explicit-tag share is 42.97\%, compared with 20.83\% across all 45 European extracts, and its way-weighted mean is 39.25\%. In other words, the current target set clusters well above the continental baseline for explicit-tag availability. This does not remove the need for fallback logic, but it does reduce the probability that the initial rollout set is dominated by very low-explicitness jurisdictions.
+
+At the same time, the report should be clear about what this comparative statistic does not yet provide. The Europe-wide analysis currently measures explicit-tag prevalence, and the Germany snapshot already carries a fuller provenance split because its fallback semantics are the best validated in the current codebase. Extending the same explicit or inherited or fallback decomposition to every target country is possible, but it is not yet the standard comparative report generated by the current toolchain.
+
+\section{Bundle Generation and Iterative Updates}
+\subsection{Country selection and regional sharding}
+Bundle generation starts from comparative data availability, not from manual country selection alone. The script \texttt{analyze\_europe\_maxspeed\_share.py} scans European Geofabrik extracts, counts car-drivable ways, and produces the cross-country explicit-tag ranking discussed above. The top-ranked countries feed the bundle-target configuration used by the apps. The generator then decides whether a target stays a single-country bundle or is split into child regions.
+
+That split is governed by a simple operational rule: if a country PBF stays at or below a \SI{1}{GB} threshold, it remains a single bundle; if it exceeds the threshold, the planner switches to Geofabrik child regions. Germany therefore becomes a 16-region shard set in the current target file, while smaller countries such as the Netherlands or Luxembourg remain single-country bundles. This rule does not optimize every possible deployment objective, but it is transparent, reproducible, and aligned with mobile download constraints.
+
+\subsection{SQLite bundle construction}
+After target selection, \texttt{build\_spatialite\_v3.py} constructs the current S3 runtime artifact. The build starts from the v1 dist representation, creates the v3 SQLite database, loads car-drivable ways with their speed-relevant attributes, writes RTree bounding boxes, stores polyline geometries, and copies polygonal context needed for residential inference. Optional topology and corridor stages then add a detailed shared-endpoint graph and paired corridor tables for tunnel and motorway continuity.
+
+The current corridor-aware Karlsruhe bundle illustrates the resulting artifact scale. Its latest research bundle contains 242{,}359 way rows, 32{,}872 area rows, 435{,}372 detailed way-link rows, 11{,}961 corridor-progress rows, and 1{,}656 corridor-pair rows. Metadata in the same bundle records the spatial backend (\texttt{sqlite\_rtree}), the detailed link mode (\texttt{shared\_endpoint\_detailed}), and the corridor mode (\texttt{paired\_portal\_chain\_v1}). This is the bundle family that underlies the corridor-aware replay numbers reported later.
+
+\subsection{Publication artifacts and delivery contract}
+The builder and publisher then transform the SQLite runtime database into app-consumable release artifacts. Table~\ref{tab:bundle_pipeline} summarizes the current stages.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Current bundle-generation and publication stages.}
+\label{tab:bundle_pipeline}
+\begin{tabular}{p{1.9cm}p{3.8cm}p{3.6cm}p{2.5cm}}
+\toprule
+Stage & Main script & Primary output & Role \\
+\midrule
+Comparative scan & \nolinkurl{analyze_europe_maxspeed_share.py} & Europe ranking CSV and markdown & Country prioritization by explicit-tag coverage. \\
+Sharding plan & \nolinkurl{plan_country_region_bundles.py} & Country bundle-plan JSON & Decide single-country vs regional shards. \\
+Bundle build & \nolinkurl{build_spatialite_v3.py} & \nolinkurl{speeds_v3.sqlite} & Create current S3 runtime database. \\
+Manifest publish & \nolinkurl{publish_v3_bundle.py} & Bundle directory plus manifest & Attach db artifact, optional split parts, coverage, penalty rules, and delta index. \\
+Country catalog & \nolinkurl{build_v3_country_bundle_catalog.py} & Country catalog JSON & Aggregate regional manifests for country-level discovery. \\
+Target config & \nolinkurl{generate_v3_country_bundles.py} & \nolinkurl{BundleTargets.top10.json} & Ship the current mobile download target list. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The bundle manifest is deliberately richer than the minimal local file copy. It can reference one full database, an optional list of split \texttt{db\_parts}, an optional delta index, an optional penalty-rule JSON, and optional coverage metadata. If a bundle exceeds the release-asset threshold, the publisher splits the database into numbered parts while keeping one logical \texttt{db} payload in the manifest for identity and checksum semantics. Country catalogs then aggregate multiple regional manifests and their coverage metadata for bundle routing on device.
+
+\subsection{Iterative updates}
+The iterative-update path is already implemented, even though the current release-track behavior remains conservative. The update pipeline starts from daily Geofabrik replication diffs. \texttt{build\_v3\_delta\_pack.py} can either infer a patch directly from an \texttt{.osc(.gz)} diff plus the base database or build an exact SQL patch by diffing a rebuilt target database against the base database. The generated delta manifest records the from-version, to-version, patch artifact, and patch statistics. \texttt{roll\_v3\_delta\_index.py} then merges new delta manifests into a rolling index with the current retention window of 30 entries.
+
+This update path is not only specified; it is also measured. The current daily-diff analysis covers a 30-day Germany window from 2026-01-22 to 2026-02-20. Table~\ref{tab:update_stats} summarizes the workload seen by the update machinery.
+
+\begin{table}[!htbp]
+\centering
+\caption{Germany daily-diff update statistics over the current 30-day analysis window.}
+\label{tab:update_stats}
+\begin{tabular}{p{6.0cm}rrr}
+\toprule
+Metric & Mean & Median & Max \\
+\midrule
+Changed ways per day & 60{,}972 & 61{,}076 & 69{,}793 \\
+Maxspeed-tag changes per day & 4{,}667 & 4{,}643 & 5{,}668 \\
+Invalidated S1 tiles & 6{,}712 & 6{,}728 & 7{,}756 \\
+Invalidated S2 tiles & 2{,}685 & 2{,}684 & 2{,}907 \\
+V3 SQL patch rows & 134{,}965 & 131{,}253 & 158{,}028 \\
+V3 patch apply time (ms) & 1{,}024 & 1{,}026 & 1{,}180 \\
+V4 SQL patch rows & 182{,}929 & 177{,}938 & 213{,}766 \\
+V4 patch apply time (ms) & 1{,}357 & 1{,}359 & 1{,}581 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations follow from these data. First, day-to-day map maintenance is not sparse at country scale: the median day still moves more than 61{,}000 ways and more than 4{,}600 speed-related tags. Second, the update burden is architecture-dependent. The same diff window invalidates roughly 2.5 times as many S1 tiles as S2 tiles, which is one reason why coarse global indexing remains unattractive for mobile delivery. Third, exact SQL patch application is already operationally plausible for S3-sized artifacts in the current analysis, with a median simulated apply time of about \SI{1.03}{s}. This does not yet prove that every mobile update path is production-ready, but it does move iterative updates from abstract future work into an implemented and measured subsystem.
+
+\section{Data and Methods}
+\subsection{Runtime architecture scenarios}
+The four runtime architectures are summarized in Table~\ref{tab:scenario_overview}. The benchmark keeps source data and scoring fixed so that architectural differences arise from packaging and spatial access, not from different road subsets or different ranking rules.
+
+\begin{table}[!htbp]
+\centering
+\caption{Current runtime architecture scenarios evaluated in this report.}
 \label{tab:scenario_overview}
-\begin{tabular}{p{1.4cm}p{3.1cm}p{5.9cm}}
+\begin{tabular}{p{1.3cm}p{3.2cm}p{6.3cm}}
 \toprule
 Scenario & Runtime artifact & Query characteristics \\
 \midrule
-S1 & Global country-scale index files & Broad candidate scans with comparatively high IO per query. \\
-S2 & Content-addressed spatial tile packs & Localized reads and independently refreshable regional partitions. \\
-S3 & Single-file spatially indexed embedded database & Direct spatial-index candidate retrieval with bounded fan-out. \\
-S4 & Spatially indexed embedded database with tile-window prefiltering & Two-stage filtering (tile prefilter then spatial-index intersection) for dense-area pruning. \\
+S1 & Global country-scale index files & Broad candidate scans with high IO and weak locality. \\
+S2 & Content-addressed spatial tile packs & Localized reads and bounded regional fan-out. \\
+S3 & Single-file spatially indexed embedded database & Direct spatial-window retrieval with low deployment overhead. \\
+S4 & Embedded database with tile-window prefilter & Two-stage pruning for dense candidate regions. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\subsection{Investigated matching approaches}
+All investigated matchers operate on the same local candidate sets. For each fix \(t\), candidate ways \(i \in C_t\) receive a geometry score
+\[
+s_{\mathrm{geom}}(t,i)=
+\begin{cases}
+d_{t,i} + \lambda_h \cdot \Delta \theta_{t,i}, & \text{if course is reliable} \\
+d_{t,i}, & \text{otherwise}
+\end{cases}
+\]
+where \(d_{t,i}\) is point-to-way distance and \(\Delta \theta_{t,i}\) is bidirectional heading mismatch. Higher-level approaches then add bounded continuity state, short-history sequence logic, or lightweight learned ranking on top of this shared local candidate generation.
 
+The matching study uses two complementary experimental settings. The retained offline benchmark fixes candidate windows from non-duplicate inspector logs and asks whether a model recovers hindsight labels. This benchmark isolates arbitration quality and makes it possible to compare multiple approaches that are not all deployed end to end. The current ladder spans four families:
 \begin{itemize}
-\item  S1 is the global-index baseline: country-scale index files are queried directly without prior spatial partitioning, which makes it simple but increases broad candidate scans and IO pressure for each lookup.
-
-\item  S2 introduces explicit spatial tiling and content-addressed tile assets. This localizes reads to relevant map partitions and supports selective data refresh at tile granularity.
-
-\item  S3 uses a file-based embedded database with spatial indexing for candidate retrieval. S3 performs direct spatial-window search and then geometric ranking. 
-
-\item S4 also uses a file-based embedded database but adds a tile-membership prefilter before spatial-index intersection to reduce candidate fan-out in dense urban regions.
-
-
-
-\end{itemize}
-Because S2--S4 runtime artifacts are file-based and immutable per build, they support horizontal cloud scaling through replication across stateless workers and object storage distribution, while also remaining suitable for autonomous offline execution on mobile devices.
-
-\subsection{Measurement scenarios}
-We evaluate two deployment modes:
-\begin{itemize}
-\item \textbf{Online (cloud-like) scenario:} host-side execution on a desktop-class environment, representing server-style continuous evaluation for online queries (measured without networking overhead).
-\item \textbf{Offline (on-device) scenario:} physical smartphone execution with country-scale runtime data stored in the mobile sandbox, representing autonomous offline operation.
+\item \textbf{Purely local heuristics:} the lowest-distance baseline and the current conservative final matcher.
+\item \textbf{Short-history sequence heuristics:} the mini-HMM else heuristic.
+\item \textbf{Bounded-history decision and smoothing models:} two-way tree gates, three-way tree gates, and a three-way fixed-lag smoother.
+\item \textbf{Lightweight learned rankers:} tree, logistic, tiny-MLP, and online-linear candidate rankers.
 \end{itemize}
 
-Both modes are assessed the same way across the four runtime scenarios and the same three query types.
+The closed-loop replay benchmark is narrower and more deployment-oriented. It keeps bundle queries, session state, tunnel logic, and runtime size or latency terms, and therefore compares only two deployable S3 profiles on the same data layer:
+\begin{itemize}
+\item \textbf{Connected baseline.} This profile uses exact geometry distance, heading-aware scoring, connected-way continuity, and tunnel or motorway entry constraints derived from a minimal shared-endpoint graph. It does not materialize explicit corridor tables.
+\item \textbf{Corridor-aware profile.} This profile uses the same geometric core but adds corridor identity, corridor phase, paired entry and exit chains, and more detailed shared-node topology. It activates the runtime three-way gate whenever corridor-aware arbitration is useful.
+\end{itemize}
 
-\section{Evaluation}
-\subsection{Experimental setup}
-The evaluated baseline was generated on 2026-02-23 from \texttt{germany-latest.osm.pbf}. Evaluation used a dual-platform setup: host-side cloud-like execution on a MacBook Pro (Mac16,5; Apple M4 Max, 16 cores; 48 GB RAM; macOS 15.5, Xcode 16.4) and offline execution on a physical iPhone 14 Pro (iPhone15,2; arm64e/A16 generation; iOS 26.2.1).
+\subsection{Query modes and benchmark harness}
+All architecture scenarios use the same query modes:
+\begin{itemize}
+\item \textbf{\texttt{bbox}:} distance to the clamped point on a candidate bounding box,
+\item \textbf{\texttt{polyline}:} minimum point-to-segment distance over full geometry,
+\item \textbf{\texttt{hybrid}:} bbox pre-ranking followed by polyline refinement of a small top-\(N\) set,
+\item \textbf{\texttt{polycontainment}:} residential-polygon area-context lookup for built-up classification.
+\end{itemize}
 
-The benchmark protocol uses a fixed Berlin probe point \((52.5200,13.4050)\), heading \(90^\circ\), top-\(k=5\), and four measured query components (\texttt{bbox}, \texttt{hybrid}, \texttt{polyline}, \texttt{polycontainment}).
+The architecture benchmark uses a fixed Berlin probe point \((52.5200,13.4050)\), heading \(90^\circ\), and \(k=5\) candidates. It runs in two contexts: host-side execution on a MacBook Pro (Apple M4 Max, 48 GB RAM, macOS 15.5) and on-device execution on an iPhone 14 Pro (iOS 26.2.1). This harness isolates spatial lookup and area-context retrieval. It does not reproduce the full recurrent app runtime and it does not currently benchmark Android device latency.
 
-Runtime footprint is strongly architecture-dependent: S1 uses 7 runtime files (\SI{5.51}{GB}), S2 uses 109{,}333 files (\SI{5.10}{GB}), S3 uses a single file (\SI{2.60}{GB}), and S4 uses a single file (\SI{3.44}{GB}). A representative country-scale on-device run completed successfully on iPhone with one executed test and \SI{48.331}{s} action elapsed time.
+\subsection{Replay corpora and metrics}
+The current matcher comparison uses three corpora with different purposes:
+\begin{table}[!htbp]
+\centering
+\caption{Current evaluation corpora.}
+\label{tab:corpora}
+\begin{tabular}{p{3.1cm}p{5.6cm}rrr}
+\toprule
+Corpus & Purpose & Logs & Fixes & Hindsight labels \\
+\midrule
+Retained offline benchmark & Candidate-level hindsight benchmark from non-duplicate inspector logs & 7 & \CurrentLogRows & \PseudoLabelExamples \\
+Inspector replay corpus & Closed-loop replay of current runtime behavior on field logs & 10 & 11{,}351 & 6{,}529 \\
+Geometry-stress corpus & Dedicated tunnel and same-ref stress replay & 2 & 2{,}598 & 1{,}410 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Benchmark results}
-Table~\ref{tab:bench_joint} reports the joint online (cloud-like) and offline (device) latency matrix. Figure~\ref{fig:bench_boxplot} orders the same data by scenario (S1--S4), each shown as adjacent online/offline columns.
+The retained offline benchmark contains \PseudoLabelExamples hindsight-labelled examples, including \PseudoLabelSwitchCount switch-labelled cases, and it uses \BenchmarkTrainExamples/\BenchmarkValExamples/\BenchmarkTestExamples train/validation/test examples where supervised models require a learned split. For profile comparison, the primary metrics are replay accuracy \(a\), changed-example recall \(r\), and unchanged-example accuracy \(u\). To summarize replay quality without collapsing everything into one number too early, we first use
+\[
+A = 0.5a + 0.25r + 0.25u.
+\]
+Because the current product still cares about bundle size and service latency, we also report the present internal score
+\[
+S = 100 \left(0.7A + 0.2\frac{t_{\min}}{t} + 0.1\frac{b_{\min}}{b}\right),
+\]
+where \(t\) is service-query \(p95\) latency, \(b\) is bundle size, and \(t_{\min}\), \(b_{\min}\) are the best values among compared profiles. We treat \(S\) as a product-weighted summary, not as a universal scientific metric.
+
+\section{Results}
+\subsection{Runtime architecture comparison}
+Table~\ref{tab:bench_joint} reports the joint latency matrix, and Figure~\ref{fig:bench_boxplot} shows the same values grouped by scenario.
 
 \begin{table}[!htbp]
 \centering
-\caption{Joint online/offline benchmark matrix at the benchmark coordinate (\si{\milli\second}).}
+\caption{Joint host/device latency matrix at the benchmark coordinate (\si{\milli\second}).}
 \label{tab:bench_joint}
 \begin{tabular}{llrrrr}
 \toprule
-Execution & Mode & S1 avg (ms) & S2 avg (ms) & S3 avg (ms) & S4 avg (ms) \\
+Execution & Mode & S1 & S2 & S3 & S4 \\
 \midrule
-online (cloud) & bbox     & 5451.24 & 172.21 & 64.74 & 166.26 \\
-online (cloud) & hybrid   & 10152.12 & 169.25 & 29.56 & 64.00 \\
-online (cloud) & polyline & 10300.65 & 170.65 & 38.88 & 72.03 \\
-online (cloud) & polycontainment & 1.51 & 1.07 & 0.94 & 0.44 \\
+host & bbox & 5451.24 & 172.21 & 64.74 & 166.26 \\
+host & hybrid & 10152.12 & 169.25 & 29.56 & 64.00 \\
+host & polyline & 10300.65 & 170.65 & 38.88 & 72.03 \\
+host & polycontainment & 1.51 & 1.07 & 0.94 & 0.44 \\
 \midrule
-offline (device) & bbox     & 4526.75 & 232.58 & 43.77 & 792.13 \\
-offline (device) & hybrid   & 2935.52 & 61.03 & 24.10 & 99.57 \\
-offline (device) & polyline & 3122.36 & 76.20 & 39.16 & 78.54 \\
-offline (device) & polycontainment & 3.14 & 0.81 & 0.74 & 2.79 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-To convert on-device latency into a raw location-update budget under worst-case per-fix operation (both way query and polygon containment query), this study uses:
-\[
-f_{\text{cycle}}=\frac{1000}{t_{\text{maxspeed}}+t_{\text{polycontainment}}}, \qquad
-v_{\max}=3.6 \cdot f_{\text{cycle}} \cdot \Delta s
-\]
-where \(f_{\text{cycle}}\) is per-fix cycle throughput in Hz, \(t_{\text{maxspeed}}\) is way-query latency, \(t_{\text{polycontainment}}\) is polygon containment latency, and \(\Delta s\) is distance between location fixes (here \(\Delta s=\SI{10}{m}\)). Table~\ref{tab:device_speed_envelope} reports per-scenario device throughput and the corresponding theoretical speed envelope without additional pipeline overheads.\footnote{From a full-system perspective, location-fix cadence rather than query runtime is the dominant upper bound. Android compatibility requirements specify that handheld devices must report GPS location and GPS clock measurements at least once per second (\(\geq\)1 Hz) \cite{android_cdd16}. The Android location framework also exposes millisecond-level request and minimum-update intervals \cite{android_locationrequest_aosp}, so higher cadences can be requested, but delivered rates remain device- and policy-dependent. With \(\Delta s=\SI{10}{m}\), a guaranteed 1 Hz fix stream corresponds to \(\SI{36}{km/h}\); a requested 5 Hz stream corresponds to \(\SI{180}{km/h}\).}
-
-\begin{table}[!htbp]
-\centering
-\caption{On-device raw query throughput and theoretical speed envelope (\(\Delta s=\SI{10}{m}\), worst-case per-fix latency \(t_{\text{maxspeed}}+t_{\text{polycontainment}}\), no additional processing overhead).}
-\label{tab:device_speed_envelope}
-\begin{tabular}{lrrrr}
-\toprule
-Scenario & Mean latency (ms) & Mean throughput (Hz) & Best-mode \(v_{\max}\) (km/h) & Worst-mode \(v_{\max}\) (km/h) \\
-\midrule
-S1 & 3531.35 & 0.28 & 12.2 & 7.9 \\
-S2 & 124.08 & 8.06 & 582.1 & 154.2 \\
-S3 & 36.42 & 27.46 & 1449.3 & 808.8 \\
-S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
+device & bbox & 4526.75 & 232.58 & 43.77 & 792.13 \\
+device & hybrid & 2935.52 & 61.03 & 24.10 & 99.57 \\
+device & polyline & 3122.36 & 76.20 & 39.16 & 78.54 \\
+device & polycontainment & 3.14 & 0.81 & 0.74 & 2.79 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -512,7 +391,7 @@ S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
 \begin{tikzpicture}
 \begin{axis}[
   ybar,
-  width=\linewidth,
+  width=0.96\linewidth,
   height=0.38\textheight,
   bar width=4pt,
   ylabel={Latency (ms, log scale)},
@@ -525,7 +404,7 @@ S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
   xmin=0.5,
   xmax=8.5,
   xtick={1,2,3,4,5,6,7,8},
-  xticklabels={S1 online,S1 offline,S2 online,S2 offline,S3 online,S3 offline,S4 online,S4 offline},
+  xticklabels={S1 host,S1 device,S2 host,S2 device,S3 host,S3 device,S4 host,S4 device},
   xticklabel style={rotate=35,anchor=east,font=\scriptsize},
   legend style={at={(0.5,1.04)},anchor=south,legend columns=4,font=\small},
   ylabel near ticks,
@@ -553,137 +432,243 @@ S4 & 326.20 & 3.07 & 442.7 & 45.3 \\
 \legend{bbox,hybrid,polyline,polycontainment}
 \end{axis}
 \end{tikzpicture}
-\caption{Scenario-first latency view derived from Table~\ref{tab:bench_joint}, including \texttt{polycontainment}. For each scenario (S1--S4), online and offline columns are adjacent, and dashed vertical lines delimit scenario groups.}
+\caption{Scenario-first latency view for the current S1--S4 comparison.}
 \label{fig:bench_boxplot}
 \end{figure}
 
-Compared to S1, host-side speedups range from \(31.7\times\) (S2 bbox) to \(343.4\times\) (S3 hybrid). On device, the same overall ordering remains for hybrid and polyline (\(S3 < S2 < S4 \ll S1\)), while bbox in S4 regresses versus S3.
+The architecture result is clear. S1 is not competitive for country-scale mobile inference. S2 is a substantial improvement and keeps the locality benefits of explicit tiling, but its high file count remains operationally heavier than the single-file variants. S4 does not justify its extra prefilter stage under the current workload; it loses to S3 on device in every decision-relevant query mode. S3 therefore remains the stable data-layer choice in the current project state.
 
-Based on current results, \textbf{S3} is selected as default on-device runtime: it delivers the lowest hybrid/polyline latency while keeping a single-file footprint smaller than S4.
+The area-context result is also narrow and current-scope only. The measured \texttt{polycontainment} step is a residential-polygon lookup used by the benchmark harness for built-up classification; it is not an administrative-boundary benchmark. Under that definition, S3 remains fastest on device at \SI{0.74}{ms}.
 
-For polygon containment (in-city/out-city classification), the measured city-context retrieval stage is \(3.14\) ms (S1), \(0.81\) ms (S2), \(0.74\) ms (S3), and \(2.79\) ms (S4). At the Berlin benchmark probe, all scenarios resolve \emph{Mitte} as \emph{inside-city} via explicit administrative polygon containment. The low millisecond-scale polycontainment latencies are expected because RTree prefiltering reduces candidate polygons to a very small set before exact ring containment checks.
-
-\subsection{Field-log reassessment: tunnels, Autobahn corridors, and model selection}
-Replaying the nine bundled inspector logs yields 11{,}259 matched fixes. This corpus includes motorway entry and exit behavior, tunnel approaches, and the corrected Loffenau sequence. The disconnected hop from L 564 onto service way 16654539 stays eliminated after warmup because the shared-endpoint graph gate removes candidates that are not connected to the recent path.
-
-Two matcher profiles were evaluated on the same S3 query layer. The first is a \emph{connected baseline}: nearest-distance selection with connected-way continuity, low-speed heading-change transitions, and tunnel/motorway lock modes that only admit entry or exit at shared nodes. Its bundle stores \texttt{way\_links\_mode=shared\_endpoint\_minimal} with 433{,}504 directed adjacency pairs and no corridor tables, for a file size of 113{,}795{,}072 bytes. The second is the selected \emph{shared-node corridor HMM}: a detailed shared-endpoint graph with \texttt{way\_links\_mode=shared\_endpoint\_detailed}, 435{,}372 directed adjacency edges, 2{,}345 corridor chains, 11{,}961 \texttt{corridor\_progress} rows, and 1{,}656 explicit \texttt{corridor\_pairs}, for a file size of 134{,}434{,}816 bytes.
-
-The corridor precompute uses only shared nodes and branch nodes as legal entry, exit, and split points. Let \(G_k=(V_k,E_k)\) denote the subgraph induced by ways of corridor kind \(k \in \{\text{tunnel},\text{motorway}\}\). Let \(P_k \subseteq V_k\) be the set of nodes shared with admissible outside ways: surface ways for tunnels and \texttt{motorway\_link} ways for motorways. The boundary-node set is
-\[
-B_k = P_k \cup \{v \in V_k \mid \deg_{G_k}(v) \neq 2\}.
-\]
-A corridor \(c\) is then a maximal chain of ways in \(G_k\) between two nodes in \(B_k\). For each side node \(p \in B_k\), the bundle attaches a paired approach chain: a local surface chain for tunnels or a \texttt{motorway\_link} chain for motorways, both starting at the same shared node \(p\). This representation captures the ``multiple nodes at entry and exit'' semantics without treating an entire motorway network or an entire same-ref surface network as one corridor.
-
-The selected runtime augments candidate identity \(i \in C_t\) with both corridor identity \(c_t\) and corridor phase \(z_t\), where
-\[
-Z=\{\text{surface},\text{tunnelEntry},\text{tunnelInside},\text{tunnelExit},\text{motorwayEntry},\text{motorwayInside},\text{motorwayExit}\}.
-\]
-The mini-HMM recurrence is
-\[
-J_t(i,c,z)= s_{\mathrm{geom}}(t,i) + \phi_t(i,c,z) + \min_{(j,c',z')} \left[J_{t-1}(j,c',z') + \tau\big((j,c',z'),(i,c,z)\big)\right].
-\]
-Here \(\phi_t(i,c,z)\) is low only when way \(i\) belongs to corridor \(c\) or to one of its paired approach chains compatible with phase \(z\). The transition term \(\tau\) forbids or heavily penalizes moves that violate shared-node legality, such as \(\text{surface}\rightarrow\text{tunnelInside}\) without a paired portal chain or \(\text{motorwayInside}\rightarrow\text{surface}\) without a paired exit ramp.
-
-Model selection uses a common score that balances replay accuracy, query time, and bundle size. Let \(a\) be hindsight accuracy, \(r\) changed-example recall, and \(u\) unchanged-example accuracy. The accuracy composite is
-\[
-A = 0.5a + 0.25r + 0.25u.
-\]
-Let \(t\) be service-query \(p95\) latency and \(b\) bundle bytes, with \(t_{\min}\) and \(b_{\min}\) the best values across compared models. The final selection score is
-\[
-S = 100 \left(0.7A + 0.2\frac{t_{\min}}{t} + 0.1\frac{b_{\min}}{b}\right).
-\]
-
-Under this protocol, the connected baseline yields \(a=93.37\%\), \(r=49.45\%\), \(u=96.67\%\), \(A=0.8321\), geom-log agreement \(80.45\%\), service-query \(p95=0.151\) ms, and \(S=88.25\). The shared-node corridor HMM yields \(a=96.13\%\), \(r=72.51\%\), \(u=97.90\%\), \(A=0.9066\), geom-log agreement \(85.80\%\), service-query \(p95=0.156\) ms, and \(S=91.21\). The corridor model is therefore selected despite an \(18.1\%\) larger bundle and a modest latency increase, because its replay accuracy and stability are materially better.
-
-The tunnel-specific evidence also separates the two models clearly. On the two geom logs, the connected baseline enters tunnels 82 times although the recorded app selections contain 0 tunnel fixes there, whereas the corridor HMM records 0 tunnel selections and avoids those false commits. Across the nine inspector logs, the selected corridor model records 103 tunnel fixes, all concentrated in \texttt{drive\_match\_log-3}; both profiles keep way 313127285 confined to that log and select it 0 times in the other driving logs.
-
-The remaining gap is under-commitment in the geom tunnel logs: the shared-node corridor HMM still does not recover those real tunnel traversals, even though it models legal entry and exit correctly. The field data indicate that tunnel traversal often retains GPS fixes while horizontal accuracy and signal bars deteriorate only later inside the tunnel. The next model improvement therefore belongs in the emission side of the corridor HMM: along-chain portal progress and delayed signal-quality deterioration inside the committed tunnel corridor.
-
-\section{Incremental Data Updates}
-Incremental update behavior was evaluated on a 30-day daily-diff window ending immediately before the baseline snapshot date (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\)). The analysis quantifies daily network churn, speed-tag churn, and scenario-specific refresh effort under a common observation period for the Germany subset of OSM.
+\subsection{Offline matcher benchmark across investigated approaches}
+Table~\ref{tab:model_benchmark} reports the retained offline benchmark across the ten investigated approaches. This benchmark isolates candidate arbitration rather than end-to-end runtime behavior, so its main value lies in comparing approach families under a fixed candidate corpus.
 
 \begin{table}[!htbp]
 \centering
-\caption{Daily-diff update workload summary (\(2026\)-\(01\)-\(22\) to \(2026\)-\(02\)-\(20\), 30 days).}
-\label{tab:update_summary}
-\begin{tabular}{p{7.2cm}rr}
+\scriptsize
+\caption{Retained offline benchmark across investigated matcher approaches (\CurrentLogRows fixes, \PseudoLabelExamples hindsight labels).}
+\label{tab:model_benchmark}
+\begin{tabular}{p{4.1cm}rrr}
 \toprule
-Metric & Total & Mean / day \\
+Approach & Accuracy & Changed rec. & Keep-current acc. \\
 \midrule
-Changed ways (\(+\), \(-\), modified) & 1{,}829{,}171 & 60{,}972 \\
-\texttt{maxspeed}-related tag changes & 139{,}999 & 4{,}667 \\
-Administrative-boundary way changes (\texttt{boundary=administrative}, level 8/9) & 1{,}493 & 49.8 \\
-Invalidated S1 grid cells (S1 proxy) & 201{,}355 & 6{,}712 \\
-Invalidated S2 tiles (S2 proxy) & 80{,}536 & 2{,}685 \\
-S3 simulated patch runtime (S3) & \SI{30719.38}{ms} & \SI{1023.98}{ms} \\
-S4 simulated patch runtime (S4) & \SI{40710.02}{ms} & \SI{1357.00}{ms} \\
-Polygon-update S1 invalidated grid cells & 15{,}151 & 505.03 \\
-Polygon-update S2 invalidated tiles & 3{,}507 & 116.9 \\
-Polygon-update S3 simulated patch runtime & \SI{87.38}{ms} & \SI{2.91}{ms} \\
-Polygon-update S4 simulated patch runtime & \SI{375.82}{ms} & \SI{12.53}{ms} \\
+\ModelBenchmarkRows
 \bottomrule
 \end{tabular}
 \end{table}
 
-Across the measured window, S4 patching is \(1.33\times\) slower than S3 in mean daily patch runtime for maxspeed updates and \(4.30\times\) slower for polygon updates, while S2 invalidates substantially fewer partitions than S1. This indicates that tile partitioning improves refresh locality over global-index invalidation, and that S3 remains the stronger update/query compromise among database-centered variants.
+Three patterns emerge from this ladder. First, bounded future or sequence context matters. The three-way fixed-lag smoother reaches the strongest overall operating point at 94.20\% accuracy and 55.34\% changed-example recall, while the mini-HMM and tree-gated approaches also improve change recovery relative to the current conservative matcher. Second, the current conservative matcher should be interpreted as a stability reference rather than as a general optimum: it maximizes keep-current accuracy at 100.00\%, but it does so by suppressing all hindsight-labelled switches in this benchmark. Third, the current label volume does not yet make the small learned rankers dominant. The tree candidate ranker is competitive, but logistic, online-linear, and especially tiny-MLP variants remain below the stronger bounded-history heuristic and smoother baselines.
 
-To translate these architectural differences into deployment-relevant transfer times, payload transmission is represented as \(T=(B_{\text{payload}}+B_{\text{overhead}})/R\), with \(B_{\text{overhead}}\) modeled as a separate 10\% transport overhead term. For Europe, a practical throughput range is \SI{104.3}{Mbps} to \SI{217.6}{Mbps} for 5G downloads (spectrum-dependent) \cite{opensignal_europe_5g_2024}, with an EU-27 mobile average of \SI{124}{Mbps} in 2025 \cite{eu_connectivity_impact_2026}. Using measured median tile-pack size (\SI{47199}{B}) and measured daily update volumes, indicative transfer times are: (i) 100 median tiles (\SI{4.72}{MB} payload): \SIrange{0.19}{0.40}{s}; (ii) 1000 median tiles (\SI{47.2}{MB}): \SIrange{1.91}{3.98}{s}; (iii) S2 mean daily invalidation volume (\(2685\) median tiles, \SI{126.73}{MB}): \SIrange{5.13}{10.69}{s}; and (iv) S3 daily SQL patch transmission (gzip estimate, \SI{5.07}{MB}): \SIrange{0.21}{0.43}{s}. These results indicate that, in practical mobile operation, compact SQL patch delivery is typically faster than broad tile-bundle refresh for equivalent daily update coverage.
+The ladder is also scientifically useful because it separates different notions of improvement. The lowest-distance baseline already reaches 54.37\% changed-example recall, which means that many switch-labelled cases are geometrically recoverable without rich temporal state. The gain from more structured models therefore lies less in discovering switches at all than in balancing switch recovery against keep-current stability. On the current retained corpus, the fixed-lag smoother is the best compromise inside that balance.
 
-The daily benchmark is designed to be extended into a weekly longitudinal protocol with regular baseline checkpoints and intervening incremental updates. This will quantify whether reduced update effort is preserved over longer horizons while retaining low-latency query behavior.
+\subsection{Current runtime matcher profile comparison}
+The closed-loop runtime comparison narrows the field to two deployable S3 profiles and adds runtime costs that the offline ladder does not measure: bundle size, service latency, gate activity, and geometry-log oscillation behavior. Table~\ref{tab:profile_comparison} compares these two profiles on replay and geometry-stress corpora.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Current matcher profile comparison on replay and geometry-stress corpora.}
+\label{tab:profile_comparison}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{p{2.2cm}rrrrrrrr}
+\toprule
+Profile & Bundle (MiB) & Service p95 & Replay acc. & Changed rec. & Unchanged acc. & Geom agree. & Way ABA & Score \(S\) \\
+\midrule
+Connected baseline & 108.5 & 0.132 & 93.41\% & 49.23\% & 96.71\% & 80.45\% & 4 & 88.23 \\
+Corridor-aware & 128.2 & 0.166 & 95.99\% & 72.19\% & 97.76\% & 83.56\% & 89 & 87.73 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+The corridor-aware profile is not a trivial strict improvement. It is better on replay quality: accuracy rises by 2.58 percentage points, changed-example recall rises by 22.96 percentage points, unchanged-example accuracy also improves, and geometry-log agreement is higher. The same profile is also materially more active, invoking the current three-way gate 3{,}118 times across the replay corpus.
+
+At the same time, the connected baseline keeps two practical advantages. It is smaller by 19.7 MiB and faster at service-query \(p95\), and it shows much less ABA behavior in the geometry-stress logs. Under the present product-weighted score \(S\), these latency and size terms are enough to move the aggregate result slightly back toward the baseline (88.23 vs.\ 87.73), even though the replay-accuracy composite \(A\) favors the corridor-aware profile (0.8319 vs.\ 0.9048). The current scientific conclusion is therefore a trade-off statement, not a winner-takes-all statement.
+
+This trade-off is visible in the corpora details. The replay corpus contains 934 motorway fixes, 92 motorway-link fixes, and 187 selected tunnel fixes. The geometry-stress corpus contains 82 replay tunnel fixes and one portal-eligible tunnel case. These are exactly the route types for which extra corridor state is expected to matter. The present data confirm that expectation on replay accuracy, but they also show that richer corridor state can reintroduce oscillation pressure in dedicated stress logs.
+
+\section{Discussion}
+The current report separates four questions that were previously mixed together.
+
+First, the architecture question is now relatively stable. S3 is the strongest present data-layer choice because it combines the lowest device-side latency with single-file deployment and no extra prefilter stage. The iPhone and Android clients both validate this architectural center of gravity through the same regional bundle contract, even though the iPhone client is the release-track product surface and Android remains an internal alpha.
+
+Second, the jurisdiction question is layered rather than binary. The bundle and warning layers already carry explicit country identity and country-specific penalty semantics. The map-inference layer already handles explicit and inherited speed tags in a country-agnostic way where the tags themselves are informative. But unsigned-road defaults still rely on a more limited heuristic stack whose best-validated semantics remain German. That asymmetry is not a flaw in the description; it is the actual current system state.
+
+Third, the update question is no longer hypothetical. Comparative target-country ranking, sharding, exact delta-pack generation, rolling delta indexes, and manifest publication are all implemented, and the Germany 30-day update study shows that these subsystems operate on realistic country-scale workloads. What remains open is production confidence across every target and every mobile download path, not whether an iterative-update mechanism exists at all.
+
+Fourth, the matching question is best understood on two levels rather than one. In the retained offline benchmark, added bounded future context pays off: the fixed-lag smoother and tree-gated approaches outperform purely local conservative arbitration on changed-example recovery, and the best lightweight learned models still trail the strongest bounded-history non-neural baselines. In the closed-loop runtime benchmark, the comparison becomes narrower because deployable profiles must also pay for bundle size, service latency, and route-stability side effects.
+
+\section{Future Work}
+Several next steps follow directly from the current evidence.
+
+The first concerns jurisdiction-aware defaults. The present bundle contract and warning layer already scale across jurisdictions, but the legal-default inference layer still deserves a fuller country-by-country model. Extending the explicit or inherited or fallback provenance decomposition beyond Germany is therefore not just a reporting improvement; it is also the measurement foundation for more principled country-specific default handling.
+
+The second concerns iterative updates. The exact delta-pack machinery is implemented and measured, but the rollout path remains intentionally conservative. A natural next step is to move from the Karlsruhe seed-first validation pattern to a broader country and shard matrix, with stronger end-to-end evidence for multipart downloads, stale-version recovery, and repeated patch application on real devices rather than only host-side simulation and narrow mobile-path verification.
+
+The third concerns matcher convergence. The current results show a productive tension between conservative baseline behavior and corridor-aware replay gains. Future work should therefore evaluate richer profiles not only on replay accuracy but also jointly with bundle build cost, delta size, update friction, and geometry-stress stability, so that matcher adoption reflects the full operational envelope of the product.
 
 \section{Conclusion}
-Under a 50\%/50\% decision rule (equal weight on query latency and update effort), this study selects S3 as the preferred operating point. Query performance uses on-device mean latency, while update effort uses scenario-specific incremental-update proxies from Section 5 (partition invalidation for S1/S2, simulated patch runtime for S3/S4), normalized to a common \([0,1]\) scale before weighting. The resulting ranking is \(S3 \prec S4 \prec S2 \ll S1\) (lower is better).
-
-\begin{table}[!htbp]
-\centering
-\caption{Scenario suitability matrix (\(++\): best; \(+\): suitable).}
-\label{tab:scenario_matrix}
-\begin{tabular}{lcc}
-\toprule
-Scenario & Query time & Update time \\
-\midrule
-S1 & -- & -- \\
-S2 & + & + \\
-S3 & ++ & ++ \\
-S4 & + & + \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The next development cycle targets corridor-HMM emissions rather than another topology expansion. Priority 1 is to keep the shared-node corridor representation and publish the same \texttt{way\_links}/\texttt{corridor\_pairs} topology in every S3 region. Priority 2 is to add stronger tunnel-commit evidence inside already selected corridor chains, especially delayed signal-quality deterioration and along-chain progress after portal entry. Priority 3 is to evaluate whether a learned corridor-transition gate adds measurable benefit over the selected shared-node corridor HMM and the simpler connected baseline on the expanded field-log corpus.
+The current YouSpeed system is best described as a four-layer result. At the architecture layer, a local-first bundle pipeline and S3 runtime data layer define the stable implementation center. At the client layer, the iPhone app provides the current launch-facing runtime while the Android alpha validates the same contract and matcher family on a second mobile platform. At the regulation layer, country identity and penalty semantics are already decoupled from the matcher, while unsigned-road legal defaults remain strongest for Germany. At the matcher layer, the project has multiple defensible operating points: the fixed-lag smoother is strongest in the retained offline arbitration benchmark, while the deployable runtime comparison remains a trade-off between a smaller connected baseline and a richer corridor-aware profile with better replay quality. The scientific value of the current status lies in keeping these comparisons explicit instead of forcing them into a single winner narrative.
 
 \section*{Reproducibility}
-All preprocessing, scenario construction, and benchmark steps are parameterized and versioned in the accompanying research codebase available at \url{https://github.com/volzinnovation/youspeed.de}. The evaluation reported here is tied to the Germany snapshot dated 2026-02-23, with fixed probe location, heading, query modes, and scenario definitions stated in the methodology and evaluation sections. 
+All preprocessing, scenario construction, benchmark steps, bundle-generation stages, and update scripts are parameterized in the accompanying codebase at \url{https://github.com/volzinnovation/youspeed.de}. The current report ties its measurements to the Germany snapshot dated 2026-02-23, the Europe-wide explicit-tag analysis artifacts stored under \texttt{mapdata/reports/}, the 30-day Germany daily-diff analysis window from 2026-01-22 to 2026-02-20, the fixed Berlin probe benchmark, and the replay corpora summarized in Table~\ref{tab:corpora}.
 
 \appendix
-\section{European maxspeed-share ranking (including Germany)}
-Table~\ref{tab:europe_maxspeed_ranking_full} reports the full country list used for the Europe-wide maxspeed-tag coverage comparison. Countries are ranked by
-\[
-\text{share} = \frac{\#(\texttt{maxspeed}-tagged drivable ways)}{\#(\text{drivable ways})} \cdot 100
-\]
-using the same drivable \texttt{highway=*} class set as the main evaluation.
 
-\small
-\begin{longtable}{r p{4.2cm} c r r r}
-\caption{European country ranking by \texttt{maxspeed} share (descending), including Germany.}
-\label{tab:europe_maxspeed_ranking_full}\\
+\section{Bundle Artifact Contracts}
+The runtime artifact family uses three JSON contracts: the bundle manifest, the delta manifest, and the country catalog. Table~\ref{tab:contract_bundle_manifest} summarizes the bundle manifest fields. Table~\ref{tab:contract_delta_manifest} summarizes the delta manifest fields. Table~\ref{tab:contract_catalog} summarizes the country catalog fields.
+
+{\scriptsize
+\begin{longtable}{@{}p{3.5cm}p{1.1cm}p{6.6cm}@{}}
+\caption{Current v3 bundle-manifest fields.}
+\label{tab:contract_bundle_manifest}\\
 \toprule
-Rank & Country & ISO2 & Drivable ways (\#) & \texttt{maxspeed} tagged (\#) & Share (\%) \\
+Field & Required & Meaning \\
 \midrule
 \endfirsthead
 \toprule
-Rank & Country & ISO2 & Drivable ways (\#) & \texttt{maxspeed} tagged (\#) & Share (\%) \\
+Field & Required & Meaning \\
 \midrule
 \endhead
 \midrule
-\multicolumn{6}{r}{Continued on next page}\\
+\multicolumn{3}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\nolinkurl{format} & yes & Constant identifier \nolinkurl{youspeed.v3.bundle.manifest}. \\
+\nolinkurl{schema_version} & yes & Manifest schema version. \\
+\nolinkurl{variant} & yes & Runtime family identifier, currently \nolinkurl{v3}. \\
+\nolinkurl{region} & yes & Logical bundle region id. \\
+\nolinkurl{country_code} & no & ISO alpha-3 jurisdiction code used for bundle identity and rule selection. \\
+\nolinkurl{bundle_version} & yes & Logical bundle version string. \\
+\nolinkurl{created_at_utc} & yes & Manifest creation timestamp. \\
+\nolinkurl{min_app_version} & yes & Minimum compatible app version. \\
+\nolinkurl{db} & yes & Logical database artifact with file name, bytes, checksum, and optional URL. \\
+\nolinkurl{db_parts} & no & Optional list of split database parts for release-asset size limits. \\
+\nolinkurl{delta_index} & no & Optional rolling index of available incremental updates. \\
+\nolinkurl{penalty_rules} & no & Optional country-specific penalty-rule artifact. \\
+\nolinkurl{coverage} & no & Optional bbox plus optional polygon artifact for on-device bundle routing. \\
+\nolinkurl{self} & no & Manifest file identity and optional published URL. \\
+\end{longtable}
+}
+
+{\scriptsize
+\begin{longtable}{@{}p{3.5cm}p{1.1cm}p{6.6cm}@{}}
+\caption{Current v3 delta-manifest fields.}
+\label{tab:contract_delta_manifest}\\
+\toprule
+Field & Required & Meaning \\
+\midrule
+\endfirsthead
+\toprule
+Field & Required & Meaning \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\nolinkurl{format} & yes & Constant identifier \nolinkurl{youspeed.v3.delta.manifest}. \\
+\nolinkurl{schema_version} & yes & Delta schema version. \\
+\nolinkurl{region} & yes & Logical region id covered by the patch. \\
+\nolinkurl{from_bundle_version} & yes & Source bundle version for the patch. \\
+\nolinkurl{to_bundle_version} & yes & Target bundle version for the patch. \\
+\nolinkurl{created_at_utc} & yes & Delta-manifest creation timestamp. \\
+\nolinkurl{source_diff_file} & no & Input replication diff used to generate the patch. \\
+\nolinkurl{patch} & yes & SQL patch artifact with file, bytes, checksum, URL, and compression metadata. \\
+\nolinkurl{stats} & yes & Patch statistics including changed ways, speed-tag changes, and SQL row counts. \\
+\end{longtable}
+}
+
+{\scriptsize
+\begin{longtable}{@{}p{3.5cm}p{1.1cm}p{6.6cm}@{}}
+\caption{Current v3 country-catalog fields.}
+\label{tab:contract_catalog}\\
+\toprule
+Field & Required & Meaning \\
+\midrule
+\endfirsthead
+\toprule
+Field & Required & Meaning \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\nolinkurl{format} & yes & Constant identifier \nolinkurl{youspeed.v3.bundle.catalog}. \\
+\nolinkurl{schema_version} & yes & Catalog schema version. \\
+\nolinkurl{variant} & yes & Runtime family identifier, currently \nolinkurl{v3}. \\
+\nolinkurl{country} & yes & Country identifier for the catalog owner. \\
+\nolinkurl{bundle_version} & yes & Logical catalog version. \\
+\nolinkurl{created_at_utc} & yes & Catalog creation timestamp. \\
+\nolinkurl{max_country_pbf_bytes} & yes & Planning threshold that explains why sharding is or is not used. \\
+\nolinkurl{regions} & yes & List of region entries with manifest artifact and optional coverage metadata. \\
+\end{longtable}
+}
+
+\section{Current v3 Bundle Database Schema}
+Table~\ref{tab:db_schema_summary} documents the schema of the current corridor-aware Karlsruhe v3 bundle (\texttt{bundle\_version} \texttt{2026-03-11-shared-node-corridor-hmm}). Internal RTree shadow tables are omitted for readability. The current builder can also materialize additional intermediate tables such as \texttt{way\_endpoints} during construction, but the deployed bundle documented here retains the tables that the runtime actually consumes.
+
+{\scriptsize
+\begin{longtable}{@{}p{2.2cm}p{4.5cm}p{3.6cm}r@{}}
+\caption{Current deployed v3 bundle schema and row counts (Karlsruhe latest corridor-aware bundle).}
+\label{tab:db_schema_summary}\\
+\toprule
+Table & Columns & Purpose & Rows \\
+\midrule
+\endfirsthead
+\toprule
+Table & Columns & Purpose & Rows \\
+\midrule
+\endhead
+\midrule
+\multicolumn{4}{r}{Continued on next page} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\nolinkurl{metadata} & \nolinkurl{key}, \nolinkurl{value} & Build metadata, feature flags, source lineage. & 8 \\
+\nolinkurl{ways} & \nolinkurl{way_id}, class, name or ref, explicit or inherited speed fields, heading, service, tunnel, bbox & Per-way speed, class, heading, and bounding-box attributes. & 242{,}359 \\
+\nolinkurl{ways_rtree} & \nolinkurl{way_id} plus bbox coordinates & Spatial pruning for candidate way retrieval. & 242{,}359 \\
+\nolinkurl{way_geom} & \nolinkurl{way_id}, \nolinkurl{points_json} & Polyline geometry for point-to-segment refinement. & 242{,}359 \\
+\nolinkurl{areas} & \nolinkurl{row_id}, area id, geometry or place fields, residential flag, geometry JSON, bbox & Residential polygons plus place or boundary context. & 32{,}872 \\
+\nolinkurl{areas_rtree} & \nolinkurl{row_id} plus bbox coordinates & Spatial pruning for polygon and area-context lookup. & 32{,}872 \\
+\nolinkurl{way_links} & \nolinkurl{way_id}, linked way id, shared ref, shared node key & Detailed shared-node continuity graph. & 435{,}372 \\
+\nolinkurl{corridor_progress} & Corridor kind or id, side node key, way id, depth and span measures & Stateful tunnel and motorway corridor arbitration. & 11{,}961 \\
+\nolinkurl{corridor_pairs} & Corridor id plus paired corridor identity fields & Pair entry and exit corridor components. & 1{,}656 \\
+\end{longtable}
+}
+
+\section{Europe-wide Explicit Maxspeed Ranking}
+Table~\ref{tab:europe_full_ranking} reproduces the full current Europe-wide ranking used by the comparative provenance scan. The statistic measures explicit \texttt{maxspeed=*} coverage on car-drivable ways and is included here in full because it directly informs target-country prioritization and cross-country provenance interpretation.
+
+{\scriptsize
+\begin{longtable}{@{}r p{4.1cm} c r r r@{}}
+\caption{Europe-wide ranking by explicit \texttt{maxspeed=*} share on car-drivable ways.}
+\label{tab:europe_full_ranking}\\
+\toprule
+Rank & Country & ISO2 & Drivable ways & Tagged ways & Share (\%) \\
+\midrule
+\endfirsthead
+\toprule
+Rank & Country & ISO2 & Drivable ways & Tagged ways & Share (\%) \\
+\midrule
+\endhead
+\midrule
+\multicolumn{6}{r}{Continued on next page} \\
 \midrule
 \endfoot
 \bottomrule
 \endlastfoot
 \input{data/europe_maxspeed_ranking_rows.tex}
 \end{longtable}
-\normalsize
+}
 
 \bibliographystyle{unsrtnat}
 \bibliography{../share/IEEEabrv,../share/references}
