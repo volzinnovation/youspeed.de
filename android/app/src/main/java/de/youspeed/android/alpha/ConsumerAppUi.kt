@@ -11,6 +11,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -95,6 +97,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
@@ -103,6 +106,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -128,6 +132,7 @@ private const val DRIVING_BAN_PULSE_CYCLE_SECONDS = 2.2f
 private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
 private const val SECONDARY_TEXT_RATIO = 9f / 16f
 private const val DEBUG_WIDTH_REFERENCE = "N00.0000 O000.0000"
+private val CITY_BADGE_TEXT_SIZE = 18.sp
 private val TrafficSignFontFamily = FontFamily(
     Font(R.font.u_din_1451_mittelschrift_regular, weight = FontWeight.Normal),
 )
@@ -456,7 +461,7 @@ private fun primaryMetricTextStyle(
     baseSize: androidx.compose.ui.unit.TextUnit,
 ): TextStyle = when {
     ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) -> roundedUiTextStyle(size = baseSize * 0.42f, weight = FontWeight.Bold)
-    ConsumerMainScreenLogic.isSearchingSignal(ui) -> roundedUiTextStyle(size = baseSize, weight = FontWeight.Bold)
+    ConsumerMainScreenLogic.isSearchingSignal(ui) -> roundedUiTextStyle(size = CITY_BADGE_TEXT_SIZE, weight = FontWeight.Bold)
     else -> trafficSignTextStyle(baseSize)
 }
 
@@ -511,6 +516,10 @@ private fun MainScreen(
     val secondaryMetric = ConsumerMainScreenLogic.secondaryMetricText(ui)
     val limitText = ConsumerMainScreenLogic.limitText(ui)
     val runtimeBanner = runtimeBanner(ui)
+    val rendersSearchInLabelSlot = ConsumerMainScreenLogic.isSearchingSignal(ui) &&
+        !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)
+    val displayedPrimaryMetric = if (rendersSearchInLabelSlot) "" else primaryMetric
+    val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
 
     BoxWithConstraints(
         modifier = Modifier
@@ -533,138 +542,108 @@ private fun MainScreen(
         val debugSpacing = max(2f, minDimensionDp.value * 0.004f).dp
         val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = screenInset, vertical = screenInset),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PillIconButton(
-                    onClick = onOpenLocalRecordings,
-                    background = buttonBg,
-                    border = buttonBorder,
-                    modifier = Modifier.testTag("local-recordings-button"),
-                ) {
-                    Icon(Icons.Default.BugReport, contentDescription = "Lokale Erfassungen", tint = foreground)
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                GpsSignalBadge(bars = ui.gpsSignalBars, accuracyM = ui.gpsHorizontalAccuracyM, foreground = foreground)
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = screenInset, bottom = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TopCornerButtons(
+                screenInset = screenInset,
+                foreground = foreground,
+                buttonBg = buttonBg,
+                buttonBorder = buttonBorder,
+                gpsSignalBars = ui.gpsSignalBars,
+                gpsHorizontalAccuracyM = ui.gpsHorizontalAccuracyM,
+                onOpenLocalRecordings = onOpenLocalRecordings,
+            )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                SpeedLimitSign(
-                    limitText = limitText,
-                    signSize = signSize,
-                    numberFontSize = primaryMetricFont,
-                    showsUnlimitedIcon = ui.isUnlimitedSpeedLimitActive && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
-                    onDoubleTap = onCapture,
-                )
+            Spacer(modifier = Modifier.weight(1f))
 
-                Spacer(modifier = Modifier.height(screenInset))
+            SpeedLimitSign(
+                limitText = limitText,
+                signSize = signSize,
+                numberFontSize = primaryMetricFont,
+                showsUnlimitedIcon = !showsPedestrianZoneSign &&
+                    ui.isUnlimitedSpeedLimitActive &&
+                    !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+                showsPedestrianZoneIcon = showsPedestrianZoneSign,
+                onDoubleTap = onCapture,
+            )
 
-                Column(
-                    modifier = Modifier.padding(horizontal = contentHorizontalPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(debugSpacing),
-                ) {
-                    Text(
-                        primaryMetric,
-                        color = foreground,
-                        style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.testTag("primary-metric"),
-                    )
-                    Text(
-                        secondaryMetric,
-                        color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
-                        style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.testTag("secondary-metric"),
-                    )
-                    Spacer(modifier = Modifier.height(metricDebugGap))
-                    if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
-                        CityBadge(
-                            streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
-                            cityName = ConsumerMainScreenLogic.cityBadgeCityText(ui).orEmpty(),
-                            onOpenDebug = onOpenDebug,
-                            maxWidth = signSize * 0.86f,
-                        )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(debugSpacing),
-                            modifier = Modifier.testTag("debug-fix-summary"),
-                        ) {
-                            Text(
-                                ConsumerMainScreenLogic.debugCoordinateText(ui),
-                                color = foreground.copy(alpha = 0.92f),
-                                fontSize = debugFont,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                            )
-                            Text(
-                                ConsumerMainScreenLogic.debugWayIdText(ui),
-                                color = foreground.copy(alpha = 0.82f),
-                                fontSize = debugFont,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                            )
-                        }
-                    }
-                    runtimeBanner?.let { banner ->
-                        ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = banner.background)) {
-                            Text(
-                                banner.text,
-                                color = banner.foreground,
-                                modifier = Modifier.padding(14.dp),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                    if (ui.maintenanceMessage.isNotBlank()) {
-                        ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = SoftCard)) {
-                            Text(
-                                ui.maintenanceMessage,
-                                color = Color.Black,
-                                modifier = Modifier.padding(14.dp),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                    if (ui.lastError.isNotBlank()) {
-                        ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFFF7D9D6))) {
-                            Text(
-                                ui.lastError,
-                                color = SignalRed,
-                                modifier = Modifier.padding(14.dp),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(metricDebugGap))
-            }
+            Spacer(modifier = Modifier.weight(1f))
+
+            MetricStatusBlock(
+                displayedPrimaryMetric = displayedPrimaryMetric,
+                secondaryMetric = secondaryMetric,
+                foreground = foreground,
+                ui = ui,
+                primaryMetricFont = primaryMetricFont,
+                secondaryFont = secondaryFont,
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            LocationStatusBlock(
+                ui = ui,
+                rendersSearchInLabelSlot = rendersSearchInLabelSlot,
+                foreground = foreground,
+                debugFont = debugFont,
+                debugSpacing = debugSpacing,
+                metricDebugGap = metricDebugGap,
+                contentHorizontalPadding = contentHorizontalPadding,
+                runtimeBanner = runtimeBanner,
+                onOpenDebug = onOpenDebug,
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            BottomCornerButtons(
+                horizontalPadding = screenInset,
+                foreground = foreground,
+                buttonBg = buttonBg,
+                buttonBorder = buttonBorder,
+                onOpenLegal = onOpenLegal,
+                onOpenSettings = onOpenSettings,
+            )
         }
+    }
+}
 
-        BottomCornerButtons(
+@Composable
+private fun TopCornerButtons(
+    screenInset: androidx.compose.ui.unit.Dp,
+    foreground: Color,
+    buttonBg: Color,
+    buttonBorder: Color,
+    gpsSignalBars: Int,
+    gpsHorizontalAccuracyM: Double?,
+    onOpenLocalRecordings: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = screenInset),
+        verticalAlignment = Alignment.Top,
+    ) {
+        LocalRecordingsButton(
+            onClick = onOpenLocalRecordings,
             foreground = foreground,
             buttonBg = buttonBg,
             buttonBorder = buttonBorder,
-            onOpenLegal = onOpenLegal,
-            onOpenSettings = onOpenSettings,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        GpsSignalBadge(
+            bars = gpsSignalBars,
+            accuracyM = gpsHorizontalAccuracyM,
+            foreground = foreground,
         )
     }
 }
 
 @Composable
-private fun BoxScope.BottomCornerButtons(
+private fun BottomCornerButtons(
+    horizontalPadding: androidx.compose.ui.unit.Dp,
     foreground: Color,
     buttonBg: Color,
     buttonBorder: Color,
@@ -673,9 +652,8 @@ private fun BoxScope.BottomCornerButtons(
 ) {
     Row(
         modifier = Modifier
-            .align(Alignment.BottomStart)
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         PillIconButton(
@@ -694,6 +672,23 @@ private fun BoxScope.BottomCornerButtons(
         ) {
             Icon(Icons.Default.Settings, contentDescription = "Einstellungen", tint = foreground)
         }
+    }
+}
+
+@Composable
+private fun LocalRecordingsButton(
+    onClick: () -> Unit,
+    foreground: Color,
+    buttonBg: Color,
+    buttonBorder: Color,
+) {
+    PillIconButton(
+        onClick = onClick,
+        background = buttonBg,
+        border = buttonBorder,
+        modifier = Modifier.testTag("local-recordings-button"),
+    ) {
+        Icon(Icons.Default.BugReport, contentDescription = "Lokale Erfassungen", tint = foreground)
     }
 }
 
@@ -720,9 +715,11 @@ private fun PillIconButton(
 @Composable
 private fun SpeedLimitSign(
     limitText: String,
+    modifier: Modifier = Modifier,
     signSize: androidx.compose.ui.unit.Dp,
     numberFontSize: androidx.compose.ui.unit.TextUnit,
     showsUnlimitedIcon: Boolean,
+    showsPedestrianZoneIcon: Boolean,
     onDoubleTap: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -730,54 +727,188 @@ private fun SpeedLimitSign(
     val trafficSignTypeface = rememberTrafficSignTypeface()
     Box(
         modifier = Modifier
-            .padding(top = 8.dp)
+            .then(modifier)
             .size(signSize)
             .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleTap() }) }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            if (showsUnlimitedIcon) {
-                drawCircle(color = Color.White)
-                drawCircle(color = Color.Black.copy(alpha = 0.82f), style = Stroke(width = size.minDimension * 0.028f))
-                repeat(5) { index ->
-                    rotate(degrees = 51f, pivot = center) {
-                        val stripeWidth = size.minDimension * 0.028f
-                        val stripeHeight = size.minDimension * 1.5f
-                        val offsetX = (index - 2) * size.minDimension * 0.07f
-                        drawRect(
-                            color = Color.Black.copy(alpha = 0.34f),
-                            topLeft = Offset(center.x + offsetX - stripeWidth / 2f, center.y - stripeHeight / 2f),
-                            size = Size(stripeWidth, stripeHeight),
-                        )
+        if (showsPedestrianZoneIcon) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_pedestrian_zone_sign),
+                contentDescription = "Fussgaengerzone",
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                if (showsUnlimitedIcon) {
+                    drawCircle(color = Color.White)
+                    drawCircle(color = Color.Black.copy(alpha = 0.82f), style = Stroke(width = size.minDimension * 0.028f))
+                    repeat(5) { index ->
+                        rotate(degrees = 51f, pivot = center) {
+                            val stripeWidth = size.minDimension * 0.028f
+                            val stripeHeight = size.minDimension * 1.5f
+                            val offsetX = (index - 2) * size.minDimension * 0.07f
+                            drawRect(
+                                color = Color.Black.copy(alpha = 0.34f),
+                                topLeft = Offset(center.x + offsetX - stripeWidth / 2f, center.y - stripeHeight / 2f),
+                                size = Size(stripeWidth, stripeHeight),
+                            )
+                        }
                     }
+                } else {
+                    drawCircle(color = Color.White)
+                    drawCircle(color = Color.Black.copy(alpha = 0.75f), style = Stroke(width = size.minDimension * 0.018f))
+                    drawCircle(
+                        color = Color(0xFFD21B24),
+                        style = Stroke(width = size.minDimension * 0.134f),
+                    )
+                    val standardBlackBorderWidth = size.minDimension * 0.018f
+                    val standardRedBandWidth = size.minDimension * 0.134f
+                    val standardInnerDiameter = max(1f, size.minDimension - (2f * (standardBlackBorderWidth + standardRedBandWidth)))
+                    val targetWidth = standardInnerDiameter * 0.86f
+                    val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
+                        color = android.graphics.Color.BLACK
+                        textAlign = AndroidPaint.Align.CENTER
+                        textSize = numberFontPx
+                        typeface = trafficSignTypeface
+                        isFakeBoldText = false
+                        style = AndroidPaint.Style.FILL
+                    }
+                    val measuredWidth = textPaint.measureText(limitText)
+                    if (measuredWidth > targetWidth && measuredWidth > 0f) {
+                        textPaint.textSize *= targetWidth / measuredWidth
+                    }
+                    val metrics = textPaint.fontMetrics
+                    val baseline = center.y - ((metrics.ascent + metrics.descent) / 2f)
+                    drawContext.canvas.nativeCanvas.drawText(limitText, center.x, baseline, textPaint)
                 }
-            } else {
-                drawCircle(color = Color.White)
-                drawCircle(color = Color.Black.copy(alpha = 0.75f), style = Stroke(width = size.minDimension * 0.018f))
-                drawCircle(
-                    color = Color(0xFFD21B24),
-                    style = Stroke(width = size.minDimension * 0.134f),
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricStatusBlock(
+    displayedPrimaryMetric: String,
+    secondaryMetric: String,
+    foreground: Color,
+    ui: ConsumerUiState,
+    primaryMetricFont: androidx.compose.ui.unit.TextUnit,
+    secondaryFont: androidx.compose.ui.unit.TextUnit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            displayedPrimaryMetric,
+            color = foreground,
+            style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("primary-metric"),
+        )
+        Text(
+            secondaryMetric,
+            color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
+            style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("secondary-metric"),
+        )
+    }
+}
+
+@Composable
+private fun LocationStatusBlock(
+    ui: ConsumerUiState,
+    rendersSearchInLabelSlot: Boolean,
+    foreground: Color,
+    debugFont: androidx.compose.ui.unit.TextUnit,
+    debugSpacing: androidx.compose.ui.unit.Dp,
+    metricDebugGap: androidx.compose.ui.unit.Dp,
+    contentHorizontalPadding: androidx.compose.ui.unit.Dp,
+    runtimeBanner: RuntimeBanner?,
+    onOpenDebug: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = contentHorizontalPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(debugSpacing),
+    ) {
+        if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
+            CityBadge(
+                streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
+                cityName = ConsumerMainScreenLogic.cityBadgeCityText(ui).orEmpty(),
+                onOpenDebug = onOpenDebug,
+            )
+        } else if (rendersSearchInLabelSlot) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(debugSpacing),
+                modifier = Modifier.testTag("search-summary"),
+            ) {
+                Text(
+                    "Suche...",
+                    color = foreground.copy(alpha = 0.92f),
+                    style = roundedUiTextStyle(size = CITY_BADGE_TEXT_SIZE, weight = FontWeight.Bold),
+                    textAlign = TextAlign.Center,
                 )
-                val standardBlackBorderWidth = size.minDimension * 0.018f
-                val standardRedBandWidth = size.minDimension * 0.134f
-                val standardInnerDiameter = max(1f, size.minDimension - (2f * (standardBlackBorderWidth + standardRedBandWidth)))
-                val targetWidth = standardInnerDiameter * 0.86f
-                val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
-                    color = android.graphics.Color.BLACK
-                    textAlign = AndroidPaint.Align.CENTER
-                    textSize = numberFontPx
-                    typeface = trafficSignTypeface
-                    isFakeBoldText = false
-                    style = AndroidPaint.Style.FILL
-                }
-                val measuredWidth = textPaint.measureText(limitText)
-                if (measuredWidth > targetWidth && measuredWidth > 0f) {
-                    textPaint.textSize *= targetWidth / measuredWidth
-                }
-                val metrics = textPaint.fontMetrics
-                val baseline = center.y - ((metrics.ascent + metrics.descent) / 2f)
-                drawContext.canvas.nativeCanvas.drawText(limitText, center.x, baseline, textPaint)
+            }
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(debugSpacing),
+                modifier = Modifier.testTag("debug-fix-summary"),
+            ) {
+                Text(
+                    ConsumerMainScreenLogic.debugCoordinateText(ui),
+                    color = foreground.copy(alpha = 0.92f),
+                    fontSize = debugFont,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Text(
+                    ConsumerMainScreenLogic.debugWayIdText(ui),
+                    color = foreground.copy(alpha = 0.82f),
+                    fontSize = debugFont,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(metricDebugGap))
+        if (runtimeBanner != null) {
+            ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = runtimeBanner.background)) {
+                Text(
+                    runtimeBanner.text,
+                    color = runtimeBanner.foreground,
+                    modifier = Modifier.padding(14.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        if (ui.maintenanceMessage.isNotBlank()) {
+            ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = SoftCard)) {
+                Text(
+                    ui.maintenanceMessage,
+                    color = Color.Black,
+                    modifier = Modifier.padding(14.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        if (ui.lastError.isNotBlank()) {
+            ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFFF7D9D6))) {
+                Text(
+                    ui.lastError,
+                    color = SignalRed,
+                    modifier = Modifier.padding(14.dp),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
@@ -788,18 +919,19 @@ private fun CityBadge(
     streetName: String,
     cityName: String,
     onOpenDebug: () -> Unit,
-    maxWidth: androidx.compose.ui.unit.Dp,
 ) {
     Card(
         modifier = Modifier
-            .widthIn(max = maxWidth)
+            .fillMaxWidth()
             .clickable { onOpenDebug() }
             .testTag("city-badge"),
         colors = CardDefaults.cardColors(containerColor = BrightYellow),
         border = androidx.compose.foundation.BorderStroke(2.dp, Color.Black.copy(alpha = 0.9f)),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (streetName.isNotBlank()) {
@@ -807,8 +939,11 @@ private fun CityBadge(
                     streetName,
                     color = Color.Black,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    fontSize = CITY_BADGE_TEXT_SIZE,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             if (cityName.isNotBlank()) {
@@ -816,8 +951,11 @@ private fun CityBadge(
                     cityName,
                     color = Color.Black,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    fontSize = CITY_BADGE_TEXT_SIZE,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -1086,6 +1224,38 @@ private fun DebugSheet(
             item {
                 SectionCard("Letzter Fix") {
                     controller.debugRows().forEach { (key, value) -> DebugLabel(key, value) }
+                }
+            }
+            item {
+                SectionCard("Matcher") {
+                    DebugLabel("Aktiv", ui.matcherDebugProfile.debugLabel)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MatcherDebugProfile.entries.forEach { profile ->
+                            val selected = profile == ui.matcherDebugProfile
+                            val colors = if (selected) {
+                                ButtonDefaults.buttonColors(containerColor = SignalGreen)
+                            } else {
+                                ButtonDefaults.outlinedButtonColors()
+                            }
+                            val buttonModifier = Modifier.fillMaxWidth()
+                            if (selected) {
+                                Button(
+                                    onClick = { controller.setMatcherDebugProfile(profile) },
+                                    colors = colors,
+                                    modifier = buttonModifier,
+                                ) {
+                                    Text(profile.debugLabel)
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { controller.setMatcherDebugProfile(profile) },
+                                    modifier = buttonModifier,
+                                ) {
+                                    Text(profile.debugLabel)
+                                }
+                            }
+                        }
+                    }
                 }
             }
             controller.currentOsmUrl()?.let { osmUrl ->

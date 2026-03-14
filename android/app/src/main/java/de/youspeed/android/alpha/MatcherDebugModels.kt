@@ -1,5 +1,50 @@
 package de.youspeed.android.alpha
 
+internal enum class LookupMatchingModel {
+    CONNECTED_BASELINE,
+    SIMPLE_SPEED_REF_HEURISTIC,
+    SIMPLE_SPEED_REF_CONNECTED_HEURISTIC,
+    CORRIDOR_HMM_RAW_MINI_HMM,
+    CORRIDOR_HMM,
+    CORRIDOR_HMM_NO_THREE_WAY_GATE,
+    CORRIDOR_HMM_NO_SAME_REF_BOUNCE_GATE,
+    CORRIDOR_HMM_ANTI_ABA_HYSTERESIS,
+}
+
+enum class MatcherDebugProfile(
+    val storageValue: String,
+    val shortLabel: String,
+    val displayName: String,
+    internal val lookupModel: LookupMatchingModel,
+) {
+    M1("m1", "M1", "Connected baseline", LookupMatchingModel.CONNECTED_BASELINE),
+    M2("m2", "M2", "Nearest + street-ref continuity", LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC),
+    M3("m3", "M3", "M2 + connected-candidate gate", LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC),
+    M4("m4", "M4", "Corridor raw mini-HMM", LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM),
+    M5("m5", "M5", "Corridor-aware final", LookupMatchingModel.CORRIDOR_HMM),
+    ;
+
+    val debugLabel: String
+        get() = "$shortLabel $displayName"
+
+    companion object {
+        const val forcedProfileVersion: Int = 2
+        val default: MatcherDebugProfile = M2
+
+        fun fromStored(raw: String?): MatcherDebugProfile {
+            val normalized = raw?.trim()?.lowercase().orEmpty()
+            return entries.firstOrNull { it.storageValue == normalized } ?: default
+        }
+
+        fun resolveInitialProfile(raw: String?, forcedVersion: Int): MatcherDebugProfile {
+            if (forcedVersion < forcedProfileVersion) {
+                return default
+            }
+            return fromStored(raw)
+        }
+    }
+}
+
 internal data class WayMatchHypothesis(
     val wayId: String,
     val streetRef: String?,

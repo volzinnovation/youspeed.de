@@ -1,6 +1,7 @@
 package de.youspeed.android.alpha
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,6 +67,13 @@ class V3SpeedLimitLookupTests {
         assertEquals(DerivedSpeedSource.INHERITED_TAG, urban.source)
         assertEquals(100, rural.speed)
         assertEquals(DerivedSpeedSource.INHERITED_TAG, rural.source)
+    }
+
+    @Test
+    fun germanBelow50SpeedLimitImpliesInsideCity() {
+        assertTrue(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "DEU", speedKmh = 30))
+        assertFalse(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "DEU", speedKmh = 50))
+        assertFalse(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "NLD", speedKmh = 30))
     }
 
     @Test

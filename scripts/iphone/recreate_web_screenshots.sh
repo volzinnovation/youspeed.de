@@ -15,6 +15,7 @@ captures=(
   "warn-level-1-money.png:warn-level-1"
   "warn-level-2-points.png:warn-level-2"
   "warn-level-3-driving-ban.png:warn-level-3"
+  "pedestrian-zone-schritt.png:pedestrian-zone"
   "autobahn-unlimited-over-130.png:autobahn-unlimited-above-130"
 )
 

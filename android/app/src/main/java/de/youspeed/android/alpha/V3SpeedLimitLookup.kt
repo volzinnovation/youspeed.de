@@ -49,7 +49,10 @@ internal data class SpeedLookupResult(
 
 internal class V3SpeedLimitLookup(
     private val dbPath: String,
+    countryCode: String? = null,
+    private val matchingModel: LookupMatchingModel = LookupMatchingModel.CORRIDOR_HMM,
 ) : Closeable {
+    private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
     private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
@@ -63,6 +66,7 @@ internal class V3SpeedLimitLookup(
     private val hasWayGeomTable = tableExists("way_geom")
     private val hasWayLinksTable = tableExists("way_links")
     private val hasCorridorProgressTable = tableExists("corridor_progress")
+    private val corridorPairContext: CorridorPairContext by lazy { loadCorridorPairContext() }
     private val hasWayBoundsColumns = hasBoundsColumns("ways")
     private val hasAreaBoundsColumns = hasBoundsColumns("areas")
     private val hasStreetNameColumn = columnExists("ways", "street_name")
@@ -75,6 +79,30 @@ internal class V3SpeedLimitLookup(
     @Volatile private var allowAreasRtreeQueries = hasAreasRtreeTable
     @Volatile private var allowCityBoundaryRtreeQueries = hasCityBoundaryRtreeTable
     @Volatile private var allowCityPlaceRtreeQueries = hasCityPlaceRtreeTable
+
+    private val usesThreeWayGate: Boolean
+        get() = matchingModel != LookupMatchingModel.CORRIDOR_HMM_NO_THREE_WAY_GATE
+
+    private val usesSameRefBounceGate: Boolean
+        get() = matchingModel != LookupMatchingModel.CORRIDOR_HMM_NO_SAME_REF_BOUNCE_GATE
+
+    private val usesAntiAbaHysteresis: Boolean
+        get() = matchingModel == LookupMatchingModel.CORRIDOR_HMM_ANTI_ABA_HYSTERESIS
+
+    private val usesRawMiniHmmSelection: Boolean
+        get() = matchingModel == LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM
+
+    private val usesCorridorMatcher: Boolean
+        get() = when (matchingModel) {
+            LookupMatchingModel.CONNECTED_BASELINE,
+            LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> false
+            LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM,
+            LookupMatchingModel.CORRIDOR_HMM,
+            LookupMatchingModel.CORRIDOR_HMM_NO_THREE_WAY_GATE,
+            LookupMatchingModel.CORRIDOR_HMM_NO_SAME_REF_BOUNCE_GATE,
+            LookupMatchingModel.CORRIDOR_HMM_ANTI_ABA_HYSTERESIS -> true
+        }
 
     fun lookup(
         lat: Double,
@@ -149,6 +177,7 @@ internal class V3SpeedLimitLookup(
         }
         val wayLinks = loadWayLinksContext(normalizedMatchContext, candidates)
         val corridorProgress = loadCorridorProgressContext(candidates)
+        val corridorPairs = corridorPairContext
         val accuracyBufferM = scaledAccuracyBufferM(horizontalAccuracyM)
 
         val selection = selectCandidate(
@@ -162,6 +191,7 @@ internal class V3SpeedLimitLookup(
             matchContext = normalizedMatchContext,
             wayLinks = wayLinks,
             corridorProgress = corridorProgress,
+            corridorPairs = corridorPairs,
         )
         val best = selection.selected
         val insideCityDecision = when {
@@ -187,6 +217,10 @@ internal class V3SpeedLimitLookup(
             insideCityDecision.first == true -> 50
             else -> null
         }
+        val resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
+            insideCityDecision = insideCityDecision,
+            speedKmh = effectiveSpeed,
+        )
 
         return SpeedLookupResult(
             wayId = best?.wayId,
@@ -197,8 +231,8 @@ internal class V3SpeedLimitLookup(
             speedLimitKmh = effectiveSpeed,
             isUnlimitedSpeedLimit = best?.isUnlimitedSpeedLimit == true,
             cityName = cityContext.cityName,
-            insideCity = insideCityDecision.first,
-            citySource = insideCityDecision.second,
+            insideCity = resolvedInsideCityDecision.first,
+            citySource = resolvedInsideCityDecision.second,
             queryTimeMs = elapsedMs(startedAtNs),
             candidateCount = candidates.size,
             speedCandidateCount = candidates.count { it.speedLimitKmh != null || it.isUnlimitedSpeedLimit },
@@ -265,6 +299,19 @@ internal class V3SpeedLimitLookup(
         }
     }
 
+    private fun applyGermanLowSpeedInCityHeuristic(
+        insideCityDecision: Pair<Boolean?, String?>,
+        speedKmh: Int?,
+    ): Pair<Boolean?, String?> {
+        if (insideCityDecision.first == true) {
+            return insideCityDecision
+        }
+        if (!germanLowSpeedLimitImpliesInsideCity(countryCode = countryCode, speedKmh = speedKmh)) {
+            return insideCityDecision
+        }
+        return true to "de_speed_limit_lt_50"
+    }
+
     private fun selectCandidate(
         candidates: List<WayCandidate>,
         radiusM: Double,
@@ -276,18 +323,23 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         wayLinks: WayLinksContext,
         corridorProgress: CorridorProgressContext,
+        corridorPairs: CorridorPairContext,
     ): CandidateSelection {
         if (candidates.isEmpty()) {
             return CandidateSelection()
         }
         val sortedCandidates = candidates.sortedWith(candidateComparator)
+        val activeCorridorAnchorState = corridorAnchor(matchContext)?.state ?: CorridorState.SURFACE
+        val activeCorridorLabel = matchContext.activeCorridorState?.let {
+            "${it.kind}#${it.corridorId}"
+        } ?: activeCorridorAnchorState.wireName
         val selectionTrace = mutableListOf(
             MatchSelectionTrace(
                 step = "context",
                 detail = buildString {
                     append("preferred=").append(matchContext.preferredWayId ?: "nil")
+                    append(" corridor=").append(activeCorridorLabel)
                     append(" tunnel_mode=").append(matchContext.isInTunnelMode)
-                    append(" motorway_mode=").append(matchContext.isInMotorwayMode)
                     append(" gps_loss=").append(matchContext.hadRecentGpsSignalLoss)
                     append(" tunnel_approach=").append(matchContext.tunnelApproachFixCount)
                     append(" corridor_approach=").append(matchContext.approachCorridorFixCount)
@@ -296,25 +348,165 @@ internal class V3SpeedLimitLookup(
                 },
             ),
         )
+        val selectableCandidates = if (!usesCorridorMatcher) {
+            sortedCandidates
+        } else {
+            run {
+                val corridorBaseCandidates = sortedCandidates.filter {
+                    isCorridorCandidateSelectable(
+                        candidate = it,
+                        matchContext = matchContext,
+                        wayLinks = wayLinks,
+                        progressContext = corridorProgress,
+                        pairContext = corridorPairs,
+                        accuracyBufferM = accuracyBufferM,
+                        horizontalAccuracyM = horizontalAccuracyM,
+                        gpsSignalBars = gpsSignalBars,
+                    )
+                }
+                val corridorSelectableCandidates = suppressAmbiguousSurfaceToTunnelEntries(
+                    candidates = corridorBaseCandidates,
+                    matchContext = matchContext,
+                    wayLinks = wayLinks,
+                    progressContext = corridorProgress,
+                    accuracyBufferM = accuracyBufferM,
+                    horizontalAccuracyM = horizontalAccuracyM,
+                    gpsSignalBars = gpsSignalBars,
+                )
+                when {
+                    corridorSelectableCandidates.isNotEmpty() -> {
+                        if (corridorSelectableCandidates.size != sortedCandidates.size) {
+                            val filteredCount = sortedCandidates.size - corridorSelectableCandidates.size
+                            selectionTrace += MatchSelectionTrace(
+                                step = "corridor_gate",
+                                detail = "filtered $filteredCount candidates incompatible with corridor state $activeCorridorLabel",
+                            )
+                        }
+                        corridorSelectableCandidates
+                    }
+
+                    shouldFallbackWhenCorridorGateEmptiesCandidates(matchContext) -> {
+                        selectionTrace += MatchSelectionTrace(
+                            step = "corridor_gate",
+                            detail = "kept full candidate set after empty corridor gate during recent gps loss",
+                        )
+                        sortedCandidates
+                    }
+
+                    else -> {
+                        selectionTrace += MatchSelectionTrace(
+                            step = "corridor_gate",
+                            detail = "rejected all candidates for corridor state $activeCorridorLabel",
+                        )
+                        corridorSelectableCandidates
+                    }
+                }
+            }
+        }
+        val nearestAlternativeDistanceCandidate = selectableCandidates
+            .filter { normalizedWayId(it.wayId) != normalizedWayId(matchContext.preferredWayId) }
+            .minWithOrNull { lhs, rhs ->
+                when {
+                    isBetterDistanceCandidate(lhs, rhs) -> -1
+                    isBetterDistanceCandidate(rhs, lhs) -> 1
+                    else -> 0
+                }
+            }
         val graphSelectableCandidates = if (shouldApplyConnectedTransitionGate(matchContext, wayLinks)) {
-            val connectedCandidates = sortedCandidates.filter {
+            val connectedCandidates = selectableCandidates.filter {
                 isConnectedTransitionCandidate(it, matchContext, wayLinks)
             }
             if (connectedCandidates.isNotEmpty()) {
-                if (connectedCandidates.size != sortedCandidates.size) {
+                if (connectedCandidates.size != selectableCandidates.size) {
                     selectionTrace += MatchSelectionTrace(
                         step = "road_graph_gate",
-                        detail = "filtered ${sortedCandidates.size - connectedCandidates.size} disconnected candidates after warmup",
+                        detail = "filtered ${selectableCandidates.size - connectedCandidates.size} disconnected candidates after warmup",
                     )
                 }
                 connectedCandidates
             } else {
-                sortedCandidates
+                selectableCandidates
             }
         } else {
-            sortedCandidates
+            selectableCandidates
         }
-        val bestGeometric = graphSelectableCandidates.firstOrNull() ?: return CandidateSelection(selectionTrace = selectionTrace)
+        val portalEligibleTunnels = graphSelectableCandidates.filter {
+            isPortalEligibleTunnelCandidate(
+                candidate = it,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+                accuracyBufferM = accuracyBufferM,
+            )
+        }
+        val nearbyTunnelCandidateWayIds = sortedCandidates.asSequence()
+            .filter { isTruthyOsmTag(it.tunnel) }
+            .mapNotNull { normalizedWayId(it.wayId) }
+            .toCollection(linkedSetOf())
+        val nearbyTunnelCandidateRefs = sortedCandidates.asSequence()
+            .filter { isTruthyOsmTag(it.tunnel) }
+            .flatMap { normalizedRefTokens(it.streetRef).asSequence() }
+            .toCollection(linkedSetOf())
+        val portalEligibleTunnelWayIds = portalEligibleTunnels.mapNotNullTo(linkedSetOf()) { normalizedWayId(it.wayId) }
+        val portalEligibleTunnelRefs = portalEligibleTunnels.flatMapTo(linkedSetOf()) { normalizedRefTokens(it.streetRef) }
+        if (!usesCorridorMatcher) {
+            return when (matchingModel) {
+                LookupMatchingModel.CONNECTED_BASELINE -> {
+                    val baselineSelection = selectConnectedBaselineCandidate(
+                        candidates = graphSelectableCandidates,
+                        matchContext = matchContext,
+                        observedHeadingDeg = observedHeadingDeg,
+                        speedKmh = speedKmh,
+                        wayLinks = wayLinks,
+                        accuracyBufferM = accuracyBufferM,
+                    )
+                    selectionTrace += baselineSelection.selectionTrace
+                    buildNonCorridorCandidateSelection(
+                        finalSelected = baselineSelection.selected,
+                        traceRankedCandidates = baselineSelection.traceRankedCandidates,
+                        selectionTrace = selectionTrace,
+                        nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
+                        nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
+                        portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
+                        portalEligibleTunnelRefs = portalEligibleTunnelRefs,
+                    )
+                }
+
+                LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> {
+                    val simpleCandidates = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
+                        graphSelectableCandidates
+                    } else {
+                        sortedCandidates
+                    }
+                    val simpleSelection = selectSimpleSpeedRefHeuristicCandidate(
+                        candidates = simpleCandidates,
+                        matchContext = matchContext,
+                        speedKmh = speedKmh,
+                        horizontalAccuracyM = horizontalAccuracyM,
+                        wayLinks = wayLinks,
+                    )
+                    selectionTrace += simpleSelection.selectionTrace
+                    buildNonCorridorCandidateSelection(
+                        finalSelected = simpleSelection.selected,
+                        traceRankedCandidates = simpleSelection.traceRankedCandidates,
+                        selectionTrace = selectionTrace,
+                        nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
+                        nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
+                        portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
+                        portalEligibleTunnelRefs = portalEligibleTunnelRefs,
+                        modelTraceName = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
+                            "simple_speed_ref_connected"
+                        } else {
+                            "simple_speed_ref"
+                        },
+                    )
+                }
+
+                else -> CandidateSelection()
+            }
+        }
+        val bestGeometric = graphSelectableCandidates.firstOrNull()
 
         var preferredCandidate: WayCandidate? = null
         var sameRefCandidate: WayCandidate? = null
@@ -339,43 +531,18 @@ internal class V3SpeedLimitLookup(
                 ContinuityClass.NONE -> Unit
             }
         }
-
-        val portalEligibleTunnels = graphSelectableCandidates.filter {
-            isPortalEligibleTunnelCandidate(
-                candidate = it,
-                matchContext = matchContext,
-                wayLinks = wayLinks,
-                corridorProgress = corridorProgress,
-                accuracyBufferM = accuracyBufferM,
-            )
-        }
-        val nearbyTunnelCandidateWayIds = sortedCandidates.asSequence()
-            .filter { isTruthyOsmTag(it.tunnel) }
-            .mapNotNull { normalizedWayId(it.wayId) }
-            .toCollection(linkedSetOf())
-        val nearbyTunnelCandidateRefs = sortedCandidates.asSequence()
-            .filter { isTruthyOsmTag(it.tunnel) }
-            .flatMap { normalizedRefTokens(it.streetRef).asSequence() }
-            .toCollection(linkedSetOf())
-        val portalEligibleTunnelWayIds = portalEligibleTunnels.mapNotNullTo(linkedSetOf()) { normalizedWayId(it.wayId) }
-        val portalEligibleTunnelRefs = portalEligibleTunnels.flatMapTo(linkedSetOf()) { normalizedRefTokens(it.streetRef) }
         var usedWalkingTurnSwitch = false
-
-        val nearestAlternativeDistanceCandidate = graphSelectableCandidates
-            .filter { normalizedWayId(it.wayId) != normalizedWayId(matchContext.preferredWayId) }
-            .minWithOrNull { lhs, rhs ->
-                when {
-                    isBetterDistanceCandidate(lhs, rhs) -> -1
-                    isBetterDistanceCandidate(rhs, lhs) -> 1
-                    else -> 0
-                }
-            }
 
         var heuristicSelected: WayCandidate? = null
         var lockHeuristicSelection = false
-        if (preferredCandidate != null && shouldSuppressImmediateSameRefBounce(bestGeometric, preferredCandidate, matchContext, wayLinks, accuracyBufferM)) {
+        if (bestGeometric != null &&
+            preferredCandidate != null &&
+            usesSameRefBounceGate &&
+            shouldSuppressImmediateSameRefBounce(bestGeometric, preferredCandidate, matchContext, wayLinks, accuracyBufferM)
+        ) {
             heuristicSelected = preferredCandidate
-        } else if (preferredCandidate != null &&
+        } else if (bestGeometric != null &&
+            preferredCandidate != null &&
             shouldPreferSameRefAlternative(
                 preferredCandidate = preferredCandidate,
                 alternativeCandidate = bestGeometric,
@@ -398,7 +565,9 @@ internal class V3SpeedLimitLookup(
         ) {
             heuristicSelected = linkedWayCandidate
             lockHeuristicSelection = true
-        } else if (preferredCandidate != null && nearestAlternativeDistanceCandidate != null &&
+        } else if (
+            preferredCandidate != null &&
+            nearestAlternativeDistanceCandidate != null &&
             shouldForceGeometricCandidateAtWalkingSpeed(preferredCandidate, nearestAlternativeDistanceCandidate, speedKmh, accuracyBufferM, matchContext)
         ) {
             heuristicSelected = nearestAlternativeDistanceCandidate
@@ -408,19 +577,27 @@ internal class V3SpeedLimitLookup(
                 step = "low_speed_rule",
                 detail = "selected geometric turn ${nearestAlternativeDistanceCandidate.wayId ?: "nil"} over preferred ${preferredCandidate.wayId ?: "nil"} at walking speed",
             )
-        } else if (preferredCandidate != null &&
+        } else if (
+            bestGeometric != null &&
+            preferredCandidate != null &&
             shouldKeepContinuityCandidate(preferredCandidate, bestGeometric, radiusM, accuracyBufferM, PREFERRED_WAY_SCORE_SLACK_M, PREFERRED_WAY_DISTANCE_MULTIPLIER, PREFERRED_WAY_DISTANCE_FLOOR_M)
         ) {
             heuristicSelected = preferredCandidate
-        } else if (sameRefCandidate != null &&
+        } else if (
+            bestGeometric != null &&
+            sameRefCandidate != null &&
             shouldKeepContinuityCandidate(sameRefCandidate, bestGeometric, radiusM, accuracyBufferM, SAME_REF_SCORE_SLACK_M, SAME_REF_DISTANCE_MULTIPLIER, SAME_REF_DISTANCE_FLOOR_M)
         ) {
             heuristicSelected = sameRefCandidate
-        } else if (linkedWayCandidate != null &&
+        } else if (
+            bestGeometric != null &&
+            linkedWayCandidate != null &&
             shouldKeepContinuityCandidate(linkedWayCandidate, bestGeometric, radiusM, accuracyBufferM, LINKED_WAY_SCORE_SLACK_M, LINKED_WAY_DISTANCE_MULTIPLIER, LINKED_WAY_DISTANCE_FLOOR_M)
         ) {
             heuristicSelected = linkedWayCandidate
-        } else if (recentWayCandidate != null &&
+        } else if (
+            bestGeometric != null &&
+            recentWayCandidate != null &&
             shouldKeepContinuityCandidate(recentWayCandidate, bestGeometric, radiusM, accuracyBufferM, RECENT_WAY_SCORE_SLACK_M, RECENT_WAY_DISTANCE_MULTIPLIER, RECENT_WAY_DISTANCE_FLOOR_M)
         ) {
             heuristicSelected = recentWayCandidate
@@ -445,29 +622,139 @@ internal class V3SpeedLimitLookup(
                 observedHeadingDeg = observedHeadingDeg,
                 speedKmh = speedKmh,
                 wayLinks = wayLinks,
+                horizontalAccuracyM = horizontalAccuracyM,
+                gpsSignalBars = gpsSignalBars,
+                corridorProgress = corridorProgress,
+                corridorPairs = corridorPairs,
             )
         }
-        val usedMiniHMM = !lockHeuristicSelection && miniHMMSelection.selectedCandidate != null
-        val baselineSelected = when {
-            lockHeuristicSelection -> heuristicSelected
-            heuristicSelected != null && miniHMMSelection.selectedCandidate != null -> {
-                val heuristicContinuity = continuityClass(heuristicSelected, matchContext, wayLinks)
-                val hmmContinuity = continuityClass(miniHMMSelection.selectedCandidate, matchContext, wayLinks)
-                if (continuityPriority(heuristicContinuity) > continuityPriority(hmmContinuity)) heuristicSelected else miniHMMSelection.selectedCandidate
-            }
-            miniHMMSelection.selectedCandidate != null -> miniHMMSelection.selectedCandidate
-            else -> heuristicSelected
-        }
-
         val traceRankedCandidates = buildTraceRankedCandidates(
             candidates = sortedCandidates,
             matchContext = matchContext,
             wayLinks = wayLinks,
             corridorProgress = corridorProgress,
+            corridorPairs = corridorPairs,
             accuracyBufferM = accuracyBufferM,
+            horizontalAccuracyM = horizontalAccuracyM,
+            gpsSignalBars = gpsSignalBars,
         )
         val traceTop2Margin = top2TraceMargin(traceRankedCandidates)
-        val threeWayGateSelection = if (!lockHeuristicSelection && shouldUseThreeWayGate(baselineSelected, matchContext)) {
+        val signalEvidence = signalQualityEvidence(
+            matchContext = matchContext,
+            horizontalAccuracyM = horizontalAccuracyM,
+            gpsSignalBars = gpsSignalBars,
+        )
+        val usedMiniHMM = !lockHeuristicSelection && miniHMMSelection.selectedCandidate != null
+        val baselineSelected = when {
+            lockHeuristicSelection -> heuristicSelected
+            miniHMMSelection.selectedCorridorState != null &&
+                miniHMMSelection.selectedCandidate != null &&
+                candidateCorridorState(
+                    candidate = miniHMMSelection.selectedCandidate,
+                    matchContext = matchContext,
+                    wayLinks = wayLinks,
+                    corridorProgress = corridorProgress,
+                )?.let { candidateCorridorState ->
+                    shouldPromoteMiniHMMCorridorSelection(
+                        state = miniHMMSelection.selectedCorridorState,
+                        candidate = miniHMMSelection.selectedCandidate,
+                        candidateCorridorState = candidateCorridorState,
+                        heuristicCandidate = heuristicSelected,
+                        matchContext = matchContext,
+                        signalEvidence = signalEvidence,
+                    )
+                } == true -> miniHMMSelection.selectedCandidate
+
+            miniHMMSelection.selectedCorridorState != null &&
+                miniHMMSelection.selectedCandidate != null &&
+                heuristicSelected != null &&
+                shouldKeepSurfaceHeuristicOverUncommittedTunnelCandidate(
+                    state = miniHMMSelection.selectedCorridorState,
+                    tunnelCandidate = miniHMMSelection.selectedCandidate,
+                    heuristicCandidate = heuristicSelected,
+                ) -> heuristicSelected
+
+            heuristicSelected != null && miniHMMSelection.selectedCandidate != null -> {
+                val heuristicContinuity = continuityClass(heuristicSelected, matchContext, wayLinks)
+                val hmmContinuity = continuityClass(miniHMMSelection.selectedCandidate, matchContext, wayLinks)
+                if (continuityPriority(heuristicContinuity) > continuityPriority(hmmContinuity)) {
+                    heuristicSelected
+                } else {
+                    miniHMMSelection.selectedCandidate
+                }
+            }
+
+            miniHMMSelection.selectedCandidate != null -> miniHMMSelection.selectedCandidate
+            else -> heuristicSelected
+        }
+        if (usesRawMiniHmmSelection) {
+            val finalSelected = miniHMMSelection.selectedCandidate ?: heuristicSelected
+            val finalActiveCorridorState = finalSelected?.let { candidate ->
+                val corridorState = candidateCorridorState(
+                    candidate = candidate,
+                    matchContext = matchContext,
+                    wayLinks = wayLinks,
+                    corridorProgress = corridorProgress,
+                ) ?: return@let null
+                if (sameCorridorState(matchContext.activeCorridorState, corridorState.snapshot) ||
+                    shouldTriggerActiveCorridorMode(corridorState, matchContext)
+                ) {
+                    corridorState.snapshot
+                } else {
+                    null
+                }
+            }
+            val selectedWayId = normalizedWayId(finalSelected?.wayId)
+            val candidateTraces = traceRankedCandidates
+                .take(MAX_TRACE_CANDIDATE_COUNT)
+                .map { entry ->
+                    MatcherCandidateTrace(
+                        rank = entry.traceRank,
+                        wayId = entry.candidate.wayId,
+                        score = entry.traceScore,
+                        distanceM = entry.candidate.distanceM,
+                        geometryScore = entry.candidate.score,
+                        endpointProximityM = entry.candidate.endpointProximityM,
+                        continuityClass = entry.continuity.traceName,
+                        highway = entry.candidate.highway,
+                        service = entry.candidate.service,
+                        streetName = entry.candidate.streetName,
+                        streetRef = entry.candidate.streetRef,
+                        tunnel = entry.candidate.tunnel,
+                        tunnelSelectable = entry.tunnelSelectable,
+                        corridorSelectable = entry.corridorSelectable,
+                        portalEligible = entry.portalEligible,
+                        isSelected = normalizedWayId(entry.candidate.wayId) == selectedWayId,
+                    )
+                }
+            finalSelected?.let {
+                selectionTrace += MatchSelectionTrace(
+                    step = "final",
+                    detail = "selected ${it.wayId ?: "nil"} tunnel=${isTruthyOsmTag(it.tunnel)} corridor=${finalActiveCorridorState?.let { state -> "${state.kind}#${state.corridorId}" } ?: "none"} model=raw_mini_hmm",
+                )
+            }
+            return CandidateSelection(
+                selected = finalSelected,
+                candidateTraces = candidateTraces,
+                nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
+                nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
+                portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
+                portalEligibleTunnelRefs = portalEligibleTunnelRefs,
+                activeCorridorState = finalActiveCorridorState,
+                approachCorridorStateCandidate = null,
+                usedWalkingTurnSwitch = usedWalkingTurnSwitch,
+                usedMiniHMM = usedMiniHMM,
+                miniHMMCandidateCount = miniHMMSelection.candidateCount,
+                matchHypotheses = miniHMMSelection.hypotheses,
+                selectionTrace = selectionTrace,
+            )
+        }
+
+        val shouldApplyThreeWayGate = usesThreeWayGate &&
+            !lockHeuristicSelection &&
+            (miniHMMSelection.selectedCorridorState == null || miniHMMSelection.selectedCorridorState == CorridorSequenceState.SURFACE) &&
+            shouldUseThreeWayGate(baselineSelected, matchContext)
+        val threeWayGateSelection = if (shouldApplyThreeWayGate) {
             selectThreeWayGateCandidate(
                 candidates = traceRankedCandidates,
                 currentSelected = baselineSelected,
@@ -484,6 +771,7 @@ internal class V3SpeedLimitLookup(
 
         val selectedAfterThreeWay = if (threeWayGateSelection != null) {
             if (baselineSelected != null &&
+                usesSameRefBounceGate &&
                 shouldSuppressImmediateSameRefBounce(threeWayGateSelection.candidate, baselineSelected, matchContext, wayLinks, accuracyBufferM)
             ) {
                 selectionTrace += MatchSelectionTrace(
@@ -514,66 +802,179 @@ internal class V3SpeedLimitLookup(
         miniHMMSelection.selectedCandidate?.let {
             selectionTrace += MatchSelectionTrace(
                 step = "mini_hmm",
-                detail = "selected ${it.wayId ?: "nil"} beam=${miniHMMSelection.candidateCount}",
+                detail = "selected ${it.wayId ?: "nil"} state=${miniHMMSelection.selectedCorridorState?.wireName ?: "surface"} beam=${miniHMMSelection.candidateCount}",
             )
         }
 
-        var selected = selectedAfterThreeWay ?: bestGeometric
-
-        val bestPortalEligibleTunnel = portalEligibleTunnels.firstOrNull()
-        if (bestPortalEligibleTunnel != null && bestPortalEligibleTunnel != selected &&
-            shouldPromoteTunnelEntry(bestPortalEligibleTunnel, selected, matchContext, wayLinks, corridorProgress, horizontalAccuracyM, gpsSignalBars, accuracyBufferM)
-        ) {
-            selected = bestPortalEligibleTunnel
-            selectionTrace += MatchSelectionTrace(
-                step = "tunnel_entry_gate",
-                detail = "promoted tunnel ${bestPortalEligibleTunnel.wayId ?: "nil"} over surface ${selectedAfterThreeWay?.wayId ?: "nil"} after repeated portal exposure and degraded signal quality",
-            )
+        val tunnelContinuityCandidate = preferredCandidate?.takeIf { isTruthyOsmTag(it.tunnel) }
+            ?: sameRefCandidate?.takeIf { isTruthyOsmTag(it.tunnel) }
+            ?: graphSelectableCandidates.firstOrNull { isTruthyOsmTag(it.tunnel) }
+        val activeCorridorLockedCandidate = graphSelectableCandidates.firstOrNull { candidate ->
+            val activeCorridorState = matchContext.activeCorridorState ?: return@firstOrNull false
+            val corridorState = candidateCorridorState(candidate, matchContext, wayLinks, corridorProgress) ?: return@firstOrNull false
+            sameCorridorState(activeCorridorState, corridorState.snapshot)
         }
-        if (!isTruthyOsmTag(selected.tunnel) && matchContext.isInTunnelMode) {
-            val tunnelContinuityCandidate = graphSelectableCandidates.firstOrNull { candidate ->
-                isTruthyOsmTag(candidate.tunnel) &&
-                    (
-                        normalizedWayId(candidate.wayId) in matchContext.recentTunnelCandidateWayIds ||
-                            normalizedRefTokens(candidate.streetRef).any(matchContext.recentTunnelCandidateRefs::contains)
-                        )
-            }
-            if (tunnelContinuityCandidate != null &&
-                shouldKeepTunnelContinuity(
-                    tunnelCandidate = tunnelContinuityCandidate,
-                    surfaceCandidate = selected,
+        val triggeredCorridorEntryCandidate = graphSelectableCandidates.firstOrNull { candidate ->
+            val corridorState = candidateCorridorState(candidate, matchContext, wayLinks, corridorProgress) ?: return@firstOrNull false
+            shouldTriggerActiveCorridorMode(corridorState, matchContext)
+        }
+        val preferredHoldCandidate = preferredCandidate
+            ?: baselineSelected?.takeIf { normalizedWayId(it.wayId) == matchContext.preferredWayId }
+            ?: selectedAfterThreeWay?.takeIf { normalizedWayId(it.wayId) == matchContext.preferredWayId }
+            ?: graphSelectableCandidates.firstOrNull { normalizedWayId(it.wayId) == matchContext.preferredWayId }
+        var finalSelected: WayCandidate?
+        var deferredActiveCorridorState: CorridorMatchState? = null
+        if (selectedAfterThreeWay != null &&
+            matchContext.activeCorridorState != null &&
+            !sameCorridorState(
+                matchContext.activeCorridorState,
+                candidateCorridorState(
+                    candidate = selectedAfterThreeWay,
                     matchContext = matchContext,
                     wayLinks = wayLinks,
                     corridorProgress = corridorProgress,
-                    accuracyBufferM = accuracyBufferM,
-                    horizontalAccuracyM = horizontalAccuracyM,
-                    gpsSignalBars = gpsSignalBars,
-                )
-            ) {
-                selected = tunnelContinuityCandidate
+                )?.snapshot,
+            ) &&
+            activeCorridorLockedCandidate != null &&
+            !isActiveCorridorEntryConnectorCandidate(selectedAfterThreeWay, matchContext, wayLinks) &&
+            !isActiveCorridorExitCandidate(selectedAfterThreeWay, matchContext, wayLinks)
+        ) {
+            finalSelected = activeCorridorLockedCandidate
+            selectionTrace += MatchSelectionTrace(
+                step = "corridor_mode_lock",
+                detail = "kept corridor ${matchContext.activeCorridorState.kind}#${matchContext.activeCorridorState.corridorId} candidate ${activeCorridorLockedCandidate.wayId ?: "nil"} over ${selectedAfterThreeWay.wayId ?: "nil"} until exit zone",
+            )
+        } else if (
+            matchContext.activeCorridorState == null &&
+            selectedAfterThreeWay != null &&
+            selectedAfterThreeWay.highway.equals("motorway_link", ignoreCase = true) &&
+            triggeredCorridorEntryCandidate != null
+        ) {
+            val corridorState = candidateCorridorState(
+                candidate = triggeredCorridorEntryCandidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+            )
+            if (corridorState != null && corridorState.snapshot.kind == "motorway") {
+                val entryProgressM = corridorApproachProgressM(corridorState, matchContext)
+                val entryProgressNodes = corridorApproachProgressNodes(corridorState, matchContext)
+                finalSelected = selectedAfterThreeWay
+                deferredActiveCorridorState = corridorState.snapshot
                 selectionTrace += MatchSelectionTrace(
-                    step = "tunnel_exit_gate",
-                    detail = "kept tunnel ${tunnelContinuityCandidate.wayId ?: "nil"} and rejected mid-segment surface exit ${selectedAfterThreeWay?.wayId ?: "nil"}",
+                    step = "corridor_entry_arm",
+                    detail = "armed motorway mode via ${triggeredCorridorEntryCandidate.wayId ?: "nil"} after ${matchContext.approachCorridorFixCount} entry-zone fixes, ${formatMetric(entryProgressM)} m and $entryProgressNodes corridor nodes while keeping entry connector ${selectedAfterThreeWay.wayId ?: "nil"}",
                 )
+            } else {
+                finalSelected = selectedAfterThreeWay
             }
+        } else if (
+            matchContext.activeCorridorState == null &&
+            selectedAfterThreeWay != null &&
+            triggeredCorridorEntryCandidate != null &&
+            normalizedWayId(selectedAfterThreeWay.wayId) != normalizedWayId(triggeredCorridorEntryCandidate.wayId)
+        ) {
+            val corridorState = candidateCorridorState(
+                candidate = triggeredCorridorEntryCandidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+            )
+            val entryProgressM = corridorState?.let { corridorApproachProgressM(it, matchContext) } ?: 0.0
+            val entryProgressNodes = corridorState?.let { corridorApproachProgressNodes(it, matchContext) } ?: 0
+            finalSelected = triggeredCorridorEntryCandidate
+            selectionTrace += MatchSelectionTrace(
+                step = "corridor_entry_gate",
+                detail = "activated ${corridorState?.snapshot?.kind ?: "corridor"} mode via ${triggeredCorridorEntryCandidate.wayId ?: "nil"} after ${matchContext.approachCorridorFixCount} entry-zone fixes, ${formatMetric(entryProgressM)} m and $entryProgressNodes corridor nodes",
+            )
+        } else if (
+            !matchContext.isInTunnelMode &&
+            selectedAfterThreeWay != null &&
+            !isTruthyOsmTag(selectedAfterThreeWay.tunnel) &&
+            tunnelContinuityCandidate != null &&
+            shouldPromoteTunnelEntry(
+                tunnelCandidate = tunnelContinuityCandidate,
+                surfaceCandidate = selectedAfterThreeWay,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+                horizontalAccuracyM = horizontalAccuracyM,
+                gpsSignalBars = gpsSignalBars,
+                accuracyBufferM = accuracyBufferM,
+            )
+        ) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace += MatchSelectionTrace(
+                step = "tunnel_entry_gate",
+                detail = "promoted tunnel ${tunnelContinuityCandidate.wayId ?: "nil"} over surface ${selectedAfterThreeWay.wayId ?: "nil"} after repeated portal exposure and degraded signal quality",
+            )
+        } else if (
+            matchContext.isInTunnelMode &&
+            selectedAfterThreeWay != null &&
+            !isTruthyOsmTag(selectedAfterThreeWay.tunnel) &&
+            tunnelContinuityCandidate != null &&
+            shouldKeepTunnelContinuity(
+                tunnelCandidate = tunnelContinuityCandidate,
+                surfaceCandidate = selectedAfterThreeWay,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+                pairContext = corridorPairs,
+                accuracyBufferM = accuracyBufferM,
+                horizontalAccuracyM = horizontalAccuracyM,
+                gpsSignalBars = gpsSignalBars,
+            )
+        ) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace += MatchSelectionTrace(
+                step = "tunnel_exit_gate",
+                detail = "kept tunnel ${tunnelContinuityCandidate.wayId ?: "nil"} and rejected mid-segment surface exit ${selectedAfterThreeWay.wayId ?: "nil"}",
+            )
+        } else {
+            finalSelected = selectedAfterThreeWay
         }
-
-        val selectedCorridorState = candidateCorridorState(selected, matchContext, wayLinks, corridorProgress)
-        val activeCorridorState = when {
-            selectedCorridorState != null && shouldTriggerActiveCorridorMode(selectedCorridorState, matchContext) -> selectedCorridorState.snapshot
-            sameCorridorState(matchContext.activeCorridorState, selectedCorridorState?.snapshot) -> selectedCorridorState?.snapshot
-            matchContext.activeCorridorState != null &&
-                normalizedWayId(selected.wayId) == matchContext.preferredWayId &&
-                isTruthyOsmTag(selected.tunnel) -> matchContext.activeCorridorState
-            else -> null
+        if (
+            usesAntiAbaHysteresis &&
+            finalSelected != null &&
+            preferredHoldCandidate != null &&
+            shouldApplyAntiAbaHysteresis(
+                candidate = finalSelected,
+                holdCandidate = preferredHoldCandidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+                accuracyBufferM = accuracyBufferM,
+            )
+        ) {
+            selectionTrace += MatchSelectionTrace(
+                step = "anti_aba_hysteresis",
+                detail = "kept ${preferredHoldCandidate.wayId ?: "nil"} over ${finalSelected.wayId ?: "nil"} to avoid immediate A-B-A bounce",
+            )
+            finalSelected = preferredHoldCandidate
+            deferredActiveCorridorState = null
         }
+        val finalActiveCorridorState = finalSelected?.let { candidate ->
+            val corridorState = candidateCorridorState(
+                candidate = candidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
+            ) ?: return@let null
+            if (sameCorridorState(matchContext.activeCorridorState, corridorState.snapshot) ||
+                shouldTriggerActiveCorridorMode(corridorState, matchContext)
+            ) {
+                corridorState.snapshot
+            } else {
+                null
+            }
+        } ?: deferredActiveCorridorState
         val approachCorridorStateCandidate = sortedCandidates.asSequence()
             .mapNotNull { candidateCorridorState(it, matchContext, wayLinks, corridorProgress) }
             .filter { it.entryZone && (it.snapshot.kind == "tunnel" || it.snapshot.kind == "motorway") }
             .sortedWith(compareBy<CandidateCorridorState> { it.snapshot.depthM }.thenBy { it.snapshot.corridorId })
             .firstOrNull()
             ?.snapshot
-        val selectedWayId = normalizedWayId(selected.wayId)
+        val selectedWayId = normalizedWayId(finalSelected?.wayId)
         val candidateTraces = traceRankedCandidates
             .take(MAX_TRACE_CANDIDATE_COUNT)
             .map { entry ->
@@ -596,19 +997,21 @@ internal class V3SpeedLimitLookup(
                     isSelected = normalizedWayId(entry.candidate.wayId) == selectedWayId,
                 )
             }
-        selectionTrace += MatchSelectionTrace(
-            step = "final",
-            detail = "selected ${selected.wayId ?: "nil"} tunnel=${isTruthyOsmTag(selected.tunnel)} corridor=${activeCorridorState?.kind ?: "none"}",
-        )
+        finalSelected?.let {
+            selectionTrace += MatchSelectionTrace(
+                step = "final",
+                detail = "selected ${it.wayId ?: "nil"} tunnel=${isTruthyOsmTag(it.tunnel)} corridor=${finalActiveCorridorState?.let { state -> "${state.kind}#${state.corridorId}" } ?: "none"}",
+            )
+        }
 
         return CandidateSelection(
-            selected = selected,
+            selected = finalSelected,
             candidateTraces = candidateTraces,
             nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
             nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
             portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
             portalEligibleTunnelRefs = portalEligibleTunnelRefs,
-            activeCorridorState = activeCorridorState,
+            activeCorridorState = finalActiveCorridorState,
             approachCorridorStateCandidate = approachCorridorStateCandidate,
             usedWalkingTurnSwitch = usedWalkingTurnSwitch,
             usedMiniHMM = usedMiniHMM,
@@ -706,6 +1109,54 @@ internal class V3SpeedLimitLookup(
         )
     }
 
+    private fun corridorPairKey(
+        kind: String,
+        corridorId: Int,
+        sideNodeKey: String,
+    ): String {
+        return "$kind#$corridorId#$sideNodeKey"
+    }
+
+    private fun loadCorridorPairContext(): CorridorPairContext {
+        if (!tableExists("corridor_pairs")) {
+            return CorridorPairContext(available = false)
+        }
+        val byMainKey = linkedMapOf<String, MutableList<CorridorPairRelation>>()
+        val byPairedKey = linkedMapOf<String, MutableList<CorridorPairRelation>>()
+        db.rawQuery(
+            """
+            SELECT corridor_kind, corridor_id, side_node_key, paired_kind, paired_corridor_id
+            FROM corridor_pairs
+            """.trimIndent(),
+            emptyArray(),
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val corridorKind = cursor.stringOrNull(0) ?: continue
+                val sideNodeKey = cursor.stringOrNull(2) ?: continue
+                val pairedKind = cursor.stringOrNull(3) ?: continue
+                if (corridorKind.isEmpty() || sideNodeKey.isEmpty() || pairedKind.isEmpty()) {
+                    continue
+                }
+                val relation = CorridorPairRelation(
+                    corridorKind = corridorKind,
+                    corridorId = cursor.getInt(1),
+                    sideNodeKey = sideNodeKey,
+                    pairedKind = pairedKind,
+                    pairedCorridorId = cursor.getInt(4),
+                )
+                val mainKey = corridorPairKey(relation.corridorKind, relation.corridorId, relation.sideNodeKey)
+                val pairedKey = corridorPairKey(relation.pairedKind, relation.pairedCorridorId, relation.sideNodeKey)
+                byMainKey.getOrPut(mainKey) { mutableListOf() } += relation
+                byPairedKey.getOrPut(pairedKey) { mutableListOf() } += relation
+            }
+        }
+        return CorridorPairContext(
+            available = true,
+            byMainKey = byMainKey.mapValues { it.value.toList() },
+            byPairedKey = byPairedKey.mapValues { it.value.toList() },
+        )
+    }
+
     private fun continuityClass(
         candidate: WayCandidate,
         matchContext: WayMatchContext,
@@ -718,7 +1169,7 @@ internal class V3SpeedLimitLookup(
         val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
         if (
             candidateRefTokens.isNotEmpty() &&
-            (candidateRefTokens.any(matchContext.recentStreetRefs::contains))
+            (candidateRefTokens.any { token -> token in matchContext.recentStreetRefs })
         ) {
             if (wayLinks.available && !isLinkedCandidate(candidateWayId, matchContext, wayLinks)) {
                 return ContinuityClass.NONE
@@ -746,6 +1197,7 @@ internal class V3SpeedLimitLookup(
         val anchors = linkedSetOf<String>()
         matchContext.preferredWayId?.let(anchors::add)
         anchors += matchContext.recentWayIds
+        anchors += matchContext.recentHypotheses.mapTo(linkedSetOf()) { it.wayId }
         for (anchor in anchors) {
             if (anchor == candidateWayId) {
                 continue
@@ -816,7 +1268,9 @@ internal class V3SpeedLimitLookup(
         if (normalizedWayId(preferredCandidate.wayId) == normalizedWayId(alternativeCandidate.wayId)) {
             return false
         }
-        if (shouldSuppressImmediateSameRefBounce(alternativeCandidate, preferredCandidate, matchContext, wayLinks, accuracyBufferM)) {
+        if (usesSameRefBounceGate &&
+            shouldSuppressImmediateSameRefBounce(alternativeCandidate, preferredCandidate, matchContext, wayLinks, accuracyBufferM)
+        ) {
             return false
         }
         val preferredRefTokens = normalizedRefTokens(preferredCandidate.streetRef).toSet()
@@ -849,6 +1303,10 @@ internal class V3SpeedLimitLookup(
         observedHeadingDeg: Double?,
         speedKmh: Double?,
         wayLinks: WayLinksContext,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+        corridorProgress: CorridorProgressContext,
+        corridorPairs: CorridorPairContext,
     ): MiniHMMSelection {
         if (!shouldUseMiniHMM(candidates, matchContext, preferredCandidate, sameRefTransitionCandidate)) {
             return MiniHMMSelection()
@@ -858,58 +1316,604 @@ internal class V3SpeedLimitLookup(
             return MiniHMMSelection()
         }
 
+        val signalEvidence = signalQualityEvidence(
+            matchContext = matchContext,
+            horizontalAccuracyM = horizontalAccuracyM,
+            gpsSignalBars = gpsSignalBars,
+        )
+        val accuracyBufferM = scaledAccuracyBufferM(horizontalAccuracyM)
         val hypotheses = mutableListOf<WayMatchHypothesis>()
         for (candidate in beamCandidates) {
             val wayId = normalizedWayId(candidate.wayId) ?: continue
-            val emission = candidate.score + miniHMMPriorAdjustment(candidate, matchContext)
-            val cumulativeCost = if (matchContext.recentHypotheses.isEmpty()) {
-                emission
-            } else {
-                matchContext.recentHypotheses.minOfOrNull { hypothesis ->
-                    (hypothesis.cumulativeCost * MINI_HMM_HISTORY_DECAY) +
-                        genericTransitionPenalty(
-                            hypothesis = hypothesis,
-                            candidate = candidate,
-                            observedHeadingDeg = observedHeadingDeg,
-                            speedKmh = speedKmh,
-                            matchContext = matchContext,
-                            wayLinks = wayLinks,
-                        ) +
-                        emission
-                } ?: emission
-            }
-            val startPoint = candidate.points.firstOrNull()
-            val endPoint = candidate.points.lastOrNull()
-            hypotheses += WayMatchHypothesis(
-                wayId = wayId,
-                streetRef = candidate.streetRef,
-                highway = candidate.highway,
-                cumulativeCost = cumulativeCost,
-                emissionScore = candidate.score,
-                endpointProximityM = candidate.endpointProximityM,
-                startLat = startPoint?.lat,
-                startLon = startPoint?.lon,
-                endLat = endPoint?.lat,
-                endLon = endPoint?.lon,
-                isTunnel = isTruthyOsmTag(candidate.tunnel),
+            val candidateCorridorState = candidateCorridorState(
+                candidate = candidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                corridorProgress = corridorProgress,
             )
+            for (corridorSequenceState in corridorSequenceStates(candidate)) {
+                val emission = candidate.score +
+                    miniHMMPriorAdjustment(candidate, matchContext) +
+                    corridorEmissionPenalty(
+                        candidate = candidate,
+                        candidateCorridorState = candidateCorridorState,
+                        corridorState = corridorSequenceState,
+                        matchContext = matchContext,
+                        signalEvidence = signalEvidence,
+                    )
+                val cumulativeCost = if (matchContext.recentHypotheses.isEmpty()) {
+                    emission
+                } else {
+                    matchContext.recentHypotheses.minOfOrNull { hypothesis ->
+                        (hypothesis.cumulativeCost * MINI_HMM_HISTORY_DECAY) +
+                            transitionPenalty(
+                                hypothesis = hypothesis,
+                                candidate = candidate,
+                                corridorState = corridorSequenceState,
+                                observedHeadingDeg = observedHeadingDeg,
+                                speedKmh = speedKmh,
+                                matchContext = matchContext,
+                                signalEvidence = signalEvidence,
+                                wayLinks = wayLinks,
+                                accuracyBufferM = accuracyBufferM,
+                                candidateCorridorState = candidateCorridorState,
+                                pairContext = corridorPairs,
+                            ) +
+                            emission
+                    } ?: emission
+                }
+                val startPoint = candidate.points.firstOrNull()
+                val endPoint = candidate.points.lastOrNull()
+                hypotheses += WayMatchHypothesis(
+                    wayId = wayId,
+                    streetRef = candidate.streetRef,
+                    highway = candidate.highway,
+                    corridorState = corridorSequenceState.wireName,
+                    corridorKind = candidateCorridorState?.snapshot?.kind,
+                    corridorId = candidateCorridorState?.snapshot?.corridorId,
+                    corridorSideNodeKey = candidateCorridorState?.snapshot?.sideNodeKey,
+                    cumulativeCost = cumulativeCost,
+                    emissionScore = candidate.score,
+                    endpointProximityM = candidate.endpointProximityM,
+                    startLat = startPoint?.lat,
+                    startLon = startPoint?.lon,
+                    endLat = endPoint?.lat,
+                    endLon = endPoint?.lon,
+                    isTunnel = isTruthyOsmTag(candidate.tunnel),
+                )
+            }
         }
         hypotheses.sortWith(
             compareBy<WayMatchHypothesis> { it.cumulativeCost }
                 .thenBy { it.emissionScore }
-                .thenBy { it.wayId },
+                .thenBy { it.wayId }
+                .thenBy { it.corridorState ?: "~" },
         )
         if (hypotheses.size > MINI_HMM_BEAM_WIDTH) {
             hypotheses.subList(MINI_HMM_BEAM_WIDTH, hypotheses.size).clear()
         }
         val selectedWayId = hypotheses.firstOrNull()?.wayId
+        val selectedCorridorState = hypotheses.firstOrNull()?.let(::corridorSequenceStateFrom)
         val selectedCandidate = beamCandidates.firstOrNull { normalizedWayId(it.wayId) == selectedWayId }
         return MiniHMMSelection(
             selectedCandidate = selectedCandidate,
+            selectedCorridorState = selectedCorridorState,
             hypotheses = hypotheses,
             used = selectedCandidate != null,
             candidateCount = beamCandidates.size,
         )
+    }
+
+    private fun corridorSequenceStateFrom(hypothesis: WayMatchHypothesis): CorridorSequenceState {
+        return when (hypothesis.corridorState) {
+            CorridorSequenceState.SURFACE.wireName -> CorridorSequenceState.SURFACE
+            CorridorSequenceState.TUNNEL_PORTAL.wireName -> CorridorSequenceState.TUNNEL_PORTAL
+            CorridorSequenceState.TUNNEL_INSIDE.wireName -> CorridorSequenceState.TUNNEL_INSIDE
+            CorridorSequenceState.TUNNEL_EXIT.wireName -> CorridorSequenceState.TUNNEL_EXIT
+            CorridorSequenceState.MOTORWAY_PORTAL.wireName -> CorridorSequenceState.MOTORWAY_PORTAL
+            CorridorSequenceState.MOTORWAY_INSIDE.wireName -> CorridorSequenceState.MOTORWAY_INSIDE
+            CorridorSequenceState.MOTORWAY_EXIT.wireName -> CorridorSequenceState.MOTORWAY_EXIT
+            null -> {
+                if (hypothesis.isTunnel) {
+                    CorridorSequenceState.TUNNEL_INSIDE
+                } else if (hypothesis.highway.equals("motorway", ignoreCase = true)) {
+                    CorridorSequenceState.MOTORWAY_INSIDE
+                } else if (hypothesis.highway.equals("motorway_link", ignoreCase = true)) {
+                    CorridorSequenceState.MOTORWAY_PORTAL
+                } else {
+                    CorridorSequenceState.SURFACE
+                }
+            }
+
+            else -> CorridorSequenceState.SURFACE
+        }
+    }
+
+    private fun corridorSequenceStates(candidate: WayCandidate): List<CorridorSequenceState> {
+        return when (corridorState(candidate)) {
+            CorridorState.SURFACE -> listOf(CorridorSequenceState.SURFACE, CorridorSequenceState.TUNNEL_EXIT)
+            CorridorState.TUNNEL -> listOf(CorridorSequenceState.TUNNEL_PORTAL, CorridorSequenceState.TUNNEL_INSIDE)
+            CorridorState.MOTORWAY -> listOf(CorridorSequenceState.MOTORWAY_INSIDE)
+            CorridorState.MOTORWAY_LINK -> listOf(CorridorSequenceState.MOTORWAY_PORTAL, CorridorSequenceState.MOTORWAY_EXIT)
+        }
+    }
+
+    private fun isCommittedCorridorSelectionState(corridorState: CorridorSequenceState): Boolean {
+        return when (corridorState) {
+            CorridorSequenceState.TUNNEL_INSIDE,
+            CorridorSequenceState.MOTORWAY_INSIDE -> true
+
+            else -> false
+        }
+    }
+
+    private fun shouldPromoteMiniHMMCorridorSelection(
+        state: CorridorSequenceState,
+        candidate: WayCandidate,
+        candidateCorridorState: CandidateCorridorState,
+        heuristicCandidate: WayCandidate?,
+        matchContext: WayMatchContext,
+        signalEvidence: SignalQualityEvidence,
+    ): Boolean {
+        if (!isCommittedCorridorSelectionState(state)) {
+            return false
+        }
+        val scoreSlackM = when (state) {
+            CorridorSequenceState.TUNNEL_INSIDE -> {
+                val chainCommitScore = corridorChainCommitScore(candidateCorridorState, matchContext)
+                val tunnelEvidenceScore = max(
+                    signalEvidence.tunnelScore,
+                    max(portalCommitProgressScore(candidate, matchContext), chainCommitScore),
+                )
+                if (!signalEvidence.hadRecentGpsSignalLoss &&
+                    chainCommitScore < CORRIDOR_STATE_TUNNEL_CHAIN_COMMIT_MIN_SCORE &&
+                    (tunnelEvidenceScore < CORRIDOR_STATE_TUNNEL_OUTPUT_MIN_SCORE ||
+                        !matchesTunnelApproachCandidate(candidate, matchContext))
+                ) {
+                    return false
+                }
+                CORRIDOR_STATE_TUNNEL_OUTPUT_SCORE_SLACK_M +
+                    (chainCommitScore * CORRIDOR_STATE_TUNNEL_CHAIN_SLACK_BONUS_M)
+            }
+
+            CorridorSequenceState.MOTORWAY_INSIDE -> CORRIDOR_STATE_MOTORWAY_OUTPUT_SCORE_SLACK_M
+            else -> return false
+        }
+        return heuristicCandidate == null || candidate.score <= heuristicCandidate.score + scoreSlackM
+    }
+
+    private fun shouldKeepSurfaceHeuristicOverUncommittedTunnelCandidate(
+        state: CorridorSequenceState,
+        tunnelCandidate: WayCandidate,
+        heuristicCandidate: WayCandidate,
+    ): Boolean {
+        if (!isTruthyOsmTag(tunnelCandidate.tunnel) || isTruthyOsmTag(heuristicCandidate.tunnel)) {
+            return false
+        }
+        return when (state) {
+            CorridorSequenceState.TUNNEL_PORTAL,
+            CorridorSequenceState.TUNNEL_INSIDE -> true
+
+            else -> false
+        }
+    }
+
+    private fun corridorEmissionPenalty(
+        candidate: WayCandidate,
+        candidateCorridorState: CandidateCorridorState?,
+        corridorState: CorridorSequenceState,
+        matchContext: WayMatchContext,
+        signalEvidence: SignalQualityEvidence,
+    ): Double {
+        val candidateClass = corridorState(candidate)
+        val chainCommitScore = corridorChainCommitScore(candidateCorridorState, matchContext)
+        return when (corridorState) {
+            CorridorSequenceState.SURFACE -> {
+                if (candidateClass != CorridorState.SURFACE) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    0.0
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_PORTAL -> {
+                if (candidateClass != CorridorState.TUNNEL) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    var penalty = 6.0
+                    if (matchesTunnelApproachCandidate(candidate, matchContext)) {
+                        penalty -= 1.5
+                    }
+                    val portalEvidenceScore = max(signalEvidence.tunnelScore, portalMotionProgressScore(candidate, matchContext))
+                    penalty -= portalEvidenceScore * CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M
+                    penalty -= chainCommitScore * (CORRIDOR_STATE_TUNNEL_CHAIN_REWARD_M * 0.35)
+                    penalty
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_INSIDE -> {
+                if (candidateClass != CorridorState.TUNNEL) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    var penalty = 4.0
+                    val candidateWayId = normalizedWayId(candidate.wayId)
+                    val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
+                    if (candidateWayId != null && candidateWayId in matchContext.recentTunnelCandidateWayIds) {
+                        penalty -= CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M
+                    } else if (candidateRefTokens.isNotEmpty() &&
+                        candidateRefTokens.any { token -> token in matchContext.recentTunnelCandidateRefs }
+                    ) {
+                        penalty -= CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M * 0.5
+                    }
+                    val tunnelEvidenceScore = max(
+                        signalEvidence.tunnelScore,
+                        max(portalCommitProgressScore(candidate, matchContext), chainCommitScore),
+                    )
+                    penalty -= tunnelEvidenceScore * (CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M * 0.5)
+                    penalty -= chainCommitScore * CORRIDOR_STATE_TUNNEL_CHAIN_REWARD_M
+                    penalty
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_EXIT -> {
+                if (candidateClass != CorridorState.SURFACE) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    4.0
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_PORTAL -> {
+                if (candidateClass != CorridorState.MOTORWAY_LINK) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    -CORRIDOR_STATE_MOTORWAY_REWARD_M
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_INSIDE -> {
+                if (candidateClass != CorridorState.MOTORWAY) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    -(CORRIDOR_STATE_MOTORWAY_REWARD_M + 1.0)
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_EXIT -> {
+                if (candidateClass != CorridorState.MOTORWAY_LINK) {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                } else {
+                    -CORRIDOR_STATE_MOTORWAY_REWARD_M
+                }
+            }
+        }
+    }
+
+    private fun transitionPenalty(
+        hypothesis: WayMatchHypothesis,
+        candidate: WayCandidate,
+        corridorState: CorridorSequenceState,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        matchContext: WayMatchContext,
+        signalEvidence: SignalQualityEvidence,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+        candidateCorridorState: CandidateCorridorState?,
+        pairContext: CorridorPairContext,
+    ): Double {
+        val wayPenalty = genericTransitionPenalty(
+            hypothesis = hypothesis,
+            candidate = candidate,
+            observedHeadingDeg = observedHeadingDeg,
+            speedKmh = speedKmh,
+            matchContext = matchContext,
+            wayLinks = wayLinks,
+        )
+        val statePenalty = corridorStateTransitionPenalty(
+            hypothesis = hypothesis,
+            candidate = candidate,
+            nextState = corridorState,
+            matchContext = matchContext,
+            signalEvidence = signalEvidence,
+            wayLinks = wayLinks,
+            accuracyBufferM = accuracyBufferM,
+            candidateCorridorState = candidateCorridorState,
+            pairContext = pairContext,
+        )
+        return wayPenalty + statePenalty
+    }
+
+    private fun corridorStateTransitionPenalty(
+        hypothesis: WayMatchHypothesis,
+        candidate: WayCandidate,
+        nextState: CorridorSequenceState,
+        matchContext: WayMatchContext,
+        signalEvidence: SignalQualityEvidence,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+        candidateCorridorState: CandidateCorridorState?,
+        pairContext: CorridorPairContext,
+    ): Double {
+        val previousState = corridorSequenceStateFrom(hypothesis)
+        val previousCorridorSnapshot = hypothesisCorridorSnapshot(hypothesis)
+        val candidateSnapshot = candidateCorridorState?.snapshot
+        val previousAnchor = CorridorAnchor(
+            wayId = hypothesis.wayId,
+            highway = hypothesis.highway,
+            endpointProximityM = hypothesis.endpointProximityM,
+            isInTunnelMode = previousState == CorridorSequenceState.TUNNEL_PORTAL ||
+                previousState == CorridorSequenceState.TUNNEL_INSIDE,
+        )
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        val linkedToPrevious = areLinkedWays(hypothesis.wayId, candidateWayId, wayLinks)
+        val sharedRefLinkedToPrevious = areSharedRefLinkedWays(hypothesis.wayId, candidateWayId, wayLinks)
+        val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
+        val previousRefTokens = normalizedRefTokens(hypothesis.streetRef).toSet()
+        val sharesRefWithPrevious = candidateRefTokens.isNotEmpty() && candidateRefTokens.intersect(previousRefTokens).isNotEmpty()
+        val portalMotionScore = portalMotionProgressScore(candidate, matchContext)
+        val portalCommitScore = portalCommitProgressScore(candidate, matchContext)
+        val tunnelPortalTransition = isTunnelPortalTransition(
+            anchor = previousAnchor,
+            candidate = candidate,
+            matchContext = matchContext,
+            wayLinks = wayLinks,
+            accuracyBufferM = accuracyBufferM,
+            entry = previousState == CorridorSequenceState.SURFACE || previousState == CorridorSequenceState.TUNNEL_PORTAL,
+        )
+        val motorwayTransition = isMotorwayTransitionCandidate(previousAnchor, candidate, wayLinks, accuracyBufferM)
+
+        if (pairContext.available && previousCorridorSnapshot != null && candidateSnapshot != null) {
+            if (previousCorridorSnapshot.kind == candidateSnapshot.kind &&
+                previousCorridorSnapshot.corridorId == candidateSnapshot.corridorId &&
+                previousCorridorSnapshot.sideNodeKey == candidateSnapshot.sideNodeKey
+            ) {
+                when {
+                    previousState == CorridorSequenceState.SURFACE &&
+                        nextState == CorridorSequenceState.SURFACE &&
+                        candidateSnapshot.kind == "surface" -> return CORRIDOR_STATE_PERSISTENCE_PENALTY_M
+
+                    (previousState == CorridorSequenceState.MOTORWAY_PORTAL &&
+                        nextState == CorridorSequenceState.MOTORWAY_PORTAL &&
+                        candidateSnapshot.kind == "motorway_link") ||
+                        (previousState == CorridorSequenceState.MOTORWAY_EXIT &&
+                            nextState == CorridorSequenceState.MOTORWAY_EXIT &&
+                            candidateSnapshot.kind == "motorway_link") -> {
+                        return CORRIDOR_STATE_PERSISTENCE_PENALTY_M
+                    }
+
+                    (previousState == CorridorSequenceState.TUNNEL_PORTAL &&
+                        nextState == CorridorSequenceState.TUNNEL_PORTAL &&
+                        candidateSnapshot.kind == "tunnel") ||
+                        (previousState == CorridorSequenceState.TUNNEL_INSIDE &&
+                            nextState == CorridorSequenceState.TUNNEL_INSIDE &&
+                            candidateSnapshot.kind == "tunnel") -> {
+                        return CORRIDOR_STATE_PERSISTENCE_PENALTY_M - CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M
+                    }
+
+                    previousState == CorridorSequenceState.MOTORWAY_INSIDE &&
+                        nextState == CorridorSequenceState.MOTORWAY_INSIDE &&
+                        candidateSnapshot.kind == "motorway" -> {
+                        return CORRIDOR_STATE_PERSISTENCE_PENALTY_M - CORRIDOR_STATE_MOTORWAY_REWARD_M
+                    }
+                }
+            }
+
+            if (previousCorridorSnapshot.kind == "surface" &&
+                candidateSnapshot.kind == "tunnel" &&
+                isPairedWithMainCorridor(previousCorridorSnapshot, candidateSnapshot, pairContext)
+            ) {
+                when (nextState) {
+                    CorridorSequenceState.TUNNEL_PORTAL -> {
+                        val tunnelEvidenceScore = max(signalEvidence.tunnelScore, portalMotionScore)
+                        return CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M -
+                            (tunnelEvidenceScore * CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M)
+                    }
+
+                    CorridorSequenceState.TUNNEL_INSIDE -> {
+                        val tunnelEvidenceScore = max(signalEvidence.tunnelScore, portalCommitScore)
+                        return CORRIDOR_STATE_REENTRY_PENALTY_M -
+                            (tunnelEvidenceScore * CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M)
+                    }
+
+                    else -> Unit
+                }
+            }
+
+            if (previousCorridorSnapshot.kind == "tunnel" &&
+                candidateSnapshot.kind == "surface" &&
+                isMainCorridorPairedToCandidate(
+                    mainSnapshot = previousCorridorSnapshot,
+                    candidateSnapshot = candidateSnapshot,
+                    pairContext = pairContext,
+                    requireOppositeSide = true,
+                )
+            ) {
+                when (nextState) {
+                    CorridorSequenceState.TUNNEL_EXIT,
+                    CorridorSequenceState.SURFACE -> return CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M
+
+                    else -> Unit
+                }
+            }
+
+            if (previousCorridorSnapshot.kind == "motorway_link" &&
+                candidateSnapshot.kind == "motorway" &&
+                isPairedWithMainCorridor(previousCorridorSnapshot, candidateSnapshot, pairContext)
+            ) {
+                if (nextState == CorridorSequenceState.MOTORWAY_INSIDE) {
+                    return CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M - CORRIDOR_STATE_MOTORWAY_REWARD_M
+                }
+            }
+
+            if (previousCorridorSnapshot.kind == "motorway" &&
+                candidateSnapshot.kind == "motorway_link" &&
+                isMainCorridorPairedToCandidate(
+                    mainSnapshot = previousCorridorSnapshot,
+                    candidateSnapshot = candidateSnapshot,
+                    pairContext = pairContext,
+                    requireOppositeSide = true,
+                ) &&
+                nextState == CorridorSequenceState.MOTORWAY_EXIT
+            ) {
+                return CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M
+            }
+        }
+
+        return when (previousState to nextState) {
+            CorridorSequenceState.SURFACE to CorridorSequenceState.SURFACE -> CORRIDOR_STATE_PERSISTENCE_PENALTY_M
+            CorridorSequenceState.SURFACE to CorridorSequenceState.TUNNEL_PORTAL -> {
+                if (tunnelPortalTransition) {
+                    val tunnelEvidenceScore = max(signalEvidence.tunnelScore, portalMotionScore)
+                    CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M -
+                        (tunnelEvidenceScore * CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M)
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.SURFACE to CorridorSequenceState.TUNNEL_INSIDE -> {
+                if (matchesTunnelApproachCandidate(candidate, matchContext) &&
+                    (signalEvidence.hadRecentGpsSignalLoss ||
+                        signalEvidence.tunnelScore >= CORRIDOR_STATE_TUNNEL_DIRECT_COMMIT_MIN_SCORE ||
+                        portalCommitScore >= CORRIDOR_STATE_TUNNEL_DIRECT_COMMIT_MIN_SCORE)
+                ) {
+                    val tunnelEvidenceScore = max(signalEvidence.tunnelScore, portalCommitScore)
+                    CORRIDOR_STATE_REENTRY_PENALTY_M -
+                        (tunnelEvidenceScore * CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M)
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.SURFACE to CorridorSequenceState.MOTORWAY_PORTAL -> {
+                if (motorwayTransition) CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.SURFACE to CorridorSequenceState.MOTORWAY_INSIDE,
+            CorridorSequenceState.SURFACE to CorridorSequenceState.MOTORWAY_EXIT,
+            CorridorSequenceState.SURFACE to CorridorSequenceState.TUNNEL_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.SURFACE -> CORRIDOR_STATE_REENTRY_PENALTY_M
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.TUNNEL_PORTAL -> {
+                if (linkedToPrevious || sharedRefLinkedToPrevious || sharesRefWithPrevious) {
+                    CORRIDOR_STATE_PERSISTENCE_PENALTY_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.TUNNEL_INSIDE -> {
+                if (linkedToPrevious || sharedRefLinkedToPrevious || sharesRefWithPrevious) {
+                    CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M - CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.TUNNEL_EXIT,
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.MOTORWAY_PORTAL,
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.MOTORWAY_INSIDE,
+            CorridorSequenceState.TUNNEL_PORTAL to CorridorSequenceState.MOTORWAY_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.TUNNEL_PORTAL -> {
+                if (linkedToPrevious || sharedRefLinkedToPrevious || sharesRefWithPrevious) {
+                    CORRIDOR_STATE_PERSISTENCE_PENALTY_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.TUNNEL_INSIDE -> {
+                if (linkedToPrevious || sharedRefLinkedToPrevious || sharesRefWithPrevious) {
+                    CORRIDOR_STATE_PERSISTENCE_PENALTY_M - CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.TUNNEL_EXIT -> {
+                if (tunnelPortalTransition) CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.SURFACE,
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.MOTORWAY_PORTAL,
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.MOTORWAY_INSIDE,
+            CorridorSequenceState.TUNNEL_INSIDE to CorridorSequenceState.MOTORWAY_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.SURFACE -> {
+                if (linkedToPrevious || sharesRefWithPrevious || candidateWayId == hypothesis.wayId) {
+                    CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.TUNNEL_INSIDE -> CORRIDOR_STATE_REENTRY_PENALTY_M
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.TUNNEL_PORTAL,
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.TUNNEL_EXIT,
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.MOTORWAY_PORTAL,
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.MOTORWAY_INSIDE,
+            CorridorSequenceState.TUNNEL_EXIT to CorridorSequenceState.MOTORWAY_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.SURFACE -> CORRIDOR_STATE_REENTRY_PENALTY_M
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.MOTORWAY_PORTAL -> {
+                if (motorwayTransition) CORRIDOR_STATE_PERSISTENCE_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.MOTORWAY_INSIDE -> {
+                if (motorwayTransition) {
+                    CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M - CORRIDOR_STATE_MOTORWAY_REWARD_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.MOTORWAY_EXIT -> {
+                if (motorwayTransition) CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.TUNNEL_PORTAL,
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.TUNNEL_INSIDE,
+            CorridorSequenceState.MOTORWAY_PORTAL to CorridorSequenceState.TUNNEL_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.MOTORWAY_INSIDE -> {
+                if (linkedToPrevious || sharesRefWithPrevious) {
+                    CORRIDOR_STATE_PERSISTENCE_PENALTY_M - CORRIDOR_STATE_MOTORWAY_REWARD_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.MOTORWAY_EXIT -> {
+                if (motorwayTransition) CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.SURFACE,
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.MOTORWAY_PORTAL,
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.TUNNEL_PORTAL,
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.TUNNEL_INSIDE,
+            CorridorSequenceState.MOTORWAY_INSIDE to CorridorSequenceState.TUNNEL_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.SURFACE -> {
+                if (linkedToPrevious || sharesRefWithPrevious || hasEndpointContinuation(hypothesis, candidate)) {
+                    CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M
+                } else {
+                    CORRIDOR_STATE_ILLEGAL_PENALTY_M
+                }
+            }
+
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.MOTORWAY_EXIT -> {
+                if (motorwayTransition) CORRIDOR_STATE_PERSISTENCE_PENALTY_M else CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            }
+
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.MOTORWAY_PORTAL,
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.MOTORWAY_INSIDE,
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.TUNNEL_PORTAL,
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.TUNNEL_INSIDE,
+            CorridorSequenceState.MOTORWAY_EXIT to CorridorSequenceState.TUNNEL_EXIT -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+            else -> CORRIDOR_STATE_ILLEGAL_PENALTY_M
+        }
     }
 
     private fun shouldUseMiniHMM(
@@ -951,7 +1955,7 @@ internal class V3SpeedLimitLookup(
         } else if (candidateWayId != null && candidateWayId in matchContext.recentWayIds) {
             adjustment -= 2.5
         }
-        if (candidateRefTokens.isNotEmpty() && candidateRefTokens.any(matchContext.recentStreetRefs::contains)) {
+        if (candidateRefTokens.isNotEmpty() && candidateRefTokens.any { token -> token in matchContext.recentStreetRefs }) {
             adjustment -= 3.5
         }
         val recentTunnelWayMatch = candidateWayId?.let { it in matchContext.recentTunnelCandidateWayIds } == true
@@ -960,7 +1964,7 @@ internal class V3SpeedLimitLookup(
         }
         if (isTruthyOsmTag(candidate.tunnel) &&
             matchContext.hadRecentGpsSignalLoss &&
-            (recentTunnelWayMatch || candidateRefTokens.any(matchContext.recentTunnelCandidateRefs::contains))
+            (recentTunnelWayMatch || candidateRefTokens.any { token -> token in matchContext.recentTunnelCandidateRefs })
         ) {
             adjustment -= 2.0
         }
@@ -1028,7 +2032,10 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         wayLinks: WayLinksContext,
         corridorProgress: CorridorProgressContext,
+        corridorPairs: CorridorPairContext,
         accuracyBufferM: Double,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
     ): List<TraceRankedCandidate> {
         val maxGeometryScore = candidates.maxOfOrNull { it.score } ?: 0.0
         val sorted = candidates
@@ -1042,13 +2049,31 @@ internal class V3SpeedLimitLookup(
                     corridorProgress = corridorProgress,
                     accuracyBufferM = accuracyBufferM,
                 )
+                val tunnelSelectable = isTunnelCandidateSelectable(
+                    candidate = candidate,
+                    matchContext = matchContext,
+                    wayLinks = wayLinks,
+                    progressContext = corridorProgress,
+                    pairContext = corridorPairs,
+                    accuracyBufferM = accuracyBufferM,
+                )
+                val corridorSelectable = isCorridorCandidateSelectable(
+                    candidate = candidate,
+                    matchContext = matchContext,
+                    wayLinks = wayLinks,
+                    progressContext = corridorProgress,
+                    pairContext = corridorPairs,
+                    accuracyBufferM = accuracyBufferM,
+                    horizontalAccuracyM = horizontalAccuracyM,
+                    gpsSignalBars = gpsSignalBars,
+                )
                 TraceRankedCandidate(
                     candidate = candidate,
                     continuity = continuity,
                     portalEligible = portalEligible,
                     corridorState = corridorState,
-                    tunnelSelectable = isTruthyOsmTag(candidate.tunnel) || portalEligible || corridorState != null,
-                    corridorSelectable = true,
+                    tunnelSelectable = tunnelSelectable,
+                    corridorSelectable = corridorSelectable,
                     traceScore = traceRankingScore(candidate, continuity, maxGeometryScore),
                     traceRank = 0,
                 )
@@ -1059,6 +2084,402 @@ internal class V3SpeedLimitLookup(
                     .thenBy { it.candidate.wayId ?: "~" },
             )
         return sorted.mapIndexed { index, entry -> entry.copy(traceRank = index + 1) }
+    }
+
+    private fun buildBaselineTraceRankedCandidates(
+        candidates: List<WayCandidate>,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+    ): List<TraceRankedCandidate> {
+        val maxDistance = candidates.maxOfOrNull { it.distanceM } ?: 0.0
+        val sorted = candidates
+            .map { candidate ->
+                val continuity = continuityClass(candidate, matchContext, wayLinks)
+                TraceRankedCandidate(
+                    candidate = candidate,
+                    continuity = continuity,
+                    portalEligible = false,
+                    corridorState = null,
+                    tunnelSelectable = true,
+                    corridorSelectable = true,
+                    traceScore = candidateTraceScore(
+                        geometryScore = candidate.distanceM,
+                        continuityClass = continuity.traceName,
+                        maxGeometryScore = maxDistance,
+                    ),
+                    traceRank = 0,
+                )
+            }
+            .sortedWith(
+                compareBy<TraceRankedCandidate> { it.traceScore }
+                    .thenBy { it.candidate.score }
+                    .thenBy { it.candidate.wayId ?: "~" },
+            )
+        return sorted.mapIndexed { index, entry -> entry.copy(traceRank = index + 1) }
+    }
+
+    private fun buildNonCorridorCandidateSelection(
+        finalSelected: WayCandidate?,
+        traceRankedCandidates: List<TraceRankedCandidate>,
+        selectionTrace: List<MatchSelectionTrace>,
+        nearbyTunnelCandidateWayIds: Set<String>,
+        nearbyTunnelCandidateRefs: Set<String>,
+        portalEligibleTunnelWayIds: Set<String>,
+        portalEligibleTunnelRefs: Set<String>,
+        modelTraceName: String? = null,
+    ): CandidateSelection {
+        val finalSelectionTrace = selectionTrace.toMutableList()
+        finalSelected?.let {
+            finalSelectionTrace += MatchSelectionTrace(
+                step = "final",
+                detail = buildString {
+                    append("selected ").append(it.wayId ?: "nil")
+                    append(" tunnel=").append(isTruthyOsmTag(it.tunnel))
+                    append(" corridor=none")
+                    if (modelTraceName != null) {
+                        append(" model=").append(modelTraceName)
+                    }
+                },
+            )
+        }
+        val selectedWayId = normalizedWayId(finalSelected?.wayId)
+        val candidateTraces = traceRankedCandidates
+            .take(MAX_TRACE_CANDIDATE_COUNT)
+            .map { entry ->
+                MatcherCandidateTrace(
+                    rank = entry.traceRank,
+                    wayId = entry.candidate.wayId,
+                    score = entry.traceScore,
+                    distanceM = entry.candidate.distanceM,
+                    geometryScore = entry.candidate.distanceM,
+                    endpointProximityM = entry.candidate.endpointProximityM,
+                    continuityClass = entry.continuity.traceName,
+                    highway = entry.candidate.highway,
+                    service = entry.candidate.service,
+                    streetName = entry.candidate.streetName,
+                    streetRef = entry.candidate.streetRef,
+                    tunnel = entry.candidate.tunnel,
+                    tunnelSelectable = true,
+                    corridorSelectable = true,
+                    portalEligible = false,
+                    isSelected = normalizedWayId(entry.candidate.wayId) == selectedWayId,
+                )
+            }
+        return CandidateSelection(
+            selected = finalSelected,
+            candidateTraces = candidateTraces,
+            nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
+            nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
+            portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
+            portalEligibleTunnelRefs = portalEligibleTunnelRefs,
+            activeCorridorState = null,
+            approachCorridorStateCandidate = null,
+            usedWalkingTurnSwitch = false,
+            usedMiniHMM = false,
+            miniHMMCandidateCount = 0,
+            matchHypotheses = emptyList(),
+            selectionTrace = finalSelectionTrace,
+        )
+    }
+
+    private fun baselineModeFilteredCandidates(
+        candidates: List<WayCandidate>,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+    ): List<WayCandidate> {
+        val preferredWayId = matchContext.preferredWayId ?: return candidates
+        if (matchContext.isInTunnelMode) {
+            val filtered = candidates.filter { candidate ->
+                if (isTruthyOsmTag(candidate.tunnel)) {
+                    true
+                } else {
+                    areLinkedWays(preferredWayId, normalizedWayId(candidate.wayId), wayLinks) &&
+                        candidate.endpointProximityM <= BASELINE_TUNNEL_EXIT_ENDPOINT_THRESHOLD_M
+                }
+            }
+            return filtered.ifEmpty { candidates }
+        }
+        if (matchContext.isInMotorwayMode) {
+            val preferredHighway = matchContext.preferredHighway?.lowercase().orEmpty()
+            val filtered = candidates.filter { candidate ->
+                val candidateHighway = candidate.highway?.lowercase().orEmpty()
+                val candidateWayId = normalizedWayId(candidate.wayId)
+                when (preferredHighway) {
+                    "motorway_link" -> {
+                        if (candidateHighway == "motorway" || candidateHighway == "motorway_link") {
+                            true
+                        } else {
+                            areLinkedWays(preferredWayId, candidateWayId, wayLinks) &&
+                                candidate.endpointProximityM <= BASELINE_MOTORWAY_GATE_ENDPOINT_THRESHOLD_M
+                        }
+                    }
+
+                    else -> when (candidateHighway) {
+                        "motorway" -> true
+                        "motorway_link" -> areLinkedWays(preferredWayId, candidateWayId, wayLinks)
+                        else -> false
+                    }
+                }
+            }
+            return filtered.ifEmpty { candidates }
+        }
+        return candidates
+    }
+
+    private fun bestBaselineContinuityCandidate(
+        candidates: List<WayCandidate>,
+        continuity: ContinuityClass,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+    ): WayCandidate? {
+        return candidates
+            .asSequence()
+            .filter { continuityClass(it, matchContext, wayLinks) == continuity }
+            .minWithOrNull(
+                Comparator { lhs, rhs ->
+                    when {
+                        isBetterDistanceCandidate(lhs, rhs) -> -1
+                        isBetterDistanceCandidate(rhs, lhs) -> 1
+                        else -> 0
+                    }
+                },
+            )
+    }
+
+    private fun shouldKeepBaselineContinuityCandidate(
+        continuityCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+        accuracyBufferM: Double,
+        distanceSlackM: Double,
+    ): Boolean {
+        val allowedDistanceSlack = max(distanceSlackM, accuracyBufferM * 0.35)
+        val allowedGeometrySlack = max(distanceSlackM * 2.0, accuracyBufferM)
+        return continuityCandidate.distanceM <= bestCandidate.distanceM + allowedDistanceSlack &&
+            continuityCandidate.score <= bestCandidate.score + allowedGeometrySlack
+    }
+
+    private fun baselineTurnTransitionCandidate(
+        candidates: List<WayCandidate>,
+        currentWayId: String?,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        accuracyBufferM: Double,
+    ): WayCandidate? {
+        val normalizedCurrentWayId = normalizedWayId(currentWayId) ?: return null
+        val currentCandidate = candidates.firstOrNull { normalizedWayId(it.wayId) == normalizedCurrentWayId } ?: return null
+        val bestCandidate = candidates.minWithOrNull(
+            Comparator { lhs, rhs ->
+                when {
+                    isBetterDistanceCandidate(lhs, rhs) -> -1
+                    isBetterDistanceCandidate(rhs, lhs) -> 1
+                    else -> 0
+                }
+            },
+        ) ?: return null
+        val fromAxisHeading = axisHeadingDeg(currentCandidate)
+        return candidates
+            .asSequence()
+            .filter { normalizedWayId(it.wayId) != normalizedCurrentWayId }
+            .sortedWith(
+                Comparator { lhs, rhs ->
+                    when {
+                        isBetterDistanceCandidate(lhs, rhs) -> -1
+                        isBetterDistanceCandidate(rhs, lhs) -> 1
+                        else -> 0
+                    }
+                },
+            )
+            .firstOrNull { candidate ->
+                val evidence = transitionHeadingEvidence(
+                    fromAxisHeadingDeg = fromAxisHeading,
+                    fromEndpointProximityM = currentCandidate.endpointProximityM,
+                    candidate = candidate,
+                    observedHeadingDeg = observedHeadingDeg,
+                    speedKmh = speedKmh,
+                ) ?: return@firstOrNull false
+                candidate.distanceM <= bestCandidate.distanceM + max(BASELINE_TURN_DISTANCE_SLACK_M, accuracyBufferM * 0.5) &&
+                    evidence.nearEndpoint &&
+                    evidence.meaningfulTurn &&
+                    evidence.candidateClearlyBetterAligned &&
+                    evidence.speedKmh <= BASELINE_TURN_TRANSITION_MAX_SPEED_KMH
+            }
+    }
+
+    private fun selectConnectedBaselineCandidate(
+        candidates: List<WayCandidate>,
+        matchContext: WayMatchContext,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+    ): NonCorridorMatcherSelection {
+        val filteredCandidates = baselineModeFilteredCandidates(candidates, matchContext, wayLinks)
+        val rankedCandidates = filteredCandidates.sortedWith(
+            Comparator { lhs, rhs ->
+                when {
+                    isBetterDistanceCandidate(lhs, rhs) -> -1
+                    isBetterDistanceCandidate(rhs, lhs) -> 1
+                    else -> 0
+                }
+            },
+        )
+        val traceRankedCandidates = buildBaselineTraceRankedCandidates(rankedCandidates, matchContext, wayLinks)
+        val bestCandidate = rankedCandidates.firstOrNull()
+            ?: return NonCorridorMatcherSelection(
+                traceRankedCandidates = traceRankedCandidates,
+                selectionTrace = listOf(
+                    MatchSelectionTrace(step = "baseline", detail = "no selectable candidates"),
+                ),
+            )
+        val selectionTrace = mutableListOf<MatchSelectionTrace>()
+        if (filteredCandidates.size != candidates.size) {
+            selectionTrace += MatchSelectionTrace(
+                step = "baseline_mode_gate",
+                detail = "filtered ${candidates.size - filteredCandidates.size} candidates due to tunnel/motorway mode",
+            )
+        }
+        val preferredCandidate = bestBaselineContinuityCandidate(
+            candidates = rankedCandidates,
+            continuity = ContinuityClass.PREFERRED_WAY,
+            matchContext = matchContext,
+            wayLinks = wayLinks,
+        )
+        val sameRefCandidate = bestBaselineContinuityCandidate(
+            candidates = rankedCandidates,
+            continuity = ContinuityClass.SAME_REF,
+            matchContext = matchContext,
+            wayLinks = wayLinks,
+        )
+        val turnCandidate = baselineTurnTransitionCandidate(
+            candidates = rankedCandidates,
+            currentWayId = matchContext.preferredWayId,
+            observedHeadingDeg = observedHeadingDeg,
+            speedKmh = speedKmh,
+            accuracyBufferM = accuracyBufferM,
+        )
+        val selected = when {
+            turnCandidate != null -> {
+                selectionTrace += MatchSelectionTrace(
+                    step = "baseline_turn_gate",
+                    detail = "selected connected turn ${turnCandidate.wayId ?: "nil"} over ${bestCandidate.wayId ?: "nil"} after low-speed heading change",
+                )
+                turnCandidate
+            }
+
+            preferredCandidate != null &&
+                normalizedWayId(preferredCandidate.wayId) != normalizedWayId(bestCandidate.wayId) &&
+                shouldKeepBaselineContinuityCandidate(
+                    continuityCandidate = preferredCandidate,
+                    bestCandidate = bestCandidate,
+                    accuracyBufferM = accuracyBufferM,
+                    distanceSlackM = BASELINE_PREFERRED_DISTANCE_SLACK_M,
+                ) -> {
+                selectionTrace += MatchSelectionTrace(
+                    step = "baseline_preferred_hold",
+                    detail = "kept preferred ${preferredCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"}",
+                )
+                preferredCandidate
+            }
+
+            sameRefCandidate != null &&
+                normalizedWayId(sameRefCandidate.wayId) != normalizedWayId(bestCandidate.wayId) &&
+                shouldKeepBaselineContinuityCandidate(
+                    continuityCandidate = sameRefCandidate,
+                    bestCandidate = bestCandidate,
+                    accuracyBufferM = accuracyBufferM,
+                    distanceSlackM = BASELINE_SAME_REF_DISTANCE_SLACK_M,
+                ) -> {
+                selectionTrace += MatchSelectionTrace(
+                    step = "baseline_same_ref_hold",
+                    detail = "kept same-ref ${sameRefCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"}",
+                )
+                sameRefCandidate
+            }
+
+            else -> bestCandidate
+        }
+        selectionTrace += MatchSelectionTrace(
+            step = "baseline",
+            detail = "selected ${selected.wayId ?: "nil"} nearest=${bestCandidate.wayId ?: "nil"} model=connected_baseline",
+        )
+        return NonCorridorMatcherSelection(
+            selected = selected,
+            traceRankedCandidates = traceRankedCandidates,
+            selectionTrace = selectionTrace,
+        )
+    }
+
+    private fun selectSimpleSpeedRefHeuristicCandidate(
+        candidates: List<WayCandidate>,
+        matchContext: WayMatchContext,
+        speedKmh: Double?,
+        horizontalAccuracyM: Double?,
+        wayLinks: WayLinksContext,
+    ): NonCorridorMatcherSelection {
+        val poorSignalThresholdM = 10.0
+        val lowSpeedThresholdKmh = 30.0
+        val poorSignal = (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) > poorSignalThresholdM
+        val lowSpeedAccurateGps = (speedKmh ?: 0.0) < lowSpeedThresholdKmh &&
+            (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) < poorSignalThresholdM
+        val filteredCandidates = if (matchContext.isInTunnelMode && poorSignal) {
+            candidates.filter { isTruthyOsmTag(it.tunnel) }.ifEmpty { candidates }
+        } else {
+            candidates
+        }
+        val rankedCandidates = filteredCandidates.sortedWith(
+            Comparator { lhs, rhs ->
+                when {
+                    isBetterDistanceCandidate(lhs, rhs) -> -1
+                    isBetterDistanceCandidate(rhs, lhs) -> 1
+                    else -> 0
+                }
+            },
+        )
+        val traceRankedCandidates = buildBaselineTraceRankedCandidates(rankedCandidates, matchContext, wayLinks)
+        val bestCandidate = rankedCandidates.firstOrNull()
+            ?: return NonCorridorMatcherSelection(
+                traceRankedCandidates = traceRankedCandidates,
+                selectionTrace = listOf(
+                    MatchSelectionTrace(step = "simple_speed_ref_heuristic", detail = "no selectable candidates"),
+                ),
+            )
+        val selectionTrace = mutableListOf<MatchSelectionTrace>()
+        if (filteredCandidates.size != candidates.size) {
+            selectionTrace += MatchSelectionTrace(
+                step = "simple_tunnel_hold_gate",
+                detail = "kept ${filteredCandidates.size} tunnel candidates while horizontal_accuracy_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)} remained above ${formatMetric(poorSignalThresholdM)}",
+            )
+        }
+        val previousRefCandidate = rankedCandidates.firstOrNull { candidate ->
+            val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
+            candidateRefTokens.isNotEmpty() && candidateRefTokens.any { token -> token in matchContext.recentStreetRefs }
+        }
+        val selected = if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousRefCandidate != null) {
+            if (normalizedWayId(previousRefCandidate.wayId) != normalizedWayId(bestCandidate.wayId)) {
+                selectionTrace += MatchSelectionTrace(
+                    step = "simple_same_ref_hold",
+                    detail = "kept same-ref ${previousRefCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)}",
+                )
+            }
+            previousRefCandidate
+        } else {
+            bestCandidate
+        }
+        val reason = when {
+            speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousRefCandidate != null -> "high_speed_same_ref"
+            lowSpeedAccurateGps -> "low_speed_good_gps_distance"
+            matchContext.isInTunnelMode && poorSignal -> "tunnel_hold_distance"
+            else -> "distance_fallback"
+        }
+        selectionTrace += MatchSelectionTrace(
+            step = "simple_speed_ref_heuristic",
+            detail = "selected ${selected.wayId ?: "nil"} nearest=${bestCandidate.wayId ?: "nil"} reason=$reason speed_kmh=${formatMetric(speedKmh ?: 0.0)} hacc_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)}",
+        )
+        return NonCorridorMatcherSelection(
+            selected = selected,
+            traceRankedCandidates = traceRankedCandidates,
+            selectionTrace = selectionTrace,
+        )
     }
 
     private fun top2TraceMargin(candidates: List<TraceRankedCandidate>): Double {
@@ -1527,7 +2948,9 @@ internal class V3SpeedLimitLookup(
         if (normalizedWayId(preferredCandidate.wayId) == normalizedWayId(transitionCandidate.wayId)) {
             return false
         }
-        if (shouldSuppressImmediateSameRefBounce(transitionCandidate, preferredCandidate, matchContext, wayLinks, accuracyBufferM)) {
+        if (usesSameRefBounceGate &&
+            shouldSuppressImmediateSameRefBounce(transitionCandidate, preferredCandidate, matchContext, wayLinks, accuracyBufferM)
+        ) {
             return false
         }
         val preferredRefTokens = normalizedRefTokens(preferredCandidate.streetRef).toSet()
@@ -1546,6 +2969,74 @@ internal class V3SpeedLimitLookup(
             return false
         }
         return preferredAtEndpoint && transitionNearEndpoint && transitionNotFarther
+    }
+
+    private fun isLegacyPortalTransitionCandidate(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+        requireSharedRef: Boolean,
+    ): Boolean {
+        val endpointThreshold = (if (requireSharedRef) TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M else TUNNEL_PORTAL_EXIT_ENDPOINT_THRESHOLD_M) +
+            accuracyBufferM
+        if (candidate.endpointProximityM > endpointThreshold) {
+            return false
+        }
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        if (requireSharedRef) {
+            return wayLinks.available && isLinkedCandidate(candidateWayId, matchContext, wayLinks, requireSharedRef = true)
+        }
+        if (wayLinks.available && isLinkedCandidate(candidateWayId, matchContext, wayLinks)) {
+            return true
+        }
+        return candidateWayId != null && candidateWayId in matchContext.recentWayIds
+    }
+
+    private fun isLegacyTunnelCandidateSelectable(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+    ): Boolean {
+        if (!isTruthyOsmTag(candidate.tunnel)) {
+            return true
+        }
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
+        if (matchContext.isInTunnelMode) {
+            if (candidateWayId != null && candidateWayId == matchContext.preferredWayId) {
+                return true
+            }
+            if (candidateWayId != null && candidateWayId in matchContext.recentTunnelCandidateWayIds) {
+                return true
+            }
+            if (candidateRefTokens.isNotEmpty() && candidateRefTokens.any { token -> token in matchContext.recentTunnelCandidateRefs }) {
+                return true
+            }
+            return isLegacyPortalTransitionCandidate(
+                candidate = candidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                accuracyBufferM = accuracyBufferM,
+                requireSharedRef = true,
+            )
+        }
+        if (candidateWayId != null && candidateWayId == matchContext.preferredWayId) {
+            return true
+        }
+        if (isLegacyPortalTransitionCandidate(candidate, matchContext, wayLinks, accuracyBufferM, requireSharedRef = true)) {
+            return true
+        }
+        if (matchContext.hadRecentGpsSignalLoss) {
+            if (candidateWayId != null && candidateWayId in matchContext.recentTunnelCandidateWayIds) {
+                return true
+            }
+            if (candidateRefTokens.isNotEmpty() && candidateRefTokens.any { token -> token in matchContext.recentTunnelCandidateRefs }) {
+                return candidate.endpointProximityM <= TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M + accuracyBufferM
+            }
+        }
+        return false
     }
 
     private fun shouldPromoteLinkedTransition(
@@ -1636,6 +3127,58 @@ internal class V3SpeedLimitLookup(
         return true
     }
 
+    private fun shouldApplyAntiAbaHysteresis(
+        candidate: WayCandidate,
+        holdCandidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        corridorProgress: CorridorProgressContext,
+        accuracyBufferM: Double,
+    ): Boolean {
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        val holdWayId = normalizedWayId(holdCandidate.wayId)
+        val preferredWayId = matchContext.preferredWayId
+        val priorWayId = matchContext.recentWayHistory.drop(1).firstOrNull()
+        if (candidateWayId == null ||
+            holdWayId == null ||
+            preferredWayId == null ||
+            priorWayId == null ||
+            holdWayId != preferredWayId ||
+            candidateWayId != priorWayId ||
+            candidateWayId == holdWayId
+        ) {
+            return false
+        }
+        if (isTruthyOsmTag(candidate.tunnel) != isTruthyOsmTag(holdCandidate.tunnel)) {
+            return false
+        }
+
+        val candidateCorridorState = candidateCorridorState(candidate, matchContext, wayLinks, corridorProgress)?.snapshot
+        val holdCorridorState = candidateCorridorState(holdCandidate, matchContext, wayLinks, corridorProgress)?.snapshot
+        val sameCorridor = sameCorridorState(candidateCorridorState, holdCorridorState) ||
+            (candidateCorridorState == null && holdCorridorState == null)
+        val candidateRefs = normalizedRefTokens(candidate.streetRef).toSet()
+        val holdRefs = normalizedRefTokens(holdCandidate.streetRef).toSet()
+        val sharesRef = candidateRefs.isNotEmpty() && candidateRefs.intersect(holdRefs).isNotEmpty()
+        val linked = wayLinks.available && (
+            areLinkedWays(candidateWayId, holdWayId, wayLinks) ||
+                areSharedRefLinkedWays(candidateWayId, holdWayId, wayLinks)
+            )
+        if (!sameCorridor && !sharesRef && !linked) {
+            return false
+        }
+
+        val requiredScoreImprovement = max(SAME_REF_BOUNCE_MIN_SCORE_IMPROVEMENT_M, accuracyBufferM)
+        if (holdCandidate.score - candidate.score >= requiredScoreImprovement) {
+            return false
+        }
+        val requiredDistanceImprovement = SAME_REF_BOUNCE_MIN_DISTANCE_IMPROVEMENT_M + min(accuracyBufferM * 0.25, 4.0)
+        if (holdCandidate.distanceM - candidate.distanceM >= requiredDistanceImprovement) {
+            return false
+        }
+        return true
+    }
+
     private fun isImmediateSameRefBounceCandidate(
         candidate: WayCandidate,
         preferredCandidate: WayCandidate,
@@ -1667,15 +3210,15 @@ internal class V3SpeedLimitLookup(
         accuracyBufferM: Double,
     ): Boolean {
         val portalEligible = isPortalEligibleTunnelCandidate(tunnelCandidate, matchContext, wayLinks, corridorProgress, accuracyBufferM)
-        if (
-            !isTruthyOsmTag(tunnelCandidate.tunnel) ||
+        if (!isTruthyOsmTag(tunnelCandidate.tunnel) ||
             isTruthyOsmTag(surfaceCandidate.tunnel) ||
             (!portalEligible && !hasCommittedTunnelApproachEvidence(tunnelCandidate, matchContext, horizontalAccuracyM, gpsSignalBars))
         ) {
             return false
         }
-        val motionScore = portalMotionProgressScore(tunnelCandidate, matchContext)
-        val allowedSlack = max(TUNNEL_PORTAL_SCORE_SLACK_M, min(accuracyBufferM, 20.0)) + (motionScore * TUNNEL_PORTAL_COMMIT_SLACK_BONUS_M)
+        val portalCommitScore = portalCommitProgressScore(tunnelCandidate, matchContext)
+        val allowedSlack = max(TUNNEL_PORTAL_SCORE_SLACK_M, min(accuracyBufferM, 20.0)) +
+            (portalCommitScore * TUNNEL_PORTAL_COMMIT_SLACK_BONUS_M)
         return tunnelCandidate.score <= surfaceCandidate.score + allowedSlack
     }
 
@@ -1685,6 +3228,7 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         wayLinks: WayLinksContext,
         corridorProgress: CorridorProgressContext,
+        pairContext: CorridorPairContext,
         accuracyBufferM: Double,
         horizontalAccuracyM: Double?,
         gpsSignalBars: Int?,
@@ -1692,78 +3236,253 @@ internal class V3SpeedLimitLookup(
         if (!isTruthyOsmTag(tunnelCandidate.tunnel) || isTruthyOsmTag(surfaceCandidate.tunnel) || !matchContext.isInTunnelMode) {
             return false
         }
-        val surfaceCorridorState = candidateCorridorState(surfaceCandidate, matchContext, wayLinks, corridorProgress)
-        if (surfaceCorridorState != null && surfaceCandidate.score <= tunnelCandidate.score + TUNNEL_PORTAL_SCORE_SLACK_M) {
+        if (
+            isCorridorCandidateSelectable(
+                candidate = surfaceCandidate,
+                matchContext = matchContext,
+                wayLinks = wayLinks,
+                progressContext = corridorProgress,
+                pairContext = pairContext,
+                accuracyBufferM = accuracyBufferM,
+                horizontalAccuracyM = horizontalAccuracyM,
+                gpsSignalBars = gpsSignalBars,
+            ) &&
+            surfaceCandidate.score <= tunnelCandidate.score + TUNNEL_PORTAL_SCORE_SLACK_M
+        ) {
             return false
-        }
-        if (hasCommittedTunnelApproachEvidence(tunnelCandidate, matchContext, horizontalAccuracyM, gpsSignalBars)) {
-            return true
         }
         return tunnelCandidate.score <= surfaceCandidate.score + max(TUNNEL_PORTAL_SCORE_SLACK_M, accuracyBufferM)
     }
 
-    private fun candidateCorridorState(
+    private fun corridorProgressInfos(
+        candidate: WayCandidate,
+        progressContext: CorridorProgressContext,
+    ): List<CorridorProgressInfo> {
+        if (!progressContext.available) {
+            return emptyList()
+        }
+        return progressContext.byWayId[normalizedWayId(candidate.wayId)].orEmpty()
+    }
+
+    private fun corridorEntryDepthThresholdM(kind: String): Double {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_DEPTH_M
+            else -> TUNNEL_CORRIDOR_ENTRY_DEPTH_M
+        }
+    }
+
+    private fun corridorExitRemainingThresholdM(kind: String): Double {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_EXIT_REMAINING_M
+            else -> TUNNEL_CORRIDOR_EXIT_REMAINING_M
+        }
+    }
+
+    private fun corridorEntryMinDepthM(kind: String): Double {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_MIN_DEPTH_M
+            else -> TUNNEL_CORRIDOR_ENTRY_MIN_DEPTH_M
+        }
+    }
+
+    private fun corridorEntryFixCount(kind: String): Int {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_FIX_COUNT
+            else -> TUNNEL_CORRIDOR_ENTRY_FIX_COUNT
+        }
+    }
+
+    private fun corridorEntryProgressThresholdM(kind: String): Double {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_PROGRESS_M
+            else -> TUNNEL_CORRIDOR_ENTRY_PROGRESS_M
+        }
+    }
+
+    private fun corridorEntryProgressThresholdNodes(kind: String): Int {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_PROGRESS_NODES
+            else -> TUNNEL_CORRIDOR_ENTRY_PROGRESS_NODES
+        }
+    }
+
+    private fun corridorExitRemainingThresholdNodes(kind: String): Int {
+        return when (kind) {
+            "motorway" -> MOTORWAY_CORRIDOR_EXIT_REMAINING_NODES
+            else -> TUNNEL_CORRIDOR_EXIT_REMAINING_NODES
+        }
+    }
+
+    private fun corridorUsesNodeProgress(
+        spanNodes: Int,
+        thresholdNodes: Int,
+    ): Boolean {
+        return spanNodes >= thresholdNodes + 1
+    }
+
+    private fun corridorApproachProgressM(
+        candidateCorridorState: CandidateCorridorState,
+        matchContext: WayMatchContext,
+    ): Double {
+        val startDepthM = matchContext.approachCorridorStartDepthM ?: matchContext.approachCorridorState?.depthM ?: return 0.0
+        return max(0.0, candidateCorridorState.snapshot.depthM - startDepthM)
+    }
+
+    private fun corridorApproachProgressNodes(
+        candidateCorridorState: CandidateCorridorState,
+        matchContext: WayMatchContext,
+    ): Int {
+        val startDepthNodes = matchContext.approachCorridorStartDepthNodes ?: matchContext.approachCorridorState?.depthNodes ?: return 0
+        return max(0, candidateCorridorState.snapshot.depthNodes - startDepthNodes)
+    }
+
+    private fun corridorChainCommitScore(
+        candidateCorridorState: CandidateCorridorState?,
+        matchContext: WayMatchContext,
+    ): Double {
+        val corridorState = candidateCorridorState ?: return 0.0
+        if (sameCorridorState(matchContext.activeCorridorState, corridorState.snapshot)) {
+            return 1.0
+        }
+        val approachState = matchContext.approachCorridorState ?: return 0.0
+        if (!sameCorridorState(approachState, corridorState.snapshot) ||
+            matchContext.approachCorridorFixCount < corridorEntryFixCount(corridorState.snapshot.kind) ||
+            corridorState.snapshot.depthM + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M < approachState.depthM ||
+            corridorState.snapshot.depthM < corridorEntryMinDepthM(corridorState.snapshot.kind)
+        ) {
+            return 0.0
+        }
+        val progressThresholdM = max(corridorEntryProgressThresholdM(corridorState.snapshot.kind), 1.0)
+        val progressScore = min(1.0, max(0.0, corridorApproachProgressM(corridorState, matchContext) / progressThresholdM))
+        val entryDepthWindowM = max(
+            corridorEntryDepthThresholdM(corridorState.snapshot.kind) - corridorEntryMinDepthM(corridorState.snapshot.kind),
+            1.0,
+        )
+        val depthScore = min(
+            1.0,
+            max(
+                0.0,
+                (corridorState.snapshot.depthM - corridorEntryMinDepthM(corridorState.snapshot.kind)) / entryDepthWindowM,
+            ),
+        )
+        val fixScore = min(
+            1.0,
+            matchContext.approachCorridorFixCount.toDouble() /
+                max(corridorEntryFixCount(corridorState.snapshot.kind) + 1, 1).toDouble(),
+        )
+        val nodeThreshold = corridorEntryProgressThresholdNodes(corridorState.snapshot.kind)
+        val nodeScore = if (corridorUsesNodeProgress(corridorState.snapshot.spanNodes, nodeThreshold)) {
+            min(1.0, corridorApproachProgressNodes(corridorState, matchContext).toDouble() / max(nodeThreshold, 1).toDouble())
+        } else {
+            progressScore
+        }
+        return max(
+            progressScore,
+            min(1.0, (0.45 * progressScore) + (0.25 * depthScore) + (0.20 * nodeScore) + (0.10 * fixScore)),
+        )
+    }
+
+    private fun hasCommittedApproachCorridorEvidence(
+        candidateCorridorState: CandidateCorridorState?,
+        matchContext: WayMatchContext,
+    ): Boolean {
+        return corridorChainCommitScore(candidateCorridorState, matchContext) >= CORRIDOR_STATE_TUNNEL_CHAIN_COMMIT_MIN_SCORE
+    }
+
+    private fun hasPairedSurfaceApproachEvidence(
+        candidateCorridorState: CandidateCorridorState?,
+        matchContext: WayMatchContext,
+        pairContext: CorridorPairContext,
+    ): Boolean {
+        val candidateSnapshot = candidateCorridorState?.snapshot ?: return !pairContext.available
+        if (!pairContext.available) {
+            return true
+        }
+        return matchContext.recentHypotheses.any { hypothesis ->
+            val previousSnapshot = hypothesisCorridorSnapshot(hypothesis) ?: return@any false
+            if (previousSnapshot.kind != "surface" && previousSnapshot.kind != "motorway_link") {
+                return@any false
+            }
+            isPairedWithMainCorridor(previousSnapshot, candidateSnapshot, pairContext)
+        }
+    }
+
+    private fun isContinuingApproachCorridorCandidate(
+        candidateCorridorState: CandidateCorridorState?,
+        matchContext: WayMatchContext,
+    ): Boolean {
+        val corridorState = candidateCorridorState ?: return false
+        val approachState = matchContext.approachCorridorState ?: return false
+        if (!sameCorridorState(approachState, corridorState.snapshot) ||
+            corridorState.snapshot.depthM + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M < approachState.depthM
+        ) {
+            return false
+        }
+        if (corridorState.progressDeltaNodes != null &&
+            corridorState.progressDeltaNodes < -1 &&
+            !corridorState.exitZone
+        ) {
+            return false
+        }
+        return true
+    }
+
+    private fun isTunnelCandidateSelectable(
         candidate: WayCandidate,
         matchContext: WayMatchContext,
         wayLinks: WayLinksContext,
-        corridorProgress: CorridorProgressContext,
-    ): CandidateCorridorState? {
-        val infos = corridorProgress.byWayId[normalizedWayId(candidate.wayId)].orEmpty()
-        if (infos.isEmpty()) {
-            return null
-        }
-        val anchorSideNodeKeys = if (matchContext.preferredWayId != null) {
-            wayLinks.sharedNodeKeys(matchContext.preferredWayId, normalizedWayId(candidate.wayId))
-        } else {
-            emptySet()
-        }
-        return infos.asSequence()
-            .filter { info ->
-                anchorSideNodeKeys.isEmpty() || info.sideNodeKey in anchorSideNodeKeys ||
-                    sameCorridorState(matchContext.activeCorridorState, corridorStateSnapshot(candidate, info)) ||
-                    sameCorridorState(matchContext.approachCorridorState, corridorStateSnapshot(candidate, info))
-            }
-            .mapNotNull { info ->
-                val snapshot = corridorStateSnapshot(candidate, info) ?: return@mapNotNull null
-                CandidateCorridorState(
-                    snapshot = snapshot,
-                    entryZone = snapshot.depthM <= corridorEntryDepthThresholdM(snapshot.kind),
-                    exitZone = isCorridorExitZone(snapshot),
-                )
-            }
-            .sortedWith(compareBy<CandidateCorridorState> { it.snapshot.depthM }.thenBy { it.snapshot.corridorId })
-            .firstOrNull()
-    }
-
-    private fun shouldTriggerActiveCorridorMode(
-        candidateCorridorState: CandidateCorridorState,
-        matchContext: WayMatchContext,
+        progressContext: CorridorProgressContext,
+        pairContext: CorridorPairContext,
+        accuracyBufferM: Double,
     ): Boolean {
-        if (sameCorridorState(matchContext.activeCorridorState, candidateCorridorState.snapshot)) {
+        if (!isTruthyOsmTag(candidate.tunnel)) {
             return true
         }
-        val approachState = matchContext.approachCorridorState ?: return false
-        if (!sameCorridorState(approachState, candidateCorridorState.snapshot)) {
+        if (isLegacyTunnelCandidateSelectable(candidate, matchContext, wayLinks, accuracyBufferM)) {
+            return true
+        }
+        val corridorCandidateState = candidateCorridorState(candidate, matchContext, wayLinks, progressContext) ?: return false
+        if (sameCorridorState(matchContext.activeCorridorState, corridorCandidateState.snapshot)) {
+            return true
+        }
+        if (!hasPairedSurfaceApproachEvidence(corridorCandidateState, matchContext, pairContext)) {
             return false
         }
-        if (matchContext.approachCorridorFixCount < corridorEntryFixCount(candidateCorridorState.snapshot.kind)) {
-            return false
+        if (isContinuingApproachCorridorCandidate(corridorCandidateState, matchContext)) {
+            return true
         }
-        if (candidateCorridorState.snapshot.depthM < corridorEntryMinDepthM(candidateCorridorState.snapshot.kind)) {
-            return false
+        return hasCommittedApproachCorridorEvidence(corridorCandidateState, matchContext)
+    }
+
+    private fun corridorDepthM(
+        candidate: WayCandidate,
+        progressInfo: CorridorProgressInfo,
+    ): Double? {
+        val distanceToStartM = candidate.distanceToStartM ?: return null
+        val distanceToEndM = candidate.distanceToEndM ?: return null
+        val viaStart = progressInfo.startDepthM + distanceToStartM
+        val viaEnd = progressInfo.endDepthM + distanceToEndM
+        return min(viaStart, viaEnd)
+    }
+
+    private fun corridorDepthNodes(
+        candidate: WayCandidate,
+        progressInfo: CorridorProgressInfo,
+    ): Int {
+        val distanceToStartM = candidate.distanceToStartM
+        val distanceToEndM = candidate.distanceToEndM
+        if (distanceToStartM == null || distanceToEndM == null) {
+            return min(progressInfo.startDepthNodes, progressInfo.endDepthNodes)
         }
-        return candidateCorridorState.snapshot.depthM + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M >= approachState.depthM
+        return if (distanceToStartM <= distanceToEndM) progressInfo.startDepthNodes else progressInfo.endDepthNodes
     }
 
     private fun corridorStateSnapshot(
         candidate: WayCandidate,
         info: CorridorProgressInfo,
     ): CorridorMatchState? {
-        val distanceToStartM = candidate.distanceToStartM ?: return null
-        val distanceToEndM = candidate.distanceToEndM ?: return null
-        val useStart = distanceToStartM <= distanceToEndM
-        val depthM = if (useStart) info.startDepthM else info.endDepthM
-        val depthNodes = if (useStart) info.startDepthNodes else info.endDepthNodes
+        val depthM = corridorDepthM(candidate, info) ?: return null
+        val depthNodes = corridorDepthNodes(candidate, info)
         return CorridorMatchState(
             kind = info.kind,
             corridorId = info.corridorId,
@@ -1788,43 +3507,251 @@ internal class V3SpeedLimitLookup(
         return remainingNodes <= thresholdNodes
     }
 
-    private fun corridorEntryDepthThresholdM(kind: String): Double {
-        return when (kind) {
-            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_DEPTH_M
-            else -> TUNNEL_CORRIDOR_ENTRY_DEPTH_M
+    private fun corridorPairRelationsForMain(
+        snapshot: CorridorMatchState?,
+        pairContext: CorridorPairContext,
+    ): List<CorridorPairRelation> {
+        if (!pairContext.available || snapshot == null) {
+            return emptyList()
+        }
+        return pairContext.byMainKey[corridorPairKey(snapshot.kind, snapshot.corridorId, snapshot.sideNodeKey)].orEmpty()
+    }
+
+    private fun corridorPairRelationsForPaired(
+        snapshot: CorridorMatchState?,
+        pairContext: CorridorPairContext,
+    ): List<CorridorPairRelation> {
+        if (!pairContext.available || snapshot == null) {
+            return emptyList()
+        }
+        return pairContext.byPairedKey[corridorPairKey(snapshot.kind, snapshot.corridorId, snapshot.sideNodeKey)].orEmpty()
+    }
+
+    private fun hypothesisCorridorSnapshot(hypothesis: WayMatchHypothesis): CorridorMatchState? {
+        val corridorKind = hypothesis.corridorKind ?: return null
+        val corridorId = hypothesis.corridorId ?: return null
+        val sideNodeKey = hypothesis.corridorSideNodeKey ?: return null
+        return CorridorMatchState(
+            kind = corridorKind,
+            corridorId = corridorId,
+            sideNodeKey = sideNodeKey,
+            depthM = 0.0,
+            spanM = 0.0,
+            depthNodes = 0,
+            spanNodes = 0,
+        )
+    }
+
+    private fun isPairedWithMainCorridor(
+        pairedSnapshot: CorridorMatchState?,
+        mainSnapshot: CorridorMatchState?,
+        pairContext: CorridorPairContext,
+        requireOppositeSide: Boolean = false,
+    ): Boolean {
+        val resolvedPairedSnapshot = pairedSnapshot ?: return false
+        val resolvedMainSnapshot = mainSnapshot ?: return false
+        return corridorPairRelationsForPaired(resolvedPairedSnapshot, pairContext).any { relation ->
+            if (relation.corridorKind != resolvedMainSnapshot.kind || relation.corridorId != resolvedMainSnapshot.corridorId) {
+                return@any false
+            }
+            if (requireOppositeSide) {
+                relation.sideNodeKey != resolvedMainSnapshot.sideNodeKey
+            } else {
+                relation.sideNodeKey == resolvedMainSnapshot.sideNodeKey
+            }
         }
     }
 
-    private fun corridorEntryMinDepthM(kind: String): Double {
-        return when (kind) {
-            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_MIN_DEPTH_M
-            else -> TUNNEL_CORRIDOR_ENTRY_MIN_DEPTH_M
+    private fun isMainCorridorPairedToCandidate(
+        mainSnapshot: CorridorMatchState?,
+        candidateSnapshot: CorridorMatchState?,
+        pairContext: CorridorPairContext,
+        requireOppositeSide: Boolean = false,
+    ): Boolean {
+        val resolvedMainSnapshot = mainSnapshot ?: return false
+        val resolvedCandidateSnapshot = candidateSnapshot ?: return false
+        return corridorPairRelationsForMain(resolvedMainSnapshot, pairContext).any { relation ->
+            if (relation.pairedKind != resolvedCandidateSnapshot.kind || relation.pairedCorridorId != resolvedCandidateSnapshot.corridorId) {
+                return@any false
+            }
+            if (requireOppositeSide) {
+                relation.sideNodeKey != resolvedMainSnapshot.sideNodeKey &&
+                    relation.sideNodeKey == resolvedCandidateSnapshot.sideNodeKey
+            } else {
+                relation.sideNodeKey == resolvedCandidateSnapshot.sideNodeKey
+            }
         }
     }
 
-    private fun corridorEntryFixCount(kind: String): Int {
-        return when (kind) {
-            "motorway" -> MOTORWAY_CORRIDOR_ENTRY_FIX_COUNT
-            else -> TUNNEL_CORRIDOR_ENTRY_FIX_COUNT
+    private fun candidateCorridorState(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        corridorProgress: CorridorProgressContext,
+    ): CandidateCorridorState? {
+        val infos = corridorProgressInfos(candidate, corridorProgress)
+        if (infos.isEmpty()) {
+            return null
+        }
+        matchContext.activeCorridorState?.let { activeState ->
+            val activeCandidates = infos
+                .filter {
+                    it.kind == activeState.kind &&
+                        it.corridorId == activeState.corridorId &&
+                        it.sideNodeKey == activeState.sideNodeKey
+                }
+                .mapNotNull { info ->
+                    val snapshot = corridorStateSnapshot(candidate, info) ?: return@mapNotNull null
+                    CandidateCorridorState(
+                        snapshot = snapshot,
+                        entryZone = snapshot.depthM <= corridorEntryDepthThresholdM(snapshot.kind),
+                        exitZone = isCorridorExitZone(snapshot),
+                        progressDeltaM = snapshot.depthM - activeState.depthM,
+                        progressDeltaNodes = snapshot.depthNodes - activeState.depthNodes,
+                    )
+                }
+                .sortedWith(compareBy<CandidateCorridorState> { it.snapshot.depthM }.thenBy { it.snapshot.corridorId })
+            if (activeCandidates.isNotEmpty()) {
+                return activeCandidates.first()
+            }
+        }
+        matchContext.approachCorridorState?.let { approachState ->
+            val approachCandidates = infos
+                .filter {
+                    it.kind == approachState.kind &&
+                        it.corridorId == approachState.corridorId &&
+                        it.sideNodeKey == approachState.sideNodeKey
+                }
+                .mapNotNull { info ->
+                    val snapshot = corridorStateSnapshot(candidate, info) ?: return@mapNotNull null
+                    CandidateCorridorState(
+                        snapshot = snapshot,
+                        entryZone = snapshot.depthM <= corridorEntryDepthThresholdM(snapshot.kind),
+                        exitZone = isCorridorExitZone(snapshot),
+                        progressDeltaM = snapshot.depthM - approachState.depthM,
+                        progressDeltaNodes = snapshot.depthNodes - approachState.depthNodes,
+                    )
+                }
+                .sortedWith(compareBy<CandidateCorridorState> { it.snapshot.depthM }.thenBy { it.snapshot.corridorId })
+            if (approachCandidates.isNotEmpty()) {
+                return approachCandidates.first()
+            }
+        }
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        if (candidateWayId != null && (candidateWayId == matchContext.preferredWayId || candidateWayId in matchContext.recentWayIds)) {
+            val preferredCandidates = infos
+                .mapNotNull { info ->
+                    val snapshot = corridorStateSnapshot(candidate, info) ?: return@mapNotNull null
+                    CandidateCorridorState(
+                        snapshot = snapshot,
+                        entryZone = snapshot.depthM <= corridorEntryDepthThresholdM(snapshot.kind),
+                        exitZone = isCorridorExitZone(snapshot),
+                    )
+                }
+                .sortedWith(
+                    compareBy<CandidateCorridorState> { it.snapshot.depthM }
+                        .thenBy { it.snapshot.depthNodes }
+                        .thenBy { it.snapshot.corridorId },
+                )
+            if (preferredCandidates.isNotEmpty()) {
+                return preferredCandidates.first()
+            }
+        }
+        val anchor = corridorAnchor(matchContext) ?: return null
+        if (candidateWayId == null) {
+            return null
+        }
+        val sharedNodeKeys = wayLinks.sharedNodeKeys(anchor.wayId, candidateWayId)
+        if (sharedNodeKeys.isEmpty()) {
+            return null
+        }
+        return infos
+            .filter { it.sideNodeKey in sharedNodeKeys }
+            .mapNotNull { info ->
+                val snapshot = corridorStateSnapshot(candidate, info) ?: return@mapNotNull null
+                CandidateCorridorState(
+                    snapshot = snapshot,
+                    entryZone = snapshot.depthM <= corridorEntryDepthThresholdM(snapshot.kind),
+                    exitZone = isCorridorExitZone(snapshot),
+                )
+            }
+            .sortedWith(compareBy<CandidateCorridorState> { it.snapshot.depthM }.thenBy { it.snapshot.corridorId })
+            .firstOrNull()
+    }
+
+    private fun shouldTriggerActiveCorridorMode(
+        candidateCorridorState: CandidateCorridorState,
+        matchContext: WayMatchContext,
+    ): Boolean {
+        if (sameCorridorState(matchContext.activeCorridorState, candidateCorridorState.snapshot)) {
+            return true
+        }
+        val approachState = matchContext.approachCorridorState ?: return false
+        if (!sameCorridorState(approachState, candidateCorridorState.snapshot) ||
+            matchContext.approachCorridorFixCount < corridorEntryFixCount(candidateCorridorState.snapshot.kind) ||
+            candidateCorridorState.snapshot.depthM < corridorEntryMinDepthM(candidateCorridorState.snapshot.kind)
+        ) {
+            return false
+        }
+        if (corridorChainCommitScore(candidateCorridorState, matchContext) < CORRIDOR_STATE_TUNNEL_CHAIN_COMMIT_MIN_SCORE) {
+            return false
+        }
+        return candidateCorridorState.snapshot.depthM + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M >= approachState.depthM
+    }
+
+    private fun isActiveCorridorExitCandidate(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+    ): Boolean {
+        val activeState = matchContext.activeCorridorState ?: return false
+        val preferredWayId = matchContext.preferredWayId ?: return false
+        val candidateWayId = normalizedWayId(candidate.wayId) ?: return false
+        val remainingM = max(0.0, activeState.spanM - activeState.depthM)
+        if (remainingM > corridorExitRemainingThresholdM(activeState.kind) + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M) {
+            return false
+        }
+        val remainingThresholdNodes = corridorExitRemainingThresholdNodes(activeState.kind)
+        if (corridorUsesNodeProgress(activeState.spanNodes, remainingThresholdNodes)) {
+            val remainingNodes = max(0, activeState.spanNodes - activeState.depthNodes)
+            if (remainingNodes > remainingThresholdNodes) {
+                return false
+            }
+        }
+        val sharedNodeKeys = wayLinks.sharedNodeKeys(preferredWayId, candidateWayId)
+        if (sharedNodeKeys.none { it != activeState.sideNodeKey }) {
+            return false
+        }
+        return if (activeState.kind == "motorway") {
+            candidate.highway.equals("motorway_link", ignoreCase = true)
+        } else {
+            !isTruthyOsmTag(candidate.tunnel)
         }
     }
 
-    private fun corridorExitRemainingThresholdM(kind: String): Double {
-        return when (kind) {
-            "motorway" -> MOTORWAY_CORRIDOR_EXIT_REMAINING_M
-            else -> TUNNEL_CORRIDOR_EXIT_REMAINING_M
+    private fun isActiveCorridorEntryConnectorCandidate(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+    ): Boolean {
+        val activeState = matchContext.activeCorridorState ?: return false
+        if (activeState.kind != "motorway" ||
+            activeState.depthM > corridorEntryDepthThresholdM(activeState.kind) + CORRIDOR_PROGRESS_NOISE_TOLERANCE_M
+        ) {
+            return false
         }
-    }
-
-    private fun corridorExitRemainingThresholdNodes(kind: String): Int {
-        return when (kind) {
-            "motorway" -> MOTORWAY_CORRIDOR_EXIT_REMAINING_NODES
-            else -> TUNNEL_CORRIDOR_EXIT_REMAINING_NODES
+        val preferredWayId = matchContext.preferredWayId ?: return false
+        val candidateWayId = normalizedWayId(candidate.wayId) ?: return false
+        if (!candidate.highway.equals("motorway_link", ignoreCase = true)) {
+            return false
         }
-    }
-
-    private fun corridorUsesNodeProgress(spanNodes: Int, thresholdNodes: Int): Boolean {
-        return spanNodes > 0 && thresholdNodes > 0
+        val entryThresholdNodes = corridorEntryProgressThresholdNodes(activeState.kind)
+        if (corridorUsesNodeProgress(activeState.spanNodes, entryThresholdNodes) &&
+            activeState.depthNodes > entryThresholdNodes
+        ) {
+            return false
+        }
+        return wayLinks.sharedNodeKeys(preferredWayId, candidateWayId).contains(activeState.sideNodeKey)
     }
 
     private fun sameCorridorState(
@@ -1838,6 +3765,203 @@ internal class V3SpeedLimitLookup(
             lhs.sideNodeKey == rhs.sideNodeKey
     }
 
+    private fun signalQualityEvidence(
+        matchContext: WayMatchContext,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+    ): SignalQualityEvidence {
+        val horizontalAccuracyDeltaM = if (
+            matchContext.tunnelApproachBaselineAccuracyM != null &&
+            horizontalAccuracyM != null &&
+            horizontalAccuracyM.isFinite()
+        ) {
+            max(0.0, horizontalAccuracyM - matchContext.tunnelApproachBaselineAccuracyM)
+        } else {
+            0.0
+        }
+        val gpsSignalBarsDrop = if (matchContext.tunnelApproachBaselineSignalBars != null && gpsSignalBars != null) {
+            max(0, matchContext.tunnelApproachBaselineSignalBars - gpsSignalBars)
+        } else {
+            0
+        }
+        return SignalQualityEvidence(
+            tunnelApproachFixCount = matchContext.tunnelApproachFixCount,
+            horizontalAccuracyDeltaM = horizontalAccuracyDeltaM,
+            gpsSignalBarsDrop = gpsSignalBarsDrop,
+            hadRecentGpsSignalLoss = matchContext.hadRecentGpsSignalLoss,
+        )
+    }
+
+    private fun shouldFallbackWhenCorridorGateEmptiesCandidates(matchContext: WayMatchContext): Boolean {
+        return matchContext.hadRecentGpsSignalLoss
+    }
+
+    private fun isCorridorCandidateSelectable(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        progressContext: CorridorProgressContext,
+        pairContext: CorridorPairContext,
+        accuracyBufferM: Double,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+    ): Boolean {
+        val tunnelSelectable = isTunnelCandidateSelectable(candidate, matchContext, wayLinks, progressContext, pairContext, accuracyBufferM)
+        if (!tunnelSelectable) {
+            return false
+        }
+        matchContext.activeCorridorState?.let { activeCorridorState ->
+            val corridorState = candidateCorridorState(candidate, matchContext, wayLinks, progressContext)
+            if (corridorState != null && sameCorridorState(activeCorridorState, corridorState.snapshot)) {
+                if (corridorState.progressDeltaM != null &&
+                    corridorState.progressDeltaM < -CORRIDOR_PROGRESS_NOISE_TOLERANCE_M &&
+                    !corridorState.exitZone
+                ) {
+                    return false
+                }
+                if (corridorState.progressDeltaNodes != null &&
+                    corridorUsesNodeProgress(activeCorridorState.spanNodes, corridorEntryProgressThresholdNodes(activeCorridorState.kind)) &&
+                    corridorState.progressDeltaNodes < -1 &&
+                    !corridorState.exitZone
+                ) {
+                    return false
+                }
+                return true
+            }
+            if (isActiveCorridorEntryConnectorCandidate(candidate, matchContext, wayLinks)) {
+                return true
+            }
+            return isActiveCorridorExitCandidate(candidate, matchContext, wayLinks)
+        }
+        val anchor = corridorAnchor(matchContext) ?: return tunnelSelectable
+        val candidateWayId = normalizedWayId(candidate.wayId)
+        if (candidateWayId == anchor.wayId) {
+            return true
+        }
+        val candidateState = corridorState(candidate)
+        val corridorCandidateState = candidateCorridorState(candidate, matchContext, wayLinks, progressContext)
+        return when (anchor.state to candidateState) {
+            CorridorState.SURFACE to CorridorState.SURFACE -> true
+            CorridorState.SURFACE to CorridorState.TUNNEL -> {
+                isContinuingApproachCorridorCandidate(corridorCandidateState, matchContext) ||
+                    hasCommittedApproachCorridorEvidence(corridorCandidateState, matchContext) ||
+                    isPortalEligibleTunnelCandidate(candidate, matchContext, wayLinks, progressContext, accuracyBufferM) ||
+                    hasCommittedTunnelApproachEvidence(candidate, matchContext, horizontalAccuracyM, gpsSignalBars)
+            }
+            CorridorState.SURFACE to CorridorState.MOTORWAY -> {
+                corridorCandidateState != null && shouldTriggerActiveCorridorMode(corridorCandidateState, matchContext)
+            }
+            CorridorState.SURFACE to CorridorState.MOTORWAY_LINK -> {
+                isMotorwayTransitionCandidate(anchor, candidate, wayLinks, accuracyBufferM)
+            }
+            CorridorState.TUNNEL to CorridorState.SURFACE -> {
+                isTunnelPortalTransition(anchor, candidate, matchContext, wayLinks, accuracyBufferM, entry = false)
+            }
+            CorridorState.TUNNEL to CorridorState.TUNNEL -> {
+                (candidateWayId != null && candidateWayId in matchContext.recentTunnelCandidateWayIds) ||
+                    normalizedRefTokens(candidate.streetRef).any { token -> token in matchContext.recentTunnelCandidateRefs } ||
+                    isEndpointLinkedTransition(anchor, candidate, wayLinks, TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M, accuracyBufferM)
+            }
+            CorridorState.TUNNEL to CorridorState.MOTORWAY,
+            CorridorState.TUNNEL to CorridorState.MOTORWAY_LINK -> false
+            CorridorState.MOTORWAY to CorridorState.SURFACE,
+            CorridorState.MOTORWAY to CorridorState.TUNNEL -> false
+            CorridorState.MOTORWAY to CorridorState.MOTORWAY,
+            CorridorState.MOTORWAY to CorridorState.MOTORWAY_LINK -> {
+                isMotorwayTransitionCandidate(anchor, candidate, wayLinks, accuracyBufferM)
+            }
+            CorridorState.MOTORWAY_LINK to CorridorState.TUNNEL -> false
+            CorridorState.MOTORWAY_LINK to CorridorState.MOTORWAY -> {
+                (corridorCandidateState != null && shouldTriggerActiveCorridorMode(corridorCandidateState, matchContext)) ||
+                    isMotorwayTransitionCandidate(anchor, candidate, wayLinks, accuracyBufferM)
+            }
+            CorridorState.MOTORWAY_LINK to CorridorState.SURFACE,
+            CorridorState.MOTORWAY_LINK to CorridorState.MOTORWAY_LINK -> {
+                isMotorwayTransitionCandidate(anchor, candidate, wayLinks, accuracyBufferM)
+            }
+            else -> false
+        }
+    }
+
+    private fun isSurfacePortalContinuationCandidate(
+        candidate: WayCandidate,
+        anchor: CorridorAnchor,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+    ): Boolean {
+        if (corridorState(candidate) != CorridorState.SURFACE || !hasSharedRefWithPreferred(candidate, matchContext)) {
+            return false
+        }
+        return isEndpointLinkedTransition(anchor, candidate, wayLinks, TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M, accuracyBufferM)
+    }
+
+    private fun suppressAmbiguousSurfaceToTunnelEntries(
+        candidates: List<WayCandidate>,
+        matchContext: WayMatchContext,
+        wayLinks: WayLinksContext,
+        progressContext: CorridorProgressContext,
+        accuracyBufferM: Double,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+    ): List<WayCandidate> {
+        val anchor = corridorAnchor(matchContext)
+        if (!wayLinks.available || matchContext.hadRecentGpsSignalLoss || anchor == null || anchor.state != CorridorState.SURFACE) {
+            return candidates
+        }
+        if (candidates.none { isSurfacePortalContinuationCandidate(it, anchor, matchContext, wayLinks, accuracyBufferM) }) {
+            return candidates
+        }
+        return candidates.filter { candidate ->
+            if (corridorState(candidate) != CorridorState.TUNNEL || !hasSharedRefWithPreferred(candidate, matchContext)) {
+                return@filter true
+            }
+            if (matchesTunnelApproachCandidate(candidate, matchContext)) {
+                return@filter true
+            }
+            val corridorState = candidateCorridorState(candidate, matchContext, wayLinks, progressContext)
+            if (corridorState != null) {
+                if (isContinuingApproachCorridorCandidate(corridorState, matchContext)) {
+                    return@filter true
+                }
+                if (hasCommittedApproachCorridorEvidence(corridorState, matchContext)) {
+                    return@filter true
+                }
+                if (shouldTriggerActiveCorridorMode(corridorState, matchContext)) {
+                    return@filter true
+                }
+            }
+            if (hasCommittedTunnelApproachEvidence(candidate, matchContext, horizontalAccuracyM, gpsSignalBars)) {
+                return@filter true
+            }
+            !isTunnelPortalTransition(anchor, candidate, matchContext, wayLinks, accuracyBufferM, entry = true)
+        }
+    }
+
+    private fun corridorAnchor(matchContext: WayMatchContext): CorridorAnchor? {
+        if (matchContext.preferredWayId == null &&
+            matchContext.preferredHighway == null &&
+            !matchContext.isInTunnelMode
+        ) {
+            return null
+        }
+        return CorridorAnchor(
+            wayId = matchContext.preferredWayId,
+            highway = matchContext.preferredHighway,
+            endpointProximityM = matchContext.preferredEndpointProximityM,
+            isInTunnelMode = matchContext.isInTunnelMode,
+        )
+    }
+
+    private fun corridorState(candidate: WayCandidate): CorridorState {
+        return when {
+            isTruthyOsmTag(candidate.tunnel) -> CorridorState.TUNNEL
+            candidate.highway.equals("motorway", ignoreCase = true) -> CorridorState.MOTORWAY
+            candidate.highway.equals("motorway_link", ignoreCase = true) -> CorridorState.MOTORWAY_LINK
+            else -> CorridorState.SURFACE
+        }
+    }
+
     private fun isPortalEligibleTunnelCandidate(
         candidate: WayCandidate,
         matchContext: WayMatchContext,
@@ -1845,33 +3969,41 @@ internal class V3SpeedLimitLookup(
         corridorProgress: CorridorProgressContext,
         accuracyBufferM: Double,
     ): Boolean {
-        if (!isTruthyOsmTag(candidate.tunnel) || !wayLinks.available || matchContext.isInTunnelMode) {
+        val anchor = corridorAnchor(matchContext)
+        if (!isTruthyOsmTag(candidate.tunnel) ||
+            !wayLinks.available ||
+            anchor == null ||
+            anchor.state != CorridorState.SURFACE
+        ) {
             return false
         }
-        val anchorWayId = matchContext.preferredWayId ?: return false
-        val anchor = CorridorAnchor(
-            wayId = anchorWayId,
-            highway = matchContext.preferredHighway,
-            endpointProximityM = matchContext.preferredEndpointProximityM,
-        )
         if (!isTunnelPortalTransition(anchor, candidate, matchContext, wayLinks, accuracyBufferM, entry = true)) {
             return false
         }
         val corridorState = candidateCorridorState(candidate, matchContext, wayLinks, corridorProgress)
-        if (corridorState != null && (!corridorState.entryZone || corridorState.snapshot.kind != "tunnel")) {
+        if (corridorState != null &&
+            (corridorState.snapshot.kind != "tunnel" || !corridorState.entryZone)
+        ) {
             return false
         }
+        val motionScore = portalMotionProgressScore(candidate, matchContext)
         val endpointDistance = corridorState?.snapshot?.depthM ?: candidate.endpointProximityM
-        if (!endpointDistance.isFinite() || endpointDistance > TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M + accuracyBufferM) {
+        val portalDistanceThreshold = TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M + accuracyBufferM
+        if (!endpointDistance.isFinite() || endpointDistance > portalDistanceThreshold) {
             return false
         }
-        if (matchContext.recentFixes.isEmpty()) {
-            return true
+        val directSnapThreshold = max(4.0, min(accuracyBufferM * 0.35, 10.0))
+        if (endpointDistance <= directSnapThreshold) {
+            return if (matchContext.recentFixes.isEmpty()) {
+                true
+            } else {
+                motionScore >= TUNNEL_PORTAL_DIRECT_SNAP_MOTION_MIN_SCORE
+            }
         }
-        return portalMotionProgressScore(candidate, matchContext) >= if (endpointDistance <= max(4.0, min(accuracyBufferM * 0.35, 10.0))) {
-            TUNNEL_PORTAL_DIRECT_SNAP_MOTION_MIN_SCORE
+        return if (matchContext.recentFixes.isEmpty()) {
+            true
         } else {
-            0.25
+            motionScore >= 0.25
         }
     }
 
@@ -1918,7 +4050,7 @@ internal class V3SpeedLimitLookup(
             return true
         }
         val candidateRefs = normalizedRefTokens(candidate.streetRef)
-        return candidateRefs.any(matchContext.recentTunnelApproachRefs::contains)
+        return candidateRefs.any { token -> token in matchContext.recentTunnelApproachRefs }
     }
 
     private fun portalMotionProgressScore(
@@ -1932,6 +4064,24 @@ internal class V3SpeedLimitLookup(
             approachComponent,
             (approachComponent * 0.6) + (metrics.alignmentScore * 0.25) + (metrics.proximityScore * 0.15),
         )
+    }
+
+    private fun portalCommitProgressScore(
+        candidate: WayCandidate,
+        matchContext: WayMatchContext,
+    ): Double {
+        val metrics = portalMotionMetrics(candidate, matchContext) ?: return 0.0
+        if (matchContext.tunnelApproachFixCount < max(TUNNEL_APPROACH_MIN_FIX_COUNT + 1, 3) ||
+            metrics.alignmentScore < 0.35 ||
+            metrics.currentPortalDistanceM < 4.0
+        ) {
+            return 0.0
+        }
+        val interiorComponent = max(0.0, min(metrics.bestInteriorProgressDeltaM / 12.0, 1.0))
+        if (interiorComponent <= 0.0) {
+            return 0.0
+        }
+        return (interiorComponent * 0.6) + (metrics.alignmentScore * 0.25) + (metrics.proximityScore * 0.15)
     }
 
     private fun portalMotionMetrics(
@@ -2003,6 +4153,21 @@ internal class V3SpeedLimitLookup(
         }
     }
 
+    private fun isMotorwayTransitionCandidate(
+        anchor: CorridorAnchor,
+        candidate: WayCandidate,
+        wayLinks: WayLinksContext,
+        accuracyBufferM: Double,
+    ): Boolean {
+        return isEndpointLinkedTransition(
+            anchor = anchor,
+            candidate = candidate,
+            wayLinks = wayLinks,
+            endpointThresholdM = MOTORWAY_TRANSITION_ENDPOINT_THRESHOLD_M,
+            accuracyBufferM = accuracyBufferM,
+        )
+    }
+
     private fun isEndpointLinkedTransition(
         anchor: CorridorAnchor,
         candidate: WayCandidate,
@@ -2025,7 +4190,7 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
     ): Boolean {
         val candidateRefs = normalizedRefTokens(candidate.streetRef)
-        return candidateRefs.isNotEmpty() && candidateRefs.any(matchContext.recentStreetRefs::contains)
+        return candidateRefs.isNotEmpty() && candidateRefs.any { token -> token in matchContext.recentStreetRefs }
     }
 
     private fun areLinkedWays(
@@ -2335,7 +4500,7 @@ internal class V3SpeedLimitLookup(
             WHERE
               $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
               AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
-              AND b.admin_level IN (6, 8)
+              AND b.admin_level IN (6, 8, 9)
             LIMIT ?
         """.trimIndent()
         val params = arrayOf(
@@ -2377,7 +4542,7 @@ internal class V3SpeedLimitLookup(
         limitRows: Int = 2048,
     ): CityContext {
         val boundaries = queryCityBoundaryCandidates(lat = lat, lon = lon, limitRows = limitRows)
-        val containing = mutableListOf<Triple<Int, Double, String>>()
+        val containing = mutableListOf<ContainingAdminBoundary>()
         boundaries.forEach { boundary ->
             val name = boundary.name?.trim().orEmpty()
             if (name.isEmpty()) {
@@ -2385,14 +4550,18 @@ internal class V3SpeedLimitLookup(
             }
             if (boundaryContainsPoint(boundaryRowId = boundary.rowId, lon = lon, lat = lat)) {
                 val bboxArea = max(boundary.maxLon - boundary.minLon, 0.0) * max(boundary.maxLat - boundary.minLat, 0.0)
-                containing += Triple(boundary.adminLevel, bboxArea, name)
+                containing += ContainingAdminBoundary(
+                    adminLevel = boundary.adminLevel,
+                    bboxArea = bboxArea,
+                    name = name,
+                )
             }
         }
         if (containing.isNotEmpty()) {
-            val best = containing.sortedWith(compareBy<Triple<Int, Double, String>> { cityBoundaryPriority(it.first) ?: Int.MAX_VALUE }.thenBy { it.second }.thenBy { it.third }).first()
+            val cityName = formatAdminCityName(containing)
             return CityContext(
                 insideCity = true,
-                cityName = best.third,
+                cityName = cityName,
                 citySource = "admin_polygon",
                 candidateBoundaries = boundaries.size,
                 placeCandidates = 0,
@@ -2583,7 +4752,8 @@ internal class V3SpeedLimitLookup(
         lon: Double,
         areas: List<AreaCandidate>,
     ): CityContext {
-        val containingAdmin = mutableListOf<Triple<Int, Double, String>>()
+        val containingAdminExact = mutableListOf<ContainingAdminBoundary>()
+        val containingAdminBBox = mutableListOf<ContainingAdminBoundary>()
         val containingPlaces = mutableListOf<Triple<Int, Double, String>>()
         val nearbyPlaces = mutableListOf<Triple<Int, Double, String>>()
 
@@ -2603,7 +4773,16 @@ internal class V3SpeedLimitLookup(
             val areaSize = bboxArea(area)
             val adminLevel = area.adminLevel?.toIntOrNull()
             if (area.boundary == "administrative" && cityBoundaryPriority(adminLevel) != null && insideBbox) {
-                containingAdmin.add(Triple(adminLevel ?: return@forEach, areaSize, name))
+                val adminBoundary = ContainingAdminBoundary(
+                    adminLevel = adminLevel ?: return@forEach,
+                    bboxArea = areaSize,
+                    name = name,
+                )
+                if (isClosedAreaRing(area.points) && pointInRing(lon = lon, lat = lat, ring = area.points)) {
+                    containingAdminExact.add(adminBoundary)
+                } else {
+                    containingAdminBBox.add(adminBoundary)
+                }
             }
 
             val placeRank = placeRank(area.place) ?: return@forEach
@@ -2616,13 +4795,23 @@ internal class V3SpeedLimitLookup(
             }
         }
 
-        if (containingAdmin.isNotEmpty()) {
-            val best = containingAdmin.sortedWith(compareBy<Triple<Int, Double, String>> { cityBoundaryPriority(it.first) ?: Int.MAX_VALUE }.thenBy { it.second }.thenBy { it.third }).first()
+        if (containingAdminExact.isNotEmpty()) {
+            val cityName = formatAdminCityName(containingAdminExact)
             return CityContext(
                 insideCity = true,
-                cityName = best.third,
+                cityName = cityName,
+                citySource = "admin_polygon",
+                candidateBoundaries = containingAdminExact.size,
+                placeCandidates = nearbyPlaces.size,
+            )
+        }
+        if (containingAdminBBox.isNotEmpty()) {
+            val cityName = formatAdminCityName(containingAdminBBox)
+            return CityContext(
+                insideCity = true,
+                cityName = cityName,
                 citySource = "admin_bbox",
-                candidateBoundaries = containingAdmin.size,
+                candidateBoundaries = containingAdminBBox.size,
                 placeCandidates = nearbyPlaces.size,
             )
         }
@@ -2702,6 +4891,12 @@ internal class V3SpeedLimitLookup(
         private const val WALKING_TURN_SWITCH_BEST_DISTANCE_M = 5.0
         private const val WALKING_TURN_SWITCH_MIN_GAP_M = 8.0
         private const val WALKING_TURN_SWITCH_ENDPOINT_M = 4.0
+        private const val BASELINE_PREFERRED_DISTANCE_SLACK_M = 7.0
+        private const val BASELINE_SAME_REF_DISTANCE_SLACK_M = 5.0
+        private const val BASELINE_TURN_TRANSITION_MAX_SPEED_KMH = 36.0
+        private const val BASELINE_TURN_DISTANCE_SLACK_M = 10.0
+        private const val BASELINE_TUNNEL_EXIT_ENDPOINT_THRESHOLD_M = 28.0
+        private const val BASELINE_MOTORWAY_GATE_ENDPOINT_THRESHOLD_M = 42.0
         private const val PREFERRED_WAY_SCORE_SLACK_M = 18.0
         private const val PREFERRED_WAY_DISTANCE_MULTIPLIER = 1.9
         private const val PREFERRED_WAY_DISTANCE_FLOOR_M = 85.0
@@ -2742,14 +4937,32 @@ internal class V3SpeedLimitLookup(
         private const val TUNNEL_CORRIDOR_EXIT_REMAINING_M = 42.0
         private const val TUNNEL_CORRIDOR_ENTRY_MIN_DEPTH_M = 12.0
         private const val TUNNEL_CORRIDOR_ENTRY_FIX_COUNT = 2
+        private const val TUNNEL_CORRIDOR_ENTRY_PROGRESS_NODES = 1
         private const val TUNNEL_CORRIDOR_EXIT_REMAINING_NODES = 1
         private const val MOTORWAY_CORRIDOR_ENTRY_DEPTH_M = 150.0
         private const val MOTORWAY_CORRIDOR_EXIT_REMAINING_M = 160.0
         private const val MOTORWAY_CORRIDOR_ENTRY_MIN_DEPTH_M = 30.0
         private const val MOTORWAY_CORRIDOR_ENTRY_FIX_COUNT = 2
+        private const val MOTORWAY_CORRIDOR_ENTRY_PROGRESS_NODES = 1
         private const val MOTORWAY_CORRIDOR_EXIT_REMAINING_NODES = 1
+        private const val MOTORWAY_TRANSITION_ENDPOINT_THRESHOLD_M = 36.0
+        private const val TUNNEL_CORRIDOR_ENTRY_PROGRESS_M = 16.0
+        private const val MOTORWAY_CORRIDOR_ENTRY_PROGRESS_M = 42.0
         private const val CORRIDOR_PROGRESS_NOISE_TOLERANCE_M = 12.0
+        private const val CORRIDOR_STATE_ILLEGAL_PENALTY_M = 80.0
+        private const val CORRIDOR_STATE_EXPECTED_TRANSITION_PENALTY_M = 2.0
+        private const val CORRIDOR_STATE_PERSISTENCE_PENALTY_M = 0.5
+        private const val CORRIDOR_STATE_REENTRY_PENALTY_M = 8.0
+        private const val CORRIDOR_STATE_TUNNEL_SIGNAL_REWARD_M = 8.0
+        private const val CORRIDOR_STATE_TUNNEL_PERSISTENCE_REWARD_M = 6.0
+        private const val CORRIDOR_STATE_TUNNEL_CHAIN_REWARD_M = 10.0
+        private const val CORRIDOR_STATE_MOTORWAY_REWARD_M = 4.0
         private const val CORRIDOR_STATE_TUNNEL_DIRECT_COMMIT_MIN_SCORE = 0.75
+        private const val CORRIDOR_STATE_TUNNEL_OUTPUT_MIN_SCORE = 0.5
+        private const val CORRIDOR_STATE_TUNNEL_CHAIN_COMMIT_MIN_SCORE = 0.7
+        private const val CORRIDOR_STATE_TUNNEL_CHAIN_SLACK_BONUS_M = 6.0
+        private const val CORRIDOR_STATE_TUNNEL_OUTPUT_SCORE_SLACK_M = 8.0
+        private const val CORRIDOR_STATE_MOTORWAY_OUTPUT_SCORE_SLACK_M = 6.0
         private val inCityHighwayClasses = setOf("residential", "service", "crossing", "living_street")
 
         fun deriveSpeedLimitKmh(
@@ -2759,6 +4972,16 @@ internal class V3SpeedLimitLookup(
             highway: String?,
         ): Int? {
             return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway).speed
+        }
+
+        internal fun germanLowSpeedLimitImpliesInsideCity(
+            countryCode: String?,
+            speedKmh: Int?,
+        ): Boolean {
+            return normalizedCountryCode(countryCode) == "DEU" &&
+                speedKmh != null &&
+                speedKmh > 0 &&
+                speedKmh < 50
         }
 
         internal fun deriveSpeedLimitWithSource(
@@ -2806,6 +5029,20 @@ internal class V3SpeedLimitLookup(
 
         internal fun isUnlimitedSpeedTag(raw: String?): Boolean {
             return raw?.trim()?.lowercase() == "none"
+        }
+
+        private fun normalizedCountryCode(raw: String?): String? {
+            val code = raw?.trim()?.uppercase(Locale.US) ?: return null
+            return code.takeIf { it.length == 3 }
+        }
+
+        private fun inferCountryCodeFromDbPath(dbPath: String): String? {
+            val fileName = dbPath.substringAfterLast('/').uppercase(Locale.US)
+            if (fileName.length < 3) {
+                return null
+            }
+            val prefix = fileName.take(3)
+            return prefix.takeIf { it.all(Char::isLetter) }
         }
 
         private fun allowsResidentialAreaFallback(highway: String?): Boolean {
@@ -2858,10 +5095,44 @@ internal class V3SpeedLimitLookup(
 
         private fun cityBoundaryPriority(adminLevel: Int?): Int? {
             return when (adminLevel) {
-                8 -> 0
-                6 -> 1
+                9 -> 0
+                8 -> 1
+                6 -> 2
                 else -> null
             }
+        }
+
+        private fun formatAdminCityName(
+            boundaries: List<ContainingAdminBoundary>,
+        ): String? {
+            val primary = boundaries.sortedWith(
+                compareBy<ContainingAdminBoundary> { cityBoundaryPriority(it.adminLevel) ?: Int.MAX_VALUE }
+                    .thenBy { it.bboxArea }
+                    .thenBy { it.name },
+            ).firstOrNull() ?: return null
+            if (primary.adminLevel != 9) {
+                return primary.name
+            }
+            val qualifier = boundaries
+                .filter { it.adminLevel == 8 && !sameAdminName(it.name, primary.name) }
+                .sortedWith(compareBy<ContainingAdminBoundary> { it.bboxArea }.thenBy { it.name })
+                .firstOrNull()
+                ?.name
+            return qualifier?.let { "${primary.name} ($it)" } ?: primary.name
+        }
+
+        private fun sameAdminName(
+            left: String,
+            right: String,
+        ): Boolean = left.trim().equals(right.trim(), ignoreCase = true)
+
+        private fun isClosedAreaRing(points: List<LonLatPoint>): Boolean {
+            if (points.size < 4) {
+                return false
+            }
+            val first = points.first()
+            val last = points.last()
+            return abs(first.lon - last.lon) <= 1e-9 && abs(first.lat - last.lat) <= 1e-9
         }
 
         private fun primaryPlaceCandidates(
@@ -3290,6 +5561,12 @@ private data class CityContext(
     val placeCandidates: Int,
 )
 
+private data class ContainingAdminBoundary(
+    val adminLevel: Int,
+    val bboxArea: Double,
+    val name: String,
+)
+
 private data class QueryBounds(
     val minLon: Double,
     val minLat: Double,
@@ -3340,8 +5617,15 @@ private data class CandidateSelection(
     val selectionTrace: List<MatchSelectionTrace> = emptyList(),
 )
 
+private data class NonCorridorMatcherSelection(
+    val selected: WayCandidate? = null,
+    val traceRankedCandidates: List<TraceRankedCandidate> = emptyList(),
+    val selectionTrace: List<MatchSelectionTrace> = emptyList(),
+)
+
 private data class MiniHMMSelection(
     val selectedCandidate: WayCandidate? = null,
+    val selectedCorridorState: CorridorSequenceState? = null,
     val hypotheses: List<WayMatchHypothesis> = emptyList(),
     val used: Boolean = false,
     val candidateCount: Int = 0,
@@ -3398,6 +5682,23 @@ private enum class ContinuityClass {
     NONE,
 }
 
+private enum class CorridorState(val wireName: String) {
+    SURFACE("surface"),
+    TUNNEL("tunnel"),
+    MOTORWAY("motorway"),
+    MOTORWAY_LINK("motorwayLink"),
+}
+
+private enum class CorridorSequenceState(val wireName: String) {
+    SURFACE("surface"),
+    TUNNEL_PORTAL("tunnelPortal"),
+    TUNNEL_INSIDE("tunnelInside"),
+    TUNNEL_EXIT("tunnelExit"),
+    MOTORWAY_PORTAL("motorwayPortal"),
+    MOTORWAY_INSIDE("motorwayInside"),
+    MOTORWAY_EXIT("motorwayExit"),
+}
+
 private val ContinuityClass.traceName: String
     get() = when (this) {
         ContinuityClass.PREFERRED_WAY -> "preferredWay"
@@ -3408,10 +5709,19 @@ private val ContinuityClass.traceName: String
     }
 
 private data class CorridorAnchor(
-    val wayId: String,
+    val wayId: String?,
     val highway: String?,
     val endpointProximityM: Double?,
-)
+    val isInTunnelMode: Boolean,
+) {
+    val state: CorridorState
+        get() = when {
+            isInTunnelMode -> CorridorState.TUNNEL
+            highway.equals("motorway", ignoreCase = true) -> CorridorState.MOTORWAY
+            highway.equals("motorway_link", ignoreCase = true) -> CorridorState.MOTORWAY_LINK
+            else -> CorridorState.SURFACE
+        }
+}
 
 private data class CorridorProgressInfo(
     val kind: String,
@@ -3431,11 +5741,47 @@ private data class CorridorProgressContext(
     val byWayId: Map<String?, List<CorridorProgressInfo>> = emptyMap(),
 )
 
+private data class CorridorPairRelation(
+    val corridorKind: String,
+    val corridorId: Int,
+    val sideNodeKey: String,
+    val pairedKind: String,
+    val pairedCorridorId: Int,
+)
+
+private data class CorridorPairContext(
+    val available: Boolean,
+    val byMainKey: Map<String, List<CorridorPairRelation>> = emptyMap(),
+    val byPairedKey: Map<String, List<CorridorPairRelation>> = emptyMap(),
+)
+
 private data class CandidateCorridorState(
     val snapshot: CorridorMatchState,
     val entryZone: Boolean,
     val exitZone: Boolean,
+    val progressDeltaM: Double? = null,
+    val progressDeltaNodes: Int? = null,
 )
+
+private data class SignalQualityEvidence(
+    val tunnelApproachFixCount: Int,
+    val horizontalAccuracyDeltaM: Double,
+    val gpsSignalBarsDrop: Int,
+    val hadRecentGpsSignalLoss: Boolean,
+) {
+    val tunnelScore: Double
+        get() {
+            if (hadRecentGpsSignalLoss) {
+                return 1.0
+            }
+            if (tunnelApproachFixCount < 2) {
+                return 0.0
+            }
+            val accuracyComponent = min(max(horizontalAccuracyDeltaM / 8.0, 0.0), 1.0)
+            val barsComponent = min(max(gpsSignalBarsDrop.toDouble() / 1.0, 0.0), 1.0)
+            return min(1.0, max(accuracyComponent, barsComponent))
+        }
+}
 
 private data class PortalMotionMetrics(
     val currentPortalDistanceM: Double,

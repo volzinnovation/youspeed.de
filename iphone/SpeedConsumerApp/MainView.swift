@@ -28,48 +28,84 @@ struct MainView: View {
         GeometryReader { proxy in
             let minDimension = min(proxy.size.width, proxy.size.height)
             let screenInset = minDimension * 0.02
-            let signSize = min(proxy.size.width * 0.74, proxy.size.width - (screenInset * 2))
+            let horizontalPadding = max(12, proxy.size.width * 0.04)
+            let controlDiameter: CGFloat = 44
+            let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
+            let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
+            let sectionGap = max(14, minDimension * 0.04)
+            let topControlBottom = topPadding + controlDiameter
+            let bottomControlTopInset = bottomPadding + controlDiameter
+            let contentTopInset = topControlBottom + max(10, minDimension * 0.028)
+            let contentBottomInset = bottomControlTopInset + max(10, minDimension * 0.03)
+            let locationReserve = viewModel.isInSpeedCaptureMode
+                ? CGFloat(0)
+                : (shouldShowCityBadge
+                    ? max(58, minDimension * 0.16)
+                    : max(40, minDimension * 0.11))
+            let signWidthBudget = min(proxy.size.width * 0.82, proxy.size.width - (horizontalPadding * 2))
+            let signHeightBudget = (
+                proxy.size.height -
+                contentTopInset -
+                contentBottomInset -
+                locationReserve -
+                (sectionGap * 2)
+            ) / 1.78
+            let signSize = min(signWidthBudget, max(minDimension * 0.58, signHeightBudget))
             let primaryMetricFontSize = signSize * speedLimitNumberScale
-            let topPadding = proxy.safeAreaInsets.top + screenInset
-            let bottomPadding = proxy.safeAreaInsets.bottom + screenInset
-            ZStack(alignment: .bottom) {
+            let baseSecondaryFont = primaryMetricFontSize * secondaryTextRatio
+            let secondaryScale = sharedSecondaryScale(
+                baseSecondaryFont: baseSecondaryFont,
+                availableWidth: proxy.size.width - (horizontalPadding * 2)
+            )
+            let secondaryFont = baseSecondaryFont * secondaryScale
+            let debugFont = secondaryFont * 0.6
+            let debugSpacing = max(2, minDimension * 0.004)
+            ZStack {
                 screenBackgroundView
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    topCornerButtons
-                        .padding(.horizontal, screenInset)
-                        .padding(.top, topPadding)
-
+                VStack(spacing: sectionGap) {
                     SpeedLimitSignView(
                         limitText: limitText,
                         numberFontSize: primaryMetricFontSize,
                         showsTunnelIcon: shouldShowTunnelSignIcon,
-                        showsUnlimitedIcon: showsUnlimitedAutobahnSign
+                        showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
+                        showsPedestrianZoneIcon: showsPedestrianZoneSign
                     )
-                        .frame(width: signSize, height: signSize)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, screenInset)
-                        .padding(.horizontal, screenInset)
-                        .contentShape(Rectangle())
-                        .highPriorityGesture(
-                            TapGesture(count: 2).onEnded {
-                                viewModel.beginSpeedLimitCapture()
-                            }
-                        )
+                    .frame(width: signSize, height: signSize)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, screenInset)
+                    .contentShape(Rectangle())
+                    .highPriorityGesture(
+                        TapGesture(count: 2).onEnded {
+                            viewModel.beginSpeedLimitCapture()
+                        }
+                    )
 
-                    Spacer(minLength: 0)
+                    metricStatusBlock(
+                        primaryFont: primaryMetricFontSize,
+                        secondaryFont: secondaryFont
+                    )
+                    .padding(.horizontal, horizontalPadding)
+
+                    locationStatusBlock(
+                        debugFont: debugFont,
+                        debugSpacing: debugSpacing
+                    )
+                    .padding(.horizontal, horizontalPadding)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, contentTopInset)
+                .padding(.bottom, contentBottomInset)
 
-                mainStatusInfo(
-                    signSize: signSize,
-                    primaryFont: primaryMetricFontSize,
-                    screenSize: proxy.size,
-                    bottomPadding: bottomPadding
-                )
+                topCornerButtons
+                    .padding(.horizontal, screenInset)
+                    .padding(.top, topPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                bugButton(bottomPadding: bottomPadding, horizontalPadding: screenInset)
-                settingsButton(bottomPadding: bottomPadding, horizontalPadding: screenInset)
+                bottomCornerButtons(horizontalPadding: screenInset)
+                    .padding(.bottom, bottomPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -109,63 +145,51 @@ struct MainView: View {
         }
     }
 
-    private func bugButton(bottomPadding: CGFloat, horizontalPadding: CGFloat) -> some View {
-        VStack {
-            Spacer()
-            HStack {
-                Button {
-                    showingLegalInfo = true
-                } label: {
-                    Image(systemName: "info.circle.fill")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .background(actionButtonBackgroundColor, in: Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-                }
-                .foregroundStyle(primaryForegroundColor)
-
-                Spacer()
-            }
-            .padding(.leading, horizontalPadding)
-            .padding(.bottom, bottomPadding + 4)
-        }
-    }
-
-    private func settingsButton(bottomPadding: CGFloat, horizontalPadding: CGFloat) -> some View {
-        VStack {
-            Spacer()
-            HStack {
-                Spacer()
-                Button {
-                    showingSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .background(actionButtonBackgroundColor, in: Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-                }
-                .foregroundStyle(primaryForegroundColor)
-            }
-            .padding(.trailing, horizontalPadding)
-            .padding(.bottom, bottomPadding + 4)
-        }
+    private var showsPedestrianZoneSign: Bool {
+        !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
     }
 
     private var topCornerButtons: some View {
         HStack {
+            localRecordingsButton
+
+            Spacer()
+
+            gpsSignalBadge
+        }
+        .foregroundStyle(primaryForegroundColor)
+    }
+
+    private var localRecordingsButton: some View {
+        Button {
+            showingLocalRecordings = true
+        } label: {
+            Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
+                .font(.title3.weight(.semibold))
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .background(actionButtonBackgroundColor, in: Circle())
+        .overlay {
+            Circle()
+                .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
+        }
+    }
+
+    private var gpsSignalBadge: some View {
+        GPSSignalBadge(
+            bars: viewModel.gpsSignalBars,
+            accuracyText: viewModel.gpsHorizontalAccuracyM.map { String(format: "%.0f m", $0) } ?? nil,
+            foregroundColor: primaryForegroundColor
+        )
+    }
+
+    private func bottomCornerButtons(horizontalPadding: CGFloat) -> some View {
+        HStack {
             Button {
-                showingLocalRecordings = true
+                showingLegalInfo = true
             } label: {
-                Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
+                Image(systemName: "info.circle.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
@@ -178,32 +202,30 @@ struct MainView: View {
 
             Spacer()
 
-            GPSSignalBadge(
-                bars: viewModel.gpsSignalBars,
-                accuracyText: viewModel.gpsHorizontalAccuracyM.map { String(format: "%.0f m", $0) } ?? nil,
-                foregroundColor: primaryForegroundColor
-            )
+            Button {
+                showingSettings = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .background(actionButtonBackgroundColor, in: Circle())
+            .overlay {
+                Circle()
+                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
+            }
         }
+        .padding(.horizontal, horizontalPadding)
         .foregroundStyle(primaryForegroundColor)
     }
 
     @ViewBuilder
-    private func mainStatusInfo(signSize: CGFloat, primaryFont: CGFloat, screenSize: CGSize, bottomPadding: CGFloat) -> some View {
-        let minDimension = min(screenSize.width, screenSize.height)
-        let horizontalPadding = max(12, screenSize.width * 0.04)
-        let baseSecondaryFont = primaryFont * secondaryTextRatio
-        let secondaryScale = sharedSecondaryScale(
-            baseSecondaryFont: baseSecondaryFont,
-            availableWidth: screenSize.width - (horizontalPadding * 2)
-        )
-        let secondaryFont = baseSecondaryFont * secondaryScale
+    private func metricStatusBlock(
+        primaryFont: CGFloat,
+        secondaryFont: CGFloat
+    ) -> some View {
         let valueUnitSpacing: CGFloat = 0
-        let metricDebugGap = max(12, minDimension * 0.024)
-        let debugFont = secondaryFont*0.6
-        let debugSpacing = max(2, minDimension * 0.004)
-        let metricBlockHeight = primaryFont + (secondaryFont * 0.9)
-        let debugBlockHeight = (secondaryFont * 2.1) + debugSpacing
-        let statusAreaHeight = max(220, metricBlockHeight + metricDebugGap + debugBlockHeight + bottomPadding)
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
@@ -225,20 +247,25 @@ struct MainView: View {
                         .opacity(secondaryMetricText.isEmpty ? 0 : 1)
                 }
             }
-            .frame(height: metricBlockHeight, alignment: .center)
+        }
+        .frame(maxWidth: .infinity)
+        .multilineTextAlignment(.center)
+        .foregroundStyle(primaryForegroundColor)
+    }
 
-            Spacer(minLength: metricDebugGap)
-
+    @ViewBuilder
+    private func locationStatusBlock(
+        debugFont: CGFloat,
+        debugSpacing: CGFloat
+    ) -> some View {
+        Group {
             if viewModel.isInSpeedCaptureMode {
                 Color.clear
-                    .frame(height: debugBlockHeight)
             } else if shouldShowCityBadge {
                 CityLimitBadgeView(
                     streetName: cityBadgeStreetText ?? "",
                     cityName: cityBadgeCityText ?? ""
                 )
-                .frame(maxWidth: signSize * 0.86)
-                .frame(height: debugBlockHeight)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
                     showingDebug = true
@@ -255,6 +282,8 @@ struct MainView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                 }
+                .foregroundStyle(primaryForegroundColor)
+                .multilineTextAlignment(.center)
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
                     showingDebug = true
@@ -262,11 +291,6 @@ struct MainView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: statusAreaHeight, alignment: .bottom)
-        .multilineTextAlignment(.center)
-        .foregroundStyle(primaryForegroundColor)
-        .padding(.horizontal, horizontalPadding)
-        .padding(.bottom, bottomPadding)
     }
 
     private var primaryMetricText: String {
@@ -344,6 +368,9 @@ struct MainView: View {
     private var limitText: String {
         if let capture = viewModel.speedCaptureSignText {
             return capture
+        }
+        if let displayText = viewModel.speedLimitDisplayText {
+            return displayText
         }
         guard let speedLimit = viewModel.speedLimitKmh else {
             return hasUsableGPSFix ? "–" : "?"
@@ -600,6 +627,7 @@ private struct SpeedLimitSignView: View {
     let numberFontSize: CGFloat
     let showsTunnelIcon: Bool
     let showsUnlimitedIcon: Bool
+    let showsPedestrianZoneIcon: Bool
 
     var body: some View {
         GeometryReader { proxy in
@@ -630,6 +658,12 @@ private struct SpeedLimitSignView: View {
                     .clipShape(
                         Circle().inset(by: unlimitedBorderWidth * 0.22)
                     )
+                } else if showsPedestrianZoneIcon {
+                    Image("PedestrianZoneSign")
+                        .resizable()
+                        .interpolation(.high)
+                        .antialiased(true)
+                        .accessibilityLabel("Fussgaengerzone")
                 } else {
                     // Based on Zeichen 274 geometry: black border 7.875 / 450, red band 60.301 / 450.
                     Circle()
@@ -1329,6 +1363,17 @@ private struct DebugInformationView: View {
                 }
             }
 
+            Section("Matcher") {
+                Picker("Profil", selection: $viewModel.matcherDebugProfile) {
+                    ForEach(MatcherDebugProfile.allCases) { profile in
+                        Text(profile.debugLabel).tag(profile)
+                    }
+                }
+                Text("Aktiv: \(viewModel.matcherDebugProfile.debugLabel)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             if !viewModel.lastCandidateTraces.isEmpty {
                 Section("Matcher-Kandidaten") {
                     ForEach(Array(viewModel.lastCandidateTraces.enumerated()), id: \.offset) { _, trace in
@@ -1431,7 +1476,7 @@ private struct DebugInformationView: View {
 
     private var fixRows: [(key: String, value: String)] {
         let speed = String(format: "%.1f km/h", viewModel.currentSpeedKmh)
-        let limitText = viewModel.speedLimitKmh.map { "\($0) km/h" } ?? "n/a"
+        let limitText = viewModel.speedLimitDisplayText ?? viewModel.speedLimitKmh.map { "\($0) km/h" } ?? "n/a"
         let delta: String = {
             guard let limit = viewModel.speedLimitKmh else { return "n/a" }
             let value = Int(round(viewModel.currentSpeedKmh)) - limit
@@ -1452,6 +1497,7 @@ private struct DebugInformationView: View {
             ("Stadt", normalizedOrNA(viewModel.limitCityName)),
             ("GPS-Signal", "\(viewModel.gpsSignalBars)/4"),
             ("Horizontal", viewModel.gpsHorizontalAccuracyM.map { String(format: "%.1f m", $0) } ?? "n/a"),
+            ("Matcher", viewModel.matcherDebugProfile.debugLabel),
             ("Tunnel-Modus", viewModel.tunnelModeState.rawValue),
             ("Innerorts", viewModel.lastLookupInsideCity.map { $0 ? "ja" : "nein" } ?? "n/a"),
             ("Lookup", viewModel.lastLookupStatus),

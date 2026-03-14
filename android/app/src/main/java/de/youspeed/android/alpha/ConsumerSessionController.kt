@@ -112,6 +112,7 @@ data class ConsumerUiState(
     val activeDBPath: String = "",
     val currentSpeedKmh: Double = 0.0,
     val speedLimitKmh: Int? = null,
+    val speedLimitDisplayText: String? = null,
     val isUnlimitedSpeedLimitActive: Boolean = false,
     val limitWayId: String? = null,
     val limitStreetName: String? = null,
@@ -155,6 +156,7 @@ data class ConsumerUiState(
     val lastLookupInsideCity: Boolean? = null,
     val tunnelModeState: TunnelModeState = TunnelModeState.INACTIVE,
     val isLowSpeedMatchingRuleActive: Boolean = false,
+    val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
 ) {
     val isDatabaseReadyForQueries: Boolean
         get() = startupDataState == StartupDataState.READY && activeDBPath.isNotBlank()
@@ -178,6 +180,7 @@ data class BundleDownloadCountrySection(
 data class AppScreenshotFixture(
     val currentSpeedKmh: Double,
     val speedLimitKmh: Int?,
+    val speedLimitDisplayText: String?,
     val isUnlimitedSpeedLimitActive: Boolean,
     val streetName: String,
     val cityName: String,
@@ -194,15 +197,17 @@ enum class AppScreenshotState(val rawValue: String) {
     WARN_LEVEL_1("warn-level-1"),
     WARN_LEVEL_2("warn-level-2"),
     WARN_LEVEL_3("warn-level-3"),
+    PEDESTRIAN_ZONE("pedestrian-zone"),
     AUTOBAHN_UNLIMITED_ABOVE_130("autobahn-unlimited-above-130");
 
     val fixture: AppScreenshotFixture
         get() = when (this) {
-            WARN_LEVEL_0 -> AppScreenshotFixture(47.0, 50, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-0", true, 49.0102, 8.4266, 6.0, 4)
-            WARN_LEVEL_1 -> AppScreenshotFixture(67.0, 50, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-1", true, 49.0102, 8.4266, 6.0, 4)
-            WARN_LEVEL_2 -> AppScreenshotFixture(73.0, 50, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-2", true, 49.0102, 8.4266, 6.0, 4)
-            WARN_LEVEL_3 -> AppScreenshotFixture(86.0, 50, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-3", true, 49.0102, 8.4266, 6.0, 4)
-            AUTOBAHN_UNLIMITED_ABOVE_130 -> AppScreenshotFixture(142.0, null, true, "A 5", "Karlsruhe", "autobahn-unlimited-130-plus", false, 49.0180, 8.3501, 5.0, 4)
+            WARN_LEVEL_0 -> AppScreenshotFixture(47.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-0", true, 49.0102, 8.4266, 6.0, 4)
+            WARN_LEVEL_1 -> AppScreenshotFixture(67.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-1", true, 49.0102, 8.4266, 6.0, 4)
+            WARN_LEVEL_2 -> AppScreenshotFixture(73.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-2", true, 49.0102, 8.4266, 6.0, 4)
+            WARN_LEVEL_3 -> AppScreenshotFixture(86.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-3", true, 49.0102, 8.4266, 6.0, 4)
+            PEDESTRIAN_ZONE -> AppScreenshotFixture(5.0, null, "Schritt", false, "Im Kloster", "Bad Herrenalb", "bad-herrenalb-pedestrian-zone", true, 48.7966, 8.4361, 5.0, 4)
+            AUTOBAHN_UNLIMITED_ABOVE_130 -> AppScreenshotFixture(142.0, null, null, true, "A 5", "Karlsruhe", "autobahn-unlimited-130-plus", false, 49.0180, 8.3501, 5.0, 4)
         }
 
     companion object {
@@ -267,12 +272,29 @@ class ConsumerSessionController(
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val wayMatchTracker = WayMatchSessionTracker()
     private val bundledVoskModelStore = BundledVoskModelStore(appContext, rootDir)
+    private val initialMatcherDebugProfile: MatcherDebugProfile =
+        MatcherDebugProfile.resolveInitialProfile(
+            raw = preferences.getString(KEY_MATCHER_DEBUG_PROFILE, null),
+            forcedVersion = preferences.getInt(KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION, 0),
+        ).also { profile ->
+            val storedForcedVersion = preferences.getInt(KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION, 0)
+            val storedProfile = preferences.getString(KEY_MATCHER_DEBUG_PROFILE, null)
+            if (storedForcedVersion < MatcherDebugProfile.forcedProfileVersion || storedProfile != profile.storageValue) {
+                preferences.edit()
+                    .putString(KEY_MATCHER_DEBUG_PROFILE, profile.storageValue)
+                    .putInt(KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION, MatcherDebugProfile.forcedProfileVersion)
+                    .apply()
+            }
+        }
 
     private var host: ConsumerHost? = null
     private var isDriving = false
     private var lookupService: V3SpeedLimitLookup? = null
     private var lookupServicePath: String? = null
+    private var lookupServiceCountryCode: String? = null
+    private var lookupServiceMatcherProfile: MatcherDebugProfile? = null
     private var localSpeedOverridesByWayId: Map<String, Int> = emptyMap()
+    private var localSpeedOverrideValuesByWayId: Map<String, String> = emptyMap()
     private var lastAudioFeedbackAtMs = 0L
     private var lastAnnouncedSpeechText: String? = null
     private var wasDrivingBanWarningActive = false
@@ -331,6 +353,7 @@ class ConsumerSessionController(
             hasGitHubReleaseToken = githubReleaseToken.isNotBlank(),
             activePenaltyRules = loadPenaltyRules("DEU"),
             appScreenshotState = launchScreenshotState,
+            matcherDebugProfile = initialMatcherDebugProfile,
         ),
     )
         private set
@@ -384,8 +407,9 @@ class ConsumerSessionController(
                 refreshDownloadedBundleInventory()
                 val observations = localObservationStore.fetchObservations(limit = 500)
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(observations)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(observations)
                 val active = bootstrapper.activeState()
-                replaceLookupService(active?.dbPath)
+                replaceLookupService(active?.dbPath, preferredCountryCode = active?.countryCode)
                 val nextRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(active?.dbPath) ?: "DEU")
                 pendingStartupData = PendingStartupData(
                     startupDetail = when {
@@ -586,6 +610,21 @@ class ConsumerSessionController(
         updateState { copy(hideWelcomeScreen = hidden) }
     }
 
+    fun setMatcherDebugProfile(profile: MatcherDebugProfile) {
+        val current = uiState.matcherDebugProfile
+        if (current == profile) {
+            return
+        }
+        preferences.edit().putString(KEY_MATCHER_DEBUG_PROFILE, profile.storageValue).apply()
+        wayMatchTracker.reset()
+        replaceLookupService(
+            uiState.activeDBPath.takeIf { it.isNotBlank() },
+            preferredCountryCode = uiState.activePenaltyRules.countryCode,
+            matcherProfile = profile,
+        )
+        updateState { copy(matcherDebugProfile = profile) }
+    }
+
     fun fetchFirstGermanyManifest() {
         val endpoint = manifestEndpoints.firstOrNull { it.countryCode.uppercase(Locale.US) == "DEU" }
             ?: return setError("Keine Deutschland-Endpunkte in BundleTargets.top10.json gefunden.")
@@ -622,7 +661,7 @@ class ConsumerSessionController(
                     val sync = bootstrapper.syncFromManifestUrl(endpoint.manifestUrl)
                     refreshDownloadedBundleInventory()
                     val active = bootstrapper.activeState()
-                    replaceLookupService(sync.dbPath)
+                    replaceLookupService(sync.dbPath, preferredCountryCode = active?.countryCode ?: endpoint.countryCode)
                     successState = copy(
                         syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
                         syncProgressDetail = "Synchronisierung abgeschlossen",
@@ -649,7 +688,7 @@ class ConsumerSessionController(
                 refreshDownloadedBundleInventory()
                 bootstrapBundledSeedIfNeeded()
                 val active = bootstrapper.activeState()
-                replaceLookupService(active?.dbPath)
+                replaceLookupService(active?.dbPath, preferredCountryCode = active?.countryCode)
                 postState {
                     copy(
                         activeBundleVersion = active?.bundleVersion ?: "none",
@@ -682,7 +721,7 @@ class ConsumerSessionController(
             val sync = bootstrapper.syncFromManifestUrl(option.endpoint.manifestUrl)
             refreshDownloadedBundleInventory()
             val active = bootstrapper.activeState()
-            replaceLookupService(sync.dbPath)
+            replaceLookupService(sync.dbPath, preferredCountryCode = active?.countryCode ?: option.countryCode)
             copy(
                 syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
                 syncProgressDetail = "Bundle geladen: ${option.displayName}",
@@ -701,7 +740,7 @@ class ConsumerSessionController(
                 val removed = bootstrapper.removeDownloadedBundles(option.endpoint.manifestRegion)
                 refreshDownloadedBundleInventory()
                 val active = bootstrapper.activeState()
-                replaceLookupService(active?.dbPath)
+                replaceLookupService(active?.dbPath, preferredCountryCode = active?.countryCode)
                 postState {
                     copy(
                         activeBundleVersion = active?.bundleVersion ?: "none",
@@ -736,7 +775,9 @@ class ConsumerSessionController(
                 val numericSpeed = savedObservation.newSpeedKmh
                 val wayId = savedObservation.wayId
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 activateLocalSpeedCorrectionIfPossible(selection, savedObservation)
+                val displayText = speedLimitDisplayTextForValue(selection.value)
                 resetSpeedCaptureTransientState()
                 postState {
                     copy(
@@ -746,8 +787,13 @@ class ConsumerSessionController(
                         speedCaptureTranscript = "",
                         maintenanceMessage = "",
                         lastError = "",
-                        speedLimitKmh = if (wayId != null && wayId == limitWayId && numericSpeed != null) numericSpeed else speedLimitKmh,
-                        isUnlimitedSpeedLimitActive = if (wayId != null && wayId == limitWayId && numericSpeed != null) false else isUnlimitedSpeedLimitActive,
+                        speedLimitKmh = when {
+                            wayId != null && wayId == limitWayId && numericSpeed != null -> numericSpeed
+                            wayId != null && wayId == limitWayId && displayText != null -> null
+                            else -> speedLimitKmh
+                        },
+                        speedLimitDisplayText = if (wayId != null && wayId == limitWayId) displayText else speedLimitDisplayText,
+                        isUnlimitedSpeedLimitActive = if (wayId != null && wayId == limitWayId && (numericSpeed != null || displayText != null)) false else isUnlimitedSpeedLimitActive,
                     )
                 }
                 playSpeedCaptureConfirmationTone()
@@ -763,6 +809,7 @@ class ConsumerSessionController(
                 localObservationStore.deleteObservation(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 activeLocalSpeedCorrection = null
                 postState {
                     copy(
@@ -782,6 +829,7 @@ class ConsumerSessionController(
             try {
                 val removed = localObservationStore.deleteAllObservations()
                 localSpeedOverridesByWayId = emptyMap()
+                localSpeedOverrideValuesByWayId = emptyMap()
                 activeLocalSpeedCorrection = null
                 postState {
                     copy(
@@ -802,6 +850,7 @@ class ConsumerSessionController(
                 val result = localObservationStore.exportAllLocalObservationsAsOsc()
                 val updated = localObservationStore.fetchObservations(limit = 500)
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 postState {
                     copy(
                         localObservationStatus = "Export erstellt (${result.includedCount} Wege): changes.osc",
@@ -821,6 +870,8 @@ class ConsumerSessionController(
             try {
                 localObservationStore.reviewAndApproveProposal(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
+                localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 postState {
                     copy(
                         localObservations = updated,
@@ -840,6 +891,7 @@ class ConsumerSessionController(
                 localObservationStore.discardObservation(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 postState {
                     copy(
                         localObservations = updated,
@@ -858,6 +910,8 @@ class ConsumerSessionController(
             try {
                 val result = localObservationStore.exportProposalAsOscPackage(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
+                localSpeedOverridesByWayId = resolveLocalSpeedOverrides(updated)
+                localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 postState {
                     copy(
                         localObservations = updated,
@@ -914,7 +968,7 @@ class ConsumerSessionController(
         return listOf(
             "Koordinate" to coordinateText(),
             "Geschwindigkeit" to String.format(Locale.US, "%.1f km/h", state.currentSpeedKmh),
-            "Tempolimit" to (state.speedLimitKmh?.toString()?.plus(" km/h") ?: if (state.isUnlimitedSpeedLimitActive) "unbegrenzt" else "n/a"),
+            "Tempolimit" to (state.speedLimitDisplayText ?: state.speedLimitKmh?.toString()?.plus(" km/h") ?: if (state.isUnlimitedSpeedLimitActive) "unbegrenzt" else "n/a"),
             "Delta" to "${ConsumerMainScreenLogic.currentOverspeedKmh(state)} km/h",
             "Drive-Status" to state.driveStatus,
             "GPS-Fixes" to state.gpsFixCount.toString(),
@@ -926,6 +980,7 @@ class ConsumerSessionController(
             "Stadt" to text(state.limitCityName),
             "GPS-Signal" to "${state.gpsSignalBars}/4",
             "Horizontal" to (state.gpsHorizontalAccuracyM?.run { String.format(Locale.US, "%.1f m", this) } ?: "n/a"),
+            "Matcher" to state.matcherDebugProfile.debugLabel,
             "Tunnel-Modus" to when (state.tunnelModeState) {
                 TunnelModeState.INACTIVE -> "inactive"
                 TunnelModeState.ACTIVE -> "active"
@@ -1085,6 +1140,7 @@ class ConsumerSessionController(
             activeDBPath = "/tmp/screenshot-fixture.sqlite",
             currentSpeedKmh = fixture.currentSpeedKmh,
             speedLimitKmh = fixture.speedLimitKmh,
+            speedLimitDisplayText = fixture.speedLimitDisplayText,
             isUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive,
             limitWayId = fixture.wayId,
             limitStreetName = fixture.streetName,
@@ -1159,7 +1215,7 @@ class ConsumerSessionController(
 
     private fun currentObservationConfidence(): Double? {
         return when {
-            uiState.speedLimitKmh != null || uiState.isUnlimitedSpeedLimitActive -> 0.85
+            uiState.speedLimitKmh != null || uiState.speedLimitDisplayText != null || uiState.isUnlimitedSpeedLimitActive -> 0.85
             uiState.lastLookupNearestCandidateM != null -> 0.55
             else -> null
         }
@@ -1270,6 +1326,7 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         speedLimitKmh = null,
+                        speedLimitDisplayText = null,
                         isUnlimitedSpeedLimitActive = false,
                         limitWayId = null,
                         limitStreetName = null,
@@ -1306,11 +1363,12 @@ class ConsumerSessionController(
                     gpsSignalBars = gpsSignalBars,
                     matchContext = matchContext,
                 )
-                val activeCorrectionOverride = applyActiveLocalSpeedCorrectionIfNeeded(result = result)
-                val localOverride = result.wayId?.let { localSpeedOverridesByWayId[it] }
-                val effectiveSpeed = activeCorrectionOverride ?: localOverride ?: result.speedLimitKmh
-                val unlimitedActive = localOverride == null &&
-                    activeCorrectionOverride == null &&
+                val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result)
+                val localOverrideValue = activeCorrectionOverrideValue ?: result.wayId?.let { localSpeedOverrideValuesByWayId[it] }
+                val localOverride = localOverrideValue?.toIntOrNull()
+                val effectiveSpeed = localOverride ?: result.speedLimitKmh
+                val effectiveDisplayText = speedLimitDisplayTextForValue(localOverrideValue)
+                val unlimitedActive = localOverrideValue == null &&
                     result.isUnlimitedSpeedLimit &&
                     normalizedCountryCode(uiState.activePenaltyRules.countryCode) == "DEU" &&
                     result.highway?.trim()?.lowercase(Locale.US) == "motorway"
@@ -1322,7 +1380,7 @@ class ConsumerSessionController(
                     speedKmh = filteredSpeedKmh,
                     status = when {
                         unlimitedActive -> "matched_unlimited"
-                        activeCorrectionOverride != null || localOverride != null -> "matched_local_override"
+                        localOverrideValue != null -> "matched_local_override"
                         effectiveSpeed != null -> "matched"
                         else -> "no_match"
                     },
@@ -1335,7 +1393,7 @@ class ConsumerSessionController(
                     speedKmh = filteredSpeedKmh,
                     status = when {
                         unlimitedActive -> "matched_unlimited"
-                        activeCorrectionOverride != null || localOverride != null -> "matched_local_override"
+                        localOverrideValue != null -> "matched_local_override"
                         effectiveSpeed != null -> "matched"
                         else -> "no_match"
                     },
@@ -1359,6 +1417,7 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         speedLimitKmh = effectiveSpeed,
+                        speedLimitDisplayText = effectiveDisplayText,
                         isUnlimitedSpeedLimitActive = unlimitedActive,
                         limitWayId = result.wayId,
                         limitStreetName = result.streetName,
@@ -1878,7 +1937,7 @@ class ConsumerSessionController(
         )
     }
 
-    private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult): Int? {
+    private fun applyActiveLocalSpeedCorrectionIfNeeded(result: SpeedLookupResult): String? {
         val correction = activeLocalSpeedCorrection ?: return null
         val wayId = result.wayId?.trim().orEmpty()
         if (wayId.isEmpty()) {
@@ -1893,11 +1952,13 @@ class ConsumerSessionController(
             return null
         }
         if (wayId in correction.wayIds) {
+            localSpeedOverrideValuesByWayId = localSpeedOverrideValuesByWayId + (wayId to correction.maxspeedValue)
             correction.numericSpeedKmh?.let { localSpeedOverridesByWayId = localSpeedOverridesByWayId + (wayId to it) }
-            return correction.numericSpeedKmh
+            return correction.maxspeedValue
         }
         val expandedCorrection = correction.copy(wayIds = correction.wayIds + wayId)
         activeLocalSpeedCorrection = expandedCorrection
+        localSpeedOverrideValuesByWayId = localSpeedOverrideValuesByWayId + (wayId to expandedCorrection.maxspeedValue)
         expandedCorrection.numericSpeedKmh?.let { localSpeedOverridesByWayId = localSpeedOverridesByWayId + (wayId to it) }
         persistChainedLocalObservation(
             wayId = wayId,
@@ -1907,7 +1968,7 @@ class ConsumerSessionController(
             selectedValue = expandedCorrection.maxspeedValue,
             confidence = 0.72,
         )
-        return expandedCorrection.numericSpeedKmh
+        return expandedCorrection.maxspeedValue
     }
 
     private fun persistChainedLocalObservation(
@@ -1959,33 +2020,82 @@ class ConsumerSessionController(
         return appContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun ensureLookupService(dbPath: String): V3SpeedLimitLookup {
+    private fun resolveLookupCountryCode(
+        dbPath: String,
+        preferredCountryCode: String? = null,
+    ): String? {
+        return normalizedCountryCode(preferredCountryCode)
+            ?: normalizedCountryCode(uiState.activePenaltyRules.countryCode)
+            ?: inferCountryCodeFromDBPath(dbPath)
+    }
+
+    private fun ensureLookupService(
+        dbPath: String,
+        preferredCountryCode: String? = null,
+        matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
+    ): V3SpeedLimitLookup {
+        val resolvedCountryCode = resolveLookupCountryCode(
+            dbPath = dbPath,
+            preferredCountryCode = preferredCountryCode,
+        )
         val current = lookupService
-        if (current != null && lookupServicePath == dbPath) {
+        if (
+            current != null &&
+            lookupServicePath == dbPath &&
+            lookupServiceCountryCode == resolvedCountryCode &&
+            lookupServiceMatcherProfile == matcherProfile
+        ) {
             return current
         }
         closeLookupService()
-        return V3SpeedLimitLookup(dbPath).also {
+        return V3SpeedLimitLookup(
+            dbPath,
+            countryCode = resolvedCountryCode,
+            matchingModel = matcherProfile.lookupModel,
+        ).also {
             lookupService = it
             lookupServicePath = dbPath
+            lookupServiceCountryCode = resolvedCountryCode
+            lookupServiceMatcherProfile = matcherProfile
         }
     }
 
-    private fun replaceLookupService(dbPath: String?) {
+    private fun replaceLookupService(
+        dbPath: String?,
+        preferredCountryCode: String? = null,
+        matcherProfile: MatcherDebugProfile = uiState.matcherDebugProfile,
+    ) {
         if (dbPath.isNullOrBlank()) {
             closeLookupService()
             return
         }
-        if (lookupServicePath == dbPath && lookupService != null) {
+        val resolvedCountryCode = resolveLookupCountryCode(
+            dbPath = dbPath,
+            preferredCountryCode = preferredCountryCode,
+        )
+        if (
+            lookupServicePath == dbPath &&
+            lookupServiceCountryCode == resolvedCountryCode &&
+            lookupServiceMatcherProfile == matcherProfile &&
+            lookupService != null
+        ) {
             return
         }
         closeLookupService()
         runCatching {
-            lookupService = V3SpeedLimitLookup(dbPath)
+            lookupService = V3SpeedLimitLookup(
+                dbPath,
+                countryCode = resolvedCountryCode,
+                matchingModel = matcherProfile.lookupModel,
+            )
             lookupServicePath = dbPath
+            lookupServiceCountryCode = resolvedCountryCode
+            lookupServiceMatcherProfile = matcherProfile
         }.onFailure {
             lookupService = null
             lookupServicePath = null
+            lookupServiceCountryCode = null
+            lookupServiceMatcherProfile = null
         }
     }
 
@@ -1993,6 +2103,8 @@ class ConsumerSessionController(
         lookupService?.close()
         lookupService = null
         lookupServicePath = null
+        lookupServiceCountryCode = null
+        lookupServiceMatcherProfile = null
     }
 
     private fun bootstrapBundledSeedIfNeeded() {
@@ -2043,6 +2155,28 @@ class ConsumerSessionController(
             }
         }
         return resolved
+    }
+
+    private fun resolveLocalSpeedOverrideValues(observations: List<LocalObservation>): Map<String, String> {
+        val resolved = linkedMapOf<String, String>()
+        observations.forEach { observation ->
+            val wayId = observation.wayId?.trim().orEmpty()
+            val maxspeedValue = observation.newSpeedValue?.trim().orEmpty()
+            if (observation.state == LocalObservationState.DISCARDED) {
+                return@forEach
+            }
+            if (wayId.isNotEmpty() && maxspeedValue.isNotEmpty() && wayId !in resolved) {
+                resolved[wayId] = maxspeedValue
+            }
+        }
+        return resolved
+    }
+
+    private fun speedLimitDisplayTextForValue(maxspeedValue: String?): String? {
+        return when (maxspeedValue?.trim()?.lowercase(Locale.US)) {
+            "walk" -> "Schritt"
+            else -> null
+        }
     }
 
     private fun ensureDrivingLogsExist() {
@@ -2372,6 +2506,8 @@ class ConsumerSessionController(
         private const val KEY_AUDIO_ALERT_THRESHOLD = "youspeed.audio_alert_threshold_kmh"
         private const val KEY_AUDIO_ALERTS_ENABLED = "youspeed.audio_alerts_enabled"
         private const val KEY_HIDE_WELCOME = "youspeed.hide_welcome_screen"
+        private const val KEY_MATCHER_DEBUG_PROFILE = "youspeed.matcher_debug_profile"
+        private const val KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION = "youspeed.matcher_debug_profile_forced_version"
         private const val DRIVING_BAN_WARNING_REMINDER_MS = 24_000L
         private const val BUNDLED_SEED_ASSET_NAME = "karlsruhe-regbez_speeds.sqlite.zlib"
         private const val BUNDLED_SEED_DB_FILE_NAME = "karlsruhe-regbez_speeds.sqlite"

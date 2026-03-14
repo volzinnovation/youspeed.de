@@ -3,6 +3,9 @@ import XCTest
 import CryptoKit
 import SQLite3
 import CoreLocation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
@@ -17,6 +20,12 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: "DE:urban", sourceMaxspeed: nil, highway: nil), 50)
         XCTAssertEqual(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: "DE:rural", highway: nil), 100)
         XCTAssertNil(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"))
+    }
+
+    func testGermanLowSpeedLimitImpliesInsideCity() {
+        XCTAssertTrue(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "DEU", speedKmh: 30))
+        XCTAssertFalse(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "DEU", speedKmh: 50))
+        XCTAssertFalse(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "NLD", speedKmh: 30))
     }
 
     func testDeriveSpeedLimitDoesNotInventMandatoryMotorwayLimitFromInheritedTags() {
@@ -195,6 +204,49 @@ final class SpeedConsumerTests: XCTestCase {
         )
         let text = try String(contentsOf: url, encoding: .utf8)
         XCTAssertTrue(text.contains("OpenStreetMap"), "Expected bundled legal text contents")
+        XCTAssertTrue(text.contains("commons.wikimedia.org/wiki/File:Zeichen_242.1"), "Expected Commons attribution in legal text")
+    }
+
+    func testPedestrianZoneSignAssetIsBundled() throws {
+        #if canImport(UIKit)
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        XCTAssertNotNil(
+            UIImage(named: "PedestrianZoneSign", in: bundle, compatibleWith: nil),
+            "Expected bundled pedestrian-zone sign asset"
+        )
+        #endif
+    }
+
+    func testPedestrianScreenshotFixtureUsesWalkingPacePresentation() {
+        let fixture = AppScreenshotState.pedestrianZone.fixture
+        XCTAssertEqual(fixture.currentSpeedKmh, 5)
+        XCTAssertNil(fixture.speedLimitKmh)
+        XCTAssertEqual(fixture.speedLimitDisplayText, "Schritt")
+        XCTAssertEqual(fixture.streetName, "Im Kloster")
+        XCTAssertEqual(fixture.cityName, "Bad Herrenalb")
+    }
+
+    func testMatcherStartupProfileMigratesLegacyDefaultToM2() {
+        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: "m1", forcedVersion: 0), .m2)
+        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: nil, forcedVersion: 0), .m2)
+    }
+
+    func testMatcherStartupProfilePreservesExplicitProfileAfterMigration() {
+        XCTAssertEqual(
+            MatcherDebugProfile.resolveInitialProfile(
+                storedRawValue: MatcherDebugProfile.m4.rawValue,
+                forcedVersion: MatcherDebugProfile.forcedProfileVersion
+            ),
+            .m4
+        )
+    }
+
+    func testMatcherProfilesFollowPaperLadder() {
+        XCTAssertEqual(MatcherDebugProfile.m1.debugLabel, "M1 Connected baseline")
+        XCTAssertEqual(MatcherDebugProfile.m2.debugLabel, "M2 Nearest + street-ref continuity")
+        XCTAssertEqual(MatcherDebugProfile.m3.debugLabel, "M3 M2 + connected-candidate gate")
+        XCTAssertEqual(MatcherDebugProfile.m4.matchingModel, .corridorHMMRawMiniHMM)
+        XCTAssertEqual(MatcherDebugProfile.m5.matchingModel, .corridorHMM)
     }
 
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
@@ -1123,6 +1175,30 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterSecondCapture.first?.value, "40")
         XCTAssertEqual(afterSecondCapture.first?.roadCandidateIDs, ["17721265"])
         XCTAssertEqual(afterSecondCapture.dropFirst().first?.value, "30")
+
+        try await viewModel.testResetLocalObservationStore()
+    }
+
+    @MainActor
+    func testSpeedCaptureWalkShowsWalkingPaceLabel() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testResetLocalObservationStore()
+
+        viewModel.speedLimitKmh = 30
+        viewModel.limitWayID = "17721265"
+        viewModel.limitStreetName = "Dobler Strasse"
+        viewModel.limitCityName = "Bad Herrenalb"
+        viewModel.currentLatitude = 48.797626
+        viewModel.currentLongitude = 8.437309
+        viewModel.activeBundleVersion = "seed"
+
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "fussgaengerzone")
+
+        XCTAssertNil(viewModel.speedLimitKmh)
+        XCTAssertEqual(viewModel.speedLimitDisplayText, "Schritt")
+
+        let stored = try await viewModel.testStoredLocalObservations()
+        XCTAssertEqual(stored.first?.value, "walk")
 
         try await viewModel.testResetLocalObservationStore()
     }
@@ -2883,13 +2959,29 @@ final class SpeedConsumerTests: XCTestCase {
             return (attributes[.size] as? NSNumber)?.uint64Value ?? 0
         }
 
-        func runAggregateReplay(service: V3SpeedLimitService) throws -> (metrics: DriveLogReplayMetrics, focusReplayCandidate: Int, focusReplaySelected: Int, focusReplayCandidateOutsideLog3: Int, focusReplaySelectedOutsideLog3: Int, selectedTunnel: Int) {
+        struct ReplayExampleOutcome {
+            let isChangedExample: Bool
+            let predictedMatches: Bool
+        }
+
+        struct AggregateReplaySummary {
+            let metrics: DriveLogReplayMetrics
+            let focusReplayCandidate: Int
+            let focusReplaySelected: Int
+            let focusReplayCandidateOutsideLog3: Int
+            let focusReplaySelectedOutsideLog3: Int
+            let selectedTunnel: Int
+            let outcomes: [String: ReplayExampleOutcome]
+        }
+
+        func runAggregateReplay(service: V3SpeedLimitService) throws -> AggregateReplaySummary {
             var aggregate = DriveLogReplayMetrics()
             var focusReplayCandidate = 0
             var focusReplaySelected = 0
             var focusReplayCandidateOutsideLog3 = 0
             var focusReplaySelectedOutsideLog3 = 0
             var selectedTunnel = 0
+            var outcomes: [String: ReplayExampleOutcome] = [:]
 
             for logURL in logURLs {
                 let entries = try loadDriveMatchLogEntries(url: logURL)
@@ -2913,6 +3005,12 @@ final class SpeedConsumerTests: XCTestCase {
                     if result.selectionTrace.contains(where: { $0.step == "three_way_gate" }) {
                         aggregate.usedThreeWayGateCount += 1
                     }
+                    if result.selectionTrace.contains(where: { $0.step == "same_ref_bounce_gate" }) {
+                        aggregate.usedSameRefBounceGateCount += 1
+                    }
+                    if result.selectionTrace.contains(where: { $0.step == "anti_aba_hysteresis" }) {
+                        aggregate.usedAntiABAHysteresisCount += 1
+                    }
                     if let pseudoLabelWayID = hindsightPseudoLabelWayID(
                         in: entries,
                         at: index,
@@ -2932,6 +3030,10 @@ final class SpeedConsumerTests: XCTestCase {
                             aggregate.unchangedExampleCount += 1
                             aggregate.unchangedCorrectCount += predictedMatches ? 1 : 0
                         }
+                        outcomes["\(logURL.lastPathComponent)#\(entry.fixID)"] = ReplayExampleOutcome(
+                            isChangedExample: isChangedExample,
+                            predictedMatches: predictedMatches
+                        )
                     }
 
                     if result.candidateTraces.contains(where: { $0.wayID == focusWayID }) {
@@ -2960,13 +3062,14 @@ final class SpeedConsumerTests: XCTestCase {
                 }
             }
 
-            return (
+            return AggregateReplaySummary(
                 metrics: aggregate,
                 focusReplayCandidate: focusReplayCandidate,
                 focusReplaySelected: focusReplaySelected,
                 focusReplayCandidateOutsideLog3: focusReplayCandidateOutsideLog3,
                 focusReplaySelectedOutsideLog3: focusReplaySelectedOutsideLog3,
-                selectedTunnel: selectedTunnel
+                selectedTunnel: selectedTunnel,
+                outcomes: outcomes
             )
         }
 
@@ -3072,10 +3175,30 @@ final class SpeedConsumerTests: XCTestCase {
             let focusReplayCandidateOutsideLog3: Int
             let focusReplaySelectedOutsideLog3: Int
             let selectedTunnel: Int
+            let replayOutcomes: [String: ReplayExampleOutcome]
 
             var accuracyComposite: Double {
                 (0.50 * replay.accuracy) + (0.25 * replay.changedRecall) + (0.25 * replay.unchangedAccuracy)
             }
+        }
+
+        struct ProfileDeltaSummary {
+            let label: String
+            let correctedExamples: Int
+            let regressedExamples: Int
+            let netCorrections: Int
+            let correctedChangedExamples: Int
+            let regressedChangedExamples: Int
+            let netChangedCorrections: Int
+            let correctedUnchangedExamples: Int
+            let regressedUnchangedExamples: Int
+            let netUnchangedCorrections: Int
+            let geomWayABADelta: Int
+            let geomSameRefABADelta: Int
+            let accuracyDelta: Double
+            let changedRecallDelta: Double
+            let unchangedAccuracyDelta: Double
+            let commonScoreDelta: Double
         }
 
         func summarize(label: String, dbURL: URL, model: V3SpeedLimitService.MatchingModel) throws -> ProfileSummary {
@@ -3097,24 +3220,106 @@ final class SpeedConsumerTests: XCTestCase {
                 focusReplaySelected: replay.focusReplaySelected,
                 focusReplayCandidateOutsideLog3: replay.focusReplayCandidateOutsideLog3,
                 focusReplaySelectedOutsideLog3: replay.focusReplaySelectedOutsideLog3,
-                selectedTunnel: replay.selectedTunnel
+                selectedTunnel: replay.selectedTunnel,
+                replayOutcomes: replay.outcomes
             )
         }
 
-        let baseline = try summarize(label: "baseline", dbURL: baselineURL, model: .connectedBaseline)
-        let corridor = try summarize(label: "corridor", dbURL: corridorURL, model: .corridorHMM)
-        let profiles = [baseline, corridor]
-        let bestLatencyP95 = profiles.map(\.latencyServiceP95).min() ?? 1.0
-        let minBytes = profiles.map(\.bytes).min() ?? 1
-
-        for profile in profiles {
+        func commonScore(for profile: ProfileSummary, bestLatencyP95: Double, minBytes: UInt64) -> Double {
             let latencyScore = bestLatencyP95 > 0 ? bestLatencyP95 / profile.latencyServiceP95 : 0.0
             let sizeScore = profile.bytes > 0 ? Double(minBytes) / Double(profile.bytes) : 0.0
-            let commonScore = 100.0 * (
+            return 100.0 * (
                 (0.70 * profile.accuracyComposite) +
                 (0.20 * latencyScore) +
                 (0.10 * sizeScore)
             )
+        }
+
+        func deltaSummary(
+            from base: ProfileSummary,
+            to candidate: ProfileSummary,
+            bestLatencyP95: Double,
+            minBytes: UInt64
+        ) -> ProfileDeltaSummary {
+            var correctedExamples = 0
+            var regressedExamples = 0
+            var correctedChangedExamples = 0
+            var regressedChangedExamples = 0
+            var correctedUnchangedExamples = 0
+            var regressedUnchangedExamples = 0
+
+            for key in base.replayOutcomes.keys.sorted() {
+                guard let baseOutcome = base.replayOutcomes[key],
+                      let candidateOutcome = candidate.replayOutcomes[key] else {
+                    continue
+                }
+                if !baseOutcome.predictedMatches && candidateOutcome.predictedMatches {
+                    correctedExamples += 1
+                    if baseOutcome.isChangedExample {
+                        correctedChangedExamples += 1
+                    } else {
+                        correctedUnchangedExamples += 1
+                    }
+                } else if baseOutcome.predictedMatches && !candidateOutcome.predictedMatches {
+                    regressedExamples += 1
+                    if baseOutcome.isChangedExample {
+                        regressedChangedExamples += 1
+                    } else {
+                        regressedUnchangedExamples += 1
+                    }
+                }
+            }
+
+            return ProfileDeltaSummary(
+                label: candidate.label,
+                correctedExamples: correctedExamples,
+                regressedExamples: regressedExamples,
+                netCorrections: correctedExamples - regressedExamples,
+                correctedChangedExamples: correctedChangedExamples,
+                regressedChangedExamples: regressedChangedExamples,
+                netChangedCorrections: correctedChangedExamples - regressedChangedExamples,
+                correctedUnchangedExamples: correctedUnchangedExamples,
+                regressedUnchangedExamples: regressedUnchangedExamples,
+                netUnchangedCorrections: correctedUnchangedExamples - regressedUnchangedExamples,
+                geomWayABADelta: candidate.geomWayABA - base.geomWayABA,
+                geomSameRefABADelta: candidate.geomSameRefABA - base.geomSameRefABA,
+                accuracyDelta: candidate.replay.accuracy - base.replay.accuracy,
+                changedRecallDelta: candidate.replay.changedRecall - base.replay.changedRecall,
+                unchangedAccuracyDelta: candidate.replay.unchangedAccuracy - base.replay.unchangedAccuracy,
+                commonScoreDelta: commonScore(for: candidate, bestLatencyP95: bestLatencyP95, minBytes: minBytes) -
+                    commonScore(for: base, bestLatencyP95: bestLatencyP95, minBytes: minBytes)
+            )
+        }
+
+        let baseline = try summarize(label: "baseline", dbURL: baselineURL, model: .connectedBaseline)
+        let simpleSpeedRef = try summarize(label: "simple_speed_ref", dbURL: baselineURL, model: .simpleSpeedRefHeuristic)
+        let simpleSpeedRefConnected = try summarize(
+            label: "simple_speed_ref_connected",
+            dbURL: baselineURL,
+            model: .simpleSpeedRefConnectedHeuristic
+        )
+        let corridorRawMiniHMM = try summarize(label: "corridor_raw_mini_hmm", dbURL: corridorURL, model: .corridorHMMRawMiniHMM)
+        let corridorNoThreeWay = try summarize(label: "corridor_no_three_way", dbURL: corridorURL, model: .corridorHMMNoThreeWayGate)
+        let corridorNoSameRefBounce = try summarize(label: "corridor_no_same_ref_bounce", dbURL: corridorURL, model: .corridorHMMNoSameRefBounceGate)
+        let corridorAntiABA = try summarize(label: "corridor_anti_aba", dbURL: corridorURL, model: .corridorHMMAntiABAHysteresis)
+        let corridor = try summarize(label: "corridor", dbURL: corridorURL, model: .corridorHMM)
+        let profiles = [
+            baseline,
+            simpleSpeedRef,
+            simpleSpeedRefConnected,
+            corridorRawMiniHMM,
+            corridorNoThreeWay,
+            corridorNoSameRefBounce,
+            corridorAntiABA,
+            corridor,
+        ]
+        let bestLatencyP95 = profiles.map(\.latencyServiceP95).min() ?? 1.0
+        let minBytes = profiles.map(\.bytes).min() ?? 1
+        let corridorReplayKeys = Set(corridor.replayOutcomes.keys)
+
+        for profile in profiles {
+            XCTAssertEqual(Set(profile.replayOutcomes.keys), corridorReplayKeys)
+            let commonScore = commonScore(for: profile, bestLatencyP95: bestLatencyP95, minBytes: minBytes)
             print(
                 "MODEL_PROFILE \(profile.label)"
                     + " bytes=\(profile.bytes)"
@@ -3122,6 +3327,9 @@ final class SpeedConsumerTests: XCTestCase {
                     + " changedRecall=\(String(format: "%.4f", profile.replay.changedRecall))"
                     + " unchangedAcc=\(String(format: "%.4f", profile.replay.unchangedAccuracy))"
                     + " accuracyComposite=\(String(format: "%.4f", profile.accuracyComposite))"
+                    + " threeWayGate=\(profile.replay.usedThreeWayGateCount)"
+                    + " sameRefBounceGate=\(profile.replay.usedSameRefBounceGateCount)"
+                    + " antiABAHysteresis=\(profile.replay.usedAntiABAHysteresisCount)"
                     + " geomLogAgree=\(String(format: "%.4f", profile.geomLogAgreement))"
                     + " geomReplayTunnel=\(profile.geomReplayTunnel)"
                     + " geomWayABA=\(profile.geomWayABA)"
@@ -3134,6 +3342,33 @@ final class SpeedConsumerTests: XCTestCase {
                     + " focusCandOtherLogs=\(profile.focusReplayCandidateOutsideLog3)"
                     + " focusSelOtherLogs=\(profile.focusReplaySelectedOutsideLog3)"
                     + " commonScore=\(String(format: "%.2f", commonScore))"
+            )
+        }
+
+        for candidate in [simpleSpeedRef, simpleSpeedRefConnected, corridorNoThreeWay, corridorNoSameRefBounce, corridorAntiABA] {
+            let delta = deltaSummary(
+                from: corridor,
+                to: candidate,
+                bestLatencyP95: bestLatencyP95,
+                minBytes: minBytes
+            )
+            print(
+                "PROFILE_DELTA corridor->\(delta.label)"
+                    + " corrected=\(delta.correctedExamples)"
+                    + " regressed=\(delta.regressedExamples)"
+                    + " net=\(delta.netCorrections)"
+                    + " correctedChanged=\(delta.correctedChangedExamples)"
+                    + " regressedChanged=\(delta.regressedChangedExamples)"
+                    + " netChanged=\(delta.netChangedCorrections)"
+                    + " correctedUnchanged=\(delta.correctedUnchangedExamples)"
+                    + " regressedUnchanged=\(delta.regressedUnchangedExamples)"
+                    + " netUnchanged=\(delta.netUnchangedCorrections)"
+                    + " geomWayABADelta=\(delta.geomWayABADelta)"
+                    + " geomSameRefABADelta=\(delta.geomSameRefABADelta)"
+                    + " accDelta=\(String(format: "%.4f", delta.accuracyDelta))"
+                    + " changedRecallDelta=\(String(format: "%.4f", delta.changedRecallDelta))"
+                    + " unchangedAccDelta=\(String(format: "%.4f", delta.unchangedAccuracyDelta))"
+                    + " commonScoreDelta=\(String(format: "%.2f", delta.commonScoreDelta))"
             )
         }
 
@@ -4938,6 +5173,36 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
+    func testLookupGermanBelow50SpeedLimitMarksInsideCity() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-low-speed-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_low_speed_fixture.sqlite")
+        try createGermanLowSpeedHeuristicFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(dbPath: dbURL.path, countryCode: "DEU")
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0020,
+            radiusM: 120.0,
+            maxCandidates: 32,
+            preferredWayID: nil,
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 30.0,
+            horizontalAccuracyM: 5.0
+        )
+
+        XCTAssertEqual(result.wayID, "4101")
+        XCTAssertEqual(result.speedLimitKmh, 30)
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "de_speed_limit_lt_50")
+    }
+
     func testLookupCityNearestFallbackPrefersCityOverCloserVillage() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-nearest-\(UUID().uuidString)", isDirectory: true)
@@ -5071,7 +5336,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
-    func testLookupCityPolygonPrefersAdminLevel8Boundary() throws {
+    func testLookupCityPolygonFormatsAdminLevel9WithAdminLevel8Qualifier() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -5096,13 +5361,13 @@ final class SpeedConsumerTests: XCTestCase {
             maxCandidates: 64
         )
 
-        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.cityName, "Buechenbronn (Pforzheim)")
         XCTAssertEqual(result.insideCity, true)
         XCTAssertEqual(result.citySource, "admin_polygon")
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
-    func testLookupCityPolygonIgnoresAdminLevel9AndFallsBackToPlace() throws {
+    func testLookupCityPolygonUsesAdminLevel9WhenNoAdminLevel8Exists() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -5131,10 +5396,10 @@ final class SpeedConsumerTests: XCTestCase {
             maxCandidates: 64
         )
 
-        XCTAssertEqual(result.cityName, "Bad Herrenalb")
-        XCTAssertEqual(result.insideCity, false)
-        XCTAssertEqual(result.citySource, "place_fallback")
-        XCTAssertEqual(result.speedLimitKmh, 100)
+        XCTAssertEqual(result.cityName, "Kullenmühle")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
     func testLookupFailsForLegacySchemaWithoutWayGeomAndApproxHeading() throws {
@@ -6624,10 +6889,67 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
-    private func createCityClassificationPrecedenceFixtureDB(at url: URL) throws {
+    private func createGermanLowSpeedHeuristicFixtureDB(at url: URL) throws {
         var db: OpaquePointer?
         guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
             throw NSError(domain: "SpeedConsumerTests", code: 107, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '4101', 'secondary', 'Low Speed Test Way', NULL, '30', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.0000, 13.0040, 52.0000);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (4101, 13.0000, 13.0040, 52.0000, 52.0000);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '4101', '[[52.0000,13.0000],[52.0000,13.0040]]');
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 108, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createCityClassificationPrecedenceFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 109, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
         }
         defer { sqlite3_close(db) }
 
@@ -6727,7 +7049,7 @@ final class SpeedConsumerTests: XCTestCase {
 
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
-            throw NSError(domain: "SpeedConsumerTests", code: 108, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+            throw NSError(domain: "SpeedConsumerTests", code: 110, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 
@@ -7167,29 +7489,61 @@ final class SpeedConsumerTests: XCTestCase {
                 userInfo: [NSLocalizedDescriptionKey: "No drive match logs found in \(logsDirectory.path)"]
             )
         }
-        return urls
+        let filtered = try urls.filter(logContainsFixID(_:))
+        if filtered.isEmpty {
+            throw NSError(
+                domain: "SpeedConsumerTests",
+                code: 38,
+                userInfo: [NSLocalizedDescriptionKey: "No drive match logs with fixID found in \(logsDirectory.path)"]
+            )
+        }
+        return filtered
     }
 
     private func geomInspectorDriveMatchLogURLs() throws -> [URL] {
-        let logsDirectory = repoRootURL()
+        let logsRoot = repoRootURL()
             .appendingPathComponent("inspector", isDirectory: true)
             .appendingPathComponent("logs", isDirectory: true)
-            .appendingPathComponent("geom", isDirectory: true)
-        let urls = try FileManager.default.contentsOfDirectory(
-            at: logsDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        )
-            .filter { $0.lastPathComponent.contains("drive_match_log") && $0.pathExtension == "ndjson" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        if urls.isEmpty {
-            throw NSError(
-                domain: "SpeedConsumerTests",
-                code: 39,
-                userInfo: [NSLocalizedDescriptionKey: "No geom drive match logs found in \(logsDirectory.path)"]
+        let candidateDirectories = [
+            logsRoot.appendingPathComponent("geom", isDirectory: true),
+            logsRoot.appendingPathComponent("replay_debug", isDirectory: true)
+                .appendingPathComponent("geom", isDirectory: true),
+        ]
+        for logsDirectory in candidateDirectories {
+            guard FileManager.default.fileExists(atPath: logsDirectory.path) else {
+                continue
+            }
+            let urls = try FileManager.default.contentsOfDirectory(
+                at: logsDirectory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
             )
+                .filter { $0.lastPathComponent.contains("drive_match_log") && $0.pathExtension == "ndjson" }
+                .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            if !urls.isEmpty {
+                let filtered = try urls.filter(logContainsFixID(_:))
+                if !filtered.isEmpty {
+                    return filtered
+                }
+            }
         }
-        return urls
+        throw NSError(
+            domain: "SpeedConsumerTests",
+            code: 39,
+            userInfo: [NSLocalizedDescriptionKey: "No geom drive match logs found in \(candidateDirectories.map(\.path).joined(separator: ", "))"]
+        )
+    }
+
+    private func logContainsFixID(_ url: URL) throws -> Bool {
+        let content = try String(contentsOf: url, encoding: .utf8)
+        for line in content.split(whereSeparator: \.isNewline) {
+            let data = Data(line.utf8)
+            guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                continue
+            }
+            return payload["fixID"] != nil
+        }
+        return false
     }
 
     private func bundledSpeedDBURL() -> URL? {
@@ -7733,6 +8087,8 @@ final class SpeedConsumerTests: XCTestCase {
         var unchangedExampleCount = 0
         var unchangedCorrectCount = 0
         var usedThreeWayGateCount = 0
+        var usedSameRefBounceGateCount = 0
+        var usedAntiABAHysteresisCount = 0
 
         var accuracy: Double {
             guard pseudoLabelExampleCount > 0 else {
@@ -7764,6 +8120,8 @@ final class SpeedConsumerTests: XCTestCase {
             unchangedExampleCount += other.unchangedExampleCount
             unchangedCorrectCount += other.unchangedCorrectCount
             usedThreeWayGateCount += other.usedThreeWayGateCount
+            usedSameRefBounceGateCount += other.usedSameRefBounceGateCount
+            usedAntiABAHysteresisCount += other.usedAntiABAHysteresisCount
         }
     }
 

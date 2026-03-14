@@ -4,13 +4,47 @@ import SQLite3
 final class V3SpeedLimitService {
     enum MatchingModel {
         case corridorHMM
+        case corridorHMMRawMiniHMM
+        case corridorHMMNoThreeWayGate
+        case corridorHMMNoSameRefBounceGate
+        case corridorHMMAntiABAHysteresis
+        case simpleSpeedRefHeuristic
+        case simpleSpeedRefConnectedHeuristic
         case connectedBaseline
     }
 
     private let dbPath: String
+    private let countryCode: String?
     private let matchingModel: MatchingModel
     private let corridorPairCacheLock = NSLock()
     private var cachedCorridorPairContext: CorridorPairContext?
+
+    private var usesCorridorMatcher: Bool {
+        switch matchingModel {
+        case .corridorHMM,
+             .corridorHMMRawMiniHMM,
+             .corridorHMMNoThreeWayGate,
+             .corridorHMMNoSameRefBounceGate,
+             .corridorHMMAntiABAHysteresis:
+            return true
+        case .simpleSpeedRefHeuristic,
+             .simpleSpeedRefConnectedHeuristic,
+             .connectedBaseline:
+            return false
+        }
+    }
+
+    private var usesThreeWayGate: Bool {
+        matchingModel != .corridorHMMNoThreeWayGate
+    }
+
+    private var usesSameRefBounceGate: Bool {
+        matchingModel != .corridorHMMNoSameRefBounceGate
+    }
+
+    private var usesAntiABAHysteresis: Bool {
+        matchingModel == .corridorHMMAntiABAHysteresis
+    }
 
     private struct WayCandidate {
         let wayID: String?
@@ -72,6 +106,7 @@ final class V3SpeedLimitService {
         let minLat: Double
         let maxLon: Double
         let maxLat: Double
+        let points: [(Double, Double)]
     }
 
     private struct CityContext {
@@ -392,8 +427,9 @@ final class V3SpeedLimitService {
         "hamlet": 3,
     ]
     private static let cityBoundaryLevelPriority: [Int: Int] = [
-        8: 0,
-        6: 1,
+        9: 0,
+        8: 1,
+        6: 2,
     ]
     private static let primaryPlaceMaxRank = 1
     private static let nearestPlaceFallbackMaxDistanceM: Double = 5_000
@@ -473,6 +509,45 @@ final class V3SpeedLimitService {
             return $0.name < $1.name
         }).first
     }
+
+    private static func formatAdminCityName(
+        from boundaries: [(adminLevel: Int, bboxArea: Double, name: String)]
+    ) -> String? {
+        guard let primary = boundaries.sorted(by: {
+            let lhsPriority = cityBoundaryLevelPriority[$0.adminLevel] ?? Int.max
+            let rhsPriority = cityBoundaryLevelPriority[$1.adminLevel] ?? Int.max
+            if lhsPriority != rhsPriority { return lhsPriority < rhsPriority }
+            if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
+            return $0.name < $1.name
+        }).first else {
+            return nil
+        }
+        guard primary.adminLevel == 9 else {
+            return primary.name
+        }
+        let qualifier = boundaries
+            .filter { $0.adminLevel == 8 && !sameAdminName($0.name, primary.name) }
+            .sorted(by: {
+                if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
+                return $0.name < $1.name
+            })
+            .first?.name
+        return qualifier.map { "\(primary.name) (\($0))" } ?? primary.name
+    }
+
+    private static func sameAdminName(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.trimmingCharacters(in: .whitespacesAndNewlines)
+            .caseInsensitiveCompare(rhs.trimmingCharacters(in: .whitespacesAndNewlines)) == .orderedSame
+    }
+
+    private static func isClosedAreaRing(_ points: [(Double, Double)]) -> Bool {
+        guard points.count >= 4,
+              let first = points.first,
+              let last = points.last else {
+            return false
+        }
+        return abs(first.0 - last.0) <= 1e-9 && abs(first.1 - last.1) <= 1e-9
+    }
     private static let tunnelPortalEntryEndpointThresholdM: Double = 24.0
     private static let tunnelPortalExitEndpointThresholdM: Double = 28.0
     private static let tunnelPortalScoreSlackM: Double = 12.0
@@ -539,8 +614,9 @@ final class V3SpeedLimitService {
         "living_street",
     ]
 
-    init(dbPath: String, matchingModel: MatchingModel = .corridorHMM) {
+    init(dbPath: String, countryCode: String? = nil, matchingModel: MatchingModel = .corridorHMM) {
         self.dbPath = dbPath
+        self.countryCode = Self.normalizedCountryCode(countryCode) ?? Self.inferCountryCode(fromDBPath: dbPath)
         self.matchingModel = matchingModel
     }
 
@@ -637,7 +713,7 @@ final class V3SpeedLimitService {
         )
         let corridorProgressContext: CorridorProgressContext
         let corridorPairContext: CorridorPairContext
-        if matchingModel == .corridorHMM {
+        if usesCorridorMatcher {
             corridorProgressContext = loadCorridorProgressContext(
                 db: db,
                 candidates: rankedCandidates
@@ -659,7 +735,7 @@ final class V3SpeedLimitService {
             )
         ]
         let selectableCandidates: [WayCandidate]
-        if matchingModel == .corridorHMM {
+        if usesCorridorMatcher {
             let corridorBaseCandidates = rankedCandidates.filter {
                 isCorridorCandidateSelectable(
                     $0,
@@ -747,26 +823,11 @@ final class V3SpeedLimitService {
         }
         bestCandidate = graphSelectableCandidates.first
 
-        if matchingModel == .connectedBaseline {
-            let baselineSelection = selectConnectedBaselineCandidate(
-                from: graphSelectableCandidates,
-                matchContext: normalizedMatchContext,
-                observedHeadingDeg: headingForScoring,
-                speedKmh: speedKmh,
-                wayLinks: wayLinksContext,
-                accuracyBufferM: accuracyBuffer
-            )
-            selectionTrace.append(contentsOf: baselineSelection.selectionTrace)
-            let finalSelected = baselineSelection.selected
-            if let finalSelected {
-                selectionTrace.append(
-                    MatchSelectionTrace(
-                        step: "final",
-                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none"
-                    )
-                )
-            }
-
+        func buildNonCorridorMatcherResult(
+            finalSelected: WayCandidate?,
+            traceRankedCandidates: [TraceRankedCandidate],
+            selectionTrace: [MatchSelectionTrace]
+        ) -> SpeedLimitResult {
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
             let insideCityDecision: (insideCity: Bool?, source: String?)
             let residentialContext: ResidentialContext
@@ -809,8 +870,12 @@ final class V3SpeedLimitService {
             } else {
                 effectiveSpeed = nil
             }
+            let resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
+                insideCityDecision: insideCityDecision,
+                speedKmh: effectiveSpeed
+            )
 
-            let candidateTraces = Array(baselineSelection.traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
+            let candidateTraces = Array(traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
                 MatchCandidateTrace(
                     rank: entry.traceRank,
                     wayID: entry.candidate.wayID,
@@ -858,8 +923,8 @@ final class V3SpeedLimitService {
                 streetRef: finalSelected?.streetRef,
                 matchedEndpointProximityM: finalSelected?.endpointProximityM.isFinite == true ? finalSelected?.endpointProximityM : nil,
                 cityName: cityContext.cityName,
-                insideCity: insideCityDecision.insideCity,
-                citySource: insideCityDecision.source ?? cityContext.citySource,
+                insideCity: resolvedInsideCityDecision.insideCity,
+                citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
                 cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
                 cityCandidateBoundaries: cityContext.candidateBoundaries,
                 cityContainingBoundaries: cityContext.containingBoundaries,
@@ -877,6 +942,59 @@ final class V3SpeedLimitService {
                 candidateTraces: candidateTraces,
                 selectionTrace: selectionTrace,
                 activeCorridorState: nil
+            )
+        }
+
+        if matchingModel == .connectedBaseline {
+            let baselineSelection = selectConnectedBaselineCandidate(
+                from: graphSelectableCandidates,
+                matchContext: normalizedMatchContext,
+                observedHeadingDeg: headingForScoring,
+                speedKmh: speedKmh,
+                wayLinks: wayLinksContext,
+                accuracyBufferM: accuracyBuffer
+            )
+            selectionTrace.append(contentsOf: baselineSelection.selectionTrace)
+            let finalSelected = baselineSelection.selected
+            if let finalSelected {
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "final",
+                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none"
+                    )
+                )
+            }
+            return buildNonCorridorMatcherResult(
+                finalSelected: finalSelected,
+                traceRankedCandidates: baselineSelection.traceRankedCandidates,
+                selectionTrace: selectionTrace
+            )
+        }
+
+        if matchingModel == .simpleSpeedRefHeuristic || matchingModel == .simpleSpeedRefConnectedHeuristic {
+            let simpleCandidates =
+                matchingModel == .simpleSpeedRefConnectedHeuristic ? graphSelectableCandidates : rankedCandidates
+            let simpleSelection = selectSimpleSpeedRefHeuristicCandidate(
+                from: simpleCandidates,
+                matchContext: normalizedMatchContext,
+                speedKmh: speedKmh,
+                horizontalAccuracyM: horizontalAccuracyM,
+                wayLinks: wayLinksContext
+            )
+            selectionTrace.append(contentsOf: simpleSelection.selectionTrace)
+            let finalSelected = simpleSelection.selected
+            if let finalSelected {
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "final",
+                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none model=\(matchingModel == .simpleSpeedRefConnectedHeuristic ? "simple_speed_ref_connected" : "simple_speed_ref")"
+                    )
+                )
+            }
+            return buildNonCorridorMatcherResult(
+                finalSelected: finalSelected,
+                traceRankedCandidates: simpleSelection.traceRankedCandidates,
+                selectionTrace: selectionTrace
             )
         }
 
@@ -1138,7 +1256,8 @@ final class V3SpeedLimitService {
         } else {
             baselineSelected = heuristicSelected
         }
-        let shouldApplyThreeWayGate = !lockHeuristicSelection &&
+        let shouldApplyThreeWayGate = usesThreeWayGate &&
+            !lockHeuristicSelection &&
             (miniHMMSelection.selectedCorridorState == nil || miniHMMSelection.selectedCorridorState == .surface) &&
             shouldUseThreeWayGate(
             currentSelected: baselineSelected,
@@ -1156,7 +1275,8 @@ final class V3SpeedLimitService {
         ) : nil
         let selected: WayCandidate?
         if let threeWayGateSelection {
-            if let baselineSelected,
+            if usesSameRefBounceGate,
+               let baselineSelected,
                shouldSuppressImmediateSameRefBounce(
                 candidate: threeWayGateSelection.candidate,
                 over: baselineSelected,
@@ -1208,6 +1328,166 @@ final class V3SpeedLimitService {
             )
         }
 
+        func buildCorridorMatcherResult(
+            finalSelected: WayCandidate?,
+            finalActiveCorridorState: CorridorMatchState?,
+            selectionTrace: [MatchSelectionTrace]
+        ) -> SpeedLimitResult {
+            let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
+            let insideCityDecision: (insideCity: Bool?, source: String?)
+            let residentialContext: ResidentialContext
+            if highwayImpliesInsideCity(finalSelected?.highway) {
+                insideCityDecision = (true, "highway_class_in_city")
+                residentialContext = ResidentialContext(
+                    insideCity: nil,
+                    candidatePolygons: 0,
+                    containingPolygons: 0,
+                    resolveMs: 0.0
+                )
+            } else {
+                residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
+                if let insideCity = residentialContext.insideCity {
+                    insideCityDecision = (insideCity, "residential_polygon")
+                } else {
+                    insideCityDecision = (cityContext.insideCity, cityContext.citySource)
+                }
+            }
+
+            let t1 = DispatchTime.now().uptimeNanoseconds
+            let elapsedMs = Double(t1 - t0) / 1_000_000.0
+
+            let effectiveSpeed: Int?
+            if finalSelected?.isUnlimitedSpeedLimit == true {
+                effectiveSpeed = nil
+            } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
+                if finalSelected.speedSource == .highwayClass,
+                   Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+                   let insideCity = insideCityDecision.insideCity {
+                    // Highway class alone is weaker than explicit city/rural context.
+                    effectiveSpeed = insideCity ? 50 : 100
+                } else {
+                    effectiveSpeed = matchedSpeed
+                }
+            } else if let finalSelected,
+                      Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
+                      let insideCity = insideCityDecision.insideCity {
+                // Keep inherited defaults only when a way match exists.
+                effectiveSpeed = insideCity ? 50 : 100
+            } else if insideCityDecision.insideCity == true {
+                // Residential polygon containment can still provide a safe inner-city fallback.
+                effectiveSpeed = 50
+            } else {
+                effectiveSpeed = nil
+            }
+            let resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
+                insideCityDecision: insideCityDecision,
+                speedKmh: effectiveSpeed
+            )
+
+            let selectedTunnelLike = isTruthyOSMTag(finalSelected?.tunnel)
+            let candidateTraces = Array(traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
+                MatchCandidateTrace(
+                    rank: entry.traceRank,
+                    wayID: entry.candidate.wayID,
+                    streetName: entry.candidate.streetName,
+                    streetRef: entry.candidate.streetRef,
+                    highway: entry.candidate.highway,
+                    service: entry.candidate.service,
+                    tunnel: entry.candidate.tunnel,
+                    distanceM: entry.candidate.distanceM,
+                    endpointProximityM: entry.candidate.endpointProximityM.isFinite ? entry.candidate.endpointProximityM : nil,
+                    score: entry.traceScore,
+                    geometryScore: entry.candidate.score,
+                    portalEligible: entry.portalEligible,
+                    corridorKind: entry.corridorState?.snapshot.kind,
+                    corridorID: entry.corridorState?.snapshot.corridorID,
+                    corridorSideNodeKey: entry.corridorState?.snapshot.sideNodeKey,
+                    corridorDepthM: entry.corridorState?.snapshot.depthM,
+                    corridorRemainingM: entry.corridorState.map { max(0.0, $0.snapshot.spanM - $0.snapshot.depthM) },
+                    corridorDepthNodes: entry.corridorState?.snapshot.depthNodes,
+                    corridorRemainingNodes: entry.corridorState.map { max(0, $0.snapshot.spanNodes - $0.snapshot.depthNodes) },
+                    corridorEntryZone: entry.corridorState?.entryZone,
+                    corridorExitZone: entry.corridorState?.exitZone,
+                    continuityClass: String(describing: entry.continuity),
+                    tunnelSelectable: entry.tunnelSelectable,
+                    corridorSelectable: entry.corridorSelectable,
+                    isSelected: normalizedWayID(entry.candidate.wayID) == normalizedWayID(finalSelected?.wayID)
+                )
+            }
+
+            return SpeedLimitResult(
+                speedLimitKmh: effectiveSpeed,
+                isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
+                wayID: finalSelected?.wayID,
+                highway: finalSelected?.highway,
+                service: finalSelected?.service,
+                tunnel: finalSelected?.tunnel,
+                bridge: nil,
+                covered: nil,
+                location: nil,
+                layer: nil,
+                level: nil,
+                isTunnelSegment: selectedTunnelLike,
+                streetName: finalSelected?.streetName,
+                streetBaseName: finalSelected?.streetBaseName,
+                streetRef: finalSelected?.streetRef,
+                matchedEndpointProximityM: finalSelected?.endpointProximityM.isFinite == true ? finalSelected?.endpointProximityM : nil,
+                cityName: cityContext.cityName,
+                insideCity: resolvedInsideCityDecision.insideCity,
+                citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
+                cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
+                cityCandidateBoundaries: cityContext.candidateBoundaries,
+                cityContainingBoundaries: cityContext.containingBoundaries,
+                cityPlaceCandidates: cityContext.placeCandidates,
+                queryTimeMs: elapsedMs,
+                candidateCount: candidateCount,
+                speedCandidateCount: speedCandidateCount,
+                nearestCandidateDistanceM: nearestCandidateDistance.isFinite ? nearestCandidateDistance : nil,
+                nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil,
+                nearbyTunnelCandidateWayIDs: nearbyTunnelCandidateWayIDs,
+                nearbyTunnelCandidateRefs: Array(nearbyTunnelCandidateRefs).sorted(),
+                usedMiniHMM: usedMiniHMM,
+                miniHMMCandidateCount: miniHMMSelection.candidateCount,
+                matchHypotheses: miniHMMSelection.hypotheses,
+                candidateTraces: candidateTraces,
+                selectionTrace: selectionTrace,
+                activeCorridorState: finalActiveCorridorState
+            )
+        }
+
+        if matchingModel == .corridorHMMRawMiniHMM {
+            let finalSelected = miniHMMSelection.selectedCandidate ?? heuristicSelected
+            let finalActiveCorridorState: CorridorMatchState? = finalSelected.flatMap { candidate in
+                guard let corridorState = candidateCorridorState(
+                    for: candidate,
+                    matchContext: normalizedMatchContext,
+                    wayLinks: wayLinksContext,
+                    progressContext: corridorProgressContext
+                ) else {
+                    return nil
+                }
+                if sameCorridorState(normalizedMatchContext.activeCorridorState, corridorState.snapshot) ||
+                    shouldTriggerActiveCorridorMode(corridorState, matchContext: normalizedMatchContext) {
+                    return corridorState.snapshot
+                }
+                return nil
+            }
+            var rawMiniHMMTrace = selectionTrace
+            if let finalSelected {
+                rawMiniHMMTrace.append(
+                    MatchSelectionTrace(
+                        step: "final",
+                        detail: "selected \(finalSelected.wayID ?? "nil") via raw_mini_hmm tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=\(finalActiveCorridorState.map { "\($0.kind)#\($0.corridorID)" } ?? "none")"
+                    )
+                )
+            }
+            return buildCorridorMatcherResult(
+                finalSelected: finalSelected,
+                finalActiveCorridorState: finalActiveCorridorState,
+                selectionTrace: rawMiniHMMTrace
+            )
+        }
+
         let tunnelContinuityCandidate = preferredCandidate.flatMap { isTruthyOSMTag($0.tunnel) ? $0 : nil }
             ?? sameRefCandidate.flatMap { isTruthyOSMTag($0.tunnel) ? $0 : nil }
             ?? graphSelectableCandidates.first(where: { isTruthyOSMTag($0.tunnel) })
@@ -1234,7 +1514,17 @@ final class V3SpeedLimitService {
             }
             return shouldTriggerActiveCorridorMode(corridorState, matchContext: normalizedMatchContext)
         }
-        let finalSelected: WayCandidate?
+        let preferredHoldCandidate = preferredCandidate
+            ?? baselineSelected.flatMap { candidate in
+                normalizedWayID(candidate.wayID) == normalizedMatchContext.preferredWayID ? candidate : nil
+            }
+            ?? selected.flatMap { candidate in
+                normalizedWayID(candidate.wayID) == normalizedMatchContext.preferredWayID ? candidate : nil
+            }
+            ?? graphSelectableCandidates.first(where: { candidate in
+                normalizedWayID(candidate.wayID) == normalizedMatchContext.preferredWayID
+            })
+        var finalSelected: WayCandidate?
         var deferredActiveCorridorState: CorridorMatchState?
         if let selected,
            let activeCorridorState = normalizedMatchContext.activeCorridorState,
@@ -1361,6 +1651,26 @@ final class V3SpeedLimitService {
         } else {
             finalSelected = selected
         }
+        if usesAntiABAHysteresis,
+           let currentFinalSelected = finalSelected,
+           let preferredHoldCandidate,
+           shouldApplyAntiABAHysteresis(
+                candidate: currentFinalSelected,
+                holdCandidate: preferredHoldCandidate,
+                matchContext: normalizedMatchContext,
+                wayLinks: wayLinksContext,
+                progressContext: corridorProgressContext,
+                accuracyBufferM: accuracyBuffer
+           ) {
+            finalSelected = preferredHoldCandidate
+            deferredActiveCorridorState = nil
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "anti_aba_hysteresis",
+                    detail: "kept \(preferredHoldCandidate.wayID ?? "nil") over \(currentFinalSelected.wayID ?? "nil") to avoid immediate A-B-A bounce"
+                )
+            )
+        }
         let finalActiveCorridorState: CorridorMatchState? = finalSelected.flatMap { candidate in
             guard let corridorState = candidateCorridorState(
                 for: candidate,
@@ -1384,122 +1694,10 @@ final class V3SpeedLimitService {
                 )
             )
         }
-
-        let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
-        let insideCityDecision: (insideCity: Bool?, source: String?)
-        let residentialContext: ResidentialContext
-        if highwayImpliesInsideCity(finalSelected?.highway) {
-            insideCityDecision = (true, "highway_class_in_city")
-            residentialContext = ResidentialContext(
-                insideCity: nil,
-                candidatePolygons: 0,
-                containingPolygons: 0,
-                resolveMs: 0.0
-            )
-        } else {
-            residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
-            if let insideCity = residentialContext.insideCity {
-                insideCityDecision = (insideCity, "residential_polygon")
-            } else {
-                insideCityDecision = (cityContext.insideCity, cityContext.citySource)
-            }
-        }
-
-        let t1 = DispatchTime.now().uptimeNanoseconds
-        let elapsedMs = Double(t1 - t0) / 1_000_000.0
-
-        let effectiveSpeed: Int?
-        if finalSelected?.isUnlimitedSpeedLimit == true {
-            effectiveSpeed = nil
-        } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
-            if finalSelected.speedSource == .highwayClass,
-               Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-               let insideCity = insideCityDecision.insideCity {
-                // Highway class alone is weaker than explicit city/rural context.
-                effectiveSpeed = insideCity ? 50 : 100
-            } else {
-                effectiveSpeed = matchedSpeed
-            }
-        } else if let finalSelected,
-                  Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-                  let insideCity = insideCityDecision.insideCity {
-            // Keep inherited defaults only when a way match exists.
-            effectiveSpeed = insideCity ? 50 : 100
-        } else if insideCityDecision.insideCity == true {
-            // Residential polygon containment can still provide a safe inner-city fallback.
-            effectiveSpeed = 50
-        } else {
-            effectiveSpeed = nil
-        }
-
-        let selectedTunnelLike = isTruthyOSMTag(finalSelected?.tunnel)
-        let candidateTraces = Array(traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
-            MatchCandidateTrace(
-                rank: entry.traceRank,
-                wayID: entry.candidate.wayID,
-                streetName: entry.candidate.streetName,
-                streetRef: entry.candidate.streetRef,
-                highway: entry.candidate.highway,
-                service: entry.candidate.service,
-                tunnel: entry.candidate.tunnel,
-                distanceM: entry.candidate.distanceM,
-                endpointProximityM: entry.candidate.endpointProximityM.isFinite ? entry.candidate.endpointProximityM : nil,
-                score: entry.traceScore,
-                geometryScore: entry.candidate.score,
-                portalEligible: entry.portalEligible,
-                corridorKind: entry.corridorState?.snapshot.kind,
-                corridorID: entry.corridorState?.snapshot.corridorID,
-                corridorSideNodeKey: entry.corridorState?.snapshot.sideNodeKey,
-                corridorDepthM: entry.corridorState?.snapshot.depthM,
-                corridorRemainingM: entry.corridorState.map { max(0.0, $0.snapshot.spanM - $0.snapshot.depthM) },
-                corridorDepthNodes: entry.corridorState?.snapshot.depthNodes,
-                corridorRemainingNodes: entry.corridorState.map { max(0, $0.snapshot.spanNodes - $0.snapshot.depthNodes) },
-                corridorEntryZone: entry.corridorState?.entryZone,
-                corridorExitZone: entry.corridorState?.exitZone,
-                continuityClass: String(describing: entry.continuity),
-                tunnelSelectable: entry.tunnelSelectable,
-                corridorSelectable: entry.corridorSelectable,
-                isSelected: normalizedWayID(entry.candidate.wayID) == normalizedWayID(finalSelected?.wayID)
-            )
-        }
-
-        return SpeedLimitResult(
-            speedLimitKmh: effectiveSpeed,
-            isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
-            wayID: finalSelected?.wayID,
-            highway: finalSelected?.highway,
-            service: finalSelected?.service,
-            tunnel: finalSelected?.tunnel,
-            bridge: nil,
-            covered: nil,
-            location: nil,
-            layer: nil,
-            level: nil,
-            isTunnelSegment: selectedTunnelLike,
-            streetName: finalSelected?.streetName,
-            streetBaseName: finalSelected?.streetBaseName,
-            streetRef: finalSelected?.streetRef,
-            matchedEndpointProximityM: finalSelected?.endpointProximityM.isFinite == true ? finalSelected?.endpointProximityM : nil,
-            cityName: cityContext.cityName,
-            insideCity: insideCityDecision.insideCity,
-            citySource: insideCityDecision.source ?? cityContext.citySource,
-            cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
-            cityCandidateBoundaries: cityContext.candidateBoundaries,
-            cityContainingBoundaries: cityContext.containingBoundaries,
-            cityPlaceCandidates: cityContext.placeCandidates,
-            queryTimeMs: elapsedMs,
-            candidateCount: candidateCount,
-            speedCandidateCount: speedCandidateCount,
-            nearestCandidateDistanceM: nearestCandidateDistance.isFinite ? nearestCandidateDistance : nil,
-            nearestSpeedCandidateDistanceM: nearestSpeedCandidateDistance.isFinite ? nearestSpeedCandidateDistance : nil,
-            nearbyTunnelCandidateWayIDs: nearbyTunnelCandidateWayIDs,
-            nearbyTunnelCandidateRefs: Array(nearbyTunnelCandidateRefs).sorted(),
-            usedMiniHMM: usedMiniHMM,
-            miniHMMCandidateCount: miniHMMSelection.candidateCount,
-            matchHypotheses: miniHMMSelection.hypotheses,
-            candidateTraces: candidateTraces,
-            selectionTrace: selectionTrace,
-            activeCorridorState: finalActiveCorridorState
+        return buildCorridorMatcherResult(
+            finalSelected: finalSelected,
+            finalActiveCorridorState: finalActiveCorridorState,
+            selectionTrace: selectionTrace
         )
     }
 
@@ -1592,6 +1790,16 @@ final class V3SpeedLimitService {
         ).speed
     }
 
+    static func germanLowSpeedLimitImpliesInsideCity(countryCode: String?, speedKmh: Int?) -> Bool {
+        guard normalizedCountryCode(countryCode) == "DEU",
+              let speedKmh,
+              speedKmh > 0,
+              speedKmh < 50 else {
+            return false
+        }
+        return true
+    }
+
     private static func allowsResidentialAreaFallback(highway: String?) -> Bool {
         switch highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "motorway", "motorway_link":
@@ -1646,6 +1854,26 @@ final class V3SpeedLimitService {
         return raw
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .lowercased() == "none"
+    }
+
+    private static func normalizedCountryCode(_ raw: String?) -> String? {
+        guard let raw else {
+            return nil
+        }
+        let code = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard code.count == 3 else {
+            return nil
+        }
+        return code
+    }
+
+    private static func inferCountryCode(fromDBPath dbPath: String) -> String? {
+        let fileName = URL(fileURLWithPath: dbPath).lastPathComponent.uppercased()
+        guard fileName.count >= 3 else {
+            return nil
+        }
+        let prefix = String(fileName.prefix(3))
+        return prefix.allSatisfy(\.isLetter) ? prefix : nil
     }
 
     static func parseExplicitSpeed(_ raw: String) -> Int? {
@@ -3083,6 +3311,97 @@ final class V3SpeedLimitService {
             MatchSelectionTrace(
                 step: "baseline",
                 detail: "selected \(selected.wayID ?? "nil") nearest=\(bestCandidate.wayID ?? "nil") model=connected_baseline"
+            )
+        )
+        return (
+            selected: selected,
+            traceRankedCandidates: traceRankedCandidates,
+            selectionTrace: selectionTrace
+        )
+    }
+
+    private func selectSimpleSpeedRefHeuristicCandidate(
+        from candidates: [WayCandidate],
+        matchContext: NormalizedMatchContext,
+        speedKmh: Double?,
+        horizontalAccuracyM: Double?,
+        wayLinks: WayLinksContext
+    ) -> (selected: WayCandidate?, traceRankedCandidates: [TraceRankedCandidate], selectionTrace: [MatchSelectionTrace]) {
+        let poorSignalThresholdM = 10.0
+        let lowSpeedThresholdKmh = 30.0
+        let poorSignal = (horizontalAccuracyM ?? Double.infinity) > poorSignalThresholdM
+        let lowSpeedAccurateGPS = (speedKmh ?? 0.0) < lowSpeedThresholdKmh &&
+            (horizontalAccuracyM ?? Double.infinity) < poorSignalThresholdM
+
+        let filteredCandidates: [WayCandidate]
+        if matchContext.isInTunnelMode && poorSignal {
+            let tunnelCandidates = candidates.filter { isTruthyOSMTag($0.tunnel) }
+            filteredCandidates = tunnelCandidates.isEmpty ? candidates : tunnelCandidates
+        } else {
+            filteredCandidates = candidates
+        }
+
+        let rankedCandidates = filteredCandidates.sorted { isBetterDistanceCandidate($0, than: $1) }
+        let traceRankedCandidates = buildBaselineTraceRankedCandidates(
+            from: rankedCandidates,
+            matchContext: matchContext,
+            wayLinks: wayLinks
+        )
+        guard let bestCandidate = rankedCandidates.first else {
+            return (
+                selected: nil,
+                traceRankedCandidates: traceRankedCandidates,
+                selectionTrace: [MatchSelectionTrace(step: "simple_speed_ref_heuristic", detail: "no selectable candidates")]
+            )
+        }
+
+        var selectionTrace: [MatchSelectionTrace] = []
+        if filteredCandidates.count != candidates.count {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_tunnel_hold_gate",
+                    detail: "kept \(filteredCandidates.count) tunnel candidates while horizontal_accuracy_m=\(String(format: "%.1f", horizontalAccuracyM ?? Double.infinity)) remained above \(String(format: "%.1f", poorSignalThresholdM))"
+                )
+            )
+        }
+
+        let previousRefCandidate = rankedCandidates.first { candidate in
+            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            guard !candidateRefTokens.isEmpty else {
+                return false
+            }
+            return !candidateRefTokens.isDisjoint(with: matchContext.preferredStreetRefs)
+        }
+
+        let selected: WayCandidate
+        if let speedKmh, speedKmh >= lowSpeedThresholdKmh, let previousRefCandidate {
+            selected = previousRefCandidate
+            if normalizedWayID(previousRefCandidate.wayID) != normalizedWayID(bestCandidate.wayID) {
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "simple_same_ref_hold",
+                        detail: "kept same-ref \(previousRefCandidate.wayID ?? "nil") over nearest \(bestCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh))"
+                    )
+                )
+            }
+        } else {
+            selected = bestCandidate
+        }
+
+        let reason: String
+        if let speedKmh, speedKmh >= lowSpeedThresholdKmh, previousRefCandidate != nil {
+            reason = "high_speed_same_ref"
+        } else if lowSpeedAccurateGPS {
+            reason = "low_speed_good_gps_distance"
+        } else if matchContext.isInTunnelMode && poorSignal {
+            reason = "tunnel_hold_distance"
+        } else {
+            reason = "distance_fallback"
+        }
+        selectionTrace.append(
+            MatchSelectionTrace(
+                step: "simple_speed_ref_heuristic",
+                detail: "selected \(selected.wayID ?? "nil") nearest=\(bestCandidate.wayID ?? "nil") reason=\(reason) speed_kmh=\(String(format: "%.1f", speedKmh ?? 0.0)) hacc_m=\(String(format: "%.1f", horizontalAccuracyM ?? Double.infinity))"
             )
         )
         return (
@@ -5707,6 +6026,64 @@ final class V3SpeedLimitService {
         return true
     }
 
+    private func shouldApplyAntiABAHysteresis(
+        candidate: WayCandidate,
+        holdCandidate: WayCandidate,
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext,
+        progressContext: CorridorProgressContext,
+        accuracyBufferM: Double
+    ) -> Bool {
+        guard let candidateWayID = normalizedWayID(candidate.wayID),
+              let holdWayID = normalizedWayID(holdCandidate.wayID),
+              let preferredWayID = matchContext.preferredWayID,
+              let priorWayID = matchContext.recentWayHistory.dropFirst().first,
+              holdWayID == preferredWayID,
+              candidateWayID == priorWayID,
+              candidateWayID != holdWayID else {
+            return false
+        }
+        guard isTruthyOSMTag(candidate.tunnel) == isTruthyOSMTag(holdCandidate.tunnel) else {
+            return false
+        }
+
+        let candidateCorridorSnapshot = candidateCorridorState(
+            for: candidate,
+            matchContext: matchContext,
+            wayLinks: wayLinks,
+            progressContext: progressContext
+        )?.snapshot
+        let holdCorridorSnapshot = candidateCorridorState(
+            for: holdCandidate,
+            matchContext: matchContext,
+            wayLinks: wayLinks,
+            progressContext: progressContext
+        )?.snapshot
+        let sameCorridor =
+            sameCorridorState(candidateCorridorSnapshot, holdCorridorSnapshot) ||
+            (candidateCorridorSnapshot == nil && holdCorridorSnapshot == nil)
+        let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+        let holdRefTokens = Set(Self.normalizedRefTokens(holdCandidate.streetRef))
+        let sharesRef = !candidateRefTokens.isEmpty && !candidateRefTokens.isDisjoint(with: holdRefTokens)
+        let linked = wayLinks.available && (
+            areLinkedWays(candidateWayID, holdWayID, wayLinks: wayLinks) ||
+            areSharedRefLinkedWays(candidateWayID, holdWayID, wayLinks: wayLinks)
+        )
+        guard sameCorridor || sharesRef || linked else {
+            return false
+        }
+
+        let requiredScoreImprovement = max(Self.sameRefBounceMinScoreImprovementM, accuracyBufferM)
+        if holdCandidate.score - candidate.score >= requiredScoreImprovement {
+            return false
+        }
+        let requiredDistanceImprovement = Self.sameRefBounceMinDistanceImprovementM + min(accuracyBufferM * 0.25, 4.0)
+        if holdCandidate.distanceM - candidate.distanceM >= requiredDistanceImprovement {
+            return false
+        }
+        return true
+    }
+
     private func isImmediateSameRefBounceCandidate(
         _ candidate: WayCandidate,
         preferredCandidate: WayCandidate,
@@ -6056,6 +6433,17 @@ final class V3SpeedLimitService {
         )
     }
 
+    private func applyGermanLowSpeedInCityHeuristic(
+        insideCityDecision: (insideCity: Bool?, source: String?),
+        speedKmh: Int?
+    ) -> (insideCity: Bool?, source: String?) {
+        guard insideCityDecision.insideCity != true,
+              Self.germanLowSpeedLimitImpliesInsideCity(countryCode: countryCode, speedKmh: speedKmh) else {
+            return insideCityDecision
+        }
+        return (true, "de_speed_limit_lt_50")
+    }
+
     private func resolveCityContextWithPolygons(
         db: OpaquePointer,
         lat: Double,
@@ -6069,7 +6457,7 @@ final class V3SpeedLimitService {
         JOIN city_boundary b ON b.row_id = r.row_id
         WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
           AND r.min_lat <= ?3 AND r.max_lat >= ?4
-          AND b.admin_level IN (6, 8)
+          AND b.admin_level IN (6, 8, 9)
         LIMIT ?5
         """
 
@@ -6100,24 +6488,22 @@ final class V3SpeedLimitService {
             )
         }
 
-        var containing: [(adminLevel: Int, name: String?, bboxArea: Double)] = []
+        var containing: [(adminLevel: Int, bboxArea: Double, name: String)] = []
         for boundary in boundaries {
+            let name = boundary.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !name.isEmpty else {
+                continue
+            }
             if boundaryContainsPoint(db: db, boundaryRowID: boundary.rowID, lon: lon, lat: lat) {
                 let bboxArea = max(boundary.maxLon - boundary.minLon, 0) * max(boundary.maxLat - boundary.minLat, 0)
-                containing.append((adminLevel: boundary.adminLevel, name: boundary.name, bboxArea: bboxArea))
+                containing.append((adminLevel: boundary.adminLevel, bboxArea: bboxArea, name: name))
             }
         }
 
-        if let best = containing.sorted(by: {
-            let lhsPriority = Self.cityBoundaryLevelPriority[$0.adminLevel] ?? Int.max
-            let rhsPriority = Self.cityBoundaryLevelPriority[$1.adminLevel] ?? Int.max
-            if lhsPriority != rhsPriority { return lhsPriority < rhsPriority }
-            if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
-            return ($0.name ?? "~") < ($1.name ?? "~")
-        }).first {
+        if let cityName = Self.formatAdminCityName(from: containing) {
             return (
                 insideCity: true,
-                cityName: best.name,
+                cityName: cityName,
                 citySource: "admin_polygon",
                 candidateBoundaries: boundaries.count,
                 containingBoundaries: containing.count,
@@ -6189,8 +6575,9 @@ final class V3SpeedLimitService {
         lon: Double,
         limitRows: Int = 512
     ) -> (insideCity: Bool?, cityName: String?, citySource: String, candidateBoundaries: Int, containingBoundaries: Int, placeCandidates: Int) {
+        let hasPointsColumn = columnExists(db: db, table: "areas", column: "points_json")
         let sql = """
-        SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat
+        SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat, \(hasPointsColumn ? "a.points_json" : "NULL")
         FROM areas_rtree r
         JOIN areas a ON a.row_id = r.row_id
         WHERE (
@@ -6206,7 +6593,7 @@ final class V3SpeedLimitService {
 
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            return (nil, nil, "bbox_unavailable", 0, 0, 0)
+            return (insideCity: nil, cityName: nil, citySource: "bbox_unavailable", candidateBoundaries: 0, containingBoundaries: 0, placeCandidates: 0)
         }
         defer { sqlite3_finalize(stmt) }
 
@@ -6233,12 +6620,14 @@ final class V3SpeedLimitService {
                     minLon: sqlite3_column_double(stmt, 4),
                     minLat: sqlite3_column_double(stmt, 5),
                     maxLon: sqlite3_column_double(stmt, 6),
-                    maxLat: sqlite3_column_double(stmt, 7)
+                    maxLat: sqlite3_column_double(stmt, 7),
+                    points: cStringOptional(sqlite3_column_text(stmt, 8)).flatMap(parseRingPoints) ?? []
                 )
             )
         }
 
-        var containingAdmin: [(priority: Int, adminLevel: Int, bboxArea: Double, name: String)] = []
+        var containingAdminExact: [(adminLevel: Int, bboxArea: Double, name: String)] = []
+        var containingAdminBBox: [(adminLevel: Int, bboxArea: Double, name: String)] = []
         var containingPlaces: [(rank: Int, distanceM: Double, name: String)] = []
         var nearbyPlaces: [(rank: Int, distanceM: Double, name: String)] = []
 
@@ -6251,9 +6640,13 @@ final class V3SpeedLimitService {
 
             if area.boundary == "administrative",
                let level = area.adminLevel,
-               let priority = Self.cityBoundaryLevelPriority[level],
+               Self.cityBoundaryLevelPriority[level] != nil,
                inside {
-                containingAdmin.append((priority: priority, adminLevel: level, bboxArea: areaSize, name: name))
+                if Self.isClosedAreaRing(area.points), pointInRing(lon: lon, lat: lat, ring: area.points) {
+                    containingAdminExact.append((adminLevel: level, bboxArea: areaSize, name: name))
+                } else {
+                    containingAdminBBox.append((adminLevel: level, bboxArea: areaSize, name: name))
+                }
             }
 
             if let place = area.place,
@@ -6268,18 +6661,25 @@ final class V3SpeedLimitService {
             }
         }
 
-        if let best = containingAdmin.sorted(by: {
-            if $0.priority != $1.priority { return $0.priority < $1.priority }
-            if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
-            return $0.name < $1.name
-        }).first {
+        if let cityName = Self.formatAdminCityName(from: containingAdminExact) {
             return (
-                true,
-                best.name,
-                "admin_bbox",
-                containingAdmin.count,
-                containingAdmin.count,
-                nearbyPlaces.count
+                insideCity: true,
+                cityName: cityName,
+                citySource: "admin_polygon",
+                candidateBoundaries: containingAdminExact.count,
+                containingBoundaries: containingAdminExact.count,
+                placeCandidates: nearbyPlaces.count
+            )
+        }
+
+        if let cityName = Self.formatAdminCityName(from: containingAdminBBox) {
+            return (
+                insideCity: true,
+                cityName: cityName,
+                citySource: "admin_bbox",
+                candidateBoundaries: containingAdminBBox.count,
+                containingBoundaries: containingAdminBBox.count,
+                placeCandidates: nearbyPlaces.count
             )
         }
 
@@ -6302,6 +6702,20 @@ final class V3SpeedLimitService {
                 0,
                 0,
                 nearbyPlaces.count
+            )
+        }
+
+        if containingAdminExact.isEmpty,
+           containingAdminBBox.isEmpty,
+           containingPlaces.isEmpty,
+           nearbyPlaces.isEmpty {
+            return (
+                insideCity: nil,
+                cityName: nil,
+                citySource: "bbox_unclassified",
+                candidateBoundaries: 0,
+                containingBoundaries: 0,
+                placeCandidates: 0
             )
         }
 

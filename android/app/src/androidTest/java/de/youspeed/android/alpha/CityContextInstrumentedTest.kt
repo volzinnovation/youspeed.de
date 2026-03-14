@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CityContextInstrumentedTest {
     @Test
-    fun adminPolygon_prefersAdminLevel8Boundary() {
+    fun adminPolygon_formatsAdminLevel9WithAdminLevel8Qualifier() {
         val dbFile = createLookupDb("city-admin-polygon-prefers-level8.sqlite")
         populateCoreSchema(dbFile)
         seedCityBoundary(
@@ -58,14 +58,14 @@ class CityContextInstrumentedTest {
                 headingDeg = null,
             )
 
-            assertEquals("Pforzheim", result.cityName)
+            assertEquals("Buechenbronn (Pforzheim)", result.cityName)
             assertTrue(result.insideCity == true)
             assertEquals("admin_polygon", result.citySource)
         }
     }
 
     @Test
-    fun adminPolygon_ignoresAdminLevel9AndFallsBackToPlace() {
+    fun adminPolygon_usesAdminLevel9WhenNoAdminLevel8Exists() {
         val dbFile = createLookupDb("city-admin-polygon-ignores-level9.sqlite")
         populateCoreSchema(dbFile)
         seedCityBoundary(
@@ -102,9 +102,9 @@ class CityContextInstrumentedTest {
                 headingDeg = null,
             )
 
-            assertEquals("Bad Herrenalb", result.cityName)
-            assertEquals(false, result.insideCity)
-            assertEquals("place_fallback", result.citySource)
+            assertEquals("Kullenmühle", result.cityName)
+            assertEquals(true, result.insideCity)
+            assertEquals("admin_polygon", result.citySource)
         }
     }
 

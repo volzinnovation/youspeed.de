@@ -47,6 +47,39 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun pedestrianScreenshotFixtureMatchesWalkingSignSurface() {
+        val fixture = AppScreenshotState.PEDESTRIAN_ZONE.fixture
+        assertEquals(5.0, fixture.currentSpeedKmh, 0.0)
+        assertNull(fixture.speedLimitKmh)
+        assertEquals("Schritt", fixture.speedLimitDisplayText)
+        assertEquals("Im Kloster", fixture.streetName)
+        assertEquals("Bad Herrenalb", fixture.cityName)
+    }
+
+    @Test
+    fun matcherStartupProfileMigratesLegacyDefaultToM2() {
+        assertEquals(MatcherDebugProfile.M2, MatcherDebugProfile.resolveInitialProfile("m1", forcedVersion = 0))
+        assertEquals(MatcherDebugProfile.M2, MatcherDebugProfile.resolveInitialProfile(null, forcedVersion = 0))
+    }
+
+    @Test
+    fun matcherStartupProfilePreservesExplicitSelectionAfterMigration() {
+        assertEquals(
+            MatcherDebugProfile.M4,
+            MatcherDebugProfile.resolveInitialProfile("m4", forcedVersion = MatcherDebugProfile.forcedProfileVersion),
+        )
+    }
+
+    @Test
+    fun matcherProfilesFollowPaperLadder() {
+        assertEquals("M1 Connected baseline", MatcherDebugProfile.M1.debugLabel)
+        assertEquals("M2 Nearest + street-ref continuity", MatcherDebugProfile.M2.debugLabel)
+        assertEquals("M3 M2 + connected-candidate gate", MatcherDebugProfile.M3.debugLabel)
+        assertEquals(LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM, MatcherDebugProfile.M4.lookupModel)
+        assertEquals(LookupMatchingModel.CORRIDOR_HMM, MatcherDebugProfile.M5.lookupModel)
+    }
+
+    @Test
     fun parsesGermanPenaltyRulesAndResolvesInnerortsBandLikeIphone() {
         val raw = """
             {
@@ -130,5 +163,21 @@ class ConsumerParityTests {
         assertEquals("1", ConsumerMainScreenLogic.primaryMetricText(state))
         assertEquals("Monat Fahrverbot", ConsumerMainScreenLogic.secondaryMetricText(state))
         assertTrue(ConsumerMainScreenLogic.isDrivingBanWarningActive(state))
+    }
+
+    @Test
+    fun mainScreenLogicShowsWalkingPaceLabelForPedestrianZoneOverride() {
+        val state = ConsumerUiState(
+            startupDataState = StartupDataState.READY,
+            activeDBPath = "/tmp/mock.sqlite",
+            currentLatitude = 48.7990,
+            currentLongitude = 8.4383,
+            gpsSignalBars = 4,
+            speedLimitDisplayText = "Schritt",
+        )
+
+        assertEquals("Schritt", ConsumerMainScreenLogic.limitText(state))
+        assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
+        assertTrue(ConsumerMainScreenLogic.showsPedestrianZoneSign(state))
     }
 }

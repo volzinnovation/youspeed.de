@@ -113,11 +113,13 @@ enum AppScreenshotState: String {
     case warnLevel1 = "warn-level-1"
     case warnLevel2 = "warn-level-2"
     case warnLevel3 = "warn-level-3"
+    case pedestrianZone = "pedestrian-zone"
     case autobahnUnlimitedAbove130 = "autobahn-unlimited-above-130"
 
     struct Fixture {
         let currentSpeedKmh: Double
         let speedLimitKmh: Int?
+        let speedLimitDisplayText: String?
         let isUnlimitedSpeedLimitActive: Bool
         let streetName: String
         let cityName: String
@@ -145,6 +147,7 @@ enum AppScreenshotState: String {
             return Fixture(
                 currentSpeedKmh: 47,
                 speedLimitKmh: 50,
+                speedLimitDisplayText: nil,
                 isUnlimitedSpeedLimitActive: false,
                 streetName: "Durlacher Allee",
                 cityName: "Karlsruhe",
@@ -159,6 +162,7 @@ enum AppScreenshotState: String {
             return Fixture(
                 currentSpeedKmh: 67,
                 speedLimitKmh: 50,
+                speedLimitDisplayText: nil,
                 isUnlimitedSpeedLimitActive: false,
                 streetName: "Durlacher Allee",
                 cityName: "Karlsruhe",
@@ -173,6 +177,7 @@ enum AppScreenshotState: String {
             return Fixture(
                 currentSpeedKmh: 73,
                 speedLimitKmh: 50,
+                speedLimitDisplayText: nil,
                 isUnlimitedSpeedLimitActive: false,
                 streetName: "Durlacher Allee",
                 cityName: "Karlsruhe",
@@ -187,6 +192,7 @@ enum AppScreenshotState: String {
             return Fixture(
                 currentSpeedKmh: 86,
                 speedLimitKmh: 50,
+                speedLimitDisplayText: nil,
                 isUnlimitedSpeedLimitActive: false,
                 streetName: "Durlacher Allee",
                 cityName: "Karlsruhe",
@@ -197,10 +203,26 @@ enum AppScreenshotState: String {
                 gpsHorizontalAccuracyM: 6,
                 gpsSignalBars: 4
             )
+        case .pedestrianZone:
+            return Fixture(
+                currentSpeedKmh: 5,
+                speedLimitKmh: nil,
+                speedLimitDisplayText: "Schritt",
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Im Kloster",
+                cityName: "Bad Herrenalb",
+                wayID: "bad-herrenalb-pedestrian-zone",
+                insideCity: true,
+                latitude: 48.7966,
+                longitude: 8.4361,
+                gpsHorizontalAccuracyM: 5,
+                gpsSignalBars: 4
+            )
         case .autobahnUnlimitedAbove130:
             return Fixture(
                 currentSpeedKmh: 142,
                 speedLimitKmh: nil,
+                speedLimitDisplayText: nil,
                 isUnlimitedSpeedLimitActive: true,
                 streetName: "A 5",
                 cityName: "Karlsruhe",
@@ -212,6 +234,61 @@ enum AppScreenshotState: String {
                 gpsSignalBars: 4
             )
         }
+    }
+}
+
+enum MatcherDebugProfile: String, CaseIterable, Identifiable {
+    case m1
+    case m2
+    case m3
+    case m4
+    case m5
+
+    var id: String { rawValue }
+
+    var shortLabel: String {
+        switch self {
+        case .m1: return "M1"
+        case .m2: return "M2"
+        case .m3: return "M3"
+        case .m4: return "M4"
+        case .m5: return "M5"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .m1: return "Connected baseline"
+        case .m2: return "Nearest + street-ref continuity"
+        case .m3: return "M2 + connected-candidate gate"
+        case .m4: return "Corridor raw mini-HMM"
+        case .m5: return "Corridor-aware final"
+        }
+    }
+
+    var debugLabel: String { "\(shortLabel) \(displayName)" }
+
+    var matchingModel: V3SpeedLimitService.MatchingModel {
+        switch self {
+        case .m1: return .connectedBaseline
+        case .m2: return .simpleSpeedRefHeuristic
+        case .m3: return .simpleSpeedRefConnectedHeuristic
+        case .m4: return .corridorHMMRawMiniHMM
+        case .m5: return .corridorHMM
+        }
+    }
+
+    static let defaultProfile: MatcherDebugProfile = .m2
+    static let forcedProfileVersion: Int = 2
+
+    static func resolveInitialProfile(storedRawValue: String?, forcedVersion: Int) -> MatcherDebugProfile {
+        if forcedVersion < forcedProfileVersion {
+            return defaultProfile
+        }
+        guard let storedRawValue else {
+            return defaultProfile
+        }
+        return MatcherDebugProfile(rawValue: storedRawValue) ?? defaultProfile
     }
 }
 
@@ -261,6 +338,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var activeDBPath: String = ""
     @Published var currentSpeedKmh: Double = 0
     @Published var speedLimitKmh: Int?
+    @Published var speedLimitDisplayText: String?
     @Published var limitWayID: String?
     @Published var limitStreetName: String?
     @Published var limitCityName: String?
@@ -340,6 +418,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(hideWelcomeScreen, forKey: Self.hideWelcomeScreenDefaultsKey)
         }
     }
+    @Published var matcherDebugProfile: MatcherDebugProfile {
+        didSet {
+            guard matcherDebugProfile != oldValue else {
+                return
+            }
+            UserDefaults.standard.set(matcherDebugProfile.rawValue, forKey: Self.matcherDebugProfileDefaultsKey)
+            resetWayMatchContinuity()
+            resetTunnelModeTracking()
+            if appScreenshotState == nil, !activeDBPath.isEmpty {
+                speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
+            }
+        }
+    }
 
     private let bundleManager = V3BundleManager()
     private let localObservationStore = LocalObservationStore()
@@ -398,6 +489,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureDidResolve = false
     private var lastKnownSpeedLimitKmh: Int?
     private var localSpeedOverridesByWayID: [String: Int] = [:]
+    private var localSpeedOverrideValuesByWayID: [String: String] = [:]
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection?
     private var limitStreetBaseName: String?
     private var limitStreetRef: String?
@@ -405,6 +497,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
+    private static let matcherDebugProfileDefaultsKey = "youspeed.matcher_debug_profile"
+    private static let matcherDebugProfileForcedVersionDefaultsKey = "youspeed.matcher_debug_profile_forced_version"
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
     private static let defaultHideWelcomeScreen = false
@@ -807,8 +901,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return code
     }
 
-    private func isGermanAutobahnUnlimitedMatch(result: SpeedLimitResult, localOverride: Int?) -> Bool {
-        guard localOverride == nil,
+    private func isGermanAutobahnUnlimitedMatch(result: SpeedLimitResult, localOverrideValue: String?) -> Bool {
+        guard localOverrideValue == nil,
               result.isUnlimitedSpeedLimit == true,
               normalizedCountryCode(activePenaltyRules.countryCode) == "DEU" else {
             return false
@@ -825,6 +919,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         return nil
+    }
+
+    private func makeSpeedLimitService(dbPath: String, preferredCountryCode: String? = nil) -> V3SpeedLimitService {
+        V3SpeedLimitService(
+            dbPath: dbPath,
+            countryCode: normalizedCountryCode(preferredCountryCode)
+                ?? normalizedCountryCode(activePenaltyRules.countryCode)
+                ?? inferCountryCodeFromDBPath(dbPath),
+            matchingModel: matcherDebugProfile.matchingModel
+        )
     }
 
     private func applyPenaltyRulesForActiveBundle(preferredCountryCode: String? = nil) async {
@@ -868,18 +972,34 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
+        let storedMatcherProfile = UserDefaults.standard.string(forKey: Self.matcherDebugProfileDefaultsKey)
+        let storedMatcherForcedVersion = UserDefaults.standard.integer(forKey: Self.matcherDebugProfileForcedVersionDefaultsKey)
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
+        let initialMatcherProfile = MatcherDebugProfile.resolveInitialProfile(
+            storedRawValue: storedMatcherProfile,
+            forcedVersion: storedMatcherForcedVersion
+        )
         activePenaltyRules = bundledRules
         activePenaltyRulesFile = "DEU-rules.json"
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
+        matcherDebugProfile = initialMatcherProfile
         githubReleaseToken = Self.defaultGitHubReleaseToken()
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        if storedMatcherForcedVersion < MatcherDebugProfile.forcedProfileVersion
+            || storedMatcherProfile != initialMatcherProfile.rawValue
+        {
+            UserDefaults.standard.set(initialMatcherProfile.rawValue, forKey: Self.matcherDebugProfileDefaultsKey)
+            UserDefaults.standard.set(
+                MatcherDebugProfile.forcedProfileVersion,
+                forKey: Self.matcherDebugProfileForcedVersionDefaultsKey
+            )
+        }
         if let screenshotState = AppScreenshotState.current() {
             configureForScreenshotMode(screenshotState)
             return
@@ -1119,7 +1239,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
-                speedLimitService = V3SpeedLimitService(dbPath: sync.dbPath)
+                speedLimitService = makeSpeedLimitService(
+                    dbPath: sync.dbPath,
+                    preferredCountryCode: option.countryCode
+                )
                 await applyPenaltyRulesForActiveBundle(preferredCountryCode: option.countryCode)
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
@@ -1144,7 +1267,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     "download_selected failed bundle=\(option.displayName, privacy: .public) region=\(option.endpoint.manifestRegion, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
                 )
                 if !activeDBPath.isEmpty {
-                    speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
+                    speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                     await applyPenaltyRulesForActiveBundle()
                 }
             }
@@ -1178,8 +1301,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
                         activeBundleVersion = bootstrap.bundleVersion
                         activeDBPath = bootstrap.dbPath
-                        speedLimitService = bootstrap.dbPath.isEmpty ? nil : V3SpeedLimitService(dbPath: bootstrap.dbPath)
                         await applyPenaltyRulesForActiveBundle()
+                        speedLimitService = bootstrap.dbPath.isEmpty ? nil : makeSpeedLimitService(dbPath: bootstrap.dbPath)
                         syncStatus = "ready_\(bootstrap.mode.rawValue)"
                     }
                     maintenanceMessage = "Bundle geloescht: \(option.displayName)"
@@ -1294,8 +1417,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 guard !manifestEndpoints.isEmpty else {
                     syncStatus = "seed_only"
                     if !activeDBPath.isEmpty {
-                        speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                         await applyPenaltyRulesForActiveBundle()
+                        speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                     }
                     Self.logger.notice("sync seed_only no_manifest_endpoint")
                     return
@@ -1309,8 +1432,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     syncStatus = "sync_failed"
                     lastError = "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
                     if !activeDBPath.isEmpty {
-                        speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                         await applyPenaltyRulesForActiveBundle()
+                        speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                     }
                     Self.logger.error("sync failed missing_github_token")
                     return
@@ -1333,8 +1456,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
-                speedLimitService = V3SpeedLimitService(dbPath: sync.dbPath)
                 await applyPenaltyRulesForActiveBundle()
+                speedLimitService = makeSpeedLimitService(dbPath: sync.dbPath)
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
                 syncProgressDetail = "Sync completed"
@@ -1353,8 +1476,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncPartDownloads = []
                 lastError = error.localizedDescription
                 if !activeDBPath.isEmpty {
-                    speedLimitService = V3SpeedLimitService(dbPath: activeDBPath)
                     await applyPenaltyRulesForActiveBundle()
+                    speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                 }
                 Self.logger.error("sync failed error=\(error.localizedDescription, privacy: .public)")
             }
@@ -1381,6 +1504,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let removed = try await bundleManager.flushLocalContributionState()
                 resetWayMatchContinuity()
                 localSpeedOverridesByWayID.removeAll(keepingCapacity: false)
+                localSpeedOverrideValuesByWayID.removeAll(keepingCapacity: false)
                 maintenanceMessage = removed > 0
                     ? "Lokale Korrekturen geloescht (\(removed) Eintraege). Starte Synchronisierung."
                     : "Keine lokalen Korrekturen gefunden. Starte Synchronisierung."
@@ -1414,8 +1538,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
                 activeBundleVersion = bootstrap.bundleVersion
                 activeDBPath = bootstrap.dbPath
-                speedLimitService = bootstrap.dbPath.isEmpty ? nil : V3SpeedLimitService(dbPath: bootstrap.dbPath)
                 await applyPenaltyRulesForActiveBundle()
+                speedLimitService = bootstrap.dbPath.isEmpty ? nil : makeSpeedLimitService(dbPath: bootstrap.dbPath)
                 syncStatus = "ready_\(bootstrap.mode.rawValue)"
                 lastError = ""
                 await refreshDownloadedBundleInventory()
@@ -1503,8 +1627,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if startupResult.dbPath.isEmpty {
                     throw ConsumerAppError.io("No local database available after startup recovery")
                 }
-                speedLimitService = V3SpeedLimitService(dbPath: startupResult.dbPath)
                 await applyPenaltyRulesForActiveBundle()
+                speedLimitService = makeSpeedLimitService(dbPath: startupResult.dbPath)
                 syncStatus = "ready_\(startupResult.mode.rawValue)"
                 await refreshDownloadedBundleInventory()
                 startupProgress = 1
@@ -1532,6 +1656,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeDBPath = screenshotState.rawValue
         currentSpeedKmh = fixture.currentSpeedKmh
         speedLimitKmh = fixture.speedLimitKmh
+        speedLimitDisplayText = fixture.speedLimitDisplayText
         limitWayID = fixture.wayID
         limitStreetName = fixture.streetName
         limitCityName = fixture.cityName
@@ -2240,6 +2365,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             let observations = try await localObservationStore.fetchObservations(limit: 500)
             localObservations = observations
             localSpeedOverridesByWayID = Self.resolveLocalSpeedOverrides(from: observations)
+            localSpeedOverrideValuesByWayID = Self.resolveLocalSpeedOverrideValues(from: observations)
             localObservationStreetNames = resolveStreetNames(for: observations)
         } catch {
             localObservationStatus = "Lokale Beobachtungen konnten nicht geladen werden: \(error.localizedDescription)"
@@ -2268,6 +2394,36 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return resolved
     }
 
+    static func resolveLocalSpeedOverrideValues(from observations: [LocalObservation]) -> [String: String] {
+        var resolved: [String: String] = [:]
+        for observation in observations {
+            guard observation.state != .discarded else {
+                continue
+            }
+            guard let wayID = observation.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !wayID.isEmpty else {
+                continue
+            }
+            guard let maxspeedValue = observation.value?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines),
+                  !maxspeedValue.isEmpty else {
+                continue
+            }
+            if resolved[wayID] == nil {
+                resolved[wayID] = maxspeedValue
+            }
+        }
+        return resolved
+    }
+
+    static func speedLimitDisplayText(for maxspeedValue: String?) -> String? {
+        switch maxspeedValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "walk":
+            return "Schritt"
+        default:
+            return nil
+        }
+    }
+
     private func resolveStreetNames(for observations: [LocalObservation]) -> [String: String] {
         let wayIDs = observations
             .compactMap { $0.roadCandidateIDs.first?.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -2280,7 +2436,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if let speedLimitService {
             resolver = speedLimitService
         } else if !activeDBPath.isEmpty {
-            resolver = V3SpeedLimitService(dbPath: activeDBPath)
+            resolver = makeSpeedLimitService(dbPath: activeDBPath)
         } else {
             resolver = nil
         }
@@ -2300,7 +2456,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let source = activeBundleVersion.isEmpty ? "none" : activeBundleVersion
         let roadCandidates = limitWayID.map { [$0] } ?? []
         let confidence: Double?
-        if speedLimitKmh != nil {
+        if speedLimitKmh != nil || speedLimitDisplayText != nil {
             confidence = 0.85
         } else if lastLookupNearestCandidateM != nil {
             confidence = 0.55
@@ -2491,6 +2647,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     newMaxspeedValue: selection.value,
                     context: captureContext
                 )
+                if let wayID = observation.roadCandidateIDs.first,
+                   !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    localSpeedOverrideValuesByWayID[wayID] = selection.value
+                }
                 if let numericSpeed = observation.newSpeedKmh,
                    let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -2498,6 +2658,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if limitWayID == wayID {
                         speedLimitKmh = numericSpeed
                         lastKnownSpeedLimitKmh = numericSpeed
+                        isUnlimitedSpeedLimitActive = false
+                    }
+                }
+                if let wayID = observation.roadCandidateIDs.first,
+                   limitWayID == wayID {
+                    if observation.newSpeedKmh == nil {
+                        speedLimitKmh = nil
+                    }
+                    speedLimitDisplayText = Self.speedLimitDisplayText(for: selection.value)
+                    if speedLimitDisplayText != nil {
                         isUnlimitedSpeedLimitActive = false
                     }
                 }
@@ -2552,7 +2722,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
-    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat: Double, lon: Double) -> Int? {
+    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat: Double, lon: Double) -> String? {
         guard var correction = activeLocalSpeedCorrection else {
             return nil
         }
@@ -2573,14 +2743,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
 
         if correction.wayIDs.contains(wayID) {
+            localSpeedOverrideValuesByWayID[wayID] = correction.maxspeedValue
             if let numeric = correction.numericSpeedKmh {
                 localSpeedOverridesByWayID[wayID] = numeric
             }
-            return correction.numericSpeedKmh
+            return correction.maxspeedValue
         }
 
         correction.wayIDs.insert(wayID)
         activeLocalSpeedCorrection = correction
+        localSpeedOverrideValuesByWayID[wayID] = correction.maxspeedValue
 
         if let numeric = correction.numericSpeedKmh {
             localSpeedOverridesByWayID[wayID] = numeric
@@ -2620,7 +2792,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
 
-        return correction.numericSpeedKmh
+        return correction.maxspeedValue
     }
 
     private func normalizedRoadIdentity(_ raw: String?) -> String? {
@@ -2792,7 +2964,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             activeDBPath = route.dbPath
             activeBundleVersion = route.bundleVersion
-            speedLimitService = V3SpeedLimitService(dbPath: route.dbPath)
+            speedLimitService = makeSpeedLimitService(
+                dbPath: route.dbPath,
+                preferredCountryCode: route.countryCode
+            )
             await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
             resetWayMatchContinuity()
             appendLookupEvent(
@@ -2864,11 +3039,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     gpsSignalBars: gpsBars
                 )
                 await MainActor.run {
-                    let propagatedOverride = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
-                    let localOverride = propagatedOverride ?? result.wayID.flatMap { self.localSpeedOverridesByWayID[$0] }
+                    let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
+                    let localOverrideValue = propagatedOverrideValue ?? result.wayID.flatMap { self.localSpeedOverrideValuesByWayID[$0] }
+                    let localOverride = localOverrideValue.flatMap(Int.init)
                     let effectiveSpeedLimit = localOverride ?? result.speedLimitKmh
-                    let unlimitedMatch = self.isGermanAutobahnUnlimitedMatch(result: result, localOverride: localOverride)
+                    let unlimitedMatch = self.isGermanAutobahnUnlimitedMatch(result: result, localOverrideValue: localOverrideValue)
                     self.speedLimitKmh = effectiveSpeedLimit
+                    self.speedLimitDisplayText = Self.speedLimitDisplayText(for: localOverrideValue)
                     self.isUnlimitedSpeedLimitActive = unlimitedMatch
                     if let resolved = effectiveSpeedLimit {
                         self.lastKnownSpeedLimitKmh = resolved
@@ -2923,7 +3100,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let nearestSpeedText = result.nearestSpeedCandidateDistanceM.map { String(format: "%.1f", $0) } ?? "nil"
                     let tunnelSegmentText = result.isTunnelSegment ? "1" : "0"
                     let tunnelModeText = self.tunnelModeState.rawValue
-                    let localOverrideText = localOverride.map(String.init) ?? "nil"
+                    let localOverrideText = localOverrideValue ?? "nil"
                     self.appendLookupEvent(
                         "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) local_override=\(localOverrideText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText) tunnel_seg=\(tunnelSegmentText) tunnel_mode=\(tunnelModeText)"
                     )

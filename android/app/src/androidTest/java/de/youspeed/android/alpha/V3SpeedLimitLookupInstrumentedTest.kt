@@ -13,6 +13,66 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class V3SpeedLimitLookupInstrumentedTest {
     @Test
+    fun below50GermanLimitMarksLookupInsideCity() {
+        val dbFile = createFixtureDb("low-speed-city-${UUID.randomUUID()}.sqlite") { db ->
+            execSql(
+                db,
+                """
+                CREATE TABLE ways (
+                  way_id INTEGER PRIMARY KEY,
+                  highway TEXT,
+                  street_name TEXT,
+                  ref TEXT,
+                  maxspeed TEXT,
+                  maxspeed_type TEXT,
+                  source_maxspeed TEXT,
+                  approx_heading_deg REAL,
+                  service TEXT,
+                  tunnel TEXT,
+                  min_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL,
+                  max_lon REAL NOT NULL,
+                  max_lat REAL NOT NULL
+                );
+                CREATE TABLE ways_rtree (
+                  way_id INTEGER NOT NULL,
+                  min_lon REAL NOT NULL,
+                  max_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL,
+                  max_lat REAL NOT NULL
+                );
+                CREATE TABLE way_geom (
+                  way_id INTEGER PRIMARY KEY,
+                  points_json TEXT NOT NULL
+                );
+
+                INSERT INTO ways VALUES (4101, 'secondary', 'Low Speed Test Way', NULL, '30', NULL, NULL, 90.0, 'main', NULL, 13.0000, 52.0000, 13.0040, 52.0000);
+                INSERT INTO ways_rtree VALUES (4101, 13.0000, 13.0040, 52.0000, 52.0000);
+                INSERT INTO way_geom VALUES (4101, '[[52.0000,13.0000],[52.0000,13.0040]]');
+                """.trimIndent(),
+            )
+        }
+
+        V3SpeedLimitLookup(dbFile.absolutePath, countryCode = "DEU").use { lookup ->
+            val result = lookup.lookup(
+                lat = 52.0000,
+                lon = 13.0020,
+                radiusM = 120.0,
+                maxCandidates = 32,
+                headingDeg = 90.0,
+                speedKmh = 30.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+            )
+
+            assertEquals("4101", result.wayId)
+            assertEquals(30, result.speedLimitKmh)
+            assertEquals(true, result.insideCity)
+            assertEquals("de_speed_limit_lt_50", result.citySource)
+        }
+    }
+
+    @Test
     fun prefersSameRefContinuationWhenPreviousWayDropsOutOfRange() {
         val dbFile = createFixtureDb("continuity-${UUID.randomUUID()}.sqlite") { db ->
             execSql(
@@ -216,6 +276,79 @@ class V3SpeedLimitLookupInstrumentedTest {
         }
     }
 
+    @Test
+    fun blocksDirectMotorwayEntryUntilRampTransition() {
+        val dbFile = createFixtureDb("motorway-${UUID.randomUUID()}.sqlite") { db ->
+            createMotorwayCorridorFixtureDb(db)
+        }
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            val result = lookup.lookup(
+                lat = 52.06003,
+                lon = 13.00430,
+                radiusM = 80.0,
+                maxCandidates = 32,
+                headingDeg = 45.0,
+                speedKmh = 35.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+                matchContext = WayMatchContext(
+                    preferredWayId = "9301",
+                    preferredHighway = "primary",
+                    preferredEndpointProximityM = 0.0,
+                    recentWayIds = listOf("9301"),
+                    recentStreetRefs = listOf("B", "462"),
+                ),
+            )
+
+            assertEquals("9302", result.wayId)
+            val directMotorway = result.candidateTraces.first { it.wayId == "9303" }
+            assertEquals(false, directMotorway.corridorSelectable)
+        }
+    }
+
+    @Test
+    fun activatesMotorwayModeAfterRepeatedEntryProgress() {
+        val dbFile = createFixtureDb("motorway-mode-${UUID.randomUUID()}.sqlite") { db ->
+            createMotorwayCorridorFixtureDb(db)
+        }
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            val result = lookup.lookup(
+                lat = 52.06010,
+                lon = 13.00595,
+                radiusM = 80.0,
+                maxCandidates = 32,
+                headingDeg = 90.0,
+                speedKmh = 70.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+                matchContext = WayMatchContext(
+                    preferredWayId = "9302",
+                    preferredHighway = "motorway_link",
+                    preferredEndpointProximityM = 0.0,
+                    recentWayIds = listOf("9302", "9301"),
+                    recentStreetRefs = listOf("A", "5", "B", "462"),
+                    approachCorridorState = CorridorMatchState(
+                        kind = "motorway",
+                        corridorId = 1,
+                        sideNodeKey = "motorway-west",
+                        depthM = 24.0,
+                        spanM = 411.0,
+                        depthNodes = 1,
+                        spanNodes = 3,
+                    ),
+                    approachCorridorFixCount = 2,
+                    approachCorridorStartDepthM = 12.0,
+                    approachCorridorStartDepthNodes = 0,
+                ),
+            )
+
+            assertEquals("9303", result.wayId)
+            assertEquals("motorway", result.activeCorridorState?.kind)
+        }
+    }
+
     private fun createFixtureDb(
         name: String,
         populate: (SQLiteDatabase) -> Unit,
@@ -242,5 +375,96 @@ class V3SpeedLimitLookupInstrumentedTest {
             .map(String::trim)
             .filter(String::isNotEmpty)
             .forEach(db::execSQL)
+    }
+
+    private fun createMotorwayCorridorFixtureDb(db: SQLiteDatabase) {
+        execSql(
+            db,
+            """
+            CREATE TABLE ways (
+              way_id INTEGER PRIMARY KEY,
+              highway TEXT,
+              street_name TEXT,
+              ref TEXT,
+              maxspeed TEXT,
+              maxspeed_type TEXT,
+              source_maxspeed TEXT,
+              approx_heading_deg REAL,
+              service TEXT,
+              tunnel TEXT,
+              min_lon REAL NOT NULL,
+              min_lat REAL NOT NULL,
+              max_lon REAL NOT NULL,
+              max_lat REAL NOT NULL
+            );
+            CREATE TABLE ways_rtree (
+              way_id INTEGER NOT NULL,
+              min_lon REAL NOT NULL,
+              max_lon REAL NOT NULL,
+              min_lat REAL NOT NULL,
+              max_lat REAL NOT NULL
+            );
+            CREATE TABLE way_geom (
+              way_id INTEGER PRIMARY KEY,
+              points_json TEXT NOT NULL
+            );
+            CREATE TABLE way_links (
+              way_id INTEGER NOT NULL,
+              linked_way_id INTEGER NOT NULL,
+              shared_ref INTEGER NOT NULL DEFAULT 0,
+              shared_node_key TEXT NOT NULL,
+              PRIMARY KEY(way_id, linked_way_id, shared_node_key)
+            );
+            CREATE TABLE corridor_progress (
+              corridor_kind TEXT NOT NULL,
+              corridor_id INTEGER NOT NULL,
+              side_node_key TEXT NOT NULL,
+              way_id INTEGER NOT NULL,
+              start_depth_m REAL NOT NULL,
+              end_depth_m REAL NOT NULL,
+              start_depth_nodes INTEGER NOT NULL,
+              end_depth_nodes INTEGER NOT NULL,
+              corridor_span_m REAL NOT NULL,
+              corridor_span_nodes INTEGER NOT NULL,
+              PRIMARY KEY(corridor_kind, corridor_id, side_node_key, way_id)
+            );
+
+            INSERT INTO ways VALUES (9301, 'primary', 'Surface Approach', 'B 462', '70', NULL, NULL, 90.0, 'main', NULL, 13.0000, 52.06000, 13.0040, 52.06000);
+            INSERT INTO ways_rtree VALUES (9301, 13.0000, 13.0040, 52.06000, 52.06000);
+            INSERT INTO way_geom VALUES (9301, '[[52.06000,13.0000],[52.06000,13.0040]]');
+
+            INSERT INTO ways VALUES (9302, 'motorway_link', 'Entry Ramp', 'A 5', '80', NULL, NULL, 45.0, 'main', NULL, 13.0040, 52.06000, 13.0050, 52.06010);
+            INSERT INTO ways_rtree VALUES (9302, 13.0040, 13.0050, 52.06000, 52.06010);
+            INSERT INTO way_geom VALUES (9302, '[[52.06000,13.0040],[52.06010,13.0050]]');
+
+            INSERT INTO ways VALUES (9303, 'motorway', 'Autobahn Mainline', 'A 5', '130', NULL, NULL, 90.0, 'main', NULL, 13.0040, 52.06010, 13.0100, 52.06010);
+            INSERT INTO ways_rtree VALUES (9303, 13.0040, 13.0100, 52.06010, 52.06010);
+            INSERT INTO way_geom VALUES (9303, '[[52.06010,13.0040],[52.06010,13.0100]]');
+
+            INSERT INTO ways VALUES (9304, 'motorway_link', 'Exit Ramp', 'A 5', '80', NULL, NULL, 135.0, 'main', NULL, 13.0064, 52.06000, 13.0074, 52.06010);
+            INSERT INTO ways_rtree VALUES (9304, 13.0064, 13.0074, 52.06000, 52.06010);
+            INSERT INTO way_geom VALUES (9304, '[[52.06010,13.0064],[52.06000,13.0074]]');
+
+            INSERT INTO ways VALUES (9305, 'secondary', 'Exit Surface Road', 'K 5', '70', NULL, NULL, 90.0, 'main', NULL, 13.0074, 52.06000, 13.0110, 52.06000);
+            INSERT INTO ways_rtree VALUES (9305, 13.0074, 13.0110, 52.06000, 52.06000);
+            INSERT INTO way_geom VALUES (9305, '[[52.06000,13.0074],[52.06000,13.0110]]');
+
+            INSERT INTO corridor_progress VALUES ('motorway', 1, 'motorway-west', 9303, 0.0, 411.0, 1, 3, 411.0, 3);
+            INSERT INTO corridor_progress VALUES ('motorway', 1, 'motorway-east', 9303, 411.0, 0.0, 3, 1, 411.0, 3);
+
+            INSERT INTO way_links VALUES (9301, 9302, 0, 'surface-entry');
+            INSERT INTO way_links VALUES (9302, 9301, 0, 'surface-entry');
+            INSERT INTO way_links VALUES (9301, 9303, 0, 'motorway-west');
+            INSERT INTO way_links VALUES (9303, 9301, 0, 'motorway-west');
+            INSERT INTO way_links VALUES (9302, 9303, 1, 'motorway-west');
+            INSERT INTO way_links VALUES (9303, 9302, 1, 'motorway-west');
+            INSERT INTO way_links VALUES (9303, 9304, 1, 'motorway-east');
+            INSERT INTO way_links VALUES (9304, 9303, 1, 'motorway-east');
+            INSERT INTO way_links VALUES (9303, 9305, 0, 'motorway-east');
+            INSERT INTO way_links VALUES (9305, 9303, 0, 'motorway-east');
+            INSERT INTO way_links VALUES (9304, 9305, 0, 'surface-exit');
+            INSERT INTO way_links VALUES (9305, 9304, 0, 'surface-exit');
+            """.trimIndent(),
+        )
     }
 }

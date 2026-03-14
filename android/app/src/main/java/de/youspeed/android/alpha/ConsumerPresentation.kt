@@ -89,12 +89,17 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return "?"
         }
+        state.speedLimitDisplayText?.let { return it }
         val speedLimit = state.speedLimitKmh
         return when {
             speedLimit != null -> speedLimit.toString()
             hasUsableGpsFix(state) -> "–"
             else -> "?"
         }
+    }
+
+    fun showsPedestrianZoneSign(state: ConsumerUiState): Boolean {
+        return !isInSpeedCaptureMode(state) && state.speedLimitDisplayText == "Schritt"
     }
 
     fun debugCoordinateText(state: ConsumerUiState): String {
