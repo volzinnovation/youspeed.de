@@ -180,4 +180,22 @@ class ConsumerParityTests {
         assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
         assertTrue(ConsumerMainScreenLogic.showsPedestrianZoneSign(state))
     }
+
+    @Test
+    fun mainScreenLogicShowsCompactPlaceBadgeOutsideCityWhenStreetAndCityKnown() {
+        val state = ConsumerUiState(
+            startupDataState = StartupDataState.READY,
+            activeDBPath = "/tmp/mock.sqlite",
+            currentLatitude = 49.0180,
+            currentLongitude = 8.3501,
+            gpsSignalBars = 4,
+            limitStreetName = "A 5",
+            limitCityName = "Karlsruhe",
+            limitWayId = "autobahn-unlimited-130-plus",
+            lastLookupInsideCity = false,
+        )
+
+        assertTrue(ConsumerMainScreenLogic.shouldShowCityBadge(state))
+        assertFalse(ConsumerMainScreenLogic.shouldHighlightCityBadge(state))
+    }
 }

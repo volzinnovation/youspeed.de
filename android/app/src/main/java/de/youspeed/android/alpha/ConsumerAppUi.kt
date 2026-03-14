@@ -133,6 +133,7 @@ private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
 private const val SECONDARY_TEXT_RATIO = 9f / 16f
 private const val DEBUG_WIDTH_REFERENCE = "N00.0000 O000.0000"
 private val CITY_BADGE_TEXT_SIZE = 18.sp
+private val CONTROL_BUTTON_DIAMETER = 44.dp
 private val TrafficSignFontFamily = FontFamily(
     Font(R.font.u_din_1451_mittelschrift_regular, weight = FontWeight.Normal),
 )
@@ -541,6 +542,10 @@ private fun MainScreen(
         val metricDebugGap = max(12f, minDimensionDp.value * 0.024f).dp
         val debugSpacing = max(2f, minDimensionDp.value * 0.004f).dp
         val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
+        val bottomButtonGapWidth = max(
+            0f,
+            maxWidth.value - (screenInset.value * 2f) - (CONTROL_BUTTON_DIAMETER.value * 2f),
+        ).dp
 
         Column(
             modifier = Modifier
@@ -592,6 +597,7 @@ private fun MainScreen(
                 debugSpacing = debugSpacing,
                 metricDebugGap = metricDebugGap,
                 contentHorizontalPadding = contentHorizontalPadding,
+                locationBadgeWidth = bottomButtonGapWidth,
                 runtimeBanner = runtimeBanner,
                 onOpenDebug = onOpenDebug,
             )
@@ -706,7 +712,7 @@ private fun PillIconButton(
         color = background,
         border = androidx.compose.foundation.BorderStroke(1.5.dp, border),
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+        IconButton(onClick = onClick, modifier = Modifier.size(CONTROL_BUTTON_DIAMETER)) {
             content()
         }
     }
@@ -829,6 +835,7 @@ private fun LocationStatusBlock(
     debugSpacing: androidx.compose.ui.unit.Dp,
     metricDebugGap: androidx.compose.ui.unit.Dp,
     contentHorizontalPadding: androidx.compose.ui.unit.Dp,
+    locationBadgeWidth: androidx.compose.ui.unit.Dp,
     runtimeBanner: RuntimeBanner?,
     onOpenDebug: () -> Unit,
 ) {
@@ -843,6 +850,9 @@ private fun LocationStatusBlock(
             CityBadge(
                 streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
                 cityName = ConsumerMainScreenLogic.cityBadgeCityText(ui).orEmpty(),
+                highlighted = ConsumerMainScreenLogic.shouldHighlightCityBadge(ui),
+                badgeWidth = locationBadgeWidth,
+                foreground = foreground,
                 onOpenDebug = onOpenDebug,
             )
         } else if (rendersSearchInLabelSlot) {
@@ -918,15 +928,23 @@ private fun LocationStatusBlock(
 private fun CityBadge(
     streetName: String,
     cityName: String,
+    highlighted: Boolean,
+    badgeWidth: androidx.compose.ui.unit.Dp,
+    foreground: Color,
     onOpenDebug: () -> Unit,
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth()
+            .width(badgeWidth)
             .clickable { onOpenDebug() }
             .testTag("city-badge"),
-        colors = CardDefaults.cardColors(containerColor = BrightYellow),
-        border = androidx.compose.foundation.BorderStroke(2.dp, Color.Black.copy(alpha = 0.9f)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (highlighted) BrightYellow else Color.Transparent,
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (highlighted) 2.dp else 0.dp,
+            color = if (highlighted) Color.Black.copy(alpha = 0.9f) else Color.Transparent,
+        ),
     ) {
         Column(
             modifier = Modifier
@@ -937,7 +955,7 @@ private fun CityBadge(
             if (streetName.isNotBlank()) {
                 Text(
                     streetName,
-                    color = Color.Black,
+                    color = if (highlighted) Color.Black else foreground,
                     fontWeight = FontWeight.Bold,
                     fontSize = CITY_BADGE_TEXT_SIZE,
                     textAlign = TextAlign.Center,
@@ -949,7 +967,7 @@ private fun CityBadge(
             if (cityName.isNotBlank()) {
                 Text(
                     cityName,
-                    color = Color.Black,
+                    color = if (highlighted) Color.Black else foreground,
                     fontWeight = FontWeight.Bold,
                     fontSize = CITY_BADGE_TEXT_SIZE,
                     textAlign = TextAlign.Center,

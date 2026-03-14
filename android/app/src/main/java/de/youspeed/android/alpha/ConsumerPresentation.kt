@@ -133,11 +133,10 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return false
         }
-        if (state.lastLookupInsideCity != true) {
-            return false
-        }
         return cityBadgeStreetText(state) != null || cityBadgeCityText(state) != null
     }
+
+    fun shouldHighlightCityBadge(state: ConsumerUiState): Boolean = state.lastLookupInsideCity == true
 
     fun cityBadgeStreetText(state: ConsumerUiState): String? = normalizedPlaceText(state.limitStreetName)
 

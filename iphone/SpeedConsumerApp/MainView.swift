@@ -30,6 +30,7 @@ struct MainView: View {
             let screenInset = minDimension * 0.02
             let horizontalPadding = max(12, proxy.size.width * 0.04)
             let controlDiameter: CGFloat = 44
+            let bottomButtonGapWidth = max(0, proxy.size.width - (screenInset * 2) - (controlDiameter * 2))
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
             let sectionGap = max(14, minDimension * 0.04)
@@ -39,7 +40,7 @@ struct MainView: View {
             let contentBottomInset = bottomControlTopInset + max(10, minDimension * 0.03)
             let locationReserve = viewModel.isInSpeedCaptureMode
                 ? CGFloat(0)
-                : (shouldShowCityBadge
+                : (showsLocationBadge
                     ? max(58, minDimension * 0.16)
                     : max(40, minDimension * 0.11))
             let signWidthBudget = min(proxy.size.width * 0.82, proxy.size.width - (horizontalPadding * 2))
@@ -89,6 +90,7 @@ struct MainView: View {
                     .padding(.horizontal, horizontalPadding)
 
                     locationStatusBlock(
+                        badgeWidth: bottomButtonGapWidth,
                         debugFont: debugFont,
                         debugSpacing: debugSpacing
                     )
@@ -255,16 +257,20 @@ struct MainView: View {
 
     @ViewBuilder
     private func locationStatusBlock(
+        badgeWidth: CGFloat,
         debugFont: CGFloat,
         debugSpacing: CGFloat
     ) -> some View {
         Group {
             if viewModel.isInSpeedCaptureMode {
                 Color.clear
-            } else if shouldShowCityBadge {
+            } else if showsLocationBadge {
                 CityLimitBadgeView(
                     streetName: cityBadgeStreetText ?? "",
-                    cityName: cityBadgeCityText ?? ""
+                    cityName: cityBadgeCityText ?? "",
+                    highlighted: highlightsCityBadge,
+                    foregroundColor: highlightsCityBadge ? .black : primaryForegroundColor,
+                    badgeWidth: badgeWidth
                 )
                 .contentShape(Rectangle())
                 .onTapGesture(count: 2) {
@@ -398,11 +404,15 @@ struct MainView: View {
         normalizedPlaceText(viewModel.limitCityName)
     }
 
-    private var shouldShowCityBadge: Bool {
-        guard viewModel.lastLookupInsideCity == true else {
+    private var showsLocationBadge: Bool {
+        guard !viewModel.isInSpeedCaptureMode else {
             return false
         }
         return cityBadgeStreetText != nil || cityBadgeCityText != nil
+    }
+
+    private var highlightsCityBadge: Bool {
+        viewModel.lastLookupInsideCity == true
     }
 
     private var finePresentation: SpeedPenaltyNotice? {
@@ -799,6 +809,9 @@ private enum LegalTextLoader {
 private struct CityLimitBadgeView: View {
     let streetName: String
     let cityName: String
+    let highlighted: Bool
+    let foregroundColor: Color
+    let badgeWidth: CGFloat
 
     var body: some View {
         VStack(spacing: 2) {
@@ -806,26 +819,27 @@ private struct CityLimitBadgeView: View {
                 Text(streetName)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .truncationMode(.tail)
             }
             if !cityName.isEmpty {
                 Text(cityName)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .truncationMode(.tail)
             }
         }
-        .foregroundStyle(.black)
+        .foregroundStyle(foregroundColor)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .frame(width: badgeWidth)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(red: 0.97, green: 0.86, blue: 0.30))
+                .fill(highlighted ? Color(red: 0.97, green: 0.86, blue: 0.30) : .clear)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.black.opacity(0.9), lineWidth: 2)
+                .stroke(highlighted ? Color.black.opacity(0.9) : .clear, lineWidth: 2)
         )
     }
 }
