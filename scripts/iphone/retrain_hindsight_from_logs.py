@@ -153,7 +153,22 @@ def parse_args() -> argparse.Namespace:
 
 
 def default_log_paths() -> list[Path]:
-    return sorted(Path("inspector/logs").glob("*.ndjson"))
+    paths: list[Path] = []
+    for path in sorted(Path("inspector/logs").glob("*.ndjson")):
+        try:
+            with path.open() as handle:
+                first_payload = None
+                for raw_line in handle:
+                    raw_line = raw_line.strip()
+                    if not raw_line:
+                        continue
+                    first_payload = json.loads(raw_line)
+                    break
+        except Exception:
+            continue
+        if isinstance(first_payload, dict) and "fixID" in first_payload:
+            paths.append(path)
+    return paths
 
 
 def row_identity(row: Any) -> tuple[Any, ...]:
@@ -418,7 +433,12 @@ def baseline_predictions(examples: list[PreparedExample], model_name: str) -> li
     for example in examples:
         rows = example.rows
         if model_name in {"current_final", "heuristic"}:
-            index = pick_row_index(rows, "label_is_current_selected")
+            if model_name == "current_final":
+                index = pick_row_index(rows, "final_matches_candidate")
+                if index is None:
+                    index = pick_row_index(rows, "label_is_current_selected")
+            else:
+                index = pick_row_index(rows, "label_is_current_selected")
         elif model_name == "mini_if_available_else_heuristic":
             index = pick_row_index(rows, "mini_hmm_matches_candidate")
             if index is None:

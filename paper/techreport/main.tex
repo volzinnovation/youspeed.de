@@ -19,9 +19,6 @@
 \setlength\LTleft{0pt}
 \setlength\LTright{0pt}
 
-\input{../personalized_matching_arxiv/data/metrics_macros.tex}
-\input{../personalized_matching_arxiv/data/model_benchmark_rows.tex}
-
 \title{YouSpeed Technical Report: System Architecture, Jurisdiction Handling, Bundle Generation, and Lightweight Matching Benchmarks for Offline Smartphone Speed-Limit Assistance}
 
 \author{
@@ -34,7 +31,7 @@
 \maketitle
 
 \begin{abstract}
-This technical report documents the current YouSpeed system for offline smartphone speed-limit assistance. The system couples regional OpenStreetMap-derived bundles, on-device area-context lookup, bounded local map matching, and jurisdiction-aware warning logic across two mobile clients: the iPhone release-track application and the Android internal alpha. The report treats four connected questions. First, it documents the current local-first architecture, bundle contract, and mobile-client feature scope. Second, it characterizes regulation handling and maxspeed provenance, including a Germany-specific provenance decomposition and a cross-country explicit-tag analysis over 45 European extracts. Third, it describes the actual bundle-generation and iterative-update pipeline, including country selection, regional sharding, delta-pack publication, and the current v3 database schema. Fourth, it reports the benchmark evidence for four runtime data architectures, ten investigated matcher approaches on a retained hindsight corpus, and two deployable matcher profiles on closed-loop replay corpora. S3, a single-file spatially indexed database, remains the stable data-layer choice. In the offline matcher ladder, the three-way fixed-lag smoother attains the best accuracy and changed-example recall, while the current conservative matcher maximizes keep-current accuracy. In the deployable runtime comparison, the corridor-aware profile improves replay quality but increases bundle size, service-query latency, and oscillation counts, leaving the present size/latency-weighted product score slightly in favor of the smaller connected baseline. The current system is therefore asymmetric: the bundle and data architecture are stable, jurisdiction-aware warning logic is broader than jurisdiction-aware legal-default inference, and matcher selection remains an explicit trade-off between conservative stability and richer corridor state.
+This technical report documents the current YouSpeed system for offline smartphone speed-limit assistance. The system couples regional OpenStreetMap-derived bundles, on-device area-context lookup, bounded local map matching, and jurisdiction-aware warning logic across two mobile clients: the iPhone release-track application and the Android internal alpha. The report treats four connected questions. First, it documents the current local-first architecture, bundle contract, and mobile-client feature scope. Second, it characterizes regulation handling and maxspeed provenance, including a Germany-specific provenance decomposition and a cross-country explicit-tag analysis over 45 European extracts. Third, it describes the actual bundle-generation and iterative-update pipeline, including country selection, regional sharding, delta-pack publication, and the current v3 database schema. Fourth, it reports the benchmark evidence for four runtime data architectures, an all-log complexity ladder of causal matcher stages, and five named deployable matcher experiments on closed-loop replay corpora. S3, a single-file spatially indexed database, remains the stable data-layer choice. The all-log complexity ladder is used to measure what each added matcher mechanism contributes on the current log inventory; it is not itself the deployment ranking. The deployable runtime comparison now separates two frontiers. The corridor-aware final remains the strongest replay-quality profile on the present corpora. Experiment M2, a nearest plus street-ref continuity heuristic, is the strongest lightweight profile and attains the highest current internal score \(S\) because it keeps the smaller 108.5 MiB bundle, near-baseline latency, and very low oscillation. Experiment M3 reintroduces connected-candidate filtering to suppress disconnected bridge and tunnel competitors, but it does not improve on M2 on the present corpora, so the current lightweight evidence still favors the branch that can omit \texttt{way\_links}. Both consumer apps still execute the corridor-aware \texttt{corridorHMM} runtime, while the smaller connected baseline remains an internal benchmark reference, M2 becomes a concrete lightweight alternative, M3 isolates the value of reintroducing graph connectivity into that lightweight family, and the raw mini-HMM profile remains a benchmark-only live candidate inside the richer corridor family. Within that deployed matcher family, the all-log hindsight screen still shows that added complexity is not monotone: the raw mini-HMM stage provides the strongest aggregate causal operating point on fixed candidate windows, but the closed-loop replay benchmark rejects it as a direct consumer-app replacement. The current system is therefore asymmetric in other respects: the bundle and data architecture are stable, jurisdiction-aware warning logic is broader than jurisdiction-aware legal-default inference, and matcher selection is driven by closed-loop deployable evidence rather than by offline hindsight scores alone.
 \end{abstract}
 
 \keywords{intelligent speed assistance \and offline-first \and OpenStreetMap \and map matching \and mobile GIS \and smartphone systems}
@@ -42,16 +39,16 @@ This technical report documents the current YouSpeed system for offline smartpho
 \section{Introduction}
 Intelligent speed assistance (ISA) is now a regulatory requirement for new vehicle types in the European Union, yet the installed vehicle base remains far larger than annual new registrations \cite{eu2019_2144,eu2021_1958,eu_mandatory_safety_2024,eurostat_passenger_cars_2026,acea_registrations_2024}. This keeps the retrofit question open: practical speed-limit assistance still needs to run on devices that drivers already carry. Smartphone deployment is therefore relevant not as a theoretical alternative to integrated vehicle systems, but as a current path to broad availability.
 
-YouSpeed addresses that path with a local runtime that keeps map data, area-context lookup, matching, and local correction handling on device. The current codebase spans a shared preprocessing and bundle-publication pipeline, an iPhone client on the launch path, and an Android internal alpha that follows the same bundle contract and runtime logic. The engineering question is no longer whether offline inference is possible in principle. The current question is which architecture and which lightweight matching approach best fit the present product and evidence state, while remaining honest about jurisdiction-specific regulation handling and update logistics.
+YouSpeed addresses that path with a local runtime that keeps map data, area-context lookup, matching, and local correction handling on device. The current codebase spans a shared preprocessing and bundle-publication pipeline, an iPhone client on the launch path, and an Android internal alpha that follows the same bundle contract and the same deployed \texttt{corridorHMM} matcher logic. The engineering question is no longer whether offline inference is possible in principle. The current question is which architecture and which lightweight matching approach best fit the present product and evidence state, while remaining honest about jurisdiction-specific regulation handling and update logistics.
 
-This report reflects that current scope. It does not present a future architecture roadmap, and it does not treat unimplemented crowd synchronization as a central result. Instead, it documents the current system and compares the approaches that are active in the codebase today:
+This report reflects that current scope. It does not present a future architecture roadmap, and it does not treat unimplemented crowd synchronization as a central result. Instead, it documents the current system and uses logs as a model-discovery tool toward deployable profiles:
 \begin{enumerate}
 \item the implemented local-first system architecture and mobile-client feature scope,
 \item the way the runtime currently handles jurisdiction identity, warning rules, and speed-limit provenance,
 \item the bundle-generation and iterative-update machinery that turns country-scale OSM data into mobile artifacts,
 \item four runtime data architectures (S1--S4) for local geospatial lookup,
-\item a broader ladder of lightweight matching approaches on a retained hindsight benchmark,
-\item two deployable matcher profiles on closed-loop replay corpora.
+\item an all-log complexity ladder of causal matching stages that can be embedded into deployable profiles,
+\item five named deployable matcher experiments on closed-loop replay corpora, which form the actual deployment comparison.
 \end{enumerate}
 
 \section{Related Work}
@@ -84,9 +81,85 @@ The iPhone application is the current release-track client. It bootstraps from a
 The same client also carries the current driver-facing feature surface. It presents current speed, inferred limit, street and city context, tunnel state, and penalty-aware overspeed warnings. It captures local speed-limit observations through an on-device speech-recognition workflow, stores them in a review queue, and exports approved proposals as editor-oriented \texttt{.osc} packages rather than publishing directly from the app. The iPhone codebase is also the main source of inspector logs and replay corpora used in the matching benchmarks reported later in this report.
 
 \subsection{Android application}
-The Android application is an internal alpha that follows the same bundle and manifest contract as the iPhone client, but it is not the current public release gate. It bootstraps from a bundled seed, derives the same Germany shard endpoints, verifies and activates full bundles or multipart bundle payloads, and mirrors the same local lookup contract. The Android matcher adopts the same bounded-history logic family as the iPhone runtime: same-reference promotion, linked-way continuity, same-reference bounce suppression, tunnel-portal continuity, and corridor-state carryover. It also includes a fallback path for Android builds that expose stored RTree tables without exposing the SQLite RTree module at runtime.
+The Android application is an internal alpha that follows the same bundle and manifest contract as the iPhone client, but it is not the current public release gate. It bootstraps from a bundled seed, derives the same Germany shard endpoints, verifies and activates full bundles or multipart bundle payloads, and mirrors the same local lookup contract. The Android matcher now executes the same deployed \texttt{corridorHMM} path as the iPhone runtime: geometry-first candidate ranking, corridor prefiltering, connected-transition pruning over \texttt{way\_links}, continuity arbitration, short-history mini-HMM re-ranking, a three-way expert gate, and final tunnel or corridor locks backed by \texttt{corridor\_progress} and \texttt{corridor\_pairs}. It also includes a fallback path for Android builds that expose stored RTree tables without exposing the SQLite RTree module at runtime.
 
 The Android alpha emphasizes parity experiments that are useful for architecture validation. It adds spoken overspeed and driving-ban warnings, a bundled German offline Vosk recognizer for local speed capture, SQLite-backed review and export of local observations, debug log export, OSM browser handoff, and emulator or device instrumentation for replay and live bundle bootstrap. This makes Android scientifically relevant even before public launch because it exercises the shared bundle contract and runtime logic under a second mobile platform.
+
+\subsection{Current consumer-app matcher}
+The current consumer applications do not run the full seven-stage complexity ladder reported later in the offline benchmark. Both consumer apps now execute the same deployed matcher path: the corridor-aware \texttt{corridorHMM} configuration. The smaller \texttt{connectedBaseline} branch remains available inside the iPhone service as a benchmark and regression reference, and it also remains one of the runtime profiles evaluated later in this report, but it is not the default consumer runtime on either platform.
+
+The deployed matcher is local and bounded rather than route-global. Each fix is resolved from a local candidate window, but the decision carries short history through a \texttt{WayMatchContext} that includes preferred way identity, recent way and street-reference history, recent matched fixes, tunnel approach counters, recent mini-HMM hypotheses, tunnel mode, motorway mode, and active or approaching corridor state. The runtime also consumes three topology side tables from the active bundle. \texttt{way\_links} stores shared-node reachability and shared-reference relations. \texttt{corridor\_progress} stores corridor identity together with entry depth, remaining span, and node counts for tunnel and motorway segments. \texttt{corridor\_pairs} links paired corridor components so that entry and exit chains can be scored consistently across repeated fixes.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Ordered stages of the deployed \texttt{corridorHMM} matcher in both consumer apps.}
+\label{tab:consumer_matcher_stages}
+\begin{tabular}{p{2.6cm}p{4.9cm}p{4.5cm}}
+\toprule
+Stage & Role in the runtime & Main evidence or state source \\
+\midrule
+Candidate query & Query nearby ways, refine by polyline distance, optionally add heading mismatch, and keep trace features for later gates. & Local candidate set \(C_t\), distance \(d_{t,i}\), heading mismatch \(\Delta \theta_{t,i}\), endpoint proximity. \\
+Corridor feasibility gate & Reject candidates incompatible with active or approaching tunnel or motorway corridors, and suppress ambiguous surface-to-tunnel snaps unless recent GPS loss justifies fallback. & \texttt{corridor\_progress}, \texttt{corridor\_pairs}, GPS-loss flag, horizontal-accuracy buffer. \\
+Connected road-graph gate & After warmup, remove disconnected transitions and keep only candidates reachable from the recent match state when graph evidence exists. & \texttt{way\_links}, preferred way, matched-fix count. \\
+Continuity heuristics & Form preferred-way, same-ref, linked-way, and recent-way classes; then apply bounce suppression, transition promotion, low-speed turn overrides, and conservative continuity holds. & Recent way or ref history, endpoint proximity, speed, heading, graph links. \\
+Mini-HMM beam & Score a short beam of candidates together with tunnel or motorway sequence states, using emission penalties plus decayed transition costs from recent hypotheses. The raw mini-HMM stage in Table~\ref{tab:model_benchmark} is the winner of this step before later gates. & Recent hypotheses, corridor state machine, signal evidence, pair-aware transition penalties. \\
+Three-way expert gate & When the sequence state is still surface-like, arbitrate between current, lowest-distance, and lowest-endpoint experts; veto same-ref bounce and infeasible turns. & Top-2 score margin, speed, accuracy, signal bars, trace ranks, continuity bands, endpoint features. \\
+Final corridor or tunnel gates & Apply \texttt{corridor\_mode\_lock}, \texttt{corridor\_entry\_arm}, \texttt{corridor\_entry\_gate}, \texttt{tunnel\_entry\_gate}, and \texttt{tunnel\_exit\_gate}, then emit the new active or approach corridor state. & Corridor depth or span, entry-zone counters, portal exposure, signal degradation, current tunnel mode. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The raw mini-HMM stage in Table~\ref{tab:model_benchmark} is the candidate selected at the runtime's logged \texttt{mini\_hmm} step, before the three-way expert gate and before the later corridor or tunnel hold logic. At fix \(t\), the runtime first keeps the top \(B=4\) candidates after the earlier query, corridor-feasibility, road-graph, and continuity steps. Each beam candidate \(i \in C_t^{(B)}\) is then expanded into a stateful hypothesis \(h_t=(i,z_t)\), where the sequence state \(z_t\) is constrained by the candidate class:
+\[
+z_t \in
+\begin{cases}
+\{\text{surface}, \text{tunnelExit}\}, & \text{surface way} \\
+\{\text{tunnelPortal}, \text{tunnelInside}\}, & \text{tunnel way} \\
+\{\text{motorwayPortal}, \text{motorwayExit}\}, & \text{motorway\_link way} \\
+\{\text{motorwayInside}\}, & \text{motorway way.}
+\end{cases}
+\]
+The mini-HMM is not always active. It turns on only when the current fix is ambiguous, when the best geometric candidate conflicts with strong continuity evidence, when a same-ref transition candidate is available, when tunnel candidates enter the beam, or when recent hypotheses already exist from previous fixes.
+
+For each expanded hypothesis, the runtime computes a cumulative cost
+\[
+J(h_t) = e(h_t) + \min_{h_{t-1}}\left[\gamma J(h_{t-1}) + \tau(h_{t-1}, h_t)\right],
+\]
+where \(\gamma = 0.55\) is the history decay and the initial step reduces to \(J(h_t)=e(h_t)\) when no recent hypotheses exist. The emission term is
+\[
+e(h_t) = s_{\mathrm{geom}}(t,i) + p_{\mathrm{prior}}(t,i) + p_{\mathrm{state}}(t,i,z_t).
+\]
+Here \(s_{\mathrm{geom}}(t,i)\) is the heading-aware geometric score already computed at candidate-query time. The prior term \(p_{\mathrm{prior}}\) encodes short-history bias from the current context: the preferred way receives a \(-8.0\) reward, recent ways \(-2.5\), recent or preferred street-reference agreement \(-3.5\), tunnel candidates receive a further \(-6.0\) reward when the runtime is already in tunnel mode, non-tunnel candidates receive a \(+10.0\) penalty in that same case, and recent tunnel exposure under GPS loss adds an extra \(-2.0\) reward. The state-emission term \(p_{\mathrm{state}}\) scores whether the candidate is compatible with the hypothesized sequence state. Illegal state-candidate combinations incur a large \(+80.0\) penalty; plausible transitions use a small expected-transition cost of \(+2.0\) or persistence cost of \(+0.5\); tunnel and motorway evidence then subtract rewards based on portal progress, signal degradation, corridor-chain depth, and paired corridor relations from \texttt{corridor\_pairs}. In practice, this term is what allows the raw mini-HMM stage to favor tunnel-inside or motorway-inside trajectories even when a single-fix surface candidate remains geometrically attractive.
+
+The transition term decomposes as
+\[
+\tau(h_{t-1}, h_t) = \tau_{\mathrm{way}}(h_{t-1}, h_t) + \tau_{\mathrm{state}}(h_{t-1}, h_t).
+\]
+The way-transition part \(\tau_{\mathrm{way}}\) is zero for staying on the same way, \(0.75\) for shared-reference linked transitions, \(2.0\) for endpoint continuations, \(2.5\) for graph-linked transitions, \(4.0\) for same-reference jumps without an explicit graph link, \(8.0\) for recent-way revisits, \(12.0\) for same-highway-class fallback transitions, and \(18.0\) for unrelated transitions. This base cost is then increased by same-reference bounce suppression and heading-feasibility penalties when the implied turn is not kinematically plausible. The state-transition part \(\tau_{\mathrm{state}}\) carries the tunnel and motorway sequence machine. It rewards legal persistence inside committed tunnel and motorway states, penalizes re-entry, forbids incompatible cross-state jumps, and uses paired-corridor relations so that entry and exit chains on opposite sides of a tunnel or motorway corridor can be connected consistently over repeated fixes.
+
+After all candidate-state hypotheses are scored, the runtime sorts them by cumulative cost, keeps the best four as the next \texttt{recentHypotheses}, and emits the lowest-cost candidate as the raw mini-HMM winner. The later runtime is allowed to override that winner only in specific ways: committed corridor promotion, the three-way expert gate, same-ref bounce suppression, turn-feasibility vetoes, and the final corridor or tunnel hold logic. The subsequent three-way gate is narrower: it activates only when the runtime is not already committed to a tunnel-inside or motorway-inside state, and it chooses among the current selection, the lowest-distance expert, and the lowest-endpoint expert using a compact learned gate over trace features rather than a full end-to-end neural matcher.
+
+\begin{table}[!htbp]
+\centering
+\scriptsize
+\caption{Current matcher deployment and why Android parity converges iteratively.}
+\label{tab:parity_iterations}
+\begin{tabular}{p{2.4cm}p{4.7cm}p{4.7cm}}
+\toprule
+Factor & Evidence in the current repository & Consequence for parity work \\
+\midrule
+Platform lead & \texttt{V3SpeedLimitService.swift} enters the repository on 2026-02-23 and receives 14 commits through 2026-03-13, while \texttt{V3SpeedLimitLookup.kt} enters on 2026-03-13 and currently has two commits. & Android ports a moving implementation rather than co-evolving from the first matcher revision. \\
+Experiment asymmetry & Most closed-loop matcher experimentation remains iPhone-led through \texttt{SpeedConsumerTests.swift} (8{,}330 lines, 19 commits), \texttt{SpeedDBBenchSketch}, and the current matcher-metrics collection script. Android replay coverage exists, but its matcher-specific instrumented file is newer and smaller. & New matching behavior is observed, tuned, and accepted on iPhone first, then carried to Android. \\
+State-space coupling & Exact parity depends on \texttt{WayMatchContext}, recent hypotheses, tunnel-approach accumulation, \texttt{way\_links}, \texttt{corridor\_progress}, \texttt{corridor\_pairs}, and late gates such as \texttt{corridor\_mode\_lock} and \texttt{tunnel\_entry\_gate}. & Small omissions leave single-fix behavior apparently close while multi-fix replay behavior still diverges. \\
+Duplicated matcher cores & The production matcher exists as separate Swift and Kotlin implementations rather than as one shared generated core. & Semantic drift accumulates whenever one platform changes first and the second platform must re-port the same state machine. \\
+Replay-only failure modes & Several gates activate only after repeated portal exposure, degraded signal quality, entry-zone depth accumulation, or tunnel-mode carryover. & Feature parity requires closed-loop replay and device instrumentation, not only isolated geometric fixtures. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Android now implements the same ordered matcher stages as iPhone. The remaining cross-platform differences are outside the matcher core: release status, speech stack, user-interface details, and Android's runtime fallback when stored RTree tables exist but the SQLite RTree module is not exposed by the device build.
 
 \begin{table}[!htbp]
 \centering
@@ -98,7 +171,7 @@ The Android alpha emphasizes parity experiments that are useful for architecture
 Capability & iPhone release-track app & Android internal alpha \\
 \midrule
 Bundle lifecycle & Bundled seed, Germany shard discovery, full-bundle or SQL-delta updates, multipart assembly, atomic activation. & Bundled seed, shared shard discovery, full-bundle bootstrap, multipart assembly, atomic activation. \\
-Lookup and matching & S3 \texttt{SQLite3} lookup, heading-aware ranking, coverage-based regional routing, deterministic tunnel handling. & Shared v3 lookup contract, iPhone-shaped continuity logic, corridor-state carryover, bbox fallback when Android lacks live RTree support. \\
+Lookup and matching & S3 \texttt{SQLite3} lookup with the app-default \texttt{corridorHMM} matcher, connected-baseline branch retained for benchmarks, coverage-based regional routing, deterministic tunnel and corridor handling. & Shared v3 lookup contract with the same deployed \texttt{corridorHMM} matcher, the same corridor-pair and tunnel gates, and bbox fallback when Android lacks live RTree support. \\
 Warning surface & Driver-facing speed or limit UI, tunnel state, penalty-aware overspeed presentation, haptic and speech driving-ban alerts. & Compose parity UI, spoken overspeed and driving-ban alerts, tunnel and matcher debug state. \\
 Local observations & On-device speech capture, review queue, single or bulk \texttt{.osc} editor export. & Bundled Vosk offline speech capture, SQLite review queue, single or bulk \texttt{.osc} export, OSM browser handoff. \\
 Verification & Unit tests, route replay, tunnel regressions, geometry-stress analysis on iPhone logs. & Emulator or device instrumentation, live Germany-shard bootstrap test, replay regressions, runtime fallback checks. \\
@@ -309,19 +382,31 @@ d_{t,i}, & \text{otherwise}
 \]
 where \(d_{t,i}\) is point-to-way distance and \(\Delta \theta_{t,i}\) is bidirectional heading mismatch. Higher-level approaches then add bounded continuity state, short-history sequence logic, or lightweight learned ranking on top of this shared local candidate generation.
 
-The matching study uses two complementary experimental settings. The retained offline benchmark fixes candidate windows from non-duplicate inspector logs and asks whether a model recovers hindsight labels. This benchmark isolates arbitration quality and makes it possible to compare multiple approaches that are not all deployed end to end. The current ladder spans four families:
+The all-log matcher analysis in this section is not meant to choose a shipping matcher directly. In the current product code, both iPhone and Android run the corridor-aware \texttt{corridorHMM} branch as the deployed consumer matcher, while the \texttt{connectedBaseline} branch remains a benchmarkable alternative inside the iPhone service and one of the five deployable matcher experiments compared later. The log benchmark is therefore used as a discovery screen: it compares causal stages on fixed candidate windows so that the benefit of each added mechanism is explicit before closed-loop integration work. The actual deployment choice is still made only in the replay-based profile comparison of Table~\ref{tab:profile_comparison}.
+
+The matching study uses two complementary experimental settings. The first is an all-log causal complexity ladder. It fixes candidate windows from all currently available inspector logs, including geometry-stress sessions and repeated route recordings, and then evaluates a staged sequence of causal selectors on those same windows. This benchmark isolates candidate arbitration quality and asks whether each added layer of the deployed matcher family contributes net hindsight corrections. The staged ladder is:
 \begin{itemize}
-\item \textbf{Purely local heuristics:} the lowest-distance baseline and the current conservative final matcher.
-\item \textbf{Short-history sequence heuristics:} the mini-HMM else heuristic.
-\item \textbf{Bounded-history decision and smoothing models:} two-way tree gates, three-way tree gates, and a three-way fixed-lag smoother.
-\item \textbf{Lightweight learned rankers:} tree, logistic, tiny-MLP, and online-linear candidate rankers.
+\item \textbf{Distance only:} choose the candidate with minimum point-to-way distance.
+\item \textbf{Distance plus heading:} choose the candidate with minimum heading-aware geometry score.
+\item \textbf{Continuity trace:} add preferred-way, same-ref, linked-way, and recent-way banding to form the trace score.
+\item \textbf{Corridor/tunnel selectability:} filter out candidates rejected by corridor and tunnel feasibility before reapplying trace ranking.
+\item \textbf{Runtime heuristic:} take the logged heuristic winner before sequence arbitration.
+\item \textbf{Raw mini-HMM pick:} take the logged mini-HMM winner before later conservative holds.
+\item \textbf{Current deployed final:} take the current shipped runtime output.
 \end{itemize}
 
-The closed-loop replay benchmark is narrower and more deployment-oriented. It keeps bundle queries, session state, tunnel logic, and runtime size or latency terms, and therefore compares only two deployable S3 profiles on the same data layer:
+A non-causal fixed-lag smoother is explored separately during offline experimentation, but it is not included in the main complexity ladder because it consumes future fixes and therefore is not a candidate consumer-app profile.
+
+The closed-loop replay benchmark is narrower and more deployment-oriented. It keeps bundle queries, session state, tunnel logic, and runtime size or latency terms, and therefore compares five named deployable S3 matcher experiments on the same data layer:
 \begin{itemize}
-\item \textbf{Connected baseline.} This profile uses exact geometry distance, heading-aware scoring, connected-way continuity, and tunnel or motorway entry constraints derived from a minimal shared-endpoint graph. It does not materialize explicit corridor tables.
-\item \textbf{Corridor-aware profile.} This profile uses the same geometric core but adds corridor identity, corridor phase, paired entry and exit chains, and more detailed shared-node topology. It activates the runtime three-way gate whenever corridor-aware arbitration is useful.
+\item \textbf{M1 Connected baseline.} This profile uses exact geometry distance, heading-aware scoring, connected-way continuity, and tunnel or motorway entry constraints derived from a minimal shared-endpoint graph. It does not materialize explicit corridor tables.
+\item \textbf{M2 Nearest + street-ref continuity.} This profile uses the smaller non-corridor bundle family and a deliberately narrow causal rule: if speed is below \SI{30}{km/h} and horizontal accuracy is better than \SI{10}{m}, it takes the nearest way by distance; at higher speed it prefers the nearest candidate that shares the previous street ref; and if the previous matched state is tunnel while horizontal accuracy is worse than \SI{10}{m}, it keeps tunnel-only candidates until signal quality recovers. The street-ref tokens are already stored on the way rows, so M2 adds no auxiliary side table beyond the base way records.
+\item \textbf{M3 M2 + connected-candidate gate.} This experiment keeps the M2 rule, but before selection it removes candidates that are not connected to the recent match state when the \texttt{way\_links} graph gate is active. It isolates the value of reintroducing graph connectivity to suppress disconnected bridge and tunnel competitors in an otherwise lightweight matcher.
+\item \textbf{M4 Corridor raw mini-HMM.} This profile uses the same corridor tables, local candidate generation, and bounded-history sequence state as the deployed corridor matcher, but it stops at the runtime's raw mini-HMM winner before the three-way expert gate and the later corridor or tunnel hold logic. It is therefore a live truncation candidate, not a smaller bundle family.
+\item \textbf{M5 Corridor-aware final.} This profile uses the same geometric core but adds corridor identity, corridor phase, paired entry and exit chains, the runtime three-way gate, and the later corridor or tunnel lock logic. This is the current deployed consumer matcher.
 \end{itemize}
+
+Experiments M1--M3 reuse the same 108.5 MiB non-corridor artifact in the current replay harness, so their measured bundle sizes are directly comparable. M1 and M3 both require \texttt{way\_links} because they use graph-derived connectivity. M2 consumes only geometry distance, street-ref tokens already stored on \texttt{ways}, tunnel tags, and bounded session state. A dedicated M2 build therefore can omit \texttt{corridor\_progress}, \texttt{corridor\_pairs}, and \texttt{way\_links}. M3 intentionally reintroduces the connected-transition gate and therefore still requires \texttt{way\_links}.
 
 \subsection{Query modes and benchmark harness}
 All architecture scenarios use the same query modes:
@@ -344,14 +429,33 @@ The current matcher comparison uses three corpora with different purposes:
 \toprule
 Corpus & Purpose & Logs & Fixes & Hindsight labels \\
 \midrule
-Retained offline benchmark & Candidate-level hindsight benchmark from non-duplicate inspector logs & 7 & \CurrentLogRows & \PseudoLabelExamples \\
-Inspector replay corpus & Closed-loop replay of current runtime behavior on field logs & 10 & 11{,}351 & 6{,}529 \\
+All-log complexity ladder & Candidate-level hindsight benchmark over all current inspector logs, including geometry sessions & 13 & 16{,}006 & 9{,}169 \\
+Inspector replay corpus & Closed-loop replay of current runtime behavior on the current fixID-carrying inspector-log subset & 13 & 16{,}006 & 9{,}169 \\
 Geometry-stress corpus & Dedicated tunnel and same-ref stress replay & 2 & 2{,}598 & 1{,}410 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The retained offline benchmark contains \PseudoLabelExamples hindsight-labelled examples, including \PseudoLabelSwitchCount switch-labelled cases, and it uses \BenchmarkTrainExamples/\BenchmarkValExamples/\BenchmarkTestExamples train/validation/test examples where supervised models require a learned split. For profile comparison, the primary metrics are replay accuracy \(a\), changed-example recall \(r\), and unchanged-example accuracy \(u\). To summarize replay quality without collapsing everything into one number too early, we first use
+The all-log complexity ladder contains 9{,}169 hindsight-labelled examples, including 640 switch-labelled cases. Each example has a logged live selection \(y_t^{\mathrm{live}}\), a hindsight pseudo-label \(y_t\), and a stage prediction \(\hat y_t^{(k)}\). For each row in the ladder, we report replay-style accuracy \(a\), changed-example recall \(r\), and unchanged-example accuracy \(u\):
+\[
+a = \frac{1}{N}\sum_{t=1}^{N}\mathbf{1}\!\left[\hat y_t^{(k)} = y_t\right],
+\qquad
+r = \frac{1}{|S|}\sum_{t \in S}\mathbf{1}\!\left[\hat y_t^{(k)} = y_t\right],
+\qquad
+u = \frac{1}{|\bar S|}\sum_{t \in \bar S}\mathbf{1}\!\left[\hat y_t^{(k)} = y_t\right],
+\]
+where \(S=\{t: y_t \neq y_t^{\mathrm{live}}\}\) is the set of hindsight switch examples and \(\bar S=\{t: y_t = y_t^{\mathrm{live}}\}\) is the set of keep-current examples. Accuracy \(a\) therefore measures overall agreement with the hindsight label, changed-example recall \(r\) measures how often a stage recovers cases where the live runtime should have switched, and unchanged-example accuracy \(u\) measures how often a stage correctly preserves the logged live selection when hindsight agrees with it.
+
+The ladder also reports the net number of hindsight corrections relative to the previous stage,
+\[
+\Delta_k =
+\sum_{t=1}^{N}\mathbf{1}\!\left[\hat y_t^{(k-1)} \neq y_t \land \hat y_t^{(k)} = y_t\right]
+-
+\sum_{t=1}^{N}\mathbf{1}\!\left[\hat y_t^{(k-1)} = y_t \land \hat y_t^{(k)} \neq y_t\right].
+\]
+A positive \(\Delta_k\) means that the added mechanism fixes more hindsight errors than it introduces; a negative \(\Delta_k\) means that the new complexity regresses more cases than it repairs on the current corpus.
+
+For profile comparison, the primary metrics are replay accuracy \(a\), changed-example recall \(r\), and unchanged-example accuracy \(u\). To summarize replay quality without collapsing everything into one number too early, we first use
 \[
 A = 0.5a + 0.25r + 0.25u.
 \]
@@ -440,52 +544,68 @@ The architecture result is clear. S1 is not competitive for country-scale mobile
 
 The area-context result is also narrow and current-scope only. The measured \texttt{polycontainment} step is a residential-polygon lookup used by the benchmark harness for built-up classification; it is not an administrative-boundary benchmark. Under that definition, S3 remains fastest on device at \SI{0.74}{ms}.
 
-\subsection{Offline matcher benchmark across investigated approaches}
-Table~\ref{tab:model_benchmark} reports the retained offline benchmark across the ten investigated approaches. This benchmark isolates candidate arbitration rather than end-to-end runtime behavior, so its main value lies in comparing approach families under a fixed candidate corpus.
+\subsection{All-log complexity ladder of causal matcher stages}
+Table~\ref{tab:model_benchmark} reports the all-log causal complexity ladder. Its purpose is not to rank heterogeneous offline and online models against each other. Instead, it asks a narrower and more deployable question: on the current full log inventory, what does each added layer of the shipped matcher family contribute beyond the previous causal stage? The final row is the current deployed consumer matcher directly, read from the runtime's logged final trace. The earlier rows are measured intermediate stages from the same local candidate windows.
 
 \begin{table}[!htbp]
 \centering
 \scriptsize
-\caption{Retained offline benchmark across investigated matcher approaches (\CurrentLogRows fixes, \PseudoLabelExamples hindsight labels).}
+\caption{All-log causal complexity ladder for the deployed matcher family across 13 current inspector logs (16{,}006 fixes, 9{,}169 hindsight labels). The last column reports net hindsight corrections minus regressions relative to the previous row. The deployed runtime row is marked in bold.}
 \label{tab:model_benchmark}
-\begin{tabular}{p{4.1cm}rrr}
+\begin{tabular}{p{4.1cm}rrrr}
 \toprule
-Approach & Accuracy & Changed rec. & Keep-current acc. \\
+Causal stage & Accuracy & Changed rec. & Keep-current acc. & Net \(\Delta\) vs.\ prev. \\
 \midrule
-\ModelBenchmarkRows
+Distance only & 93.98\% & 57.50\% & 96.72\% & -- \\
+Distance + heading & 92.44\% & 43.59\% & 96.11\% & -141 \\
+Continuity trace & 90.96\% & 48.91\% & 94.11\% & -136 \\
+Corridor/tunnel selectable trace & 90.99\% & 48.91\% & 94.15\% & +3 \\
+Runtime heuristic & 92.67\% & 1.09\% & 99.54\% & +154 \\
+Raw mini-HMM pick & 93.57\% & 38.44\% & 97.70\% & +82 \\
+\textbf{Current deployed final} & 93.02\% & 0.00\% & 100.00\% & -50 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Three patterns emerge from this ladder. First, bounded future or sequence context matters. The three-way fixed-lag smoother reaches the strongest overall operating point at 94.20\% accuracy and 55.34\% changed-example recall, while the mini-HMM and tree-gated approaches also improve change recovery relative to the current conservative matcher. Second, the current conservative matcher should be interpreted as a stability reference rather than as a general optimum: it maximizes keep-current accuracy at 100.00\%, but it does so by suppressing all hindsight-labelled switches in this benchmark. Third, the current label volume does not yet make the small learned rankers dominant. The tree candidate ranker is competitive, but logistic, online-linear, and especially tiny-MLP variants remain below the stronger bounded-history heuristic and smoother baselines.
+\noindent
+\textit{Interpretation.} The bold row is the exact deployed consumer matcher on this offline corpus: the benchmark reads the runtime's final selected way from the logged final trace. The preceding rows are not synthetic toy baselines; they are measured causal cut points along the same matcher family. Closed-loop end-to-end evidence for actual deployment choice still appears separately in Table~\ref{tab:profile_comparison}.
 
-The ladder is also scientifically useful because it separates different notions of improvement. The lowest-distance baseline already reaches 54.37\% changed-example recall, which means that many switch-labelled cases are geometrically recoverable without rich temporal state. The gain from more structured models therefore lies less in discovering switches at all than in balancing switch recovery against keep-current stability. On the current retained corpus, the fixed-lag smoother is the best compromise inside that balance.
+Four patterns emerge from this ladder. First, added complexity is not monotone. The pure distance baseline already reaches 93.98\% accuracy and the strongest switch recovery at 57.50\%, which means that many hindsight-labelled switches are geometrically recoverable before any temporal logic is added. Second, the heading-aware geometry score and the continuity-trace layer both move in the wrong aggregate direction on the current all-log corpus: they reduce overall accuracy and incur net regressions relative to the simpler previous stage. Third, the large positive steps come later in the live stack. The runtime heuristic improves stability sharply, raising keep-current accuracy to 99.54\% at the cost of almost all switch recovery, and the raw mini-HMM stage then restores much of the lost switch sensitivity while also giving the strongest overall causal operating point in the table at 93.57\% accuracy, 38.44\% changed-example recall, and 97.70\% keep-current accuracy. Fourth, the current deployed final stage is best understood as a conservative hold layer rather than as the strongest hindsight selector: it lifts keep-current accuracy to 100.00\%, but it suppresses all 640 hindsight-labelled switches and loses 50 net corrections relative to the raw mini-HMM row. Table~\ref{tab:profile_comparison} then shows why this offline result is not itself a shipping decision: the raw mini-HMM direct live profile does not beat the deployed final profile once closed-loop replay, bundle costs, and runtime side effects are evaluated together.
+
+The all-log ladder is scientifically useful because it separates different notions of improvement before replay integration work begins. It shows that the main benefit of added complexity does not come from the front of the stack. The strongest positive shift occurs when the runtime moves from static trace ranking into explicit bounded-history arbitration, and the strongest overall hindsight stage is the raw mini-HMM rather than the current final conservative hold. This is exactly the role of Table~\ref{tab:model_benchmark}: it narrows the candidate space for deployable profile design, not the final shipping decision. In the current report, it successfully nominates one concrete live candidate and the closed-loop benchmark then rejects that candidate.
 
 \subsection{Current runtime matcher profile comparison}
-The closed-loop runtime comparison narrows the field to two deployable S3 profiles and adds runtime costs that the offline ladder does not measure: bundle size, service latency, gate activity, and geometry-log oscillation behavior. Table~\ref{tab:profile_comparison} compares these two profiles on replay and geometry-stress corpora.
+The closed-loop runtime comparison narrows the field to five deployable S3 matcher experiments and adds runtime costs that the offline ladder does not measure: bundle size, service latency, and geometry-log oscillation behavior. Table~\ref{tab:profile_comparison} compares these experiments on replay and geometry-stress corpora.
 
 \begin{table}[!htbp]
 \centering
 \scriptsize
-\caption{Current matcher profile comparison on replay and geometry-stress corpora.}
+\caption{Current matcher experiment comparison on replay and geometry-stress corpora. The deployed consumer experiment is marked explicitly; the highest current internal score \(S\) is bolded in the last column.}
 \label{tab:profile_comparison}
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{p{2.2cm}rrrrrrrr}
+\begin{tabular}{lp{4.0cm}rrrrrrrr}
 \toprule
-Profile & Bundle (MiB) & Service p95 & Replay acc. & Changed rec. & Unchanged acc. & Geom agree. & Way ABA & Score \(S\) \\
+Exp. & Profile & Bundle (MiB) & Service p95 & Replay acc. & Changed rec. & Unchanged acc. & Geom agree. & Way ABA & Score \(S\) \\
 \midrule
-Connected baseline & 108.5 & 0.132 & 93.41\% & 49.23\% & 96.71\% & 80.45\% & 4 & 88.23 \\
-Corridor-aware & 128.2 & 0.166 & 95.99\% & 72.19\% & 97.76\% & 83.56\% & 89 & 87.73 \\
+M1 & Connected baseline & 108.5 & 0.146 & 92.69\% & 45.30\% & 96.24\% & 80.45\% & 4 & 85.79 \\
+M2 & Nearest + street-ref continuity & 108.5 & 0.140 & 93.09\% & 55.17\% & 95.93\% & 80.29\% & 2 & \textbf{88.46} \\
+M3 & M2 + connected-candidate gate & 108.5 & 0.136 & 92.18\% & 54.08\% & 95.03\% & 81.45\% & 2 & 88.35 \\
+M4 & Corridor raw mini-HMM & 128.2 & 0.152 & 90.64\% & 35.27\% & 94.78\% & 80.87\% & 2 & 80.89 \\
+M5 & Corridor-aware final (deployed) & 128.2 & 0.151 & 95.68\% & 63.17\% & 98.11\% & 83.56\% & 89 & 88.13 \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
 
-The corridor-aware profile is not a trivial strict improvement. It is better on replay quality: accuracy rises by 2.58 percentage points, changed-example recall rises by 22.96 percentage points, unchanged-example accuracy also improves, and geometry-log agreement is higher. The same profile is also materially more active, invoking the current three-way gate 3{,}118 times across the replay corpus.
+The closed-loop result now separates three deployment roles. M5 remains the strongest replay-quality experiment: it leads the table on replay accuracy, changed-example recall, unchanged-example accuracy, and geometry-log agreement. M2 is the strongest lightweight experiment. Relative to M1, it preserves the smaller 108.5 MiB bundle, lowers service-query \(p95\) latency from \SI{0.146}{ms} to \SI{0.140}{ms}, increases replay accuracy by 0.40 percentage points, raises changed-example recall by 9.87 percentage points, and lowers geometry-stress ABA from 4 to 2. Under the current internal score \(S\), those gains are enough to move M2 to the top of the table even though it does not lead the replay metrics outright.
 
-At the same time, the connected baseline keeps two practical advantages. It is smaller by 19.7 MiB and faster at service-query \(p95\), and it shows much less ABA behavior in the geometry-stress logs. Under the present product-weighted score \(S\), these latency and size terms are enough to move the aggregate result slightly back toward the baseline (88.23 vs.\ 87.73), even though the replay-accuracy composite \(A\) favors the corridor-aware profile (0.8319 vs.\ 0.9048). The current scientific conclusion is therefore a trade-off statement, not a winner-takes-all statement.
+M3 is the bridge or tunnel connectivity experiment: it keeps the M2 rule but excludes disconnected candidates when \texttt{way\_links} evidence is active. On the current corpora, M3 does not improve on M2. Replay accuracy falls by 0.91 percentage points, changed-example recall by 1.09 percentage points, unchanged-example accuracy by 0.90 percentage points, and the internal score drops from 88.46 to 88.35. The connected-candidate gate slightly improves geometry-log agreement (81.45\% vs.\ 80.29\%) and service-query \(p95\) latency (\SI{0.136}{ms} vs.\ \SI{0.140}{ms}), but not enough to justify reintroducing \texttt{way\_links} into the lightweight branch on present evidence.
 
-This trade-off is visible in the corpora details. The replay corpus contains 934 motorway fixes, 92 motorway-link fixes, and 187 selected tunnel fixes. The geometry-stress corpus contains 82 replay tunnel fixes and one portal-eligible tunnel case. These are exactly the route types for which extra corridor state is expected to matter. The present data confirm that expectation on replay accuracy, but they also show that richer corridor state can reintroduce oscillation pressure in dedicated stress logs.
+M4 remains the weakest live experiment. It keeps the same 128.2 MiB corridor-aware bundle as M5, slightly improves service-query \(p95\) latency relative to M5, and nearly eliminates geometry-stress ABA oscillations (2 vs.\ 89), but it loses replay quality on all three primary metrics and therefore drops to the lowest product-weighted score \(S\). In other words, truncating the live matcher at the raw mini-HMM step is still not a deployable improvement on the current corpus.
+
+Relative to M2, M5 accepts 19.7 MiB of additional bundle size and much more geometry-stress ABA (89 vs.\ 2) in exchange for stronger replay quality. Replay accuracy rises by 2.59 percentage points, changed-example recall by 7.99 percentage points, unchanged-example accuracy by 2.18 percentage points, and geometry-log agreement by 3.27 percentage points. The resulting replay-quality composite \(A\) rises from 0.8432 for M2 to 0.8816 for M5. The scientific conclusion is therefore not that one experiment dominates everywhere. M5 is the strongest accuracy-oriented consumer matcher on the present logs. M2 is the strongest lightweight alternative under the current score \(S\), while also almost eliminating same-ref ABA in the geometry-stress corpus.
+
+This trade-off is also visible in bundle construction. M2 and M3 are both measured on the 108.5 MiB baseline artifact because that bundle already exists in the replay harness. The distinction is that M2 reads only geometry distance, street-ref tokens already present on the \texttt{ways} rows, tunnel tags, and session state. A dedicated M2 artifact therefore can omit \texttt{corridor\_progress}, \texttt{corridor\_pairs}, and \texttt{way\_links}. M3 reintroduces the connected-transition gate and therefore still requires \texttt{way\_links}. Because M3 underperforms M2 on the present corpora, the current evidence does not justify carrying \texttt{way\_links} in the lightweight branch. The existing Karlsruhe benchmark build family already shows the direction of that further reduction: the no-\texttt{way\_links} geometry variant is 77{,}869{,}056 bytes, compared with 107{,}929{,}600 bytes for the corresponding way-links variant. The current report does not benchmark that leaner artifact as a separate live profile, but it makes the remaining size headroom of a genuinely lightweight matcher concrete.
 
 \section{Discussion}
 The current report separates four questions that were previously mixed together.
@@ -496,7 +616,7 @@ Second, the jurisdiction question is layered rather than binary. The bundle and 
 
 Third, the update question is no longer hypothetical. Comparative target-country ranking, sharding, exact delta-pack generation, rolling delta indexes, and manifest publication are all implemented, and the Germany 30-day update study shows that these subsystems operate on realistic country-scale workloads. What remains open is production confidence across every target and every mobile download path, not whether an iterative-update mechanism exists at all.
 
-Fourth, the matching question is best understood on two levels rather than one. In the retained offline benchmark, added bounded future context pays off: the fixed-lag smoother and tree-gated approaches outperform purely local conservative arbitration on changed-example recovery, and the best lightweight learned models still trail the strongest bounded-history non-neural baselines. In the closed-loop runtime benchmark, the comparison becomes narrower because deployable profiles must also pay for bundle size, service latency, and route-stability side effects.
+Fourth, the matching question is best understood as a stage-wise complexity screen followed by a deployment stage. The all-log ladder shows that the benefit of added complexity is selective rather than monotone: heading and continuity layers regress on the present corpus, the runtime heuristic trades switch recovery for extreme stability, the raw mini-HMM is the strongest hindsight operating point, and the current deployed final layer is the most conservative endpoint. Closed-loop runtime evidence then decides which deployable experiment is actually worth shipping, because only that stage sees bundle size, service latency, corridor state, and route-stability side effects together. In the current benchmark, that deployment stage produces three clear outcomes. The direct raw mini-HMM live experiment underperforms every other candidate. M5 leads the replay-quality metrics. M2 leads the current internal score \(S\) because it captures a large part of the replay gain over M1 while keeping the smaller bundle family. M3 is the explicit \texttt{way\_links} reintroduction experiment for bridge and tunnel confusions, and it does not beat M2 on the present corpora.
 
 \section{Future Work}
 Several next steps follow directly from the current evidence.
@@ -505,10 +625,10 @@ The first concerns jurisdiction-aware defaults. The present bundle contract and 
 
 The second concerns iterative updates. The exact delta-pack machinery is implemented and measured, but the rollout path remains intentionally conservative. A natural next step is to move from the Karlsruhe seed-first validation pattern to a broader country and shard matrix, with stronger end-to-end evidence for multipart downloads, stale-version recovery, and repeated patch application on real devices rather than only host-side simulation and narrow mobile-path verification.
 
-The third concerns matcher convergence. The current results show a productive tension between conservative baseline behavior and corridor-aware replay gains. Future work should therefore evaluate richer profiles not only on replay accuracy but also jointly with bundle build cost, delta size, update friction, and geometry-stress stability, so that matcher adoption reflects the full operational envelope of the product.
+The third concerns matcher convergence. The current results now resolve three concrete hypotheses. First, directly truncating the deployed corridor-aware runtime at the raw mini-HMM step is not sufficient. That profile keeps the full corridor-aware bundle size, lowers oscillation, and slightly lowers service latency, but it loses too much replay quality to be attractive as a replacement. Second, a much simpler nearest plus street-ref continuity rule is no longer hypothetical. M2 already outperforms M1 while keeping the smaller bundle family. Third, reintroducing the connected-candidate gate into that lightweight branch is also no longer hypothetical. M3 explicitly tests whether excluding disconnected candidates helps with bridge and tunnel confusions, and on the present corpora it does not beat M2. Future work should therefore proceed on two branches: re-tune narrower interventions inside M5 to reduce same-ref ABA without giving up replay quality, and build a dedicated M2 artifact family that removes corridor tables and \texttt{way\_links}. If the bridge and tunnel stress corpus expands materially, the lightweight branch can revisit a narrower connectivity veto rather than the current generic gate. Those experiments should still be scored jointly with bundle build cost, delta size, update friction, and geometry-stress stability so that matcher adoption reflects the full operational envelope of the product.
 
 \section{Conclusion}
-The current YouSpeed system is best described as a four-layer result. At the architecture layer, a local-first bundle pipeline and S3 runtime data layer define the stable implementation center. At the client layer, the iPhone app provides the current launch-facing runtime while the Android alpha validates the same contract and matcher family on a second mobile platform. At the regulation layer, country identity and penalty semantics are already decoupled from the matcher, while unsigned-road legal defaults remain strongest for Germany. At the matcher layer, the project has multiple defensible operating points: the fixed-lag smoother is strongest in the retained offline arbitration benchmark, while the deployable runtime comparison remains a trade-off between a smaller connected baseline and a richer corridor-aware profile with better replay quality. The scientific value of the current status lies in keeping these comparisons explicit instead of forcing them into a single winner narrative.
+The current YouSpeed system is best described as a four-layer result. At the architecture layer, a local-first bundle pipeline and S3 runtime data layer define the stable implementation center. At the client layer, the iPhone app provides the current launch-facing runtime while the Android alpha executes the same deployed \texttt{corridorHMM} matcher and validates the same bundle contract on a second mobile platform. At the regulation layer, country identity and penalty semantics are already decoupled from the matcher, while unsigned-road legal defaults remain strongest for Germany. At the matcher layer, the all-log ladder acts as a discovery tool for causal runtime stages, while deployment choice is made only between live experiments. Under that criterion, the current decision is now more structured than a single winner row. M5 remains the best replay-quality consumer matcher on the present benchmark. M2 is the strongest lightweight alternative and the current leader under the internal score \(S\), because it keeps the 108.5 MiB bundle family, near-baseline latency, and very low oscillation while improving materially over M1. M3 reintroduces connected-candidate filtering to test the value of \texttt{way\_links} in bridge and tunnel situations, but it does not beat M2, so the present lightweight evidence still favors the branch that can omit \texttt{way\_links}. M4 remains scientifically useful as an intermediate diagnostic stage, but it is not a deployable replacement. The scientific value of the current status lies in keeping stage-wise model discovery, replay-quality leadership, and lightweight deployment trade-offs separate instead of forcing them into a single undifferentiated winner table.
 
 \section*{Reproducibility}
 All preprocessing, scenario construction, benchmark steps, bundle-generation stages, and update scripts are parameterized in the accompanying codebase at \url{https://github.com/volzinnovation/youspeed.de}. The current report ties its measurements to the Germany snapshot dated 2026-02-23, the Europe-wide explicit-tag analysis artifacts stored under \texttt{mapdata/reports/}, the 30-day Germany daily-diff analysis window from 2026-01-22 to 2026-02-20, the fixed Berlin probe benchmark, and the replay corpora summarized in Table~\ref{tab:corpora}.

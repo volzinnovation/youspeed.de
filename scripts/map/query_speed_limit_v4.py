@@ -17,7 +17,7 @@ DEFAULT_DE_URBAN = 50
 DEFAULT_DE_RURAL_CAR = 100
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
 PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
-CITY_BOUNDARY_PRIORITY = {8: 0, 6: 1}
+CITY_BOUNDARY_PRIORITY = {9: 0, 8: 1, 6: 2}
 PRIMARY_PLACE_MAX_RANK = 1
 NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M = 5000.0
 NUMERIC_SPEED_RE = re.compile(r"^(\d{1,3})")
@@ -90,6 +90,37 @@ def _select_nearest_place_fallback(candidates: List[Tuple[int, float, str]]) -> 
     if primary:
         return sorted(primary, key=lambda row: (row[1], row[0], row[2]))[0]
     return sorted(within_threshold, key=lambda row: (row[0], row[1], row[2]))[0]
+
+
+def _same_admin_name(lhs: str, rhs: str) -> bool:
+    return lhs.strip().casefold() == rhs.strip().casefold()
+
+
+def _format_admin_city_name(
+    boundaries: List[Tuple[int, Optional[str], float]],
+) -> Tuple[Optional[str], Optional[int]]:
+    normalized: List[Tuple[int, str, float]] = []
+    for admin_level, name, bbox_area in boundaries:
+        if name is None:
+            continue
+        trimmed = name.strip()
+        if not trimmed:
+            continue
+        normalized.append((admin_level, trimmed, bbox_area))
+    if not normalized:
+        return None, None
+    normalized.sort(key=lambda record: (CITY_BOUNDARY_PRIORITY.get(record[0], 99), record[2], record[1]))
+    best_level, best_name, _ = normalized[0]
+    if best_level == 9:
+        parents = [
+            candidate
+            for candidate in normalized
+            if candidate[0] == 8 and not _same_admin_name(candidate[1], best_name)
+        ]
+        if parents:
+            parents.sort(key=lambda record: (record[2], record[1]))
+            return f"{best_name} ({parents[0][1]})", best_level
+    return best_name, best_level
 
 
 def distance_to_bbox_m(lat: float, lon: float, row: dict) -> float:
@@ -527,7 +558,7 @@ def _resolve_city_context(
         JOIN city_boundary b ON b.row_id = t.boundary_row_id
         WHERE r.min_lon <= ? AND r.max_lon >= ?
           AND r.min_lat <= ? AND r.max_lat >= ?
-          AND b.admin_level IN (6, 8)
+          AND b.admin_level IN (6, 8, 9)
         LIMIT 2048
         """,
         (
@@ -552,11 +583,10 @@ def _resolve_city_context(
             containing.append((admin_level, name, bbox_area))
 
     if containing:
-        containing.sort(key=lambda r: (CITY_BOUNDARY_PRIORITY.get(r[0], 99), r[2], (r[1] or "~")))
-        best_level, best_name, _ = containing[0]
+        city_name, best_level = _format_admin_city_name(containing)
         return {
             "inside_city": True,
-            "city_name": best_name,
+            "city_name": city_name,
             "city_admin_level": best_level,
             "city_source": "admin_polygon",
             "city_candidate_boundaries": len(candidates),

@@ -8,7 +8,7 @@ import math
 import sqlite3
 from typing import Dict, List, Optional, Tuple
 
-CITY_BOUNDARY_PRIORITY = {8: 0, 6: 1}
+CITY_BOUNDARY_PRIORITY = {9: 0, 8: 1, 6: 2}
 PLACE_RANK = {"city": 0, "town": 1, "village": 2, "hamlet": 3}
 PRIMARY_PLACE_MAX_RANK = 1
 NEAREST_PLACE_FALLBACK_MAX_DISTANCE_M = 5000.0
@@ -126,6 +126,37 @@ def _select_nearest_place_fallback(
     return sorted(within_threshold, key=lambda record: (record[0], record[1], record[2]))[0]
 
 
+def _same_admin_name(lhs: str, rhs: str) -> bool:
+    return lhs.strip().casefold() == rhs.strip().casefold()
+
+
+def _format_admin_city_name(
+    boundaries: List[Tuple[int, Optional[str], float]],
+) -> Tuple[Optional[str], Optional[int]]:
+    normalized: List[Tuple[int, str, float]] = []
+    for admin_level, name, bbox_area in boundaries:
+        if name is None:
+            continue
+        trimmed = name.strip()
+        if not trimmed:
+            continue
+        normalized.append((admin_level, trimmed, bbox_area))
+    if not normalized:
+        return None, None
+    normalized.sort(key=lambda record: (CITY_BOUNDARY_PRIORITY.get(record[0], 99), record[2], record[1]))
+    best_level, best_name, _ = normalized[0]
+    if best_level == 9:
+        parents = [
+            candidate
+            for candidate in normalized
+            if candidate[0] == 8 and not _same_admin_name(candidate[1], best_name)
+        ]
+        if parents:
+            parents.sort(key=lambda record: (record[2], record[1]))
+            return f"{best_name} ({parents[0][1]})", best_level
+    return best_name, best_level
+
+
 def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit_rows: int = 2048) -> Dict[str, object]:
     has_boundary_tables = all(
         table_exists(conn, table_name)
@@ -162,7 +193,7 @@ def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit
         JOIN city_boundary b ON b.row_id = r.row_id
         WHERE r.min_lon <= ? AND r.max_lon >= ?
           AND r.min_lat <= ? AND r.max_lat >= ?
-          AND b.admin_level IN (6, 8)
+          AND b.admin_level IN (6, 8, 9)
         LIMIT ?
         """,
         (lon, lon, lat, lat, limit_rows),
@@ -178,11 +209,10 @@ def resolve_city_context(conn: sqlite3.Connection, lat: float, lon: float, limit
             containing.append((admin_level, name, bbox_area))
 
     if containing:
-        containing.sort(key=lambda record: (CITY_BOUNDARY_PRIORITY.get(record[0], 99), record[2], (record[1] or "~")))
-        best_level, best_name, _ = containing[0]
+        city_name, best_level = _format_admin_city_name(containing)
         return {
             "inside_city": True,
-            "city_name": best_name,
+            "city_name": city_name,
             "city_admin_level": best_level,
             "city_source": "admin_polygon",
             "city_candidate_boundaries": len(candidates),

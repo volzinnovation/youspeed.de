@@ -9,6 +9,7 @@ __pycache__/
 *.py[cod]
 
 # Local build/runtime outputs
+.codex-tmp/
 .tmp/
 tmp/
 *.tmp
@@ -66,6 +67,7 @@ paper/techreport/*.fls
 paper/techreport/*.log
 paper/techreport/*.out
 paper/techreport/*.synctex.gz
+paper/techreport/rendered/
 paper/techreport/data/.device_benchmark_report*.swp
 paper/techreport/tmp/
 

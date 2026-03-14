@@ -14,6 +14,8 @@ struct DriveLogReplayMetrics {
     var unchangedExampleCount = 0
     var unchangedCorrectCount = 0
     var usedThreeWayGateCount = 0
+    var usedSameRefBounceGateCount = 0
+    var usedAntiABAHysteresisCount = 0
 
     var accuracy: Double {
         guard pseudoLabelExampleCount > 0 else {
@@ -45,6 +47,8 @@ struct DriveLogReplayMetrics {
         unchangedExampleCount += other.unchangedExampleCount
         unchangedCorrectCount += other.unchangedCorrectCount
         usedThreeWayGateCount += other.usedThreeWayGateCount
+        usedSameRefBounceGateCount += other.usedSameRefBounceGateCount
+        usedAntiABAHysteresisCount += other.usedAntiABAHysteresisCount
     }
 }
 
@@ -378,6 +382,8 @@ struct ProfileSummary: Codable {
     let changedRecall: Double
     let unchangedAccuracy: Double
     let usedThreeWayGateCount: Int
+    let usedSameRefBounceGateCount: Int
+    let usedAntiABAHysteresisCount: Int
     let geomLogAgreement: Double
     let geomReplayTunnel: Int
     let geomWayABA: Int
@@ -391,6 +397,25 @@ struct ProfileSummary: Codable {
     let selectedTunnel: Int
     let accuracyComposite: Double
     let commonScore: Double
+}
+
+struct ProfileDeltaSummary: Codable {
+    let label: String
+    let correctedExamples: Int
+    let regressedExamples: Int
+    let netCorrections: Int
+    let correctedChangedExamples: Int
+    let regressedChangedExamples: Int
+    let netChangedCorrections: Int
+    let correctedUnchangedExamples: Int
+    let regressedUnchangedExamples: Int
+    let netUnchangedCorrections: Int
+    let geomWayABADelta: Int
+    let geomSameRefABADelta: Int
+    let accuracyDelta: Double
+    let changedRecallDelta: Double
+    let unchangedAccuracyDelta: Double
+    let commonScoreDelta: Double
 }
 
 struct RuntimeReplayMacros: Codable {
@@ -413,6 +438,7 @@ struct MetricsOutput: Codable {
     let fieldReplay: FieldReplaySummary
     let geomReplay: GeomReplaySummary
     let profiles: [ProfileSummary]
+    let profileDeltas: [ProfileDeltaSummary]
     let runtimeReplayMacros: RuntimeReplayMacros
 }
 
@@ -525,21 +551,47 @@ func inspectorLogURLs(repoRoot: URL) throws -> [URL] {
     if urls.isEmpty {
         throw ArgumentError.message("No drive match logs found in \(logsDirectory.path)")
     }
-    return urls
+    let filtered = try urls.filter(logContainsFixID(_:))
+    if filtered.isEmpty {
+        throw ArgumentError.message("No drive match logs with fixID found in \(logsDirectory.path)")
+    }
+    return filtered
 }
 
 func geomLogURLs(repoRoot: URL) throws -> [URL] {
-    let logsDirectory = repoRoot
+    let logsRoot = repoRoot
         .appendingPathComponent("inspector", isDirectory: true)
         .appendingPathComponent("logs", isDirectory: true)
-        .appendingPathComponent("geom", isDirectory: true)
-    let urls = try FileManager.default.contentsOfDirectory(at: logsDirectory, includingPropertiesForKeys: nil)
-        .filter { $0.lastPathComponent.contains("drive_match_log") && $0.pathExtension == "ndjson" }
-        .sorted { $0.lastPathComponent < $1.lastPathComponent }
-    if urls.isEmpty {
-        throw ArgumentError.message("No geom drive match logs found in \(logsDirectory.path)")
+    let candidateDirectories = [
+        logsRoot.appendingPathComponent("geom", isDirectory: true),
+        logsRoot.appendingPathComponent("replay_debug", isDirectory: true)
+            .appendingPathComponent("geom", isDirectory: true),
+    ]
+    for logsDirectory in candidateDirectories where FileManager.default.fileExists(atPath: logsDirectory.path) {
+        let urls = try FileManager.default.contentsOfDirectory(at: logsDirectory, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.contains("drive_match_log") && $0.pathExtension == "ndjson" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        if !urls.isEmpty {
+            let filtered = try urls.filter(logContainsFixID(_:))
+            if !filtered.isEmpty {
+                return filtered
+            }
+        }
     }
-    return urls
+    throw ArgumentError.message(
+        "No geom drive match logs found in \(candidateDirectories.map(\.path).joined(separator: ", "))"
+    )
+}
+
+func logContainsFixID(_ url: URL) throws -> Bool {
+    let content = try String(contentsOf: url, encoding: .utf8)
+    for line in content.split(whereSeparator: \.isNewline) {
+        let payload = try JSONSerialization.jsonObject(with: Data(line.utf8))
+        if let dictionary = payload as? [String: Any] {
+            return dictionary["fixID"] != nil
+        }
+    }
+    return false
 }
 
 func inspectorLogsRoot(repoRoot: URL) -> URL {
@@ -1166,16 +1218,32 @@ func profileSummaries(
     logURLs: [URL],
     geomLogURLs: [URL],
     track: [TrackPoint]
-) throws -> [ProfileSummary] {
+) throws -> (profiles: [ProfileSummary], deltas: [ProfileDeltaSummary]) {
     let focusWayID = "313127285"
 
-    func runAggregateReplay(service: V3SpeedLimitService) throws -> (metrics: DriveLogReplayMetrics, focusReplayCandidate: Int, focusReplaySelected: Int, focusReplayCandidateOutsideLog3: Int, focusReplaySelectedOutsideLog3: Int, selectedTunnel: Int) {
+    struct ReplayExampleOutcome {
+        let isChangedExample: Bool
+        let predictedMatches: Bool
+    }
+
+    struct AggregateReplaySummary {
+        let metrics: DriveLogReplayMetrics
+        let focusReplayCandidate: Int
+        let focusReplaySelected: Int
+        let focusReplayCandidateOutsideLog3: Int
+        let focusReplaySelectedOutsideLog3: Int
+        let selectedTunnel: Int
+        let outcomes: [String: ReplayExampleOutcome]
+    }
+
+    func runAggregateReplay(service: V3SpeedLimitService) throws -> AggregateReplaySummary {
         var aggregate = DriveLogReplayMetrics()
         var focusReplayCandidate = 0
         var focusReplaySelected = 0
         var focusReplayCandidateOutsideLog3 = 0
         var focusReplaySelectedOutsideLog3 = 0
         var selectedTunnel = 0
+        var outcomes: [String: ReplayExampleOutcome] = [:]
 
         for logURL in logURLs {
             let entries = try loadDriveMatchLogEntries(url: logURL)
@@ -1199,6 +1267,12 @@ func profileSummaries(
                 if result.selectionTrace.contains(where: { $0.step == "three_way_gate" }) {
                     aggregate.usedThreeWayGateCount += 1
                 }
+                if result.selectionTrace.contains(where: { $0.step == "same_ref_bounce_gate" }) {
+                    aggregate.usedSameRefBounceGateCount += 1
+                }
+                if result.selectionTrace.contains(where: { $0.step == "anti_aba_hysteresis" }) {
+                    aggregate.usedAntiABAHysteresisCount += 1
+                }
                 if let pseudoLabelWayID = hindsightPseudoLabelWayID(in: entries, at: index) {
                     let selectedWayID = entry.result?.wayID
                     let predictedMatches = result.wayID == pseudoLabelWayID
@@ -1212,6 +1286,10 @@ func profileSummaries(
                         aggregate.unchangedExampleCount += 1
                         aggregate.unchangedCorrectCount += predictedMatches ? 1 : 0
                     }
+                    outcomes["\(logURL.lastPathComponent)#\(entry.fixID)"] = ReplayExampleOutcome(
+                        isChangedExample: isChangedExample,
+                        predictedMatches: predictedMatches
+                    )
                 }
 
                 if result.candidateTraces.contains(where: { $0.wayID == focusWayID }) {
@@ -1240,13 +1318,14 @@ func profileSummaries(
             }
         }
 
-        return (
+        return AggregateReplaySummary(
             metrics: aggregate,
             focusReplayCandidate: focusReplayCandidate,
             focusReplaySelected: focusReplaySelected,
             focusReplayCandidateOutsideLog3: focusReplayCandidateOutsideLog3,
             focusReplaySelectedOutsideLog3: focusReplaySelectedOutsideLog3,
-            selectedTunnel: selectedTunnel
+            selectedTunnel: selectedTunnel,
+            outcomes: outcomes
         )
     }
 
@@ -1352,6 +1431,7 @@ func profileSummaries(
         let focusReplayCandidateOutsideLog3: Int
         let focusReplaySelectedOutsideLog3: Int
         let selectedTunnel: Int
+        let replayOutcomes: [String: ReplayExampleOutcome]
 
         var accuracyComposite: Double {
             (0.50 * replay.accuracy) + (0.25 * replay.changedRecall) + (0.25 * replay.unchangedAccuracy)
@@ -1377,25 +1457,100 @@ func profileSummaries(
             focusReplaySelected: replay.focusReplaySelected,
             focusReplayCandidateOutsideLog3: replay.focusReplayCandidateOutsideLog3,
             focusReplaySelectedOutsideLog3: replay.focusReplaySelectedOutsideLog3,
-            selectedTunnel: replay.selectedTunnel
+            selectedTunnel: replay.selectedTunnel,
+            replayOutcomes: replay.outcomes
+        )
+    }
+
+    func commonScore(for profile: IntermediateProfile, bestLatencyP95: Double, minBytes: UInt64) -> Double {
+        let latencyScore = bestLatencyP95 > 0 ? bestLatencyP95 / profile.latencyServiceP95 : 0.0
+        let sizeScore = profile.bytes > 0 ? Double(minBytes) / Double(profile.bytes) : 0.0
+        return 100.0 * (
+            (0.70 * profile.accuracyComposite) +
+            (0.20 * latencyScore) +
+            (0.10 * sizeScore)
+        )
+    }
+
+    func deltaSummary(
+        from base: IntermediateProfile,
+        to candidate: IntermediateProfile,
+        bestLatencyP95: Double,
+        minBytes: UInt64
+    ) -> ProfileDeltaSummary {
+        var correctedExamples = 0
+        var regressedExamples = 0
+        var correctedChangedExamples = 0
+        var regressedChangedExamples = 0
+        var correctedUnchangedExamples = 0
+        var regressedUnchangedExamples = 0
+
+        for key in base.replayOutcomes.keys.sorted() {
+            guard let baseOutcome = base.replayOutcomes[key],
+                  let candidateOutcome = candidate.replayOutcomes[key] else {
+                continue
+            }
+            if !baseOutcome.predictedMatches && candidateOutcome.predictedMatches {
+                correctedExamples += 1
+                if baseOutcome.isChangedExample {
+                    correctedChangedExamples += 1
+                } else {
+                    correctedUnchangedExamples += 1
+                }
+            } else if baseOutcome.predictedMatches && !candidateOutcome.predictedMatches {
+                regressedExamples += 1
+                if baseOutcome.isChangedExample {
+                    regressedChangedExamples += 1
+                } else {
+                    regressedUnchangedExamples += 1
+                }
+            }
+        }
+
+        return ProfileDeltaSummary(
+            label: candidate.label,
+            correctedExamples: correctedExamples,
+            regressedExamples: regressedExamples,
+            netCorrections: correctedExamples - regressedExamples,
+            correctedChangedExamples: correctedChangedExamples,
+            regressedChangedExamples: regressedChangedExamples,
+            netChangedCorrections: correctedChangedExamples - regressedChangedExamples,
+            correctedUnchangedExamples: correctedUnchangedExamples,
+            regressedUnchangedExamples: regressedUnchangedExamples,
+            netUnchangedCorrections: correctedUnchangedExamples - regressedUnchangedExamples,
+            geomWayABADelta: candidate.geomWayABA - base.geomWayABA,
+            geomSameRefABADelta: candidate.geomSameRefABA - base.geomSameRefABA,
+            accuracyDelta: candidate.replay.accuracy - base.replay.accuracy,
+            changedRecallDelta: candidate.replay.changedRecall - base.replay.changedRecall,
+            unchangedAccuracyDelta: candidate.replay.unchangedAccuracy - base.replay.unchangedAccuracy,
+            commonScoreDelta: commonScore(for: candidate, bestLatencyP95: bestLatencyP95, minBytes: minBytes) -
+                commonScore(for: base, bestLatencyP95: bestLatencyP95, minBytes: minBytes)
         )
     }
 
     let intermediates = [
         try summarize(label: "baseline", dbURL: baselineDB, model: .connectedBaseline),
+        try summarize(label: "simple_speed_ref", dbURL: baselineDB, model: .simpleSpeedRefHeuristic),
+        try summarize(
+            label: "simple_speed_ref_connected",
+            dbURL: baselineDB,
+            model: .simpleSpeedRefConnectedHeuristic
+        ),
+        try summarize(label: "corridor_raw_mini_hmm", dbURL: corridorDB, model: .corridorHMMRawMiniHMM),
+        try summarize(label: "corridor_no_three_way", dbURL: corridorDB, model: .corridorHMMNoThreeWayGate),
+        try summarize(label: "corridor_no_same_ref_bounce", dbURL: corridorDB, model: .corridorHMMNoSameRefBounceGate),
+        try summarize(label: "corridor_anti_aba", dbURL: corridorDB, model: .corridorHMMAntiABAHysteresis),
         try summarize(label: "corridor", dbURL: corridorDB, model: .corridorHMM),
     ]
     let bestLatencyP95 = intermediates.map(\.latencyServiceP95).min() ?? 1.0
     let minBytes = intermediates.map(\.bytes).min() ?? 1
+    guard let corridor = intermediates.first(where: { $0.label == "corridor" }) else {
+        throw ArgumentError.message("Missing corridor profile in replay summary")
+    }
+    let corridorReplayKeys = Set(corridor.replayOutcomes.keys)
 
-    return intermediates.map { profile in
-        let latencyScore = bestLatencyP95 > 0 ? bestLatencyP95 / profile.latencyServiceP95 : 0.0
-        let sizeScore = profile.bytes > 0 ? Double(minBytes) / Double(profile.bytes) : 0.0
-        let commonScore = 100.0 * (
-            (0.70 * profile.accuracyComposite) +
-            (0.20 * latencyScore) +
-            (0.10 * sizeScore)
-        )
+    let profiles = intermediates.map { profile in
+        precondition(Set(profile.replayOutcomes.keys) == corridorReplayKeys)
         return ProfileSummary(
             label: profile.label,
             bytes: profile.bytes,
@@ -1406,6 +1561,8 @@ func profileSummaries(
             changedRecall: profile.replay.changedRecall,
             unchangedAccuracy: profile.replay.unchangedAccuracy,
             usedThreeWayGateCount: profile.replay.usedThreeWayGateCount,
+            usedSameRefBounceGateCount: profile.replay.usedSameRefBounceGateCount,
+            usedAntiABAHysteresisCount: profile.replay.usedAntiABAHysteresisCount,
             geomLogAgreement: profile.geomLogAgreement,
             geomReplayTunnel: profile.geomReplayTunnel,
             geomWayABA: profile.geomWayABA,
@@ -1418,9 +1575,24 @@ func profileSummaries(
             focusReplaySelectedOutsideLog3: profile.focusReplaySelectedOutsideLog3,
             selectedTunnel: profile.selectedTunnel,
             accuracyComposite: profile.accuracyComposite,
-            commonScore: commonScore
+            commonScore: commonScore(for: profile, bestLatencyP95: bestLatencyP95, minBytes: minBytes)
         )
     }
+
+    let deltas = [
+        "simple_speed_ref",
+        "simple_speed_ref_connected",
+        "corridor_no_three_way",
+        "corridor_no_same_ref_bounce",
+        "corridor_anti_aba",
+    ]
+        .compactMap { label in
+            intermediates.first(where: { $0.label == label }).map {
+                deltaSummary(from: corridor, to: $0, bestLatencyP95: bestLatencyP95, minBytes: minBytes)
+            }
+        }
+
+    return (profiles: profiles, deltas: deltas)
 }
 
 @main
@@ -1451,13 +1623,15 @@ enum Main {
             logsRoot: logsRoot,
             annotatedLogRoot: args.annotatedLogDir
         )
-        let profiles = try profileSummaries(
+        let profileBenchmark = try profileSummaries(
             baselineDB: args.baselineDB,
             corridorDB: args.corridorDB,
             logURLs: logs,
             geomLogURLs: geomLogs,
             track: replayTrack
         )
+        let profiles = profileBenchmark.profiles
+        let profileDeltas = profileBenchmark.deltas
 
         guard let corridor = profiles.first(where: { $0.label == "corridor" }) else {
             throw ArgumentError.message("Missing corridor profile in replay summary")
@@ -1472,6 +1646,7 @@ enum Main {
             fieldReplay: fieldReplay,
             geomReplay: geomReplay,
             profiles: profiles,
+            profileDeltas: profileDeltas,
             runtimeReplayMacros: RuntimeReplayMacros(
                 replayAllLogs: logs.count,
                 replayAllLogFixes: corridor.replayedFixCount,

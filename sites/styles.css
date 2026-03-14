@@ -317,25 +317,6 @@ ol {
   justify-content: center;
   gap: 0.75rem;
 }
-.launch-scope {
-  margin-top: 1.6rem;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-}
-.launch-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.72rem 1rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f2f2f3;
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -530,10 +511,6 @@ section {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-}
-.cta-note {
-  max-width: 46rem;
-  margin: 0 auto;
 }
 .btn-lg {
   padding: 1rem 2rem;

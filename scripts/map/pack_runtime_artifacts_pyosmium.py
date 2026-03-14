@@ -242,7 +242,7 @@ class ArtifactHandler(osmium.SimpleHandler):
             self.ways_geom_file.write("\n")
             self.ways_count += 1
 
-        if tags.get("boundary") == "administrative" and tags.get("admin_level") in {"6", "8"} and bbox is not None:
+        if tags.get("boundary") == "administrative" and tags.get("admin_level") in {"6", "8", "9"} and bbox is not None:
             min_lon, min_lat, max_lon, max_lat = bbox
             area_points = None
             if _is_closed_ring(coords):

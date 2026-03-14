@@ -36,6 +36,8 @@ class CandidateTrace:
     street_name: str | None
     street_ref: str | None
     tunnel_selectable: bool | None
+    corridor_selectable: bool | None
+    portal_eligible: bool | None
     is_selected: bool | None
 
 
@@ -57,6 +59,7 @@ class LogRow:
     heuristic_way_id: str | None
     mini_hmm_way_id: str | None
     final_way_id: str | None
+    selection_trace: list[dict[str, Any]]
     candidate_traces: list[CandidateTrace]
 
     @property
@@ -119,6 +122,8 @@ def load_rows(path: Path) -> list[LogRow]:
                     street_name=candidate.get("streetName"),
                     street_ref=candidate.get("streetRef"),
                     tunnel_selectable=candidate.get("tunnelSelectable"),
+                    corridor_selectable=candidate.get("corridorSelectable"),
+                    portal_eligible=candidate.get("portalEligible"),
                     is_selected=candidate.get("isSelected"),
                 )
                 for candidate in (result.get("candidateTraces") or [])
@@ -140,6 +145,7 @@ def load_rows(path: Path) -> list[LogRow]:
                 heuristic_way_id=heuristic_way_id,
                 mini_hmm_way_id=mini_hmm_way_id,
                 final_way_id=final_way_id,
+                selection_trace=selection_trace,
                 candidate_traces=candidates,
             )
             rows.append(row)
@@ -247,6 +253,8 @@ def derive_pseudo_labels(
             "mini_hmm_way_id": row.mini_hmm_way_id,
             "final_way_id": row.final_way_id,
             "used_mini_hmm": row.used_mini_hmm,
+            "selection_trace": row.selection_trace,
+            "selection_steps": [step.get("step") for step in row.selection_trace if step.get("step")],
             "candidate_count": len(row.candidate_traces),
             "top2_margin": row.top2_margin,
             "selected_rank": current_rank,
@@ -265,6 +273,8 @@ def derive_pseudo_labels(
                     "street_name": candidate.street_name,
                     "street_ref": candidate.street_ref,
                     "tunnel_selectable": candidate.tunnel_selectable,
+                    "corridor_selectable": candidate.corridor_selectable,
+                    "portal_eligible": candidate.portal_eligible,
                     "is_current_selected": candidate.way_id == row.selected_way_id,
                     "is_pseudo_label": candidate.way_id == majority_way_id,
                 }

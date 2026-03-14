@@ -861,8 +861,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-city-ring-points", type=int, default=96, help="Maximum retained points per city boundary ring")
     parser.add_argument(
         "--city-admin-levels",
-        default="6,8",
-        help="Comma-separated admin levels used for primary municipal city labels (default: 6,8)",
+        default="6,8,9",
+        help="Comma-separated admin levels used for primary municipal city labels (default: 6,8,9)",
     )
     parser.add_argument(
         "--build-way-links",
