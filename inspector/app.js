@@ -2,6 +2,7 @@ const statusEl = document.getElementById("status");
 const coordValueEl = document.getElementById("coord-value");
 const wayValueEl = document.getElementById("way-value");
 const streetValueEl = document.getElementById("street-value");
+const adminValueEl = document.getElementById("admin-value");
 const bundleValueEl = document.getElementById("bundle-value");
 
 const dbURLInput = document.getElementById("db-url-input");
@@ -22,6 +23,7 @@ const traceDebugEl = document.getElementById("trace-debug");
 const selectionTraceEl = document.getElementById("selection-trace");
 const candidateTraceEl = document.getElementById("candidate-trace");
 const rawEntryEl = document.getElementById("raw-entry");
+const adminBoundaryLegendEl = document.getElementById("admin-boundary-legend");
 
 const defaultDriveLogURL = "./drive_match_log.ndjson";
 
@@ -35,20 +37,52 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
+map.createPane("adminBoundaryPane");
+map.getPane("adminBoundaryPane").style.zIndex = "340";
+map.getPane("adminBoundaryPane").style.pointerEvents = "none";
+
+map.createPane("adminLabelPane");
+map.getPane("adminLabelPane").style.zIndex = "640";
+map.getPane("adminLabelPane").style.pointerEvents = "none";
+
 let locationMarker = null;
 let wayLayers = [];
 let drivePathLayer = null;
 let selectedFixMarker = null;
+let adminBoundaryLayers = [];
+let adminBoundaryLabelLayers = [];
 let sqlModulePromise = null;
 let sqlDatabase = null;
 let loadedDriveLogEntries = [];
 let selectedDriveLogIndex = -1;
+let availableTables = new Set();
+let selectedAdminBoundaryLevelFilter = "all";
 
 const replayWayColors = {
   logged: "#00e4ff",
   replay: "#ffb454",
   replayError: "#ff6a6a",
   hindsight: "#7fda8b"
+};
+
+const adminBoundaryLimit = 160;
+const adminBoundaryStyles = {
+  6: {
+    color: "#ff3b30",
+    label: "admin_level=6"
+  },
+  8: {
+    color: "#ff6a5f",
+    label: "admin_level=8"
+  },
+  9: {
+    color: "#ff9a94",
+    label: "admin_level=9"
+  },
+  other: {
+    color: "#ffc0bb",
+    label: "admin_level=other"
+  }
 };
 
 function setStatus(message, isError = false) {
@@ -67,6 +101,13 @@ function setBundleValue(value) {
 function setStreetAndWay(street, wayID) {
   streetValueEl.textContent = street ?? "n/a";
   wayValueEl.textContent = wayID != null ? String(wayID) : "n/a";
+}
+
+function setAdminValue(value) {
+  if (!adminValueEl) {
+    return;
+  }
+  adminValueEl.textContent = value ?? "n/a";
 }
 
 function normalizeWayID(rawValue) {
@@ -317,6 +358,54 @@ function closeCurrentDatabase() {
     sqlDatabase.close();
   }
   sqlDatabase = null;
+  availableTables = new Set();
+  clearAdminBoundaryLayers();
+  setAdminValue(null);
+}
+
+function renderAdminBoundaryLegend() {
+  if (!adminBoundaryLegendEl) {
+    return;
+  }
+
+  const entries = [
+    {
+      key: "all",
+      color: "#f2f5ff",
+      label: "alle Levels",
+      description: "zeigt alle administrativen Grenzen"
+    },
+    ...[6, 8, 9, "other"].map((level) => ({
+      key: String(level),
+      color: adminBoundaryStyles[level].color,
+      label: adminBoundaryStyles[level].label,
+      description: level === "other" ? "sonstige administrative Grenzen" : "administrative Grenze"
+    }))
+  ];
+
+  const items = entries
+    .map((level) => {
+      const isActive = String(selectedAdminBoundaryLevelFilter) === String(level.key);
+      return `
+        <button
+          type="button"
+          class="map-legend-row map-legend-filter${isActive ? " active" : ""}"
+          data-admin-level-filter="${escapeHTML(level.key)}"
+        >
+          <span class="map-legend-swatch" style="--legend-color:${escapeHTML(level.color)}"></span>
+          <div class="map-legend-copy">
+            <strong>${escapeHTML(level.label)}</strong>
+            <span>${escapeHTML(level.description)}</span>
+          </div>
+        </button>
+      `;
+    })
+    .join("");
+
+  adminBoundaryLegendEl.innerHTML = `
+    <div class="map-legend-title">Admin-Grenzen</div>
+    <div class="map-legend-list">${items}</div>
+  `;
 }
 
 function executeRows(sql, params = []) {
@@ -346,10 +435,51 @@ function querySingleValue(sql, params = []) {
   return keys.length ? first[keys[0]] : null;
 }
 
-function validateRequiredTables() {
-  const tables = new Set(
+function refreshAvailableTables() {
+  availableTables = new Set(
     executeRows("SELECT name FROM sqlite_master WHERE type='table'").map((row) => String(row.name || ""))
   );
+  return availableTables;
+}
+
+function tableExists(name) {
+  return availableTables.has(name);
+}
+
+function normalizeAdminLevelTag(adminLevel) {
+  const numeric = finiteNumber(adminLevel);
+  if (numeric != null) {
+    return Math.round(numeric);
+  }
+  const text = safeString(adminLevel);
+  if (!text) {
+    return "other";
+  }
+  const parsed = Number.parseInt(text, 10);
+  return Number.isFinite(parsed) ? parsed : "other";
+}
+
+function adminBoundaryStyleForLevel(adminLevel) {
+  const normalized = normalizeAdminLevelTag(adminLevel);
+  return {
+    key: Object.prototype.hasOwnProperty.call(adminBoundaryStyles, normalized) ? normalized : "other",
+    ...(adminBoundaryStyles[normalized] ?? adminBoundaryStyles.other)
+  };
+}
+
+function adminBoundaryMatchesCurrentFilter(feature) {
+  if (selectedAdminBoundaryLevelFilter === "all") {
+    return true;
+  }
+  return String(adminBoundaryStyleForLevel(feature?.adminLevel).key) === String(selectedAdminBoundaryLevelFilter);
+}
+
+function filteredAdminBoundaries(features) {
+  return (Array.isArray(features) ? features : []).filter((feature) => adminBoundaryMatchesCurrentFilter(feature));
+}
+
+function validateRequiredTables() {
+  const tables = refreshAvailableTables();
   const required = ["ways", "way_geom"];
   const missing = required.filter((name) => !tables.has(name));
   if (missing.length) {
@@ -375,6 +505,8 @@ async function loadDatabaseFromBytes(bytes, sourceLabel) {
   }
   const suffix = suffixParts.length ? ` (${suffixParts.join(", ")})` : "";
   setBundleValue(`${sourceLabel}${suffix}`);
+  refreshAdminBoundaryOverlay();
+  refreshCrosshairAdminContainment();
 
   if (selectedDriveLogIndex >= 0) {
     renderSelectedDriveLogEntry({ focusMap: false });
@@ -1143,6 +1275,14 @@ function requireDatabase() {
 }
 
 function parseWayPoints(rawJSON) {
+  return parseCoordinatePairs(rawJSON, 0, 1);
+}
+
+function parsePolygonRingPoints(rawJSON) {
+  return parseCoordinatePairs(rawJSON, 1, 0);
+}
+
+function parseCoordinatePairs(rawJSON, latIndex, lonIndex) {
   const raw = safeString(rawJSON);
   if (!raw) {
     return [];
@@ -1154,11 +1294,208 @@ function parseWayPoints(rawJSON) {
     }
     return parsed
       .filter((entry) => Array.isArray(entry) && entry.length >= 2)
-      .map((entry) => [Number(entry[0]), Number(entry[1])])
+      .map((entry) => [Number(entry[latIndex]), Number(entry[lonIndex])])
       .filter((pair) => Number.isFinite(pair[0]) && Number.isFinite(pair[1]));
   } catch {
     return [];
   }
+}
+
+function pointsEqual(left, right, tolerance = 1e-9) {
+  return Math.abs(left[0] - right[0]) <= tolerance && Math.abs(left[1] - right[1]) <= tolerance;
+}
+
+function normalizeRingPoints(points) {
+  if (!Array.isArray(points) || !points.length) {
+    return [];
+  }
+  if (points.length > 1 && pointsEqual(points[0], points[points.length - 1])) {
+    return points.slice(0, -1);
+  }
+  return points.slice();
+}
+
+function closeRingPoints(points) {
+  const normalized = normalizeRingPoints(points);
+  if (normalized.length < 2) {
+    return normalized;
+  }
+  return [...normalized, normalized[0]];
+}
+
+function ringSignedArea(points) {
+  const ring = normalizeRingPoints(points);
+  if (ring.length < 3) {
+    return 0;
+  }
+  let doubleArea = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const [lat1, lon1] = ring[i];
+    const [lat2, lon2] = ring[(i + 1) % ring.length];
+    doubleArea += lon1 * lat2 - lon2 * lat1;
+  }
+  return doubleArea / 2;
+}
+
+function ringCentroid(points) {
+  const ring = normalizeRingPoints(points);
+  if (ring.length < 3) {
+    return null;
+  }
+  let doubleArea = 0;
+  let centroidLon = 0;
+  let centroidLat = 0;
+
+  for (let i = 0; i < ring.length; i += 1) {
+    const [lat1, lon1] = ring[i];
+    const [lat2, lon2] = ring[(i + 1) % ring.length];
+    const cross = lon1 * lat2 - lon2 * lat1;
+    doubleArea += cross;
+    centroidLon += (lon1 + lon2) * cross;
+    centroidLat += (lat1 + lat2) * cross;
+  }
+
+  if (Math.abs(doubleArea) < 1e-12) {
+    return null;
+  }
+
+  return [centroidLat / (3 * doubleArea), centroidLon / (3 * doubleArea)];
+}
+
+function bboxCenter(minLon, minLat, maxLon, maxLat) {
+  return [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+}
+
+function featureCentroid(feature) {
+  const outerRings = (feature?.rings ?? []).filter((ring) => !ring.isHole && ring.points.length >= 3);
+  let bestRing = null;
+  let bestArea = 0;
+
+  for (const ring of outerRings) {
+    const area = Math.abs(ringSignedArea(ring.points));
+    if (!bestRing || area > bestArea) {
+      bestRing = ring;
+      bestArea = area;
+    }
+  }
+
+  if (bestRing) {
+    return ringCentroid(bestRing.points) ?? bboxCenter(feature.minLon, feature.minLat, feature.maxLon, feature.maxLat);
+  }
+  return bboxCenter(feature.minLon, feature.minLat, feature.maxLon, feature.maxLat);
+}
+
+function pointOnSegment(lat, lon, lat1, lon1, lat2, lon2, epsilon = 1e-10) {
+  const cross = (lon - lon1) * (lat2 - lat1) - (lat - lat1) * (lon2 - lon1);
+  if (Math.abs(cross) > epsilon) {
+    return false;
+  }
+  const dot = (lon - lon1) * (lon2 - lon1) + (lat - lat1) * (lat2 - lat1);
+  if (dot < -epsilon) {
+    return false;
+  }
+  const squaredLength = (lon2 - lon1) ** 2 + (lat2 - lat1) ** 2;
+  return dot - squaredLength <= epsilon;
+}
+
+function pointInRing(lat, lon, points) {
+  const ring = normalizeRingPoints(points);
+  if (ring.length < 3) {
+    return false;
+  }
+
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [lat1, lon1] = ring[i];
+    const [lat2, lon2] = ring[j];
+    if (pointOnSegment(lat, lon, lat1, lon1, lat2, lon2)) {
+      return true;
+    }
+
+    const intersects =
+      (lat1 > lat) !== (lat2 > lat) &&
+      lon < ((lon2 - lon1) * (lat - lat1)) / (lat2 - lat1) + lon1;
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function pointInFeature(lat, lon, feature) {
+  const groups = new Map();
+  for (const ring of feature?.rings ?? []) {
+    const key = ring.outerIndex ?? ring.ringIndex ?? 0;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        outers: [],
+        holes: []
+      };
+      groups.set(key, group);
+    }
+    if (ring.isHole) {
+      group.holes.push(ring);
+    } else {
+      group.outers.push(ring);
+    }
+  }
+
+  for (const group of groups.values()) {
+    const insideOuter = group.outers.some((ring) => pointInRing(lat, lon, ring.points));
+    if (!insideOuter) {
+      continue;
+    }
+    const insideHole = group.holes.some((ring) => pointInRing(lat, lon, ring.points));
+    if (!insideHole) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function visibleMapBounds(paddingFactor = 0.08) {
+  const bounds = map.getBounds();
+  if (!bounds.isValid()) {
+    return null;
+  }
+
+  const latSpan = bounds.getNorth() - bounds.getSouth();
+  const lonSpan = bounds.getEast() - bounds.getWest();
+  const latPad = latSpan * paddingFactor;
+  const lonPad = lonSpan * paddingFactor;
+
+  return {
+    minLon: bounds.getWest() - lonPad,
+    minLat: bounds.getSouth() - latPad,
+    maxLon: bounds.getEast() + lonPad,
+    maxLat: bounds.getNorth() + latPad
+  };
+}
+
+function compareAdminBoundaryMatches(left, right) {
+  const leftLevel = normalizeAdminLevelTag(left?.adminLevel);
+  const rightLevel = normalizeAdminLevelTag(right?.adminLevel);
+  const leftNumeric = typeof leftLevel === "number" ? leftLevel : Number.POSITIVE_INFINITY;
+  const rightNumeric = typeof rightLevel === "number" ? rightLevel : Number.POSITIVE_INFINITY;
+  if (leftNumeric !== rightNumeric) {
+    return leftNumeric - rightNumeric;
+  }
+  return String(left?.name ?? "").localeCompare(String(right?.name ?? ""), "de");
+}
+
+function formatAdminBoundaryMatch(feature) {
+  const style = adminBoundaryStyleForLevel(feature?.adminLevel);
+  const name = safeString(feature?.name) ?? `Grenze ${feature?.id ?? "?"}`;
+  return `${name} (${style.label})`;
+}
+
+function formatAdminBoundaryMatches(features) {
+  const filtered = filteredAdminBoundaries(features);
+  if (!filtered.length) {
+    return "keine";
+  }
+  return filtered.map((feature) => formatAdminBoundaryMatch(feature)).join(" · ");
 }
 
 function queryBounds(lat, lon, radiusM = 50) {
@@ -1244,6 +1581,306 @@ function clearWayLayers() {
     layer.remove();
   }
   wayLayers = [];
+}
+
+function clearAdminBoundaryLayers() {
+  for (const layer of adminBoundaryLayers) {
+    layer.remove();
+  }
+  for (const layer of adminBoundaryLabelLayers) {
+    layer.remove();
+  }
+  adminBoundaryLayers = [];
+  adminBoundaryLabelLayers = [];
+}
+
+function queryContainingAdminBoundaries(lat, lon, limit = 32) {
+  if (!sqlDatabase) {
+    return [];
+  }
+  if (tableExists("city_boundary") && tableExists("city_ring")) {
+    return queryContainingCityBoundaries(lat, lon, limit);
+  }
+  if (tableExists("areas")) {
+    return queryContainingAreaAdminBoundaries(lat, lon, limit);
+  }
+  return [];
+}
+
+function queryVisibleAdminBoundaries(bounds, limit = adminBoundaryLimit) {
+  if (!sqlDatabase || !bounds) {
+    return [];
+  }
+  if (tableExists("city_boundary") && tableExists("city_ring")) {
+    return queryVisibleCityBoundaries(bounds, limit);
+  }
+  if (tableExists("areas")) {
+    return queryVisibleAreaAdminBoundaries(bounds, limit);
+  }
+  return [];
+}
+
+function queryVisibleCityBoundaries(bounds, limit) {
+  const sql = `
+    WITH visible AS (
+      SELECT
+        row_id AS boundary_row_id,
+        name AS name,
+        admin_level AS admin_level,
+        min_lon AS min_lon,
+        min_lat AS min_lat,
+        max_lon AS max_lon,
+        max_lat AS max_lat
+      FROM city_boundary
+      WHERE min_lon <= ?1 AND max_lon >= ?2
+        AND min_lat <= ?3 AND max_lat >= ?4
+      ORDER BY admin_level ASC, boundary_row_id ASC
+      LIMIT ?5
+    )
+    SELECT
+      v.boundary_row_id AS boundary_row_id,
+      v.name AS name,
+      v.admin_level AS admin_level,
+      v.min_lon AS min_lon,
+      v.min_lat AS min_lat,
+      v.max_lon AS max_lon,
+      v.max_lat AS max_lat,
+      r.ring_index AS ring_index,
+      r.outer_index AS outer_index,
+      r.is_hole AS is_hole,
+      r.points_json AS points_json
+    FROM visible v
+    JOIN city_ring r ON r.boundary_row_id = v.boundary_row_id
+    ORDER BY v.admin_level ASC, v.boundary_row_id ASC, r.outer_index ASC, r.ring_index ASC
+  `;
+
+  const rows = executeRows(sql, [bounds.maxLon, bounds.minLon, bounds.maxLat, bounds.minLat, limit]);
+  const grouped = new Map();
+
+  for (const row of rows) {
+    const featureID = Number(row.boundary_row_id);
+    let feature = grouped.get(featureID);
+    if (!feature) {
+      feature = {
+        id: featureID,
+        name: safeString(row.name),
+        adminLevel: finiteNumber(row.admin_level) ?? safeString(row.admin_level),
+        minLon: Number(row.min_lon),
+        minLat: Number(row.min_lat),
+        maxLon: Number(row.max_lon),
+        maxLat: Number(row.max_lat),
+        rings: []
+      };
+      grouped.set(featureID, feature);
+    }
+
+    const points = parsePolygonRingPoints(row.points_json);
+    if (points.length >= 3) {
+      feature.rings.push({
+        ringIndex: finiteNumber(row.ring_index) ?? feature.rings.length,
+        outerIndex: finiteNumber(row.outer_index) ?? 0,
+        isHole: Number(row.is_hole) === 1,
+        points
+      });
+    }
+  }
+
+  return Array.from(grouped.values());
+}
+
+function queryContainingCityBoundaries(lat, lon, limit) {
+  const sql = `
+    WITH candidates AS (
+      SELECT
+        row_id AS boundary_row_id,
+        name AS name,
+        admin_level AS admin_level,
+        min_lon AS min_lon,
+        min_lat AS min_lat,
+        max_lon AS max_lon,
+        max_lat AS max_lat
+      FROM city_boundary
+      WHERE min_lon <= ?1 AND max_lon >= ?1
+        AND min_lat <= ?2 AND max_lat >= ?2
+      ORDER BY admin_level ASC, boundary_row_id ASC
+      LIMIT ?3
+    )
+    SELECT
+      c.boundary_row_id AS boundary_row_id,
+      c.name AS name,
+      c.admin_level AS admin_level,
+      c.min_lon AS min_lon,
+      c.min_lat AS min_lat,
+      c.max_lon AS max_lon,
+      c.max_lat AS max_lat,
+      r.ring_index AS ring_index,
+      r.outer_index AS outer_index,
+      r.is_hole AS is_hole,
+      r.points_json AS points_json
+    FROM candidates c
+    JOIN city_ring r ON r.boundary_row_id = c.boundary_row_id
+    ORDER BY c.admin_level ASC, c.boundary_row_id ASC, r.outer_index ASC, r.ring_index ASC
+  `;
+
+  const rows = executeRows(sql, [lon, lat, limit]);
+  const grouped = new Map();
+
+  for (const row of rows) {
+    const featureID = Number(row.boundary_row_id);
+    let feature = grouped.get(featureID);
+    if (!feature) {
+      feature = {
+        id: featureID,
+        name: safeString(row.name),
+        adminLevel: finiteNumber(row.admin_level) ?? safeString(row.admin_level),
+        minLon: Number(row.min_lon),
+        minLat: Number(row.min_lat),
+        maxLon: Number(row.max_lon),
+        maxLat: Number(row.max_lat),
+        rings: []
+      };
+      grouped.set(featureID, feature);
+    }
+
+    const points = parsePolygonRingPoints(row.points_json);
+    if (points.length >= 3) {
+      feature.rings.push({
+        ringIndex: finiteNumber(row.ring_index) ?? feature.rings.length,
+        outerIndex: finiteNumber(row.outer_index) ?? 0,
+        isHole: Number(row.is_hole) === 1,
+        points
+      });
+    }
+  }
+
+  return Array.from(grouped.values()).filter((feature) => pointInFeature(lat, lon, feature)).sort(compareAdminBoundaryMatches);
+}
+
+function queryVisibleAreaAdminBoundaries(bounds, limit) {
+  const sql = `
+    SELECT
+      row_id AS boundary_row_id,
+      name AS name,
+      admin_level AS admin_level,
+      min_lon AS min_lon,
+      min_lat AS min_lat,
+      max_lon AS max_lon,
+      max_lat AS max_lat,
+      points_json AS points_json
+    FROM areas
+    WHERE boundary = 'administrative'
+      AND COALESCE(admin_level, '') != ''
+      AND points_json IS NOT NULL
+      AND min_lon <= ?1 AND max_lon >= ?2
+      AND min_lat <= ?3 AND max_lat >= ?4
+    ORDER BY CAST(admin_level AS INTEGER) ASC, row_id ASC
+    LIMIT ?5
+  `;
+
+  return executeRows(sql, [bounds.maxLon, bounds.minLon, bounds.maxLat, bounds.minLat, limit])
+    .map((row) => {
+      const points = parsePolygonRingPoints(row.points_json);
+      return {
+        id: Number(row.boundary_row_id),
+        name: safeString(row.name),
+        adminLevel: finiteNumber(row.admin_level) ?? safeString(row.admin_level),
+        minLon: Number(row.min_lon),
+        minLat: Number(row.min_lat),
+        maxLon: Number(row.max_lon),
+        maxLat: Number(row.max_lat),
+        rings: points.length >= 3 ? [{ ringIndex: 0, outerIndex: 0, isHole: false, points }] : []
+      };
+    })
+    .filter((feature) => feature.rings.length);
+}
+
+function queryContainingAreaAdminBoundaries(lat, lon, limit) {
+  const sql = `
+    SELECT
+      row_id AS boundary_row_id,
+      name AS name,
+      admin_level AS admin_level,
+      min_lon AS min_lon,
+      min_lat AS min_lat,
+      max_lon AS max_lon,
+      max_lat AS max_lat,
+      points_json AS points_json
+    FROM areas
+    WHERE boundary = 'administrative'
+      AND COALESCE(admin_level, '') != ''
+      AND points_json IS NOT NULL
+      AND min_lon <= ?1 AND max_lon >= ?1
+      AND min_lat <= ?2 AND max_lat >= ?2
+    ORDER BY CAST(admin_level AS INTEGER) ASC, row_id ASC
+    LIMIT ?3
+  `;
+
+  return executeRows(sql, [lon, lat, limit])
+    .map((row) => {
+      const points = parsePolygonRingPoints(row.points_json);
+      return {
+        id: Number(row.boundary_row_id),
+        name: safeString(row.name),
+        adminLevel: finiteNumber(row.admin_level) ?? safeString(row.admin_level),
+        minLon: Number(row.min_lon),
+        minLat: Number(row.min_lat),
+        maxLon: Number(row.max_lon),
+        maxLat: Number(row.max_lat),
+        rings: points.length >= 3 ? [{ ringIndex: 0, outerIndex: 0, isHole: false, points }] : []
+      };
+    })
+    .filter((feature) => feature.rings.length && pointInFeature(lat, lon, feature))
+    .sort(compareAdminBoundaryMatches);
+}
+
+function refreshAdminBoundaryOverlay() {
+  clearAdminBoundaryLayers();
+  if (!sqlDatabase) {
+    return;
+  }
+
+  const bounds = visibleMapBounds();
+  const features = filteredAdminBoundaries(queryVisibleAdminBoundaries(bounds, adminBoundaryLimit));
+  for (const feature of features) {
+    const style = adminBoundaryStyleForLevel(feature.adminLevel);
+    for (const ring of feature.rings) {
+      const layer = L.polyline(closeRingPoints(ring.points), {
+        pane: "adminBoundaryPane",
+        color: style.color,
+        weight: 2.25,
+        opacity: 0.88,
+        interactive: false
+      }).addTo(map);
+      adminBoundaryLayers.push(layer);
+    }
+
+    const label = safeString(feature.name);
+    const centroid = featureCentroid(feature);
+    if (label && Array.isArray(centroid) && centroid.length === 2) {
+      const tooltip = L.tooltip({
+        pane: "adminLabelPane",
+        permanent: true,
+        direction: "center",
+        className: `admin-boundary-label-tooltip admin-boundary-label-level-${style.key}`,
+        opacity: 1
+      })
+        .setLatLng(centroid)
+        .setContent(escapeHTML(label))
+        .addTo(map);
+      adminBoundaryLabelLayers.push(tooltip);
+    }
+  }
+}
+
+function refreshCrosshairAdminContainment() {
+  if (!sqlDatabase) {
+    setAdminValue(null);
+    return [];
+  }
+  const center = map.getCenter();
+  const containing = queryContainingAdminBoundaries(center.lat, center.lng);
+  setAdminValue(formatAdminBoundaryMatches(containing));
+  return containing;
 }
 
 function drawWay(points) {
@@ -1490,13 +2127,15 @@ function identifyStreetUnderCrosshair() {
   }
 
   const center = map.getCenter();
+  const containingAdminBoundaries = refreshCrosshairAdminContainment();
+  const adminSummary = formatAdminBoundaryMatches(containingAdminBoundaries);
   setCoordinateValue(center.lat, center.lng);
   setStatus("Suche Straße unter Fadenkreuz ...");
 
   const best = queryBestWayAt(center.lat, center.lng, 50, 256);
   if (!best) {
     setStreetAndWay(null, null);
-    setStatus("Keine Straße im Suchradius gefunden.", true);
+    setStatus(`Keine Straße im Suchradius gefunden. Admin: ${adminSummary}.`, true);
     return;
   }
 
@@ -1510,7 +2149,7 @@ function identifyStreetUnderCrosshair() {
     map.fitBounds(wayLayers[0].getBounds(), { padding: [32, 32] });
   }
 
-  setStatus(`Identifiziert: ${street} (Way ${wayID}, ~${Math.round(best.distanceM)} m).`);
+  setStatus(`Identifiziert: ${street} (Way ${wayID}, ~${Math.round(best.distanceM)} m) · Admin: ${adminSummary}.`);
 }
 
 dbLoadBtn.addEventListener("click", loadDatabaseFromURL);
@@ -1551,11 +2190,28 @@ wayInput.addEventListener("keydown", (event) => {
     loadAndCenterWay(wayInput.value);
   }
 });
+adminBoundaryLegendEl?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-admin-level-filter]");
+  if (!button) {
+    return;
+  }
+  const nextFilter = safeString(button.getAttribute("data-admin-level-filter")) ?? "all";
+  if (selectedAdminBoundaryLevelFilter === nextFilter) {
+    return;
+  }
+  selectedAdminBoundaryLevelFilter = nextFilter;
+  renderAdminBoundaryLegend();
+  refreshAdminBoundaryOverlay();
+  refreshCrosshairAdminContainment();
+});
+
+renderAdminBoundaryLegend();
 
 map.whenReady(() => {
   const center = map.getCenter();
   setCoordinateValue(center.lat, center.lng);
   setStreetAndWay(null, null);
+  setAdminValue(null);
   setBundleValue("nicht geladen");
   setStatus("Bereit. SQLite-Bundle laden.");
   void loadDatabaseFromURL();
@@ -1565,4 +2221,6 @@ map.whenReady(() => {
 map.on("moveend", () => {
   const center = map.getCenter();
   setCoordinateValue(center.lat, center.lng);
+  refreshAdminBoundaryOverlay();
+  refreshCrosshairAdminContainment();
 });
