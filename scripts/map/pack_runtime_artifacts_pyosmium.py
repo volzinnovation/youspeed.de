@@ -101,6 +101,43 @@ def _downsample_coords(coords: List[Tuple[float, float]], max_points: int) -> Li
     return selected
 
 
+def _downsample_closed_ring(points: List[Tuple[float, float]], max_points: int) -> List[Tuple[float, float]]:
+    if len(points) < 4:
+        return points
+    if max_points < 4:
+        max_points = 4
+    if len(points) <= max_points:
+        return points
+
+    if points[0] != points[-1]:
+        points = points + [points[0]]
+
+    body = points[:-1]
+    if len(body) < 3:
+        return points
+
+    target_body = max_points - 1
+    if len(body) <= target_body:
+        sampled = body
+    else:
+        step = (len(body) - 1) / max(target_body - 1, 1)
+        sampled: List[Tuple[float, float]] = []
+        last_idx = -1
+        for i in range(target_body):
+            idx = int(round(i * step))
+            idx = min(max(idx, 0), len(body) - 1)
+            if idx == last_idx:
+                continue
+            sampled.append(body[idx])
+            last_idx = idx
+        if sampled[-1] != body[-1]:
+            sampled[-1] = body[-1]
+
+    if sampled[0] != sampled[-1]:
+        sampled.append(sampled[0])
+    return sampled
+
+
 def _bearing_deg(from_lon: float, from_lat: float, to_lon: float, to_lat: float) -> float:
     lat1 = math.radians(from_lat)
     lat2 = math.radians(to_lat)
@@ -160,6 +197,43 @@ class ArtifactHandler(osmium.SimpleHandler):
         self.ways_cells: Dict[str, List[str]] = defaultdict(list)
         self.areas: List[dict] = []
 
+    def _append_area(
+        self,
+        *,
+        area_id: str,
+        geometry_type: str,
+        name: str | None,
+        place: str | None,
+        boundary: str | None,
+        admin_level: str | None,
+        residential: str | None,
+        parking: str | None,
+        traffic_sign: str | None,
+        points: List[List[float]] | None,
+        min_lon: float,
+        min_lat: float,
+        max_lon: float,
+        max_lat: float,
+    ) -> None:
+        self.areas.append(
+            {
+                "area_id": area_id,
+                "geometry_type": geometry_type,
+                "name": name,
+                "place": place,
+                "boundary": boundary,
+                "admin_level": admin_level,
+                "residential": residential,
+                "parking": parking,
+                "traffic_sign": traffic_sign,
+                "points": points,
+                "min_lon": min_lon,
+                "min_lat": min_lat,
+                "max_lon": max_lon,
+                "max_lat": max_lat,
+            }
+        )
+
     def way(self, way: osmium.osm.Way) -> None:
         tags = way.tags
         highway = tags.get("highway")
@@ -181,7 +255,6 @@ class ArtifactHandler(osmium.SimpleHandler):
         if (
             is_car_drivable
             or has_speed_tags
-            or tags.get("boundary") == "administrative"
             or is_residential_polygon
             or is_parking_polygon
         ):
@@ -242,74 +315,105 @@ class ArtifactHandler(osmium.SimpleHandler):
             self.ways_geom_file.write("\n")
             self.ways_count += 1
 
-        if tags.get("boundary") == "administrative" and tags.get("admin_level") in {"6", "8", "9"} and bbox is not None:
-            min_lon, min_lat, max_lon, max_lat = bbox
-            area_points = None
-            if _is_closed_ring(coords):
-                sampled_area = _downsample_coords(coords, self.max_geom_points)
-                area_points = [[lon, lat] for lon, lat in sampled_area]
-            self.areas.append(
-                {
-                    "area_id": f"w:{way.id}",
-                    "geometry_type": "LineString",
-                    "name": tags.get("name"),
-                    "place": tags.get("place"),
-                    "boundary": tags.get("boundary"),
-                    "admin_level": tags.get("admin_level"),
-                    "residential": residential_value,
-                    "parking": parking_value,
-                    "traffic_sign": city_sign,
-                    "points": area_points,
-                    "min_lon": min_lon,
-                    "min_lat": min_lat,
-                    "max_lon": max_lon,
-                    "max_lat": max_lat,
-                }
-            )
-
         if is_residential_polygon and bbox is not None and _is_closed_ring(coords):
             min_lon, min_lat, max_lon, max_lat = bbox
             sampled_area = _downsample_coords(coords, self.max_geom_points)
-            self.areas.append(
-                {
-                    "area_id": f"w:{way.id}",
-                    "geometry_type": "Polygon",
-                    "name": tags.get("name"),
-                    "place": tags.get("place"),
-                    "boundary": tags.get("boundary"),
-                    "admin_level": tags.get("admin_level"),
-                    "residential": residential_value,
-                    "parking": parking_value,
-                    "traffic_sign": city_sign,
-                    "points": [[lon, lat] for lon, lat in sampled_area],
-                    "min_lon": min_lon,
-                    "min_lat": min_lat,
-                    "max_lon": max_lon,
-                    "max_lat": max_lat,
-                }
+            self._append_area(
+                area_id=f"w:{way.id}",
+                geometry_type="Polygon",
+                name=tags.get("name"),
+                place=tags.get("place"),
+                boundary=tags.get("boundary"),
+                admin_level=tags.get("admin_level"),
+                residential=residential_value,
+                parking=parking_value,
+                traffic_sign=city_sign,
+                points=[[lon, lat] for lon, lat in sampled_area],
+                min_lon=min_lon,
+                min_lat=min_lat,
+                max_lon=max_lon,
+                max_lat=max_lat,
             )
 
         if is_parking_polygon and bbox is not None and _is_closed_ring(coords):
             min_lon, min_lat, max_lon, max_lat = bbox
             sampled_area = _downsample_coords(coords, self.max_geom_points)
-            self.areas.append(
-                {
-                    "area_id": f"w:{way.id}:parking",
-                    "geometry_type": "Polygon",
-                    "name": tags.get("name"),
-                    "place": tags.get("place"),
-                    "boundary": tags.get("boundary"),
-                    "admin_level": tags.get("admin_level"),
-                    "residential": residential_value,
-                    "parking": parking_value,
-                    "traffic_sign": city_sign,
-                    "points": [[lon, lat] for lon, lat in sampled_area],
-                    "min_lon": min_lon,
-                    "min_lat": min_lat,
-                    "max_lon": max_lon,
-                    "max_lat": max_lat,
-                }
+            self._append_area(
+                area_id=f"w:{way.id}:parking",
+                geometry_type="Polygon",
+                name=tags.get("name"),
+                place=tags.get("place"),
+                boundary=tags.get("boundary"),
+                admin_level=tags.get("admin_level"),
+                residential=residential_value,
+                parking=parking_value,
+                traffic_sign=city_sign,
+                points=[[lon, lat] for lon, lat in sampled_area],
+                min_lon=min_lon,
+                min_lat=min_lat,
+                max_lon=max_lon,
+                max_lat=max_lat,
             )
+
+    def area(self, area: osmium.osm.Area) -> None:
+        tags = area.tags
+        if tags.get("boundary") != "administrative":
+            return
+        if tags.get("admin_level") not in {"6", "8", "9"}:
+            return
+        name = (tags.get("name") or "").strip()
+        if not name:
+            return
+
+        min_lon = float("inf")
+        min_lat = float("inf")
+        max_lon = float("-inf")
+        max_lat = float("-inf")
+        outer_rings: List[List[Tuple[float, float]]] = []
+        has_holes = False
+
+        for outer in area.outer_rings():
+            outer_pts: List[Tuple[float, float]] = []
+            for node in outer:
+                outer_pts.append((float(node.lon), float(node.lat)))
+            if len(outer_pts) < 4:
+                continue
+            if outer_pts[0] != outer_pts[-1]:
+                outer_pts.append(outer_pts[0])
+            for lon, lat in outer_pts:
+                min_lon = min(min_lon, lon)
+                min_lat = min(min_lat, lat)
+                max_lon = max(max_lon, lon)
+                max_lat = max(max_lat, lat)
+            outer_rings.append(_downsample_closed_ring(outer_pts, self.max_geom_points))
+            for inner in area.inner_rings(outer):
+                inner_pts = [(float(node.lon), float(node.lat)) for node in inner]
+                if len(inner_pts) >= 4:
+                    has_holes = True
+
+        if not outer_rings or not math.isfinite(min_lon) or not math.isfinite(min_lat):
+            return
+
+        exact_points = None
+        if len(outer_rings) == 1 and not has_holes:
+            exact_points = [[lon, lat] for lon, lat in outer_rings[0]]
+
+        self._append_area(
+            area_id=f"{'w' if area.from_way() else 'r'}:{area.orig_id()}",
+            geometry_type="Polygon" if len(outer_rings) == 1 else "MultiPolygon",
+            name=name,
+            place=tags.get("place"),
+            boundary=tags.get("boundary"),
+            admin_level=tags.get("admin_level"),
+            residential=tags.get("residential"),
+            parking=tags.get("parking"),
+            traffic_sign=_canonical_city_sign(tags.get("traffic_sign")),
+            points=exact_points,
+            min_lon=min_lon,
+            min_lat=min_lat,
+            max_lon=max_lon,
+            max_lat=max_lat,
+        )
 
     def node(self, node: osmium.osm.Node) -> None:
         place = node.tags.get("place")
@@ -321,23 +425,21 @@ class ArtifactHandler(osmium.SimpleHandler):
 
         lon = node.location.lon
         lat = node.location.lat
-        self.areas.append(
-            {
-                "area_id": f"n:{node.id}",
-                "geometry_type": "Point",
-                "name": node.tags.get("name"),
-                "place": place,
-                "boundary": node.tags.get("boundary"),
-                "admin_level": node.tags.get("admin_level"),
-                "residential": node.tags.get("residential"),
-                "parking": node.tags.get("parking"),
-                "traffic_sign": city_sign,
-                "points": None,
-                "min_lon": lon,
-                "min_lat": lat,
-                "max_lon": lon,
-                "max_lat": lat,
-            }
+        self._append_area(
+            area_id=f"n:{node.id}",
+            geometry_type="Point",
+            name=node.tags.get("name"),
+            place=place,
+            boundary=node.tags.get("boundary"),
+            admin_level=node.tags.get("admin_level"),
+            residential=node.tags.get("residential"),
+            parking=node.tags.get("parking"),
+            traffic_sign=city_sign,
+            points=None,
+            min_lon=lon,
+            min_lat=lat,
+            max_lon=lon,
+            max_lat=lat,
         )
 
 

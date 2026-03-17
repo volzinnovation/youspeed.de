@@ -91,6 +91,7 @@ class MapPipelineIntegrationTests(unittest.TestCase):
             for line in cls.ways_meta.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
+        cls.area_rows = json.loads(cls.areas_idx.read_text(encoding="utf-8")).get("areas", [])
 
     @classmethod
     def tearDownClass(cls):
@@ -132,6 +133,10 @@ class MapPipelineIntegrationTests(unittest.TestCase):
               <node id='402' lat='49.0000' lon='8.0100'/>
               <node id='403' lat='49.0100' lon='8.0100'/>
               <node id='404' lat='49.0100' lon='8.0000'/>
+              <node id='451' lat='49.1500' lon='8.1500'/>
+              <node id='452' lat='49.1500' lon='8.1600'/>
+              <node id='453' lat='49.1600' lon='8.1600'/>
+              <node id='454' lat='49.1600' lon='8.1500'/>
               <node id='500' lat='49.0050' lon='8.0050'>
                 <tag k='place' v='city'/>
                 <tag k='name' v='Teststadt'/>
@@ -225,6 +230,23 @@ class MapPipelineIntegrationTests(unittest.TestCase):
                 <tag k='admin_level' v='8'/>
                 <tag k='name' v='Teststadt Boundary'/>
               </way>
+              <way id='450'>
+                <nd ref='451'/>
+                <nd ref='452'/>
+                <nd ref='453'/>
+                <nd ref='454'/>
+                <nd ref='451'/>
+                <tag k='boundary' v='administrative'/>
+                <tag k='admin_level' v='6'/>
+              </way>
+
+              <relation id='900'>
+                <member type='way' ref='450' role='outer'/>
+                <tag k='type' v='boundary'/>
+                <tag k='boundary' v='administrative'/>
+                <tag k='admin_level' v='6'/>
+                <tag k='name' v='Testkreis'/>
+              </relation>
             </osm>
             """
         )
@@ -282,6 +304,24 @@ class MapPipelineIntegrationTests(unittest.TestCase):
         highways = {row["highway"] for row in self.way_rows}
         expected = {"service", "residential", "motorway", "living_street", "primary_link", "tertiary", "trunk_link", "road"}
         self.assertTrue(expected.issubset(highways))
+
+    def test_dataset_captures_named_admin_relation_areas(self):
+        admin_rows = [row for row in self.area_rows if row.get("boundary") == "administrative"]
+        rows_by_id = {row["area_id"]: row for row in admin_rows}
+
+        self.assertEqual(rows_by_id["w:400"]["name"], "Teststadt Boundary")
+        self.assertEqual(rows_by_id["r:900"]["name"], "Testkreis")
+        self.assertEqual(rows_by_id["r:900"]["admin_level"], "6")
+        self.assertNotIn("w:450", rows_by_id)
+        self.assertFalse(any(not (row.get("name") or "").strip() for row in admin_rows))
+
+    def test_query_uses_named_admin_relation_area(self):
+        _, payload = self.run_query(49.1550, 8.1550, heading=None, radius_cells=1)
+        summary = payload["summary"]
+
+        self.assertEqual(summary["city_name"], "Testkreis")
+        self.assertEqual(summary["city_admin_level"], 6)
+        self.assertEqual(summary["city_source"], "admin_bbox")
 
     def test_check_artifacts_passes_for_valid_fixture(self):
         run_cmd([str(CHECK_ARTIFACTS), str(self.dist_dir)])
