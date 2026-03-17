@@ -10,6 +10,7 @@ import java.time.Instant
 import java.util.Locale
 import java.util.zip.GZIPInputStream
 import java.util.zip.InflaterInputStream
+import kotlin.math.abs
 
 enum class BundleSyncMode {
     BOOTSTRAP,
@@ -44,6 +45,13 @@ data class DownloadedBundleInfo(
     val dbPath: String,
 )
 
+data class LocalBundleRoute(
+    val region: String,
+    val bundleVersion: String,
+    val countryCode: String?,
+    val dbPath: String,
+)
+
 private data class MaterializedDatabaseArtifact(
     val bytes: Long,
     val sha256: String,
@@ -61,7 +69,26 @@ class BundleBootstrapper(
     private val rootDir: File,
     private val httpFetcher: HttpFetcher,
     private val clock: Clock = Clock.systemUTC(),
+    private val assetReader: AppAssetReader? = null,
 ) {
+    private data class CoverageRing(
+        val isHole: Boolean,
+        val points: List<Pair<Double, Double>>,
+    )
+
+    private data class CoverageEntry(
+        val region: String,
+        val bundleVersion: String,
+        val countryCode: String?,
+        val dbPath: String,
+        val bbox: BundleCoverageBBox,
+        val rings: List<CoverageRing>,
+    )
+
+    private val coverageCacheTtlMillis = 60_000L
+    private var coverageCacheLoadedAtMillis = 0L
+    private var cachedCoverageEntries: List<CoverageEntry> = emptyList()
+
     fun activeState(): ActiveBundleState? {
         val stateFile = File(rootDir, "active_bundle.json")
         if (!stateFile.exists()) {
@@ -117,6 +144,7 @@ class BundleBootstrapper(
         if (state != null && state.bundleVersion != "seed") {
             clearActiveState()
         }
+        invalidateCoverageCache()
         return removed
     }
 
@@ -139,7 +167,38 @@ class BundleBootstrapper(
         if (state != null && tokenize(state.region) == token) {
             clearActiveState()
         }
+        invalidateCoverageCache()
         return removed
+    }
+
+    fun resolveLocalBundleRoute(
+        lat: Double,
+        lon: Double,
+        fallbackDBPath: String?,
+    ): LocalBundleRoute? {
+        val entries = loadCoverageEntriesIfNeeded()
+        if (entries.isEmpty()) {
+            val fallback = fallbackDBPath?.trim().orEmpty()
+            return if (fallback.isEmpty()) null else LocalBundleRoute("unknown", "unknown", null, fallback)
+        }
+
+        val matches = entries.filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
+        if (matches.isEmpty()) {
+            val fallback = fallbackDBPath?.trim().orEmpty()
+            return if (fallback.isEmpty()) null else LocalBundleRoute("unknown", "unknown", null, fallback)
+        }
+
+        val best = matches.sortedWith(
+            compareBy<CoverageEntry> { bboxArea(it.bbox) }
+                .thenByDescending { it.bundleVersion }
+                .thenBy { it.region },
+        ).first()
+        return LocalBundleRoute(
+            region = best.region,
+            bundleVersion = best.bundleVersion,
+            countryCode = best.countryCode,
+            dbPath = best.dbPath,
+        )
     }
 
     @Throws(IOException::class)
@@ -242,6 +301,7 @@ class BundleBootstrapper(
                 activatedAtUTC = Instant.now(clock).toString(),
             )
             File(rootDir, "active_bundle.json").writeText(ContractJson.encodeActiveBundleState(state))
+            invalidateCoverageCache()
 
             return BundleSyncResult(
                 mode = BundleSyncMode.FULL_DOWNLOAD,
@@ -320,6 +380,273 @@ class BundleBootstrapper(
         if (stateFile.exists()) {
             stateFile.delete()
         }
+    }
+
+    @Synchronized
+    private fun invalidateCoverageCache() {
+        cachedCoverageEntries = emptyList()
+        coverageCacheLoadedAtMillis = 0L
+    }
+
+    @Synchronized
+    private fun loadCoverageEntriesIfNeeded(forceReload: Boolean = false): List<CoverageEntry> {
+        val now = clock.millis()
+        if (!forceReload &&
+            coverageCacheLoadedAtMillis > 0L &&
+            now - coverageCacheLoadedAtMillis < coverageCacheTtlMillis
+        ) {
+            return cachedCoverageEntries
+        }
+
+        val bundlesRoot = File(rootDir, "bundles")
+        if (!bundlesRoot.exists()) {
+            cachedCoverageEntries = emptyList()
+            coverageCacheLoadedAtMillis = now
+            return cachedCoverageEntries
+        }
+
+        val bundleDirs = mutableListOf<File>()
+        (bundlesRoot.listFiles { file -> file.isDirectory } ?: emptyArray())
+            .sortedBy { it.name }
+            .forEach { regionDir ->
+                if (regionDir.name == "seed") {
+                    return@forEach
+                }
+                if (File(regionDir, "bundle-manifest.v3.json").exists()) {
+                    bundleDirs += regionDir
+                    return@forEach
+                }
+                bundleDirs += (regionDir.listFiles { file -> file.isDirectory } ?: emptyArray())
+            }
+
+        val loaded = mutableListOf<CoverageEntry>()
+        bundleDirs.forEach { bundleDir ->
+            val manifestFile = File(bundleDir, "bundle-manifest.v3.json")
+            if (!manifestFile.exists()) {
+                return@forEach
+            }
+            val manifest = runCatching { ContractJson.decodeBundleManifest(manifestFile.readText()) }.getOrNull()
+                ?: return@forEach
+            val coverage = manifest.coverage ?: return@forEach
+            val dbFile = File(bundleDir, manifest.db.file)
+            if (!dbFile.exists()) {
+                return@forEach
+            }
+
+            val rings = if (coverage.poly != null) {
+                val polyText = loadCoveragePolyText(
+                    polyFile = coverage.poly.file,
+                    region = manifest.region,
+                    bundleDir = bundleDir,
+                )
+                if (polyText == null) {
+                    emptyList()
+                } else {
+                    runCatching { parsePolyRings(polyText) }.getOrElse { emptyList() }
+                }
+            } else {
+                emptyList()
+            }
+
+            loaded += CoverageEntry(
+                region = manifest.region,
+                bundleVersion = manifest.bundleVersion,
+                countryCode = manifest.countryCode,
+                dbPath = dbFile.absolutePath,
+                bbox = coverage.bbox,
+                rings = rings,
+            )
+        }
+
+        cachedCoverageEntries = loaded
+        coverageCacheLoadedAtMillis = now
+        return loaded
+    }
+
+    private fun loadCoveragePolyText(
+        polyFile: String,
+        region: String,
+        bundleDir: File,
+    ): String? {
+        val requestedName = File(polyFile).name
+        listOf(polyFile, requestedName).forEach { candidate ->
+            if (candidate.isBlank()) {
+                return@forEach
+            }
+            val file = File(bundleDir, candidate)
+            if (file.exists()) {
+                return file.readText()
+            }
+        }
+        return readEmbeddedCoveragePolyText(polyFile = polyFile, region = region)
+    }
+
+    private fun readEmbeddedCoveragePolyText(
+        polyFile: String,
+        region: String,
+    ): String? {
+        val reader = assetReader ?: return null
+        val requestedNames = mutableListOf<String>()
+
+        fun appendRequestedName(raw: String) {
+            val normalized = File(raw).name.trim()
+            if (normalized.isBlank()) {
+                return
+            }
+            if (requestedNames.none { it.equals(normalized, ignoreCase = true) }) {
+                requestedNames += normalized
+            }
+        }
+
+        appendRequestedName(polyFile)
+        appendRequestedName(normalizedCoveragePolyName(region))
+
+        requestedNames.forEach { requestedName ->
+            reader.readTextOrNull("CoveragePolys/$requestedName")?.let { return it }
+            reader.readTextOrNull(requestedName)?.let { return it }
+        }
+
+        val availableNames = reader.listOrNull("CoveragePolys").orEmpty()
+        requestedNames.forEach { requestedName ->
+            val normalizedRequested = requestedName.lowercase(Locale.US)
+            val matchedName = availableNames.firstOrNull { normalizedRequested.endsWith(it.lowercase(Locale.US)) }
+            if (matchedName != null) {
+                reader.readTextOrNull("CoveragePolys/$matchedName")?.let { return it }
+            }
+        }
+        return null
+    }
+
+    private fun normalizedCoveragePolyName(region: String): String {
+        val trimmed = region.trim().lowercase(Locale.US)
+        val lastComponent = trimmed.substringAfterLast('/')
+        val normalized = lastComponent
+            .replace(" ", "-")
+            .replace("_", "-")
+        return if (normalized.isBlank()) "" else "$normalized.poly"
+    }
+
+    private fun parsePolyRings(raw: String): List<CoverageRing> {
+        val lines = raw.lineSequence()
+            .map { it.trim() }
+            .toList()
+        if (lines.isEmpty()) {
+            return emptyList()
+        }
+
+        val rings = mutableListOf<CoverageRing>()
+        var index = 1
+        while (index < lines.size) {
+            val token = lines[index]
+            index += 1
+            if (token.isEmpty()) {
+                continue
+            }
+            if (token.equals("END", ignoreCase = true)) {
+                break
+            }
+
+            val isHole = token.startsWith("!")
+            val points = mutableListOf<Pair<Double, Double>>()
+            while (index < lines.size) {
+                val pointLine = lines[index]
+                index += 1
+                if (pointLine.isEmpty()) {
+                    continue
+                }
+                if (pointLine.equals("END", ignoreCase = true)) {
+                    break
+                }
+                val components = pointLine.split(Regex("\\s+"))
+                if (components.size < 2) {
+                    continue
+                }
+                val lon = components[0].toDoubleOrNull() ?: continue
+                val lat = components[1].toDoubleOrNull() ?: continue
+                points += lon to lat
+            }
+            if (points.size >= 3) {
+                val closedPoints = if (points.first() == points.last()) points else points + points.first()
+                rings += CoverageRing(isHole = isHole, points = closedPoints)
+            }
+        }
+        return rings
+    }
+
+    private fun bboxArea(bbox: BundleCoverageBBox): Double {
+        val width = maxOf(0.0, bbox.maxLon - bbox.minLon)
+        val height = maxOf(0.0, bbox.maxLat - bbox.minLat)
+        return width * height
+    }
+
+    private fun pointIsInsideCoverage(
+        lon: Double,
+        lat: Double,
+        entry: CoverageEntry,
+    ): Boolean {
+        if (lon < entry.bbox.minLon || lon > entry.bbox.maxLon || lat < entry.bbox.minLat || lat > entry.bbox.maxLat) {
+            return false
+        }
+        if (entry.rings.isEmpty()) {
+            return true
+        }
+
+        val insideOuter = entry.rings
+            .filterNot { it.isHole }
+            .any { pointInRing(lon = lon, lat = lat, ring = it.points) }
+        if (!insideOuter) {
+            return false
+        }
+        val insideHole = entry.rings
+            .filter { it.isHole }
+            .any { pointInRing(lon = lon, lat = lat, ring = it.points) }
+        return !insideHole
+    }
+
+    private fun pointInRing(
+        lon: Double,
+        lat: Double,
+        ring: List<Pair<Double, Double>>,
+    ): Boolean {
+        if (ring.size < 4) {
+            return false
+        }
+        var inside = false
+        for (index in 0 until ring.lastIndex) {
+            val current = ring[index]
+            val next = ring[index + 1]
+            if (pointOnSegment(px = lon, py = lat, x1 = current.first, y1 = current.second, x2 = next.first, y2 = next.second)) {
+                return true
+            }
+            val crossesLatitude = (current.second > lat) != (next.second > lat)
+            val denominator = if ((next.second - current.second) == 0.0) 1e-30 else (next.second - current.second)
+            val xAtLat = ((next.first - current.first) * (lat - current.second) / denominator) + current.first
+            if (crossesLatitude && lon < xAtLat) {
+                inside = !inside
+            }
+        }
+        return inside
+    }
+
+    private fun pointOnSegment(
+        px: Double,
+        py: Double,
+        x1: Double,
+        y1: Double,
+        x2: Double,
+        y2: Double,
+    ): Boolean {
+        val epsilon = 1e-12
+        val cross = ((px - x1) * (y2 - y1)) - ((py - y1) * (x2 - x1))
+        if (abs(cross) > epsilon) {
+            return false
+        }
+        val dot = ((px - x1) * (x2 - x1)) + ((py - y1) * (y2 - y1))
+        if (dot < -epsilon) {
+            return false
+        }
+        val squaredLength = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1))
+        return dot - squaredLength <= epsilon
     }
 
     private fun validateFile(

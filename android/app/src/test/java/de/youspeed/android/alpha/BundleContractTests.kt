@@ -2,6 +2,7 @@ package de.youspeed.android.alpha
 
 import java.io.File
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.security.MessageDigest
 import java.time.Clock
 import java.time.Instant
@@ -310,6 +311,104 @@ class BundleContractTests {
         assertEquals(sha256Hex(fullDb), sha256Hex(File(result.dbPath).readBytes()))
     }
 
+    @Test
+    fun resolveLocalBundleRouteUsesEmbeddedCoveragePolysWhenDownloadedPolyMissing() {
+        val tempRoot = createTempDirectory("android-alpha-route-poly").toFile()
+        tempRoot.deleteOnExit()
+
+        val sharedBBox = BundleCoverageBBox(minLon = 7.0, minLat = 47.0, maxLon = 10.5, maxLat = 50.0)
+        val bwDb = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "z-bw",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "z-bw",
+            dbFileName = "baden-wuerttemberg.sqlite",
+            bbox = sharedBBox,
+            polyFileName = "baden-wuerttemberg.poly",
+        )
+        val rpDb = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "a-rp",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "a-rp",
+            dbFileName = "rheinland-pfalz.sqlite",
+            bbox = sharedBBox,
+            polyFileName = "rheinland-pfalz.poly",
+        )
+
+        val bootstrapper = BundleBootstrapper(
+            rootDir = tempRoot,
+            httpFetcher = FakeHttpFetcher(emptyMap()),
+            assetReader = FileAppAssetReader(bundledSharedAssetsRoot()),
+        )
+
+        val route = bootstrapper.resolveLocalBundleRoute(
+            lat = 48.80117,
+            lon = 8.44278,
+            fallbackDBPath = rpDb.absolutePath,
+        )
+
+        assertEquals("z-bw", route?.region)
+        assertEquals(bwDb.absolutePath, route?.dbPath)
+    }
+
+    @Test
+    fun resolveLocalBundleRouteFallsBackToBBoxWhenCoveragePolyIsUnavailable() {
+        val tempRoot = createTempDirectory("android-alpha-route-bbox").toFile()
+        tempRoot.deleteOnExit()
+
+        val dbFile = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "bbox-only",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "bbox-only",
+            dbFileName = "bbox-only.sqlite",
+            bbox = BundleCoverageBBox(minLon = 8.0, minLat = 48.0, maxLon = 9.0, maxLat = 49.0),
+            polyFileName = "missing.poly",
+        )
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+
+        val route = bootstrapper.resolveLocalBundleRoute(lat = 48.5, lon = 8.5, fallbackDBPath = null)
+
+        assertEquals("bbox-only", route?.region)
+        assertEquals(dbFile.absolutePath, route?.dbPath)
+    }
+
+    @Test
+    fun resolveLocalBundleRoutePrefersMoreSpecificCoverageOverFallbackDb() {
+        val tempRoot = createTempDirectory("android-alpha-route-specific").toFile()
+        tempRoot.deleteOnExit()
+
+        val broadDb = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "broad",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "broad",
+            dbFileName = "broad.sqlite",
+            bbox = BundleCoverageBBox(minLon = 7.0, minLat = 47.0, maxLon = 10.0, maxLat = 50.0),
+            polyFileName = null,
+        )
+        val narrowDb = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "narrow",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "narrow",
+            dbFileName = "narrow.sqlite",
+            bbox = BundleCoverageBBox(minLon = 8.2, minLat = 48.6, maxLon = 8.7, maxLat = 49.0),
+            polyFileName = null,
+        )
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+
+        val route = bootstrapper.resolveLocalBundleRoute(
+            lat = 48.80117,
+            lon = 8.44278,
+            fallbackDBPath = broadDb.absolutePath,
+        )
+
+        assertEquals("narrow", route?.region)
+        assertEquals(narrowDb.absolutePath, route?.dbPath)
+    }
+
     private class FakeHttpFetcher(
         private val responses: Map<String, ByteArray>,
     ) : HttpFetcher {
@@ -334,6 +433,105 @@ private fun bundledTargetsAsset(): File {
     )
     return candidates.firstOrNull { it.exists() }
         ?: error("Unable to locate BundleTargets.top10.json from ${System.getProperty("user.dir")}")
+}
+
+private fun bundledSharedAssetsRoot(): File {
+    val candidates = listOf(
+        File("shared"),
+        File("../shared"),
+        File("../../shared"),
+    )
+    return candidates.firstOrNull { File(it, "CoveragePolys").exists() }
+        ?: error("Unable to locate shared coverage assets from ${System.getProperty("user.dir")}")
+}
+
+private fun writeCoverageBundle(
+    rootDir: File,
+    regionDirName: String,
+    bundleVersion: String,
+    manifestRegion: String,
+    dbFileName: String,
+    bbox: BundleCoverageBBox,
+    polyFileName: String?,
+): File {
+    val bundleDir = File(File(File(rootDir, "bundles"), regionDirName), bundleVersion)
+    check(bundleDir.mkdirs() || bundleDir.exists()) { "Unable to create ${bundleDir.absolutePath}" }
+
+    val dbBytes = "$manifestRegion:$dbFileName".toByteArray()
+    val dbFile = File(bundleDir, dbFileName)
+    dbFile.writeBytes(dbBytes)
+    val coverageJson = if (polyFileName == null) {
+        """
+          "coverage": {
+            "bbox": {
+              "min_lon": ${bbox.minLon},
+              "min_lat": ${bbox.minLat},
+              "max_lon": ${bbox.maxLon},
+              "max_lat": ${bbox.maxLat}
+            }
+          }
+        """.trimIndent()
+    } else {
+        """
+          "coverage": {
+            "bbox": {
+              "min_lon": ${bbox.minLon},
+              "min_lat": ${bbox.minLat},
+              "max_lon": ${bbox.maxLon},
+              "max_lat": ${bbox.maxLat}
+            },
+            "poly": {
+              "file": "$polyFileName",
+              "bytes": 1,
+              "sha256": "${"0".repeat(64)}",
+              "url": null
+            }
+          }
+        """.trimIndent()
+    }
+    File(bundleDir, "bundle-manifest.v3.json").writeText(
+        """
+            {
+              "format": "youspeed.v3.bundle.manifest",
+              "schema_version": 1,
+              "variant": "v3",
+              "region": "$manifestRegion",
+              "country_code": "DEU",
+              "bundle_version": "$bundleVersion",
+              "created_at_utc": "2026-03-17T00:00:00Z",
+              "min_app_version": "1.0.0",
+              "db": {
+                "file": "$dbFileName",
+                "bytes": ${dbBytes.size},
+                "sha256": "${sha256Hex(dbBytes)}",
+                "url": null
+              },
+              $coverageJson
+            }
+        """.trimIndent(),
+    )
+    return dbFile
+}
+
+private class FileAppAssetReader(
+    private val rootDir: File,
+) : AppAssetReader {
+    override fun readText(name: String): String {
+        return File(rootDir, name).readText()
+    }
+
+    override fun readTextOrNull(name: String): String? {
+        return runCatching { readText(name) }.getOrNull()
+    }
+
+    override fun openOrNull(name: String): InputStream? {
+        return runCatching { File(rootDir, name).inputStream() }.getOrNull()
+    }
+
+    override fun listOrNull(path: String): List<String>? {
+        val dir = if (path.isBlank()) rootDir else File(rootDir, path)
+        return dir.list()?.toList()
+    }
 }
 
 private fun sha256Hex(bytes: ByteArray): String {

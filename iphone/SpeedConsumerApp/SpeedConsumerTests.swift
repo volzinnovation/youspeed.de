@@ -742,6 +742,247 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(fallbackRoute?.dbPath, bwDB.path)
     }
 
+    func testResolveLocalBundleRouteUsesEmbeddedCoveragePolysWhenDownloadedPolyMissing() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesRoot = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let bwDir = bundlesRoot.appendingPathComponent("z-bw", isDirectory: true)
+        let rpDir = bundlesRoot.appendingPathComponent("a-rp", isDirectory: true)
+        try fm.createDirectory(at: bwDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: rpDir, withIntermediateDirectories: true)
+
+        let bwDB = bwDir.appendingPathComponent("baden-wuerttemberg.sqlite")
+        let rpDB = rpDir.appendingPathComponent("rheinland-pfalz.sqlite")
+        try createFixtureV3DB(at: bwDB)
+        try createFixtureV3DB(at: rpDB)
+
+        let sharedBBox = BundleCoverageBBox(minLon: 7.0, minLat: 47.0, maxLon: 10.5, maxLat: 50.0)
+        let polyChecksum = String(repeating: "0", count: 64)
+        let bwManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "z-bw",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: bwDB.lastPathComponent,
+                bytes: try fileSize(bwDB),
+                sha256: sha256Hex(try Data(contentsOf: bwDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: sharedBBox,
+                poly: BundleArtifact(
+                    file: "baden-wuerttemberg.poly",
+                    bytes: 1,
+                    sha256: polyChecksum,
+                    url: nil
+                )
+            )
+        )
+        let rpManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "a-rp",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: rpDB.lastPathComponent,
+                bytes: try fileSize(rpDB),
+                sha256: sha256Hex(try Data(contentsOf: rpDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: sharedBBox,
+                poly: BundleArtifact(
+                    file: "rheinland-pfalz.poly",
+                    bytes: 1,
+                    sha256: polyChecksum,
+                    url: nil
+                )
+            )
+        )
+
+        try JSONEncoder().encode(bwManifest).write(
+            to: bwDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+        try JSONEncoder().encode(rpManifest).write(
+            to: rpDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(
+            fileManager: fm,
+            session: URLSession(configuration: .ephemeral),
+            resourceBundle: Bundle(for: SpeedConsumerAppDelegate.self)
+        )
+        let route = try await manager.resolveLocalBundleRoute(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: rpDB.path
+        )
+        XCTAssertEqual(route?.region, "z-bw")
+        XCTAssertEqual(route?.dbPath, bwDB.path)
+    }
+
+    func testResolveLocalBundleRouteFallsBackToBBoxWhenCoveragePolyIsUnavailable() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundleDir = supportDir
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent("bbox-only", isDirectory: true)
+        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+
+        let dbURL = bundleDir.appendingPathComponent("bbox-only.sqlite")
+        try createFixtureV3DB(at: dbURL)
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "bbox-only",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: dbURL.lastPathComponent,
+                bytes: try fileSize(dbURL),
+                sha256: sha256Hex(try Data(contentsOf: dbURL)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.0, minLat: 48.0, maxLon: 9.0, maxLat: 49.0),
+                poly: BundleArtifact(
+                    file: "missing.poly",
+                    bytes: 1,
+                    sha256: String(repeating: "0", count: 64),
+                    url: nil
+                )
+            )
+        )
+        try JSONEncoder().encode(manifest).write(
+            to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let route = try await manager.resolveLocalBundleRoute(lat: 48.5, lon: 8.5, fallbackDBPath: nil)
+        XCTAssertEqual(route?.region, "bbox-only")
+        XCTAssertEqual(route?.dbPath, dbURL.path)
+    }
+
+    func testResolveLocalBundleRoutePrefersMoreSpecificCoverageOverFallbackDB() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let bundlesRoot = supportDir.appendingPathComponent("bundles", isDirectory: true)
+        let broadDir = bundlesRoot.appendingPathComponent("broad", isDirectory: true)
+        let narrowDir = bundlesRoot.appendingPathComponent("narrow", isDirectory: true)
+        try fm.createDirectory(at: broadDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: narrowDir, withIntermediateDirectories: true)
+
+        let broadDB = broadDir.appendingPathComponent("broad.sqlite")
+        let narrowDB = narrowDir.appendingPathComponent("narrow.sqlite")
+        try createFixtureV3DB(at: broadDB)
+        try createFixtureV3DB(at: narrowDB)
+
+        let broadManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "broad",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: broadDB.lastPathComponent,
+                bytes: try fileSize(broadDB),
+                sha256: sha256Hex(try Data(contentsOf: broadDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 7.0, minLat: 47.0, maxLon: 10.0, maxLat: 50.0),
+                poly: nil
+            )
+        )
+        let narrowManifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "narrow",
+            countryCode: "DEU",
+            bundleVersion: "2026-03-17",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: narrowDB.lastPathComponent,
+                bytes: try fileSize(narrowDB),
+                sha256: sha256Hex(try Data(contentsOf: narrowDB)),
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 8.2, minLat: 48.6, maxLon: 8.7, maxLat: 49.0),
+                poly: nil
+            )
+        )
+
+        try JSONEncoder().encode(broadManifest).write(
+            to: broadDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+        try JSONEncoder().encode(narrowManifest).write(
+            to: narrowDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+        let route = try await manager.resolveLocalBundleRoute(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(route?.region, "narrow")
+        XCTAssertEqual(route?.dbPath, narrowDB.path)
+    }
+
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)

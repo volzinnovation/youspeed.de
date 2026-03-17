@@ -28,6 +28,7 @@ actor V3BundleManager {
     private let fileManager: FileManager
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let resourceBundle: Bundle
     private let minimumFreeDiskReserveBytes: Int64 = 256 * 1024 * 1024
     private let coverageCacheTTLSeconds: TimeInterval = 60
     private var githubToken: String?
@@ -44,10 +45,15 @@ actor V3BundleManager {
         return country.regions.map(\.regionID)
     }
 
-    init(fileManager: FileManager = .default, session: URLSession = .shared) {
+    init(
+        fileManager: FileManager = .default,
+        session: URLSession = .shared,
+        resourceBundle: Bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+    ) {
         self.fileManager = fileManager
         self.session = session
         self.decoder = JSONDecoder()
+        self.resourceBundle = resourceBundle
     }
 
     func setGitHubToken(_ token: String?) {
@@ -310,17 +316,6 @@ actor V3BundleManager {
                 return LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)
             }
             return nil
-        }
-
-        if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty,
-           let current = entries.first(where: { $0.dbPath == fallback }),
-           pointIsInsideCoverage(lon: lon, lat: lat, entry: current) {
-            return LocalBundleRoute(
-                region: current.region,
-                bundleVersion: current.bundleVersion,
-                countryCode: current.countryCode,
-                dbPath: current.dbPath
-            )
         }
 
         let matches = entries.filter { pointIsInsideCoverage(lon: lon, lat: lat, entry: $0) }
@@ -1413,11 +1408,21 @@ actor V3BundleManager {
 
             let rings: [CoverageRing]
             if let poly = coverage.poly {
-                let polyURL = bundleDir.appendingPathComponent(poly.file)
-                guard fileManager.fileExists(atPath: polyURL.path) else {
-                    continue
+                if let polyURL = resolveCoveragePolyURL(polyFile: poly.file, region: manifest.region, bundleDir: bundleDir) {
+                    do {
+                        rings = try parsePolyRings(at: polyURL)
+                    } catch {
+                        Self.logger.error(
+                            "coverage poly parse failed region=\(manifest.region, privacy: .public) poly_file=\(poly.file, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                        )
+                        rings = []
+                    }
+                } else {
+                    Self.logger.notice(
+                        "coverage poly missing region=\(manifest.region, privacy: .public) poly_file=\(poly.file, privacy: .public) fallback=bbox_only"
+                    )
+                    rings = []
                 }
-                rings = try parsePolyRings(at: polyURL)
             } else {
                 rings = []
             }
@@ -1437,6 +1442,71 @@ actor V3BundleManager {
         cachedCoverageEntries = loaded
         coverageCacheUpdatedAt = now
         return loaded
+    }
+
+    private func resolveCoveragePolyURL(polyFile: String, region: String, bundleDir: URL) -> URL? {
+        let requestedName = URL(fileURLWithPath: polyFile).lastPathComponent
+        let localCandidates = [polyFile, requestedName]
+        for candidate in localCandidates {
+            guard !candidate.isEmpty else {
+                continue
+            }
+            let candidateURL = bundleDir.appendingPathComponent(candidate)
+            if fileManager.fileExists(atPath: candidateURL.path) {
+                return candidateURL
+            }
+        }
+
+        return embeddedCoveragePolyURL(polyFile: polyFile, region: region)
+    }
+
+    private func embeddedCoveragePolyURL(polyFile: String, region: String) -> URL? {
+        var requestedNames: [String] = []
+
+        func appendRequestedName(_ raw: String) {
+            let normalized = URL(fileURLWithPath: raw).lastPathComponent
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !normalized.isEmpty else {
+                return
+            }
+            if !requestedNames.contains(where: { $0.caseInsensitiveCompare(normalized) == .orderedSame }) {
+                requestedNames.append(normalized)
+            }
+        }
+
+        appendRequestedName(polyFile)
+        appendRequestedName(normalizedCoveragePolyName(forRegion: region))
+
+        for requestedName in requestedNames {
+            if let url = resourceBundle.url(forResource: requestedName, withExtension: nil, subdirectory: "CoveragePolys") {
+                return url
+            }
+            if let url = resourceBundle.url(forResource: requestedName, withExtension: nil) {
+                return url
+            }
+        }
+
+        let availableURLs =
+            (resourceBundle.urls(forResourcesWithExtension: "poly", subdirectory: "CoveragePolys") ?? []) +
+            (resourceBundle.urls(forResourcesWithExtension: "poly", subdirectory: nil) ?? [])
+        for requestedName in requestedNames {
+            let normalizedRequested = requestedName.lowercased()
+            if let match = availableURLs.first(where: { normalizedRequested.hasSuffix($0.lastPathComponent.lowercased()) }) {
+                return match
+            }
+        }
+        return nil
+    }
+
+    private func normalizedCoveragePolyName(forRegion region: String) -> String {
+        let trimmed = region
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+        let lastComponent = trimmed.split(separator: "/").last.map(String.init) ?? trimmed
+        let normalized = lastComponent
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: "_", with: "-")
+        return normalized.isEmpty ? "" : "\(normalized).poly"
     }
 
     private func bboxArea(_ bbox: BundleCoverageBBox) -> Double {

@@ -55,7 +55,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            assets.srcDirs("src/main/assets")
+            assets.srcDirs("src/main/assets", "../../shared")
         }
     }
 }

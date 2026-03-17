@@ -262,6 +262,7 @@ class ConsumerSessionController(
         rootDir = rootDir,
         httpFetcher = HttpUrlFetcher(githubReleaseToken),
         clock = clock,
+        assetReader = assetReader,
     )
     private val locationManager = appContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val targetsConfig = runCatching {
@@ -1301,9 +1302,47 @@ class ConsumerSessionController(
         maybeSpeakOverspeedWarning()
 
         val token = lookupToken.incrementAndGet()
-        val dbPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
-        if (dbPath == null) {
-            executor.execute {
+        val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
+        val fallbackBundleVersion = uiState.activeBundleVersion
+        val fallbackPenaltyRules = uiState.activePenaltyRules
+
+        executor.execute {
+            val route = runCatching {
+                bootstrapper.resolveLocalBundleRoute(
+                    lat = location.latitude,
+                    lon = location.longitude,
+                    fallbackDBPath = fallbackDBPath,
+                )
+            }.getOrNull()
+            val routedDBPath = route?.dbPath?.takeIf { it.isNotBlank() && File(it).exists() }
+            val effectiveDBPath = routedDBPath ?: fallbackDBPath
+            val fallbackCountryCode = normalizedCountryCode(fallbackPenaltyRules.countryCode)
+            val effectiveCountryCode = normalizedCountryCode(route?.countryCode)
+                ?: fallbackCountryCode
+                ?: inferCountryCodeFromDBPath(effectiveDBPath)
+            val effectiveBundleVersion = route?.bundleVersion ?: fallbackBundleVersion
+            val effectivePenaltyRules = if (effectiveCountryCode == fallbackCountryCode) {
+                fallbackPenaltyRules
+            } else {
+                loadPenaltyRules(effectiveCountryCode ?: "DEU")
+            }
+            val routeChanged = route != null && (
+                routedDBPath != fallbackDBPath ||
+                    effectiveBundleVersion != fallbackBundleVersion ||
+                    effectiveCountryCode != fallbackCountryCode
+            )
+
+            if (routeChanged && effectiveDBPath != null) {
+                postState {
+                    copy(
+                        activeBundleVersion = effectiveBundleVersion,
+                        activeDBPath = effectiveDBPath,
+                        activePenaltyRules = effectivePenaltyRules,
+                    )
+                }
+            }
+
+            if (effectiveDBPath == null) {
                 wayMatchTracker.reset()
                 ensureDrivingLogsExist()
                 appendGpsFixRow(
@@ -1344,15 +1383,15 @@ class ConsumerSessionController(
                         matchLogPath = matchLogFile().absolutePath,
                     )
                 }
+                return@execute
             }
-            return
-        }
 
-        executor.execute {
             try {
-                val service = ensureLookupService(dbPath)
                 val matchContext = wayMatchTracker.snapshotOrNull()
-                val result = service.lookup(
+                val result = ensureLookupService(
+                    dbPath = effectiveDBPath,
+                    preferredCountryCode = effectiveCountryCode,
+                ).lookup(
                     lat = location.latitude,
                     lon = location.longitude,
                     radiusM = lookupRadiusForHorizontalAccuracy(location.accuracy.toDouble()),
@@ -1370,7 +1409,7 @@ class ConsumerSessionController(
                 val effectiveDisplayText = speedLimitDisplayTextForValue(localOverrideValue)
                 val unlimitedActive = localOverrideValue == null &&
                     result.isUnlimitedSpeedLimit &&
-                    normalizedCountryCode(uiState.activePenaltyRules.countryCode) == "DEU" &&
+                    normalizedCountryCode(effectivePenaltyRules.countryCode) == "DEU" &&
                     result.highway?.trim()?.lowercase(Locale.US) == "motorway"
 
                 ensureDrivingLogsExist()
@@ -1431,6 +1470,9 @@ class ConsumerSessionController(
                         lastLookupSpeedCandidateCount = result.speedCandidateCount,
                         lastLookupNearestCandidateM = result.nearestCandidateDistanceM,
                         lastLookupNearestSpeedCandidateM = result.nearestSpeedCandidateDistanceM,
+                        activeBundleVersion = effectiveBundleVersion,
+                        activeDBPath = effectiveDBPath,
+                        activePenaltyRules = effectivePenaltyRules,
                         tunnelModeState = if (result.isTunnelSegment) TunnelModeState.ACTIVE else TunnelModeState.INACTIVE,
                         isLowSpeedMatchingRuleActive = result.usedWalkingTurnSwitch,
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -1464,6 +1506,9 @@ class ConsumerSessionController(
                 )
                 postState {
                     copy(
+                        activeBundleVersion = effectiveBundleVersion,
+                        activeDBPath = effectiveDBPath,
+                        activePenaltyRules = effectivePenaltyRules,
                         driveStatus = "location_error",
                         lastError = error.message ?: error.javaClass.simpleName,
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -2564,19 +2609,23 @@ class ConsumerSessionController(
 
 private class AndroidAssetReader(
     private val context: Context,
-) {
-    fun readText(name: String): String {
+) : AppAssetReader {
+    override fun readText(name: String): String {
         return context.assets.open(name).bufferedReader().use { it.readText() }
     }
 
-    fun readTextOrNull(name: String): String? {
+    override fun readTextOrNull(name: String): String? {
         return runCatching { readText(name) }.getOrNull()
     }
 
     fun readTextOrEmpty(name: String): String = readTextOrNull(name).orEmpty()
 
-    fun openOrNull(name: String): InputStream? {
+    override fun openOrNull(name: String): InputStream? {
         return runCatching { context.assets.open(name) }.getOrNull()
+    }
+
+    override fun listOrNull(path: String): List<String>? {
+        return runCatching { context.assets.list(path)?.toList().orEmpty() }.getOrNull()
     }
 }
 
