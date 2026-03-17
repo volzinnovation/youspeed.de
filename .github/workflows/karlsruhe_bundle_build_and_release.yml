@@ -105,7 +105,8 @@ jobs:
 
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${REGION}" \
-            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
+            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --corridor-mode none
 
       - name: Regression Check (paper benchmark smoke contract)
         run: |
@@ -127,6 +128,7 @@ jobs:
             --bundle-dir-name latest \
             --out-root mapdata/bundles/v3 \
             --db-file-name "${BUNDLE_DB_ASSET}" \
+            --db-compression gzip \
             --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
             --github-owner "${GITHUB_REPOSITORY%/*}" \
             --github-repo "${GITHUB_REPOSITORY#*/}" \

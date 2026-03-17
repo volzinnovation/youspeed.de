@@ -503,6 +503,7 @@ def _bundle_commands(
     target: BundleTarget,
     bundle_version: str,
     max_geom_points: int,
+    db_compression: str,
     release_tag: str,
     skip_release_urls: bool,
 ) -> List[List[str]]:
@@ -536,6 +537,8 @@ def _bundle_commands(
             str(db_path),
             "--input-pbf",
             str(pbf_path),
+            "--corridor-mode",
+            "none",
         ],
         [
             "python3",
@@ -552,6 +555,8 @@ def _bundle_commands(
             str(repo_root / "mapdata" / "bundles" / "v3"),
             "--db-file-name",
             _db_asset_name(region_asset_id),
+            "--db-compression",
+            db_compression,
             "--manifest-name",
             _manifest_asset_name(region_asset_id),
             "--coverage-poly",
@@ -658,6 +663,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--iso2", default="", help="Optional ISO2 override for --bundle-region mode")
     parser.add_argument("--bundle-version", default="", help="Bundle version (default: UTC date)")
     parser.add_argument("--max-geom-points", type=int, default=24)
+    parser.add_argument(
+        "--db-compression",
+        choices=("none", "gzip"),
+        default="gzip",
+        help="Compression used for published DB assets (default: gzip)",
+    )
     parser.add_argument(
         "--bundle-target-config",
         default="iphone/SpeedConsumerApp/BundleTargets.top10.json",
@@ -876,6 +887,7 @@ def main() -> int:
             target=target,
             bundle_version=bundle_version,
             max_geom_points=int(args.max_geom_points),
+            db_compression=args.db_compression,
             release_tag=effective_release_tag,
             skip_release_urls=bool(args.skip_release_urls),
         ):

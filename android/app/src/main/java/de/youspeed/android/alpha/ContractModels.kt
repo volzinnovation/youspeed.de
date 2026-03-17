@@ -15,6 +15,8 @@ data class BundleArtifact(
     val sha256: String,
     val url: String?,
     val compression: String? = null,
+    val uncompressedBytes: Long? = null,
+    val uncompressedSha256: String? = null,
 )
 
 data class BundleCoverageBBox(
@@ -300,7 +302,7 @@ object ContractJson {
     fun resolveArtifactUrl(artifact: BundleArtifact, manifestUrl: String): String {
         val explicit = artifact.url?.trim().orEmpty()
         if (explicit.isNotEmpty()) {
-            return explicit
+            return URI(manifestUrl).resolve(explicit).toString()
         }
         return URI(manifestUrl).resolve(artifact.file).toString()
     }
@@ -312,6 +314,8 @@ object ContractJson {
             sha256 = requiredString("sha256"),
             url = optionalString("url"),
             compression = optionalString("compression"),
+            uncompressedBytes = optionalLong("uncompressed_bytes"),
+            uncompressedSha256 = optionalString("uncompressed_sha256"),
         )
     }
 
@@ -354,6 +358,9 @@ object ContractJson {
 
     private fun JsonObject.requiredLong(key: String): Long =
         this[key]?.jsonPrimitive?.longOrNull ?: error("Missing long field: $key")
+
+    private fun JsonObject.optionalLong(key: String): Long? =
+        this[key]?.jsonPrimitive?.longOrNull
 
     private fun JsonObject.requiredDouble(key: String): Double =
         this[key]?.jsonPrimitive?.doubleOrNull ?: error("Missing double field: $key")

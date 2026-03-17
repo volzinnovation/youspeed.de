@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import shutil
@@ -71,6 +72,12 @@ def parse_args() -> argparse.Namespace:
         "--db-file-name",
         default="",
         help="Database file name inside the bundle directory (default: <region-id>_speeds.sqlite)",
+    )
+    parser.add_argument(
+        "--db-compression",
+        choices=("none", "gzip"),
+        default="none",
+        help="Optional compression for published DB download artifacts (default: none)",
     )
     parser.add_argument(
         "--manifest-name",
@@ -155,13 +162,50 @@ def _artifact_payload(path: Path, rel_file: str, url: Optional[str]) -> dict:
     }
 
 
-def _logical_db_payload(src_db: Path, rel_file: str, url: Optional[str]) -> dict:
-    return {
+def _logical_db_payload(
+    src_db: Path,
+    rel_file: str,
+    url: Optional[str],
+    *,
+    published_path: Optional[Path] = None,
+    compression: Optional[str] = None,
+) -> dict:
+    payload = {
         "file": rel_file,
-        "bytes": src_db.stat().st_size,
-        "sha256": _sha256_path(src_db),
+        "bytes": (published_path or src_db).stat().st_size,
+        "sha256": _sha256_path(published_path or src_db),
         "url": url,
     }
+    normalized_compression = (compression or "").strip().lower()
+    if normalized_compression and normalized_compression != "none":
+        payload["compression"] = normalized_compression
+        payload["uncompressed_bytes"] = src_db.stat().st_size
+        payload["uncompressed_sha256"] = _sha256_path(src_db)
+    return payload
+
+
+def _gzip_file(src: Path, dst: Path, compresslevel: int = 6) -> None:
+    tmp_path = dst.with_suffix(dst.suffix + ".tmp")
+    with src.open("rb") as in_f, tmp_path.open("wb") as raw_out:
+        with gzip.GzipFile(
+            filename="",
+            mode="wb",
+            fileobj=raw_out,
+            compresslevel=compresslevel,
+            mtime=0,
+        ) as gzip_out:
+            shutil.copyfileobj(in_f, gzip_out, length=1024 * 1024)
+    tmp_path.replace(dst)
+
+
+def _cleanup_stale_db_outputs(out_dir: Path, db_file_name: str, preserve_main_name: Optional[str] = None) -> None:
+    for base_name in (db_file_name, f"{db_file_name}.gz"):
+        stale_main = out_dir / base_name
+        if stale_main.is_file() and base_name != preserve_main_name:
+            stale_main.unlink()
+        for stale_part in out_dir.glob(f"{base_name}.part*"):
+            if stale_part.is_file():
+                stale_part.unlink()
 
 
 def _split_file_to_parts(src: Path, out_dir: Path, base_name: str, max_part_bytes: int) -> List[Path]:
@@ -261,11 +305,13 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     dst_db = out_dir / db_file_name
-    db_size = src_db.stat().st_size
-    should_split_db = (
-        (not args.no_split_db)
-        and db_size > int(args.max_release_asset_bytes)
-    )
+    normalized_db_compression = args.db_compression.strip().lower()
+    if normalized_db_compression != "none" and args.no_copy_db:
+        raise SystemExit("--no-copy-db cannot be combined with --db-compression")
+
+    preserve_main_name = db_file_name if args.no_copy_db and normalized_db_compression == "none" else None
+    _cleanup_stale_db_outputs(out_dir, db_file_name, preserve_main_name=preserve_main_name)
+
     coverage_poly_src: Optional[Path] = None
     if args.coverage_poly:
         coverage_poly_src = Path(args.coverage_poly)
@@ -277,6 +323,20 @@ def main() -> int:
         if not penalty_rules_src.exists():
             raise SystemExit(f"Penalty rules file not found: {penalty_rules_src}")
 
+    compressed_db_path: Optional[Path] = None
+    if normalized_db_compression == "gzip":
+        compressed_db_path = out_dir / f"{db_file_name}.gz"
+        _gzip_file(src_db, compressed_db_path)
+        publish_db_path = compressed_db_path
+    else:
+        publish_db_path = src_db
+
+    db_size = publish_db_path.stat().st_size
+    should_split_db = (
+        (not args.no_split_db)
+        and db_size > int(args.max_release_asset_bytes)
+    )
+
     if should_split_db and args.no_copy_db:
         raise SystemExit("--no-copy-db cannot be combined with split DB output")
 
@@ -284,19 +344,20 @@ def main() -> int:
     if should_split_db:
         dst_db.unlink(missing_ok=True)
         part_paths = _split_file_to_parts(
-            src=src_db,
+            src=publish_db_path,
             out_dir=out_dir,
-            base_name=db_file_name,
+            base_name=publish_db_path.name,
             max_part_bytes=int(args.max_release_asset_bytes),
         )
     else:
-        if args.no_copy_db:
-            if not dst_db.exists():
-                raise SystemExit(f"--no-copy-db set but destination DB is missing: {dst_db}")
-        else:
-            tmp_db = dst_db.with_suffix(dst_db.suffix + ".tmp")
-            shutil.copy2(src_db, tmp_db)
-            tmp_db.replace(dst_db)
+        if normalized_db_compression == "none":
+            if args.no_copy_db:
+                if not dst_db.exists():
+                    raise SystemExit(f"--no-copy-db set but destination DB is missing: {dst_db}")
+            else:
+                tmp_db = dst_db.with_suffix(dst_db.suffix + ".tmp")
+                shutil.copy2(src_db, tmp_db)
+                tmp_db.replace(dst_db)
 
     coverage_poly_dst: Optional[Path] = None
     coverage_bbox_payload: Optional[dict] = None
@@ -331,7 +392,22 @@ def main() -> int:
             return _join_url(args.base_url, args.region, bundle_dir_name, file_name)
         return None
 
-    db_url = artifact_url(db_file_name) if not should_split_db else None
+    db_download_file_name = publish_db_path.name
+    db_url: Optional[str]
+    if should_split_db:
+        db_url = None
+    elif normalized_db_compression == "gzip":
+        db_url = artifact_url(db_download_file_name) or db_download_file_name
+    else:
+        db_url = artifact_url(db_file_name)
+
+    db_payload = _logical_db_payload(
+        src_db,
+        db_file_name,
+        db_url,
+        published_path=publish_db_path if normalized_db_compression != "none" else None,
+        compression=normalized_db_compression,
+    )
     manifest: dict = {
         "format": "youspeed.v3.bundle.manifest",
         "schema_version": args.schema_version,
@@ -340,7 +416,7 @@ def main() -> int:
         "bundle_version": args.bundle_version,
         "created_at_utc": _now_utc(),
         "min_app_version": args.min_app_version,
-        "db": _logical_db_payload(src_db, db_file_name, db_url),
+        "db": db_payload,
         "delta_index": None,
         "db_parts": [],
         "source": {},
@@ -397,6 +473,8 @@ def main() -> int:
     if not manifest["db_parts"]:
         manifest.pop("db_parts", None)
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if should_split_db and compressed_db_path is not None:
+        compressed_db_path.unlink(missing_ok=True)
 
     print(f"Wrote v3 bundle: {out_dir}")
     if should_split_db:

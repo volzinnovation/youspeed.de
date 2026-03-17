@@ -29,6 +29,10 @@ def _extract_asset_name_from_release_url(url: str, release_tag: str) -> str | No
     return None
 
 
+def _prefixed_name(prefix: str, name: str) -> str:
+    return f"{prefix}{name}" if prefix else name
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Prune v3 release assets based on delta index keep set")
     parser.add_argument("--repo", required=True, help="owner/repo")
@@ -98,12 +102,29 @@ def main() -> int:
 
     keep.add(f"{prefix}{bundle_manifest_name}")
     keep.add(f"{prefix}{delta_index_name}")
-    keep.add(f"{prefix}{db_file_name}")
+    managed_db_names: Set[str] = {_prefixed_name(prefix, db_file_name), _prefixed_name(prefix, f"{db_file_name}.gz")}
+    keep.add(_prefixed_name(prefix, db_file_name))
 
     if args.bundle_manifest:
         manifest_path = Path(args.bundle_manifest)
         if manifest_path.exists():
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            db_artifact = manifest.get("db")
+            if isinstance(db_artifact, dict):
+                db_url = db_artifact.get("url")
+                if isinstance(db_url, str) and db_url:
+                    if db_url.startswith("http://") or db_url.startswith("https://"):
+                        name = _extract_asset_name_from_release_url(db_url, args.release_tag)
+                        if name:
+                            managed_db_names.add(name)
+                            keep.add(name)
+                    else:
+                        managed_db_names.add(_prefixed_name(prefix, db_url))
+                        keep.add(_prefixed_name(prefix, db_url))
+                db_file = db_artifact.get("file")
+                if isinstance(db_file, str) and db_file:
+                    managed_db_names.add(_prefixed_name(prefix, db_file))
+                    managed_db_names.add(_prefixed_name(prefix, f"{db_file}.gz"))
             db_parts = manifest.get("db_parts", [])
             if isinstance(db_parts, list):
                 for part in db_parts:
@@ -155,8 +176,7 @@ def main() -> int:
         managed = (
             name == f"{prefix}{bundle_manifest_name}"
             or name == f"{prefix}{delta_index_name}"
-            or name == f"{prefix}{db_file_name}"
-            or name.startswith(f"{prefix}{db_file_name}.part")
+            or any(name == candidate or name.startswith(f"{candidate}.part") for candidate in managed_db_names)
             or (bool(delta_manifest_prefix) and name.startswith(f"{prefix}{delta_manifest_prefix}"))
             or (bool(patch_prefix) and name.startswith(f"{prefix}{patch_prefix}"))
         )

@@ -3,6 +3,7 @@ import XCTest
 import CryptoKit
 import SQLite3
 import CoreLocation
+import zlib
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -51,29 +52,57 @@ final class SpeedConsumerTests: XCTestCase {
         )
     }
 
-    func testFilteredDisplaySpeedClampsNearStandstillToZero() {
+    func testFilteredDisplaySpeedUsesDerivedBelowLowSpeedThreshold() {
         XCTAssertEqual(
             DriveSessionViewModel.filteredDisplaySpeedKmh(
                 rawSpeedKmh: 3.8,
+                fallbackDerivedSpeedKmh: 1.8,
                 speedAccuracyKmh: nil,
                 previousDisplaySpeedKmh: 7.2
             ),
-            0
+            1.8,
+            accuracy: 0.0001
         )
         XCTAssertEqual(
             DriveSessionViewModel.filteredDisplaySpeedKmh(
                 rawSpeedKmh: 5.4,
+                fallbackDerivedSpeedKmh: 0,
                 speedAccuracyKmh: 2.0,
                 previousDisplaySpeedKmh: 0
             ),
-            0
+            0,
+            accuracy: 0.0001
         )
     }
 
-    func testFilteredDisplaySpeedLeavesStandstillOnlyAboveResumeThreshold() {
+    func testFilteredDisplaySpeedUsesRawGpsAtOrAboveThreshold() {
         XCTAssertEqual(
             DriveSessionViewModel.filteredDisplaySpeedKmh(
-                rawSpeedKmh: 5.9,
+                rawSpeedKmh: 7.0,
+                fallbackDerivedSpeedKmh: 2.8,
+                speedAccuracyKmh: nil,
+                previousDisplaySpeedKmh: 0
+            ),
+            7.0,
+            accuracy: 0.0001
+        )
+        XCTAssertEqual(
+            DriveSessionViewModel.filteredDisplaySpeedKmh(
+                rawSpeedKmh: 12.4,
+                fallbackDerivedSpeedKmh: 4.2,
+                speedAccuracyKmh: nil,
+                previousDisplaySpeedKmh: 0
+            ),
+            12.4,
+            accuracy: 0.0001
+        )
+    }
+
+    func testFilteredDisplaySpeedStillClampsNonPositiveValues() {
+        XCTAssertEqual(
+            DriveSessionViewModel.filteredDisplaySpeedKmh(
+                rawSpeedKmh: 0,
+                fallbackDerivedSpeedKmh: 0,
                 speedAccuracyKmh: nil,
                 previousDisplaySpeedKmh: 0
             ),
@@ -81,11 +110,33 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(
             DriveSessionViewModel.filteredDisplaySpeedKmh(
-                rawSpeedKmh: 6.2,
+                rawSpeedKmh: -1,
+                fallbackDerivedSpeedKmh: -2,
                 speedAccuracyKmh: nil,
                 previousDisplaySpeedKmh: 0
             ),
-            6.2,
+            0,
+            accuracy: 0.0001
+        )
+    }
+
+    func testDerivedSpeedUsesDistanceAndElapsedTime() {
+        XCTAssertEqual(
+            DriveSessionViewModel.derivedSpeedKmh(distanceM: 50, elapsedSeconds: 5),
+            36,
+            accuracy: 0.0001
+        )
+    }
+
+    func testDerivedSpeedSubtractsAccuracyAllowance() {
+        XCTAssertEqual(
+            DriveSessionViewModel.derivedSpeedKmh(distanceM: 12, elapsedSeconds: 3, accuracyAllowanceM: 5),
+            8.4,
+            accuracy: 0.0001
+        )
+        XCTAssertEqual(
+            DriveSessionViewModel.derivedSpeedKmh(distanceM: 4, elapsedSeconds: 3, accuracyAllowanceM: 5),
+            0,
             accuracy: 0.0001
         )
     }
@@ -247,6 +298,16 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(MatcherDebugProfile.m3.debugLabel, "M3 M2 + connected-candidate gate")
         XCTAssertEqual(MatcherDebugProfile.m4.matchingModel, .corridorHMMRawMiniHMM)
         XCTAssertEqual(MatcherDebugProfile.m5.matchingModel, .corridorHMM)
+        XCTAssertEqual(MatcherDebugProfile.m6.debugLabel, "M6 M2 + urban consecutive distance-gap release")
+        XCTAssertEqual(MatcherDebugProfile.m6.matchingModel, .simpleSpeedRefUrbanReleaseHeuristic)
+        XCTAssertEqual(MatcherDebugProfile.m7.debugLabel, "M7 M6 + 10m search window")
+        XCTAssertEqual(MatcherDebugProfile.m7.matchingModel, .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic)
+        XCTAssertEqual(MatcherDebugProfile.m8.debugLabel, "M8 M6 + no-ref street-name continuity")
+        XCTAssertEqual(MatcherDebugProfile.m8.matchingModel, .simpleSpeedRefStreetNameFallbackHeuristic)
+        XCTAssertEqual(MatcherDebugProfile.m9.debugLabel, "M9 M8 + guarded stale-ref suppression")
+        XCTAssertEqual(MatcherDebugProfile.m9.matchingModel, .simpleSpeedRefStreetNameGuardHeuristic)
+        XCTAssertEqual(MatcherDebugProfile.m10.debugLabel, "M10 M9 + node-direction-aware junction release")
+        XCTAssertEqual(MatcherDebugProfile.m10.matchingModel, .simpleSpeedRefStreetNameGuardNodeAwareHeuristic)
     }
 
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
@@ -1203,6 +1264,25 @@ final class SpeedConsumerTests: XCTestCase {
         try await viewModel.testResetLocalObservationStore()
     }
 
+    @MainActor
+    func testActiveLocalSpeedCorrectionExpiresOnNextWayID() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testResetLocalObservationStore()
+
+        viewModel.testSetActiveLocalSpeedCorrection(wayID: "17721265", value: "30", numericSpeedKmh: 30)
+
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: nil))
+        XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
+
+        XCTAssertEqual(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721265"), "30")
+        XCTAssertEqual(viewModel.testActiveLocalSpeedCorrectionWayID, "17721265")
+
+        XCTAssertNil(viewModel.testApplyActiveLocalSpeedCorrection(wayID: "17721266"))
+        XCTAssertNil(viewModel.testActiveLocalSpeedCorrectionWayID)
+
+        try await viewModel.testResetLocalObservationStore()
+    }
+
     func testResolveLocalSpeedOverridesUsesLatestAndSkipsDiscarded() async {
         let base = "2026-03-08T00:00:00.000Z"
         let observations: [LocalObservation] = [
@@ -1380,6 +1460,174 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.streetName, "Fixture Main Street")
         XCTAssertEqual(result.cityName, "Fixture City")
         XCTAssertEqual(result.insideCity, true)
+    }
+
+    func testCompressedBundleSyncAndFirstQuery() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-gzip-tests-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let sourceDB = tempDir.appendingPathComponent("fixture.sqlite")
+        try createFixtureV3DB(at: sourceDB)
+        let sourceData = try Data(contentsOf: sourceDB)
+        let sourceSHA = sha256Hex(sourceData)
+        let gzipData = try gzipCompressedData(sourceData)
+
+        let manifestURL = URL(string: "https://speedconsumer.test/DEU-gzip.bundle-manifest.v3.json")!
+        let dbURL = URL(string: "https://speedconsumer.test/DEU-gzip.speeds_v3.sqlite.gz")!
+
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "DEU",
+            bundleVersion: "2026-03-17-gzip",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-gzip.speeds_v3.sqlite",
+                bytes: Int64(gzipData.count),
+                sha256: sha256Hex(gzipData),
+                url: dbURL.absoluteString,
+                compression: "gzip",
+                uncompressedBytes: Int64(sourceData.count),
+                uncompressedSHA256: sourceSHA
+            ),
+            dbParts: nil,
+            deltaIndex: nil
+        )
+
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(manifest)),
+            dbURL.absoluteString: (status: 200, body: gzipData),
+        ]
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        let sync = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(sync.mode, .fullDownload)
+        XCTAssertEqual(sync.bundleVersion, "2026-03-17-gzip")
+
+        guard let dbURL = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active database URL after compressed sync")
+            return
+        }
+        XCTAssertTrue(fm.fileExists(atPath: dbURL.path))
+        let assembledData = try Data(contentsOf: dbURL)
+        XCTAssertEqual(sourceData.count, assembledData.count)
+        XCTAssertEqual(sourceSHA, sha256Hex(assembledData))
+        try assertDBIntegrity(dbURL)
+    }
+
+    func testCompressedMultipartBundleSyncAndFirstQuery() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer {
+            try? fm.removeItem(at: supportDir)
+        }
+
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-gzip-multipart-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let sourceDB = tempDir.appendingPathComponent("fixture.sqlite")
+        try createFixtureV3DB(at: sourceDB)
+        let sourceData = try Data(contentsOf: sourceDB)
+        let sourceSHA = sha256Hex(sourceData)
+        let gzipData = try gzipCompressedData(sourceData)
+
+        let splitAt = max(1, gzipData.count / 2)
+        let part1Data = gzipData.subdata(in: 0..<splitAt)
+        let part2Data = gzipData.subdata(in: splitAt..<gzipData.count)
+
+        let manifestURL = URL(string: "https://speedconsumer.test/DEU-gzip-multipart.bundle-manifest.v3.json")!
+        let part1URL = URL(string: "https://speedconsumer.test/DEU-gzip.speeds_v3.sqlite.gz.part001")!
+        let part2URL = URL(string: "https://speedconsumer.test/DEU-gzip.speeds_v3.sqlite.gz.part002")!
+
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "DEU",
+            bundleVersion: "2026-03-17-gzip-multipart",
+            createdAtUTC: "2026-03-17T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: "DEU-gzip.speeds_v3.sqlite",
+                bytes: Int64(gzipData.count),
+                sha256: sha256Hex(gzipData),
+                url: nil,
+                compression: "gzip",
+                uncompressedBytes: Int64(sourceData.count),
+                uncompressedSHA256: sourceSHA
+            ),
+            dbParts: [
+                BundleArtifact(
+                    file: "DEU-gzip.speeds_v3.sqlite.gz.part001",
+                    bytes: Int64(part1Data.count),
+                    sha256: sha256Hex(part1Data),
+                    url: part1URL.absoluteString
+                ),
+                BundleArtifact(
+                    file: "DEU-gzip.speeds_v3.sqlite.gz.part002",
+                    bytes: Int64(part2Data.count),
+                    sha256: sha256Hex(part2Data),
+                    url: part2URL.absoluteString
+                ),
+            ],
+            deltaIndex: nil
+        )
+        let manifestData = try JSONEncoder().encode(manifest)
+
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: manifestData),
+            part1URL.absoluteString: (status: 200, body: part1Data),
+            part2URL.absoluteString: (status: 200, body: part2Data),
+        ]
+        defer {
+            MockURLProtocol.responses = [:]
+        }
+
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+
+        let sync = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(sync.mode, .fullDownload)
+        XCTAssertEqual(sync.bundleVersion, "2026-03-17-gzip-multipart")
+
+        guard let dbURL = try await manager.activeDatabaseURL() else {
+            XCTFail("Expected active database URL after compressed multipart sync")
+            return
+        }
+        XCTAssertTrue(fm.fileExists(atPath: dbURL.path))
+        let assembledData = try Data(contentsOf: dbURL)
+        XCTAssertEqual(sourceData.count, assembledData.count)
+        XCTAssertEqual(sourceSHA, sha256Hex(assembledData))
+        try assertDBIntegrity(dbURL)
     }
 
     func testLookupTreatsExplicitUnlimitedMotorwayAsMatchedUnlimitedState() throws {
@@ -2196,6 +2444,53 @@ final class SpeedConsumerTests: XCTestCase {
             },
             "Expected road graph gate trace for disconnected Loffenau hop"
         )
+    }
+
+    func testBundledLookupUsesAdminPolygonAtLoffenauRegressionFix() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let logURL = try driveMatchLogURL(named: "Lof drive_match_log.ndjson")
+        let entries = try loadDriveMatchLogEntries(url: logURL)
+        let target = try XCTUnwrap(
+            entries.first(where: { $0.fixID == 2497 }),
+            "Expected bundled Loffenau replay fix"
+        )
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        let result = try service.lookupSpeedLimit(
+            lat: target.lat,
+            lon: target.lon,
+            radiusM: 50.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Gernsbach (Landkreis Rastatt)")
+        XCTAssertEqual(result.cityPlaceName, "Gernsbach")
+        XCTAssertEqual(result.cityDistrictName, "Landkreis Rastatt")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+    }
+
+    func testBundledLookupResolvesLoffenauViaAdminPolygon() throws {
+        guard let bundledDB = bundledSpeedDBURL() else {
+            throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
+        }
+
+        let service = V3SpeedLimitService(dbPath: bundledDB.path)
+        let result = try service.lookupSpeedLimit(
+            lat: 48.7739967,
+            lon: 8.3807646,
+            radiusM: 50.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Loffenau (Landkreis Rastatt)")
+        XCTAssertEqual(result.cityPlaceName, "Loffenau")
+        XCTAssertEqual(result.cityDistrictName, "Landkreis Rastatt")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
     }
 
     func testBundledDriveLogsAcrossAllInspectorLogsMeetHindsightThresholds() throws {
@@ -3779,6 +4074,199 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.wayID, "11003")
     }
 
+    func testSimpleSameRefMatcherKeepsStraightContinuationWhenLowSpeedHeadingStaysOnMainline() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-low-speed-junction-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("low_speed_junction_fixture.sqlite")
+        try createLowSpeedSameRefJunctionFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardHeuristic
+        )
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "12001",
+                recentWayIDs: ["12001"],
+                recentFixes: [
+                    WayMatchRecentFix(lat: 52.06000, lon: 13.00400),
+                ],
+                preferredStreetRef: "B463",
+                activeStreetRef: "B463",
+                recentStreetRefs: ["B463"]
+            ),
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+
+        XCTAssertEqual(result.wayID, "12002")
+        XCTAssertFalse(
+            result.selectionTrace.contains { $0.step == "simple_low_speed_same_ref_junction_release" }
+        )
+    }
+
+    func testSimpleSameRefMatcherPromotesLinkedTurnBeforeItBecomesNearestAtLowSpeed() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-low-speed-junction-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("low_speed_junction_fixture.sqlite")
+        try createLowSpeedSameRefJunctionFixtureDB(at: dbURL)
+        let service = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardHeuristic
+        )
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "12001",
+                recentWayIDs: ["12001"],
+                recentFixes: [
+                    WayMatchRecentFix(lat: 52.05995, lon: 13.00413),
+                ],
+                preferredStreetRef: "B463",
+                activeStreetRef: "B463",
+                recentStreetRefs: ["B463"]
+            ),
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+
+        XCTAssertEqual(result.wayID, "12003")
+        XCTAssertTrue(
+            result.selectionTrace.contains {
+                $0.step == "simple_low_speed_same_ref_junction_release" &&
+                    $0.detail.contains("12003")
+            }
+        )
+    }
+
+    func testNodeAwareLowSpeedJunctionMatcherPromotesCurvedTurnUsingSharedNodeDirection() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-low-speed-junction-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("low_speed_junction_fixture.sqlite")
+        try createLowSpeedSameRefJunctionFixtureDB(at: dbURL, useCurvedTurn: true)
+        let m9 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardHeuristic
+        )
+        let m10 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+        )
+
+        let context = WayMatchContext(
+            preferredWayID: "12001",
+            recentWayIDs: ["12001"],
+            recentFixes: [
+                WayMatchRecentFix(lat: 52.05995, lon: 13.00413),
+            ],
+            preferredStreetRef: "B463",
+            activeStreetRef: "B463",
+            recentStreetRefs: ["B463"]
+        )
+
+        let m9Result = try m9.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+        XCTAssertEqual(m9Result.wayID, "12002")
+        XCTAssertFalse(
+            m9Result.selectionTrace.contains { $0.step == "simple_low_speed_same_ref_junction_release" }
+        )
+
+        let m10Result = try m10.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+        XCTAssertEqual(m10Result.wayID, "12003")
+        XCTAssertTrue(
+            m10Result.selectionTrace.contains {
+                $0.step == "simple_low_speed_same_ref_junction_release" &&
+                    $0.detail.contains("12003") &&
+                    $0.detail.contains("12001")
+            }
+        )
+    }
+
+    func testNodeAwareLowSpeedJunctionProbeExplainsBlockedPreTurnCandidate() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-low-speed-junction-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("low_speed_junction_fixture.sqlite")
+        try createLowSpeedSameRefJunctionFixtureDB(at: dbURL, useCurvedTurn: true)
+        let service = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+        )
+
+        let result = try service.lookupSpeedLimit(
+            lat: 52.06000,
+            lon: 13.00392,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: WayMatchContext(
+                preferredWayID: "12001",
+                recentWayIDs: ["12001"],
+                preferredStreetRef: "B463",
+                activeStreetRef: "B463",
+                recentStreetRefs: ["B463"]
+            ),
+            headingDeg: 90.0,
+            headingAccuracyDeg: 5.0,
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+
+        XCTAssertEqual(result.wayID, "12001")
+        XCTAssertFalse(
+            result.selectionTrace.contains { $0.step == "simple_low_speed_same_ref_junction_release" }
+        )
+        XCTAssertTrue(result.candidateTraces.contains(where: { $0.wayID == "12003" }))
+        let probe = try XCTUnwrap(
+            result.selectionTrace.first(where: { $0.step == "simple_low_speed_same_ref_probe" })
+        )
+        XCTAssertTrue(probe.detail.contains("candidate=12003"))
+        XCTAssertTrue(probe.detail.contains("blocked="))
+        XCTAssertTrue(probe.detail.contains("candidate_geometry_rank="))
+        XCTAssertTrue(probe.detail.contains("candidate_trace_rank="))
+    }
+
     func testLookupCapsCandidateRadiusByHorizontalAccuracy() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-hacc-radius-\(UUID().uuidString)", isDirectory: true)
@@ -3809,6 +4297,131 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(capped.wayID, "100")
         XCTAssertEqual(capped.candidateCount, 1)
+    }
+
+    func testUrbanReleaseNarrowWindowMatcherCapsSearchRadiusAtTenMeters() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-narrow-window-radius-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("fixture.sqlite")
+        try createHorizontalAccuracyRadiusFixtureDB(at: dbURL)
+
+        let baseline = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefUrbanReleaseHeuristic
+        )
+        let narrowWindow = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic
+        )
+
+        let baselineResult = try baseline.lookupSpeedLimit(
+            lat: 52.00013,
+            lon: 13.0050,
+            radiusM: 20.0,
+            maxCandidates: 32
+        )
+        XCTAssertEqual(baselineResult.wayID, "200")
+        XCTAssertEqual(baselineResult.candidateCount, 2)
+
+        let narrowWindowResult = try narrowWindow.lookupSpeedLimit(
+            lat: 52.00013,
+            lon: 13.0050,
+            radiusM: 20.0,
+            maxCandidates: 32
+        )
+        XCTAssertEqual(narrowWindowResult.wayID, "200")
+        XCTAssertEqual(narrowWindowResult.candidateCount, 1)
+        XCTAssertTrue(
+            narrowWindowResult.selectionTrace.contains {
+                $0.detail.contains("candidate_radius_m=10.0")
+            }
+        )
+    }
+
+    func testStreetNameFallbackKeepsSplitNoRefStreetInsteadOfStaleRefRoad() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-street-name-fallback-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("fixture.sqlite")
+        try createStreetNameFallbackFixtureDB(at: dbURL)
+
+        let m6 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefUrbanReleaseHeuristic
+        )
+        let m8 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameFallbackHeuristic
+        )
+        let m9 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardHeuristic
+        )
+
+        let context = WayMatchContext(
+            preferredWayID: "200",
+            recentWayIDs: ["200", "100"],
+            sameRefUrbanReleaseStreak: 0,
+            preferredStreetRef: "L564",
+            activeStreetRef: nil,
+            preferredStreetName: "Bleichweg",
+            recentStreetRefs: ["L564"],
+            consecutiveNoRefMatchCount: 2
+        )
+
+        let baselineResult = try m6.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0070,
+            radiusM: 150.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 33.0,
+            horizontalAccuracyM: 4.0
+        )
+        XCTAssertEqual(baselineResult.wayID, "100")
+
+        let fallbackResult = try m8.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0070,
+            radiusM: 150.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 33.0,
+            horizontalAccuracyM: 4.0
+        )
+        XCTAssertEqual(fallbackResult.wayID, "300")
+        XCTAssertTrue(
+            fallbackResult.selectionTrace.contains {
+                ($0.step == "simple_same_name_hold" || $0.step == "simple_same_name_urban_hold") &&
+                    $0.detail.contains("300")
+            }
+        )
+
+        let guardedResult = try m9.lookupSpeedLimit(
+            lat: 52.0000,
+            lon: 13.0070,
+            radiusM: 150.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 33.0,
+            horizontalAccuracyM: 4.0
+        )
+        XCTAssertEqual(guardedResult.wayID, "300")
+        XCTAssertTrue(
+            guardedResult.selectionTrace.contains {
+                $0.step == "simple_same_name_guard" &&
+                    $0.detail.contains("300")
+            }
+        )
     }
 
     func testLookupDoesNotMarkTunnelSegmentWithoutContinuationContext() throws {
@@ -5305,7 +5918,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
-    func testLookupCityPolygonPrefersAdminLevel8BoundaryOverLevel6() throws {
+    func testLookupCityPolygonFormatsAdminLevel8WithAdminLevel6Qualifier() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -5330,13 +5943,15 @@ final class SpeedConsumerTests: XCTestCase {
             maxCandidates: 64
         )
 
-        XCTAssertEqual(result.cityName, "Ispringen")
+        XCTAssertEqual(result.cityName, "Ispringen (Enzkreis)")
+        XCTAssertEqual(result.cityPlaceName, "Ispringen")
+        XCTAssertEqual(result.cityDistrictName, "Enzkreis")
         XCTAssertEqual(result.insideCity, true)
         XCTAssertEqual(result.citySource, "admin_polygon")
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
-    func testLookupCityPolygonFormatsAdminLevel9WithAdminLevel8Qualifier() throws {
+    func testLookupCityPolygonFormatsAdminLevel9WithAdminLevel6Qualifier() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -5349,6 +5964,7 @@ final class SpeedConsumerTests: XCTestCase {
             at: dbURL,
             fixLat: 48.890934,
             fixLon: 8.7025509,
+            adminLevel6Name: "Enzkreis",
             adminLevel8Name: "Pforzheim",
             adminLevel9Name: "Buechenbronn"
         )
@@ -5361,7 +5977,9 @@ final class SpeedConsumerTests: XCTestCase {
             maxCandidates: 64
         )
 
-        XCTAssertEqual(result.cityName, "Buechenbronn (Pforzheim)")
+        XCTAssertEqual(result.cityName, "Pforzheim - Buechenbronn (Enzkreis)")
+        XCTAssertEqual(result.cityPlaceName, "Pforzheim - Buechenbronn")
+        XCTAssertEqual(result.cityDistrictName, "Enzkreis")
         XCTAssertEqual(result.insideCity, true)
         XCTAssertEqual(result.citySource, "admin_polygon")
         XCTAssertEqual(result.speedLimitKmh, 50)
@@ -5397,6 +6015,8 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Kullenmühle")
+        XCTAssertEqual(result.cityPlaceName, "Kullenmühle")
+        XCTAssertNil(result.cityDistrictName)
         XCTAssertEqual(result.insideCity, true)
         XCTAssertEqual(result.citySource, "admin_polygon")
         XCTAssertEqual(result.speedLimitKmh, 50)
@@ -5683,6 +6303,77 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
+    private func createStreetNameFallbackFixtureDB(at url: URL) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 92, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, approx_heading_deg, service, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '100', 'secondary', 'Ettlinger Straße', 'L 564', '50', 90.0, 'main', 13.0000, 52.00090, 13.0100, 52.00090);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (100, 13.0000, 13.0100, 52.00090, 52.00090);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '100', '[[52.00090,13.0000],[52.00090,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, approx_heading_deg, service, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '200', 'residential', 'Bleichweg', NULL, '30', 90.0, 'main', 13.0000, 52.00000, 13.0050, 52.00000);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (200, 13.0000, 13.0050, 52.00000, 52.00000);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, '200', '[[52.00000,13.0000],[52.00000,13.0050]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, approx_heading_deg, service, min_lon, min_lat, max_lon, max_lat)
+        VALUES (3, '300', 'residential', 'Bleichweg', NULL, '30', 90.0, 'main', 13.0050, 52.00000, 13.0100, 52.00000);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (300, 13.0050, 13.0100, 52.00000, 52.00000);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (3, '300', '[[52.00000,13.0050],[52.00000,13.0100]]');
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 93, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
     private func createHeadingDisambiguationFixtureDB(at url: URL) throws {
         var db: OpaquePointer?
         guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
@@ -5868,6 +6559,100 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
             let err = String(cString: sqlite3_errmsg(db))
             throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
+        }
+    }
+
+    private func createLowSpeedSameRefJunctionFixtureDB(at url: URL, useCurvedTurn: Bool = false) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
+            throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
+        }
+        defer { sqlite3_close(db) }
+
+        let turnApproxHeading = useCurvedTurn ? 48.0 : 0.0
+        let turnMaxLon = useCurvedTurn ? 13.0118 : 13.0041
+        let turnPointsJSON = useCurvedTurn
+            ? "[[52.06000,13.0041],[52.06150,13.0041],[52.0660,13.0118]]"
+            : "[[52.06000,13.0041],[52.0660,13.0041]]"
+
+        let schema = """
+        CREATE TABLE ways (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          highway TEXT,
+          street_name TEXT,
+          ref TEXT,
+          maxspeed TEXT,
+          maxspeed_type TEXT,
+          source_maxspeed TEXT,
+          zone_maxspeed TEXT,
+          traffic_sign TEXT,
+          approx_heading_deg REAL,
+          service TEXT,
+          tunnel TEXT,
+          bridge TEXT,
+          covered TEXT,
+          location TEXT,
+          layer TEXT,
+          level TEXT,
+          min_lon REAL NOT NULL,
+          min_lat REAL NOT NULL,
+          max_lon REAL NOT NULL,
+          max_lat REAL NOT NULL
+        );
+        CREATE VIRTUAL TABLE ways_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+        CREATE TABLE way_geom (
+          row_id INTEGER PRIMARY KEY,
+          way_id TEXT NOT NULL UNIQUE,
+          points_json TEXT NOT NULL
+        );
+        CREATE TABLE way_links (
+          way_id INTEGER NOT NULL,
+          linked_way_id INTEGER NOT NULL,
+          shared_ref INTEGER NOT NULL DEFAULT 0,
+          link_kind TEXT NOT NULL,
+          shared_node_key TEXT,
+          shared_lon REAL,
+          shared_lat REAL,
+          PRIMARY KEY(way_id, linked_way_id)
+        );
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (1, '12001', 'primary', 'Jahnstraße', 'B463', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.06000, 13.0040, 52.06000);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (12001, 13.0000, 13.0040, 52.06000, 52.06000);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (1, '12001', '[[52.06000,13.0000],[52.06000,13.0040]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (2, '12002', 'primary', 'Werderbrücke', 'B463', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0041, 52.06000, 13.0100, 52.06000);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (12002, 13.0041, 13.0100, 52.06000, 52.06000);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (2, '12002', '[[52.06000,13.0041],[52.06000,13.0100]]');
+
+        INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
+        VALUES (3, '12003', 'secondary', 'Calwer Straße', 'L1135', '30', NULL, NULL, NULL, NULL, \(turnApproxHeading), 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0041, 52.06000, \(turnMaxLon), 52.0660);
+        INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat)
+        VALUES (12003, 13.0041, \(turnMaxLon), 52.06000, 52.0660);
+        INSERT INTO way_geom(row_id, way_id, points_json)
+        VALUES (3, '12003', '\(turnPointsJSON)');
+
+        INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind, shared_node_key, shared_lon, shared_lat)
+        VALUES
+          (12001, 12002, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
+          (12002, 12001, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
+          (12001, 12003, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000),
+          (12003, 12001, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000);
+        """
+
+        guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            let err = String(cString: sqlite3_errmsg(db))
+            throw NSError(domain: "SpeedConsumerTests", code: 105, userInfo: [NSLocalizedDescriptionKey: "sqlite schema failed: \(err)"])
         }
     }
 
@@ -7374,6 +8159,65 @@ final class SpeedConsumerTests: XCTestCase {
             code: 109,
             userInfo: [NSLocalizedDescriptionKey: "zlib compression requires iOS 13+"]
         )
+    }
+
+    private func gzipCompressedData(_ data: Data) throws -> Data {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("speedconsumer-gzip-\(UUID().uuidString).gz")
+        defer {
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        var gzipFileHandle: gzFile?
+        do {
+            gzipFileHandle = gzopen(tempURL.path, "wb")
+            guard let handle = gzipFileHandle else {
+                throw NSError(
+                    domain: "SpeedConsumerTests",
+                    code: 110,
+                    userInfo: [NSLocalizedDescriptionKey: "Failed to open gzip temp file"]
+                )
+            }
+
+            var writeError: Error?
+            data.withUnsafeBytes { rawBuffer in
+                guard let baseAddress = rawBuffer.baseAddress else {
+                    return
+                }
+                var offset = 0
+                while offset < data.count {
+                    let remaining = min(256 * 1024, data.count - offset)
+                    let written = gzwrite(handle, baseAddress.advanced(by: offset), UInt32(remaining))
+                    if written <= 0 {
+                        var errorCode: Int32 = 0
+                        let messagePtr = gzerror(handle, &errorCode)
+                        let message = messagePtr.map { String(cString: $0) } ?? "unknown gzip write failure"
+                        writeError = NSError(
+                            domain: "SpeedConsumerTests",
+                            code: 111,
+                            userInfo: [NSLocalizedDescriptionKey: "Failed to write gzip data: \(message)"]
+                        )
+                        break
+                    }
+                    offset += Int(written)
+                }
+            }
+            if let writeError {
+                throw writeError
+            }
+            guard gzclose(handle) == Z_OK else {
+                throw NSError(
+                    domain: "SpeedConsumerTests",
+                    code: 112,
+                    userInfo: [NSLocalizedDescriptionKey: "Failed to finalize gzip output"]
+                )
+            }
+            gzipFileHandle = nil
+            return try Data(contentsOf: tempURL)
+        } catch {
+            if let gzipFileHandle {
+                gzclose(gzipFileHandle)
+            }
+            throw error
+        }
     }
 
     private func assertDBIntegrity(_ url: URL) throws {

@@ -1,10 +1,12 @@
 package de.youspeed.android.alpha
 
 import java.io.File
+import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.zip.GZIPOutputStream
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -137,6 +139,56 @@ class BundleContractTests {
     }
 
     @Test
+    fun bootstrapsCompressedFullBundleAndPersistsInflatedState() {
+        val tempRoot = createTempDirectory("android-alpha-bootstrap-gzip").toFile()
+        tempRoot.deleteOnExit()
+
+        val dbBytes = "fixture-db".repeat(128).toByteArray()
+        val gzipBytes = gzip(dbBytes)
+        val manifestUrl = "https://speedconsumer.test/baden-wuerttemberg_manifest.json"
+        val dbUrl = "https://speedconsumer.test/baden-wuerttemberg.sqlite.gz"
+
+        val fetcher = FakeHttpFetcher(
+            mapOf(
+                manifestUrl to """
+                    {
+                      "format": "youspeed.v3.bundle.manifest",
+                      "schema_version": 1,
+                      "variant": "v3",
+                      "region": "germany/baden-wuerttemberg",
+                      "country_code": "DEU",
+                      "bundle_version": "2026-03-17-gzip",
+                      "created_at_utc": "2026-03-17T00:00:00Z",
+                      "min_app_version": "1.0.0",
+                      "db": {
+                        "file": "baden-wuerttemberg.sqlite",
+                        "bytes": ${gzipBytes.size},
+                        "sha256": "${sha256Hex(gzipBytes)}",
+                        "url": "$dbUrl",
+                        "compression": "gzip",
+                        "uncompressed_bytes": ${dbBytes.size},
+                        "uncompressed_sha256": "${sha256Hex(dbBytes)}"
+                      },
+                      "delta_index": null
+                    }
+                """.trimIndent().toByteArray(),
+                dbUrl to gzipBytes,
+            )
+        )
+
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val result = bootstrapper.syncFromManifestUrl(manifestUrl)
+
+        assertEquals(BundleSyncMode.FULL_DOWNLOAD, result.mode)
+        assertEquals(sha256Hex(dbBytes), sha256Hex(File(result.dbPath).readBytes()))
+
+        val state = bootstrapper.activeState()
+        assertNotNull(state)
+        assertEquals(sha256Hex(dbBytes), state?.dbSha256)
+        assertEquals(dbBytes.size.toLong(), state?.dbBytes)
+    }
+
+    @Test
     fun assemblesMultipartBundle() {
         val tempRoot = createTempDirectory("android-alpha-multipart").toFile()
         tempRoot.deleteOnExit()
@@ -195,6 +247,69 @@ class BundleContractTests {
         assertEquals(sha256Hex(fullDb), sha256Hex(File(result.dbPath).readBytes()))
     }
 
+    @Test
+    fun assemblesCompressedMultipartBundle() {
+        val tempRoot = createTempDirectory("android-alpha-multipart-gzip").toFile()
+        tempRoot.deleteOnExit()
+
+        val fullDb = ("part-one-" + "part-two").repeat(128).toByteArray()
+        val gzipDb = gzip(fullDb)
+        val splitAt = gzipDb.size / 2
+        val partOne = gzipDb.copyOfRange(0, splitAt)
+        val partTwo = gzipDb.copyOfRange(splitAt, gzipDb.size)
+        val manifestUrl = "https://speedconsumer.test/bayern_manifest.json"
+        val partOneUrl = "https://speedconsumer.test/bayern.sqlite.gz.part001"
+        val partTwoUrl = "https://speedconsumer.test/bayern.sqlite.gz.part002"
+
+        val fetcher = FakeHttpFetcher(
+            mapOf(
+                manifestUrl to """
+                    {
+                      "format": "youspeed.v3.bundle.manifest",
+                      "schema_version": 1,
+                      "variant": "v3",
+                      "region": "germany/bayern",
+                      "country_code": "DEU",
+                      "bundle_version": "2026-03-17-multipart-gzip",
+                      "created_at_utc": "2026-03-17T00:00:00Z",
+                      "min_app_version": "1.0.0",
+                      "db": {
+                        "file": "bayern.sqlite",
+                        "bytes": ${gzipDb.size},
+                        "sha256": "${sha256Hex(gzipDb)}",
+                        "url": null,
+                        "compression": "gzip",
+                        "uncompressed_bytes": ${fullDb.size},
+                        "uncompressed_sha256": "${sha256Hex(fullDb)}"
+                      },
+                      "db_parts": [
+                        {
+                          "file": "bayern.sqlite.gz.part001",
+                          "bytes": ${partOne.size},
+                          "sha256": "${sha256Hex(partOne)}",
+                          "url": "$partOneUrl"
+                        },
+                        {
+                          "file": "bayern.sqlite.gz.part002",
+                          "bytes": ${partTwo.size},
+                          "sha256": "${sha256Hex(partTwo)}",
+                          "url": "$partTwoUrl"
+                        }
+                      ]
+                    }
+                """.trimIndent().toByteArray(),
+                partOneUrl to partOne,
+                partTwoUrl to partTwo,
+            )
+        )
+
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val result = bootstrapper.syncFromManifestUrl(manifestUrl)
+
+        assertEquals(BundleSyncMode.FULL_DOWNLOAD, result.mode)
+        assertEquals(sha256Hex(fullDb), sha256Hex(File(result.dbPath).readBytes()))
+    }
+
     private class FakeHttpFetcher(
         private val responses: Map<String, ByteArray>,
     ) : HttpFetcher {
@@ -224,4 +339,12 @@ private fun bundledTargetsAsset(): File {
 private fun sha256Hex(bytes: ByteArray): String {
     val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
     return digest.joinToString("") { "%02x".format(it) }
+}
+
+private fun gzip(bytes: ByteArray): ByteArray {
+    val out = ByteArrayOutputStream()
+    GZIPOutputStream(out).use { gzip ->
+        gzip.write(bytes)
+    }
+    return out.toByteArray()
 }

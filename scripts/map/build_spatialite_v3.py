@@ -878,8 +878,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--corridor-mode",
         choices=("none", "paired"),
-        default="paired",
-        help="Corridor precompute mode (requires detailed way-links for paired)",
+        default="none",
+        help="Corridor precompute mode (requires detailed way-links for paired; default: none)",
     )
     return parser.parse_args()
 

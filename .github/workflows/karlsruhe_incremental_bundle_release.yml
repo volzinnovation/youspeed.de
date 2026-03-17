@@ -271,7 +271,8 @@ jobs:
 
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${REGION}" \
-            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite"
+            --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --corridor-mode none
 
       - name: Regression Check (paper benchmark smoke contract)
         if: steps.compare.outputs.needs_publish == '1'
@@ -399,6 +400,7 @@ jobs:
             --bundle-dir-name latest \
             --out-root mapdata/bundles/v3 \
             --db-file-name "${BUNDLE_DB_ASSET}" \
+            --db-compression gzip \
             --manifest-name "${BUNDLE_MANIFEST_ASSET}" \
             --delta-index "${BUNDLE_DIR}/${DELTA_INDEX_ASSET}" \
             --delta-index-file-name "${DELTA_INDEX_ASSET}" \

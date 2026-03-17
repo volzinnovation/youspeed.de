@@ -1,5 +1,6 @@
 package de.youspeed.android.alpha
 
+import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -7,6 +8,8 @@ import java.security.MessageDigest
 import java.time.Clock
 import java.time.Instant
 import java.util.Locale
+import java.util.zip.GZIPInputStream
+import java.util.zip.InflaterInputStream
 
 enum class BundleSyncMode {
     BOOTSTRAP,
@@ -39,6 +42,11 @@ data class DownloadedBundleInfo(
     val countryCode: String?,
     val dbFileName: String,
     val dbPath: String,
+)
+
+private data class MaterializedDatabaseArtifact(
+    val bytes: Long,
+    val sha256: String,
 )
 
 interface HttpFetcher {
@@ -172,20 +180,40 @@ class BundleBootstrapper(
             }
         }
         val stagingDb = File.createTempFile("bundle-", ".tmp", stagingDir)
+        val compression = normalizedCompression(manifest.db)
+        val downloadedArtifact = if (compression == null) {
+            stagingDb
+        } else {
+            File.createTempFile("bundle-download-", ".tmp", stagingDir)
+        }
 
         try {
             if (!manifest.dbParts.isNullOrEmpty()) {
-                assembleMultipartDatabase(stagingDb, manifest, manifestUrl)
+                assembleMultipartArtifact(downloadedArtifact, manifest, manifestUrl)
             } else {
                 httpFetcher.fetchToFile(
                     url = ContractJson.resolveArtifactUrl(manifest.db, manifestUrl),
-                    destination = stagingDb,
+                    destination = downloadedArtifact,
                 )
                 validateFile(
-                    file = stagingDb,
+                    file = downloadedArtifact,
                     expectedBytes = manifest.db.bytes,
                     expectedSha256 = manifest.db.sha256,
                     label = manifest.db.file,
+                )
+            }
+
+            val dbArtifact = if (compression == null) {
+                MaterializedDatabaseArtifact(
+                    bytes = stagingDb.length(),
+                    sha256 = manifest.db.sha256.lowercase(Locale.US),
+                )
+            } else {
+                materializeCompressedDatabaseArtifact(
+                    artifactFile = downloadedArtifact,
+                    artifact = manifest.db,
+                    compression = compression,
+                    destinationDb = stagingDb,
                 )
             }
 
@@ -208,8 +236,8 @@ class BundleBootstrapper(
                 bundleVersion = manifest.bundleVersion,
                 dbFileName = manifest.db.file,
                 dbPath = finalDb.absolutePath,
-                dbSha256 = manifest.db.sha256.lowercase(Locale.US),
-                dbBytes = manifest.db.bytes,
+                dbSha256 = dbArtifact.sha256,
+                dbBytes = dbArtifact.bytes,
                 manifestUrl = manifestUrl,
                 activatedAtUTC = Instant.now(clock).toString(),
             )
@@ -229,11 +257,14 @@ class BundleBootstrapper(
             if (stagingDb.exists()) {
                 stagingDb.delete()
             }
+            if (downloadedArtifact != stagingDb && downloadedArtifact.exists()) {
+                downloadedArtifact.delete()
+            }
         }
     }
 
-    private fun assembleMultipartDatabase(
-        stagingDb: File,
+    private fun assembleMultipartArtifact(
+        artifactFile: File,
         manifest: V3BundleManifest,
         manifestUrl: String,
     ) {
@@ -241,9 +272,9 @@ class BundleBootstrapper(
         require(dbParts.isNotEmpty()) { "db_parts is empty" }
 
         var totalBytes = 0L
-        FileOutputStream(stagingDb).use { output ->
+        FileOutputStream(artifactFile).use { output ->
             for (part in dbParts) {
-                val partFile = File.createTempFile("bundle-part-", ".tmp", stagingDb.parentFile)
+                val partFile = File.createTempFile("bundle-part-", ".tmp", artifactFile.parentFile)
                 try {
                     httpFetcher.fetchToFile(
                         url = ContractJson.resolveArtifactUrl(part, manifestUrl),
@@ -271,7 +302,7 @@ class BundleBootstrapper(
             )
         }
         validateFile(
-            file = stagingDb,
+            file = artifactFile,
             expectedBytes = manifest.db.bytes,
             expectedSha256 = manifest.db.sha256,
             label = manifest.db.file,
@@ -320,6 +351,67 @@ class BundleBootstrapper(
             }
         }
         return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private fun normalizedCompression(artifact: BundleArtifact): String? {
+        val raw = artifact.compression?.trim()?.lowercase(Locale.US).orEmpty()
+        return raw.takeIf { it.isNotEmpty() && it != "none" }
+    }
+
+    private fun materializeCompressedDatabaseArtifact(
+        artifactFile: File,
+        artifact: BundleArtifact,
+        compression: String,
+        destinationDb: File,
+    ): MaterializedDatabaseArtifact {
+        val expectedBytes = artifact.uncompressedBytes
+            ?: throw IllegalArgumentException("Compressed bundle db is missing uncompressed_bytes")
+        val expectedSha256 = artifact.uncompressedSha256
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.lowercase(Locale.US)
+            ?: throw IllegalArgumentException("Compressed bundle db is missing uncompressed_sha256")
+
+        if (destinationDb.exists()) {
+            destinationDb.delete()
+        }
+        val digest = MessageDigest.getInstance("SHA-256")
+        var totalBytes = 0L
+        val inflaterFactory: (BufferedInputStream) -> java.io.InputStream = when (compression) {
+            "gzip" -> { input -> GZIPInputStream(input) }
+            "zlib" -> { input -> InflaterInputStream(input) }
+            else -> throw IllegalArgumentException("Unsupported bundle db compression '$compression' for ${artifact.file}")
+        }
+
+        artifactFile.inputStream().use { rawInput ->
+            inflaterFactory(BufferedInputStream(rawInput)).use { inflated ->
+                FileOutputStream(destinationDb).use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        val read = inflated.read(buffer)
+                        if (read <= 0) {
+                            break
+                        }
+                        output.write(buffer, 0, read)
+                        digest.update(buffer, 0, read)
+                        totalBytes += read.toLong()
+                    }
+                }
+            }
+        }
+
+        if (totalBytes != expectedBytes) {
+            destinationDb.delete()
+            throw IllegalArgumentException(
+                "bundle db size mismatch after decompression: expected $expectedBytes, got $totalBytes",
+            )
+        }
+        val actualSha = digest.digest().joinToString("") { "%02x".format(it) }
+        if (actualSha != expectedSha256) {
+            destinationDb.delete()
+            throw IllegalArgumentException("bundle db sha256 mismatch after decompression")
+        }
+        return MaterializedDatabaseArtifact(bytes = totalBytes, sha256 = actualSha)
     }
 
     private fun decodeManifestOrThrow(

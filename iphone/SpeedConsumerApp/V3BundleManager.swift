@@ -2,6 +2,7 @@ import CryptoKit
 import Foundation
 import OSLog
 import SQLite3
+import zlib
 
 actor V3BundleManager {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "bundle-manager")
@@ -905,7 +906,7 @@ actor V3BundleManager {
             completedBytes: 0,
             totalBytes: 0
         )
-        let requiredBytes = manifest.db.bytes
+        let requiredBytes = requiredDiskBytes(for: manifest.db)
         try ensureSufficientDiskSpace(requiredBytes: requiredBytes, reason: "bundle download")
 
         let stagingDB: URL
@@ -943,7 +944,12 @@ actor V3BundleManager {
                 try? removeItemIfExists(at: downloaded)
             }
             try validateSHA256(fileAt: downloaded, expectedHex: manifest.db.sha256, label: "bundle db")
-            stagingDB = try writeStagingDB(downloadedFile: downloaded, version: manifest.bundleVersion)
+            stagingDB = try prepareDownloadedDB(
+                artifactFile: downloaded,
+                artifact: manifest.db,
+                version: manifest.bundleVersion,
+                onProgress: onProgress
+            )
         }
 
         do {
@@ -1662,6 +1668,9 @@ actor V3BundleManager {
 
     private func multipartAssembledCacheIdentity(manifest: V3BundleManifest, sortedParts: [BundleArtifact]) -> String {
         var identity = "\(manifest.bundleVersion)|\(manifest.db.file)|\(manifest.db.sha256)|\(manifest.db.bytes)"
+        if let compression = normalizedCompression(for: manifest.db) {
+            identity.append("|\(compression)|\(expectedInstalledSHA256(for: manifest.db))|\(expectedInstalledBytes(for: manifest.db))")
+        }
         for part in sortedParts {
             identity.append("|\(part.file)|\(part.sha256)|\(part.bytes)")
         }
@@ -1672,7 +1681,8 @@ actor V3BundleManager {
         let identity = multipartAssembledCacheIdentity(manifest: manifest, sortedParts: sortedParts)
         let digest = SHA256.hash(data: Data(identity.utf8))
         let key = digest.map { String(format: "%02x", $0) }.joined()
-        return try multipartPartsCacheDirectory().appendingPathComponent("\(key).assembled.sqlite")
+        let suffix = normalizedCompression(for: manifest.db) == nil ? ".assembled.sqlite" : ".assembled.download"
+        return try multipartPartsCacheDirectory().appendingPathComponent("\(key)\(suffix)")
     }
 
     private func multipartAssembleCheckpointFileURL(manifest: V3BundleManifest, sortedParts: [BundleArtifact]) throws -> URL {
@@ -1708,11 +1718,185 @@ actor V3BundleManager {
         }
     }
 
-    private func writeStagingDB(downloadedFile: URL, version: String) throws -> URL {
+    private func normalizedCompression(for artifact: BundleArtifact) -> String? {
+        let raw = artifact.compression?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        guard !raw.isEmpty, raw != "none" else {
+            return nil
+        }
+        return raw
+    }
+
+    private func expectedInstalledBytes(for artifact: BundleArtifact) -> Int64 {
+        max(0, artifact.uncompressedBytes ?? artifact.bytes)
+    }
+
+    private func expectedInstalledSHA256(for artifact: BundleArtifact) -> String {
+        let raw = artifact.uncompressedSHA256?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        return raw.isEmpty ? artifact.sha256.lowercased() : raw
+    }
+
+    private func requiredDiskBytes(for artifact: BundleArtifact) -> Int64 {
+        let installedBytes = expectedInstalledBytes(for: artifact)
+        guard normalizedCompression(for: artifact) != nil else {
+            return installedBytes
+        }
+        let downloadBytes = max(0, artifact.bytes)
+        if downloadBytes > Int64.max - installedBytes {
+            return Int64.max
+        }
+        return downloadBytes + installedBytes
+    }
+
+    private func stagingDBURL(forVersion version: String) throws -> URL {
         let stageDir = try stagingDirectory()
-        let fileURL = stageDir.appendingPathComponent("\(version)-\(UUID().uuidString).sqlite")
+        return stageDir.appendingPathComponent("\(version)-\(UUID().uuidString).sqlite")
+    }
+
+    private func writeStagingDB(downloadedFile: URL, version: String) throws -> URL {
+        let fileURL = try stagingDBURL(forVersion: version)
         try fileManager.moveItem(at: downloadedFile, to: fileURL)
         return fileURL
+    }
+
+    private func prepareDownloadedDB(
+        artifactFile: URL,
+        artifact: BundleArtifact,
+        version: String,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
+    ) throws -> URL {
+        guard let compression = normalizedCompression(for: artifact) else {
+            return try writeStagingDB(downloadedFile: artifactFile, version: version)
+        }
+
+        let stagingDB = try stagingDBURL(forVersion: version)
+        do {
+            try materializeCompressedBundleArtifact(
+                artifactFile: artifactFile,
+                artifact: artifact,
+                compression: compression,
+                outputDB: stagingDB,
+                onProgress: onProgress
+            )
+            return stagingDB
+        } catch {
+            try? removeItemIfExists(at: stagingDB)
+            throw error
+        }
+    }
+
+    private func materializeCompressedBundleArtifact(
+        artifactFile: URL,
+        artifact: BundleArtifact,
+        compression: String,
+        outputDB: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
+    ) throws {
+        guard let expectedBytes = artifact.uncompressedBytes else {
+            throw ConsumerAppError.invalidManifest("Compressed bundle DB is missing uncompressed_bytes for \(artifact.file)")
+        }
+        let expectedSHA256 = artifact.uncompressedSHA256?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased() ?? ""
+        guard !expectedSHA256.isEmpty else {
+            throw ConsumerAppError.invalidManifest("Compressed bundle DB is missing uncompressed_sha256 for \(artifact.file)")
+        }
+        emitProgress(
+            onProgress,
+            stage: .assembling,
+            detail: "Decompressing \(artifact.file)",
+            completedBytes: 0,
+            totalBytes: expectedBytes
+        )
+
+        switch compression {
+        case "gzip":
+            try gunzipFile(
+                sourceURL: artifactFile,
+                destinationURL: outputDB,
+                expectedBytes: expectedBytes,
+                expectedSHA256: expectedSHA256
+            ) { completedBytes in
+                self.emitProgress(
+                    onProgress,
+                    stage: .assembling,
+                    detail: "Decompressing \(artifact.file)",
+                    completedBytes: min(expectedBytes, completedBytes),
+                    totalBytes: expectedBytes
+                )
+            }
+        default:
+            throw ConsumerAppError.invalidManifest("Unsupported bundle DB compression '\(compression)' for \(artifact.file)")
+        }
+    }
+
+    private func gunzipFile(
+        sourceURL: URL,
+        destinationURL: URL,
+        expectedBytes: Int64,
+        expectedSHA256: String,
+        onProgress: @escaping (_ completedBytes: Int64) -> Void
+    ) throws {
+        try? removeItemIfExists(at: destinationURL)
+        fileManager.createFile(atPath: destinationURL.path, contents: nil)
+        let outHandle = try FileHandle(forWritingTo: destinationURL)
+        var gzFile: gzFile?
+        do {
+            gzFile = gzopen(sourceURL.path, "rb")
+            guard let gzFile else {
+                throw ConsumerAppError.invalidManifest("Failed to open gzip bundle artifact \(sourceURL.lastPathComponent)")
+            }
+
+            defer {
+                gzclose(gzFile)
+                try? outHandle.close()
+            }
+
+            var hasher = SHA256()
+            var totalBytes: Int64 = 0
+            let bufferSize = 256 * 1024
+            var buffer = [UInt8](repeating: 0, count: bufferSize)
+
+            while true {
+                let readCount = buffer.withUnsafeMutableBytes { rawBuffer -> Int32 in
+                    guard let baseAddress = rawBuffer.baseAddress else {
+                        return 0
+                    }
+                    return gzread(gzFile, baseAddress, UInt32(bufferSize))
+                }
+                if readCount < 0 {
+                    var errorCode: Int32 = 0
+                    let messagePtr = gzerror(gzFile, &errorCode)
+                    let message = messagePtr.map { String(cString: $0) } ?? "unknown gzip read failure"
+                    throw ConsumerAppError.invalidManifest("Failed to decompress gzip bundle \(sourceURL.lastPathComponent): \(message)")
+                }
+                if readCount == 0 {
+                    break
+                }
+                let chunk = Data(buffer[0..<Int(readCount)])
+                try outHandle.write(contentsOf: chunk)
+                hasher.update(data: chunk)
+                totalBytes += Int64(readCount)
+                onProgress(totalBytes)
+            }
+
+            if totalBytes != expectedBytes {
+                throw ConsumerAppError.invalidManifest(
+                    "bundle db size mismatch after decompression: expected \(expectedBytes), got \(totalBytes)"
+                )
+            }
+            let digest = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+            if digest != expectedSHA256.lowercased() {
+                throw ConsumerAppError.checksum("Checksum mismatch for decompressed bundle db \(sourceURL.lastPathComponent)")
+            }
+        } catch {
+            try? outHandle.close()
+            try? removeItemIfExists(at: destinationURL)
+            throw error
+        }
     }
 
     private func stageCopyOfActiveDB(forVersion version: String) throws -> URL {
@@ -1871,7 +2055,15 @@ actor V3BundleManager {
         do {
             try validateSHA256(fileAt: assembledOut, expectedHex: manifest.db.sha256, label: "bundle db (assembled)")
             try? removeItemIfExists(at: checkpointURL)
-            return assembledOut
+            guard normalizedCompression(for: manifest.db) != nil else {
+                return assembledOut
+            }
+            return try prepareDownloadedDB(
+                artifactFile: assembledOut,
+                artifact: manifest.db,
+                version: manifest.bundleVersion,
+                onProgress: onProgress
+            )
         } catch {
             try? removeItemIfExists(at: assembledOut)
             try? removeItemIfExists(at: checkpointURL)
@@ -2034,8 +2226,10 @@ actor V3BundleManager {
     }
 
     private func resolveArtifactURL(_ artifact: BundleArtifact, relativeTo baseURL: URL) throws -> URL {
-        if let raw = artifact.url, let absolute = URL(string: raw), absolute.scheme != nil {
-            return absolute
+        if let raw = artifact.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !raw.isEmpty,
+           let resolved = URL(string: raw, relativeTo: baseURL)?.absoluteURL {
+            return resolved
         }
         guard !artifact.file.isEmpty,
               let relative = URL(string: artifact.file, relativeTo: baseURL)?.absoluteURL else {

@@ -1,7 +1,10 @@
 import importlib.util
+import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 def _load_module(module_path: Path, module_name: str):
@@ -133,6 +136,43 @@ class PublishCoverageBBoxTests(unittest.TestCase):
             )
             bbox = _parse_poly_bbox(poly_path)
             self.assertEqual(bbox, (8.0, 48.0, 10.0, 50.0))
+
+    def test_publish_bundle_emits_gzip_db_artifact(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="youspeed-publish-test-") as td:
+            temp_root = Path(td)
+            db_path = temp_root / "fixture.sqlite"
+            out_root = temp_root / "out"
+            db_path.write_bytes((b"fixture-db-row\n" * 4096))
+
+            argv = [
+                "publish_v3_bundle.py",
+                "--region",
+                "bayern",
+                "--db",
+                str(db_path),
+                "--bundle-version",
+                "2026-03-17",
+                "--out-root",
+                str(out_root),
+                "--db-file-name",
+                "bayern.sqlite",
+                "--db-compression",
+                "gzip",
+                "--manifest-name",
+                "bundle.json",
+            ]
+            with mock.patch.object(sys, "argv", argv):
+                rc = PUBLISH_MODULE.main()
+            self.assertEqual(rc, 0)
+
+            bundle_dir = out_root / "bayern" / "2026-03-17"
+            manifest = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8"))
+            self.assertFalse((bundle_dir / "bayern.sqlite").exists())
+            self.assertTrue((bundle_dir / "bayern.sqlite.gz").exists())
+            self.assertEqual(manifest["db"]["file"], "bayern.sqlite")
+            self.assertEqual(manifest["db"]["compression"], "gzip")
+            self.assertEqual(manifest["db"]["url"], "bayern.sqlite.gz")
+            self.assertEqual(manifest["db"]["uncompressed_bytes"], db_path.stat().st_size)
 
 
 if __name__ == "__main__":

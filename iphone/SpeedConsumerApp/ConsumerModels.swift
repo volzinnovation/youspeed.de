@@ -11,19 +11,35 @@ struct BundleArtifact: Codable, Sendable {
     let sha256: String
     let url: String?
     let compression: String?
+    let uncompressedBytes: Int64?
+    let uncompressedSHA256: String?
+
+    enum CodingKeys: String, CodingKey {
+        case file
+        case bytes
+        case sha256
+        case url
+        case compression
+        case uncompressedBytes = "uncompressed_bytes"
+        case uncompressedSHA256 = "uncompressed_sha256"
+    }
 
     init(
         file: String,
         bytes: Int64,
         sha256: String,
         url: String?,
-        compression: String? = nil
+        compression: String? = nil,
+        uncompressedBytes: Int64? = nil,
+        uncompressedSHA256: String? = nil
     ) {
         self.file = file
         self.bytes = bytes
         self.sha256 = sha256
         self.url = url
         self.compression = compression
+        self.uncompressedBytes = uncompressedBytes
+        self.uncompressedSHA256 = uncompressedSHA256
     }
 }
 
@@ -514,8 +530,12 @@ struct WayMatchContext: Sendable {
     let preferredEndpointProximityM: Double?
     let recentWayIDs: [String]
     let recentFixes: [WayMatchRecentFix]
+    let sameRefUrbanReleaseStreak: Int
     let preferredStreetRef: String?
+    let activeStreetRef: String?
+    let preferredStreetName: String?
     let recentStreetRefs: [String]
+    let consecutiveNoRefMatchCount: Int
     let recentTunnelCandidateWayIDs: [String]
     let recentTunnelCandidateRefs: [String]
     let recentTunnelApproachWayIDs: [String]
@@ -540,8 +560,12 @@ struct WayMatchContext: Sendable {
         preferredEndpointProximityM: Double? = nil,
         recentWayIDs: [String],
         recentFixes: [WayMatchRecentFix] = [],
+        sameRefUrbanReleaseStreak: Int = 0,
         preferredStreetRef: String?,
+        activeStreetRef: String? = nil,
+        preferredStreetName: String? = nil,
         recentStreetRefs: [String],
+        consecutiveNoRefMatchCount: Int = 0,
         recentTunnelCandidateWayIDs: [String] = [],
         recentTunnelCandidateRefs: [String] = [],
         recentTunnelApproachWayIDs: [String] = [],
@@ -565,8 +589,12 @@ struct WayMatchContext: Sendable {
         self.preferredEndpointProximityM = preferredEndpointProximityM
         self.recentWayIDs = recentWayIDs
         self.recentFixes = recentFixes
+        self.sameRefUrbanReleaseStreak = max(sameRefUrbanReleaseStreak, 0)
         self.preferredStreetRef = preferredStreetRef
+        self.activeStreetRef = activeStreetRef
+        self.preferredStreetName = preferredStreetName
         self.recentStreetRefs = recentStreetRefs
+        self.consecutiveNoRefMatchCount = max(consecutiveNoRefMatchCount, 0)
         self.recentTunnelCandidateWayIDs = recentTunnelCandidateWayIDs
         self.recentTunnelCandidateRefs = recentTunnelCandidateRefs
         self.recentTunnelApproachWayIDs = recentTunnelApproachWayIDs
@@ -727,6 +755,8 @@ struct SpeedLimitResult: Codable, Sendable {
     let streetRef: String?
     let matchedEndpointProximityM: Double?
     let cityName: String?
+    let cityPlaceName: String?
+    let cityDistrictName: String?
     let insideCity: Bool?
     let citySource: String?
     let cityResolveMs: Double
