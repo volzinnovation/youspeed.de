@@ -55,6 +55,7 @@ on:
         type: boolean
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -177,6 +178,56 @@ jobs:
           echo "Country: ${{ steps.plan.outputs.bundle_country }} (${{ steps.plan.outputs.country_code }})"
           echo "Bundle release: ${{ steps.params.outputs.release_tag }}"
           echo "PBF release: ${{ steps.params.outputs.pbf_release_tag }}"
+
+      - name: Ensure Maintained Country PBF Snapshot Release
+        if: ${{ inputs.execute }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          pbf_tag="${{ steps.params.outputs.pbf_release_tag }}"
+          need_pbf_workflow=0
+
+          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Required PBF release not found: ${pbf_tag}"
+            need_pbf_workflow=1
+          else
+            assets_json="$(gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" --json assets)"
+            missing_required="$(
+              python3 -c 'import json,sys; payload=json.loads(sys.argv[1]); assets=payload.get("assets", []); names={str(a.get("name", "")) for a in assets if isinstance(a, dict)}; pbf_name=sys.argv[2]; state_name=sys.argv[3]; report_name=sys.argv[4]; has_pbf=(pbf_name in names) or any(n.startswith(pbf_name + ".part") for n in names); required={state_name, report_name}; print("1" if ((not has_pbf) or bool(required - names)) else "0")' \
+                "${assets_json}" \
+                "${{ steps.plan.outputs.pbf_asset_name }}" \
+                "${{ steps.plan.outputs.state_asset_name }}" \
+                "${{ steps.plan.outputs.report_asset_name }}"
+            )"
+            if [[ "${missing_required}" == "1" ]]; then
+              echo "PBF release exists but is incomplete: ${pbf_tag}"
+              need_pbf_workflow=1
+            fi
+          fi
+
+          if [[ "${need_pbf_workflow}" != "1" ]]; then
+            echo "Found usable maintained PBF release: ${pbf_tag}"
+            exit 0
+          fi
+
+          ref_name="${{ github.ref_name }}"
+          dispatch_output="$(
+            gh workflow run ".github/workflows/country_pbf_diff_update.yml" \
+              --ref "${ref_name}" \
+              --field "bundle_country=${{ steps.plan.outputs.bundle_country }}" \
+              --field "pbf_release_tag=${pbf_tag}" 2>&1
+          )"
+          echo "${dispatch_output}"
+
+          pbf_run_id="$(echo "${dispatch_output}" | sed -nE 's#^.*/actions/runs/([0-9]+)$#\1#p' | tail -n1)"
+          if [[ -z "${pbf_run_id}" ]]; then
+            echo "Failed to parse Country PBF Diff Update run id." >&2
+            exit 1
+          fi
+
+          gh run watch "${pbf_run_id}" --interval 30 --exit-status
 
       - name: Download Maintained Country PBF Snapshot
         if: ${{ inputs.execute }}
