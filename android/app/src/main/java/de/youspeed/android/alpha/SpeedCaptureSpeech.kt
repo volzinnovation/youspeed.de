@@ -33,7 +33,7 @@ data class SpeedCaptureSelection(
 
 object SpeedCaptureSpeech {
     const val speechLocaleTag: String = "de-DE"
-    const val promptText: String = "Geschwindigkeit erfassen. Jetzt sprechen."
+    const val promptText: String = "Korrektur"
     const val listeningWindowMs: Long = 30_000L
     const val timeoutPaddingMs: Long = 350L
     const val startDelayMs: Long = 300L

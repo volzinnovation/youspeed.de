@@ -54,7 +54,7 @@ object ConsumerMainScreenLogic {
         return when (notice?.severity) {
             PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: "?"
             PenaltySeverity.POINTS_AND_FINE -> notice.penaltyPoints?.toString() ?: "?"
-            null -> if (isSearchingSignal(state)) "Suche Signal" else state.currentSpeedKmh.roundToInt().toString()
+            null -> if (isSearchingSignal(state)) " " else state.currentSpeedKmh.roundToInt().toString()
         }
     }
 
@@ -81,7 +81,7 @@ object ConsumerMainScreenLogic {
                 val points = notice.penaltyPoints
                 if (points == 1) "Punkt" else "Punkte"
             }
-            null -> if (isSearchingSignal(state)) "" else "km/h"
+            null -> if (isSearchingSignal(state)) "Suche Signal" else "km/h"
         }
     }
 
@@ -122,7 +122,7 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return ""
         }
-        val city = normalizedPlaceText(state.limitCityName)
+        val city = normalizedPlaceText(state.limitCityName ?: state.limitCityPlaceName)
         if (city != null) {
             return city
         }
@@ -133,14 +133,21 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return false
         }
-        return cityBadgeStreetText(state) != null || cityBadgeCityText(state) != null
+        return cityBadgeStreetText(state) != null ||
+            cityBadgePlaceText(state) != null ||
+            cityBadgeDistrictText(state) != null
     }
 
     fun shouldHighlightCityBadge(state: ConsumerUiState): Boolean = state.lastLookupInsideCity == true
 
     fun cityBadgeStreetText(state: ConsumerUiState): String? = normalizedPlaceText(state.limitStreetName)
 
-    fun cityBadgeCityText(state: ConsumerUiState): String? = normalizedPlaceText(state.limitCityName)
+    fun cityBadgePlaceText(state: ConsumerUiState): String? {
+        return normalizedPlaceText(state.limitCityPlaceName)
+            ?: normalizedPlaceText(state.limitCityName)
+    }
+
+    fun cityBadgeDistrictText(state: ConsumerUiState): String? = normalizedPlaceText(state.limitCityDistrictName)
 
     fun isDrivingBanWarningActive(state: ConsumerUiState): Boolean {
         return (currentPenaltyNotice(state)?.drivingBanMonths ?: 0) > 0

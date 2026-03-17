@@ -25,6 +25,102 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun derivedSpeedUsesDistanceAndElapsedTime() {
+        assertEquals(36.0, ConsumerSessionController.derivedSpeedKmh(distanceM = 50.0, elapsedSeconds = 5.0), 0.0001)
+    }
+
+    @Test
+    fun derivedSpeedSubtractsAccuracyAllowance() {
+        assertEquals(
+            8.4,
+            ConsumerSessionController.derivedSpeedKmh(distanceM = 12.0, elapsedSeconds = 3.0, accuracyAllowanceM = 5.0),
+            0.0001,
+        )
+        assertEquals(
+            0.0,
+            ConsumerSessionController.derivedSpeedKmh(distanceM = 4.0, elapsedSeconds = 3.0, accuracyAllowanceM = 5.0),
+            0.0001,
+        )
+    }
+
+    @Test
+    fun derivedSpeedKeepsLowNonZeroValues() {
+        assertEquals(3.6, ConsumerSessionController.derivedSpeedKmh(distanceM = 2.0, elapsedSeconds = 2.0), 0.0001)
+    }
+
+    @Test
+    fun filteredDisplaySpeedUsesDerivedBelowLowSpeedThreshold() {
+        assertEquals(
+            1.8,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = 3.8,
+                fallbackDerivedSpeedKmh = 1.8,
+                speedAccuracyKmh = null,
+                previousDisplaySpeedKmh = 7.2,
+            ),
+            0.0001,
+        )
+        assertEquals(
+            0.0,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = 5.4,
+                fallbackDerivedSpeedKmh = 0.0,
+                speedAccuracyKmh = 2.0,
+                previousDisplaySpeedKmh = 0.0,
+            ),
+            0.0001,
+        )
+    }
+
+    @Test
+    fun filteredDisplaySpeedUsesRawGpsAtOrAboveThreshold() {
+        assertEquals(
+            7.0,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = 7.0,
+                fallbackDerivedSpeedKmh = 2.8,
+                speedAccuracyKmh = null,
+                previousDisplaySpeedKmh = 0.0,
+            ),
+            0.0001,
+        )
+        assertEquals(
+            12.4,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = 12.4,
+                fallbackDerivedSpeedKmh = 4.2,
+                speedAccuracyKmh = null,
+                previousDisplaySpeedKmh = 0.0,
+            ),
+            0.0001,
+        )
+    }
+
+    @Test
+    fun filteredDisplaySpeedClampsNonPositiveInputs() {
+        assertEquals(
+            0.0,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = 0.0,
+                fallbackDerivedSpeedKmh = 0.0,
+                speedAccuracyKmh = null,
+                previousDisplaySpeedKmh = 0.0,
+            ),
+            0.0001,
+        )
+        assertEquals(
+            0.0,
+            ConsumerSessionController.filteredDisplaySpeedKmh(
+                rawSpeedKmh = -1.0,
+                fallbackDerivedSpeedKmh = -2.0,
+                speedAccuracyKmh = null,
+                previousDisplaySpeedKmh = 0.0,
+            ),
+            0.0001,
+        )
+    }
+
+    @Test
     fun parsesGitHubReleaseAssetPaths() {
         val parsed = HttpUrlFetcher.parseGitHubReleaseAssetUrl(
             "https://github.com/volzinnovation/youspeed.de/releases/download/baden-wuerttemberg/baden-wuerttemberg_manifest.json"
@@ -77,6 +173,15 @@ class ConsumerParityTests {
         assertEquals("M3 M2 + connected-candidate gate", MatcherDebugProfile.M3.debugLabel)
         assertEquals(LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM, MatcherDebugProfile.M4.lookupModel)
         assertEquals(LookupMatchingModel.CORRIDOR_HMM, MatcherDebugProfile.M5.lookupModel)
+        assertEquals("M9 Guarded stale-ref suppression", MatcherDebugProfile.M9.debugLabel)
+        assertEquals(LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC, MatcherDebugProfile.M9.lookupModel)
+    }
+
+    @Test
+    fun localSpeedCorrectionExpiresOnNextWayId() {
+        assertEquals(LocalSpeedCorrectionDecision.APPLY, LocalSpeedCorrectionPolicy.decide("17721265", "17721265"))
+        assertEquals(LocalSpeedCorrectionDecision.KEEP_WAITING, LocalSpeedCorrectionPolicy.decide("17721265", null))
+        assertEquals(LocalSpeedCorrectionDecision.EXPIRE, LocalSpeedCorrectionPolicy.decide("17721265", "17721266"))
     }
 
     @Test
@@ -179,6 +284,18 @@ class ConsumerParityTests {
         assertEquals("Schritt", ConsumerMainScreenLogic.limitText(state))
         assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
         assertTrue(ConsumerMainScreenLogic.showsPedestrianZoneSign(state))
+    }
+
+    @Test
+    fun mainScreenLogicMovesSearchSignalIntoSecondaryMetric() {
+        val state = ConsumerUiState(
+            startupDataState = StartupDataState.READY,
+            activeDBPath = "/tmp/mock.sqlite",
+            gpsSignalBars = 0,
+        )
+
+        assertEquals(" ", ConsumerMainScreenLogic.primaryMetricText(state))
+        assertEquals("Suche Signal", ConsumerMainScreenLogic.secondaryMetricText(state))
     }
 
     @Test

@@ -243,6 +243,11 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
     case m3
     case m4
     case m5
+    case m6
+    case m7
+    case m8
+    case m9
+    case m10
 
     var id: String { rawValue }
 
@@ -253,6 +258,11 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m3: return "M3"
         case .m4: return "M4"
         case .m5: return "M5"
+        case .m6: return "M6"
+        case .m7: return "M7"
+        case .m8: return "M8"
+        case .m9: return "M9"
+        case .m10: return "M10"
         }
     }
 
@@ -263,6 +273,11 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m3: return "M2 + connected-candidate gate"
         case .m4: return "Corridor raw mini-HMM"
         case .m5: return "Corridor-aware final"
+        case .m6: return "M2 + urban consecutive distance-gap release"
+        case .m7: return "M6 + 10m search window"
+        case .m8: return "M6 + no-ref street-name continuity"
+        case .m9: return "M8 + guarded stale-ref suppression"
+        case .m10: return "M9 + node-direction-aware junction release"
         }
     }
 
@@ -275,11 +290,16 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m3: return .simpleSpeedRefConnectedHeuristic
         case .m4: return .corridorHMMRawMiniHMM
         case .m5: return .corridorHMM
+        case .m6: return .simpleSpeedRefUrbanReleaseHeuristic
+        case .m7: return .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic
+        case .m8: return .simpleSpeedRefStreetNameFallbackHeuristic
+        case .m9: return .simpleSpeedRefStreetNameGuardHeuristic
+        case .m10: return .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
         }
     }
 
     static let defaultProfile: MatcherDebugProfile = .m2
-    static let forcedProfileVersion: Int = 2
+    static let forcedProfileVersion: Int = 7
 
     static func resolveInitialProfile(storedRawValue: String?, forcedVersion: Int) -> MatcherDebugProfile {
         if forcedVersion < forcedProfileVersion {
@@ -342,6 +362,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var limitWayID: String?
     @Published var limitStreetName: String?
     @Published var limitCityName: String?
+    @Published var limitCityPlaceName: String?
+    @Published var limitCityDistrictName: String?
     @Published var lastError: String = ""
     @Published var currentLatitude: Double?
     @Published var currentLongitude: Double?
@@ -455,12 +477,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var lastAnnouncedSpeechText: String?
     private var wasDrivingBanWarningActive = false
     private var lastDrivingBanWarningAt = Date.distantPast
+    private var recentSpeedSampleLocations: [CLLocation] = []
     private var previousMatchedWayID: String?
     private var previousMatchedHighway: String?
     private var previousMatchedEndpointProximityM: Double?
+    private var previousMatchedStreetRef: String?
+    private var previousMatchedStreetName: String?
     private var recentMatchedWayIDs: [String] = []
     private var recentMatchedFixes: [WayMatchRecentFix] = []
+    private var sameRefUrbanReleaseStreak = 0
     private var recentMatchedStreetRefs: [String] = []
+    private var consecutiveNoRefMatchCount = 0
     private var recentNearbyTunnelWayIDs: [String] = []
     private var recentNearbyTunnelRefs: [String] = []
     private var recentTunnelApproachWayIDs: [String] = []
@@ -510,6 +537,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let startupSeedActivationFloorProgress: Double = 0.92
     private static let recentMatchedWayHistoryLimit = 5
     private static let recentMatchedStreetRefHistoryLimit = 6
+    private static let derivedSpeedComputationMinWindowSeconds: TimeInterval = 2.0
+    private static let derivedSpeedComputationMaxWindowSeconds: TimeInterval = 4.5
+    private static let lowSpeedDerivedFallbackThresholdKmh: Double = 7.0
     private static let speedCaptureSpeechLocaleIdentifier = "de-DE"
     private static let speedCaptureListeningWindowSeconds: UInt64 = 4
     private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
@@ -522,11 +552,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let displayLabel: String
     }
     private struct ActiveLocalSpeedCorrection {
+        let wayID: String
         let maxspeedValue: String
         let numericSpeedKmh: Int?
-        let anchorStreetName: String?
-        let anchorRef: String?
-        var wayIDs: Set<String>
     }
     // Source: https://taginfo.openstreetmap.org/api/4/key/values?key=maxspeed&filter=all&lang=de&sortname=count&sortorder=desc&rp=26
     // Snapshot date: 2026-03-03
@@ -1009,7 +1037,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         speechSynthesizer.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .automotiveNavigation
-        locationManager.distanceFilter = 10
+        locationManager.distanceFilter = kCLDistanceFilterNone
         beginStartupDataLoadIfNeeded()
         Task { @MainActor [weak self] in
             await self?.refreshLocalObservations()
@@ -1660,6 +1688,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         limitWayID = fixture.wayID
         limitStreetName = fixture.streetName
         limitCityName = fixture.cityName
+        limitCityPlaceName = fixture.cityName
+        limitCityDistrictName = nil
         lastError = ""
         currentLatitude = fixture.latitude
         currentLongitude = fixture.longitude
@@ -1794,6 +1824,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         isDriving = true
         isUnlimitedSpeedLimitActive = false
+        resetDerivedSpeedTracking()
         resetTunnelModeTracking()
         driveStatus = "requesting_location"
         let auth = locationManager.authorizationStatus
@@ -1811,6 +1842,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func stopDriving() {
         isDriving = false
         locationManager.stopUpdatingLocation()
+        resetDerivedSpeedTracking()
         driveStatus = "stopped"
         cancelSpeedCapture(reason: nil)
         isUnlimitedSpeedLimitActive = false
@@ -1898,6 +1930,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard previousMatchedWayID != nil ||
                 !recentMatchedWayIDs.isEmpty ||
                 !recentMatchedStreetRefs.isEmpty ||
+                previousMatchedStreetName != nil ||
                 !recentNearbyTunnelWayIDs.isEmpty ||
                 !recentNearbyTunnelRefs.isEmpty ||
                 !recentTunnelApproachWayIDs.isEmpty ||
@@ -1918,8 +1951,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             preferredEndpointProximityM: previousMatchedEndpointProximityM,
             recentWayIDs: recentMatchedWayIDs,
             recentFixes: recentMatchedFixes,
+            sameRefUrbanReleaseStreak: sameRefUrbanReleaseStreak,
             preferredStreetRef: recentMatchedStreetRefs.first,
+            activeStreetRef: previousMatchedStreetRef,
+            preferredStreetName: previousMatchedStreetName,
             recentStreetRefs: recentMatchedStreetRefs,
+            consecutiveNoRefMatchCount: consecutiveNoRefMatchCount,
             recentTunnelCandidateWayIDs: recentNearbyTunnelWayIDs,
             recentTunnelCandidateRefs: recentNearbyTunnelRefs,
             recentTunnelApproachWayIDs: recentTunnelApproachWayIDs,
@@ -1954,6 +1991,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         previousMatchedWayID = wayID
         previousMatchedHighway = result.highway
         previousMatchedEndpointProximityM = result.matchedEndpointProximityM
+        previousMatchedStreetRef = result.streetRef
+        previousMatchedStreetName = result.streetBaseName ?? result.streetName
         pushUniqueFront(
             wayID,
             into: &recentMatchedWayIDs,
@@ -1963,7 +2002,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if recentMatchedFixes.count > 3 {
             recentMatchedFixes.removeLast(recentMatchedFixes.count - 3)
         }
-        for refToken in V3SpeedLimitService.normalizedRefTokens(result.streetRef) {
+        sameRefUrbanReleaseStreak = updatedSameRefUrbanReleaseStreak(after: result)
+        let normalizedStreetRefs = V3SpeedLimitService.normalizedRefTokens(result.streetRef)
+        if normalizedStreetRefs.isEmpty {
+            consecutiveNoRefMatchCount = min(consecutiveNoRefMatchCount + 1, 8)
+        } else {
+            consecutiveNoRefMatchCount = 0
+        }
+        for refToken in normalizedStreetRefs {
             pushUniqueFront(
                 refToken,
                 into: &recentMatchedStreetRefs,
@@ -2007,9 +2053,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         previousMatchedWayID = nil
         previousMatchedHighway = nil
         previousMatchedEndpointProximityM = nil
+        previousMatchedStreetRef = nil
+        previousMatchedStreetName = nil
         recentMatchedWayIDs.removeAll(keepingCapacity: false)
         recentMatchedFixes.removeAll(keepingCapacity: false)
+        sameRefUrbanReleaseStreak = 0
         recentMatchedStreetRefs.removeAll(keepingCapacity: false)
+        consecutiveNoRefMatchCount = 0
         recentNearbyTunnelWayIDs.removeAll(keepingCapacity: false)
         recentNearbyTunnelRefs.removeAll(keepingCapacity: false)
         resetTunnelApproachState()
@@ -2027,6 +2077,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         tunnelApproachFixCount = 0
         tunnelApproachBaselineAccuracyM = nil
         tunnelApproachBaselineSignalBars = nil
+    }
+
+    private func updatedSameRefUrbanReleaseStreak(after result: SpeedLimitResult) -> Int {
+        if let streakCount = result.selectionTrace.last(where: { $0.step == "simple_same_ref_urban_release_streak" }).flatMap({ Int($0.detail) }) {
+            return max(streakCount, 0)
+        }
+        return 0
     }
 
     private func resetApproachCorridorState() {
@@ -2702,108 +2759,36 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
 
-        let anchorRef = normalizedRoadIdentity(limitStreetRef)
-        let anchorStreet = normalizedRoadIdentity(limitStreetBaseName ?? limitStreetName)
-        guard anchorRef != nil || anchorStreet != nil else {
-            activeLocalSpeedCorrection = nil
-            Self.logger.notice("capture_corr anchor_unavailable way=\(wayID, privacy: .public)")
-            return
-        }
-
         activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
+            wayID: wayID,
             maxspeedValue: selection.value,
-            numericSpeedKmh: observation.newSpeedKmh ?? Int(selection.value),
-            anchorStreetName: anchorStreet,
-            anchorRef: anchorRef,
-            wayIDs: [wayID]
+            numericSpeedKmh: observation.newSpeedKmh ?? Int(selection.value)
         )
         Self.logger.notice(
-            "capture_corr session_started way=\(wayID, privacy: .public) ref=\(anchorRef ?? "n/a", privacy: .public) street=\(anchorStreet ?? "n/a", privacy: .public) value=\(selection.value, privacy: .public)"
+            "capture_corr session_started way=\(wayID, privacy: .public) value=\(selection.value, privacy: .public)"
         )
     }
 
-    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat: Double, lon: Double) -> String? {
-        guard var correction = activeLocalSpeedCorrection else {
+    private func applyActiveLocalSpeedCorrectionIfNeeded(for result: SpeedLimitResult, lat _: Double, lon _: Double) -> String? {
+        guard let correction = activeLocalSpeedCorrection else {
             return nil
         }
         guard let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines), !wayID.isEmpty else {
             return nil
         }
-
-        let currentRef = normalizedRoadIdentity(result.streetRef)
-        let currentStreet = normalizedRoadIdentity(result.streetBaseName ?? result.streetName)
-        let sharesRef = correction.anchorRef != nil && correction.anchorRef == currentRef
-        let sharesStreet = correction.anchorStreetName != nil && correction.anchorStreetName == currentStreet
-        guard sharesRef || sharesStreet else {
+        guard wayID == correction.wayID else {
             Self.logger.notice(
-                "capture_corr session_stopped reason=road_changed way=\(wayID, privacy: .public) ref=\(currentRef ?? "n/a", privacy: .public) street=\(currentStreet ?? "n/a", privacy: .public)"
+                "capture_corr session_stopped reason=way_changed from=\(correction.wayID, privacy: .public) to=\(wayID, privacy: .public)"
             )
             activeLocalSpeedCorrection = nil
             return nil
         }
 
-        if correction.wayIDs.contains(wayID) {
-            localSpeedOverrideValuesByWayID[wayID] = correction.maxspeedValue
-            if let numeric = correction.numericSpeedKmh {
-                localSpeedOverridesByWayID[wayID] = numeric
-            }
-            return correction.maxspeedValue
-        }
-
-        correction.wayIDs.insert(wayID)
-        activeLocalSpeedCorrection = correction
         localSpeedOverrideValuesByWayID[wayID] = correction.maxspeedValue
-
         if let numeric = correction.numericSpeedKmh {
             localSpeedOverridesByWayID[wayID] = numeric
         }
-
-        let source = activeBundleVersion.isEmpty ? "none" : activeBundleVersion
-        let context = LocalObservationCaptureContext(
-            lat: lat,
-            lon: lon,
-            headingDeg: nil,
-            roadCandidateIDs: [wayID],
-            cityContext: result.cityName,
-            streetContext: result.streetName,
-            confidenceCalibrated: 0.72,
-            sourceVersion: source
-        )
-        let oldSpeed = result.speedLimitKmh
-        let maxspeedValue = correction.maxspeedValue
-        Task { @MainActor [weak self] in
-            guard let self else {
-                return
-            }
-            do {
-                let persisted = try await localObservationStore.recordSpeedLimitChange(
-                    oldSpeedKmh: oldSpeed,
-                    newMaxspeedValue: maxspeedValue,
-                    context: context
-                )
-                Self.logger.notice(
-                    "capture_corr segment_saved obs=\(persisted.id, privacy: .public) way=\(wayID, privacy: .public) value=\(maxspeedValue, privacy: .public)"
-                )
-                await refreshLocalObservations()
-            } catch {
-                Self.logger.error(
-                    "capture_corr segment_save_failed way=\(wayID, privacy: .public) value=\(maxspeedValue, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
-                )
-            }
-        }
-
         return correction.maxspeedValue
-    }
-
-    private func normalizedRoadIdentity(_ raw: String?) -> String? {
-        guard let raw else {
-            return nil
-        }
-        let normalized = raw
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-        return normalized.isEmpty ? nil : normalized
     }
 
     private func cancelSpeedCapture(reason: String?) {
@@ -2978,12 +2963,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func updateSpeedLimit(for location: CLLocation, fixID: Int) async {
+    private func updateSpeedLimit(for location: CLLocation, fixID: Int, speedKmh: Double) async {
         let fixTimestamp = Self.lookupTimestampFormatter.string(from: location.timestamp)
         let fixTimestampISO = Self.isoFormatter.string(from: location.timestamp)
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
-        let gpsKmh = max(0, location.speed) * 3.6
         let hAcc = location.horizontalAccuracy
         let vAcc = location.verticalAccuracy
         gpsHorizontalAccuracyM = hAcc >= 0 ? hAcc : nil
@@ -3002,14 +2986,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             matchedFixCount = 0
             hadRecentGPSSignalLoss = true
             appendLookupEvent(
-                "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
+                "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) speed_kmh=\(String(format: "%.1f", speedKmh)) hacc_m=\(String(format: "%.1f", hAcc)) status=no_service"
             )
             appendGPSFixCSV(
                 fixID: fixID,
                 timestampISO: fixTimestampISO,
                 lat: lat,
                 lon: lon,
-                speedKmh: gpsKmh,
+                speedKmh: speedKmh,
                 horizontalAccM: hAcc,
                 verticalAccM: vAcc,
                 courseDeg: rawCourse,
@@ -3034,7 +3018,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     matchContext: matchContext,
                     headingDeg: course,
                     headingAccuracyDeg: courseAccuracy,
-                    speedKmh: gpsKmh,
+                    speedKmh: speedKmh,
                     horizontalAccuracyM: hAcc,
                     gpsSignalBars: gpsBars
                 )
@@ -3055,6 +3039,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.limitStreetBaseName = result.streetBaseName
                     self.limitStreetRef = result.streetRef
                     self.limitCityName = result.cityName
+                    self.limitCityPlaceName = result.cityPlaceName
+                    self.limitCityDistrictName = result.cityDistrictName
                     self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
                     self.recordWayMatch(
@@ -3102,14 +3088,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let tunnelModeText = self.tunnelModeState.rawValue
                     let localOverrideText = localOverrideValue ?? "nil"
                     self.appendLookupEvent(
-                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) local_override=\(localOverrideText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText) tunnel_seg=\(tunnelSegmentText) tunnel_mode=\(tunnelModeText)"
+                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) speed_kmh=\(String(format: "%.1f", speedKmh)) hacc_m=\(String(format: "%.1f", hAcc)) speed=\(speedText) local_override=\(localOverrideText) way=\(wayText) street=\(streetText) city=\(cityText) inside_city=\(insideCityText) city_src=\(citySourceText) city_ms=\(String(format: "%.3f", result.cityResolveMs)) q_ms=\(String(format: "%.3f", result.queryTimeMs)) rows=\(result.candidateCount) speed_rows=\(result.speedCandidateCount) nearest_m=\(nearestText) nearest_speed_m=\(nearestSpeedText) tunnel_seg=\(tunnelSegmentText) tunnel_mode=\(tunnelModeText)"
                     )
                     self.appendGPSFixCSV(
                         fixID: fixID,
                         timestampISO: fixTimestampISO,
                         lat: lat,
                         lon: lon,
-                        speedKmh: gpsKmh,
+                        speedKmh: speedKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
                         courseDeg: rawCourse,
@@ -3123,7 +3109,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         timestampISO: fixTimestampISO,
                         lat: lat,
                         lon: lon,
-                        speedKmh: gpsKmh,
+                        speedKmh: speedKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
                         courseDeg: rawCourse,
@@ -3145,14 +3131,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.lastCandidateTraces = []
                     self.lastSelectionTrace = []
                     self.appendLookupEvent(
-                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) gps_kmh=\(String(format: "%.1f", gpsKmh)) hacc_m=\(String(format: "%.1f", hAcc)) lookup_error=\(error.localizedDescription)"
+                        "\(fixTimestamp) fix=\(fixID) lat=\(String(format: "%.5f", lat)) lon=\(String(format: "%.5f", lon)) speed_kmh=\(String(format: "%.1f", speedKmh)) hacc_m=\(String(format: "%.1f", hAcc)) lookup_error=\(error.localizedDescription)"
                     )
                     self.appendGPSFixCSV(
                         fixID: fixID,
                         timestampISO: fixTimestampISO,
                         lat: lat,
                         lon: lon,
-                        speedKmh: gpsKmh,
+                        speedKmh: speedKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
                         courseDeg: rawCourse,
@@ -3165,7 +3151,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         timestampISO: fixTimestampISO,
                         lat: lat,
                         lon: lon,
-                        speedKmh: gpsKmh,
+                        speedKmh: speedKmh,
                         horizontalAccM: hAcc,
                         verticalAccM: vAcc,
                         courseDeg: rawCourse,
@@ -3206,42 +3192,84 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func resetDerivedSpeedTracking() {
+        recentSpeedSampleLocations.removeAll(keepingCapacity: true)
+        currentSpeedKmh = 0
+    }
+
+    private func updateCurrentSpeed(from location: CLLocation) -> Double {
+        if let last = recentSpeedSampleLocations.last,
+           location.timestamp <= last.timestamp {
+            recentSpeedSampleLocations.removeAll(keepingCapacity: true)
+        }
+
+        recentSpeedSampleLocations.append(location)
+        // Keep a short history so low-speed fallback can use recent displacement.
+        recentSpeedSampleLocations.removeAll {
+            location.timestamp.timeIntervalSince($0.timestamp) > Self.derivedSpeedComputationMaxWindowSeconds
+        }
+
+        let gpsSpeedKmh = max(0, location.speed) * 3.6
+        let speedAccuracyKmh = location.speedAccuracy >= 0 ? location.speedAccuracy * 3.6 : nil
+        let fallbackDerivedSpeedKmh: Double
+        if let referenceLocation = recentSpeedSampleLocations.first {
+            let elapsedSeconds = location.timestamp.timeIntervalSince(referenceLocation.timestamp)
+            let accuracyAllowanceM = max(0, max(referenceLocation.horizontalAccuracy, location.horizontalAccuracy))
+            if elapsedSeconds >= Self.derivedSpeedComputationMinWindowSeconds {
+                fallbackDerivedSpeedKmh = Self.derivedSpeedKmh(
+                    distanceM: location.distance(from: referenceLocation),
+                    elapsedSeconds: elapsedSeconds,
+                    accuracyAllowanceM: accuracyAllowanceM
+                )
+            } else {
+                fallbackDerivedSpeedKmh = 0
+            }
+        } else {
+            fallbackDerivedSpeedKmh = 0
+        }
+
+        let previousDisplaySpeedKmh = currentSpeedKmh
+        currentSpeedKmh = Self.filteredDisplaySpeedKmh(
+            rawSpeedKmh: gpsSpeedKmh,
+            fallbackDerivedSpeedKmh: fallbackDerivedSpeedKmh,
+            speedAccuracyKmh: speedAccuracyKmh,
+            previousDisplaySpeedKmh: previousDisplaySpeedKmh
+        )
+        return currentSpeedKmh
+    }
+
+    nonisolated static func derivedSpeedKmh(
+        distanceM: Double,
+        elapsedSeconds: TimeInterval,
+        accuracyAllowanceM: Double = 0
+    ) -> Double {
+        guard distanceM.isFinite,
+              distanceM > 0,
+              elapsedSeconds.isFinite,
+              elapsedSeconds > 0 else {
+            return 0
+        }
+        let adjustedDistanceM = max(0, distanceM - max(0, accuracyAllowanceM))
+        guard adjustedDistanceM > 0 else {
+            return 0
+        }
+        return (adjustedDistanceM / elapsedSeconds) * 3.6
+    }
+
     nonisolated static func filteredDisplaySpeedKmh(
         rawSpeedKmh: Double,
+        fallbackDerivedSpeedKmh: Double = 0,
         speedAccuracyKmh: Double?,
         previousDisplaySpeedKmh: Double
     ) -> Double {
-        let standstillEnterThresholdKmh = 4.0
-        let standstillExitThresholdKmh = 6.0
-        let standstillAccuracyMarginKmh = 1.0
-
-        guard rawSpeedKmh.isFinite, rawSpeedKmh > 0 else {
-            return 0
+        let normalizedRawSpeedKmh = rawSpeedKmh.isFinite && rawSpeedKmh > 0 ? rawSpeedKmh : 0
+        let normalizedFallbackDerivedSpeedKmh = fallbackDerivedSpeedKmh.isFinite && fallbackDerivedSpeedKmh > 0
+            ? fallbackDerivedSpeedKmh
+            : 0
+        if normalizedRawSpeedKmh < Self.lowSpeedDerivedFallbackThresholdKmh {
+            return normalizedFallbackDerivedSpeedKmh
         }
-
-        let normalizedAccuracyKmh: Double? = {
-            guard let speedAccuracyKmh, speedAccuracyKmh.isFinite, speedAccuracyKmh >= 0 else {
-                return nil
-            }
-            return speedAccuracyKmh
-        }()
-
-        if previousDisplaySpeedKmh <= 0.5, rawSpeedKmh < standstillExitThresholdKmh {
-            return 0
-        }
-
-        let enterThreshold = min(
-            standstillExitThresholdKmh,
-            max(
-                standstillEnterThresholdKmh,
-                (normalizedAccuracyKmh ?? 0) + standstillAccuracyMarginKmh
-            )
-        )
-        if rawSpeedKmh <= enterThreshold {
-            return 0
-        }
-
-        return rawSpeedKmh
+        return normalizedRawSpeedKmh
     }
 
     private func appendLookupEvent(_ line: String) {
@@ -3594,12 +3622,68 @@ extension DriveSessionViewModel {
         try await waitForTestSpeedCaptureToBecomeIdle()
     }
 
+    func testSetActiveLocalSpeedCorrection(wayID: String, value: String, numericSpeedKmh: Int?) {
+        activeLocalSpeedCorrection = ActiveLocalSpeedCorrection(
+            wayID: wayID,
+            maxspeedValue: value,
+            numericSpeedKmh: numericSpeedKmh
+        )
+    }
+
+    func testApplyActiveLocalSpeedCorrection(wayID: String?) -> String? {
+        let result = SpeedLimitResult(
+            speedLimitKmh: 50,
+            isUnlimitedSpeedLimit: false,
+            wayID: wayID,
+            highway: nil,
+            service: nil,
+            tunnel: nil,
+            bridge: nil,
+            covered: nil,
+            location: nil,
+            layer: nil,
+            level: nil,
+            isTunnelSegment: false,
+            streetName: nil,
+            streetBaseName: nil,
+            streetRef: nil,
+            matchedEndpointProximityM: nil,
+            cityName: nil,
+            cityPlaceName: nil,
+            cityDistrictName: nil,
+            insideCity: nil,
+            citySource: nil,
+            cityResolveMs: 0,
+            cityCandidateBoundaries: 0,
+            cityContainingBoundaries: 0,
+            cityPlaceCandidates: 0,
+            queryTimeMs: 0,
+            candidateCount: 0,
+            speedCandidateCount: 0,
+            nearestCandidateDistanceM: nil,
+            nearestSpeedCandidateDistanceM: nil,
+            nearbyTunnelCandidateWayIDs: [],
+            nearbyTunnelCandidateRefs: [],
+            usedMiniHMM: false,
+            miniHMMCandidateCount: 0,
+            matchHypotheses: [],
+            candidateTraces: [],
+            selectionTrace: [],
+            activeCorridorState: nil
+        )
+        return applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: 0, lon: 0)
+    }
+
     var testSpeedCaptureDidResolve: Bool {
         speedCaptureDidResolve
     }
 
     var testSpeedCaptureLatestTranscript: String {
         speedCaptureLatestTranscript
+    }
+
+    var testActiveLocalSpeedCorrectionWayID: String? {
+        activeLocalSpeedCorrection?.wayID
     }
 
     private func waitForTestSpeedCaptureToBecomeIdle(timeoutNanoseconds: UInt64 = 2_000_000_000) async throws {
@@ -3644,6 +3728,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         }
         let auth = manager.authorizationStatus
         if auth == .authorizedWhenInUse || auth == .authorizedAlways {
+            resetDerivedSpeedTracking()
             manager.startUpdatingLocation()
             driveStatus = "running"
         } else if auth == .denied || auth == .restricted {
@@ -3657,13 +3742,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             return
         }
         for location in locations {
-            let rawSpeedKmh = max(0, location.speed) * 3.6
-            let speedAccuracyKmh = location.speedAccuracy >= 0 ? location.speedAccuracy * 3.6 : nil
-            currentSpeedKmh = Self.filteredDisplaySpeedKmh(
-                rawSpeedKmh: rawSpeedKmh,
-                speedAccuracyKmh: speedAccuracyKmh,
-                previousDisplaySpeedKmh: currentSpeedKmh
-            )
+            let displaySpeedKmh = updateCurrentSpeed(from: location)
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
             gpsFixCount += 1
@@ -3673,7 +3752,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
                 guard let self else {
                     return
                 }
-                await updateSpeedLimit(for: location, fixID: fixID)
+                await updateSpeedLimit(for: location, fixID: fixID, speedKmh: displaySpeedKmh)
             }
         }
     }

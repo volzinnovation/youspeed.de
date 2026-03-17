@@ -23,6 +23,8 @@ internal data class SpeedLookupResult(
     val speedLimitKmh: Int?,
     val isUnlimitedSpeedLimit: Boolean,
     val cityName: String?,
+    val cityPlaceName: String?,
+    val cityDistrictName: String?,
     val insideCity: Boolean?,
     val citySource: String?,
     val queryTimeMs: Double,
@@ -96,6 +98,7 @@ internal class V3SpeedLimitLookup(
         get() = when (matchingModel) {
             LookupMatchingModel.CONNECTED_BASELINE,
             LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> false
             LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM,
             LookupMatchingModel.CORRIDOR_HMM,
@@ -133,6 +136,8 @@ internal class V3SpeedLimitLookup(
                 speedLimitKmh = null,
                 isUnlimitedSpeedLimit = false,
                 cityName = null,
+                cityPlaceName = null,
+                cityDistrictName = null,
                 insideCity = null,
                 citySource = null,
                 queryTimeMs = elapsedMs(startedAtNs),
@@ -231,6 +236,8 @@ internal class V3SpeedLimitLookup(
             speedLimitKmh = effectiveSpeed,
             isUnlimitedSpeedLimit = best?.isUnlimitedSpeedLimit == true,
             cityName = cityContext.cityName,
+            cityPlaceName = cityContext.cityPlaceName,
+            cityDistrictName = cityContext.cityDistrictName,
             insideCity = resolvedInsideCityDecision.first,
             citySource = resolvedInsideCityDecision.second,
             queryTimeMs = elapsedMs(startedAtNs),
@@ -473,6 +480,7 @@ internal class V3SpeedLimitLookup(
                 }
 
                 LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> {
                     val simpleCandidates = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
                         graphSelectableCandidates
@@ -484,6 +492,9 @@ internal class V3SpeedLimitLookup(
                         matchContext = matchContext,
                         speedKmh = speedKmh,
                         horizontalAccuracyM = horizontalAccuracyM,
+                        urbanSameRefReleaseEnabled = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                        useStreetNameFallbackContinuity = false,
+                        useGuardedStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                         wayLinks = wayLinks,
                     )
                     selectionTrace += simpleSelection.selectionTrace
@@ -495,10 +506,10 @@ internal class V3SpeedLimitLookup(
                         nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
                         portalEligibleTunnelWayIds = portalEligibleTunnelWayIds,
                         portalEligibleTunnelRefs = portalEligibleTunnelRefs,
-                        modelTraceName = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
-                            "simple_speed_ref_connected"
-                        } else {
-                            "simple_speed_ref"
+                        modelTraceName = when (matchingModel) {
+                            LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> "simple_speed_ref_connected"
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC -> "simple_speed_ref_street_name_guard"
+                            else -> "simple_speed_ref"
                         },
                     )
                 }
@@ -2414,10 +2425,13 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         speedKmh: Double?,
         horizontalAccuracyM: Double?,
+        urbanSameRefReleaseEnabled: Boolean,
+        useStreetNameFallbackContinuity: Boolean,
+        useGuardedStreetNameFallbackContinuity: Boolean,
         wayLinks: WayLinksContext,
     ): NonCorridorMatcherSelection {
         val poorSignalThresholdM = 10.0
-        val lowSpeedThresholdKmh = 30.0
+        val lowSpeedThresholdKmh = SIMPLE_SAME_REF_HOLD_SPEED_THRESHOLD_KMH
         val poorSignal = (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) > poorSignalThresholdM
         val lowSpeedAccurateGps = (speedKmh ?: 0.0) < lowSpeedThresholdKmh &&
             (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) < poorSignalThresholdM
@@ -2450,23 +2464,150 @@ internal class V3SpeedLimitLookup(
                 detail = "kept ${filteredCandidates.size} tunnel candidates while horizontal_accuracy_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)} remained above ${formatMetric(poorSignalThresholdM)}",
             )
         }
-        val previousRefCandidate = rankedCandidates.firstOrNull { candidate ->
-            val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
-            candidateRefTokens.isNotEmpty() && candidateRefTokens.any { token -> token in matchContext.recentStreetRefs }
-        }
-        val selected = if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousRefCandidate != null) {
-            if (normalizedWayId(previousRefCandidate.wayId) != normalizedWayId(bestCandidate.wayId)) {
-                selectionTrace += MatchSelectionTrace(
-                    step = "simple_same_ref_hold",
-                    detail = "kept same-ref ${previousRefCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)}",
+        val continuityIdentity: Pair<Set<String>, SimpleContinuityIdentitySource>
+        val previousContinuityCandidate: WayCandidate?
+        if (useGuardedStreetNameFallbackContinuity) {
+            val guardedContinuity = preferredGuardedStreetNameContinuityCandidate(
+                rankedCandidates = rankedCandidates,
+                bestCandidate = bestCandidate,
+                matchContext = matchContext,
+                horizontalAccuracyM = horizontalAccuracyM,
+            )
+            if (guardedContinuity != null) {
+                continuityIdentity = guardedContinuity.tokens to SimpleContinuityIdentitySource.STREET_NAME
+                previousContinuityCandidate = guardedContinuity.candidate
+                selectionTrace += guardedContinuity.trace
+            } else {
+                continuityIdentity = preferredSimpleContinuityIdentity(
+                    matchContext = matchContext,
+                    useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
+                    ageOutStaleRefContinuity = true,
                 )
+                previousContinuityCandidate = rankedCandidates.firstOrNull { candidate ->
+                    val candidateTokens = continuityTokens(
+                        candidate = candidate,
+                        source = continuityIdentity.second,
+                        useStreetNameFallbackContinuity = useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity,
+                    )
+                    candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in continuityIdentity.first }
+                }
             }
-            previousRefCandidate
+        } else {
+            continuityIdentity = preferredSimpleContinuityIdentity(
+                matchContext = matchContext,
+                useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
+                ageOutStaleRefContinuity = false,
+            )
+            previousContinuityCandidate = rankedCandidates.firstOrNull { candidate ->
+                val candidateTokens = continuityTokens(
+                    candidate = candidate,
+                    source = continuityIdentity.second,
+                    useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
+                )
+                candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in continuityIdentity.first }
+            }
+        }
+
+        val urbanReleasePressureActive = if (
+            urbanSameRefReleaseEnabled &&
+            speedKmh != null &&
+            speedKmh.isFinite() &&
+            speedKmh >= lowSpeedThresholdKmh &&
+            speedKmh <= SIMPLE_SAME_REF_URBAN_RELEASE_MAX_SPEED_KMH &&
+            horizontalAccuracyM != null &&
+            horizontalAccuracyM.isFinite() &&
+            horizontalAccuracyM <= SIMPLE_SAME_REF_URBAN_RELEASE_MAX_ACCURACY_M &&
+            previousContinuityCandidate != null &&
+            normalizedWayId(previousContinuityCandidate.wayId) != normalizedWayId(bestCandidate.wayId) &&
+            shouldEnableUrbanSameRefRelease(
+                sameRefCandidate = previousContinuityCandidate,
+                bestCandidate = bestCandidate,
+            )
+        ) {
+            true
+        } else {
+            false
+        }
+        val nextUrbanReleaseStreak = if (urbanReleasePressureActive) {
+            minOf(matchContext.sameRefUrbanReleaseStreak + 1, 8)
+        } else {
+            0
+        }
+
+        val selected = if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
+            if (
+                urbanSameRefReleaseEnabled &&
+                urbanReleasePressureActive &&
+                nextUrbanReleaseStreak >= SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK
+            ) {
+                selectionTrace += MatchSelectionTrace(
+                    step = "simple_same_ref_urban_release",
+                    detail = "released ${continuityIdentity.second.traceLabel} ${previousContinuityCandidate.wayId ?: "nil"} for nearest ${bestCandidate.wayId ?: "nil"} speed_kmh=${formatMetric(speedKmh)} nearest_m=${formatMetric(bestCandidate.distanceM)} continuity_m=${formatMetric(previousContinuityCandidate.distanceM)} streak=$nextUrbanReleaseStreak",
+                )
+                bestCandidate
+            } else {
+                if (normalizedWayId(previousContinuityCandidate.wayId) != normalizedWayId(bestCandidate.wayId)) {
+                    val step = if (urbanSameRefReleaseEnabled && urbanReleasePressureActive) {
+                        if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
+                            "simple_same_name_urban_hold"
+                        } else {
+                            "simple_same_ref_urban_hold"
+                        }
+                    } else {
+                        if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
+                            "simple_same_name_hold"
+                        } else {
+                            "simple_same_ref_hold"
+                        }
+                    }
+                    val detail = if (urbanSameRefReleaseEnabled && urbanReleasePressureActive) {
+                        "kept ${continuityIdentity.second.traceLabel} ${previousContinuityCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)} nearest_m=${formatMetric(bestCandidate.distanceM)} continuity_m=${formatMetric(previousContinuityCandidate.distanceM)} streak=$nextUrbanReleaseStreak"
+                    } else {
+                        "kept ${continuityIdentity.second.traceLabel} ${previousContinuityCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)}"
+                    }
+                    selectionTrace += MatchSelectionTrace(step = step, detail = detail)
+                }
+                previousContinuityCandidate
+            }
         } else {
             bestCandidate
         }
+
+        if (urbanSameRefReleaseEnabled) {
+            selectionTrace += MatchSelectionTrace(
+                step = "simple_same_ref_urban_release_streak",
+                detail = nextUrbanReleaseStreak.toString(),
+            )
+        }
+
         val reason = when {
-            speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousRefCandidate != null -> "high_speed_same_ref"
+            urbanSameRefReleaseEnabled &&
+                urbanReleasePressureActive &&
+                nextUrbanReleaseStreak >= SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK &&
+                normalizedWayId(selected.wayId) == normalizedWayId(bestCandidate.wayId) -> {
+                if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
+                    "urban_same_name_distance_gap_release"
+                } else {
+                    "urban_same_ref_distance_gap_release"
+                }
+            }
+
+            speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null -> {
+                if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
+                    "high_speed_same_name"
+                } else {
+                    "high_speed_same_ref"
+                }
+            }
+
+            previousContinuityCandidate != null -> {
+                if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
+                    "low_speed_same_name_release_distance"
+                } else {
+                    "low_speed_same_ref_release_distance"
+                }
+            }
+
             lowSpeedAccurateGps -> "low_speed_good_gps_distance"
             matchContext.isInTunnelMode && poorSignal -> "tunnel_hold_distance"
             else -> "distance_fallback"
@@ -2480,6 +2621,175 @@ internal class V3SpeedLimitLookup(
             traceRankedCandidates = traceRankedCandidates,
             selectionTrace = selectionTrace,
         )
+    }
+
+    private enum class SimpleContinuityIdentitySource(val traceLabel: String) {
+        NONE("continuity"),
+        REF("same-ref"),
+        STREET_NAME("same-name"),
+    }
+
+    private data class GuardedStreetNameContinuity(
+        val candidate: WayCandidate,
+        val tokens: Set<String>,
+        val trace: MatchSelectionTrace,
+    )
+
+    private fun preferredSimpleContinuityIdentity(
+        matchContext: WayMatchContext,
+        useStreetNameFallbackContinuity: Boolean,
+        ageOutStaleRefContinuity: Boolean,
+    ): Pair<Set<String>, SimpleContinuityIdentitySource> {
+        val activeStreetRefTokens = normalizedRefTokens(matchContext.activeStreetRef).toSet()
+        if (activeStreetRefTokens.isNotEmpty()) {
+            return activeStreetRefTokens to SimpleContinuityIdentitySource.REF
+        }
+        val activeStreetNameTokens = normalizedStreetNameTokens(matchContext.preferredStreetName).toSet()
+        if (
+            useStreetNameFallbackContinuity &&
+            matchContext.consecutiveNoRefMatchCount >= SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES &&
+            activeStreetNameTokens.isNotEmpty()
+        ) {
+            return activeStreetNameTokens to SimpleContinuityIdentitySource.STREET_NAME
+        }
+        val refTokens = preferredSimpleRefContinuityTokens(
+            matchContext = matchContext,
+            ageOutStaleRefContinuity = ageOutStaleRefContinuity,
+        )
+        if (refTokens.isNotEmpty()) {
+            return refTokens to SimpleContinuityIdentitySource.REF
+        }
+        return emptySet<String>() to SimpleContinuityIdentitySource.NONE
+    }
+
+    private fun preferredGuardedStreetNameContinuityCandidate(
+        rankedCandidates: List<WayCandidate>,
+        bestCandidate: WayCandidate,
+        matchContext: WayMatchContext,
+        horizontalAccuracyM: Double?,
+    ): GuardedStreetNameContinuity? {
+        val activeStreetRefTokens = normalizedRefTokens(matchContext.activeStreetRef).toSet()
+        val activeStreetNameTokens = normalizedStreetNameTokens(matchContext.preferredStreetName).toSet()
+        if (
+            activeStreetRefTokens.isNotEmpty() ||
+            matchContext.consecutiveNoRefMatchCount < SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES ||
+            activeStreetNameTokens.isEmpty() ||
+            !isUrbanSameRefReleaseTargetHighway(matchContext.preferredHighway) ||
+            horizontalAccuracyM == null ||
+            !horizontalAccuracyM.isFinite() ||
+            horizontalAccuracyM <= 0.0
+        ) {
+            return null
+        }
+
+        val nameCandidate = rankedCandidates.firstOrNull { candidate ->
+            val candidateRefTokens = normalizedRefTokens(candidate.streetRef).toSet()
+            if (candidateRefTokens.isNotEmpty()) {
+                return@firstOrNull false
+            }
+            val candidateTokens = normalizedStreetNameTokens(candidate.streetBaseName ?: candidate.streetName).toSet()
+            candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in activeStreetNameTokens }
+        } ?: return null
+
+        if (
+            normalizedWayId(nameCandidate.wayId) != normalizedWayId(bestCandidate.wayId) ||
+            !isUrbanSameRefReleaseTargetHighway(nameCandidate.highway) ||
+            nameCandidate.distanceM > horizontalAccuracyM
+        ) {
+            return null
+        }
+
+        val refTokens = preferredSimpleRefContinuityTokens(
+            matchContext = matchContext,
+            ageOutStaleRefContinuity = true,
+        )
+        val staleRefCandidate = rankedCandidates.firstOrNull { candidate ->
+            val candidateTokens = normalizedRefTokens(candidate.streetRef).toSet()
+            candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in refTokens }
+        }
+        if (staleRefCandidate != null) {
+            val staleRefOutsideAccuracyCap = staleRefCandidate.distanceM > horizontalAccuracyM
+            val staleRefDistanceGapM = staleRefCandidate.distanceM - nameCandidate.distanceM
+            if (
+                !isUrbanSameRefReleaseSourceHighway(staleRefCandidate.highway) ||
+                (!staleRefOutsideAccuracyCap && staleRefDistanceGapM < SIMPLE_SAME_REF_URBAN_RELEASE_MIN_DISTANCE_GAP_M)
+            ) {
+                return null
+            }
+        }
+
+        return GuardedStreetNameContinuity(
+            candidate = nameCandidate,
+            tokens = activeStreetNameTokens,
+            trace = MatchSelectionTrace(
+                step = "simple_same_name_guard",
+                detail = "kept same-name ${nameCandidate.wayId ?: "nil"} after ${matchContext.consecutiveNoRefMatchCount} no-ref matches best_m=${formatMetric(nameCandidate.distanceM)} stale_ref_m=${formatMetric(staleRefCandidate?.distanceM ?: Double.POSITIVE_INFINITY)} hacc_m=${formatMetric(horizontalAccuracyM)}",
+            ),
+        )
+    }
+
+    private fun preferredSimpleRefContinuityTokens(
+        matchContext: WayMatchContext,
+        ageOutStaleRefContinuity: Boolean,
+    ): Set<String> {
+        val activeStreetRefTokens = normalizedRefTokens(matchContext.activeStreetRef).toSet()
+        if (activeStreetRefTokens.isNotEmpty()) {
+            return activeStreetRefTokens
+        }
+        if (
+            ageOutStaleRefContinuity &&
+            matchContext.consecutiveNoRefMatchCount >= SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES
+        ) {
+            return emptySet()
+        }
+        if (matchContext.recentStreetRefs.isNotEmpty()) {
+            return matchContext.recentStreetRefs.toSet()
+        }
+        return normalizedRefTokens(matchContext.preferredStreetRef).toSet()
+    }
+
+    private fun continuityTokens(
+        candidate: WayCandidate,
+        source: SimpleContinuityIdentitySource,
+        useStreetNameFallbackContinuity: Boolean,
+    ): Set<String> {
+        val refTokens = normalizedRefTokens(candidate.streetRef).toSet()
+        if (refTokens.isNotEmpty()) {
+            return refTokens
+        }
+        if (useStreetNameFallbackContinuity && source == SimpleContinuityIdentitySource.STREET_NAME) {
+            return normalizedStreetNameTokens(candidate.streetBaseName ?: candidate.streetName).toSet()
+        }
+        return emptySet()
+    }
+
+    private fun isUrbanSameRefReleaseSourceHighway(highway: String?): Boolean {
+        return when (highway?.trim()?.lowercase(Locale.ROOT)) {
+            "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "residential", "living_street" -> true
+            else -> false
+        }
+    }
+
+    private fun isUrbanSameRefReleaseTargetHighway(highway: String?): Boolean {
+        return when (highway?.trim()?.lowercase(Locale.ROOT)) {
+            "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "residential", "living_street" -> true
+            else -> false
+        }
+    }
+
+    private fun shouldEnableUrbanSameRefRelease(
+        sameRefCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+    ): Boolean {
+        if (
+            !isUrbanSameRefReleaseSourceHighway(sameRefCandidate.highway) ||
+            !isUrbanSameRefReleaseTargetHighway(bestCandidate.highway) ||
+            bestCandidate.distanceM > SIMPLE_SAME_REF_URBAN_RELEASE_MAX_BEST_DISTANCE_M
+        ) {
+            return false
+        }
+        val distanceGapM = sameRefCandidate.distanceM - bestCandidate.distanceM
+        return distanceGapM >= SIMPLE_SAME_REF_URBAN_RELEASE_MIN_DISTANCE_GAP_M
     }
 
     private fun top2TraceMargin(candidates: List<TraceRankedCandidate>): Double {
@@ -4558,10 +4868,12 @@ internal class V3SpeedLimitLookup(
             }
         }
         if (containing.isNotEmpty()) {
-            val cityName = formatAdminCityName(containing)
+            val adminDisplay = buildAdminCityDisplay(containing)
             return CityContext(
                 insideCity = true,
-                cityName = cityName,
+                cityName = adminDisplay.cityName,
+                cityPlaceName = adminDisplay.cityPlaceName,
+                cityDistrictName = adminDisplay.cityDistrictName,
                 citySource = "admin_polygon",
                 candidateBoundaries = boundaries.size,
                 placeCandidates = 0,
@@ -4574,6 +4886,8 @@ internal class V3SpeedLimitLookup(
                 return CityContext(
                     insideCity = false,
                     cityName = best.third,
+                    cityPlaceName = best.third,
+                    cityDistrictName = null,
                     citySource = "place_fallback",
                     candidateBoundaries = boundaries.size,
                     placeCandidates = placeCandidates.size,
@@ -4584,6 +4898,8 @@ internal class V3SpeedLimitLookup(
         return CityContext(
             insideCity = false,
             cityName = null,
+            cityPlaceName = null,
+            cityDistrictName = null,
             citySource = if (hasPlaceTables) "admin_polygons_plus_places" else "admin_polygons",
             candidateBoundaries = boundaries.size,
             placeCandidates = 0,
@@ -4796,20 +5112,24 @@ internal class V3SpeedLimitLookup(
         }
 
         if (containingAdminExact.isNotEmpty()) {
-            val cityName = formatAdminCityName(containingAdminExact)
+            val adminDisplay = buildAdminCityDisplay(containingAdminExact)
             return CityContext(
                 insideCity = true,
-                cityName = cityName,
+                cityName = adminDisplay.cityName,
+                cityPlaceName = adminDisplay.cityPlaceName,
+                cityDistrictName = adminDisplay.cityDistrictName,
                 citySource = "admin_polygon",
                 candidateBoundaries = containingAdminExact.size,
                 placeCandidates = nearbyPlaces.size,
             )
         }
         if (containingAdminBBox.isNotEmpty()) {
-            val cityName = formatAdminCityName(containingAdminBBox)
+            val adminDisplay = buildAdminCityDisplay(containingAdminBBox)
             return CityContext(
                 insideCity = true,
-                cityName = cityName,
+                cityName = adminDisplay.cityName,
+                cityPlaceName = adminDisplay.cityPlaceName,
+                cityDistrictName = adminDisplay.cityDistrictName,
                 citySource = "admin_bbox",
                 candidateBoundaries = containingAdminBBox.size,
                 placeCandidates = nearbyPlaces.size,
@@ -4819,6 +5139,8 @@ internal class V3SpeedLimitLookup(
             return CityContext(
                 insideCity = true,
                 cityName = best.third,
+                cityPlaceName = best.third,
+                cityDistrictName = null,
                 citySource = "place_bbox",
                 candidateBoundaries = 0,
                 placeCandidates = nearbyPlaces.size,
@@ -4828,6 +5150,8 @@ internal class V3SpeedLimitLookup(
             return CityContext(
                 insideCity = false,
                 cityName = best.third,
+                cityPlaceName = best.third,
+                cityDistrictName = null,
                 citySource = "place_nearest",
                 candidateBoundaries = 0,
                 placeCandidates = nearbyPlaces.size,
@@ -4836,6 +5160,8 @@ internal class V3SpeedLimitLookup(
         return CityContext(
             insideCity = false,
             cityName = null,
+            cityPlaceName = null,
+            cityDistrictName = null,
             citySource = "bbox_no_match",
             candidateBoundaries = 0,
             placeCandidates = 0,
@@ -4906,6 +5232,13 @@ internal class V3SpeedLimitLookup(
         private const val SAME_REF_DISTANCE_FLOOR_M = 72.0
         private const val SAME_REF_BOUNCE_MIN_SCORE_IMPROVEMENT_M = 14.0
         private const val SAME_REF_BOUNCE_MIN_DISTANCE_IMPROVEMENT_M = 8.0
+        private const val SIMPLE_SAME_REF_HOLD_SPEED_THRESHOLD_KMH = 30.0
+        private const val SIMPLE_SAME_REF_URBAN_RELEASE_MAX_SPEED_KMH = 34.0
+        private const val SIMPLE_SAME_REF_URBAN_RELEASE_MAX_ACCURACY_M = 10.0
+        private const val SIMPLE_SAME_REF_URBAN_RELEASE_MAX_BEST_DISTANCE_M = 2.5
+        private const val SIMPLE_SAME_REF_URBAN_RELEASE_MIN_DISTANCE_GAP_M = 25.0
+        private const val SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK = 2
+        private const val SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES = 2
         private const val RECENT_WAY_SCORE_SLACK_M = 6.0
         private const val RECENT_WAY_DISTANCE_MULTIPLIER = 1.35
         private const val RECENT_WAY_DISTANCE_FLOOR_M = 55.0
@@ -5102,23 +5435,44 @@ internal class V3SpeedLimitLookup(
             }
         }
 
-        private fun formatAdminCityName(
+        private fun selectAdminBoundaryName(
             boundaries: List<ContainingAdminBoundary>,
+            adminLevel: Int,
         ): String? {
-            val primary = boundaries.sortedWith(
-                compareBy<ContainingAdminBoundary> { cityBoundaryPriority(it.adminLevel) ?: Int.MAX_VALUE }
-                    .thenBy { it.bboxArea }
-                    .thenBy { it.name },
-            ).firstOrNull() ?: return null
-            if (primary.adminLevel != 9) {
-                return primary.name
-            }
-            val qualifier = boundaries
-                .filter { it.adminLevel == 8 && !sameAdminName(it.name, primary.name) }
+            return boundaries
+                .filter { it.adminLevel == adminLevel }
                 .sortedWith(compareBy<ContainingAdminBoundary> { it.bboxArea }.thenBy { it.name })
                 .firstOrNull()
                 ?.name
-            return qualifier?.let { "${primary.name} ($it)" } ?: primary.name
+        }
+
+        private fun buildAdminCityDisplay(
+            boundaries: List<ContainingAdminBoundary>,
+        ): AdminCityDisplay {
+            val districtName = selectAdminBoundaryName(boundaries, adminLevel = 6)
+            val adminLevel8Name = selectAdminBoundaryName(boundaries, adminLevel = 8)
+            val adminLevel9Name = selectAdminBoundaryName(boundaries, adminLevel = 9)
+            val placeName = when {
+                adminLevel9Name != null && adminLevel8Name != null && !sameAdminName(adminLevel8Name, adminLevel9Name) -> {
+                    "$adminLevel8Name - $adminLevel9Name"
+                }
+                adminLevel9Name != null -> adminLevel9Name
+                adminLevel8Name != null -> adminLevel8Name
+                else -> districtName
+            }
+            if (placeName == null) {
+                return AdminCityDisplay(
+                    cityName = null,
+                    cityPlaceName = null,
+                    cityDistrictName = null,
+                )
+            }
+            val districtLine = districtName?.takeUnless { sameAdminName(placeName, it) }
+            return AdminCityDisplay(
+                cityName = districtLine?.let { "$placeName ($it)" } ?: placeName,
+                cityPlaceName = placeName,
+                cityDistrictName = districtLine,
+            )
         }
 
         private fun sameAdminName(
@@ -5468,6 +5822,15 @@ internal class V3SpeedLimitLookup(
                 .orEmpty()
         }
 
+        private fun normalizedStreetNameTokens(raw: String?): List<String> {
+            val normalized = raw
+                ?.trim()
+                ?.uppercase()
+                ?.replace(Regex("[^A-Z0-9]+"), "")
+                .orEmpty()
+            return if (normalized.isEmpty()) emptyList() else listOf(normalized)
+        }
+
         private fun scaledAccuracyBufferM(horizontalAccuracyM: Double?): Double {
             if (horizontalAccuracyM == null || !horizontalAccuracyM.isFinite() || horizontalAccuracyM < 0.0) {
                 return 0.0
@@ -5556,9 +5919,17 @@ private data class ResidentialContext(
 private data class CityContext(
     val insideCity: Boolean,
     val cityName: String?,
+    val cityPlaceName: String?,
+    val cityDistrictName: String?,
     val citySource: String?,
     val candidateBoundaries: Int,
     val placeCandidates: Int,
+)
+
+private data class AdminCityDisplay(
+    val cityName: String?,
+    val cityPlaceName: String?,
+    val cityDistrictName: String?,
 )
 
 private data class ContainingAdminBoundary(

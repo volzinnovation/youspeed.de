@@ -22,8 +22,12 @@ internal data class WayMatchContext(
     val recentWayIds: List<String> = emptyList(),
     val recentWayHistory: List<String> = emptyList(),
     val recentFixes: List<WayMatchRecentFix> = emptyList(),
+    val sameRefUrbanReleaseStreak: Int = 0,
     val preferredStreetRef: String? = null,
+    val activeStreetRef: String? = null,
+    val preferredStreetName: String? = null,
     val recentStreetRefs: List<String> = emptyList(),
+    val consecutiveNoRefMatchCount: Int = 0,
     val recentTunnelCandidateWayIds: Set<String> = emptySet(),
     val recentTunnelCandidateRefs: Set<String> = emptySet(),
     val recentTunnelApproachWayIds: Set<String> = emptySet(),
@@ -50,7 +54,11 @@ internal class WayMatchSessionTracker {
     private val recentWayIds = ArrayDeque<String>()
     private val recentWayHistory = ArrayDeque<String>()
     private val recentFixes = ArrayDeque<WayMatchRecentFix>()
+    private var sameRefUrbanReleaseStreak = 0
+    private var activeStreetRef: String? = null
+    private var preferredStreetName: String? = null
     private val recentStreetRefs = ArrayDeque<String>()
+    private var consecutiveNoRefMatchCount = 0
     private val recentTunnelCandidateWayIds = linkedSetOf<String>()
     private val recentTunnelCandidateRefs = linkedSetOf<String>()
     private val recentTunnelApproachWayIds = linkedSetOf<String>()
@@ -73,7 +81,11 @@ internal class WayMatchSessionTracker {
         if (
             preferredWayId == null &&
             recentWayIds.isEmpty() &&
+            sameRefUrbanReleaseStreak <= 0 &&
+            activeStreetRef == null &&
+            preferredStreetName == null &&
             recentStreetRefs.isEmpty() &&
+            consecutiveNoRefMatchCount <= 0 &&
             recentTunnelCandidateWayIds.isEmpty() &&
             recentTunnelCandidateRefs.isEmpty() &&
             recentTunnelApproachWayIds.isEmpty() &&
@@ -95,8 +107,12 @@ internal class WayMatchSessionTracker {
             recentWayIds = recentWayIds.toList(),
             recentWayHistory = recentWayHistory.toList(),
             recentFixes = recentFixes.toList(),
+            sameRefUrbanReleaseStreak = sameRefUrbanReleaseStreak,
             preferredStreetRef = recentStreetRefs.firstOrNull(),
+            activeStreetRef = activeStreetRef,
+            preferredStreetName = preferredStreetName,
             recentStreetRefs = recentStreetRefs.toList(),
+            consecutiveNoRefMatchCount = consecutiveNoRefMatchCount,
             recentTunnelCandidateWayIds = recentTunnelCandidateWayIds.toSet(),
             recentTunnelCandidateRefs = recentTunnelCandidateRefs.toSet(),
             recentTunnelApproachWayIds = recentTunnelApproachWayIds.toSet(),
@@ -133,6 +149,14 @@ internal class WayMatchSessionTracker {
         }
         preferredHighway = result.highway
         preferredEndpointProximityM = result.matchedEndpointProximityM
+        activeStreetRef = result.streetRef
+        preferredStreetName = result.streetBaseName ?: result.streetName
+        sameRefUrbanReleaseStreak = updatedSameRefUrbanReleaseStreak(result)
+        if (result.streetRefTokens.isEmpty()) {
+            consecutiveNoRefMatchCount = minOf(consecutiveNoRefMatchCount + 1, 8)
+        } else {
+            consecutiveNoRefMatchCount = 0
+        }
         result.streetRefTokens.forEach { pushFrontUnique(recentStreetRefs, it, RECENT_STREET_REF_LIMIT) }
         replaceLinkedSet(recentTunnelCandidateWayIds, result.nearbyTunnelCandidateWayIds, RECENT_WAY_LIMIT)
         replaceLinkedSet(recentTunnelCandidateRefs, result.nearbyTunnelCandidateRefs, RECENT_STREET_REF_LIMIT)
@@ -165,7 +189,11 @@ internal class WayMatchSessionTracker {
         recentWayIds.clear()
         recentWayHistory.clear()
         recentFixes.clear()
+        sameRefUrbanReleaseStreak = 0
+        activeStreetRef = null
+        preferredStreetName = null
         recentStreetRefs.clear()
+        consecutiveNoRefMatchCount = 0
         recentTunnelCandidateWayIds.clear()
         recentTunnelCandidateRefs.clear()
         resetTunnelApproachState()
@@ -176,6 +204,14 @@ internal class WayMatchSessionTracker {
         isInTunnelMode = false
         isInMotorwayMode = false
         activeCorridorState = null
+    }
+
+    private fun updatedSameRefUrbanReleaseStreak(result: SpeedLookupResult): Int {
+        val streak = result.selectionTrace
+            .lastOrNull { it.step == "simple_same_ref_urban_release_streak" }
+            ?.detail
+            ?.toIntOrNull()
+        return maxOf(streak ?: 0, 0)
     }
 
     private fun updateTunnelApproachState(

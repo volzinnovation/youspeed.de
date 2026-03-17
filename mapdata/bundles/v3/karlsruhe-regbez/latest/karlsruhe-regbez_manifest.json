@@ -1,11 +1,11 @@
 {
-  "bundle_version": "2026-03-11-shared-node-corridor-hmm",
+  "bundle_version": "2026-03-15-city-polygons",
   "country_code": "DEU",
-  "created_at_utc": "2026-03-11T23:05:15Z",
+  "created_at_utc": "2026-03-15T09:42:41Z",
   "db": {
-    "bytes": 134434816,
+    "bytes": 136097792,
     "file": "karlsruhe-regbez_speeds.sqlite",
-    "sha256": "90b8fa6148f002d2bfcfc4e2f4bcfa32c785fc9979775b8de097a5da049b7a79",
+    "sha256": "13fc90e9331c165be634b3486f1952d1c0ff5c4a7be26ce9f3205861815edd93",
     "url": null
   },
   "delta_index": null,

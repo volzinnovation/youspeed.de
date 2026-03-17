@@ -9,6 +9,11 @@ final class V3SpeedLimitService {
         case corridorHMMNoSameRefBounceGate
         case corridorHMMAntiABAHysteresis
         case simpleSpeedRefHeuristic
+        case simpleSpeedRefUrbanReleaseHeuristic
+        case simpleSpeedRefUrbanReleaseNarrowWindowHeuristic
+        case simpleSpeedRefStreetNameFallbackHeuristic
+        case simpleSpeedRefStreetNameGuardHeuristic
+        case simpleSpeedRefStreetNameGuardNodeAwareHeuristic
         case simpleSpeedRefConnectedHeuristic
         case connectedBaseline
     }
@@ -28,6 +33,11 @@ final class V3SpeedLimitService {
              .corridorHMMAntiABAHysteresis:
             return true
         case .simpleSpeedRefHeuristic,
+             .simpleSpeedRefUrbanReleaseHeuristic,
+             .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic,
+             .simpleSpeedRefStreetNameFallbackHeuristic,
+             .simpleSpeedRefStreetNameGuardHeuristic,
+             .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
              .simpleSpeedRefConnectedHeuristic,
              .connectedBaseline:
             return false
@@ -112,6 +122,8 @@ final class V3SpeedLimitService {
     private struct CityContext {
         let insideCity: Bool?
         let cityName: String?
+        let cityPlaceName: String?
+        let cityDistrictName: String?
         let citySource: String?
         let candidateBoundaries: Int
         let containingBoundaries: Int
@@ -133,8 +145,12 @@ final class V3SpeedLimitService {
         let recentWayIDs: Set<String>
         let recentWayHistory: [String]
         let recentFixes: [WayMatchRecentFix]
+        let sameRefUrbanReleaseStreak: Int
         let preferredStreetRefs: Set<String>
+        let activeStreetRefTokens: Set<String>
+        let activeStreetNameTokens: Set<String>
         let recentStreetRefs: Set<String>
+        let consecutiveNoRefMatchCount: Int
         let recentTunnelCandidateWayIDs: Set<String>
         let recentTunnelCandidateRefs: Set<String>
         let recentTunnelApproachWayIDs: Set<String>
@@ -269,6 +285,11 @@ final class V3SpeedLimitService {
         var verySharpTurn: Bool {
             turnAngleDeg >= V3SpeedLimitService.transitionHeadingVerySharpTurnDeg
         }
+    }
+
+    private enum JunctionNodeTraversalDirection {
+        case towardNode
+        case awayFromNode
     }
 
     private enum CorridorState: String {
@@ -436,6 +457,20 @@ final class V3SpeedLimitService {
     private static let headingWeightMPerDeg: Double = 1.8
     private static let headingMinSpeedKmh: Double = 8.0
     private static let headingMaxAccuracyDeg: Double = 45.0
+    private static let simpleSameRefHoldSpeedThresholdKmh: Double = 30.0
+    private static let simpleSameRefUrbanReleaseMaxSpeedKmh: Double = 34.0
+    private static let simpleSameRefUrbanReleaseMaxAccuracyM: Double = 10.0
+    private static let simpleSameRefUrbanReleaseMaxBestDistanceM: Double = 2.5
+    private static let simpleSameRefUrbanReleaseMinDistanceGapM: Double = 25.0
+    private static let simpleSameRefUrbanReleaseRequiredStreak = 2
+    private static let simpleSpeedRefNarrowWindowRadiusM: Double = 10.0
+    private static let simpleStreetNameFallbackMinNoRefMatches = 2
+    private static let simpleLowSpeedJunctionBestDistanceSlackM: Double = 3.0
+    private static let simpleLowSpeedJunctionCurrentDistanceSlackM: Double = 4.0
+    private static let simpleLowSpeedJunctionMaxCandidateMismatchDeg: Double = 35.0
+    private static let simpleLowSpeedNodeAwareJunctionMaxCandidateMismatchDeg: Double = 40.0
+    private static let simpleLowSpeedJunctionMinCurrentMismatchDeg: Double = 40.0
+    private static let simpleLowSpeedJunctionSharedNodeToleranceM: Double = 16.0
     private static let walkingTurnSwitchMaxSpeedKmh: Double = 7.0
     private static let walkingTurnSwitchPreferredDistanceM: Double = 10.0
     private static let walkingTurnSwitchBestDistanceM: Double = 5.0
@@ -510,29 +545,49 @@ final class V3SpeedLimitService {
         }).first
     }
 
-    private static func formatAdminCityName(
-        from boundaries: [(adminLevel: Int, bboxArea: Double, name: String)]
+    private static func selectAdminBoundaryName(
+        from boundaries: [(adminLevel: Int, bboxArea: Double, name: String)],
+        adminLevel: Int
     ) -> String? {
-        guard let primary = boundaries.sorted(by: {
-            let lhsPriority = cityBoundaryLevelPriority[$0.adminLevel] ?? Int.max
-            let rhsPriority = cityBoundaryLevelPriority[$1.adminLevel] ?? Int.max
-            if lhsPriority != rhsPriority { return lhsPriority < rhsPriority }
-            if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
-            return $0.name < $1.name
-        }).first else {
-            return nil
-        }
-        guard primary.adminLevel == 9 else {
-            return primary.name
-        }
-        let qualifier = boundaries
-            .filter { $0.adminLevel == 8 && !sameAdminName($0.name, primary.name) }
+        boundaries
+            .filter { $0.adminLevel == adminLevel }
             .sorted(by: {
                 if $0.bboxArea != $1.bboxArea { return $0.bboxArea < $1.bboxArea }
                 return $0.name < $1.name
             })
             .first?.name
-        return qualifier.map { "\(primary.name) (\($0))" } ?? primary.name
+    }
+
+    private static func buildAdminCityDisplay(
+        from boundaries: [(adminLevel: Int, bboxArea: Double, name: String)]
+    ) -> (cityName: String?, cityPlaceName: String?, cityDistrictName: String?) {
+        let districtName = selectAdminBoundaryName(from: boundaries, adminLevel: 6)
+        let adminLevel8Name = selectAdminBoundaryName(from: boundaries, adminLevel: 8)
+        let adminLevel9Name = selectAdminBoundaryName(from: boundaries, adminLevel: 9)
+        let placeName: String?
+        if let adminLevel9Name {
+            if let adminLevel8Name, !sameAdminName(adminLevel8Name, adminLevel9Name) {
+                placeName = "\(adminLevel8Name) - \(adminLevel9Name)"
+            } else {
+                placeName = adminLevel9Name
+            }
+        } else if let adminLevel8Name {
+            placeName = adminLevel8Name
+        } else {
+            placeName = districtName
+        }
+        guard let placeName else {
+            return (cityName: nil, cityPlaceName: nil, cityDistrictName: nil)
+        }
+        let districtLine = districtName.flatMap { sameAdminName(placeName, $0) ? nil : $0 }
+        let cityName = districtLine.map { "\(placeName) (\($0))" } ?? placeName
+        return (cityName: cityName, cityPlaceName: placeName, cityDistrictName: districtLine)
+    }
+
+    private static func formatAdminCityName(
+        from boundaries: [(adminLevel: Int, bboxArea: Double, name: String)]
+    ) -> String? {
+        buildAdminCityDisplay(from: boundaries).cityName
     }
 
     private static func sameAdminName(_ lhs: String, _ rhs: String) -> Bool {
@@ -614,7 +669,11 @@ final class V3SpeedLimitService {
         "living_street",
     ]
 
-    init(dbPath: String, countryCode: String? = nil, matchingModel: MatchingModel = .corridorHMM) {
+    init(
+        dbPath: String,
+        countryCode: String? = nil,
+        matchingModel: MatchingModel = .corridorHMM
+    ) {
         self.dbPath = dbPath
         self.countryCode = Self.normalizedCountryCode(countryCode) ?? Self.inferCountryCode(fromDBPath: dbPath)
         self.matchingModel = matchingModel
@@ -651,9 +710,11 @@ final class V3SpeedLimitService {
         ) ? resolvedHeading : nil
         let normalizedMatchContext = normalizedMatchContext(
             from: matchContext,
-            fallbackPreferredWayID: preferredWayID
+            fallbackPreferredWayID: preferredWayID,
+            ageOutStaleRefContinuity: matchingModel == .simpleSpeedRefStreetNameGuardHeuristic
+                || matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
         )
-        let normalizedRadiusM = max(radiusM, 0.0)
+        let normalizedRadiusM = effectiveCandidateSearchRadiusM(radiusM: radiusM)
         let cappedCandidateRadiusM = candidateLookupRadiusM(radiusM: normalizedRadiusM, horizontalAccuracyM: horizontalAccuracyM)
         let cappedCandidateQuery = try loadCandidates(
             db: db,
@@ -923,6 +984,8 @@ final class V3SpeedLimitService {
                 streetRef: finalSelected?.streetRef,
                 matchedEndpointProximityM: finalSelected?.endpointProximityM.isFinite == true ? finalSelected?.endpointProximityM : nil,
                 cityName: cityContext.cityName,
+                cityPlaceName: cityContext.cityPlaceName,
+                cityDistrictName: cityContext.cityDistrictName,
                 insideCity: resolvedInsideCityDecision.insideCity,
                 citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
                 cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
@@ -971,23 +1034,57 @@ final class V3SpeedLimitService {
             )
         }
 
-        if matchingModel == .simpleSpeedRefHeuristic || matchingModel == .simpleSpeedRefConnectedHeuristic {
+        if matchingModel == .simpleSpeedRefHeuristic ||
+            matchingModel == .simpleSpeedRefUrbanReleaseHeuristic ||
+            matchingModel == .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic ||
+            matchingModel == .simpleSpeedRefStreetNameFallbackHeuristic ||
+            matchingModel == .simpleSpeedRefStreetNameGuardHeuristic ||
+            matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic ||
+            matchingModel == .simpleSpeedRefConnectedHeuristic {
             let simpleCandidates =
                 matchingModel == .simpleSpeedRefConnectedHeuristic ? graphSelectableCandidates : rankedCandidates
             let simpleSelection = selectSimpleSpeedRefHeuristicCandidate(
                 from: simpleCandidates,
                 matchContext: normalizedMatchContext,
+                observedHeadingDeg: headingForScoring,
                 speedKmh: speedKmh,
+                accuracyBufferM: accuracyBuffer,
                 horizontalAccuracyM: horizontalAccuracyM,
+                urbanSameRefReleaseEnabled: matchingModel == .simpleSpeedRefUrbanReleaseHeuristic ||
+                    matchingModel == .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic ||
+                    matchingModel == .simpleSpeedRefStreetNameFallbackHeuristic ||
+                    matchingModel == .simpleSpeedRefStreetNameGuardHeuristic ||
+                    matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
+                useStreetNameFallbackContinuity: matchingModel == .simpleSpeedRefStreetNameFallbackHeuristic,
+                useGuardedStreetNameFallbackContinuity: matchingModel == .simpleSpeedRefStreetNameGuardHeuristic ||
+                    matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
+                nodeDirectionAwareLowSpeedJunctionRelease: matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
                 wayLinks: wayLinksContext
             )
             selectionTrace.append(contentsOf: simpleSelection.selectionTrace)
             let finalSelected = simpleSelection.selected
             if let finalSelected {
+                let modelName: String
+                switch matchingModel {
+                case .simpleSpeedRefConnectedHeuristic:
+                    modelName = "simple_speed_ref_connected"
+                case .simpleSpeedRefStreetNameGuardHeuristic:
+                    modelName = "simple_speed_ref_street_name_guard"
+                case .simpleSpeedRefStreetNameGuardNodeAwareHeuristic:
+                    modelName = "simple_speed_ref_street_name_guard_node_aware"
+                case .simpleSpeedRefStreetNameFallbackHeuristic:
+                    modelName = "simple_speed_ref_street_name_fallback"
+                case .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic:
+                    modelName = "simple_speed_ref_urban_release_10m"
+                case .simpleSpeedRefUrbanReleaseHeuristic:
+                    modelName = "simple_speed_ref_urban_release"
+                default:
+                    modelName = "simple_speed_ref"
+                }
                 selectionTrace.append(
                     MatchSelectionTrace(
                         step: "final",
-                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none model=\(matchingModel == .simpleSpeedRefConnectedHeuristic ? "simple_speed_ref_connected" : "simple_speed_ref")"
+                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none model=\(modelName)"
                     )
                 )
             }
@@ -1433,6 +1530,8 @@ final class V3SpeedLimitService {
                 streetRef: finalSelected?.streetRef,
                 matchedEndpointProximityM: finalSelected?.endpointProximityM.isFinite == true ? finalSelected?.endpointProximityM : nil,
                 cityName: cityContext.cityName,
+                cityPlaceName: cityContext.cityPlaceName,
+                cityDistrictName: cityContext.cityDistrictName,
                 insideCity: resolvedInsideCityDecision.insideCity,
                 citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
                 cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
@@ -2063,6 +2162,14 @@ final class V3SpeedLimitService {
         )
     }
 
+    private func effectiveCandidateSearchRadiusM(radiusM: Double) -> Double {
+        let normalizedRadiusM = max(radiusM, 0.0)
+        if matchingModel == .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic {
+            return min(normalizedRadiusM, Self.simpleSpeedRefNarrowWindowRadiusM)
+        }
+        return normalizedRadiusM
+    }
+
     private func candidateLookupRadiusM(radiusM: Double, horizontalAccuracyM: Double?) -> Double {
         let normalizedRadiusM = max(radiusM, 0.0)
         guard let horizontalAccuracyM, horizontalAccuracyM.isFinite, horizontalAccuracyM >= 0.0 else {
@@ -2301,36 +2408,36 @@ final class V3SpeedLimitService {
     }
 
     private func transitionHeadingEvidence(
-        fromAxisHeadingDeg: Double?,
+        fromHeadingDeg: Double?,
+        toHeadingDeg: Double?,
         fromEndpointProximityM: Double,
-        to candidate: WayCandidate,
+        toEndpointProximityM: Double,
         observedHeadingDeg: Double?,
-        speedKmh: Double?
+        speedKmh: Double?,
+        serviceLike: Bool
     ) -> TransitionHeadingEvidence? {
         guard let observedHeadingDeg,
               let speedKmh,
               speedKmh.isFinite,
               speedKmh >= Self.headingMinSpeedKmh,
-              let fromAxisHeadingDeg,
-              let candidateAxisHeadingDeg = axisHeadingDeg(for: candidate) else {
+              let fromHeadingDeg,
+              let toHeadingDeg else {
             return nil
         }
         let currentMismatchDeg = headingMismatchDeg(
             headingDeg: observedHeadingDeg,
-            approxHeadingDeg: fromAxisHeadingDeg
+            approxHeadingDeg: fromHeadingDeg
         )
         let candidateMismatchDeg = headingMismatchDeg(
             headingDeg: observedHeadingDeg,
-            approxHeadingDeg: candidateAxisHeadingDeg
+            approxHeadingDeg: toHeadingDeg
         )
         let turnAngleDeg = headingMismatchDeg(
-            headingDeg: fromAxisHeadingDeg,
-            approxHeadingDeg: candidateAxisHeadingDeg
+            headingDeg: fromHeadingDeg,
+            approxHeadingDeg: toHeadingDeg
         )
         let nearEndpoint = fromEndpointProximityM <= Self.segmentTransitionEndpointThresholdM &&
-            candidate.endpointProximityM <= (Self.segmentTransitionEndpointThresholdM * 2.0)
-        let serviceLike = (candidate.service?.isEmpty == false) ||
-            candidate.highway?.lowercased() == "service"
+            toEndpointProximityM <= (Self.segmentTransitionEndpointThresholdM * 2.0)
         return TransitionHeadingEvidence(
             currentMismatchDeg: currentMismatchDeg,
             candidateMismatchDeg: candidateMismatchDeg,
@@ -2338,6 +2445,25 @@ final class V3SpeedLimitService {
             speedKmh: speedKmh,
             nearEndpoint: nearEndpoint,
             serviceLike: serviceLike
+        )
+    }
+
+    private func transitionHeadingEvidence(
+        fromAxisHeadingDeg: Double?,
+        fromEndpointProximityM: Double,
+        to candidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?
+    ) -> TransitionHeadingEvidence? {
+        transitionHeadingEvidence(
+            fromHeadingDeg: fromAxisHeadingDeg,
+            toHeadingDeg: axisHeadingDeg(for: candidate),
+            fromEndpointProximityM: fromEndpointProximityM,
+            toEndpointProximityM: candidate.endpointProximityM,
+            observedHeadingDeg: observedHeadingDeg,
+            speedKmh: speedKmh,
+            serviceLike: (candidate.service?.isEmpty == false) ||
+                candidate.highway?.lowercased() == "service"
         )
     }
 
@@ -3021,7 +3147,8 @@ final class V3SpeedLimitService {
 
     private func normalizedMatchContext(
         from matchContext: WayMatchContext?,
-        fallbackPreferredWayID: String?
+        fallbackPreferredWayID: String?,
+        ageOutStaleRefContinuity: Bool
     ) -> NormalizedMatchContext {
         let preferredWayID = normalizedWayID(matchContext?.preferredWayID) ?? normalizedWayID(fallbackPreferredWayID)
         var recentWayHistory: [String] = []
@@ -3039,15 +3166,29 @@ final class V3SpeedLimitService {
             recentWayIDs.insert(preferredWayID)
         }
 
+        let activeStreetRefTokens = Set(Self.normalizedRefTokens(matchContext?.activeStreetRef))
+        let consecutiveNoRefMatchCount = matchContext?.consecutiveNoRefMatchCount ?? 0
+        let staleRefContinuityExpired =
+            ageOutStaleRefContinuity &&
+            activeStreetRefTokens.isEmpty &&
+            consecutiveNoRefMatchCount >= Self.simpleStreetNameFallbackMinNoRefMatches
+
         var preferredStreetRefs = Set(Self.normalizedRefTokens(matchContext?.preferredStreetRef))
         if preferredStreetRefs.isEmpty {
             preferredStreetRefs = Set(
                 (matchContext?.recentStreetRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
             )
         }
+        if staleRefContinuityExpired {
+            preferredStreetRefs.removeAll()
+        }
+        let activeStreetNameTokens = Set(Self.normalizedStreetNameTokens(matchContext?.preferredStreetName))
         var recentStreetRefs = Set(
             (matchContext?.recentStreetRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
         )
+        if staleRefContinuityExpired {
+            recentStreetRefs.removeAll()
+        }
         recentStreetRefs.formUnion(preferredStreetRefs)
         let recentTunnelCandidateWayIDs = Set(
             (matchContext?.recentTunnelCandidateWayIDs ?? []).compactMap { normalizedWayID($0) }
@@ -3070,8 +3211,12 @@ final class V3SpeedLimitService {
             recentWayIDs: recentWayIDs,
             recentWayHistory: recentWayHistory,
             recentFixes: Array((matchContext?.recentFixes ?? []).prefix(3)),
+            sameRefUrbanReleaseStreak: matchContext?.sameRefUrbanReleaseStreak ?? 0,
             preferredStreetRefs: preferredStreetRefs,
+            activeStreetRefTokens: activeStreetRefTokens,
+            activeStreetNameTokens: activeStreetNameTokens,
             recentStreetRefs: recentStreetRefs,
+            consecutiveNoRefMatchCount: consecutiveNoRefMatchCount,
             recentTunnelCandidateWayIDs: recentTunnelCandidateWayIDs,
             recentTunnelCandidateRefs: recentTunnelCandidateRefs,
             recentTunnelApproachWayIDs: recentTunnelApproachWayIDs,
@@ -3323,12 +3468,18 @@ final class V3SpeedLimitService {
     private func selectSimpleSpeedRefHeuristicCandidate(
         from candidates: [WayCandidate],
         matchContext: NormalizedMatchContext,
+        observedHeadingDeg: Double?,
         speedKmh: Double?,
+        accuracyBufferM: Double,
         horizontalAccuracyM: Double?,
+        urbanSameRefReleaseEnabled: Bool,
+        useStreetNameFallbackContinuity: Bool,
+        useGuardedStreetNameFallbackContinuity: Bool,
+        nodeDirectionAwareLowSpeedJunctionRelease: Bool,
         wayLinks: WayLinksContext
     ) -> (selected: WayCandidate?, traceRankedCandidates: [TraceRankedCandidate], selectionTrace: [MatchSelectionTrace]) {
         let poorSignalThresholdM = 10.0
-        let lowSpeedThresholdKmh = 30.0
+        let lowSpeedThresholdKmh = Self.simpleSameRefHoldSpeedThresholdKmh
         let poorSignal = (horizontalAccuracyM ?? Double.infinity) > poorSignalThresholdM
         let lowSpeedAccurateGPS = (speedKmh ?? 0.0) < lowSpeedThresholdKmh &&
             (horizontalAccuracyM ?? Double.infinity) < poorSignalThresholdM
@@ -3346,6 +3497,16 @@ final class V3SpeedLimitService {
             from: rankedCandidates,
             matchContext: matchContext,
             wayLinks: wayLinks
+        )
+        let geometryRanksByWayID = Dictionary(
+            uniqueKeysWithValues: rankedCandidates.enumerated().compactMap { index, candidate in
+                normalizedWayID(candidate.wayID).map { ($0, index + 1) }
+            }
+        )
+        let traceRanksByWayID = Dictionary(
+            uniqueKeysWithValues: traceRankedCandidates.compactMap { entry in
+                normalizedWayID(entry.candidate.wayID).map { ($0, entry.traceRank) }
+            }
         )
         guard let bestCandidate = rankedCandidates.first else {
             return (
@@ -3365,32 +3526,179 @@ final class V3SpeedLimitService {
             )
         }
 
-        let previousRefCandidate = rankedCandidates.first { candidate in
-            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
-            guard !candidateRefTokens.isEmpty else {
-                return false
+        let continuityIdentity: (tokens: Set<String>, source: SimpleContinuityIdentitySource)
+        let previousContinuityCandidate: WayCandidate?
+        if useGuardedStreetNameFallbackContinuity,
+           let guardedContinuity = preferredGuardedStreetNameContinuityCandidate(
+               rankedCandidates: rankedCandidates,
+               bestCandidate: bestCandidate,
+               matchContext: matchContext,
+               horizontalAccuracyM: horizontalAccuracyM
+           ) {
+            continuityIdentity = (guardedContinuity.tokens, .streetName)
+            previousContinuityCandidate = guardedContinuity.candidate
+            selectionTrace.append(guardedContinuity.trace)
+        } else {
+            continuityIdentity = preferredSimpleContinuityIdentity(
+                for: matchContext,
+                useStreetNameFallbackContinuity: useStreetNameFallbackContinuity
+            )
+            previousContinuityCandidate = rankedCandidates.first { candidate in
+                let candidateTokens = continuityTokens(
+                    for: candidate,
+                    source: continuityIdentity.source,
+                    useStreetNameFallbackContinuity: useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity
+                )
+                guard !candidateTokens.isEmpty else {
+                    return false
+                }
+                return !candidateTokens.isDisjoint(with: continuityIdentity.tokens)
             }
-            return !candidateRefTokens.isDisjoint(with: matchContext.preferredStreetRefs)
+        }
+
+        let urbanReleasePressureActive: Bool
+        if urbanSameRefReleaseEnabled,
+           let speedKmh,
+           speedKmh.isFinite,
+           speedKmh >= lowSpeedThresholdKmh,
+           speedKmh <= Self.simpleSameRefUrbanReleaseMaxSpeedKmh,
+           let horizontalAccuracyM,
+           horizontalAccuracyM.isFinite,
+           horizontalAccuracyM <= Self.simpleSameRefUrbanReleaseMaxAccuracyM,
+           let previousContinuityCandidate,
+           normalizedWayID(previousContinuityCandidate.wayID) != normalizedWayID(bestCandidate.wayID),
+           shouldEnableUrbanSameRefRelease(
+               sameRefCandidate: previousContinuityCandidate,
+               bestCandidate: bestCandidate
+           ) {
+            urbanReleasePressureActive = true
+        } else {
+            urbanReleasePressureActive = false
+        }
+        let nextUrbanReleaseStreak = urbanReleasePressureActive ? min(matchContext.sameRefUrbanReleaseStreak + 1, 8) : 0
+        let lowSpeedJunctionRelease: LowSpeedSameRefJunctionRelease?
+        let lowSpeedJunctionProbeTrace: MatchSelectionTrace?
+        if let speedKmh,
+           speedKmh.isFinite,
+           speedKmh < lowSpeedThresholdKmh,
+           continuityIdentity.source == .ref,
+           let previousContinuityCandidate {
+            if nodeDirectionAwareLowSpeedJunctionRelease {
+                let nodeDirectionAnalysis = lowSpeedSameRefNodeDirectionJunctionAnalysis(
+                    in: rankedCandidates,
+                    currentCandidate: previousContinuityCandidate,
+                    bestCandidate: bestCandidate,
+                    observedHeadingDeg: observedHeadingDeg,
+                    speedKmh: speedKmh,
+                    accuracyBufferM: accuracyBufferM,
+                    matchContext: matchContext,
+                    wayLinks: wayLinks
+                )
+                lowSpeedJunctionRelease = nodeDirectionAnalysis.release
+                lowSpeedJunctionProbeTrace = nodeDirectionAnalysis.probe.map { probe in
+                    MatchSelectionTrace(
+                        step: "simple_low_speed_same_ref_probe",
+                        detail: lowSpeedSameRefJunctionProbeDetail(
+                            probe: probe,
+                            currentCandidate: previousContinuityCandidate,
+                            bestCandidate: bestCandidate,
+                            geometryRanksByWayID: geometryRanksByWayID,
+                            traceRanksByWayID: traceRanksByWayID
+                        )
+                    )
+                }
+            } else {
+                lowSpeedJunctionRelease = lowSpeedSameRefJunctionTransitionCandidate(
+                    in: rankedCandidates,
+                    currentCandidate: previousContinuityCandidate,
+                    bestCandidate: bestCandidate,
+                    observedHeadingDeg: observedHeadingDeg,
+                    speedKmh: speedKmh,
+                    accuracyBufferM: accuracyBufferM,
+                    matchContext: matchContext,
+                    wayLinks: wayLinks
+                )
+                lowSpeedJunctionProbeTrace = nil
+            }
+        } else {
+            lowSpeedJunctionRelease = nil
+            lowSpeedJunctionProbeTrace = nil
         }
 
         let selected: WayCandidate
-        if let speedKmh, speedKmh >= lowSpeedThresholdKmh, let previousRefCandidate {
-            selected = previousRefCandidate
-            if normalizedWayID(previousRefCandidate.wayID) != normalizedWayID(bestCandidate.wayID) {
+        if let lowSpeedJunctionRelease {
+            selected = lowSpeedJunctionRelease.candidate
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_low_speed_same_ref_junction_release",
+                    detail: "released same-ref \(previousContinuityCandidate?.wayID ?? "nil") for linked turn \(lowSpeedJunctionRelease.candidate.wayID ?? "nil") via anchor \(lowSpeedJunctionRelease.anchorCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh ?? 0.0)) candidate_m=\(String(format: "%.1f", lowSpeedJunctionRelease.candidate.distanceM))"
+                )
+            )
+        } else if let speedKmh, speedKmh >= lowSpeedThresholdKmh, let previousContinuityCandidate {
+            if urbanSameRefReleaseEnabled,
+               urbanReleasePressureActive,
+               nextUrbanReleaseStreak >= Self.simpleSameRefUrbanReleaseRequiredStreak {
+                selected = bestCandidate
                 selectionTrace.append(
                     MatchSelectionTrace(
-                        step: "simple_same_ref_hold",
-                        detail: "kept same-ref \(previousRefCandidate.wayID ?? "nil") over nearest \(bestCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh))"
+                        step: "simple_same_ref_urban_release",
+                        detail: "released \(continuityIdentity.source.traceLabel) \(previousContinuityCandidate.wayID ?? "nil") for nearest \(bestCandidate.wayID ?? "nil") speed_kmh=\(String(format: "%.1f", speedKmh)) nearest_m=\(String(format: "%.1f", bestCandidate.distanceM)) continuity_m=\(String(format: "%.1f", previousContinuityCandidate.distanceM)) streak=\(nextUrbanReleaseStreak)"
                     )
                 )
+            } else {
+                selected = previousContinuityCandidate
+                if normalizedWayID(previousContinuityCandidate.wayID) != normalizedWayID(bestCandidate.wayID) {
+                    let step: String
+                    if urbanSameRefReleaseEnabled && urbanReleasePressureActive {
+                        step = continuityIdentity.source == .streetName ? "simple_same_name_urban_hold" : "simple_same_ref_urban_hold"
+                    } else {
+                        step = continuityIdentity.source == .streetName ? "simple_same_name_hold" : "simple_same_ref_hold"
+                    }
+                    let detail: String
+                    if urbanSameRefReleaseEnabled && urbanReleasePressureActive {
+                        detail = "kept \(continuityIdentity.source.traceLabel) \(previousContinuityCandidate.wayID ?? "nil") over nearest \(bestCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh)) nearest_m=\(String(format: "%.1f", bestCandidate.distanceM)) continuity_m=\(String(format: "%.1f", previousContinuityCandidate.distanceM)) streak=\(nextUrbanReleaseStreak)"
+                    } else {
+                        detail = "kept \(continuityIdentity.source.traceLabel) \(previousContinuityCandidate.wayID ?? "nil") over nearest \(bestCandidate.wayID ?? "nil") at speed_kmh=\(String(format: "%.1f", speedKmh))"
+                    }
+                    selectionTrace.append(
+                        MatchSelectionTrace(
+                            step: step,
+                            detail: detail
+                        )
+                    )
+                }
             }
         } else {
             selected = bestCandidate
         }
 
+        if let lowSpeedJunctionProbeTrace {
+            selectionTrace.append(lowSpeedJunctionProbeTrace)
+        }
+
+        if urbanSameRefReleaseEnabled {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_same_ref_urban_release_streak",
+                    detail: "\(nextUrbanReleaseStreak)"
+                )
+            )
+        }
+
         let reason: String
-        if let speedKmh, speedKmh >= lowSpeedThresholdKmh, previousRefCandidate != nil {
-            reason = "high_speed_same_ref"
+        if lowSpeedJunctionRelease != nil {
+            reason = "low_speed_same_ref_junction_release"
+        } else if urbanSameRefReleaseEnabled,
+           urbanReleasePressureActive,
+           nextUrbanReleaseStreak >= Self.simpleSameRefUrbanReleaseRequiredStreak,
+           normalizedWayID(selected.wayID) == normalizedWayID(bestCandidate.wayID) {
+            reason = continuityIdentity.source == .streetName
+                ? "urban_same_name_distance_gap_release"
+                : "urban_same_ref_distance_gap_release"
+        } else if let speedKmh, speedKmh >= lowSpeedThresholdKmh, previousContinuityCandidate != nil {
+            reason = continuityIdentity.source == .streetName ? "high_speed_same_name" : "high_speed_same_ref"
+        } else if previousContinuityCandidate != nil {
+            reason = continuityIdentity.source == .streetName ? "low_speed_same_name_release_distance" : "low_speed_same_ref_release_distance"
         } else if lowSpeedAccurateGPS {
             reason = "low_speed_good_gps_distance"
         } else if matchContext.isInTunnelMode && poorSignal {
@@ -3409,6 +3717,668 @@ final class V3SpeedLimitService {
             traceRankedCandidates: traceRankedCandidates,
             selectionTrace: selectionTrace
         )
+    }
+
+    private struct LowSpeedSameRefJunctionRelease {
+        let candidate: WayCandidate
+        let anchorCandidate: WayCandidate
+    }
+
+    private struct LowSpeedSameRefJunctionProbe {
+        let candidate: WayCandidate
+        let anchorCandidate: WayCandidate
+        let blockFlags: [String]
+        let evidence: TransitionHeadingEvidence?
+    }
+
+    private struct LowSpeedSameRefNodeDirectionAnalysis {
+        let release: LowSpeedSameRefJunctionRelease?
+        let probe: LowSpeedSameRefJunctionProbe?
+    }
+
+    private func lowSpeedSameRefJunctionTransitionCandidate(
+        in candidates: [WayCandidate],
+        currentCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        speedKmh: Double,
+        accuracyBufferM: Double,
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext
+    ) -> LowSpeedSameRefJunctionRelease? {
+        guard wayLinks.available,
+              speedKmh >= Self.headingMinSpeedKmh,
+              let currentWayID = normalizedWayID(currentCandidate.wayID) else {
+            return nil
+        }
+        let effectiveHeadingDeg = observedHeadingDeg ?? recentApproachHeadingDeg(
+            matchContext: matchContext,
+            queryPoint: currentCandidate.queryPoint
+        )
+        guard let effectiveHeadingDeg else {
+            return nil
+        }
+
+        let maxDistanceSlack = max(Self.simpleLowSpeedJunctionBestDistanceSlackM, accuracyBufferM * 0.35)
+        let maxCurrentGap = max(Self.simpleLowSpeedJunctionCurrentDistanceSlackM, accuracyBufferM * 0.4)
+        let continuityRefTokens = preferredSimpleRefContinuityTokens(for: matchContext)
+        let anchorCandidates = lowSpeedSameRefJunctionAnchorCandidates(
+            in: candidates,
+            currentCandidate: currentCandidate,
+            continuityRefTokens: continuityRefTokens,
+            matchContext: matchContext
+        )
+        guard !anchorCandidates.isEmpty else {
+            return nil
+        }
+
+        let releases = candidates.compactMap { candidate -> LowSpeedSameRefJunctionRelease? in
+            guard let candidateWayID = normalizedWayID(candidate.wayID),
+                  candidateWayID != currentWayID else {
+                return nil
+            }
+            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            if !candidateRefTokens.isEmpty,
+               candidateRefTokens == continuityRefTokens {
+                return nil
+            }
+            guard candidate.distanceM <= bestCandidate.distanceM + maxDistanceSlack,
+                  candidate.distanceM <= currentCandidate.distanceM + maxCurrentGap else {
+                return nil
+            }
+
+            for anchorCandidate in anchorCandidates {
+                guard let anchorWayID = normalizedWayID(anchorCandidate.wayID),
+                      wayLinks.isLinked(from: anchorWayID, to: candidateWayID) ||
+                        wayLinks.isLinked(from: candidateWayID, to: anchorWayID),
+                      let evidence = transitionHeadingEvidence(
+                        fromAxisHeadingDeg: axisHeadingDeg(for: anchorCandidate),
+                        fromEndpointProximityM: anchorCandidate.endpointProximityM,
+                        to: candidate,
+                        observedHeadingDeg: effectiveHeadingDeg,
+                        speedKmh: speedKmh
+                      ),
+                      evidence.nearEndpoint,
+                      evidence.meaningfulTurn,
+                      evidence.candidateClearlyBetterAligned,
+                      evidence.candidateMismatchDeg <= Self.simpleLowSpeedJunctionMaxCandidateMismatchDeg,
+                      evidence.currentMismatchDeg >= Self.simpleLowSpeedJunctionMinCurrentMismatchDeg,
+                      !isServiceLikeTransitionCandidate(candidate) else {
+                    continue
+                }
+                return LowSpeedSameRefJunctionRelease(
+                    candidate: candidate,
+                    anchorCandidate: anchorCandidate
+                )
+            }
+            return nil
+        }
+
+        return releases.sorted { lhs, rhs in
+            if lhs.candidate.score != rhs.candidate.score {
+                return lhs.candidate.score < rhs.candidate.score
+            }
+            return isBetterDistanceCandidate(lhs.candidate, than: rhs.candidate)
+        }.first
+    }
+
+    private func lowSpeedSameRefNodeDirectionJunctionAnalysis(
+        in candidates: [WayCandidate],
+        currentCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        speedKmh: Double,
+        accuracyBufferM: Double,
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext
+    ) -> LowSpeedSameRefNodeDirectionAnalysis {
+        guard wayLinks.available,
+              speedKmh >= Self.headingMinSpeedKmh,
+              let currentWayID = normalizedWayID(currentCandidate.wayID) else {
+            return LowSpeedSameRefNodeDirectionAnalysis(release: nil, probe: nil)
+        }
+        let effectiveHeadingDeg = observedHeadingDeg ?? recentApproachHeadingDeg(
+            matchContext: matchContext,
+            queryPoint: currentCandidate.queryPoint
+        )
+        guard let effectiveHeadingDeg else {
+            return LowSpeedSameRefNodeDirectionAnalysis(release: nil, probe: nil)
+        }
+
+        let maxDistanceSlack = max(Self.simpleLowSpeedJunctionBestDistanceSlackM, accuracyBufferM * 0.35)
+        let maxCurrentGap = max(Self.simpleLowSpeedJunctionCurrentDistanceSlackM, accuracyBufferM * 0.4)
+        let continuityRefTokens = preferredSimpleRefContinuityTokens(for: matchContext)
+        let anchorCandidates = lowSpeedSameRefJunctionAnchorCandidates(
+            in: candidates,
+            currentCandidate: currentCandidate,
+            continuityRefTokens: continuityRefTokens,
+            matchContext: matchContext
+        )
+        guard !anchorCandidates.isEmpty else {
+            return LowSpeedSameRefNodeDirectionAnalysis(release: nil, probe: nil)
+        }
+
+        let releases = candidates.compactMap { candidate -> LowSpeedSameRefJunctionRelease? in
+            guard let candidateWayID = normalizedWayID(candidate.wayID),
+                  candidateWayID != currentWayID else {
+                return nil
+            }
+            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            if !candidateRefTokens.isEmpty,
+               candidateRefTokens == continuityRefTokens {
+                return nil
+            }
+            guard candidate.distanceM <= bestCandidate.distanceM + maxDistanceSlack,
+                  candidate.distanceM <= currentCandidate.distanceM + maxCurrentGap,
+                  !isServiceLikeTransitionCandidate(candidate) else {
+                return nil
+            }
+
+            for anchorCandidate in anchorCandidates {
+                guard let sharedPoint = sharedJunctionPoint(between: anchorCandidate, and: candidate),
+                      let evidence = nodeDirectionTransitionHeadingEvidence(
+                        from: anchorCandidate,
+                        to: candidate,
+                        sharedPoint: sharedPoint,
+                        observedHeadingDeg: effectiveHeadingDeg,
+                        speedKmh: speedKmh
+                      ),
+                      evidence.nearEndpoint,
+                      evidence.meaningfulTurn,
+                      evidence.candidateClearlyBetterAligned,
+                      evidence.candidateMismatchDeg <= Self.simpleLowSpeedNodeAwareJunctionMaxCandidateMismatchDeg,
+                      evidence.currentMismatchDeg >= Self.simpleLowSpeedJunctionMinCurrentMismatchDeg else {
+                    continue
+                }
+                return LowSpeedSameRefJunctionRelease(
+                    candidate: candidate,
+                    anchorCandidate: anchorCandidate
+                )
+            }
+            return nil
+        }
+
+        let release = releases.sorted { lhs, rhs in
+            if lhs.candidate.score != rhs.candidate.score {
+                return lhs.candidate.score < rhs.candidate.score
+            }
+            return isBetterDistanceCandidate(lhs.candidate, than: rhs.candidate)
+        }.first
+        guard release == nil else {
+            return LowSpeedSameRefNodeDirectionAnalysis(release: release, probe: nil)
+        }
+
+        var bestProbe: LowSpeedSameRefJunctionProbe?
+        for candidate in candidates {
+            guard let candidateWayID = normalizedWayID(candidate.wayID),
+                  candidateWayID != currentWayID else {
+                continue
+            }
+            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            if !candidateRefTokens.isEmpty,
+               candidateRefTokens == continuityRefTokens {
+                continue
+            }
+
+            for anchorCandidate in anchorCandidates {
+                guard let anchorWayID = normalizedWayID(anchorCandidate.wayID),
+                      wayLinks.isLinked(from: anchorWayID, to: candidateWayID) ||
+                        wayLinks.isLinked(from: candidateWayID, to: anchorWayID) else {
+                    continue
+                }
+
+                let sharedPoint = sharedJunctionPoint(between: anchorCandidate, and: candidate)
+                let evidence = sharedPoint.flatMap {
+                    nodeDirectionTransitionHeadingEvidence(
+                        from: anchorCandidate,
+                        to: candidate,
+                        sharedPoint: $0,
+                        observedHeadingDeg: effectiveHeadingDeg,
+                        speedKmh: speedKmh
+                    )
+                }
+                var blockFlags: [String] = []
+                if candidate.distanceM > bestCandidate.distanceM + maxDistanceSlack {
+                    blockFlags.append("best_gap")
+                }
+                if candidate.distanceM > currentCandidate.distanceM + maxCurrentGap {
+                    blockFlags.append("current_gap")
+                }
+                if sharedPoint == nil {
+                    blockFlags.append("shared_node_missing")
+                }
+                if let evidence {
+                    if !evidence.nearEndpoint {
+                        blockFlags.append("not_near_endpoint")
+                    }
+                    if !evidence.meaningfulTurn {
+                        blockFlags.append("turn_not_meaningful")
+                    }
+                    if !evidence.candidateClearlyBetterAligned {
+                        blockFlags.append("candidate_not_better_aligned")
+                    }
+                    if evidence.candidateMismatchDeg > Self.simpleLowSpeedNodeAwareJunctionMaxCandidateMismatchDeg {
+                        blockFlags.append("candidate_heading_mismatch")
+                    }
+                    if evidence.currentMismatchDeg < Self.simpleLowSpeedJunctionMinCurrentMismatchDeg {
+                        blockFlags.append("current_heading_still_aligned")
+                    }
+                    if evidence.serviceLike {
+                        blockFlags.append("service_like")
+                    }
+                } else if sharedPoint != nil {
+                    blockFlags.append("heading_unavailable")
+                }
+
+                guard !blockFlags.isEmpty else {
+                    continue
+                }
+                let probe = LowSpeedSameRefJunctionProbe(
+                    candidate: candidate,
+                    anchorCandidate: anchorCandidate,
+                    blockFlags: blockFlags,
+                    evidence: evidence
+                )
+                if let currentBestProbe = bestProbe {
+                    if isBetterDistanceCandidate(candidate, than: currentBestProbe.candidate) {
+                        bestProbe = probe
+                    }
+                } else {
+                    bestProbe = probe
+                }
+                break
+            }
+        }
+
+        return LowSpeedSameRefNodeDirectionAnalysis(release: nil, probe: bestProbe)
+    }
+
+    private func lowSpeedSameRefJunctionProbeDetail(
+        probe: LowSpeedSameRefJunctionProbe,
+        currentCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+        geometryRanksByWayID: [String: Int],
+        traceRanksByWayID: [String: Int]
+    ) -> String {
+        let candidateWayID = normalizedWayID(probe.candidate.wayID)
+        let currentWayID = normalizedWayID(currentCandidate.wayID)
+        let bestWayID = normalizedWayID(bestCandidate.wayID)
+        let blocked = probe.blockFlags.reduce(into: [String]()) { partialResult, flag in
+            if !partialResult.contains(flag) {
+                partialResult.append(flag)
+            }
+        }
+
+        var parts = [
+            "candidate=\(probe.candidate.wayID ?? "nil")",
+            "anchor=\(probe.anchorCandidate.wayID ?? "nil")",
+            "blocked=\(blocked.joined(separator: ","))",
+            "candidate_geometry_rank=\(candidateWayID.flatMap { geometryRanksByWayID[$0] }.map(String.init) ?? "nil")",
+            "candidate_trace_rank=\(candidateWayID.flatMap { traceRanksByWayID[$0] }.map(String.init) ?? "nil")",
+            "current_geometry_rank=\(currentWayID.flatMap { geometryRanksByWayID[$0] }.map(String.init) ?? "nil")",
+            "best_geometry_rank=\(bestWayID.flatMap { geometryRanksByWayID[$0] }.map(String.init) ?? "nil")",
+            "candidate_m=\(String(format: "%.1f", probe.candidate.distanceM))",
+            "current_m=\(String(format: "%.1f", currentCandidate.distanceM))",
+            "best_m=\(String(format: "%.1f", bestCandidate.distanceM))",
+            "candidate_endpoint_m=\(String(format: "%.1f", probe.candidate.endpointProximityM))",
+            "current_endpoint_m=\(String(format: "%.1f", currentCandidate.endpointProximityM))"
+        ]
+        if let evidence = probe.evidence {
+            parts.append("turn_deg=\(String(format: "%.1f", evidence.turnAngleDeg))")
+            parts.append("candidate_mismatch_deg=\(String(format: "%.1f", evidence.candidateMismatchDeg))")
+            parts.append("current_mismatch_deg=\(String(format: "%.1f", evidence.currentMismatchDeg))")
+        }
+        return parts.joined(separator: " ")
+    }
+
+    private func nodeDirectionTransitionHeadingEvidence(
+        from anchorCandidate: WayCandidate,
+        to candidate: WayCandidate,
+        sharedPoint: (Double, Double),
+        observedHeadingDeg: Double?,
+        speedKmh: Double?
+    ) -> TransitionHeadingEvidence? {
+        transitionHeadingEvidence(
+            fromHeadingDeg: junctionNodeHeadingDeg(
+                for: anchorCandidate,
+                sharedPoint: sharedPoint,
+                traversal: .towardNode
+            ),
+            toHeadingDeg: junctionNodeHeadingDeg(
+                for: candidate,
+                sharedPoint: sharedPoint,
+                traversal: .awayFromNode
+            ),
+            fromEndpointProximityM: anchorCandidate.endpointProximityM,
+            toEndpointProximityM: candidate.endpointProximityM,
+            observedHeadingDeg: observedHeadingDeg,
+            speedKmh: speedKmh,
+            serviceLike: isServiceLikeTransitionCandidate(candidate)
+        )
+    }
+
+    private func sharedJunctionPoint(
+        between firstCandidate: WayCandidate,
+        and secondCandidate: WayCandidate
+    ) -> (Double, Double)? {
+        let firstEndpoints = [firstCandidate.startPoint, firstCandidate.endPoint].compactMap { $0 }
+        let secondEndpoints = [secondCandidate.startPoint, secondCandidate.endPoint].compactMap { $0 }
+        guard !firstEndpoints.isEmpty, !secondEndpoints.isEmpty else {
+            return nil
+        }
+
+        var bestDistanceM = Double.infinity
+        var bestPair: ((Double, Double), (Double, Double))?
+        for firstPoint in firstEndpoints {
+            for secondPoint in secondEndpoints {
+                let distanceM = haversineM(
+                    lat1: firstPoint.0,
+                    lon1: firstPoint.1,
+                    lat2: secondPoint.0,
+                    lon2: secondPoint.1
+                )
+                if distanceM < bestDistanceM {
+                    bestDistanceM = distanceM
+                    bestPair = (firstPoint, secondPoint)
+                }
+            }
+        }
+        guard let bestPair,
+              bestDistanceM <= Self.simpleLowSpeedJunctionSharedNodeToleranceM else {
+            return nil
+        }
+        return (
+            (bestPair.0.0 + bestPair.1.0) * 0.5,
+            (bestPair.0.1 + bestPair.1.1) * 0.5
+        )
+    }
+
+    private func junctionNodeHeadingDeg(
+        for candidate: WayCandidate,
+        sharedPoint: (Double, Double),
+        traversal: JunctionNodeTraversalDirection
+    ) -> Double? {
+        let startDistanceM = candidate.startPoint.map {
+            haversineM(
+                lat1: $0.0,
+                lon1: $0.1,
+                lat2: sharedPoint.0,
+                lon2: sharedPoint.1
+            )
+        } ?? Double.infinity
+        let endDistanceM = candidate.endPoint.map {
+            haversineM(
+                lat1: $0.0,
+                lon1: $0.1,
+                lat2: sharedPoint.0,
+                lon2: sharedPoint.1
+            )
+        } ?? Double.infinity
+        let fallbackHeadingDeg = axisHeadingDeg(for: candidate)
+
+        if startDistanceM <= endDistanceM,
+           startDistanceM <= Self.simpleLowSpeedJunctionSharedNodeToleranceM {
+            switch traversal {
+            case .towardNode:
+                return oppositeHeadingDeg(candidate.startHeadingDeg ?? fallbackHeadingDeg)
+            case .awayFromNode:
+                return candidate.startHeadingDeg ?? fallbackHeadingDeg
+            }
+        }
+        guard endDistanceM <= Self.simpleLowSpeedJunctionSharedNodeToleranceM else {
+            return nil
+        }
+        switch traversal {
+        case .towardNode:
+            return candidate.endHeadingDeg ?? fallbackHeadingDeg
+        case .awayFromNode:
+            return oppositeHeadingDeg(candidate.endHeadingDeg ?? fallbackHeadingDeg)
+        }
+    }
+
+    private func oppositeHeadingDeg(_ headingDeg: Double?) -> Double? {
+        guard let headingDeg else {
+            return nil
+        }
+        return normalizedHeadingDegrees(headingDeg + 180.0)
+    }
+
+    private func recentApproachHeadingDeg(
+        matchContext: NormalizedMatchContext,
+        queryPoint: (Double, Double)
+    ) -> Double? {
+        for fix in matchContext.recentFixes {
+            let distanceM = haversineM(
+                lat1: fix.lat,
+                lon1: fix.lon,
+                lat2: queryPoint.0,
+                lon2: queryPoint.1
+            )
+            if distanceM >= 2.0 {
+                return axisHeadingDeg(
+                    from: fix.lat,
+                    lon1: fix.lon,
+                    to: queryPoint.0,
+                    lon2: queryPoint.1
+                )
+            }
+        }
+        guard let fix = matchContext.recentFixes.first else {
+            return nil
+        }
+        return axisHeadingDeg(
+            from: fix.lat,
+            lon1: fix.lon,
+            to: queryPoint.0,
+            lon2: queryPoint.1
+        )
+    }
+
+    private enum SimpleContinuityIdentitySource {
+        case none
+        case ref
+        case streetName
+
+        var traceLabel: String {
+            switch self {
+            case .none:
+                return "continuity"
+            case .ref:
+                return "same-ref"
+            case .streetName:
+                return "same-name"
+            }
+        }
+    }
+
+    private func preferredSimpleContinuityIdentity(
+        for matchContext: NormalizedMatchContext,
+        useStreetNameFallbackContinuity: Bool
+    ) -> (tokens: Set<String>, source: SimpleContinuityIdentitySource) {
+        if !matchContext.activeStreetRefTokens.isEmpty {
+            return (matchContext.activeStreetRefTokens, .ref)
+        }
+        if useStreetNameFallbackContinuity,
+           matchContext.consecutiveNoRefMatchCount >= Self.simpleStreetNameFallbackMinNoRefMatches,
+           !matchContext.activeStreetNameTokens.isEmpty {
+            return (matchContext.activeStreetNameTokens, .streetName)
+        }
+        if !matchContext.preferredStreetRefs.isEmpty {
+            return (matchContext.preferredStreetRefs, .ref)
+        }
+        return ([], .none)
+    }
+
+    private func preferredGuardedStreetNameContinuityCandidate(
+        rankedCandidates: [WayCandidate],
+        bestCandidate: WayCandidate,
+        matchContext: NormalizedMatchContext,
+        horizontalAccuracyM: Double?
+    ) -> (candidate: WayCandidate, tokens: Set<String>, trace: MatchSelectionTrace)? {
+        guard matchContext.activeStreetRefTokens.isEmpty,
+              matchContext.consecutiveNoRefMatchCount >= Self.simpleStreetNameFallbackMinNoRefMatches,
+              !matchContext.activeStreetNameTokens.isEmpty,
+              isUrbanSameRefReleaseTargetHighway(matchContext.preferredHighway),
+              let horizontalAccuracyM,
+              horizontalAccuracyM.isFinite,
+              horizontalAccuracyM > 0 else {
+            return nil
+        }
+
+        let nameCandidate = rankedCandidates.first { candidate in
+            guard Set(Self.normalizedRefTokens(candidate.streetRef)).isEmpty else {
+                return false
+            }
+            let candidateTokens = Set(Self.normalizedStreetNameTokens(candidate.streetBaseName ?? candidate.streetName))
+            guard !candidateTokens.isEmpty else {
+                return false
+            }
+            return !candidateTokens.isDisjoint(with: matchContext.activeStreetNameTokens)
+        }
+        guard let nameCandidate,
+              normalizedWayID(nameCandidate.wayID) == normalizedWayID(bestCandidate.wayID),
+              isUrbanSameRefReleaseTargetHighway(nameCandidate.highway),
+              nameCandidate.distanceM <= horizontalAccuracyM else {
+            return nil
+        }
+
+        let refTokens = preferredSimpleRefContinuityTokens(for: matchContext)
+        let staleRefCandidate = rankedCandidates.first { candidate in
+            let candidateTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            guard !candidateTokens.isEmpty else {
+                return false
+            }
+            return !candidateTokens.isDisjoint(with: refTokens)
+        }
+
+        if let staleRefCandidate {
+            guard isUrbanSameRefReleaseSourceHighway(staleRefCandidate.highway) else {
+                return nil
+            }
+            let staleRefOutsideAccuracyCap = staleRefCandidate.distanceM > horizontalAccuracyM
+            let staleRefDistanceGapM = staleRefCandidate.distanceM - nameCandidate.distanceM
+            guard staleRefOutsideAccuracyCap ||
+                    staleRefDistanceGapM >= Self.simpleSameRefUrbanReleaseMinDistanceGapM else {
+                return nil
+            }
+        }
+
+        let trace = MatchSelectionTrace(
+            step: "simple_same_name_guard",
+            detail: "kept same-name \(nameCandidate.wayID ?? "nil") after \(matchContext.consecutiveNoRefMatchCount) no-ref matches best_m=\(String(format: "%.1f", nameCandidate.distanceM)) stale_ref_m=\(String(format: "%.1f", staleRefCandidate?.distanceM ?? Double.infinity)) hacc_m=\(String(format: "%.1f", horizontalAccuracyM))"
+        )
+        return (
+            candidate: nameCandidate,
+            tokens: matchContext.activeStreetNameTokens,
+            trace: trace
+        )
+    }
+
+    private func preferredSimpleRefContinuityTokens(
+        for matchContext: NormalizedMatchContext
+    ) -> Set<String> {
+        if !matchContext.activeStreetRefTokens.isEmpty {
+            return matchContext.activeStreetRefTokens
+        }
+        return matchContext.preferredStreetRefs
+    }
+
+    private func lowSpeedSameRefJunctionAnchorCandidates(
+        in candidates: [WayCandidate],
+        currentCandidate: WayCandidate,
+        continuityRefTokens: Set<String>,
+        matchContext: NormalizedMatchContext
+    ) -> [WayCandidate] {
+        var anchorWayIDs: [String] = []
+        if let preferredWayID = matchContext.preferredWayID {
+            anchorWayIDs.append(preferredWayID)
+        }
+        anchorWayIDs.append(contentsOf: matchContext.recentWayHistory)
+        anchorWayIDs.append(contentsOf: matchContext.recentWayIDs)
+        if let currentWayID = normalizedWayID(currentCandidate.wayID) {
+            anchorWayIDs.append(currentWayID)
+        }
+
+        var seenWayIDs = Set<String>()
+        var anchors: [WayCandidate] = []
+        for wayID in anchorWayIDs {
+            guard seenWayIDs.insert(wayID).inserted,
+                  let candidate = candidates.first(where: {
+                    normalizedWayID($0.wayID) == wayID
+                  }) else {
+                continue
+            }
+            let candidateRefTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+            if !continuityRefTokens.isEmpty &&
+                (candidateRefTokens.isEmpty || candidateRefTokens.isDisjoint(with: continuityRefTokens)) {
+                continue
+            }
+            anchors.append(candidate)
+        }
+        if anchors.isEmpty {
+            anchors.append(currentCandidate)
+        }
+        return anchors
+    }
+
+    private func continuityTokens(
+        for candidate: WayCandidate,
+        source: SimpleContinuityIdentitySource,
+        useStreetNameFallbackContinuity: Bool
+    ) -> Set<String> {
+        let refTokens = Set(Self.normalizedRefTokens(candidate.streetRef))
+        if !refTokens.isEmpty {
+            return refTokens
+        }
+        if useStreetNameFallbackContinuity, source == .streetName {
+            return Set(Self.normalizedStreetNameTokens(candidate.streetBaseName ?? candidate.streetName))
+        }
+        return []
+    }
+
+    private func isUrbanSameRefReleaseSourceHighway(_ highway: String?) -> Bool {
+        switch (highway ?? "").lowercased() {
+        case "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "residential", "living_street":
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func isUrbanSameRefReleaseTargetHighway(_ highway: String?) -> Bool {
+        switch (highway ?? "").lowercased() {
+        case "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "residential", "living_street":
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func shouldEnableUrbanSameRefRelease(
+        sameRefCandidate: WayCandidate,
+        bestCandidate: WayCandidate
+    ) -> Bool {
+        guard isUrbanSameRefReleaseSourceHighway(sameRefCandidate.highway),
+              isUrbanSameRefReleaseTargetHighway(bestCandidate.highway),
+              bestCandidate.distanceM <= Self.simpleSameRefUrbanReleaseMaxBestDistanceM else {
+            return false
+        }
+        let distanceGapM = sameRefCandidate.distanceM - bestCandidate.distanceM
+        return distanceGapM >= Self.simpleSameRefUrbanReleaseMinDistanceGapM
+    }
+
+    private func isServiceLikeTransitionCandidate(_ candidate: WayCandidate) -> Bool {
+        if (candidate.highway ?? "").lowercased() == "service" {
+            return true
+        }
+        switch (candidate.service ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "driveway", "parking_aisle", "alley", "emergency_access", "drive-through",
+             "yard", "bus", "delivery", "parking", "busbay", "siding", "spur",
+             "slipway", "weigh_station", "training":
+            return true
+        default:
+            return false
+        }
     }
 
     private func selectMiniHMMCandidate(
@@ -6256,6 +7226,18 @@ final class V3SpeedLimitService {
             .filter { !$0.isEmpty }
     }
 
+    static func normalizedStreetNameTokens(_ raw: String?) -> [String] {
+        guard let raw else {
+            return []
+        }
+        let token = raw
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+            .unicodeScalars
+            .filter { CharacterSet.alphanumerics.contains($0) }
+        let normalized = String(String.UnicodeScalarView(token))
+        return normalized.isEmpty ? [] : [normalized]
+    }
 
     private func haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
         let r = 6_371_008.8
@@ -6330,6 +7312,8 @@ final class V3SpeedLimitService {
                 return CityContext(
                     insideCity: polygonResult.insideCity,
                     cityName: polygonResult.cityName,
+                    cityPlaceName: polygonResult.cityPlaceName,
+                    cityDistrictName: polygonResult.cityDistrictName,
                     citySource: polygonResult.citySource,
                     candidateBoundaries: polygonResult.candidateBoundaries,
                     containingBoundaries: polygonResult.containingBoundaries,
@@ -6346,6 +7330,8 @@ final class V3SpeedLimitService {
             return CityContext(
                 insideCity: areaResult.insideCity,
                 cityName: areaResult.cityName,
+                cityPlaceName: areaResult.cityPlaceName,
+                cityDistrictName: areaResult.cityDistrictName,
                 citySource: areaResult.citySource,
                 candidateBoundaries: areaResult.candidateBoundaries,
                 containingBoundaries: areaResult.containingBoundaries,
@@ -6358,6 +7344,8 @@ final class V3SpeedLimitService {
         return CityContext(
             insideCity: nil,
             cityName: nil,
+            cityPlaceName: nil,
+            cityDistrictName: nil,
             citySource: "unavailable",
             candidateBoundaries: 0,
             containingBoundaries: 0,
@@ -6450,7 +7438,16 @@ final class V3SpeedLimitService {
         lon: Double,
         hasPlaceTables: Bool,
         limitRows: Int = 2048
-    ) -> (insideCity: Bool, cityName: String?, citySource: String, candidateBoundaries: Int, containingBoundaries: Int, placeCandidates: Int)? {
+    ) -> (
+        insideCity: Bool,
+        cityName: String?,
+        cityPlaceName: String?,
+        cityDistrictName: String?,
+        citySource: String,
+        candidateBoundaries: Int,
+        containingBoundaries: Int,
+        placeCandidates: Int
+    )? {
         let boundarySQL = """
         SELECT b.row_id, b.admin_level, b.name, b.min_lon, b.min_lat, b.max_lon, b.max_lat
         FROM city_boundary_rtree r
@@ -6500,10 +7497,13 @@ final class V3SpeedLimitService {
             }
         }
 
-        if let cityName = Self.formatAdminCityName(from: containing) {
+        let adminDisplay = Self.buildAdminCityDisplay(from: containing)
+        if let cityName = adminDisplay.cityName {
             return (
                 insideCity: true,
                 cityName: cityName,
+                cityPlaceName: adminDisplay.cityPlaceName,
+                cityDistrictName: adminDisplay.cityDistrictName,
                 citySource: "admin_polygon",
                 candidateBoundaries: boundaries.count,
                 containingBoundaries: containing.count,
@@ -6550,6 +7550,8 @@ final class V3SpeedLimitService {
                     return (
                         insideCity: false,
                         cityName: best.name,
+                        cityPlaceName: best.name,
+                        cityDistrictName: nil,
                         citySource: "place_fallback",
                         candidateBoundaries: boundaries.count,
                         containingBoundaries: 0,
@@ -6562,6 +7564,8 @@ final class V3SpeedLimitService {
         return (
             insideCity: false,
             cityName: nil,
+            cityPlaceName: nil,
+            cityDistrictName: nil,
             citySource: hasPlaceTables ? "admin_polygons_plus_places" : "admin_polygons",
             candidateBoundaries: boundaries.count,
             containingBoundaries: 0,
@@ -6574,7 +7578,16 @@ final class V3SpeedLimitService {
         lat: Double,
         lon: Double,
         limitRows: Int = 512
-    ) -> (insideCity: Bool?, cityName: String?, citySource: String, candidateBoundaries: Int, containingBoundaries: Int, placeCandidates: Int) {
+    ) -> (
+        insideCity: Bool?,
+        cityName: String?,
+        cityPlaceName: String?,
+        cityDistrictName: String?,
+        citySource: String,
+        candidateBoundaries: Int,
+        containingBoundaries: Int,
+        placeCandidates: Int
+    ) {
         let hasPointsColumn = columnExists(db: db, table: "areas", column: "points_json")
         let sql = """
         SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat, \(hasPointsColumn ? "a.points_json" : "NULL")
@@ -6593,7 +7606,16 @@ final class V3SpeedLimitService {
 
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-            return (insideCity: nil, cityName: nil, citySource: "bbox_unavailable", candidateBoundaries: 0, containingBoundaries: 0, placeCandidates: 0)
+            return (
+                insideCity: nil,
+                cityName: nil,
+                cityPlaceName: nil,
+                cityDistrictName: nil,
+                citySource: "bbox_unavailable",
+                candidateBoundaries: 0,
+                containingBoundaries: 0,
+                placeCandidates: 0
+            )
         }
         defer { sqlite3_finalize(stmt) }
 
@@ -6661,10 +7683,13 @@ final class V3SpeedLimitService {
             }
         }
 
-        if let cityName = Self.formatAdminCityName(from: containingAdminExact) {
+        let exactAdminDisplay = Self.buildAdminCityDisplay(from: containingAdminExact)
+        if let cityName = exactAdminDisplay.cityName {
             return (
                 insideCity: true,
                 cityName: cityName,
+                cityPlaceName: exactAdminDisplay.cityPlaceName,
+                cityDistrictName: exactAdminDisplay.cityDistrictName,
                 citySource: "admin_polygon",
                 candidateBoundaries: containingAdminExact.count,
                 containingBoundaries: containingAdminExact.count,
@@ -6672,10 +7697,13 @@ final class V3SpeedLimitService {
             )
         }
 
-        if let cityName = Self.formatAdminCityName(from: containingAdminBBox) {
+        let bboxAdminDisplay = Self.buildAdminCityDisplay(from: containingAdminBBox)
+        if let cityName = bboxAdminDisplay.cityName {
             return (
                 insideCity: true,
                 cityName: cityName,
+                cityPlaceName: bboxAdminDisplay.cityPlaceName,
+                cityDistrictName: bboxAdminDisplay.cityDistrictName,
                 citySource: "admin_bbox",
                 candidateBoundaries: containingAdminBBox.count,
                 containingBoundaries: containingAdminBBox.count,
@@ -6687,6 +7715,8 @@ final class V3SpeedLimitService {
             return (
                 true,
                 best.name,
+                best.name,
+                nil,
                 "place_bbox",
                 0,
                 0,
@@ -6698,6 +7728,8 @@ final class V3SpeedLimitService {
             return (
                 false,
                 best.name,
+                best.name,
+                nil,
                 "place_nearest",
                 0,
                 0,
@@ -6712,6 +7744,8 @@ final class V3SpeedLimitService {
             return (
                 insideCity: nil,
                 cityName: nil,
+                cityPlaceName: nil,
+                cityDistrictName: nil,
                 citySource: "bbox_unclassified",
                 candidateBoundaries: 0,
                 containingBoundaries: 0,
@@ -6721,6 +7755,8 @@ final class V3SpeedLimitService {
 
         return (
             false,
+            nil,
+            nil,
             nil,
             "bbox_no_match",
             0,

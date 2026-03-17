@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -132,7 +133,14 @@ private const val DRIVING_BAN_PULSE_CYCLE_SECONDS = 2.2f
 private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
 private const val SECONDARY_TEXT_RATIO = 9f / 16f
 private const val DEBUG_WIDTH_REFERENCE = "N00.0000 O000.0000"
-private val CITY_BADGE_TEXT_SIZE = 18.sp
+private val CITY_BADGE_STREET_TEXT_SIZE = 18.sp
+private val CITY_BADGE_PLACE_TEXT_SIZE = 17.sp
+private val CITY_BADGE_DISTRICT_TEXT_SIZE = 16.sp
+private val CITY_BADGE_LINE_SPACING = 2.dp
+private val CITY_BADGE_HORIZONTAL_PADDING = 12.dp
+private val CITY_BADGE_VERTICAL_PADDING = 8.dp
+private val GPS_BADGE_MIN_HEIGHT = 58.dp
+private val LOCATION_SLOT_MIN_HEIGHT = 84.dp
 private val CONTROL_BUTTON_DIAMETER = 44.dp
 private val TrafficSignFontFamily = FontFamily(
     Font(R.font.u_din_1451_mittelschrift_regular, weight = FontWeight.Normal),
@@ -462,7 +470,6 @@ private fun primaryMetricTextStyle(
     baseSize: androidx.compose.ui.unit.TextUnit,
 ): TextStyle = when {
     ConsumerMainScreenLogic.isInSpeedCaptureMode(ui) -> roundedUiTextStyle(size = baseSize * 0.42f, weight = FontWeight.Bold)
-    ConsumerMainScreenLogic.isSearchingSignal(ui) -> roundedUiTextStyle(size = CITY_BADGE_TEXT_SIZE, weight = FontWeight.Bold)
     else -> trafficSignTextStyle(baseSize)
 }
 
@@ -517,9 +524,6 @@ private fun MainScreen(
     val secondaryMetric = ConsumerMainScreenLogic.secondaryMetricText(ui)
     val limitText = ConsumerMainScreenLogic.limitText(ui)
     val runtimeBanner = runtimeBanner(ui)
-    val rendersSearchInLabelSlot = ConsumerMainScreenLogic.isSearchingSignal(ui) &&
-        !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)
-    val displayedPrimaryMetric = if (rendersSearchInLabelSlot) "" else primaryMetric
     val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
 
     BoxWithConstraints(
@@ -541,6 +545,14 @@ private fun MainScreen(
         val debugFont = secondaryFont * 0.6f
         val metricDebugGap = max(12f, minDimensionDp.value * 0.024f).dp
         val debugSpacing = max(2f, minDimensionDp.value * 0.004f).dp
+        val metricSlotMinHeight = with(LocalDensity.current) {
+            (primaryMetricFont.toDp() * 1.05f) + (secondaryFont.toDp() * 1.2f)
+        }
+        val locationSlotMinHeight = if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+            0.dp
+        } else {
+            max(LOCATION_SLOT_MIN_HEIGHT.value, minDimensionDp.value * 0.225f).dp
+        }
         val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
         val bottomButtonGapWidth = max(
             0f,
@@ -579,23 +591,24 @@ private fun MainScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             MetricStatusBlock(
-                displayedPrimaryMetric = displayedPrimaryMetric,
+                displayedPrimaryMetric = primaryMetric,
                 secondaryMetric = secondaryMetric,
                 foreground = foreground,
                 ui = ui,
                 primaryMetricFont = primaryMetricFont,
                 secondaryFont = secondaryFont,
+                metricSlotMinHeight = metricSlotMinHeight,
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             LocationStatusBlock(
                 ui = ui,
-                rendersSearchInLabelSlot = rendersSearchInLabelSlot,
                 foreground = foreground,
                 debugFont = debugFont,
                 debugSpacing = debugSpacing,
                 metricDebugGap = metricDebugGap,
+                locationSlotMinHeight = locationSlotMinHeight,
                 contentHorizontalPadding = contentHorizontalPadding,
                 locationBadgeWidth = bottomButtonGapWidth,
                 runtimeBanner = runtimeBanner,
@@ -802,12 +815,15 @@ private fun MetricStatusBlock(
     ui: ConsumerUiState,
     primaryMetricFont: androidx.compose.ui.unit.TextUnit,
     secondaryFont: androidx.compose.ui.unit.TextUnit,
+    metricSlotMinHeight: androidx.compose.ui.unit.Dp,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = metricSlotMinHeight)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             displayedPrimaryMetric,
@@ -815,13 +831,17 @@ private fun MetricStatusBlock(
             style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
             textAlign = TextAlign.Center,
             modifier = Modifier.testTag("primary-metric"),
+            maxLines = if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) 2 else 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
-            secondaryMetric,
+            if (secondaryMetric.isBlank()) " " else secondaryMetric,
             color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
             style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
             textAlign = TextAlign.Center,
             modifier = Modifier.testTag("secondary-metric"),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -829,11 +849,11 @@ private fun MetricStatusBlock(
 @Composable
 private fun LocationStatusBlock(
     ui: ConsumerUiState,
-    rendersSearchInLabelSlot: Boolean,
     foreground: Color,
     debugFont: androidx.compose.ui.unit.TextUnit,
     debugSpacing: androidx.compose.ui.unit.Dp,
     metricDebugGap: androidx.compose.ui.unit.Dp,
+    locationSlotMinHeight: androidx.compose.ui.unit.Dp,
     contentHorizontalPadding: androidx.compose.ui.unit.Dp,
     locationBadgeWidth: androidx.compose.ui.unit.Dp,
     runtimeBanner: RuntimeBanner?,
@@ -846,48 +866,43 @@ private fun LocationStatusBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(debugSpacing),
     ) {
-        if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
-            CityBadge(
-                streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
-                cityName = ConsumerMainScreenLogic.cityBadgeCityText(ui).orEmpty(),
-                highlighted = ConsumerMainScreenLogic.shouldHighlightCityBadge(ui),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = locationSlotMinHeight),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
+                CityBadge(
+                    streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
+                    placeName = ConsumerMainScreenLogic.cityBadgePlaceText(ui).orEmpty(),
+                    districtName = ConsumerMainScreenLogic.cityBadgeDistrictText(ui).orEmpty(),
+                    highlighted = ConsumerMainScreenLogic.shouldHighlightCityBadge(ui),
                 badgeWidth = locationBadgeWidth,
                 foreground = foreground,
                 onOpenDebug = onOpenDebug,
             )
-        } else if (rendersSearchInLabelSlot) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(debugSpacing),
-                modifier = Modifier.testTag("search-summary"),
-            ) {
-                Text(
-                    "Suche...",
-                    color = foreground.copy(alpha = 0.92f),
-                    style = roundedUiTextStyle(size = CITY_BADGE_TEXT_SIZE, weight = FontWeight.Bold),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(debugSpacing),
-                modifier = Modifier.testTag("debug-fix-summary"),
-            ) {
-                Text(
-                    ConsumerMainScreenLogic.debugCoordinateText(ui),
-                    color = foreground.copy(alpha = 0.92f),
-                    fontSize = debugFont,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                )
-                Text(
-                    ConsumerMainScreenLogic.debugWayIdText(ui),
-                    color = foreground.copy(alpha = 0.82f),
-                    fontSize = debugFont,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(debugSpacing),
+                    modifier = Modifier.testTag("debug-fix-summary"),
+                ) {
+                    Text(
+                        ConsumerMainScreenLogic.debugCoordinateText(ui),
+                        color = foreground.copy(alpha = 0.92f),
+                        fontSize = debugFont,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Text(
+                        ConsumerMainScreenLogic.debugWayIdText(ui),
+                        color = foreground.copy(alpha = 0.82f),
+                        fontSize = debugFont,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(metricDebugGap))
@@ -927,7 +942,8 @@ private fun LocationStatusBlock(
 @Composable
 private fun CityBadge(
     streetName: String,
-    cityName: String,
+    placeName: String,
+    districtName: String,
     highlighted: Boolean,
     badgeWidth: androidx.compose.ui.unit.Dp,
     foreground: Color,
@@ -949,35 +965,54 @@ private fun CityBadge(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(
+                    horizontal = CITY_BADGE_HORIZONTAL_PADDING,
+                    vertical = CITY_BADGE_VERTICAL_PADDING,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CITY_BADGE_LINE_SPACING),
         ) {
-            if (streetName.isNotBlank()) {
-                Text(
-                    streetName,
-                    color = if (highlighted) Color.Black else foreground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = CITY_BADGE_TEXT_SIZE,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (cityName.isNotBlank()) {
-                Text(
-                    cityName,
-                    color = if (highlighted) Color.Black else foreground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = CITY_BADGE_TEXT_SIZE,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            CityBadgeLine(
+                text = streetName,
+                color = if (highlighted) Color.Black else foreground,
+                fontWeight = FontWeight.Bold,
+                fontSize = CITY_BADGE_STREET_TEXT_SIZE,
+            )
+            CityBadgeLine(
+                text = placeName,
+                color = if (highlighted) Color.Black else foreground,
+                fontWeight = FontWeight.Bold,
+                fontSize = CITY_BADGE_PLACE_TEXT_SIZE,
+            )
+            CityBadgeLine(
+                text = districtName,
+                color = if (highlighted) Color.Black else foreground,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = CITY_BADGE_DISTRICT_TEXT_SIZE,
+            )
         }
     }
+}
+
+@Composable
+private fun CityBadgeLine(
+    text: String,
+    color: Color,
+    fontWeight: FontWeight,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+) {
+    val hasText = text.isNotBlank()
+    Text(
+        text = if (hasText) text else " ",
+        color = color.copy(alpha = if (hasText) 1f else 0f),
+        fontWeight = fontWeight,
+        fontSize = fontSize,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+        maxLines = 1,
+        minLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -986,8 +1021,11 @@ private fun GpsSignalBadge(
     accuracyM: Double?,
     foreground: Color,
 ) {
+    val accuracyText = accuracyM?.let { String.format(Locale.US, "%.0f m", it) }
     Column(
-        modifier = Modifier.testTag("gps-badge"),
+        modifier = Modifier
+            .heightIn(min = GPS_BADGE_MIN_HEIGHT)
+            .testTag("gps-badge"),
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -1008,14 +1046,12 @@ private fun GpsSignalBadge(
                 )
             }
         }
-        accuracyM?.let {
-            Text(
-                String.format(Locale.US, "%.0f m", it),
-                color = foreground.copy(alpha = 0.82f),
-                fontSize = 11.sp,
-                fontFamily = FontFamily.Monospace,
-            )
-        }
+        Text(
+            accuracyText ?: " ",
+            color = foreground.copy(alpha = if (accuracyText == null) 0f else 0.82f),
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+        )
     }
 }
 
@@ -1319,6 +1355,21 @@ private fun DebugSheet(
                             Text("Matcher-Log teilen")
                         }
                     }
+                    if (ui.runtimeDiagnosticsLogPath.isNotBlank()) {
+                        DebugLabel("Diagnose-Log", ui.runtimeDiagnosticsLogPath)
+                        OutlinedButton(
+                            onClick = controller::shareRuntimeDiagnosticsLog,
+                            modifier = Modifier.testTag("debug-share-runtime-diagnostics-log-button"),
+                        ) {
+                            Text("Diagnose-Log teilen")
+                        }
+                        OutlinedButton(
+                            onClick = controller::clearRuntimeDiagnosticsLog,
+                            modifier = Modifier.testTag("debug-clear-runtime-diagnostics-log-button"),
+                        ) {
+                            Text("Diagnose-Log leeren")
+                        }
+                    }
                     OutlinedButton(
                         onClick = controller::clearDrivingLogs,
                         modifier = Modifier.testTag("debug-clear-logs-button"),
@@ -1348,7 +1399,7 @@ private fun LocalRecordingsSheet(
     SheetScaffold(title = "Lokale Erfassungen", onDismiss = onDismiss, testTag = "local-recordings-sheet") {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "Zur Erfassung von Korrekturen Schild doppelklicken anschliessend die korrekte Geschwindigkeit als Zahl einsprechen.",
+                "Zur Erfassung von Korrekturen Schild doppelklicken. Android bestaetigt mit \"Korrektur\", anschliessend die korrekte Geschwindigkeit sprechen.",
                 color = Color(0xFF555555),
                 fontSize = 13.sp,
             )

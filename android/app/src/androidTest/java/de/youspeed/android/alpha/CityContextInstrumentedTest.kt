@@ -13,9 +13,25 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CityContextInstrumentedTest {
     @Test
-    fun adminPolygon_formatsAdminLevel9WithAdminLevel8Qualifier() {
+    fun adminPolygon_formatsAdminLevel9WithAdminLevel6Qualifier() {
         val dbFile = createLookupDb("city-admin-polygon-prefers-level8.sqlite")
         populateCoreSchema(dbFile)
+        seedCityBoundary(
+            dbFile = dbFile,
+            rowId = 3L,
+            adminLevel = 6,
+            name = "Enzkreis",
+            minLon = 8.6625509,
+            minLat = 48.850934,
+            maxLon = 8.7425509,
+            maxLat = 48.930934,
+            ring = rectangleRing(
+                minLon = 8.6625509,
+                minLat = 48.850934,
+                maxLon = 8.7425509,
+                maxLat = 48.930934,
+            ),
+        )
         seedCityBoundary(
             dbFile = dbFile,
             rowId = 1L,
@@ -58,7 +74,9 @@ class CityContextInstrumentedTest {
                 headingDeg = null,
             )
 
-            assertEquals("Buechenbronn (Pforzheim)", result.cityName)
+            assertEquals("Pforzheim - Buechenbronn (Enzkreis)", result.cityName)
+            assertEquals("Pforzheim - Buechenbronn", result.cityPlaceName)
+            assertEquals("Enzkreis", result.cityDistrictName)
             assertTrue(result.insideCity == true)
             assertEquals("admin_polygon", result.citySource)
         }
@@ -103,6 +121,8 @@ class CityContextInstrumentedTest {
             )
 
             assertEquals("Kullenmühle", result.cityName)
+            assertEquals("Kullenmühle", result.cityPlaceName)
+            assertNull(result.cityDistrictName)
             assertEquals(true, result.insideCity)
             assertEquals("admin_polygon", result.citySource)
         }
@@ -139,13 +159,15 @@ class CityContextInstrumentedTest {
             )
 
             assertEquals("Pforzheim", result.cityName)
+            assertEquals("Pforzheim", result.cityPlaceName)
+            assertNull(result.cityDistrictName)
             assertTrue(result.insideCity == true)
             assertEquals("admin_polygon", result.citySource)
         }
     }
 
     @Test
-    fun adminPolygon_prefersAdminLevel8BoundaryOverLevel6() {
+    fun adminPolygon_formatsAdminLevel8WithAdminLevel6Qualifier() {
         val dbFile = createLookupDb("city-admin-polygon-prefers-level8-over-level6.sqlite")
         populateCoreSchema(dbFile)
         seedCityBoundary(
@@ -190,7 +212,9 @@ class CityContextInstrumentedTest {
                 headingDeg = null,
             )
 
-            assertEquals("Ispringen", result.cityName)
+            assertEquals("Ispringen (Enzkreis)", result.cityName)
+            assertEquals("Ispringen", result.cityPlaceName)
+            assertEquals("Enzkreis", result.cityDistrictName)
             assertTrue(result.insideCity == true)
             assertEquals("admin_polygon", result.citySource)
         }

@@ -3,6 +3,7 @@ package de.youspeed.android.alpha
 internal enum class LookupMatchingModel {
     CONNECTED_BASELINE,
     SIMPLE_SPEED_REF_HEURISTIC,
+    SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
     SIMPLE_SPEED_REF_CONNECTED_HEURISTIC,
     CORRIDOR_HMM_RAW_MINI_HMM,
     CORRIDOR_HMM,
@@ -22,6 +23,7 @@ enum class MatcherDebugProfile(
     M3("m3", "M3", "M2 + connected-candidate gate", LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC),
     M4("m4", "M4", "Corridor raw mini-HMM", LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM),
     M5("m5", "M5", "Corridor-aware final", LookupMatchingModel.CORRIDOR_HMM),
+    M9("m9", "M9", "Guarded stale-ref suppression", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC),
     ;
 
     val debugLabel: String

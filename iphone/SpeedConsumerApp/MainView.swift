@@ -7,6 +7,8 @@ import UIKit
 private let speedLimitNumberScale: CGFloat = 0.5
 private let secondaryTextRatio: CGFloat = 9.0 / 16.0
 private let drivingBanPulseCycleSeconds: Double = 2.2
+private let gpsBadgeSlotMinHeight: CGFloat = 58
+private let cityBadgeSlotMinHeight: CGFloat = 84
 
 enum LegalDisclaimerText {
     static let short = "Hinweis: Angezeigte Bußgelder, Punkte und Fahrverbote sind unverbindliche Orientierung und keine Rechtsberatung. Maßgeblich sind amtliche Bescheide und die jeweils gültige Rechtslage."
@@ -40,9 +42,7 @@ struct MainView: View {
             let contentBottomInset = bottomControlTopInset + max(10, minDimension * 0.03)
             let locationReserve = viewModel.isInSpeedCaptureMode
                 ? CGFloat(0)
-                : (showsLocationBadge
-                    ? max(58, minDimension * 0.16)
-                    : max(40, minDimension * 0.11))
+                : max(cityBadgeSlotMinHeight, minDimension * 0.225)
             let signWidthBudget = min(proxy.size.width * 0.82, proxy.size.width - (horizontalPadding * 2))
             let signHeightBudget = (
                 proxy.size.height -
@@ -92,7 +92,8 @@ struct MainView: View {
                     locationStatusBlock(
                         badgeWidth: bottomButtonGapWidth,
                         debugFont: debugFont,
-                        debugSpacing: debugSpacing
+                        debugSpacing: debugSpacing,
+                        reservedHeight: locationReserve
                     )
                     .padding(.horizontal, horizontalPadding)
                 }
@@ -228,6 +229,7 @@ struct MainView: View {
         secondaryFont: CGFloat
     ) -> some View {
         let valueUnitSpacing: CGFloat = 0
+        let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
@@ -242,7 +244,7 @@ struct MainView: View {
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.45)
                         .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
-                    Text(secondaryMetricText)
+                    Text(secondaryMetricText.isEmpty ? " " : secondaryMetricText)
                         .font(.system(size: secondaryFont, weight: .bold, design: .default))
                         .minimumScaleFactor(0.45)
                         .padding(.top, -primaryFont * 0.06)
@@ -250,7 +252,7 @@ struct MainView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: metricSlotMinHeight, alignment: .center)
         .multilineTextAlignment(.center)
         .foregroundStyle(primaryForegroundColor)
     }
@@ -259,7 +261,8 @@ struct MainView: View {
     private func locationStatusBlock(
         badgeWidth: CGFloat,
         debugFont: CGFloat,
-        debugSpacing: CGFloat
+        debugSpacing: CGFloat,
+        reservedHeight: CGFloat
     ) -> some View {
         Group {
             if viewModel.isInSpeedCaptureMode {
@@ -267,7 +270,8 @@ struct MainView: View {
             } else if showsLocationBadge {
                 CityLimitBadgeView(
                     streetName: cityBadgeStreetText ?? "",
-                    cityName: cityBadgeCityText ?? "",
+                    placeName: cityBadgePlaceText ?? "",
+                    districtName: cityBadgeDistrictText ?? "",
                     highlighted: highlightsCityBadge,
                     foregroundColor: highlightsCityBadge ? .black : primaryForegroundColor,
                     badgeWidth: badgeWidth
@@ -296,7 +300,7 @@ struct MainView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: reservedHeight, alignment: .center)
     }
 
     private var primaryMetricText: String {
@@ -319,7 +323,7 @@ struct MainView: View {
             return "\(points)"
         case .none:
             guard !isSearchingSignal else {
-                return "Suche Signal"
+                return " "
             }
             return "\(Int(round(viewModel.currentSpeedKmh)))"
         }
@@ -342,7 +346,7 @@ struct MainView: View {
             return "Punkte"
         case .none:
             guard !isSearchingSignal else {
-                return ""
+                return "Suche Signal"
             }
             return "km/h"
         }
@@ -365,7 +369,7 @@ struct MainView: View {
         if viewModel.isInSpeedCaptureMode {
             return ""
         }
-        if let city = normalizedPlaceText(viewModel.limitCityName) {
+        if let city = normalizedPlaceText(viewModel.limitCityName ?? viewModel.limitCityPlaceName) {
             return city
         }
         return hasUsableGPSFix ? "Stadt unbekannt" : "Suche..."
@@ -400,15 +404,20 @@ struct MainView: View {
         normalizedPlaceText(viewModel.limitStreetName)
     }
 
-    private var cityBadgeCityText: String? {
-        normalizedPlaceText(viewModel.limitCityName)
+    private var cityBadgePlaceText: String? {
+        normalizedPlaceText(viewModel.limitCityPlaceName)
+            ?? normalizedPlaceText(viewModel.limitCityName)
+    }
+
+    private var cityBadgeDistrictText: String? {
+        normalizedPlaceText(viewModel.limitCityDistrictName)
     }
 
     private var showsLocationBadge: Bool {
         guard !viewModel.isInSpeedCaptureMode else {
             return false
         }
-        return cityBadgeStreetText != nil || cityBadgeCityText != nil
+        return cityBadgeStreetText != nil || cityBadgePlaceText != nil || cityBadgeDistrictText != nil
     }
 
     private var highlightsCityBadge: Bool {
@@ -599,9 +608,6 @@ struct MainView: View {
         if viewModel.isInSpeedCaptureMode {
             return .system(size: size * 0.42, weight: .bold, design: .rounded)
         }
-        if isSearchingSignal {
-            return .system(size: size, weight: .bold, design: .rounded)
-        }
         return trafficSignNumberFont(size: size)
     }
 
@@ -718,11 +724,11 @@ private struct GPSSignalBadge: View {
             Image(systemName: signalSymbolName)
                 .font(.title3.weight(.semibold))
                 .frame(width: 44, height: 44)
-            if let accuracyText {
-                Text(accuracyText)
-                    .font(.caption2.monospacedDigit())
-            }
+            Text(accuracyText ?? " ")
+                .font(.caption2.monospacedDigit())
+                .opacity(accuracyText == nil ? 0 : 1)
         }
+        .frame(minHeight: gpsBadgeSlotMinHeight, alignment: .topTrailing)
         .foregroundStyle(foregroundColor)
     }
 
@@ -808,25 +814,17 @@ private enum LegalTextLoader {
 
 private struct CityLimitBadgeView: View {
     let streetName: String
-    let cityName: String
+    let placeName: String
+    let districtName: String
     let highlighted: Bool
     let foregroundColor: Color
     let badgeWidth: CGFloat
 
     var body: some View {
         VStack(spacing: 2) {
-            if !streetName.isEmpty {
-                Text(streetName)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-            if !cityName.isEmpty {
-                Text(cityName)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
+            badgeLine(streetName, size: 18, weight: .bold)
+            badgeLine(placeName, size: 17, weight: .bold)
+            badgeLine(districtName, size: 16, weight: .semibold)
         }
         .foregroundStyle(foregroundColor)
         .frame(maxWidth: .infinity)
@@ -841,6 +839,14 @@ private struct CityLimitBadgeView: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(highlighted ? Color.black.opacity(0.9) : .clear, lineWidth: 2)
         )
+    }
+
+    private func badgeLine(_ text: String, size: CGFloat, weight: Font.Weight) -> some View {
+        Text(text.isEmpty ? " " : text)
+            .font(.system(size: size, weight: weight, design: .default))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .opacity(text.isEmpty ? 0 : 1)
     }
 }
 

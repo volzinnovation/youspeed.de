@@ -169,6 +169,49 @@ class V3ReplayInstrumentedTest {
     }
 
     @Test
+    fun bundledLookupUsesAdminPolygonAtLoffenauRegressionFix() {
+        val dbFile = resolveReplayDbFile()
+        val target = loadReplayWindow("replay_loffenau_window.json").first { it.fixId == 2497 }
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            val result = lookup.lookup(
+                lat = target.lat,
+                lon = target.lon,
+                radiusM = 50.0,
+                maxCandidates = 64,
+                headingDeg = null,
+            )
+
+            assertEquals("Gernsbach (Landkreis Rastatt)", result.cityName)
+            assertEquals("Gernsbach", result.cityPlaceName)
+            assertEquals("Landkreis Rastatt", result.cityDistrictName)
+            assertEquals(true, result.insideCity)
+            assertEquals("admin_polygon", result.citySource)
+        }
+    }
+
+    @Test
+    fun bundledLookupResolvesLoffenauViaAdminPolygon() {
+        val dbFile = resolveReplayDbFile()
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            val result = lookup.lookup(
+                lat = 48.7739967,
+                lon = 8.3807646,
+                radiusM = 50.0,
+                maxCandidates = 64,
+                headingDeg = null,
+            )
+
+            assertEquals("Loffenau (Landkreis Rastatt)", result.cityName)
+            assertEquals("Loffenau", result.cityPlaceName)
+            assertEquals("Landkreis Rastatt", result.cityDistrictName)
+            assertEquals(true, result.insideCity)
+            assertEquals("admin_polygon", result.citySource)
+        }
+    }
+
+    @Test
     fun replayFieldLogs_reportAggregateHindsightAndTunnelMetrics() {
         val dbFile = resolveReplayDbFile()
         val traceDir = resolveReplayTraceDir()
@@ -845,6 +888,8 @@ class V3ReplayInstrumentedTest {
             speedLimitKmh = null,
             isUnlimitedSpeedLimit = false,
             cityName = null,
+            cityPlaceName = null,
+            cityDistrictName = null,
             insideCity = null,
             citySource = null,
             queryTimeMs = 0.0,

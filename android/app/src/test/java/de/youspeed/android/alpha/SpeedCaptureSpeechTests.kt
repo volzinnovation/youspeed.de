@@ -44,6 +44,11 @@ class SpeedCaptureSpeechTests {
     }
 
     @Test
+    fun usesShortCorrectionPromptText() {
+        assertEquals("Korrektur", SpeedCaptureSpeech.promptText)
+    }
+
+    @Test
     fun rejectsNonWhitelistTranscript() {
         val selection = SpeedCaptureSpeech.resolveSelection("zweihundert")
 
