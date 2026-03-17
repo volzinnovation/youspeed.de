@@ -140,6 +140,55 @@ class BundleContractTests {
     }
 
     @Test
+    fun emitsDownloadProgressForSingleBundleSync() {
+        val tempRoot = createTempDirectory("android-alpha-progress").toFile()
+        tempRoot.deleteOnExit()
+
+        val dbBytes = "fixture-db-progress".repeat(32).toByteArray()
+        val manifestUrl = "https://speedconsumer.test/berlin_manifest.json"
+        val dbUrl = "https://speedconsumer.test/berlin.sqlite"
+
+        val fetcher = FakeHttpFetcher(
+            mapOf(
+                manifestUrl to """
+                    {
+                      "format": "youspeed.v3.bundle.manifest",
+                      "schema_version": 1,
+                      "variant": "v3",
+                      "region": "germany/berlin",
+                      "country_code": "DEU",
+                      "bundle_version": "2026-03-17-progress",
+                      "created_at_utc": "2026-03-17T00:00:00Z",
+                      "min_app_version": "1.0.0",
+                      "db": {
+                        "file": "berlin.sqlite",
+                        "bytes": ${dbBytes.size},
+                        "sha256": "${sha256Hex(dbBytes)}",
+                        "url": "$dbUrl"
+                      },
+                      "delta_index": null
+                    }
+                """.trimIndent().toByteArray(),
+                dbUrl to dbBytes,
+            )
+        )
+
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val progressEvents = mutableListOf<BundleSyncProgress>()
+
+        bootstrapper.syncFromManifestUrl(manifestUrl) { progress ->
+            progressEvents += progress
+        }
+
+        assertFalse(progressEvents.isEmpty())
+        assertEquals(BundleSyncStage.PREPARING, progressEvents.first().stage)
+        assertTrue(progressEvents.any { it.stage == BundleSyncStage.DOWNLOADING })
+        assertEquals(BundleSyncStage.COMPLETED, progressEvents.last().stage)
+        assertEquals(dbBytes.size.toLong(), progressEvents.last().completedBytes)
+        assertEquals(dbBytes.size.toLong(), progressEvents.last().totalBytes)
+    }
+
+    @Test
     fun bootstrapsCompressedFullBundleAndPersistsInflatedState() {
         val tempRoot = createTempDirectory("android-alpha-bootstrap-gzip").toFile()
         tempRoot.deleteOnExit()
@@ -419,8 +468,11 @@ class BundleContractTests {
         override fun fetchToFile(
             url: String,
             destination: File,
+            onProgress: ((completedBytes: Long, totalBytes: Long?) -> Unit)?,
         ) {
-            destination.writeBytes(fetch(url))
+            val bytes = fetch(url)
+            destination.writeBytes(bytes)
+            onProgress?.invoke(bytes.size.toLong(), bytes.size.toLong())
         }
     }
 }

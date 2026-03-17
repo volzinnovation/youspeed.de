@@ -18,6 +18,13 @@ enum class BundleSyncMode {
     FULL_DOWNLOAD,
 }
 
+enum class BundleSyncStage {
+    PREPARING,
+    DOWNLOADING,
+    ASSEMBLING,
+    COMPLETED,
+}
+
 data class ActiveBundleState(
     val region: String,
     val countryCode: String?,
@@ -35,6 +42,13 @@ data class BundleSyncResult(
     val bundleVersion: String,
     val dbPath: String,
     val details: String,
+)
+
+data class BundleSyncProgress(
+    val stage: BundleSyncStage,
+    val detail: String,
+    val completedBytes: Long,
+    val totalBytes: Long,
 )
 
 data class DownloadedBundleInfo(
@@ -62,7 +76,11 @@ interface HttpFetcher {
     fun fetch(url: String): ByteArray
 
     @Throws(IOException::class)
-    fun fetchToFile(url: String, destination: File)
+    fun fetchToFile(
+        url: String,
+        destination: File,
+        onProgress: ((completedBytes: Long, totalBytes: Long?) -> Unit)? = null,
+    )
 }
 
 class BundleBootstrapper(
@@ -208,11 +226,22 @@ class BundleBootstrapper(
     }
 
     @Throws(IOException::class)
-    fun syncFromManifestUrl(manifestUrl: String): BundleSyncResult {
+    fun syncFromManifestUrl(
+        manifestUrl: String,
+        onProgress: ((BundleSyncProgress) -> Unit)? = null,
+    ): BundleSyncResult {
         ensureRoot()
         val manifestBytes = httpFetcher.fetch(manifestUrl)
         val manifestRaw = manifestBytes.toString(Charsets.UTF_8)
         val manifest = decodeManifestOrThrow(manifestUrl, manifestRaw)
+        val totalDownloadBytes = totalDownloadBytes(manifest)
+        emitProgress(
+            onProgress = onProgress,
+            stage = BundleSyncStage.PREPARING,
+            detail = "Manifest geladen: ${manifest.region} ${manifest.bundleVersion}",
+            completedBytes = 0L,
+            totalBytes = totalDownloadBytes,
+        )
 
         val current = activeState()
         if (current != null &&
@@ -220,6 +249,13 @@ class BundleBootstrapper(
             current.bundleVersion == manifest.bundleVersion &&
             File(current.dbPath).exists()
         ) {
+            emitProgress(
+                onProgress = onProgress,
+                stage = BundleSyncStage.COMPLETED,
+                detail = "Bundle bereits aktuell",
+                completedBytes = totalDownloadBytes,
+                totalBytes = totalDownloadBytes,
+            )
             return BundleSyncResult(
                 mode = BundleSyncMode.UP_TO_DATE,
                 bundleVersion = current.bundleVersion,
@@ -248,11 +284,38 @@ class BundleBootstrapper(
 
         try {
             if (!manifest.dbParts.isNullOrEmpty()) {
-                assembleMultipartArtifact(downloadedArtifact, manifest, manifestUrl)
+                assembleMultipartArtifact(
+                    artifactFile = downloadedArtifact,
+                    manifest = manifest,
+                    manifestUrl = manifestUrl,
+                    onProgress = onProgress,
+                )
             } else {
                 httpFetcher.fetchToFile(
                     url = ContractJson.resolveArtifactUrl(manifest.db, manifestUrl),
                     destination = downloadedArtifact,
+                    onProgress = { completedBytes, reportedTotalBytes ->
+                        emitProgress(
+                            onProgress = onProgress,
+                            stage = BundleSyncStage.DOWNLOADING,
+                            detail = "Lade ${manifest.region}",
+                            completedBytes = completedBytes,
+                            totalBytes = resolveProgressTotalBytes(
+                                expectedTotalBytes = totalDownloadBytes,
+                                reportedTotalBytes = reportedTotalBytes,
+                            ),
+                        )
+                    },
+                )
+                emitProgress(
+                    onProgress = onProgress,
+                    stage = BundleSyncStage.DOWNLOADING,
+                    detail = "Lade ${manifest.region}",
+                    completedBytes = downloadedArtifact.length(),
+                    totalBytes = resolveProgressTotalBytes(
+                        expectedTotalBytes = totalDownloadBytes,
+                        reportedTotalBytes = downloadedArtifact.length().takeIf { it > 0L },
+                    ),
                 )
                 validateFile(
                     file = downloadedArtifact,
@@ -268,6 +331,13 @@ class BundleBootstrapper(
                     sha256 = manifest.db.sha256.lowercase(Locale.US),
                 )
             } else {
+                emitProgress(
+                    onProgress = onProgress,
+                    stage = BundleSyncStage.ASSEMBLING,
+                    detail = "Entpacke ${manifest.region}",
+                    completedBytes = totalDownloadBytes,
+                    totalBytes = totalDownloadBytes,
+                )
                 materializeCompressedDatabaseArtifact(
                     artifactFile = downloadedArtifact,
                     artifact = manifest.db,
@@ -302,6 +372,13 @@ class BundleBootstrapper(
             )
             File(rootDir, "active_bundle.json").writeText(ContractJson.encodeActiveBundleState(state))
             invalidateCoverageCache()
+            emitProgress(
+                onProgress = onProgress,
+                stage = BundleSyncStage.COMPLETED,
+                detail = "Bundle aktiviert: ${manifest.region} ${manifest.bundleVersion}",
+                completedBytes = totalDownloadBytes,
+                totalBytes = totalDownloadBytes,
+            )
 
             return BundleSyncResult(
                 mode = BundleSyncMode.FULL_DOWNLOAD,
@@ -327,18 +404,37 @@ class BundleBootstrapper(
         artifactFile: File,
         manifest: V3BundleManifest,
         manifestUrl: String,
+        onProgress: ((BundleSyncProgress) -> Unit)?,
     ) {
         val dbParts = manifest.dbParts ?: error("db_parts missing")
         require(dbParts.isNotEmpty()) { "db_parts is empty" }
 
+        val totalProgressBytes = dbParts.sumOf { it.bytes.coerceAtLeast(0L) }
+            .takeIf { it > 0L }
+            ?: manifest.db.bytes.coerceAtLeast(0L)
         var totalBytes = 0L
         FileOutputStream(artifactFile).use { output ->
-            for (part in dbParts) {
+            for ((index, part) in dbParts.withIndex()) {
                 val partFile = File.createTempFile("bundle-part-", ".tmp", artifactFile.parentFile)
                 try {
                     httpFetcher.fetchToFile(
                         url = ContractJson.resolveArtifactUrl(part, manifestUrl),
                         destination = partFile,
+                        onProgress = { completedBytes, _ ->
+                            val normalizedPartBytes = part.bytes.coerceAtLeast(0L)
+                            val normalizedCompletedBytes = if (normalizedPartBytes > 0L) {
+                                completedBytes.coerceIn(0L, normalizedPartBytes)
+                            } else {
+                                completedBytes.coerceAtLeast(0L)
+                            }
+                            emitProgress(
+                                onProgress = onProgress,
+                                stage = BundleSyncStage.DOWNLOADING,
+                                detail = "Lade ${part.file} (${index + 1}/${dbParts.size})",
+                                completedBytes = totalBytes + normalizedCompletedBytes,
+                                totalBytes = totalProgressBytes,
+                            )
+                        },
                     )
                     validateFile(
                         file = partFile,
@@ -348,6 +444,13 @@ class BundleBootstrapper(
                     )
                     partFile.inputStream().use { input -> input.copyTo(output) }
                     totalBytes += partFile.length()
+                    emitProgress(
+                        onProgress = onProgress,
+                        stage = BundleSyncStage.DOWNLOADING,
+                        detail = "Lade ${part.file} (${index + 1}/${dbParts.size})",
+                        completedBytes = totalBytes,
+                        totalBytes = totalProgressBytes,
+                    )
                 } finally {
                     if (partFile.exists()) {
                         partFile.delete()
@@ -683,6 +786,42 @@ class BundleBootstrapper(
     private fun normalizedCompression(artifact: BundleArtifact): String? {
         val raw = artifact.compression?.trim()?.lowercase(Locale.US).orEmpty()
         return raw.takeIf { it.isNotEmpty() && it != "none" }
+    }
+
+    private fun totalDownloadBytes(manifest: V3BundleManifest): Long {
+        val multipartTotal = manifest.dbParts
+            ?.sumOf { it.bytes.coerceAtLeast(0L) }
+            ?.takeIf { it > 0L }
+        return multipartTotal ?: manifest.db.bytes.coerceAtLeast(0L)
+    }
+
+    private fun resolveProgressTotalBytes(
+        expectedTotalBytes: Long,
+        reportedTotalBytes: Long?,
+    ): Long {
+        val normalizedReportedTotalBytes = reportedTotalBytes?.takeIf { it > 0L } ?: 0L
+        return if (expectedTotalBytes > 0L) expectedTotalBytes else normalizedReportedTotalBytes
+    }
+
+    private fun emitProgress(
+        onProgress: ((BundleSyncProgress) -> Unit)?,
+        stage: BundleSyncStage,
+        detail: String,
+        completedBytes: Long,
+        totalBytes: Long,
+    ) {
+        val normalizedTotalBytes = totalBytes.coerceAtLeast(0L)
+        val normalizedCompletedBytes = completedBytes.coerceAtLeast(0L).let { bytes ->
+            if (normalizedTotalBytes > 0L) bytes.coerceAtMost(normalizedTotalBytes) else bytes
+        }
+        onProgress?.invoke(
+            BundleSyncProgress(
+                stage = stage,
+                detail = detail,
+                completedBytes = normalizedCompletedBytes,
+                totalBytes = normalizedTotalBytes,
+            )
+        )
     }
 
     private fun materializeCompressedDatabaseArtifact(

@@ -308,6 +308,8 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(MatcherDebugProfile.m9.matchingModel, .simpleSpeedRefStreetNameGuardHeuristic)
         XCTAssertEqual(MatcherDebugProfile.m10.debugLabel, "M10 M9 + node-direction-aware junction release")
         XCTAssertEqual(MatcherDebugProfile.m10.matchingModel, .simpleSpeedRefStreetNameGuardNodeAwareHeuristic)
+        XCTAssertEqual(MatcherDebugProfile.m11.debugLabel, "M11 M10 + topology-only particle sequence")
+        XCTAssertEqual(MatcherDebugProfile.m11.matchingModel, .simpleSequenceParticleHeuristic)
     }
 
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
@@ -4508,6 +4510,68 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(probe.detail.contains("candidate_trace_rank="))
     }
 
+    func testSequenceParticleMatcherPromotesTurnWithoutWayLinksUsingMotionHeading() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-sequence-particle-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("low_speed_junction_fixture.sqlite")
+        try createLowSpeedSameRefJunctionFixtureDB(at: dbURL, useCurvedTurn: true, includeWayLinks: false)
+        let m10 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+        )
+        let m11 = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSequenceParticleHeuristic
+        )
+
+        let context = WayMatchContext(
+            preferredWayID: "12001",
+            preferredHighway: "primary",
+            preferredEndpointProximityM: 3.0,
+            recentWayIDs: ["12001"],
+            recentFixes: [
+                WayMatchRecentFix(lat: 52.05995, lon: 13.00413),
+            ],
+            preferredStreetRef: "B463",
+            activeStreetRef: "B463",
+            recentStreetRefs: ["B463"]
+        )
+
+        let m10Result = try m10.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+        XCTAssertEqual(m10Result.wayID, "12002")
+
+        let m11Result = try m11.lookupSpeedLimit(
+            lat: 52.06001,
+            lon: 13.00413,
+            radiusM: 45.0,
+            maxCandidates: 32,
+            matchContext: context,
+            speedKmh: 23.0,
+            horizontalAccuracyM: 6.0
+        )
+        XCTAssertEqual(m11Result.wayID, "12003")
+        XCTAssertTrue(
+            m11Result.selectionTrace.contains {
+                $0.step == "simple_sequence_particle_switch" &&
+                    $0.detail.contains("12003")
+            }
+        )
+        XCTAssertTrue(m11Result.matchHypotheses.contains { $0.wayID == "12003" })
+    }
+
     func testLookupCapsCandidateRadiusByHorizontalAccuracy() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-hacc-radius-\(UUID().uuidString)", isDirectory: true)
@@ -6263,6 +6327,70 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
+    func testLookupCityPolygonFallsBackToAreasWhenPolygonTablesAreEmpty() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.890934,
+            fixLon: 8.7025509,
+            adminLevel6Name: "Pforzheim",
+            includePolygonBoundaryRows: false,
+            includeAreaAdminRows: true
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.890934,
+            lon: 8.7025509,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
+    func testLookupCityPolygonFallsBackToAreasWhenPolygonRowsHaveNoRings() throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: tempDir)
+        }
+
+        let dbURL = tempDir.appendingPathComponent("city_polygon_fixture.sqlite")
+        try createCityPolygonFixtureDB(
+            at: dbURL,
+            fixLat: 48.890934,
+            fixLon: 8.7025509,
+            adminLevel6Name: "Pforzheim",
+            includePolygonRings: false,
+            includeAreaAdminRows: true
+        )
+        let service = V3SpeedLimitService(dbPath: dbURL.path)
+
+        let result = try service.lookupSpeedLimit(
+            lat: 48.890934,
+            lon: 8.7025509,
+            radiusM: 120.0,
+            maxCandidates: 64
+        )
+
+        XCTAssertEqual(result.cityName, "Pforzheim")
+        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "admin_polygon")
+        XCTAssertEqual(result.speedLimitKmh, 50)
+    }
+
     func testLookupFailsForLegacySchemaWithoutWayGeomAndApproxHeading() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-legacy-\(UUID().uuidString)", isDirectory: true)
@@ -6803,7 +6931,11 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
-    private func createLowSpeedSameRefJunctionFixtureDB(at url: URL, useCurvedTurn: Bool = false) throws {
+    private func createLowSpeedSameRefJunctionFixtureDB(
+        at url: URL,
+        useCurvedTurn: Bool = false,
+        includeWayLinks: Bool = true
+    ) throws {
         var db: OpaquePointer?
         guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
             throw NSError(domain: "SpeedConsumerTests", code: 104, userInfo: [NSLocalizedDescriptionKey: "sqlite open failed"])
@@ -6815,6 +6947,26 @@ final class SpeedConsumerTests: XCTestCase {
         let turnPointsJSON = useCurvedTurn
             ? "[[52.06000,13.0041],[52.06150,13.0041],[52.0660,13.0118]]"
             : "[[52.06000,13.0041],[52.0660,13.0041]]"
+        let wayLinksSchema = includeWayLinks ? """
+        CREATE TABLE way_links (
+          way_id INTEGER NOT NULL,
+          linked_way_id INTEGER NOT NULL,
+          shared_ref INTEGER NOT NULL DEFAULT 0,
+          link_kind TEXT NOT NULL,
+          shared_node_key TEXT,
+          shared_lon REAL,
+          shared_lat REAL,
+          PRIMARY KEY(way_id, linked_way_id)
+        );
+        """ : ""
+        let wayLinksSeed = includeWayLinks ? """
+        INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind, shared_node_key, shared_lon, shared_lat)
+        VALUES
+          (12001, 12002, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
+          (12002, 12001, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
+          (12001, 12003, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000),
+          (12003, 12001, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000);
+        """ : ""
 
         let schema = """
         CREATE TABLE ways (
@@ -6851,16 +7003,7 @@ final class SpeedConsumerTests: XCTestCase {
           way_id TEXT NOT NULL UNIQUE,
           points_json TEXT NOT NULL
         );
-        CREATE TABLE way_links (
-          way_id INTEGER NOT NULL,
-          linked_way_id INTEGER NOT NULL,
-          shared_ref INTEGER NOT NULL DEFAULT 0,
-          link_kind TEXT NOT NULL,
-          shared_node_key TEXT,
-          shared_lon REAL,
-          shared_lat REAL,
-          PRIMARY KEY(way_id, linked_way_id)
-        );
+        \(wayLinksSchema)
 
         INSERT INTO ways(row_id, way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, bridge, covered, location, layer, level, min_lon, min_lat, max_lon, max_lat)
         VALUES (1, '12001', 'primary', 'Jahnstraße', 'B463', '50', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, NULL, NULL, NULL, NULL, NULL, 13.0000, 52.06000, 13.0040, 52.06000);
@@ -6882,13 +7025,7 @@ final class SpeedConsumerTests: XCTestCase {
         VALUES (12003, 13.0041, \(turnMaxLon), 52.06000, 52.0660);
         INSERT INTO way_geom(row_id, way_id, points_json)
         VALUES (3, '12003', '\(turnPointsJSON)');
-
-        INSERT INTO way_links(way_id, linked_way_id, shared_ref, link_kind, shared_node_key, shared_lon, shared_lat)
-        VALUES
-          (12001, 12002, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
-          (12002, 12001, 1, 'shared_endpoint', '12001:12002', 13.0041, 52.06000),
-          (12001, 12003, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000),
-          (12003, 12001, 0, 'shared_endpoint', '12001:12003', 13.0041, 52.06000);
+        \(wayLinksSeed)
         """
 
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
@@ -8202,7 +8339,10 @@ final class SpeedConsumerTests: XCTestCase {
         fallbackPlaceName: String? = nil,
         fallbackPlaceType: String? = nil,
         fallbackPlaceLon: Double? = nil,
-        fallbackPlaceLat: Double? = nil
+        fallbackPlaceLat: Double? = nil,
+        includePolygonBoundaryRows: Bool = true,
+        includePolygonRings: Bool = true,
+        includeAreaAdminRows: Bool = false
     ) throws {
         var db: OpaquePointer?
         guard sqlite3_open(url.path, &db) == SQLITE_OK, let db else {
@@ -8325,41 +8465,86 @@ final class SpeedConsumerTests: XCTestCase {
             """
         ]
 
-        if let adminLevel6Name {
-            statements.append(
-                """
+        if includePolygonBoundaryRows, let adminLevel6Name {
+            var sql = """
                 INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
                 VALUES (1, 'relation', 6001, 6, '\(adminLevel6Name)', \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
                 INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (1, \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
-                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
-                VALUES (1, 0, 0, 0, '\(admin6Ring)');
                 """
-            )
+            if includePolygonRings {
+                sql += """
+
+                    INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                    VALUES (1, 0, 0, 0, '\(admin6Ring)');
+                    """
+            }
+            statements.append(sql)
         }
 
-        if let adminLevel8Name {
-            statements.append(
-                """
+        if includePolygonBoundaryRows, let adminLevel8Name {
+            var sql = """
                 INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
                 VALUES (2, 'relation', 8001, 8, '\(adminLevel8Name)', \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
                 INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (2, \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
-                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
-                VALUES (2, 0, 0, 0, '\(admin8Ring)');
                 """
-            )
+            if includePolygonRings {
+                sql += """
+
+                    INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                    VALUES (2, 0, 0, 0, '\(admin8Ring)');
+                    """
+            }
+            statements.append(sql)
         }
 
-        if let adminLevel9Name {
-            statements.append(
-                """
+        if includePolygonBoundaryRows, let adminLevel9Name {
+            var sql = """
                 INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
                 VALUES (3, 'relation', 9001, 9, '\(adminLevel9Name)', \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
                 INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (3, \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
-                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
-                VALUES (3, 0, 0, 0, '\(admin9Ring)');
+                """
+            if includePolygonRings {
+                sql += """
+
+                    INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                    VALUES (3, 0, 0, 0, '\(admin9Ring)');
+                    """
+            }
+            statements.append(sql)
+        }
+
+        if includeAreaAdminRows, let adminLevel6Name {
+            statements.append(
+                """
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES (101, 'r:area-6001', 'Polygon', '\(adminLevel6Name)', NULL, 'administrative', '6', NULL, NULL, NULL, '\(admin6Ring)', \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (101, \(String(format: "%.7f", fixLon - 0.0300)), \(String(format: "%.7f", fixLon + 0.0300)), \(String(format: "%.7f", fixLat - 0.0300)), \(String(format: "%.7f", fixLat + 0.0300)));
+                """
+            )
+        }
+
+        if includeAreaAdminRows, let adminLevel8Name {
+            statements.append(
+                """
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES (102, 'r:area-8001', 'Polygon', '\(adminLevel8Name)', NULL, 'administrative', '8', NULL, NULL, NULL, '\(admin8Ring)', \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (102, \(String(format: "%.7f", fixLon - 0.0200)), \(String(format: "%.7f", fixLon + 0.0200)), \(String(format: "%.7f", fixLat - 0.0200)), \(String(format: "%.7f", fixLat + 0.0200)));
+                """
+            )
+        }
+
+        if includeAreaAdminRows, let adminLevel9Name {
+            statements.append(
+                """
+                INSERT INTO areas(row_id, area_id, geometry_type, name, place, boundary, admin_level, residential, parking, traffic_sign, points_json, min_lon, min_lat, max_lon, max_lat)
+                VALUES (103, 'r:area-9001', 'Polygon', '\(adminLevel9Name)', NULL, 'administrative', '9', NULL, NULL, NULL, '\(admin9Ring)', \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
+                INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (103, \(String(format: "%.7f", fixLon - 0.0030)), \(String(format: "%.7f", fixLon + 0.0030)), \(String(format: "%.7f", fixLat - 0.0030)), \(String(format: "%.7f", fixLat + 0.0030)));
                 """
             )
         }

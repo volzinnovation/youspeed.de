@@ -126,7 +126,10 @@ data class ConsumerUiState(
     val startupDetail: String = "Lokale Daten werden vorbereitet",
     val syncStatus: String = "not_synced",
     val syncProgressDetail: String = "",
+    val syncProgressCompletedBytes: Long = 0L,
+    val syncProgressTotalBytes: Long = 0L,
     val maintenanceMessage: String = "",
+    val activeDownloadOptionId: String? = null,
     val activeBundleVersion: String = "none",
     val activeDBPath: String = "",
     val currentSpeedKmh: Double = 0.0,
@@ -699,14 +702,42 @@ class ConsumerSessionController(
             setError("GitHub Release Token fehlt in der Android-Build-Konfiguration (YOUSPEED_RELEASE_READ_TOKEN).")
             return
         }
-        runSyncTask(status = "syncing", detail = "Synchronisierung startet") {
-            var lastFailure: Exception? = null
-            var successState: ConsumerUiState? = null
+        if (isSyncingNow()) {
+            setError("Es laeuft bereits eine Synchronisierung.")
+            return
+        }
+        var lastFailure: Exception? = null
+        updateState {
+            copy(
+                syncStatus = "syncing",
+                syncProgressDetail = "Synchronisierung startet",
+                syncProgressCompletedBytes = 0L,
+                syncProgressTotalBytes = 0L,
+                maintenanceMessage = "",
+                activeDownloadOptionId = null,
+                lastError = "",
+            )
+        }
+        executor.execute {
             val endpoints = manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) == "DEU" } +
                 manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) != "DEU" }
             for (endpoint in endpoints) {
                 try {
-                    val sync = bootstrapper.syncFromManifestUrl(endpoint.manifestUrl)
+                    postState {
+                        copy(
+                            syncStatus = "syncing",
+                            syncProgressDetail = "Lade ${endpoint.manifestRegion}",
+                            syncProgressCompletedBytes = 0L,
+                            syncProgressTotalBytes = 0L,
+                            maintenanceMessage = "",
+                            activeDownloadOptionId = null,
+                            lastError = "",
+                        )
+                    }
+                    val sync = bootstrapper.syncFromManifestUrl(
+                        manifestUrl = endpoint.manifestUrl,
+                        onProgress = ::applyBundleSyncProgress,
+                    )
                     refreshDownloadedBundleInventory()
                     val active = bootstrapper.activeState()
                     replaceLookupService(
@@ -714,22 +745,26 @@ class ConsumerSessionController(
                         preferredCountryCode = active?.countryCode ?: endpoint.countryCode,
                         reason = "bootstrap_and_sync",
                     )
-                    successState = copy(
-                        syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
-                        syncProgressDetail = "Synchronisierung abgeschlossen",
-                        maintenanceMessage = sync.details,
-                        activeBundleVersion = sync.bundleVersion,
-                        activeDBPath = sync.dbPath,
-                        activePenaltyRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(sync.dbPath) ?: "DEU"),
-                        lastError = "",
-                    )
-                    break
+                    postState {
+                        copy(
+                            syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
+                            syncProgressDetail = "Synchronisierung abgeschlossen",
+                            syncProgressCompletedBytes = 0L,
+                            syncProgressTotalBytes = 0L,
+                            maintenanceMessage = sync.details,
+                            activeDownloadOptionId = null,
+                            activeBundleVersion = sync.bundleVersion,
+                            activeDBPath = sync.dbPath,
+                            activePenaltyRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(sync.dbPath) ?: "DEU"),
+                            lastError = "",
+                        )
+                    }
+                    return@execute
                 } catch (error: Exception) {
                     lastFailure = error
                 }
             }
-            successState?.let { return@runSyncTask it }
-            throw lastFailure ?: IllegalStateException("Kein Manifest-Endpunkt konnte synchronisiert werden.")
+            setError(lastFailure?.message ?: "Kein Manifest-Endpunkt konnte synchronisiert werden.")
         }
     }
 
@@ -773,24 +808,51 @@ class ConsumerSessionController(
             setError("GitHub Release Token fehlt (YOUSPEED_RELEASE_READ_TOKEN).")
             return
         }
-        runSyncTask(status = "syncing", detail = "Lade ${option.displayName}") {
-            val sync = bootstrapper.syncFromManifestUrl(option.endpoint.manifestUrl)
-            refreshDownloadedBundleInventory()
-            val active = bootstrapper.activeState()
-            replaceLookupService(
-                sync.dbPath,
-                preferredCountryCode = active?.countryCode ?: option.countryCode,
-                reason = "download_selected_bundle",
-            )
+        if (isSyncingNow()) {
+            setError("Download blockiert: Es laeuft bereits eine Synchronisierung.")
+            return
+        }
+        updateState {
             copy(
-                syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
-                syncProgressDetail = "Bundle geladen: ${option.displayName}",
-                maintenanceMessage = "Bundle geladen: ${option.displayName}",
-                activeBundleVersion = sync.bundleVersion,
-                activeDBPath = sync.dbPath,
-                activePenaltyRules = loadPenaltyRules(active?.countryCode ?: option.countryCode),
+                syncStatus = "syncing",
+                syncProgressDetail = "Lade ${option.displayName}",
+                syncProgressCompletedBytes = 0L,
+                syncProgressTotalBytes = 0L,
+                maintenanceMessage = "Download gestartet: ${option.displayName}",
+                activeDownloadOptionId = option.id,
                 lastError = "",
             )
+        }
+        executor.execute {
+            try {
+                val sync = bootstrapper.syncFromManifestUrl(
+                    manifestUrl = option.endpoint.manifestUrl,
+                    onProgress = ::applyBundleSyncProgress,
+                )
+                refreshDownloadedBundleInventory()
+                val active = bootstrapper.activeState()
+                replaceLookupService(
+                    sync.dbPath,
+                    preferredCountryCode = active?.countryCode ?: option.countryCode,
+                    reason = "download_selected_bundle",
+                )
+                postState {
+                    copy(
+                        syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
+                        syncProgressDetail = "Bundle geladen: ${option.displayName}",
+                        syncProgressCompletedBytes = 0L,
+                        syncProgressTotalBytes = 0L,
+                        maintenanceMessage = "Bundle geladen: ${option.displayName}",
+                        activeDownloadOptionId = null,
+                        activeBundleVersion = sync.bundleVersion,
+                        activeDBPath = sync.dbPath,
+                        activePenaltyRules = loadPenaltyRules(active?.countryCode ?: option.countryCode),
+                        lastError = "",
+                    )
+                }
+            } catch (error: Exception) {
+                setError(error.message ?: error.javaClass.simpleName)
+            }
         }
     }
 
@@ -1112,9 +1174,34 @@ class ConsumerSessionController(
     fun formattedSyncStatus(): String = when (uiState.syncStatus) {
         "not_synced" -> "Nicht synchronisiert"
         "syncing" -> "Synchronisiert..."
+        "bootstrapping" -> "Vorbereitung..."
         "sync_failed" -> "Synchronisierung fehlgeschlagen"
         "seed_only" -> "Seed aktiv"
         else -> uiState.syncStatus.replace("_", " ")
+    }
+
+    fun isSyncingNow(): Boolean {
+        return uiState.syncStatus == "syncing" || uiState.syncStatus == "bootstrapping"
+    }
+
+    fun hasActiveBundleDownload(): Boolean {
+        return !uiState.activeDownloadOptionId.isNullOrBlank()
+    }
+
+    fun isActiveBundleDownload(option: BundleDownloadOption): Boolean {
+        return hasActiveBundleDownload() && uiState.activeDownloadOptionId == option.id
+    }
+
+    fun activeBundleDownloadProgress(option: BundleDownloadOption): Double? {
+        if (!isActiveBundleDownload(option)) {
+            return null
+        }
+        val total = uiState.syncProgressTotalBytes.coerceAtLeast(0L)
+        if (total <= 0L) {
+            return null
+        }
+        val completed = uiState.syncProgressCompletedBytes.coerceAtLeast(0L).coerceAtMost(total)
+        return completed.toDouble() / total.toDouble()
     }
 
     fun isBundleDownloaded(option: BundleDownloadOption): Boolean {
@@ -1137,6 +1224,16 @@ class ConsumerSessionController(
         return "$lat, $lon"
     }
 
+    private fun applyBundleSyncProgress(progress: BundleSyncProgress) {
+        postState {
+            copy(
+                syncProgressDetail = progress.detail,
+                syncProgressCompletedBytes = progress.completedBytes.coerceAtLeast(0L),
+                syncProgressTotalBytes = progress.totalBytes.coerceAtLeast(0L),
+            )
+        }
+    }
+
     private fun runSyncTask(
         status: String,
         detail: String,
@@ -1146,7 +1243,10 @@ class ConsumerSessionController(
             copy(
                 syncStatus = status,
                 syncProgressDetail = detail,
+                syncProgressCompletedBytes = 0L,
+                syncProgressTotalBytes = 0L,
                 maintenanceMessage = "",
+                activeDownloadOptionId = null,
                 lastError = "",
             )
         }
@@ -1163,8 +1263,11 @@ class ConsumerSessionController(
     private fun setError(message: String) {
         postState {
             copy(
-                syncStatus = if (syncStatus == "syncing") "sync_failed" else syncStatus,
+                syncStatus = if (syncStatus == "syncing" || syncStatus == "bootstrapping") "sync_failed" else syncStatus,
                 syncProgressDetail = "",
+                syncProgressCompletedBytes = 0L,
+                syncProgressTotalBytes = 0L,
+                activeDownloadOptionId = null,
                 lastError = message,
             )
         }

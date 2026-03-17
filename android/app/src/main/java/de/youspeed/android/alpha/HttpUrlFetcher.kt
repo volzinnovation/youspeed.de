@@ -36,14 +36,26 @@ class HttpUrlFetcher(
     override fun fetchToFile(
         url: String,
         destination: File,
+        onProgress: ((completedBytes: Long, totalBytes: Long?) -> Unit)?,
     ) {
         val requestUrl = resolveEffectiveUrl(url)
         val connection = openConnection(requestUrl)
         try {
             requireSuccess(connection, requestUrl)
+            val totalBytes = connection.contentLengthLong.takeIf { it > 0L }
             destination.outputStream().use { output ->
                 connection.inputStream.use { input ->
-                    input.copyTo(output)
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var completedBytes = 0L
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) {
+                            break
+                        }
+                        output.write(buffer, 0, read)
+                        completedBytes += read.toLong()
+                        onProgress?.invoke(completedBytes, totalBytes)
+                    }
                 }
             }
         } finally {

@@ -171,14 +171,34 @@ internal class V3SpeedLimitLookup(
             headingDeg = observedHeadingDeg,
         )
         val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
-        val cityContext = if (hasCityBoundaryTable && hasCityRingTable) {
+        val polygonCityContext = if (hasCityBoundaryTable && hasCityRingTable) {
             resolveCityContextFromPolygons(
                 lat = lat,
                 lon = lon,
                 hasPlaceTables = hasCityPlaceTable,
             )
         } else {
+            null
+        }
+        val areaCityContext = if (hasAreasTable) {
             resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates)
+        } else {
+            null
+        }
+        val cityContext = when {
+            polygonCityContext != null && areaCityContext != null ->
+                preferredCityContext(primary = polygonCityContext, fallback = areaCityContext)
+            polygonCityContext != null -> polygonCityContext
+            areaCityContext != null -> areaCityContext
+            else -> CityContext(
+                insideCity = false,
+                cityName = null,
+                cityPlaceName = null,
+                cityDistrictName = null,
+                citySource = "unavailable",
+                candidateBoundaries = 0,
+                placeCandidates = 0,
+            )
         }
         val wayLinks = loadWayLinksContext(normalizedMatchContext, candidates)
         val corridorProgress = loadCorridorProgressContext(candidates)
@@ -5166,6 +5186,28 @@ internal class V3SpeedLimitLookup(
             candidateBoundaries = 0,
             placeCandidates = 0,
         )
+    }
+
+    private fun preferredCityContext(
+        primary: CityContext,
+        fallback: CityContext,
+    ): CityContext {
+        val primaryScore = cityContextResolutionScore(primary)
+        val fallbackScore = cityContextResolutionScore(fallback)
+        return if (fallbackScore > primaryScore) fallback else primary
+    }
+
+    private fun cityContextResolutionScore(context: CityContext): Int {
+        val baseScore = when (context.citySource) {
+            "admin_polygon" -> 50
+            "admin_bbox" -> 40
+            "place_bbox" -> 30
+            "place_fallback", "place_nearest" -> 20
+            else -> 0
+        }
+        val cityNameBonus = if (!context.cityName.isNullOrBlank()) 2 else 0
+        val districtBonus = if (!context.cityDistrictName.isNullOrBlank()) 1 else 0
+        return baseScore + cityNameBonus + districtBonus
     }
 
     private fun tableExists(name: String): Boolean {

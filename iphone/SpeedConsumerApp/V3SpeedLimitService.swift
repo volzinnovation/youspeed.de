@@ -14,6 +14,7 @@ final class V3SpeedLimitService {
         case simpleSpeedRefStreetNameFallbackHeuristic
         case simpleSpeedRefStreetNameGuardHeuristic
         case simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+        case simpleSequenceParticleHeuristic
         case simpleSpeedRefConnectedHeuristic
         case connectedBaseline
     }
@@ -38,6 +39,7 @@ final class V3SpeedLimitService {
              .simpleSpeedRefStreetNameFallbackHeuristic,
              .simpleSpeedRefStreetNameGuardHeuristic,
              .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
+             .simpleSequenceParticleHeuristic,
              .simpleSpeedRefConnectedHeuristic,
              .connectedBaseline:
             return false
@@ -118,6 +120,17 @@ final class V3SpeedLimitService {
         let maxLat: Double
         let points: [(Double, Double)]
     }
+
+    private typealias ResolvedCityContext = (
+        insideCity: Bool?,
+        cityName: String?,
+        cityPlaceName: String?,
+        cityDistrictName: String?,
+        citySource: String,
+        candidateBoundaries: Int,
+        containingBoundaries: Int,
+        placeCandidates: Int
+    )
 
     private struct CityContext {
         let insideCity: Bool?
@@ -388,6 +401,23 @@ final class V3SpeedLimitService {
         let endpointWayID: String?
     }
 
+    private struct SimpleSequenceParticleState {
+        let candidate: WayCandidate
+        let continuity: ContinuityClass
+        let cumulativeCost: Double
+        let emissionCost: Double
+        let transitionCost: Double
+        let seedWayID: String?
+        let seedSource: String
+    }
+
+    private struct SimpleSequenceParticleSelection {
+        let selected: WayCandidate?
+        let traceRankedCandidates: [TraceRankedCandidate]
+        let hypotheses: [WayMatchHypothesis]
+        let selectionTrace: [MatchSelectionTrace]
+    }
+
     private enum DriveMatchThreeWayGateModel {
         static let classNames: [String] = ["current", "lowest_distance", "lowest_endpoint"]
 
@@ -471,6 +501,10 @@ final class V3SpeedLimitService {
     private static let simpleLowSpeedNodeAwareJunctionMaxCandidateMismatchDeg: Double = 40.0
     private static let simpleLowSpeedJunctionMinCurrentMismatchDeg: Double = 40.0
     private static let simpleLowSpeedJunctionSharedNodeToleranceM: Double = 16.0
+    private static let simpleSequenceParticleMotionHeadingWeightMPerDeg: Double = 1.4
+    private static let simpleSequenceParticleHistoryDecay: Double = 0.65
+    private static let simpleSequenceParticleAdoptionSlackM: Double = 4.0
+    private static let simpleSequenceParticleSharedNodeTurnPenaltyM: Double = 1.0
     private static let walkingTurnSwitchMaxSpeedKmh: Double = 7.0
     private static let walkingTurnSwitchPreferredDistanceM: Double = 10.0
     private static let walkingTurnSwitchBestDistanceM: Double = 5.0
@@ -713,6 +747,7 @@ final class V3SpeedLimitService {
             fallbackPreferredWayID: preferredWayID,
             ageOutStaleRefContinuity: matchingModel == .simpleSpeedRefStreetNameGuardHeuristic
                 || matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+                || matchingModel == .simpleSequenceParticleHeuristic
         )
         let normalizedRadiusM = effectiveCandidateSearchRadiusM(radiusM: radiusM)
         let cappedCandidateRadiusM = candidateLookupRadiusM(radiusM: normalizedRadiusM, horizontalAccuracyM: horizontalAccuracyM)
@@ -887,7 +922,8 @@ final class V3SpeedLimitService {
         func buildNonCorridorMatcherResult(
             finalSelected: WayCandidate?,
             traceRankedCandidates: [TraceRankedCandidate],
-            selectionTrace: [MatchSelectionTrace]
+            selectionTrace: [MatchSelectionTrace],
+            matchHypotheses: [WayMatchHypothesis] = []
         ) -> SpeedLimitResult {
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
             let insideCityDecision: (insideCity: Bool?, source: String?)
@@ -1001,7 +1037,7 @@ final class V3SpeedLimitService {
                 nearbyTunnelCandidateRefs: Array(nearbyTunnelCandidateRefs).sorted(),
                 usedMiniHMM: false,
                 miniHMMCandidateCount: 0,
-                matchHypotheses: [],
+                matchHypotheses: matchHypotheses,
                 candidateTraces: candidateTraces,
                 selectionTrace: selectionTrace,
                 activeCorridorState: nil
@@ -1031,6 +1067,48 @@ final class V3SpeedLimitService {
                 finalSelected: finalSelected,
                 traceRankedCandidates: baselineSelection.traceRankedCandidates,
                 selectionTrace: selectionTrace
+            )
+        }
+
+        if matchingModel == .simpleSequenceParticleHeuristic {
+            let heuristicSelection = selectSimpleSpeedRefHeuristicCandidate(
+                from: rankedCandidates,
+                matchContext: normalizedMatchContext,
+                observedHeadingDeg: headingForScoring,
+                speedKmh: speedKmh,
+                accuracyBufferM: accuracyBuffer,
+                horizontalAccuracyM: horizontalAccuracyM,
+                urbanSameRefReleaseEnabled: true,
+                useStreetNameFallbackContinuity: false,
+                useGuardedStreetNameFallbackContinuity: true,
+                nodeDirectionAwareLowSpeedJunctionRelease: true,
+                wayLinks: wayLinksContext
+            )
+            selectionTrace.append(contentsOf: heuristicSelection.selectionTrace)
+            let particleSelection = selectSimpleSequenceParticleCandidate(
+                from: rankedCandidates,
+                heuristicSelected: heuristicSelection.selected,
+                matchContext: normalizedMatchContext,
+                observedHeadingDeg: headingForScoring,
+                speedKmh: speedKmh
+            )
+            selectionTrace.append(contentsOf: particleSelection.selectionTrace)
+            let finalSelected = particleSelection.selected ?? heuristicSelection.selected
+            if let finalSelected {
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "final",
+                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none model=simple_sequence_particle"
+                    )
+                )
+            }
+            return buildNonCorridorMatcherResult(
+                finalSelected: finalSelected,
+                traceRankedCandidates: particleSelection.traceRankedCandidates.isEmpty
+                    ? heuristicSelection.traceRankedCandidates
+                    : particleSelection.traceRankedCandidates,
+                selectionTrace: selectionTrace,
+                matchHypotheses: particleSelection.hypotheses
             )
         }
 
@@ -3716,6 +3794,339 @@ final class V3SpeedLimitService {
             selected: selected,
             traceRankedCandidates: traceRankedCandidates,
             selectionTrace: selectionTrace
+        )
+    }
+
+    private func selectSimpleSequenceParticleCandidate(
+        from candidates: [WayCandidate],
+        heuristicSelected: WayCandidate?,
+        matchContext: NormalizedMatchContext,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?
+    ) -> SimpleSequenceParticleSelection {
+        guard let queryPoint = candidates.first?.queryPoint else {
+            return SimpleSequenceParticleSelection(selected: heuristicSelected, traceRankedCandidates: [], hypotheses: [], selectionTrace: [])
+        }
+        let topologyFreeWayLinks = WayLinksContext(available: false, byWayID: [:])
+        let fallbackMotionHeadingDeg = observedHeadingDeg ?? recentApproachHeadingDeg(
+            matchContext: matchContext,
+            queryPoint: queryPoint
+        )
+        let seedContext = simpleSequenceParticleSeedContext(
+            candidates: candidates,
+            matchContext: matchContext
+        )
+        var selectionTrace: [MatchSelectionTrace] = [
+            MatchSelectionTrace(
+                step: "simple_sequence_particle_seed",
+                detail: "source=\(seedContext.source) count=\(seedContext.hypotheses.count) motion_heading_deg=\(fallbackMotionHeadingDeg.map { String(format: "%.1f", $0) } ?? "nil")"
+            )
+        ]
+
+        var states: [SimpleSequenceParticleState] = []
+        states.reserveCapacity(min(candidates.count, Self.maxTraceCandidateCount))
+        for candidate in candidates.prefix(Self.maxTraceCandidateCount) {
+            guard normalizedWayID(candidate.wayID) != nil else {
+                continue
+            }
+            let emissionCost = simpleSequenceParticleEmissionCost(
+                for: candidate,
+                observedHeadingDeg: observedHeadingDeg,
+                fallbackMotionHeadingDeg: fallbackMotionHeadingDeg
+            )
+            let transition = simpleSequenceParticleTransition(
+                for: candidate,
+                seedHypotheses: seedContext.hypotheses,
+                observedHeadingDeg: fallbackMotionHeadingDeg,
+                speedKmh: speedKmh,
+                matchContext: matchContext,
+                wayLinks: topologyFreeWayLinks
+            )
+            let continuity = continuityClass(
+                for: candidate,
+                matchContext: matchContext,
+                wayLinks: topologyFreeWayLinks
+            )
+            states.append(
+                SimpleSequenceParticleState(
+                    candidate: candidate,
+                    continuity: continuity,
+                    cumulativeCost: emissionCost + transition.cost,
+                    emissionCost: emissionCost,
+                    transitionCost: transition.cost,
+                    seedWayID: transition.seedWayID,
+                    seedSource: transition.reason
+                )
+            )
+        }
+
+        states.sort { lhs, rhs in
+            if lhs.cumulativeCost != rhs.cumulativeCost {
+                return lhs.cumulativeCost < rhs.cumulativeCost
+            }
+            if lhs.emissionCost != rhs.emissionCost {
+                return lhs.emissionCost < rhs.emissionCost
+            }
+            return (lhs.candidate.wayID ?? "~") < (rhs.candidate.wayID ?? "~")
+        }
+
+        let hypotheses = states.prefix(Self.miniHMMBeamWidth).compactMap { state in
+            wayMatchHypothesis(
+                from: state.candidate,
+                cumulativeCost: state.cumulativeCost,
+                emissionScore: state.emissionCost
+            )
+        }
+        let traceRankedCandidates = states.enumerated().map { index, state in
+            TraceRankedCandidate(
+                candidate: state.candidate,
+                continuity: state.continuity,
+                portalEligible: false,
+                corridorState: nil,
+                tunnelSelectable: true,
+                corridorSelectable: true,
+                traceScore: state.cumulativeCost,
+                traceRank: index + 1
+            )
+        }
+
+        let particleSelected = states.first
+        let heuristicWayID = normalizedWayID(heuristicSelected?.wayID)
+        let heuristicCost = states.first(where: {
+            normalizedWayID($0.candidate.wayID) == heuristicWayID
+        })?.cumulativeCost ?? heuristicSelected?.score ?? Double.infinity
+
+        let finalSelected: WayCandidate?
+        if let particleSelected {
+            if heuristicWayID == normalizedWayID(particleSelected.candidate.wayID) {
+                finalSelected = heuristicSelected ?? particleSelected.candidate
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "simple_sequence_particle_agree",
+                        detail: "particle and heuristic agreed on \(particleSelected.candidate.wayID ?? "nil") cost=\(String(format: "%.1f", particleSelected.cumulativeCost)) seed=\(particleSelected.seedWayID ?? "nil") reason=\(particleSelected.seedSource)"
+                    )
+                )
+            } else if seedContext.hypotheses.isEmpty && observedHeadingDeg == nil && fallbackMotionHeadingDeg == nil {
+                finalSelected = heuristicSelected ?? particleSelected.candidate
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "simple_sequence_particle_hold",
+                        detail: "kept heuristic \(heuristicSelected?.wayID ?? "nil") over particle \(particleSelected.candidate.wayID ?? "nil") on cold start"
+                    )
+                )
+            } else if particleSelected.cumulativeCost + Self.simpleSequenceParticleAdoptionSlackM < heuristicCost {
+                finalSelected = particleSelected.candidate
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "simple_sequence_particle_switch",
+                        detail: "switched heuristic \(heuristicSelected?.wayID ?? "nil") -> particle \(particleSelected.candidate.wayID ?? "nil") particle_cost=\(String(format: "%.1f", particleSelected.cumulativeCost)) heuristic_cost=\(String(format: "%.1f", heuristicCost)) seed=\(particleSelected.seedWayID ?? "nil") reason=\(particleSelected.seedSource)"
+                    )
+                )
+            } else {
+                finalSelected = heuristicSelected ?? particleSelected.candidate
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "simple_sequence_particle_hold",
+                        detail: "kept heuristic \(heuristicSelected?.wayID ?? "nil") over particle \(particleSelected.candidate.wayID ?? "nil") particle_cost=\(String(format: "%.1f", particleSelected.cumulativeCost)) heuristic_cost=\(String(format: "%.1f", heuristicCost))"
+                    )
+                )
+            }
+        } else {
+            finalSelected = heuristicSelected
+        }
+
+        if let particleSelected {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_sequence_particle",
+                    detail: "best_particle=\(particleSelected.candidate.wayID ?? "nil") cost=\(String(format: "%.1f", particleSelected.cumulativeCost)) emission=\(String(format: "%.1f", particleSelected.emissionCost)) transition=\(String(format: "%.1f", particleSelected.transitionCost))"
+                )
+            )
+        }
+
+        return SimpleSequenceParticleSelection(
+            selected: finalSelected,
+            traceRankedCandidates: traceRankedCandidates,
+            hypotheses: hypotheses,
+            selectionTrace: selectionTrace
+        )
+    }
+
+    private func simpleSequenceParticleSeedContext(
+        candidates: [WayCandidate],
+        matchContext: NormalizedMatchContext
+    ) -> (hypotheses: [WayMatchHypothesis], source: String) {
+        if !matchContext.recentHypotheses.isEmpty {
+            return (Array(matchContext.recentHypotheses.prefix(Self.miniHMMBeamWidth)), "recent_hypotheses")
+        }
+        if let preferredWayID = matchContext.preferredWayID,
+           let preferredCandidate = candidates.first(where: {
+               normalizedWayID($0.wayID) == preferredWayID
+           }),
+           let hypothesis = wayMatchHypothesis(
+               from: preferredCandidate,
+               cumulativeCost: 0.0,
+               emissionScore: preferredCandidate.score
+           ) {
+            return ([hypothesis], "preferred_way")
+        }
+        return ([], "cold_start")
+    }
+
+    private func simpleSequenceParticleEmissionCost(
+        for candidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        fallbackMotionHeadingDeg: Double?
+    ) -> Double {
+        var emissionCost = candidate.score
+        guard observedHeadingDeg == nil,
+              let fallbackMotionHeadingDeg,
+              let candidateHeadingDeg = axisHeadingDeg(for: candidate) else {
+            return emissionCost
+        }
+        emissionCost += headingMismatchDeg(
+            headingDeg: fallbackMotionHeadingDeg,
+            approxHeadingDeg: candidateHeadingDeg
+        ) * Self.simpleSequenceParticleMotionHeadingWeightMPerDeg
+        return emissionCost
+    }
+
+    private func simpleSequenceParticleTransition(
+        for candidate: WayCandidate,
+        seedHypotheses: [WayMatchHypothesis],
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext
+    ) -> (cost: Double, seedWayID: String?, reason: String) {
+        guard !seedHypotheses.isEmpty else {
+            return (0.0, nil, "emission_only")
+        }
+
+        var bestCost = Double.infinity
+        var bestSeedWayID: String?
+        var bestReason = "history"
+        for hypothesis in seedHypotheses {
+            let historyCost = hypothesis.cumulativeCost * Self.simpleSequenceParticleHistoryDecay
+            let genericCost = genericTransitionPenalty(
+                from: hypothesis,
+                to: candidate,
+                observedHeadingDeg: observedHeadingDeg,
+                speedKmh: speedKmh,
+                matchContext: matchContext,
+                wayLinks: wayLinks
+            )
+            let geometryTurnCost = simpleSequenceParticleSharedNodeTurnCost(
+                from: hypothesis,
+                to: candidate,
+                observedHeadingDeg: observedHeadingDeg,
+                speedKmh: speedKmh
+            )
+            let transitionCost: Double
+            let transitionReason: String
+            if let geometryTurnCost, geometryTurnCost < genericCost {
+                transitionCost = geometryTurnCost
+                transitionReason = "shared_node_turn"
+            } else {
+                transitionCost = genericCost
+                transitionReason = "history"
+            }
+            let totalCost = historyCost + transitionCost
+            if totalCost < bestCost {
+                bestCost = totalCost
+                bestSeedWayID = hypothesis.wayID
+                bestReason = transitionReason
+            }
+        }
+        return (bestCost.isFinite ? bestCost : 0.0, bestSeedWayID, bestReason)
+    }
+
+    private func simpleSequenceParticleSharedNodeTurnCost(
+        from hypothesis: WayMatchHypothesis,
+        to candidate: WayCandidate,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?
+    ) -> Double? {
+        let anchorCandidate = wayCandidate(from: hypothesis)
+        guard let sharedPoint = sharedJunctionPoint(between: anchorCandidate, and: candidate),
+              let evidence = nodeDirectionTransitionHeadingEvidence(
+                from: anchorCandidate,
+                to: candidate,
+                sharedPoint: sharedPoint,
+                observedHeadingDeg: observedHeadingDeg,
+                speedKmh: speedKmh
+              ),
+              evidence.nearEndpoint,
+              evidence.meaningfulTurn,
+              evidence.candidateClearlyBetterAligned,
+              evidence.candidateMismatchDeg <= Self.simpleLowSpeedNodeAwareJunctionMaxCandidateMismatchDeg,
+              evidence.currentMismatchDeg >= Self.simpleLowSpeedJunctionMinCurrentMismatchDeg,
+              !evidence.serviceLike else {
+            return nil
+        }
+        return Self.simpleSequenceParticleSharedNodeTurnPenaltyM
+    }
+
+    private func wayMatchHypothesis(
+        from candidate: WayCandidate,
+        cumulativeCost: Double,
+        emissionScore: Double
+    ) -> WayMatchHypothesis? {
+        guard let wayID = normalizedWayID(candidate.wayID) else {
+            return nil
+        }
+        return WayMatchHypothesis(
+            wayID: wayID,
+            streetRef: candidate.streetRef,
+            highway: candidate.highway,
+            cumulativeCost: cumulativeCost,
+            emissionScore: emissionScore,
+            endpointProximityM: candidate.endpointProximityM,
+            startLat: candidate.startPoint?.0,
+            startLon: candidate.startPoint?.1,
+            endLat: candidate.endPoint?.0,
+            endLon: candidate.endPoint?.1,
+            isTunnel: isTruthyOSMTag(candidate.tunnel)
+        )
+    }
+
+    private func wayCandidate(from hypothesis: WayMatchHypothesis) -> WayCandidate {
+        let axisHeading = axisHeadingDeg(
+            from: hypothesis.startLat,
+            lon1: hypothesis.startLon,
+            to: hypothesis.endLat,
+            lon2: hypothesis.endLon
+        )
+        return WayCandidate(
+            wayID: hypothesis.wayID,
+            highway: hypothesis.highway,
+            service: nil,
+            tunnel: hypothesis.isTunnel ? "yes" : nil,
+            streetName: nil,
+            streetBaseName: nil,
+            streetRef: hypothesis.streetRef,
+            speedKmh: nil,
+            speedSource: .none,
+            isUnlimitedSpeedLimit: false,
+            distanceM: 0.0,
+            endpointProximityM: hypothesis.endpointProximityM,
+            distanceToStartM: 0.0,
+            distanceToEndM: 0.0,
+            score: hypothesis.emissionScore,
+            queryPoint: (
+                hypothesis.startLat ?? 0.0,
+                hypothesis.startLon ?? 0.0
+            ),
+            points: [],
+            localHeadingDeg: axisHeading,
+            startPoint: hypothesis.startLat.flatMap { startLat in
+                hypothesis.startLon.map { (startLat, $0) }
+            },
+            endPoint: hypothesis.endLat.flatMap { endLat in
+                hypothesis.endLon.map { (endLat, $0) }
+            },
+            startHeadingDeg: axisHeading,
+            endHeadingDeg: axisHeading
         )
     }
 
@@ -7299,59 +7710,84 @@ final class V3SpeedLimitService {
         let hasBoundaryTables = tableExists(db: db, name: "city_boundary") &&
             tableExists(db: db, name: "city_boundary_rtree") &&
             tableExists(db: db, name: "city_ring")
+        let polygonResult: ResolvedCityContext?
         if hasBoundaryTables {
             let hasPlaceTables = tableExists(db: db, name: "city_place") &&
                 tableExists(db: db, name: "city_place_rtree")
-            if let polygonResult = resolveCityContextWithPolygons(
+            polygonResult = resolveCityContextWithPolygons(
                 db: db,
                 lat: lat,
                 lon: lon,
                 hasPlaceTables: hasPlaceTables
-            ) {
-                let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
-                return CityContext(
-                    insideCity: polygonResult.insideCity,
-                    cityName: polygonResult.cityName,
-                    cityPlaceName: polygonResult.cityPlaceName,
-                    cityDistrictName: polygonResult.cityDistrictName,
-                    citySource: polygonResult.citySource,
-                    candidateBoundaries: polygonResult.candidateBoundaries,
-                    containingBoundaries: polygonResult.containingBoundaries,
-                    placeCandidates: polygonResult.placeCandidates,
-                    resolveMs: elapsed
-                )
-            }
+            )
+        } else {
+            polygonResult = nil
         }
 
         let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
-        if hasAreasTables {
-            let areaResult = resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
-            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
-            return CityContext(
-                insideCity: areaResult.insideCity,
-                cityName: areaResult.cityName,
-                cityPlaceName: areaResult.cityPlaceName,
-                cityDistrictName: areaResult.cityDistrictName,
-                citySource: areaResult.citySource,
-                candidateBoundaries: areaResult.candidateBoundaries,
-                containingBoundaries: areaResult.containingBoundaries,
-                placeCandidates: areaResult.placeCandidates,
-                resolveMs: elapsed
+        let areaResult: ResolvedCityContext? = hasAreasTables
+            ? resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
+            : nil
+
+        let resolved = {
+            if let polygonResult, let areaResult {
+                return preferredCityContext(primary: polygonResult, fallback: areaResult)
+            }
+            if let polygonResult {
+                return polygonResult
+            }
+            if let areaResult {
+                return areaResult
+            }
+            return (
+                insideCity: nil,
+                cityName: nil,
+                cityPlaceName: nil,
+                cityDistrictName: nil,
+                citySource: "unavailable",
+                candidateBoundaries: 0,
+                containingBoundaries: 0,
+                placeCandidates: 0
             )
-        }
+        }()
 
         let elapsed = Double(DispatchTime.now().uptimeNanoseconds - startNs) / 1_000_000.0
         return CityContext(
-            insideCity: nil,
-            cityName: nil,
-            cityPlaceName: nil,
-            cityDistrictName: nil,
-            citySource: "unavailable",
-            candidateBoundaries: 0,
-            containingBoundaries: 0,
-            placeCandidates: 0,
+            insideCity: resolved.insideCity,
+            cityName: resolved.cityName,
+            cityPlaceName: resolved.cityPlaceName,
+            cityDistrictName: resolved.cityDistrictName,
+            citySource: resolved.citySource,
+            candidateBoundaries: resolved.candidateBoundaries,
+            containingBoundaries: resolved.containingBoundaries,
+            placeCandidates: resolved.placeCandidates,
             resolveMs: elapsed
         )
+    }
+
+    private func preferredCityContext(primary: ResolvedCityContext, fallback: ResolvedCityContext) -> ResolvedCityContext {
+        let primaryScore = cityContextResolutionScore(primary)
+        let fallbackScore = cityContextResolutionScore(fallback)
+        return fallbackScore > primaryScore ? fallback : primary
+    }
+
+    private func cityContextResolutionScore(_ context: ResolvedCityContext) -> Int {
+        let baseScore: Int
+        switch context.citySource {
+        case "admin_polygon":
+            baseScore = 50
+        case "admin_bbox":
+            baseScore = 40
+        case "place_bbox":
+            baseScore = 30
+        case "place_fallback", "place_nearest":
+            baseScore = 20
+        default:
+            baseScore = 0
+        }
+        let cityNameBonus = (context.cityName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? 2 : 0
+        let districtBonus = (context.cityDistrictName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? 1 : 0
+        return baseScore + cityNameBonus + districtBonus
     }
 
     private func resolveResidentialContext(db: OpaquePointer, lat: Double, lon: Double, limitRows: Int = 1024) -> ResidentialContext {
@@ -7438,16 +7874,7 @@ final class V3SpeedLimitService {
         lon: Double,
         hasPlaceTables: Bool,
         limitRows: Int = 2048
-    ) -> (
-        insideCity: Bool,
-        cityName: String?,
-        cityPlaceName: String?,
-        cityDistrictName: String?,
-        citySource: String,
-        candidateBoundaries: Int,
-        containingBoundaries: Int,
-        placeCandidates: Int
-    )? {
+    ) -> ResolvedCityContext? {
         let boundarySQL = """
         SELECT b.row_id, b.admin_level, b.name, b.min_lon, b.min_lat, b.max_lon, b.max_lat
         FROM city_boundary_rtree r
@@ -7578,16 +8005,7 @@ final class V3SpeedLimitService {
         lat: Double,
         lon: Double,
         limitRows: Int = 512
-    ) -> (
-        insideCity: Bool?,
-        cityName: String?,
-        cityPlaceName: String?,
-        cityDistrictName: String?,
-        citySource: String,
-        candidateBoundaries: Int,
-        containingBoundaries: Int,
-        placeCandidates: Int
-    ) {
+    ) -> ResolvedCityContext {
         let hasPointsColumn = columnExists(db: db, table: "areas", column: "points_json")
         let sql = """
         SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat, \(hasPointsColumn ? "a.points_json" : "NULL")

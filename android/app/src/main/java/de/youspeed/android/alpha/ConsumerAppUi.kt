@@ -2,8 +2,10 @@
 
 package de.youspeed.android.alpha
 
+import android.content.Context
 import android.graphics.Paint as AndroidPaint
 import android.graphics.Typeface
+import android.text.format.Formatter
 import androidx.core.content.res.ResourcesCompat
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -14,6 +16,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -1138,38 +1141,43 @@ private fun SettingsSheet(
                             fontSize = 13.sp,
                         )
                     }
-                    if (ui.syncProgressDetail.isNotBlank()) {
-                        Text(ui.syncProgressDetail, color = Color(0xFF555555), fontSize = 13.sp)
-                    }
                     Text(
                         "Top-10 Laender (A-Z). Bundles koennen einzeln geladen oder geloescht werden.",
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
                     )
-                    ui.bundleDownloadSections.forEach { section: BundleDownloadCountrySection ->
-                        Text(section.countryName, color = Color.Black, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
-                        section.options.forEach { option: BundleDownloadOption ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(option.displayName, color = Color.Black)
-                                    val status = controller.downloadedBundleStatusText(option)
-                                    if (status.isNotBlank()) {
-                                        Text(status, color = SignalGreen, fontSize = 12.sp)
-                                    }
-                                }
-                                if (controller.isBundleDownloaded(option)) {
-                                    OutlinedButton(onClick = { controller.deleteSelectedBundle(option) }) {
-                                        Text("Loeschen")
-                                    }
-                                } else {
-                                    Button(
-                                        onClick = { controller.downloadSelectedBundle(option) },
-                                        colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
-                                    ) {
-                                        Text("Laden")
+                    if (ui.bundleDownloadSections.isEmpty()) {
+                        Text(
+                            "Keine Downloadliste verfuegbar.",
+                            color = Color(0xFF555555),
+                            fontSize = 13.sp,
+                        )
+                    } else {
+                        ui.bundleDownloadSections.forEach { section: BundleDownloadCountrySection ->
+                            if (section.options.size == 1) {
+                                BundleDownloadOptionRow(
+                                    title = section.countryName,
+                                    option = section.options.first(),
+                                    controller = controller,
+                                    ui = ui,
+                                )
+                            } else {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 2.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        section.countryName,
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    section.options.forEach { option: BundleDownloadOption ->
+                                        BundleDownloadOptionRow(
+                                            title = option.displayName,
+                                            option = option,
+                                            controller = controller,
+                                            ui = ui,
+                                        )
                                     }
                                 }
                             }
@@ -1202,6 +1210,9 @@ private fun SettingsSheet(
                     }
                     if (ui.lastError.isNotBlank()) {
                         Text(ui.lastError, color = SignalRed, fontSize = 13.sp)
+                    }
+                    if (controller.isSyncingNow() && ui.activeDownloadOptionId == null) {
+                        BundleSyncProgressBlock(ui = ui)
                     }
                 }
             }
@@ -1697,6 +1708,191 @@ private fun LinearProgress(progress: Double) {
                 .height(10.dp)
                 .background(SoftRed),
         )
+    }
+}
+
+@Composable
+private fun BundleDownloadOptionRow(
+    title: String,
+    option: BundleDownloadOption,
+    controller: ConsumerSessionController,
+    ui: ConsumerUiState,
+) {
+    val context = LocalContext.current
+    val downloaded = controller.isBundleDownloaded(option)
+    val isActiveDownload = controller.isActiveBundleDownload(option)
+    val progress = controller.activeBundleDownloadProgress(option)
+    val statusText = controller.downloadedBundleStatusText(option)
+    val progressText = if (isActiveDownload) {
+        progressBytesText(
+            context = context,
+            completedBytes = ui.syncProgressCompletedBytes,
+            totalBytes = ui.syncProgressTotalBytes,
+        )
+    } else {
+        ""
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 42.dp)
+            .padding(vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = title,
+                color = Color.Black,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            if (statusText.isNotBlank()) {
+                Text(
+                    text = statusText,
+                    color = if (downloaded) SignalGreen else Color(0xFF666666),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            if (isActiveDownload) {
+                if (progress != null) {
+                    LinearProgress(progress)
+                } else {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                if (progressText.isNotBlank()) {
+                    Text(
+                        text = progressText,
+                        color = Color(0xFF666666),
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        when {
+            downloaded -> {
+                IconButton(
+                    onClick = { controller.deleteSelectedBundle(option) },
+                    enabled = !controller.isSyncingNow(),
+                    modifier = Modifier.size(30.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Bundle loeschen",
+                        tint = SignalRed,
+                    )
+                }
+            }
+            isActiveDownload -> {
+                DownloadActionIcon(
+                    tint = Color(0xFF777777),
+                    enabled = false,
+                    onClick = null,
+                )
+            }
+            else -> {
+                DownloadActionIcon(
+                    tint = Color.Black,
+                    enabled = !controller.isSyncingNow() && !controller.hasActiveBundleDownload(),
+                    onClick = { controller.downloadSelectedBundle(option) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadActionIcon(
+    tint: Color,
+    enabled: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    val alpha = if (enabled || onClick == null) 1f else 0.45f
+    val modifier = Modifier
+        .size(30.dp)
+        .clip(CircleShape)
+        .border(width = 1.25.dp, color = tint.copy(alpha = alpha), shape = CircleShape)
+        .let { baseModifier ->
+            if (onClick != null) {
+                baseModifier.clickable(enabled = enabled, onClick = onClick)
+            } else {
+                baseModifier
+            }
+        }
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Download,
+            contentDescription = if (onClick != null) "Bundle laden" else null,
+            tint = tint.copy(alpha = alpha),
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
+@Composable
+private fun BundleSyncProgressBlock(ui: ConsumerUiState) {
+    val context = LocalContext.current
+    val progress = syncProgressValue(ui)
+    val bytesText = progressBytesText(
+        context = context,
+        completedBytes = ui.syncProgressCompletedBytes,
+        totalBytes = ui.syncProgressTotalBytes,
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (ui.syncProgressDetail.isNotBlank()) {
+            Text(ui.syncProgressDetail, color = Color.Black, fontSize = 13.sp)
+        }
+        if (progress != null) {
+            LinearProgress(progress)
+        } else {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        if (bytesText.isNotBlank()) {
+            Text(bytesText, color = Color(0xFF666666), fontSize = 12.sp)
+        }
+    }
+}
+
+private fun syncProgressValue(ui: ConsumerUiState): Double? {
+    val total = ui.syncProgressTotalBytes.coerceAtLeast(0L)
+    if (total <= 0L) {
+        return null
+    }
+    val completed = ui.syncProgressCompletedBytes.coerceAtLeast(0L).coerceAtMost(total)
+    return completed.toDouble() / total.toDouble()
+}
+
+private fun progressBytesText(
+    context: Context,
+    completedBytes: Long,
+    totalBytes: Long,
+): String {
+    val normalizedCompletedBytes = completedBytes.coerceAtLeast(0L)
+    val normalizedTotalBytes = totalBytes.coerceAtLeast(0L)
+    return when {
+        normalizedTotalBytes > 0L -> {
+            "${Formatter.formatShortFileSize(context, normalizedCompletedBytes.coerceAtMost(normalizedTotalBytes))} / ${Formatter.formatShortFileSize(context, normalizedTotalBytes)}"
+        }
+        normalizedCompletedBytes > 0L -> Formatter.formatShortFileSize(context, normalizedCompletedBytes)
+        else -> ""
     }
 }
 
