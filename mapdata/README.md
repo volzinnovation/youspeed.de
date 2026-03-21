@@ -19,7 +19,7 @@ Validation scripts:
 - `../scripts/map/migrate_v2_tile_layout_xy.py --dist-dir dist-v2/germany`
 - `../scripts/map/query_speed_limit_v2.py --dist-dir dist-v2/germany --lat 52.5200 --lon 13.4050 --heading 90`
 - `../scripts/map/benchmark_lookup_speed_v2.sh dist-v2/germany 52.5200 13.4050 90 10 5 250 1`
-- `../scripts/map/build_spatialite_v3.py --v1-dist dist/germany --out-db dist-v3/germany/speeds_v3.sqlite`
+- `../scripts/map/build_spatialite_v3.py --v1-dist dist/germany --out-db dist-v3/germany/speeds_v3.sqlite --input-pbf raw/germany-latest.osm.pbf`
 - `../scripts/map/query_speed_limit_v3.py --db dist-v3/germany/speeds_v3.sqlite --lat 52.5200 --lon 13.4050 --heading 90`
 - `../scripts/map/plan_country_region_bundles.py --country-id germany --country-pbf mapdata/raw/DEU-latest.osm.pbf --geofabrik-index mapdata/build/geofabrik/index-v1.json --max-country-pbf-bytes 1000000000 --out-json mapdata/reports/germany_bundle_plan.v3.json`
 - `../scripts/map/build_v3_delta_pack.py --base-db dist-v3/germany/speeds_v3.sqlite --diff-file reports/deltas/daily/DEU-YYYY-MM-DD.osc.gz --from-version 2026-02-23 --to-version 2026-02-24 --out-dir bundles/v3/germany/2026-02-24/deltas/2026-02-23_to_2026-02-24 --patch-file-name v3_patch_2026-02-23_to_2026-02-24.sql.zlib --patch-compression zlib --manifest-name v3_delta_manifest_2026-02-23_to_2026-02-24.json`

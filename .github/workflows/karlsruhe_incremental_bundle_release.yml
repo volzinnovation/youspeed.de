@@ -272,6 +272,7 @@ jobs:
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${REGION}" \
             --out-db "mapdata/dist-v3/${REGION}/speeds_v3.sqlite" \
+            --input-pbf "${INPUT_PBF}" \
             --corridor-mode none
 
       - name: Regression Check (paper benchmark smoke contract)

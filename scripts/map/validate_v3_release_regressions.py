@@ -70,6 +70,9 @@ def parse_explicit_speed(row: sqlite3.Row) -> int | None:
 def inspect_schema_contract(db_path: Path) -> Dict:
     conn = sqlite3.connect(str(db_path))
     try:
+        table_names = {
+            str(row[0]) for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        }
         way_info = {
             str(row[1]): str(row[2]).upper() for row in conn.execute("PRAGMA table_info(ways)")
         }
@@ -94,6 +97,9 @@ def inspect_schema_contract(db_path: Path) -> Dict:
             raise RuntimeError("schema contract failed: areas.residential column missing")
         if "points_json" not in area_columns:
             raise RuntimeError("schema contract failed: areas.points_json column missing")
+        for required_table in ("city_boundary", "city_ring", "city_place"):
+            if required_table not in table_names:
+                raise RuntimeError(f"schema contract failed: {required_table} table missing")
 
         ways_with_street_name = int(
             conn.execute(
@@ -166,6 +172,40 @@ def inspect_schema_contract(db_path: Path) -> Dict:
                 """
             ).fetchone()[0]
         )
+        city_boundary_rows = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM city_boundary
+                """
+            ).fetchone()[0]
+        )
+        city_ring_rows = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM city_ring
+                """
+            ).fetchone()[0]
+        )
+        city_boundary_level6_rows = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM city_boundary
+                WHERE admin_level = 6
+                """
+            ).fetchone()[0]
+        )
+        city_boundary_level8_rows = int(
+            conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM city_boundary
+                WHERE admin_level = 8
+                """
+            ).fetchone()[0]
+        )
     finally:
         conn.close()
 
@@ -179,6 +219,14 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         raise RuntimeError("schema/data contract failed: ways.service has no non-empty values")
     if residential_areas_with_polygons <= 0:
         raise RuntimeError("schema/data contract failed: areas.residential has no polygon rows")
+    if city_boundary_rows <= 0:
+        raise RuntimeError("schema/data contract failed: city_boundary has no rows")
+    if city_ring_rows <= 0:
+        raise RuntimeError("schema/data contract failed: city_ring has no rows")
+    if city_boundary_level6_rows <= 0:
+        raise RuntimeError("schema/data contract failed: city_boundary has no admin_level=6 rows")
+    if city_boundary_level8_rows <= 0:
+        raise RuntimeError("schema/data contract failed: city_boundary has no admin_level=8 rows")
 
     return {
         "ways_has_street_name_column": True,
@@ -187,6 +235,9 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         "areas_has_name_column": True,
         "areas_has_residential_column": True,
         "areas_has_points_json_column": True,
+        "city_boundary_table_present": True,
+        "city_ring_table_present": True,
+        "city_place_table_present": True,
         "ways_with_nonempty_street_name": ways_with_street_name,
         "ways_with_nonempty_ref": ways_with_nonempty_ref,
         "ways_with_nonempty_service": ways_with_service,
@@ -194,6 +245,10 @@ def inspect_schema_contract(db_path: Path) -> Dict:
         "ways_with_tunnel_tag": ways_with_tunnel,
         "areas_with_nonempty_name": areas_with_name,
         "residential_areas_with_polygons": residential_areas_with_polygons,
+        "city_boundary_rows": city_boundary_rows,
+        "city_ring_rows": city_ring_rows,
+        "city_boundary_level6_rows": city_boundary_level6_rows,
+        "city_boundary_level8_rows": city_boundary_level8_rows,
     }
 
 

@@ -426,6 +426,7 @@ jobs:
           python3 scripts/map/build_spatialite_v3.py \
             --v1-dist "mapdata/dist/${{ steps.plan.outputs.region_slug }}" \
             --out-db "mapdata/dist-v3/${{ steps.plan.outputs.region_slug }}/speeds_v3.sqlite" \
+            --input-pbf "${{ steps.plan.outputs.input_pbf_path }}" \
             --corridor-mode none
 
       - name: Build New Incremental Delta (If Possible)
