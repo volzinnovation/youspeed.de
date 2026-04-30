@@ -1,12 +1,6 @@
 name: Publish Web Site
 
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - "Web/**"
-      - "scripts/web/publish_web_to_sites.sh"
-      - ".github/workflows/web_pages.yml"
   workflow_dispatch:
 
 permissions:

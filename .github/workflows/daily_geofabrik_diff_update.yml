@@ -1,10 +1,6 @@
 name: Germany PBF Diff Update And Release
 
 on:
-  schedule:
-    # Run hourly; pipeline uses replication state.txt timestamp date to decide
-    # whether a new daily diff should be processed.
-    - cron: "35 * * * *"
   workflow_dispatch:
     inputs:
       pbf_release_tag:

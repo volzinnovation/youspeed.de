@@ -28,11 +28,6 @@ on:
         required: false
         default: false
         type: boolean
-  workflow_run:
-    workflows:
-      - Karlsruhe PBF Diff Update And Release
-    types:
-      - completed
 
 permissions:
   contents: write
@@ -43,7 +38,6 @@ concurrency:
 
 jobs:
   build-release:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 240
     env:

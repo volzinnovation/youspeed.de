@@ -1,8 +1,6 @@
 name: Karlsruhe PBF Diff Update And Release
 
 on:
-  schedule:
-    - cron: "35 2 * * *"
   workflow_dispatch:
     inputs:
       pbf_release_tag:
