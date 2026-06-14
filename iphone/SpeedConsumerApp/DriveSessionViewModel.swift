@@ -248,6 +248,8 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
     case m8
     case m9
     case m10
+    case m11
+    case m12
 
     var id: String { rawValue }
 
@@ -263,6 +265,8 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m8: return "M8"
         case .m9: return "M9"
         case .m10: return "M10"
+        case .m11: return "M11"
+        case .m12: return "M12"
         }
     }
 
@@ -278,6 +282,8 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m8: return "M6 + no-ref street-name continuity"
         case .m9: return "M8 + guarded stale-ref suppression"
         case .m10: return "M9 + node-direction-aware junction release"
+        case .m11: return "M10 + topology-only particle sequence"
+        case .m12: return "M11 + 10-fix HMM/Viterbi"
         }
     }
 
@@ -295,6 +301,8 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         case .m8: return .simpleSpeedRefStreetNameFallbackHeuristic
         case .m9: return .simpleSpeedRefStreetNameGuardHeuristic
         case .m10: return .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+        case .m11: return .simpleSequenceParticleHeuristic
+        case .m12: return .simpleSequenceViterbiHeuristic
         }
     }
 
@@ -484,7 +492,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var previousMatchedStreetRef: String?
     private var previousMatchedStreetName: String?
     private var recentMatchedWayIDs: [String] = []
-    private var recentMatchedFixes: [WayMatchRecentFix] = []
+    private var recentObservedFixes: [WayMatchRecentFix] = []
     private var sameRefUrbanReleaseStreak = 0
     private var recentMatchedStreetRefs: [String] = []
     private var consecutiveNoRefMatchCount = 0
@@ -536,6 +544,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let lookupRadiusAccuracyMultiplier: Double = 2.2
     private static let startupSeedActivationFloorProgress: Double = 0.92
     private static let recentMatchedWayHistoryLimit = 5
+    private static let recentMatchedFixHistoryLimit = 10
     private static let recentMatchedStreetRefHistoryLimit = 6
     private static let derivedSpeedComputationMinWindowSeconds: TimeInterval = 2.0
     private static let derivedSpeedComputationMaxWindowSeconds: TimeInterval = 4.5
@@ -1029,9 +1038,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
         }
         if let screenshotState = AppScreenshotState.current() {
+            clearDrivingLogsOnAppLaunch()
             configureForScreenshotMode(screenshotState)
             return
         }
+        clearDrivingLogsOnAppLaunch()
         bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
@@ -1926,6 +1937,38 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func clearDrivingLogsOnAppLaunch(fileManager: FileManager = .default) {
+        do {
+            let base = try V3BundleManager.applicationSupportDirectory(fileManager: fileManager)
+            if !fileManager.fileExists(atPath: base.path) {
+                try fileManager.createDirectory(at: base, withIntermediateDirectories: true)
+            }
+
+            let existingURLs = try fileManager.contentsOfDirectory(
+                at: base,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+            for url in existingURLs where
+                url.pathExtension == "ndjson" &&
+                url.lastPathComponent.contains("drive_match_log") {
+                try fileManager.removeItem(at: url)
+            }
+
+            hasPreparedGPSLogFile = false
+            if let gpsLogURL = prepareGPSLogFileIfNeeded() {
+                try Data(Self.gpsLogCSVHeader.utf8).write(to: gpsLogURL, options: .atomic)
+            }
+            resetPreparedMatchLogFile()
+            if let matchLogURL = prepareMatchLogFileIfNeeded() {
+                try Data().write(to: matchLogURL, options: .atomic)
+            }
+            lastError = ""
+        } catch {
+            lastError = "startup log clear failed: \(error.localizedDescription)"
+        }
+    }
+
     private func currentWayMatchContext() -> WayMatchContext? {
         guard previousMatchedWayID != nil ||
                 !recentMatchedWayIDs.isEmpty ||
@@ -1942,6 +1985,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 approachCorridorStartDepthM != nil ||
                 approachCorridorStartDepthNodes != nil ||
                 !recentMatchHypotheses.isEmpty ||
+                !recentObservedFixes.isEmpty ||
                 hadRecentGPSSignalLoss else {
             return nil
         }
@@ -1950,7 +1994,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             preferredHighway: previousMatchedHighway,
             preferredEndpointProximityM: previousMatchedEndpointProximityM,
             recentWayIDs: recentMatchedWayIDs,
-            recentFixes: recentMatchedFixes,
+            recentFixes: recentObservedFixes,
             sameRefUrbanReleaseStreak: sameRefUrbanReleaseStreak,
             preferredStreetRef: recentMatchedStreetRefs.first,
             activeStreetRef: previousMatchedStreetRef,
@@ -1981,9 +2025,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         result: SpeedLimitResult,
         lat: Double,
         lon: Double,
+        headingDeg: Double?,
+        headingAccuracyDeg: Double?,
+        speedKmh: Double?,
         horizontalAccuracyM: Double,
         gpsSignalBars: Int
     ) {
+        recentObservedFixes.insert(
+            WayMatchRecentFix(
+                lat: lat,
+                lon: lon,
+                headingDeg: headingDeg,
+                headingAccuracyDeg: headingAccuracyDeg,
+                speedKmh: speedKmh,
+                horizontalAccuracyM: horizontalAccuracyM,
+                gpsSignalBars: gpsSignalBars
+            ),
+            at: 0
+        )
+        if recentObservedFixes.count > Self.recentMatchedFixHistoryLimit {
+            recentObservedFixes.removeLast(recentObservedFixes.count - Self.recentMatchedFixHistoryLimit)
+        }
+
         guard let wayID = normalizedWayID(result.wayID) else {
             return
         }
@@ -1998,10 +2061,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             into: &recentMatchedWayIDs,
             limit: Self.recentMatchedWayHistoryLimit
         )
-        recentMatchedFixes.insert(WayMatchRecentFix(lat: lat, lon: lon), at: 0)
-        if recentMatchedFixes.count > 3 {
-            recentMatchedFixes.removeLast(recentMatchedFixes.count - 3)
-        }
         sameRefUrbanReleaseStreak = updatedSameRefUrbanReleaseStreak(after: result)
         let normalizedStreetRefs = V3SpeedLimitService.normalizedRefTokens(result.streetRef)
         if normalizedStreetRefs.isEmpty {
@@ -2056,7 +2115,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         previousMatchedStreetRef = nil
         previousMatchedStreetName = nil
         recentMatchedWayIDs.removeAll(keepingCapacity: false)
-        recentMatchedFixes.removeAll(keepingCapacity: false)
+        recentObservedFixes.removeAll(keepingCapacity: false)
         sameRefUrbanReleaseStreak = 0
         recentMatchedStreetRefs.removeAll(keepingCapacity: false)
         consecutiveNoRefMatchCount = 0
@@ -3047,6 +3106,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         result: result,
                         lat: lat,
                         lon: lon,
+                        headingDeg: course,
+                        headingAccuracyDeg: courseAccuracy,
+                        speedKmh: speedKmh,
                         horizontalAccuracyM: hAcc,
                         gpsSignalBars: gpsBars
                     )

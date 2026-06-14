@@ -15,6 +15,7 @@ final class V3SpeedLimitService {
         case simpleSpeedRefStreetNameGuardHeuristic
         case simpleSpeedRefStreetNameGuardNodeAwareHeuristic
         case simpleSequenceParticleHeuristic
+        case simpleSequenceViterbiHeuristic
         case simpleSpeedRefConnectedHeuristic
         case connectedBaseline
     }
@@ -40,6 +41,7 @@ final class V3SpeedLimitService {
              .simpleSpeedRefStreetNameGuardHeuristic,
              .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
              .simpleSequenceParticleHeuristic,
+             .simpleSequenceViterbiHeuristic,
              .simpleSpeedRefConnectedHeuristic,
              .connectedBaseline:
             return false
@@ -77,6 +79,9 @@ final class V3SpeedLimitService {
         let queryPoint: (Double, Double)
         let points: [(Double, Double)]
         let localHeadingDeg: Double?
+        let wayLengthM: Double?
+        let startNodeKey: String?
+        let endNodeKey: String?
         let startPoint: (Double, Double)?
         let endPoint: (Double, Double)?
         let startHeadingDeg: Double?
@@ -222,6 +227,92 @@ final class V3SpeedLimitService {
             }
             return info.sharedNodeKeysByLinkedWayID[targetWayID] ?? []
         }
+    }
+
+    private enum WayContinuityKind: String {
+        case routeRelationConnected = "route_relation_connected"
+        case sameStreetNameConnected = "same_street_name_connected"
+    }
+
+    private enum WayContinuityStrength: Equatable {
+        case none
+        case sameStreetNameConnected
+        case routeRelationConnected
+
+        var transitionBonus: Double {
+            switch self {
+            case .none:
+                return 0.0
+            case .sameStreetNameConnected:
+                return V3SpeedLimitService.simpleSequenceViterbiSameStreetContinuityBonus
+            case .routeRelationConnected:
+                return V3SpeedLimitService.simpleSequenceViterbiRouteRelationContinuityBonus
+            }
+        }
+    }
+
+    private struct WayContinuityMembershipInfo {
+        var routeRelationGroupIDs: Set<Int> = []
+        var sameStreetNameGroupIDs: Set<Int> = []
+
+        func sharedStrength(with other: WayContinuityMembershipInfo?) -> WayContinuityStrength {
+            guard let other else {
+                return .none
+            }
+            if !routeRelationGroupIDs.isDisjoint(with: other.routeRelationGroupIDs) {
+                return .routeRelationConnected
+            }
+            if !sameStreetNameGroupIDs.isDisjoint(with: other.sameStreetNameGroupIDs) {
+                return .sameStreetNameConnected
+            }
+            return .none
+        }
+    }
+
+    private struct WayContinuityContext {
+        let available: Bool
+        let byWayID: [String: WayContinuityMembershipInfo]
+
+        var trackedWayCount: Int {
+            byWayID.count
+        }
+
+        func sharedStrength(from sourceWayID: String?, to targetWayID: String?) -> WayContinuityStrength {
+            guard let sourceWayID, let targetWayID else {
+                return .none
+            }
+            guard let source = byWayID[sourceWayID] else {
+                return .none
+            }
+            return source.sharedStrength(with: byWayID[targetWayID])
+        }
+    }
+
+    private struct WayEndpointInfo {
+        let wayID: String
+        let refNorm: String
+        let highway: String?
+        let tunnelFlag: Bool
+        let startNodeKey: String
+        let startLon: Double
+        let startLat: Double
+        let endNodeKey: String
+        let endLon: Double
+        let endLat: Double
+        let wayLengthM: Double
+    }
+
+    private struct LocalWayGraphEdge {
+        let wayID: String
+        let toNodeKey: String
+        let lengthM: Double
+    }
+
+    private struct LocalWayGraphContext {
+        let available: Bool
+        let byWayID: [String: WayEndpointInfo]
+        let adjacencyByNodeKey: [String: [LocalWayGraphEdge]]
+        let expandedWayCount: Int
     }
 
     private struct CorridorProgressInfo {
@@ -371,6 +462,16 @@ final class V3SpeedLimitService {
         }
     }
 
+    private enum CandidateNetwork: String {
+        case surface
+        case tunnel
+        case motorway
+
+        var rtreeTableName: String {
+            "\(rawValue)_way_network_rtree"
+        }
+    }
+
     private struct CandidateQueryResult {
         let candidates: [WayCandidate]
         let candidateCount: Int
@@ -412,6 +513,41 @@ final class V3SpeedLimitService {
     }
 
     private struct SimpleSequenceParticleSelection {
+        let selected: WayCandidate?
+        let traceRankedCandidates: [TraceRankedCandidate]
+        let hypotheses: [WayMatchHypothesis]
+        let selectionTrace: [MatchSelectionTrace]
+    }
+
+    private struct SimpleSequenceViterbiObservation {
+        let lat: Double
+        let lon: Double
+        let headingDeg: Double?
+        let speedKmh: Double?
+        let horizontalAccuracyM: Double?
+        let gpsSignalBars: Int?
+        let headingForScoring: Double?
+    }
+
+    private struct SimpleSequenceViterbiLayer {
+        let observation: SimpleSequenceViterbiObservation
+        let candidates: [WayCandidate]
+    }
+
+    private struct SimpleSequenceViterbiState {
+        let layerIndex: Int
+        let stateIndex: Int
+        let candidate: WayCandidate
+        let continuity: ContinuityClass
+        let cumulativeCost: Double
+        let emissionCost: Double
+        let transitionCost: Double
+        let routeDistanceM: Double?
+        let observedDistanceM: Double?
+        let previousStateIndex: Int?
+    }
+
+    private struct SimpleSequenceViterbiSelection {
         let selected: WayCandidate?
         let traceRankedCandidates: [TraceRankedCandidate]
         let hypotheses: [WayMatchHypothesis]
@@ -505,6 +641,20 @@ final class V3SpeedLimitService {
     private static let simpleSequenceParticleHistoryDecay: Double = 0.65
     private static let simpleSequenceParticleAdoptionSlackM: Double = 4.0
     private static let simpleSequenceParticleSharedNodeTurnPenaltyM: Double = 1.0
+    private static let simpleSequenceViterbiWindowFixCount = 10
+    private static let simpleSequenceViterbiBeamWidth = 6
+    private static let simpleSequenceViterbiCandidateCount = 6
+    private static let simpleSequenceViterbiLocalGraphMarginM: Double = 120.0
+    private static let simpleSequenceViterbiObservationSigmaFloorM: Double = 4.0
+    private static let simpleSequenceViterbiObservationSigmaCapM: Double = 25.0
+    private static let simpleSequenceViterbiHeadingSigmaDeg: Double = 35.0
+    private static let simpleSequenceViterbiTransitionBetaFloorM: Double = 12.0
+    private static let simpleSequenceViterbiTransitionBetaScale: Double = 0.5
+    private static let simpleSequenceViterbiTransitionBetaBiasM: Double = 10.0
+    private static let simpleSequenceViterbiUnreachableTransitionPenalty: Double = 14.0
+    private static let simpleSequenceViterbiLayerGapPenalty: Double = 2.0
+    private static let simpleSequenceViterbiRouteRelationContinuityBonus: Double = 1.1
+    private static let simpleSequenceViterbiSameStreetContinuityBonus: Double = 0.55
     private static let walkingTurnSwitchMaxSpeedKmh: Double = 7.0
     private static let walkingTurnSwitchPreferredDistanceM: Double = 10.0
     private static let walkingTurnSwitchBestDistanceM: Double = 5.0
@@ -748,6 +898,7 @@ final class V3SpeedLimitService {
             ageOutStaleRefContinuity: matchingModel == .simpleSpeedRefStreetNameGuardHeuristic
                 || matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
                 || matchingModel == .simpleSequenceParticleHeuristic
+                || matchingModel == .simpleSequenceViterbiHeuristic
         )
         let normalizedRadiusM = effectiveCandidateSearchRadiusM(radiusM: radiusM)
         let cappedCandidateRadiusM = candidateLookupRadiusM(radiusM: normalizedRadiusM, horizontalAccuracyM: horizontalAccuracyM)
@@ -757,7 +908,8 @@ final class V3SpeedLimitService {
             lon: lon,
             radiusM: cappedCandidateRadiusM,
             maxCandidates: maxCandidates,
-            headingForScoring: headingForScoring
+            headingForScoring: headingForScoring,
+            matchContext: normalizedMatchContext
         )
         let fullCandidateQuery: CandidateQueryResult?
         if cappedCandidateRadiusM < normalizedRadiusM {
@@ -767,7 +919,8 @@ final class V3SpeedLimitService {
                 lon: lon,
                 radiusM: normalizedRadiusM,
                 maxCandidates: maxCandidates,
-                headingForScoring: headingForScoring
+                headingForScoring: headingForScoring,
+                matchContext: normalizedMatchContext
             )
         } else {
             fullCandidateQuery = nil
@@ -1078,11 +1231,14 @@ final class V3SpeedLimitService {
                 speedKmh: speedKmh,
                 accuracyBufferM: accuracyBuffer,
                 horizontalAccuracyM: horizontalAccuracyM,
+                gpsSignalBars: gpsSignalBars,
                 urbanSameRefReleaseEnabled: true,
                 useStreetNameFallbackContinuity: false,
                 useGuardedStreetNameFallbackContinuity: true,
                 nodeDirectionAwareLowSpeedJunctionRelease: true,
-                wayLinks: wayLinksContext
+                wayLinks: wayLinksContext,
+                progressContext: corridorProgressContext,
+                pairContext: corridorPairContext
             )
             selectionTrace.append(contentsOf: heuristicSelection.selectionTrace)
             let particleSelection = selectSimpleSequenceParticleCandidate(
@@ -1112,6 +1268,37 @@ final class V3SpeedLimitService {
             )
         }
 
+        if matchingModel == .simpleSequenceViterbiHeuristic {
+            let viterbiSelection = selectSimpleSequenceViterbiCandidate(
+                db: db,
+                currentCandidates: rankedCandidates,
+                matchContext: normalizedMatchContext,
+                observedHeadingDeg: headingForScoring,
+                speedKmh: speedKmh,
+                horizontalAccuracyM: horizontalAccuracyM,
+                gpsSignalBars: gpsSignalBars,
+                searchRadiusM: normalizedRadiusM,
+                maxCandidates: maxCandidates,
+                wayLinks: wayLinksContext
+            )
+            selectionTrace.append(contentsOf: viterbiSelection.selectionTrace)
+            let finalSelected = viterbiSelection.selected
+            if let finalSelected {
+                selectionTrace.append(
+                    MatchSelectionTrace(
+                        step: "final",
+                        detail: "selected \(finalSelected.wayID ?? "nil") tunnel=\(isTruthyOSMTag(finalSelected.tunnel)) corridor=none model=simple_sequence_viterbi"
+                    )
+                )
+            }
+            return buildNonCorridorMatcherResult(
+                finalSelected: finalSelected,
+                traceRankedCandidates: viterbiSelection.traceRankedCandidates,
+                selectionTrace: selectionTrace,
+                matchHypotheses: viterbiSelection.hypotheses
+            )
+        }
+
         if matchingModel == .simpleSpeedRefHeuristic ||
             matchingModel == .simpleSpeedRefUrbanReleaseHeuristic ||
             matchingModel == .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic ||
@@ -1128,6 +1315,7 @@ final class V3SpeedLimitService {
                 speedKmh: speedKmh,
                 accuracyBufferM: accuracyBuffer,
                 horizontalAccuracyM: horizontalAccuracyM,
+                gpsSignalBars: gpsSignalBars,
                 urbanSameRefReleaseEnabled: matchingModel == .simpleSpeedRefUrbanReleaseHeuristic ||
                     matchingModel == .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic ||
                     matchingModel == .simpleSpeedRefStreetNameFallbackHeuristic ||
@@ -1137,7 +1325,9 @@ final class V3SpeedLimitService {
                 useGuardedStreetNameFallbackContinuity: matchingModel == .simpleSpeedRefStreetNameGuardHeuristic ||
                     matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
                 nodeDirectionAwareLowSpeedJunctionRelease: matchingModel == .simpleSpeedRefStreetNameGuardNodeAwareHeuristic,
-                wayLinks: wayLinksContext
+                wayLinks: wayLinksContext,
+                progressContext: corridorProgressContext,
+                pairContext: corridorPairContext
             )
             selectionTrace.append(contentsOf: simpleSelection.selectionTrace)
             let finalSelected = simpleSelection.selected
@@ -2086,25 +2276,174 @@ final class V3SpeedLimitService {
         return (lon - degLon, lat - degLat, lon + degLon, lat + degLat)
     }
 
+    private func candidateNetworks(for matchContext: NormalizedMatchContext) -> [CandidateNetwork] {
+        let hasAnchorContext =
+            matchContext.preferredWayID != nil ||
+            matchContext.preferredHighway != nil ||
+            !matchContext.recentWayIDs.isEmpty ||
+            !matchContext.recentFixes.isEmpty
+        let preferredHighwayFamily = highwayFamily(matchContext.preferredHighway)
+        let activeCorridorKind = matchContext.activeCorridorState?.kind
+        let approachCorridorKind = matchContext.approachCorridorState?.kind
+        let portalPrefetchThresholdM =
+            max(Self.tunnelPortalEntryEndpointThresholdM, Self.motorwayTransitionEndpointThresholdM) +
+            Self.corridorProgressNoiseToleranceM
+        let nearPortalAnchor = matchContext.preferredEndpointProximityM.map {
+            $0.isFinite && $0 <= portalPrefetchThresholdM
+        } ?? false
+
+        var networks: [CandidateNetwork] = [.surface]
+        if !hasAnchorContext ||
+            matchContext.isInTunnelMode ||
+            activeCorridorKind == "tunnel" ||
+            approachCorridorKind == "tunnel" ||
+            matchContext.tunnelApproachFixCount > 0 ||
+            !matchContext.recentTunnelCandidateWayIDs.isEmpty ||
+            !matchContext.recentTunnelCandidateRefs.isEmpty ||
+            nearPortalAnchor {
+            networks.append(.tunnel)
+        }
+        if !hasAnchorContext ||
+            matchContext.isInMotorwayMode ||
+            activeCorridorKind == "motorway" ||
+            approachCorridorKind == "motorway" ||
+            preferredHighwayFamily == "motorway" ||
+            nearPortalAnchor {
+            networks.append(.motorway)
+        }
+        return networks
+    }
+
+    private func candidateNetworkFilterSQL(for network: CandidateNetwork) -> String {
+        let tunnelCondition = "LOWER(TRIM(COALESCE(w.tunnel, ''))) NOT IN ('', '0', 'false', 'no', 'off', 'none')"
+        let highwayExpr = "LOWER(TRIM(COALESCE(w.highway, '')))"
+        switch network {
+        case .surface:
+            return "NOT (\(tunnelCondition)) AND \(highwayExpr) != 'motorway'"
+        case .tunnel:
+            return tunnelCondition
+        case .motorway:
+            return "NOT (\(tunnelCondition)) AND \(highwayExpr) = 'motorway'"
+        }
+    }
+
     private func loadCandidates(
         db: OpaquePointer,
         lat: Double,
         lon: Double,
         radiusM: Double,
         maxCandidates: Int,
-        headingForScoring: Double?
+        headingForScoring: Double?,
+        matchContext: NormalizedMatchContext
     ) throws -> CandidateQueryResult {
+        var mergedCandidatesByWayID: [String: WayCandidate] = [:]
+        var anonymousCandidates: [WayCandidate] = []
+        for network in candidateNetworks(for: matchContext) {
+            let candidates = try loadCandidates(
+                db: db,
+                lat: lat,
+                lon: lon,
+                radiusM: radiusM,
+                maxCandidates: maxCandidates,
+                headingForScoring: headingForScoring,
+                network: network
+            )
+            for candidate in candidates {
+                if let wayID = normalizedWayID(candidate.wayID) {
+                    if let existing = mergedCandidatesByWayID[wayID] {
+                        if isBetterCandidate(candidate, than: existing) {
+                            mergedCandidatesByWayID[wayID] = candidate
+                        }
+                    } else {
+                        mergedCandidatesByWayID[wayID] = candidate
+                    }
+                } else {
+                    anonymousCandidates.append(candidate)
+                }
+            }
+        }
+
+        var rankedCandidates = Array(mergedCandidatesByWayID.values)
+        rankedCandidates.append(contentsOf: anonymousCandidates)
+        rankedCandidates.sort { lhs, rhs in
+            isBetterCandidate(lhs, than: rhs)
+        }
+        let speedCandidateCount = rankedCandidates.reduce(into: 0) { partialResult, candidate in
+            if candidate.speedKmh != nil || candidate.isUnlimitedSpeedLimit {
+                partialResult += 1
+            }
+        }
+        let nearestCandidateDistance = rankedCandidates.map(\.distanceM).min() ?? .infinity
+        let nearestSpeedCandidateDistance = rankedCandidates
+            .compactMap { ($0.speedKmh != nil || $0.isUnlimitedSpeedLimit) ? $0.distanceM : nil }
+            .min() ?? .infinity
+        let nearbyTunnelCandidateWayIDs = rankedCandidates.compactMap { candidate -> String? in
+            guard isTruthyOSMTag(candidate.tunnel) else {
+                return nil
+            }
+            return normalizedWayID(candidate.wayID)
+        }
+        let nearbyTunnelCandidateRefs = Set(
+            rankedCandidates.flatMap { candidate in
+                isTruthyOSMTag(candidate.tunnel) ? Self.normalizedRefTokens(candidate.streetRef) : []
+            }
+        )
+        return CandidateQueryResult(
+            candidates: rankedCandidates,
+            candidateCount: rankedCandidates.count,
+            speedCandidateCount: speedCandidateCount,
+            nearestCandidateDistance: nearestCandidateDistance,
+            nearestSpeedCandidateDistance: nearestSpeedCandidateDistance,
+            nearbyTunnelCandidateWayIDs: nearbyTunnelCandidateWayIDs,
+            nearbyTunnelCandidateRefs: nearbyTunnelCandidateRefs,
+            queryRadiusM: radiusM
+        )
+    }
+
+    private func loadCandidates(
+        db: OpaquePointer,
+        lat: Double,
+        lon: Double,
+        radiusM: Double,
+        maxCandidates: Int,
+        headingForScoring: Double?,
+        network: CandidateNetwork
+    ) throws -> [WayCandidate] {
         let wayGeomJoin = "LEFT JOIN way_geom g ON g.way_id = w.way_id"
+        let hasWayEndpoints = tableExists(db: db, name: "way_endpoints")
+        let wayEndpointJoin = hasWayEndpoints ? "LEFT JOIN way_endpoints e ON e.way_id = w.way_id" : ""
+        let wayEndpointSelect = hasWayEndpoints
+            ? ", e.start_node_key, e.end_node_key, e.way_length_m"
+            : ", NULL AS start_node_key, NULL AS end_node_key, NULL AS way_length_m"
         let bounds = queryBounds(lat: lat, lon: lon, radiusM: radiusM)
+        let hasNetworkRTree = tableExists(db: db, name: network.rtreeTableName)
+        let hasWaysRtree = tableExists(db: db, name: "ways_rtree")
+        let fromClause: String
+        let boundsSource: String
+        let extraWhereClause: String
+        if hasNetworkRTree {
+            fromClause = "FROM \(network.rtreeTableName) r JOIN ways w ON w.way_id = r.way_id"
+            boundsSource = "r"
+            extraWhereClause = ""
+        } else if hasWaysRtree {
+            fromClause = "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
+            boundsSource = "r"
+            extraWhereClause = "AND \(candidateNetworkFilterSQL(for: network))"
+        } else {
+            fromClause = "FROM ways w"
+            boundsSource = "w"
+            extraWhereClause = "AND \(candidateNetworkFilterSQL(for: network))"
+        }
         let sql = """
         SELECT w.way_id, w.highway, w.street_name, w.ref, w.maxspeed, w.maxspeed_type, w.source_maxspeed,
                w.approx_heading_deg, w.service, w.tunnel,
-               w.min_lon, w.min_lat, w.max_lon, w.max_lat, g.points_json
-        FROM ways_rtree r
-        JOIN ways w ON w.way_id = r.way_id
+               w.min_lon, w.min_lat, w.max_lon, w.max_lat, g.points_json\(wayEndpointSelect)
+        \(fromClause)
         \(wayGeomJoin)
-        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
-          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        \(wayEndpointJoin)
+        WHERE \(boundsSource).min_lon <= ?1 AND \(boundsSource).max_lon >= ?2
+          AND \(boundsSource).min_lat <= ?3 AND \(boundsSource).max_lat >= ?4
+          \(extraWhereClause)
         LIMIT ?5
         """
 
@@ -2121,13 +2460,6 @@ final class V3SpeedLimitService {
         sqlite3_bind_int64(stmt, 5, Int64(maxCandidates))
 
         var rankedCandidates: [WayCandidate] = []
-        var candidateCount = 0
-        var speedCandidateCount = 0
-        var nearestCandidateDistance = Double.infinity
-        var nearestSpeedCandidateDistance = Double.infinity
-        var nearbyTunnelCandidateWayIDs: [String] = []
-        var nearbyTunnelCandidateRefs: Set<String> = []
-
         while true {
             let rc = sqlite3_step(stmt)
             if rc == SQLITE_DONE {
@@ -2153,8 +2485,10 @@ final class V3SpeedLimitService {
             let maxLon = sqlite3_column_double(stmt, 12)
             let maxLat = sqlite3_column_double(stmt, 13)
             let points = parseWayPoints(cStringOptional(sqlite3_column_text(stmt, 14)))
+            let startNodeKey = cStringOptional(sqlite3_column_text(stmt, 15))
+            let endNodeKey = cStringOptional(sqlite3_column_text(stmt, 16))
+            let wayLengthM = sqlite3_column_type(stmt, 17) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 17)
 
-            candidateCount += 1
             let bboxDistance = distanceToBBoxM(
                 lat: lat,
                 lon: lon,
@@ -2165,23 +2499,12 @@ final class V3SpeedLimitService {
             )
             let polylineMetrics = polylineMetrics(lat: lat, lon: lon, points: points)
             let distance = polylineMetrics?.distanceM ?? bboxDistance
-            if distance < nearestCandidateDistance {
-                nearestCandidateDistance = distance
-            }
             let parsedResult = Self.deriveSpeedLimitWithSource(
                 maxspeed: maxspeedRaw,
                 maxspeedType: maxspeedType,
                 sourceMaxspeed: sourceMaxspeed,
                 highway: highway
             )
-            let parsed = parsedResult.speed
-            if parsed != nil || parsedResult.isUnlimited {
-                speedCandidateCount += 1
-                if distance < nearestSpeedCandidateDistance {
-                    nearestSpeedCandidateDistance = distance
-                }
-            }
-
             let localHeadingDeg = polylineMetrics?.localHeadingDeg
             let headingPenalty: Double
             if let headingForScoring,
@@ -2192,52 +2515,37 @@ final class V3SpeedLimitService {
             }
             let score = distance + headingPenalty
 
-            let candidate = WayCandidate(
-                wayID: wayID,
-                highway: highway,
-                service: service,
-                tunnel: tunnel,
-                streetName: streetName,
-                streetBaseName: rawStreetName,
-                streetRef: streetRef,
-                speedKmh: parsed,
-                speedSource: parsedResult.source,
-                isUnlimitedSpeedLimit: parsedResult.isUnlimited,
-                distanceM: distance,
-                endpointProximityM: polylineMetrics?.endpointProximityM ?? .infinity,
-                distanceToStartM: polylineMetrics?.distanceToStartM,
-                distanceToEndM: polylineMetrics?.distanceToEndM,
-                score: score,
-                queryPoint: (lat, lon),
-                points: points,
-                localHeadingDeg: localHeadingDeg,
-                startPoint: points.first,
-                endPoint: points.last,
-                startHeadingDeg: endpointHeadingDeg(points: points, atStart: true),
-                endHeadingDeg: endpointHeadingDeg(points: points, atStart: false)
+            rankedCandidates.append(
+                WayCandidate(
+                    wayID: wayID,
+                    highway: highway,
+                    service: service,
+                    tunnel: tunnel,
+                    streetName: streetName,
+                    streetBaseName: rawStreetName,
+                    streetRef: streetRef,
+                    speedKmh: parsedResult.speed,
+                    speedSource: parsedResult.source,
+                    isUnlimitedSpeedLimit: parsedResult.isUnlimited,
+                    distanceM: distance,
+                    endpointProximityM: polylineMetrics?.endpointProximityM ?? .infinity,
+                    distanceToStartM: polylineMetrics?.distanceToStartM,
+                    distanceToEndM: polylineMetrics?.distanceToEndM,
+                    score: score,
+                    queryPoint: (lat, lon),
+                    points: points,
+                    localHeadingDeg: localHeadingDeg,
+                    wayLengthM: wayLengthM ?? polylineMetrics.map { $0.distanceToStartM + $0.distanceToEndM },
+                    startNodeKey: startNodeKey,
+                    endNodeKey: endNodeKey,
+                    startPoint: points.first,
+                    endPoint: points.last,
+                    startHeadingDeg: endpointHeadingDeg(points: points, atStart: true),
+                    endHeadingDeg: endpointHeadingDeg(points: points, atStart: false)
+                )
             )
-            if isTruthyOSMTag(tunnel) {
-                if let candidateWayID = normalizedWayID(wayID) {
-                    nearbyTunnelCandidateWayIDs.append(candidateWayID)
-                }
-                nearbyTunnelCandidateRefs.formUnion(Self.normalizedRefTokens(streetRef))
-            }
-            rankedCandidates.append(candidate)
         }
-
-        rankedCandidates.sort { lhs, rhs in
-            isBetterCandidate(lhs, than: rhs)
-        }
-        return CandidateQueryResult(
-            candidates: rankedCandidates,
-            candidateCount: candidateCount,
-            speedCandidateCount: speedCandidateCount,
-            nearestCandidateDistance: nearestCandidateDistance,
-            nearestSpeedCandidateDistance: nearestSpeedCandidateDistance,
-            nearbyTunnelCandidateWayIDs: nearbyTunnelCandidateWayIDs,
-            nearbyTunnelCandidateRefs: nearbyTunnelCandidateRefs,
-            queryRadiusM: radiusM
-        )
+        return rankedCandidates
     }
 
     private func effectiveCandidateSearchRadiusM(radiusM: Double) -> Double {
@@ -3280,7 +3588,8 @@ final class V3SpeedLimitService {
         let recentTunnelApproachRefs = Set(
             (matchContext?.recentTunnelApproachRefs ?? []).flatMap { Self.normalizedRefTokens($0) }
         )
-        let recentHypotheses = Array((matchContext?.recentHypotheses ?? []).prefix(Self.miniHMMBeamWidth))
+        let recentHypothesisLimit = max(Self.miniHMMBeamWidth, Self.simpleSequenceViterbiBeamWidth)
+        let recentHypotheses = Array((matchContext?.recentHypotheses ?? []).prefix(recentHypothesisLimit))
 
         return NormalizedMatchContext(
             preferredWayID: preferredWayID,
@@ -3288,7 +3597,7 @@ final class V3SpeedLimitService {
             preferredEndpointProximityM: matchContext?.preferredEndpointProximityM,
             recentWayIDs: recentWayIDs,
             recentWayHistory: recentWayHistory,
-            recentFixes: Array((matchContext?.recentFixes ?? []).prefix(3)),
+            recentFixes: Array((matchContext?.recentFixes ?? []).prefix(Self.simpleSequenceViterbiWindowFixCount)),
             sameRefUrbanReleaseStreak: matchContext?.sameRefUrbanReleaseStreak ?? 0,
             preferredStreetRefs: preferredStreetRefs,
             activeStreetRefTokens: activeStreetRefTokens,
@@ -3550,11 +3859,14 @@ final class V3SpeedLimitService {
         speedKmh: Double?,
         accuracyBufferM: Double,
         horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
         urbanSameRefReleaseEnabled: Bool,
         useStreetNameFallbackContinuity: Bool,
         useGuardedStreetNameFallbackContinuity: Bool,
         nodeDirectionAwareLowSpeedJunctionRelease: Bool,
-        wayLinks: WayLinksContext
+        wayLinks: WayLinksContext,
+        progressContext: CorridorProgressContext,
+        pairContext: CorridorPairContext
     ) -> (selected: WayCandidate?, traceRankedCandidates: [TraceRankedCandidate], selectionTrace: [MatchSelectionTrace]) {
         let poorSignalThresholdM = 10.0
         let lowSpeedThresholdKmh = Self.simpleSameRefHoldSpeedThresholdKmh
@@ -3562,12 +3874,59 @@ final class V3SpeedLimitService {
         let lowSpeedAccurateGPS = (speedKmh ?? 0.0) < lowSpeedThresholdKmh &&
             (horizontalAccuracyM ?? Double.infinity) < poorSignalThresholdM
 
+        var selectionTrace: [MatchSelectionTrace] = []
+        let legacyTunnelCandidates = candidates.filter {
+            isLegacyTunnelCandidateSelectable(
+                $0,
+                matchContext: matchContext,
+                wayLinks: wayLinks,
+                accuracyBufferM: accuracyBufferM
+            )
+        }
+        let tunnelSelectableCandidates: [WayCandidate]
+        if legacyTunnelCandidates.isEmpty,
+           shouldFallbackToTunnelOnlyCandidateSet(
+                candidates,
+                matchContext: matchContext
+           ) {
+            tunnelSelectableCandidates = candidates
+        } else {
+            tunnelSelectableCandidates = legacyTunnelCandidates
+        }
+        if tunnelSelectableCandidates.count != candidates.count {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_tunnel_selectability_gate",
+                    detail: "filtered \(candidates.count - tunnelSelectableCandidates.count) tunnel candidates without portal or continuity support"
+                )
+            )
+        }
+
+        let ambiguityFilteredCandidates = suppressAmbiguousSurfaceToTunnelEntries(
+            in: tunnelSelectableCandidates,
+            matchContext: matchContext,
+            wayLinks: wayLinks,
+            progressContext: progressContext,
+            accuracyBufferM: accuracyBufferM,
+            horizontalAccuracyM: horizontalAccuracyM,
+            gpsSignalBars: gpsSignalBars
+        )
+        let corridorAwareCandidates = ambiguityFilteredCandidates.isEmpty ? tunnelSelectableCandidates : ambiguityFilteredCandidates
+        if corridorAwareCandidates.count != tunnelSelectableCandidates.count {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_tunnel_ambiguity_gate",
+                    detail: "filtered \(tunnelSelectableCandidates.count - corridorAwareCandidates.count) ambiguous surface-to-tunnel portal candidates"
+                )
+            )
+        }
+
         let filteredCandidates: [WayCandidate]
         if matchContext.isInTunnelMode && poorSignal {
-            let tunnelCandidates = candidates.filter { isTruthyOSMTag($0.tunnel) }
-            filteredCandidates = tunnelCandidates.isEmpty ? candidates : tunnelCandidates
+            let tunnelCandidates = corridorAwareCandidates.filter { isTruthyOSMTag($0.tunnel) }
+            filteredCandidates = tunnelCandidates.isEmpty ? corridorAwareCandidates : tunnelCandidates
         } else {
-            filteredCandidates = candidates
+            filteredCandidates = corridorAwareCandidates
         }
 
         let rankedCandidates = filteredCandidates.sorted { isBetterDistanceCandidate($0, than: $1) }
@@ -3587,14 +3946,19 @@ final class V3SpeedLimitService {
             }
         )
         guard let bestCandidate = rankedCandidates.first else {
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_speed_ref_heuristic",
+                    detail: "no selectable candidates"
+                )
+            )
             return (
                 selected: nil,
                 traceRankedCandidates: traceRankedCandidates,
-                selectionTrace: [MatchSelectionTrace(step: "simple_speed_ref_heuristic", detail: "no selectable candidates")]
+                selectionTrace: selectionTrace
             )
         }
 
-        var selectionTrace: [MatchSelectionTrace] = []
         if filteredCandidates.count != candidates.count {
             selectionTrace.append(
                 MatchSelectionTrace(
@@ -3621,16 +3985,15 @@ final class V3SpeedLimitService {
                 for: matchContext,
                 useStreetNameFallbackContinuity: useStreetNameFallbackContinuity
             )
-            previousContinuityCandidate = rankedCandidates.first { candidate in
-                let candidateTokens = continuityTokens(
-                    for: candidate,
-                    source: continuityIdentity.source,
-                    useStreetNameFallbackContinuity: useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity
-                )
-                guard !candidateTokens.isEmpty else {
-                    return false
-                }
-                return !candidateTokens.isDisjoint(with: continuityIdentity.tokens)
+            let preferredContinuity = preferredSimpleContinuityCandidate(
+                rankedCandidates: rankedCandidates,
+                continuityIdentity: continuityIdentity,
+                matchContext: matchContext,
+                useStreetNameFallbackContinuity: useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity
+            )
+            previousContinuityCandidate = preferredContinuity?.candidate
+            if let trace = preferredContinuity?.trace {
+                selectionTrace.append(trace)
             }
         }
 
@@ -3763,13 +4126,98 @@ final class V3SpeedLimitService {
             )
         }
 
+        let tunnelContinuityCandidate: WayCandidate? = {
+            if let previousContinuityCandidate,
+               isTruthyOSMTag(previousContinuityCandidate.tunnel) {
+                return previousContinuityCandidate
+            }
+            if !continuityIdentity.tokens.isEmpty,
+               let continuityMatchedTunnel = rankedCandidates.first(where: { candidate in
+                   guard isTruthyOSMTag(candidate.tunnel) else {
+                       return false
+                   }
+                   let candidateTokens = continuityTokens(
+                       for: candidate,
+                       source: continuityIdentity.source,
+                       useStreetNameFallbackContinuity: useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity
+                   )
+                   return !candidateTokens.isEmpty &&
+                       !candidateTokens.isDisjoint(with: continuityIdentity.tokens)
+               }) {
+                return continuityMatchedTunnel
+            }
+            return rankedCandidates.first(where: { isTruthyOSMTag($0.tunnel) })
+        }()
+
+        var finalSelected = selected
+        if !matchContext.isInTunnelMode,
+           !isTruthyOSMTag(finalSelected.tunnel),
+           let tunnelContinuityCandidate,
+           shouldPromoteTunnelEntry(
+                tunnelCandidate: tunnelContinuityCandidate,
+                over: finalSelected,
+                matchContext: matchContext,
+                wayLinks: wayLinks,
+                progressContext: progressContext,
+                horizontalAccuracyM: horizontalAccuracyM,
+                gpsSignalBars: gpsSignalBars,
+                accuracyBufferM: accuracyBufferM
+           ) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "tunnel_entry_gate",
+                    detail: "promoted tunnel \(tunnelContinuityCandidate.wayID ?? "nil") over surface \(selected.wayID ?? "nil") on simple continuity path"
+                )
+            )
+        } else if matchContext.isInTunnelMode,
+                  !isTruthyOSMTag(finalSelected.tunnel),
+                  let tunnelContinuityCandidate,
+                  shouldKeepTunnelContinuity(
+                    tunnelCandidate: tunnelContinuityCandidate,
+                    over: finalSelected,
+                    matchContext: matchContext,
+                    wayLinks: wayLinks,
+                    progressContext: progressContext,
+                    pairContext: pairContext,
+                    accuracyBufferM: accuracyBufferM,
+                    horizontalAccuracyM: horizontalAccuracyM,
+                    gpsSignalBars: gpsSignalBars
+                  ) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "tunnel_exit_gate",
+                    detail: "kept tunnel \(tunnelContinuityCandidate.wayID ?? "nil") and rejected surface exit \(selected.wayID ?? "nil") on simple continuity path"
+                )
+            )
+        }
+        if continuityIdentity.source == .ref,
+           let previousContinuityCandidate,
+           normalizedWayID(finalSelected.wayID) != normalizedWayID(previousContinuityCandidate.wayID),
+           shouldSuppressImmediateSameRefBounce(
+                candidate: finalSelected,
+                over: previousContinuityCandidate,
+                matchContext: matchContext,
+                wayLinks: wayLinks,
+                accuracyBufferM: accuracyBufferM
+           ) {
+            finalSelected = previousContinuityCandidate
+            selectionTrace.append(
+                MatchSelectionTrace(
+                    step: "simple_same_ref_bounce_hold",
+                    detail: "kept \(previousContinuityCandidate.wayID ?? "nil") over \(selected.wayID ?? "nil") to avoid immediate same-ref bounce"
+                )
+            )
+        }
+
         let reason: String
         if lowSpeedJunctionRelease != nil {
             reason = "low_speed_same_ref_junction_release"
         } else if urbanSameRefReleaseEnabled,
            urbanReleasePressureActive,
            nextUrbanReleaseStreak >= Self.simpleSameRefUrbanReleaseRequiredStreak,
-           normalizedWayID(selected.wayID) == normalizedWayID(bestCandidate.wayID) {
+           normalizedWayID(finalSelected.wayID) == normalizedWayID(bestCandidate.wayID) {
             reason = continuityIdentity.source == .streetName
                 ? "urban_same_name_distance_gap_release"
                 : "urban_same_ref_distance_gap_release"
@@ -3787,14 +4235,30 @@ final class V3SpeedLimitService {
         selectionTrace.append(
             MatchSelectionTrace(
                 step: "simple_speed_ref_heuristic",
-                detail: "selected \(selected.wayID ?? "nil") nearest=\(bestCandidate.wayID ?? "nil") reason=\(reason) speed_kmh=\(String(format: "%.1f", speedKmh ?? 0.0)) hacc_m=\(String(format: "%.1f", horizontalAccuracyM ?? Double.infinity))"
+                detail: "selected \(finalSelected.wayID ?? "nil") nearest=\(bestCandidate.wayID ?? "nil") reason=\(reason) speed_kmh=\(String(format: "%.1f", speedKmh ?? 0.0)) hacc_m=\(String(format: "%.1f", horizontalAccuracyM ?? Double.infinity))"
             )
         )
         return (
-            selected: selected,
+            selected: finalSelected,
             traceRankedCandidates: traceRankedCandidates,
             selectionTrace: selectionTrace
         )
+    }
+
+    private func shouldFallbackToTunnelOnlyCandidateSet(
+        _ candidates: [WayCandidate],
+        matchContext: NormalizedMatchContext
+    ) -> Bool {
+        guard !candidates.isEmpty,
+              !matchContext.isInTunnelMode,
+              matchContext.preferredWayID == nil,
+              !matchContext.hadRecentGPSSignalLoss,
+              matchContext.recentTunnelCandidateWayIDs.isEmpty,
+              matchContext.recentTunnelCandidateRefs.isEmpty,
+              candidates.allSatisfy({ isTruthyOSMTag($0.tunnel) }) else {
+            return false
+        }
+        return candidates.contains { !isServiceLikeTransitionCandidate($0) }
     }
 
     private func selectSimpleSequenceParticleCandidate(
@@ -3814,7 +4278,8 @@ final class V3SpeedLimitService {
         )
         let seedContext = simpleSequenceParticleSeedContext(
             candidates: candidates,
-            matchContext: matchContext
+            matchContext: matchContext,
+            limit: Self.miniHMMBeamWidth
         )
         var selectionTrace: [MatchSelectionTrace] = [
             MatchSelectionTrace(
@@ -3952,12 +4417,665 @@ final class V3SpeedLimitService {
         )
     }
 
+    private func selectSimpleSequenceViterbiCandidate(
+        db: OpaquePointer,
+        currentCandidates: [WayCandidate],
+        matchContext: NormalizedMatchContext,
+        observedHeadingDeg: Double?,
+        speedKmh: Double?,
+        horizontalAccuracyM: Double?,
+        gpsSignalBars: Int?,
+        searchRadiusM: Double,
+        maxCandidates: Int,
+        wayLinks: WayLinksContext
+    ) -> SimpleSequenceViterbiSelection {
+        let fallbackTraceRankedCandidates = buildBaselineTraceRankedCandidates(
+            from: currentCandidates,
+            matchContext: matchContext,
+            wayLinks: wayLinks
+        )
+        let currentObservation = SimpleSequenceViterbiObservation(
+            lat: currentCandidates.first?.queryPoint.0 ?? matchContext.recentFixes.first?.lat ?? 0.0,
+            lon: currentCandidates.first?.queryPoint.1 ?? matchContext.recentFixes.first?.lon ?? 0.0,
+            headingDeg: observedHeadingDeg,
+            speedKmh: speedKmh,
+            horizontalAccuracyM: horizontalAccuracyM,
+            gpsSignalBars: gpsSignalBars,
+            headingForScoring: observedHeadingDeg
+        )
+        let observations = simpleSequenceViterbiObservations(
+            matchContext: matchContext,
+            currentObservation: currentObservation
+        )
+        let layerBuild = simpleSequenceViterbiCandidateLayers(
+            db: db,
+            observations: observations,
+            currentCandidates: currentCandidates,
+            searchRadiusM: searchRadiusM,
+            maxCandidates: maxCandidates,
+            matchContext: matchContext
+        )
+        let layers = layerBuild.layers
+        let continuityContext = loadWayContinuityContext(
+            db: db,
+            layers: layers,
+            matchContext: matchContext
+        )
+        let graphContext = loadLocalWayGraphContext(
+            db: db,
+            observations: layers.map(\.observation),
+            layers: layers
+        )
+        var selectionTrace: [MatchSelectionTrace] = [
+            MatchSelectionTrace(
+                step: "simple_sequence_viterbi_seed",
+                detail: "source=rolling_hmm history_fixes=\(max(observations.count - 1, 0)) layers=\(layers.count) skipped_observations=\(layerBuild.skippedObservationCount) graph_available=\(graphContext.available) graph_way_count=\(graphContext.expandedWayCount) continuity_available=\(continuityContext.available) continuity_way_count=\(continuityContext.trackedWayCount)"
+            )
+        ]
+
+        guard let finalLayer = layers.last, !finalLayer.candidates.isEmpty else {
+            selectionTrace.append(
+                MatchSelectionTrace(step: "simple_sequence_viterbi_hold", detail: "no viable candidate layers")
+            )
+            return SimpleSequenceViterbiSelection(
+                selected: currentCandidates.first,
+                traceRankedCandidates: fallbackTraceRankedCandidates,
+                hypotheses: [],
+                selectionTrace: selectionTrace
+            )
+        }
+
+        var allLayerStates: [[SimpleSequenceViterbiState]] = []
+        var shortestPathCache: [String: [String: Double]] = [:]
+
+        for (layerIndex, layer) in layers.enumerated() {
+            let previousLayer = layerIndex > 0 ? layers[layerIndex - 1] : nil
+            let previousStates = layerIndex > 0 ? allLayerStates[layerIndex - 1] : []
+            var layerStates: [SimpleSequenceViterbiState] = []
+            layerStates.reserveCapacity(layer.candidates.count)
+
+            for (stateIndex, candidate) in layer.candidates.enumerated() {
+                let emissionCost = simpleSequenceViterbiEmissionCost(for: candidate, observation: layer.observation)
+                if let previousLayer, !previousStates.isEmpty {
+                    var bestCost = Double.infinity
+                    var bestTransitionCost = Self.simpleSequenceViterbiUnreachableTransitionPenalty
+                    var bestRouteDistance: Double?
+                    var bestObservedDistance: Double?
+                    var bestPreviousStateIndex: Int?
+
+                    for previousState in previousStates {
+                        let transition = simpleSequenceViterbiTransitionCost(
+                            from: previousState.candidate,
+                            previousObservation: previousLayer.observation,
+                            to: candidate,
+                            observation: layer.observation,
+                            graph: graphContext,
+                            continuity: continuityContext,
+                            shortestPathCache: &shortestPathCache,
+                            matchContext: matchContext,
+                            wayLinks: wayLinks
+                        )
+                        let cumulativeCost = previousState.cumulativeCost + emissionCost + transition.cost
+                        if cumulativeCost < bestCost {
+                            bestCost = cumulativeCost
+                            bestTransitionCost = transition.cost
+                            bestRouteDistance = transition.routeDistanceM
+                            bestObservedDistance = transition.observedDistanceM
+                            bestPreviousStateIndex = previousState.stateIndex
+                        }
+                    }
+
+                    layerStates.append(
+                        SimpleSequenceViterbiState(
+                            layerIndex: layerIndex,
+                            stateIndex: stateIndex,
+                            candidate: candidate,
+                            continuity: continuityClass(for: candidate, matchContext: matchContext, wayLinks: wayLinks),
+                            cumulativeCost: bestCost,
+                            emissionCost: emissionCost,
+                            transitionCost: bestTransitionCost,
+                            routeDistanceM: bestRouteDistance,
+                            observedDistanceM: bestObservedDistance,
+                            previousStateIndex: bestPreviousStateIndex
+                        )
+                    )
+                } else {
+                    layerStates.append(
+                        SimpleSequenceViterbiState(
+                            layerIndex: layerIndex,
+                            stateIndex: stateIndex,
+                            candidate: candidate,
+                            continuity: continuityClass(for: candidate, matchContext: matchContext, wayLinks: wayLinks),
+                            cumulativeCost: emissionCost,
+                            emissionCost: emissionCost,
+                            transitionCost: 0.0,
+                            routeDistanceM: nil,
+                            observedDistanceM: nil,
+                            previousStateIndex: nil
+                        )
+                    )
+                }
+            }
+
+            allLayerStates.append(layerStates)
+        }
+
+        guard let lastStates = allLayerStates.last, !lastStates.isEmpty else {
+            selectionTrace.append(
+                MatchSelectionTrace(step: "simple_sequence_viterbi_hold", detail: "final layer empty after DP")
+            )
+            return SimpleSequenceViterbiSelection(
+                selected: currentCandidates.first,
+                traceRankedCandidates: fallbackTraceRankedCandidates,
+                hypotheses: [],
+                selectionTrace: selectionTrace
+            )
+        }
+
+        let sortedLastStates = lastStates.enumerated().sorted { lhs, rhs in
+            let left = lhs.element
+            let right = rhs.element
+            if left.cumulativeCost != right.cumulativeCost {
+                return left.cumulativeCost < right.cumulativeCost
+            }
+            if left.transitionCost != right.transitionCost {
+                return left.transitionCost < right.transitionCost
+            }
+            if left.emissionCost != right.emissionCost {
+                return left.emissionCost < right.emissionCost
+            }
+            return (left.candidate.wayID ?? "~") < (right.candidate.wayID ?? "~")
+        }
+
+        let traceRankedCandidates = sortedLastStates.enumerated().map { rank, entry in
+            TraceRankedCandidate(
+                candidate: entry.element.candidate,
+                continuity: entry.element.continuity,
+                portalEligible: false,
+                corridorState: nil,
+                tunnelSelectable: true,
+                corridorSelectable: true,
+                traceScore: entry.element.cumulativeCost,
+                traceRank: rank + 1
+            )
+        }
+        let hypotheses = sortedLastStates.prefix(Self.simpleSequenceViterbiBeamWidth).compactMap { entry in
+            wayMatchHypothesis(
+                from: entry.element.candidate,
+                cumulativeCost: entry.element.cumulativeCost,
+                emissionScore: entry.element.emissionCost
+            )
+        }
+
+        guard let bestFinal = sortedLastStates.first?.element else {
+            return SimpleSequenceViterbiSelection(
+                selected: currentCandidates.first,
+                traceRankedCandidates: traceRankedCandidates.isEmpty ? fallbackTraceRankedCandidates : traceRankedCandidates,
+                hypotheses: hypotheses,
+                selectionTrace: selectionTrace
+            )
+        }
+
+        var bestPathWayIDs: [String] = []
+        var layerIndex = allLayerStates.count - 1
+        var stateIndex = bestFinal.stateIndex
+        while layerIndex >= 0, stateIndex < allLayerStates[layerIndex].count {
+            let state = allLayerStates[layerIndex][stateIndex]
+            if let wayID = normalizedWayID(state.candidate.wayID) {
+                bestPathWayIDs.insert(wayID, at: 0)
+            }
+            guard let previousStateIndex = state.previousStateIndex else {
+                break
+            }
+            layerIndex -= 1
+            stateIndex = previousStateIndex
+        }
+
+        selectionTrace.append(
+            MatchSelectionTrace(
+                step: "simple_sequence_viterbi",
+                detail: "best_viterbi=\(bestFinal.candidate.wayID ?? "nil") cost=\(String(format: "%.3f", bestFinal.cumulativeCost)) emission=\(String(format: "%.3f", bestFinal.emissionCost)) transition=\(String(format: "%.3f", bestFinal.transitionCost)) observed_route_delta_m=\(bestFinal.routeDistanceM.flatMap { route in bestFinal.observedDistanceM.map { observed in String(format: "%.1f", abs(route - observed)) } } ?? "nil") path=\(bestPathWayIDs.joined(separator: ">"))"
+            )
+        )
+
+        return SimpleSequenceViterbiSelection(
+            selected: bestFinal.candidate,
+            traceRankedCandidates: traceRankedCandidates,
+            hypotheses: hypotheses,
+            selectionTrace: selectionTrace
+        )
+    }
+
+    private func simpleSequenceViterbiObservations(
+        matchContext: NormalizedMatchContext,
+        currentObservation: SimpleSequenceViterbiObservation
+    ) -> [SimpleSequenceViterbiObservation] {
+        let priorObservations = matchContext.recentFixes
+            .prefix(Self.simpleSequenceViterbiWindowFixCount - 1)
+            .reversed()
+            .map { fix in
+                let normalizedHeading = normalizedHeadingDegrees(fix.headingDeg)
+                return SimpleSequenceViterbiObservation(
+                    lat: fix.lat,
+                    lon: fix.lon,
+                    headingDeg: normalizedHeading,
+                    speedKmh: fix.speedKmh,
+                    horizontalAccuracyM: fix.horizontalAccuracyM,
+                    gpsSignalBars: fix.gpsSignalBars,
+                    headingForScoring: shouldUseHeading(
+                        headingDeg: normalizedHeading,
+                        headingAccuracyDeg: fix.headingAccuracyDeg,
+                        speedKmh: fix.speedKmh
+                    ) ? normalizedHeading : nil
+                )
+            }
+        return Array(priorObservations) + [currentObservation]
+    }
+
+    private func simpleSequenceViterbiCandidateLayers(
+        db: OpaquePointer,
+        observations: [SimpleSequenceViterbiObservation],
+        currentCandidates: [WayCandidate],
+        searchRadiusM: Double,
+        maxCandidates: Int,
+        matchContext: NormalizedMatchContext
+    ) -> (layers: [SimpleSequenceViterbiLayer], skippedObservationCount: Int) {
+        let cappedMaxCandidates = max(Self.simpleSequenceViterbiCandidateCount, min(maxCandidates, Self.maxTraceCandidateCount))
+        var layers: [SimpleSequenceViterbiLayer] = []
+        var skippedObservationCount = 0
+
+        for (index, observation) in observations.enumerated() {
+            let candidates: [WayCandidate]
+            if index == observations.count - 1 {
+                candidates = Array(currentCandidates.prefix(Self.simpleSequenceViterbiCandidateCount))
+            } else {
+                let preferredRadiusM = candidateLookupRadiusM(
+                    radiusM: searchRadiusM,
+                    horizontalAccuracyM: observation.horizontalAccuracyM
+                )
+                func queryCandidates(radiusM: Double) -> [WayCandidate]? {
+                    guard let query = try? loadCandidates(
+                        db: db,
+                        lat: observation.lat,
+                        lon: observation.lon,
+                        radiusM: radiusM,
+                        maxCandidates: cappedMaxCandidates,
+                        headingForScoring: observation.headingForScoring,
+                        matchContext: matchContext
+                    ) else {
+                        return nil
+                    }
+                    return Array(query.candidates.prefix(Self.simpleSequenceViterbiCandidateCount))
+                }
+
+                if let preferredCandidates = queryCandidates(radiusM: preferredRadiusM),
+                   !preferredCandidates.isEmpty {
+                    candidates = preferredCandidates
+                } else if preferredRadiusM + 0.5 < searchRadiusM,
+                          let widenedCandidates = queryCandidates(radiusM: searchRadiusM),
+                          !widenedCandidates.isEmpty {
+                    candidates = widenedCandidates
+                } else {
+                    skippedObservationCount += 1
+                    continue
+                }
+            }
+
+            let normalizedCandidates = candidates.filter { normalizedWayID($0.wayID) != nil }
+            if normalizedCandidates.isEmpty {
+                skippedObservationCount += 1
+                continue
+            }
+            layers.append(SimpleSequenceViterbiLayer(observation: observation, candidates: normalizedCandidates))
+        }
+
+        return (layers, skippedObservationCount)
+    }
+
+    private func loadLocalWayGraphContext(
+        db: OpaquePointer,
+        observations: [SimpleSequenceViterbiObservation],
+        layers: [SimpleSequenceViterbiLayer]
+    ) -> LocalWayGraphContext {
+        guard tableExists(db: db, name: "way_endpoints"), !observations.isEmpty else {
+            return LocalWayGraphContext(available: false, byWayID: [:], adjacencyByNodeKey: [:], expandedWayCount: 0)
+        }
+
+        let lats = observations.map(\.lat)
+        let lons = observations.map(\.lon)
+        guard let minLat = lats.min(),
+              let maxLat = lats.max(),
+              let minLon = lons.min(),
+              let maxLon = lons.max() else {
+            return LocalWayGraphContext(available: false, byWayID: [:], adjacencyByNodeKey: [:], expandedWayCount: 0)
+        }
+
+        let totalObservedDistanceM = zip(observations, observations.dropFirst()).reduce(0.0) { partial, pair in
+            partial + haversineM(lat1: pair.0.lat, lon1: pair.0.lon, lat2: pair.1.lat, lon2: pair.1.lon)
+        }
+        let marginM = max(Self.simpleSequenceViterbiLocalGraphMarginM, totalObservedDistanceM * 0.5 + 30.0)
+        let degLat = marginM / 111_132.0
+        let cosLat = max(0.173648, abs(cos(((minLat + maxLat) * 0.5) * .pi / 180.0)))
+        let degLon = marginM / (111_320.0 * cosLat)
+
+        var byWayID: [String: WayEndpointInfo] = [:]
+        var adjacencyByNodeKey: [String: [LocalWayGraphEdge]] = [:]
+
+        let sql = """
+        SELECT CAST(e.way_id AS TEXT), e.ref_norm, e.highway, e.tunnel_flag,
+               e.start_node_key, e.start_lon, e.start_lat,
+               e.end_node_key, e.end_lon, e.end_lat, e.way_length_m
+        FROM way_endpoints e
+        JOIN ways_rtree r ON r.way_id = e.way_id
+        WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
+          AND r.min_lat <= ?3 AND r.max_lat >= ?4
+        """
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            return LocalWayGraphContext(available: false, byWayID: [:], adjacencyByNodeKey: [:], expandedWayCount: 0)
+        }
+        sqlite3_bind_double(stmt, 1, maxLon + degLon)
+        sqlite3_bind_double(stmt, 2, minLon - degLon)
+        sqlite3_bind_double(stmt, 3, maxLat + degLat)
+        sqlite3_bind_double(stmt, 4, minLat - degLat)
+
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let wayID = cStringOptional(sqlite3_column_text(stmt, 0)),
+                  let startNodeKey = cStringOptional(sqlite3_column_text(stmt, 4)),
+                  let endNodeKey = cStringOptional(sqlite3_column_text(stmt, 7)),
+                  !wayID.isEmpty,
+                  !startNodeKey.isEmpty,
+                  !endNodeKey.isEmpty else {
+                continue
+            }
+            let info = WayEndpointInfo(
+                wayID: wayID,
+                refNorm: cStringOptional(sqlite3_column_text(stmt, 1)) ?? "",
+                highway: cStringOptional(sqlite3_column_text(stmt, 2)),
+                tunnelFlag: sqlite3_column_int(stmt, 3) != 0,
+                startNodeKey: startNodeKey,
+                startLon: sqlite3_column_double(stmt, 5),
+                startLat: sqlite3_column_double(stmt, 6),
+                endNodeKey: endNodeKey,
+                endLon: sqlite3_column_double(stmt, 8),
+                endLat: sqlite3_column_double(stmt, 9),
+                wayLengthM: sqlite3_column_double(stmt, 10)
+            )
+            appendWayEndpointInfo(info, byWayID: &byWayID, adjacencyByNodeKey: &adjacencyByNodeKey)
+        }
+
+        let requiredWayIDs = Set(layers.flatMap { layer in
+            layer.candidates.compactMap { normalizedWayID($0.wayID) }
+        })
+        let missingWayIDs = requiredWayIDs.subtracting(byWayID.keys)
+        if !missingWayIDs.isEmpty {
+            let placeholders = Array(repeating: "?", count: missingWayIDs.count).joined(separator: ",")
+            let sql = """
+            SELECT CAST(way_id AS TEXT), ref_norm, highway, tunnel_flag,
+                   start_node_key, start_lon, start_lat,
+                   end_node_key, end_lon, end_lat, way_length_m
+            FROM way_endpoints
+            WHERE CAST(way_id AS TEXT) IN (\(placeholders))
+            """
+            var missingStmt: OpaquePointer?
+            defer { sqlite3_finalize(missingStmt) }
+            if sqlite3_prepare_v2(db, sql, -1, &missingStmt, nil) == SQLITE_OK, let missingStmt {
+                for (index, wayID) in missingWayIDs.sorted().enumerated() {
+                    sqlite3_bind_text(
+                        missingStmt,
+                        Int32(index + 1),
+                        wayID,
+                        -1,
+                        unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+                    )
+                }
+                while sqlite3_step(missingStmt) == SQLITE_ROW {
+                    guard let wayID = cStringOptional(sqlite3_column_text(missingStmt, 0)),
+                          let startNodeKey = cStringOptional(sqlite3_column_text(missingStmt, 4)),
+                          let endNodeKey = cStringOptional(sqlite3_column_text(missingStmt, 7)),
+                          !wayID.isEmpty,
+                          !startNodeKey.isEmpty,
+                          !endNodeKey.isEmpty else {
+                        continue
+                    }
+                    let info = WayEndpointInfo(
+                        wayID: wayID,
+                        refNorm: cStringOptional(sqlite3_column_text(missingStmt, 1)) ?? "",
+                        highway: cStringOptional(sqlite3_column_text(missingStmt, 2)),
+                        tunnelFlag: sqlite3_column_int(missingStmt, 3) != 0,
+                        startNodeKey: startNodeKey,
+                        startLon: sqlite3_column_double(missingStmt, 5),
+                        startLat: sqlite3_column_double(missingStmt, 6),
+                        endNodeKey: endNodeKey,
+                        endLon: sqlite3_column_double(missingStmt, 8),
+                        endLat: sqlite3_column_double(missingStmt, 9),
+                        wayLengthM: sqlite3_column_double(missingStmt, 10)
+                    )
+                    appendWayEndpointInfo(info, byWayID: &byWayID, adjacencyByNodeKey: &adjacencyByNodeKey)
+                }
+            }
+        }
+
+        return LocalWayGraphContext(
+            available: !byWayID.isEmpty,
+            byWayID: byWayID,
+            adjacencyByNodeKey: adjacencyByNodeKey,
+            expandedWayCount: byWayID.count
+        )
+    }
+
+    private func appendWayEndpointInfo(
+        _ info: WayEndpointInfo,
+        byWayID: inout [String: WayEndpointInfo],
+        adjacencyByNodeKey: inout [String: [LocalWayGraphEdge]]
+    ) {
+        guard byWayID[info.wayID] == nil else {
+            return
+        }
+        byWayID[info.wayID] = info
+        adjacencyByNodeKey[info.startNodeKey, default: []].append(
+            LocalWayGraphEdge(wayID: info.wayID, toNodeKey: info.endNodeKey, lengthM: info.wayLengthM)
+        )
+        adjacencyByNodeKey[info.endNodeKey, default: []].append(
+            LocalWayGraphEdge(wayID: info.wayID, toNodeKey: info.startNodeKey, lengthM: info.wayLengthM)
+        )
+    }
+
+    private func simpleSequenceViterbiEmissionCost(
+        for candidate: WayCandidate,
+        observation: SimpleSequenceViterbiObservation
+    ) -> Double {
+        let sigmaM = min(
+            max(observation.horizontalAccuracyM ?? 8.0, Self.simpleSequenceViterbiObservationSigmaFloorM),
+            Self.simpleSequenceViterbiObservationSigmaCapM
+        )
+        var cost = 0.5 * pow(candidate.distanceM / sigmaM, 2.0)
+        if let headingDeg = observation.headingForScoring,
+           let candidateHeadingDeg = candidate.localHeadingDeg ?? axisHeadingDeg(for: candidate) {
+            let mismatchDeg = headingMismatchDeg(headingDeg: headingDeg, approxHeadingDeg: candidateHeadingDeg)
+            cost += 0.5 * pow(mismatchDeg / Self.simpleSequenceViterbiHeadingSigmaDeg, 2.0)
+        }
+        return cost
+    }
+
+    private func simpleSequenceViterbiTransitionCost(
+        from previousCandidate: WayCandidate,
+        previousObservation: SimpleSequenceViterbiObservation,
+        to candidate: WayCandidate,
+        observation: SimpleSequenceViterbiObservation,
+        graph: LocalWayGraphContext,
+        continuity: WayContinuityContext,
+        shortestPathCache: inout [String: [String: Double]],
+        matchContext: NormalizedMatchContext,
+        wayLinks: WayLinksContext
+    ) -> (cost: Double, routeDistanceM: Double?, observedDistanceM: Double?) {
+        let observedDistanceM = haversineM(
+            lat1: previousObservation.lat,
+            lon1: previousObservation.lon,
+            lat2: observation.lat,
+            lon2: observation.lon
+        )
+        let continuityStrength = simpleSequenceViterbiContinuityStrength(
+            from: previousCandidate,
+            to: candidate,
+            continuity: continuity
+        )
+        let continuityBonus = continuityStrength.transitionBonus
+        if graph.available,
+           let routeDistanceM = simpleSequenceViterbiRouteDistanceM(
+                from: previousCandidate,
+                to: candidate,
+                graph: graph,
+                shortestPathCache: &shortestPathCache
+           ) {
+            let beta = max(
+                Self.simpleSequenceViterbiTransitionBetaFloorM,
+                observedDistanceM * Self.simpleSequenceViterbiTransitionBetaScale + Self.simpleSequenceViterbiTransitionBetaBiasM
+            )
+            let baseCost = abs(routeDistanceM - observedDistanceM) / beta
+            return (max(0.0, baseCost - continuityBonus), routeDistanceM, observedDistanceM)
+        }
+
+        if let previousHypothesis = wayMatchHypothesis(
+                from: previousCandidate,
+                cumulativeCost: 0.0,
+                emissionScore: previousCandidate.score
+           ),
+           (!graph.available || continuityStrength != .none) {
+            let baseCost =
+                genericTransitionPenalty(
+                    from: previousHypothesis,
+                    to: candidate,
+                    observedHeadingDeg: observation.headingForScoring,
+                    speedKmh: observation.speedKmh,
+                    matchContext: matchContext,
+                    wayLinks: wayLinks
+                ) + Self.simpleSequenceViterbiLayerGapPenalty
+            return (
+                max(0.0, baseCost - continuityBonus),
+                nil,
+                observedDistanceM
+            )
+        }
+
+        return (Self.simpleSequenceViterbiUnreachableTransitionPenalty, nil, observedDistanceM)
+    }
+
+    private func simpleSequenceViterbiContinuityStrength(
+        from previousCandidate: WayCandidate,
+        to candidate: WayCandidate,
+        continuity: WayContinuityContext
+    ) -> WayContinuityStrength {
+        guard normalizedWayID(previousCandidate.wayID) != normalizedWayID(candidate.wayID) else {
+            return .none
+        }
+        return continuity.sharedStrength(
+            from: normalizedWayID(previousCandidate.wayID),
+            to: normalizedWayID(candidate.wayID)
+        )
+    }
+
+    private func simpleSequenceViterbiRouteDistanceM(
+        from previousCandidate: WayCandidate,
+        to candidate: WayCandidate,
+        graph: LocalWayGraphContext,
+        shortestPathCache: inout [String: [String: Double]]
+    ) -> Double? {
+        if normalizedWayID(previousCandidate.wayID) == normalizedWayID(candidate.wayID),
+           let previousDistanceToStartM = previousCandidate.distanceToStartM,
+           let currentDistanceToStartM = candidate.distanceToStartM {
+            return abs(currentDistanceToStartM - previousDistanceToStartM)
+        }
+
+        let previousOptions = simpleSequenceViterbiNodeOptions(for: previousCandidate, graph: graph)
+        let currentOptions = simpleSequenceViterbiNodeOptions(for: candidate, graph: graph)
+        guard !previousOptions.isEmpty, !currentOptions.isEmpty else {
+            return nil
+        }
+
+        var bestDistanceM = Double.infinity
+        for previousOption in previousOptions {
+            let distances = simpleSequenceViterbiShortestPathDistances(
+                from: previousOption.nodeKey,
+                graph: graph,
+                cache: &shortestPathCache
+            )
+            for currentOption in currentOptions {
+                guard let graphDistanceM = distances[currentOption.nodeKey] else {
+                    continue
+                }
+                bestDistanceM = min(
+                    bestDistanceM,
+                    previousOption.distanceM + graphDistanceM + currentOption.distanceM
+                )
+            }
+        }
+        return bestDistanceM.isFinite ? bestDistanceM : nil
+    }
+
+    private func simpleSequenceViterbiNodeOptions(
+        for candidate: WayCandidate,
+        graph: LocalWayGraphContext
+    ) -> [(nodeKey: String, distanceM: Double)] {
+        let wayID = normalizedWayID(candidate.wayID)
+        let endpointInfo = wayID.flatMap { graph.byWayID[$0] }
+        let startNodeKey = candidate.startNodeKey ?? endpointInfo?.startNodeKey
+        let endNodeKey = candidate.endNodeKey ?? endpointInfo?.endNodeKey
+
+        var options: [(nodeKey: String, distanceM: Double)] = []
+        if let startNodeKey, let distanceToStartM = candidate.distanceToStartM {
+            options.append((startNodeKey, distanceToStartM))
+        }
+        if let endNodeKey, let distanceToEndM = candidate.distanceToEndM {
+            options.append((endNodeKey, distanceToEndM))
+        }
+        if options.count == 2, options[0].nodeKey == options[1].nodeKey {
+            return [options.min(by: { $0.distanceM < $1.distanceM })!]
+        }
+        return options
+    }
+
+    private func simpleSequenceViterbiShortestPathDistances(
+        from startNodeKey: String,
+        graph: LocalWayGraphContext,
+        cache: inout [String: [String: Double]]
+    ) -> [String: Double] {
+        if let cached = cache[startNodeKey] {
+            return cached
+        }
+        var distances: [String: Double] = [startNodeKey: 0.0]
+        var frontier: [(nodeKey: String, distanceM: Double)] = [(startNodeKey, 0.0)]
+
+        while !frontier.isEmpty {
+            var bestIndex = 0
+            for index in 1..<frontier.count where frontier[index].distanceM < frontier[bestIndex].distanceM {
+                bestIndex = index
+            }
+            let current = frontier.remove(at: bestIndex)
+            if current.distanceM > distances[current.nodeKey, default: .infinity] {
+                continue
+            }
+            for edge in graph.adjacencyByNodeKey[current.nodeKey] ?? [] {
+                let nextDistanceM = current.distanceM + edge.lengthM
+                if nextDistanceM < distances[edge.toNodeKey, default: .infinity] {
+                    distances[edge.toNodeKey] = nextDistanceM
+                    frontier.append((edge.toNodeKey, nextDistanceM))
+                }
+            }
+        }
+
+        cache[startNodeKey] = distances
+        return distances
+    }
+
     private func simpleSequenceParticleSeedContext(
         candidates: [WayCandidate],
-        matchContext: NormalizedMatchContext
+        matchContext: NormalizedMatchContext,
+        limit: Int
     ) -> (hypotheses: [WayMatchHypothesis], source: String) {
         if !matchContext.recentHypotheses.isEmpty {
-            return (Array(matchContext.recentHypotheses.prefix(Self.miniHMMBeamWidth)), "recent_hypotheses")
+            return (Array(matchContext.recentHypotheses.prefix(limit)), "recent_hypotheses")
         }
         if let preferredWayID = matchContext.preferredWayID,
            let preferredCandidate = candidates.first(where: {
@@ -4119,6 +5237,9 @@ final class V3SpeedLimitService {
             ),
             points: [],
             localHeadingDeg: axisHeading,
+            wayLengthM: nil,
+            startNodeKey: nil,
+            endNodeKey: nil,
             startPoint: hypothesis.startLat.flatMap { startLat in
                 hypothesis.startLon.map { (startLat, $0) }
             },
@@ -4692,6 +5813,73 @@ final class V3SpeedLimitService {
             return matchContext.activeStreetRefTokens
         }
         return matchContext.preferredStreetRefs
+    }
+
+    private func preferredSimpleContinuityCandidate(
+        rankedCandidates: [WayCandidate],
+        continuityIdentity: (tokens: Set<String>, source: SimpleContinuityIdentitySource),
+        matchContext: NormalizedMatchContext,
+        useStreetNameFallbackContinuity: Bool
+    ) -> (candidate: WayCandidate, trace: MatchSelectionTrace?)? {
+        guard !continuityIdentity.tokens.isEmpty else {
+            return nil
+        }
+        let continuityCandidates = rankedCandidates.filter { candidate in
+            let candidateTokens = continuityTokens(
+                for: candidate,
+                source: continuityIdentity.source,
+                useStreetNameFallbackContinuity: useStreetNameFallbackContinuity
+            )
+            guard !candidateTokens.isEmpty else {
+                return false
+            }
+            return !candidateTokens.isDisjoint(with: continuityIdentity.tokens)
+        }
+        guard let geometricContinuityCandidate = continuityCandidates.first else {
+            return nil
+        }
+        let preferredContinuityCandidate = continuityCandidates.min { lhs, rhs in
+            let lhsRank = simpleContinuityGuardRank(for: lhs, matchContext: matchContext)
+            let rhsRank = simpleContinuityGuardRank(for: rhs, matchContext: matchContext)
+            if lhsRank != rhsRank {
+                return lhsRank < rhsRank
+            }
+            return isBetterDistanceCandidate(lhs, than: rhs)
+        } ?? geometricContinuityCandidate
+
+        let trace: MatchSelectionTrace?
+        if normalizedWayID(preferredContinuityCandidate.wayID) != normalizedWayID(geometricContinuityCandidate.wayID),
+           simpleContinuityGuardRank(for: preferredContinuityCandidate, matchContext: matchContext) <
+            simpleContinuityGuardRank(for: geometricContinuityCandidate, matchContext: matchContext) {
+            trace = MatchSelectionTrace(
+                step: continuityIdentity.source == .streetName
+                    ? "simple_same_name_route_class_guard"
+                    : "simple_same_ref_route_class_guard",
+                detail: "kept \(continuityIdentity.source.traceLabel) \(preferredContinuityCandidate.wayID ?? "nil") over closer \(geometricContinuityCandidate.wayID ?? "nil") preferred_highway=\(matchContext.preferredHighway ?? "nil")"
+            )
+        } else {
+            trace = nil
+        }
+        return (preferredContinuityCandidate, trace)
+    }
+
+    private func simpleContinuityGuardRank(
+        for candidate: WayCandidate,
+        matchContext: NormalizedMatchContext
+    ) -> Int {
+        var rank = 0
+        if let preferredFamily = highwayFamily(matchContext.preferredHighway) {
+            if highwayFamily(candidate.highway) != preferredFamily {
+                rank += 4
+            }
+        }
+        if isServiceLikeTransitionCandidate(candidate) {
+            rank += 2
+        }
+        if matchContext.isInTunnelMode != isTruthyOSMTag(candidate.tunnel) {
+            rank += 1
+        }
+        return rank
     }
 
     private func lowSpeedSameRefJunctionAnchorCandidates(
@@ -5501,6 +6689,75 @@ final class V3SpeedLimitService {
             return min(partialBest, currentBest)
         }
         return bestConnection <= Self.miniHMMEndpointConnectionThresholdM
+    }
+
+    private func loadWayContinuityContext(
+        db: OpaquePointer,
+        layers: [SimpleSequenceViterbiLayer],
+        matchContext: NormalizedMatchContext
+    ) -> WayContinuityContext {
+        guard tableExists(db: db, name: "way_continuity_membership") else {
+            return WayContinuityContext(available: false, byWayID: [:])
+        }
+
+        var relevantWayIDs = Set(layers.flatMap { layer in
+            layer.candidates.compactMap { normalizedWayID($0.wayID) }
+        })
+        relevantWayIDs.formUnion(matchContext.recentWayIDs)
+        relevantWayIDs.formUnion(matchContext.recentHypotheses.map(\.wayID))
+        if let preferredWayID = matchContext.preferredWayID {
+            relevantWayIDs.insert(preferredWayID)
+        }
+        let orderedWayIDs = relevantWayIDs.compactMap { Int64($0) }.sorted()
+        guard !orderedWayIDs.isEmpty else {
+            return WayContinuityContext(available: true, byWayID: [:])
+        }
+
+        let placeholders = Array(repeating: "?", count: orderedWayIDs.count).joined(separator: ",")
+        let hasMembershipKind = columnExists(db: db, table: "way_continuity_membership", column: "continuity_kind")
+        let hasGroupTable = tableExists(db: db, name: "way_continuity_group")
+        guard hasMembershipKind || hasGroupTable else {
+            return WayContinuityContext(available: true, byWayID: [:])
+        }
+        let kindSelect = hasMembershipKind ? "m.continuity_kind" : "g.continuity_kind"
+        let joinClause = hasMembershipKind ? "" : "JOIN way_continuity_group g ON g.continuity_group_id = m.continuity_group_id"
+        let sql = """
+        SELECT m.way_id, m.continuity_group_id, \(kindSelect)
+        FROM way_continuity_membership m
+        \(joinClause)
+        WHERE m.way_id IN (\(placeholders))
+        """
+
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            return WayContinuityContext(available: true, byWayID: [:])
+        }
+
+        for (index, wayID) in orderedWayIDs.enumerated() {
+            sqlite3_bind_int64(stmt, Int32(index + 1), wayID)
+        }
+
+        var byWayID: [String: WayContinuityMembershipInfo] = [:]
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let wayID = String(sqlite3_column_int64(stmt, 0))
+            let continuityGroupID = Int(sqlite3_column_int(stmt, 1))
+            guard !wayID.isEmpty, continuityGroupID != 0,
+                  let rawKind = cStringOptional(sqlite3_column_text(stmt, 2)),
+                  let kind = WayContinuityKind(rawValue: rawKind) else {
+                continue
+            }
+            var info = byWayID[wayID] ?? WayContinuityMembershipInfo()
+            switch kind {
+            case .routeRelationConnected:
+                info.routeRelationGroupIDs.insert(continuityGroupID)
+            case .sameStreetNameConnected:
+                info.sameStreetNameGroupIDs.insert(continuityGroupID)
+            }
+            byWayID[wayID] = info
+        }
+
+        return WayContinuityContext(available: true, byWayID: byWayID)
     }
 
     private func loadWayLinksContext(
@@ -7526,6 +8783,9 @@ final class V3SpeedLimitService {
                 to: hypothesis.endLat,
                 lon2: hypothesis.endLon
             ),
+            wayLengthM: nil,
+            startNodeKey: nil,
+            endNodeKey: nil,
             startPoint: hypothesis.startLat.flatMap { startLat in
                 hypothesis.startLon.map { (startLat, $0) }
             },

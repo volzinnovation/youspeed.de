@@ -5,9 +5,9 @@
   "land_name": "Deutschland",
   "waehrung_code": "EUR",
   "standardsprache": "de",
-  "quelle_url": "https://www.adac.de/verkehr/recht/bussgeld-punkte/geschwindigkeitsueberschreitung/",
-  "quelle_geprueft_am": "2026-02-25",
-  "hinweis": "Werte nach ADAC-Tabelle fuer Pkw, mit Unterscheidung innerorts und ausserorts. Einige Fahrverbote gelten nur unter Voraussetzungen (Wiederholungstat).",
+  "quelle_url": "https://www.runtervomgas.de/ratgeber-und-service/bussgeldkatalog/",
+  "quelle_geprueft_am": "2026-04-11",
+  "hinweis": "Werte nach Runter-vom-Gas-Bussgeldkatalog fuer Pkw und andere Kfz bis 3,5 t zulaessigem Gesamtgewicht, mit Unterscheidung innerorts und ausserorts.",
   "stufen": [
     {
       "min_ueber_kmh": 1,
@@ -63,24 +63,12 @@
       "max_ueber_kmh": 30,
       "schweregrad": "punkte_und_geldbusse",
       "titel_vorlage": "Hoher Verstoss",
-      "detail_vorlage": "Voraussichtlich 1 Punkt und Bussgeld: innerorts 180 {waehrung}, ausserorts 150 {waehrung}; 1 Monat Fahrverbot nur bei zweiter Tat >25 km/h innerhalb von 12 Monaten",
+      "detail_vorlage": "Voraussichtlich 1 Punkt und Bussgeld: innerorts 180 {waehrung}, ausserorts 150 {waehrung}",
       "geldbusse_eur": 180,
       "punkte": 1,
       "ortsvarianten": {
-        "innerorts": {
-          "geldbusse_eur": 180,
-          "punkte": 1,
-          "fahrverbot_monate": 0,
-          "bedingtes_fahrverbot_monate": 1,
-          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
-        },
-        "ausserorts": {
-          "geldbusse_eur": 150,
-          "punkte": 1,
-          "fahrverbot_monate": 0,
-          "bedingtes_fahrverbot_monate": 1,
-          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
-        }
+        "innerorts": { "geldbusse_eur": 180, "punkte": 1, "fahrverbot_monate": 0 },
+        "ausserorts": { "geldbusse_eur": 150, "punkte": 1, "fahrverbot_monate": 0 }
       }
     },
     {
@@ -88,18 +76,12 @@
       "max_ueber_kmh": 40,
       "schweregrad": "punkte_und_geldbusse",
       "titel_vorlage": "Schwerer Verstoss",
-      "detail_vorlage": "Voraussichtlich innerorts: 260 {waehrung}, 2 Punkte, 1 Monat Fahrverbot; ausserorts: 200 {waehrung}, 1 Punkt, 1 Monat Fahrverbot nur bei zweiter Tat >25 km/h innerhalb von 12 Monaten",
+      "detail_vorlage": "Voraussichtlich innerorts: 260 {waehrung}, 2 Punkte, 1 Monat Fahrverbot; ausserorts: 200 {waehrung}, 1 Punkt, 1 Monat Fahrverbot",
       "geldbusse_eur": 260,
       "punkte": 2,
       "ortsvarianten": {
         "innerorts": { "geldbusse_eur": 260, "punkte": 2, "fahrverbot_monate": 1 },
-        "ausserorts": {
-          "geldbusse_eur": 200,
-          "punkte": 1,
-          "fahrverbot_monate": 0,
-          "bedingtes_fahrverbot_monate": 1,
-          "fahrverbot_bedingung": "wiederholungstat_innerhalb_12_monate_mehr_als_25_kmh"
-        }
+        "ausserorts": { "geldbusse_eur": 200, "punkte": 1, "fahrverbot_monate": 1 }
       }
     },
     {

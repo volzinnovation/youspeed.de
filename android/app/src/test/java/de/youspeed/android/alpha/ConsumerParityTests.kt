@@ -1,6 +1,8 @@
 package de.youspeed.android.alpha
 
+import java.io.File
 import java.time.Instant
+import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -46,6 +48,28 @@ class ConsumerParityTests {
     @Test
     fun derivedSpeedKeepsLowNonZeroValues() {
         assertEquals(3.6, ConsumerSessionController.derivedSpeedKmh(distanceM = 2.0, elapsedSeconds = 2.0), 0.0001)
+    }
+
+    @Test
+    fun resetDrivingLogFilesRewritesCsvAndClearsMatcherLog() {
+        val rootDir = createTempDirectory(prefix = "driving-logs-").toFile()
+        try {
+            val gpsLogFile = File(rootDir, "logs/gps_fix_log.csv")
+            val matchLogFile = File(rootDir, "logs/drive_match_log.ndjson")
+            gpsLogFile.parentFile?.mkdirs()
+            gpsLogFile.writeText("stale")
+            matchLogFile.parentFile?.mkdirs()
+            matchLogFile.writeText("{\"stale\":true}\n")
+
+            ConsumerSessionController.resetDrivingLogFiles(gpsLogFile = gpsLogFile, matchLogFile = matchLogFile)
+
+            assertTrue(gpsLogFile.exists())
+            assertTrue(matchLogFile.exists())
+            assertTrue(gpsLogFile.readText().startsWith("fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m"))
+            assertEquals("", matchLogFile.readText())
+        } finally {
+            rootDir.deleteRecursively()
+        }
     }
 
     @Test
@@ -204,7 +228,7 @@ class ConsumerParityTests {
                   "punkte": 1,
                   "ortsvarianten": {
                     "innerorts": { "geldbusse_eur": 260, "punkte": 2, "fahrverbot_monate": 1 },
-                    "ausserorts": { "geldbusse_eur": 200, "punkte": 1, "fahrverbot_monate": 0 }
+                    "ausserorts": { "geldbusse_eur": 200, "punkte": 1, "fahrverbot_monate": 1 }
                   }
                 }
               ]
@@ -212,14 +236,20 @@ class ConsumerParityTests {
         """.trimIndent()
 
         val rules = PenaltyRulesParser.parse(raw)
-        val notice = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh = 36, rules = rules, insideCity = true)
+        val innerNotice = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh = 36, rules = rules, insideCity = true)
+        val outerNotice = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh = 36, rules = rules, insideCity = false)
 
         assertEquals("DEU", rules.countryCode)
         assertEquals(1, rules.bands.size)
-        assertNotNull(notice)
-        assertEquals(260, notice?.moneyFineEUR)
-        assertEquals(2, notice?.penaltyPoints)
-        assertEquals(1, notice?.drivingBanMonths)
+        assertNotNull(innerNotice)
+        assertNotNull(outerNotice)
+        assertEquals(260, innerNotice?.moneyFineEUR)
+        assertEquals(2, innerNotice?.penaltyPoints)
+        assertEquals(1, innerNotice?.drivingBanMonths)
+        assertEquals(200, outerNotice?.moneyFineEUR)
+        assertEquals(1, outerNotice?.penaltyPoints)
+        assertEquals(1, outerNotice?.drivingBanMonths)
+        assertNull(outerNotice?.conditionalDrivingBanMonths)
     }
 
     @Test

@@ -375,6 +375,8 @@ class ConsumerSessionController(
             audioAlertsEnabled = preferences.getBoolean(KEY_AUDIO_ALERTS_ENABLED, true),
             audioAlertThresholdKmh = preferences.getInt(KEY_AUDIO_ALERT_THRESHOLD, 8).coerceIn(0, 80),
             hideWelcomeScreen = preferences.getBoolean(KEY_HIDE_WELCOME, false),
+            gpsLogPath = gpsLogFile().absolutePath,
+            matchLogPath = matchLogFile().absolutePath,
             runtimeDiagnosticsLogPath = runtimeDiagnosticsLogFile().absolutePath,
             bundleDownloadSections = buildBundleDownloadSections(),
             configuredManifestEndpointCount = manifestEndpoints.size,
@@ -390,6 +392,17 @@ class ConsumerSessionController(
     init {
         rootDir.mkdirs()
         ensureRuntimeDiagnosticsLogExists()
+        runCatching {
+            resetDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
+        }.onFailure { error ->
+            appendRuntimeDiagnosticEvent(
+                event = "driving_logs_startup_reset_failed",
+                details = mapOf(
+                    "pid" to Process.myPid(),
+                    "error" to (error.message ?: error.javaClass.simpleName),
+                ),
+            )
+        }
         installCrashObserverIfNeeded()
         appendRuntimeDiagnosticEvent(
             event = "session_init",
@@ -1071,10 +1084,7 @@ class ConsumerSessionController(
     fun clearDrivingLogs() {
         executor.execute {
             try {
-                gpsLogFile().parentFile?.mkdirs()
-                gpsLogFile().writeText(GPS_LOG_HEADER)
-                matchLogFile().parentFile?.mkdirs()
-                matchLogFile().writeText("")
+                resetDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
                 postState {
                     copy(
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -2947,6 +2957,13 @@ class ConsumerSessionController(
         private const val DERIVED_SPEED_COMPUTATION_MIN_WINDOW_SECONDS = 2.0
         private const val LOW_SPEED_DERIVED_FALLBACK_THRESHOLD_KMH = 7.0
         private const val GPS_LOG_HEADER = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,bearing_deg,status,way_id,street_name,city_name,inside_city,city_source,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
+
+        internal fun resetDrivingLogFiles(gpsLogFile: File, matchLogFile: File) {
+            gpsLogFile.parentFile?.mkdirs()
+            gpsLogFile.writeText(GPS_LOG_HEADER)
+            matchLogFile.parentFile?.mkdirs()
+            matchLogFile.writeText("")
+        }
 
         private fun appendRuntimeDiagnosticEvent(
             file: File,

@@ -54,6 +54,15 @@ internal class V3SpeedLimitLookup(
     countryCode: String? = null,
     private val matchingModel: LookupMatchingModel = LookupMatchingModel.CORRIDOR_HMM,
 ) : Closeable {
+    private enum class CandidateNetwork(val wireName: String) {
+        SURFACE("surface"),
+        TUNNEL("tunnel"),
+        MOTORWAY("motorway");
+
+        val rtreeTableName: String
+            get() = "${wireName}_way_network_rtree"
+    }
+
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
     private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
     private val hasWaysTable = tableExists("ways")
@@ -64,6 +73,9 @@ internal class V3SpeedLimitLookup(
     private val hasCityPlaceTable = tableExists("city_place")
     private val hasCityPlaceRtreeTable = tableExists("city_place_rtree")
     private val hasWaysRtreeTable = tableExists("ways_rtree")
+    private val hasSurfaceWayNetworkRtreeTable = tableExists("surface_way_network_rtree")
+    private val hasTunnelWayNetworkRtreeTable = tableExists("tunnel_way_network_rtree")
+    private val hasMotorwayWayNetworkRtreeTable = tableExists("motorway_way_network_rtree")
     private val hasAreasRtreeTable = tableExists("areas_rtree")
     private val hasWayGeomTable = tableExists("way_geom")
     private val hasWayLinksTable = tableExists("way_links")
@@ -169,6 +181,7 @@ internal class V3SpeedLimitLookup(
             radiusM = radiusM,
             maxCandidates = maxCandidates,
             headingDeg = observedHeadingDeg,
+            matchContext = normalizedMatchContext,
         )
         val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
         val polygonCityContext = if (hasCityBoundaryTable && hasCityRingTable) {
@@ -4548,6 +4561,62 @@ internal class V3SpeedLimitLookup(
         }
     }
 
+    private fun candidateNetworks(matchContext: WayMatchContext): List<CandidateNetwork> {
+        val hasAnchorContext =
+            matchContext.preferredWayId != null ||
+                matchContext.preferredHighway != null ||
+                matchContext.recentWayIds.isNotEmpty() ||
+                matchContext.recentFixes.isNotEmpty()
+        val preferredHighwayFamily = highwayFamily(matchContext.preferredHighway)
+        val activeCorridorKind = matchContext.activeCorridorState?.kind
+        val approachCorridorKind = matchContext.approachCorridorState?.kind
+        val portalPrefetchThresholdM =
+            max(TUNNEL_PORTAL_ENTRY_ENDPOINT_THRESHOLD_M, MOTORWAY_TRANSITION_ENDPOINT_THRESHOLD_M) +
+                CORRIDOR_PROGRESS_NOISE_TOLERANCE_M
+        val nearPortalAnchor =
+            matchContext.preferredEndpointProximityM?.let { it.isFinite() && it <= portalPrefetchThresholdM } == true
+
+        val networks = mutableListOf(CandidateNetwork.SURFACE)
+        if (!hasAnchorContext ||
+            matchContext.isInTunnelMode ||
+            activeCorridorKind == "tunnel" ||
+            approachCorridorKind == "tunnel" ||
+            matchContext.tunnelApproachFixCount > 0 ||
+            matchContext.recentTunnelCandidateWayIds.isNotEmpty() ||
+            matchContext.recentTunnelCandidateRefs.isNotEmpty() ||
+            nearPortalAnchor
+        ) {
+            networks += CandidateNetwork.TUNNEL
+        }
+        if (!hasAnchorContext ||
+            matchContext.isInMotorwayMode ||
+            activeCorridorKind == "motorway" ||
+            approachCorridorKind == "motorway" ||
+            preferredHighwayFamily == "motorway" ||
+            nearPortalAnchor
+        ) {
+            networks += CandidateNetwork.MOTORWAY
+        }
+        return networks
+    }
+
+    private fun candidateNetworkFilterSql(network: CandidateNetwork): String {
+        val tunnelCondition = "LOWER(TRIM(COALESCE(w.tunnel, ''))) NOT IN ('', '0', 'false', 'no', 'off', 'none')"
+        val highwayExpr = "LOWER(TRIM(COALESCE(w.highway, '')))"
+        return when (network) {
+            CandidateNetwork.SURFACE -> "NOT ($tunnelCondition) AND $highwayExpr != 'motorway'"
+            CandidateNetwork.TUNNEL -> tunnelCondition
+            CandidateNetwork.MOTORWAY -> "NOT ($tunnelCondition) AND $highwayExpr = 'motorway'"
+        }
+    }
+
+    private fun hasNetworkRtreeTable(network: CandidateNetwork): Boolean =
+        when (network) {
+            CandidateNetwork.SURFACE -> hasSurfaceWayNetworkRtreeTable
+            CandidateNetwork.TUNNEL -> hasTunnelWayNetworkRtreeTable
+            CandidateNetwork.MOTORWAY -> hasMotorwayWayNetworkRtreeTable
+        }
+
     private fun normalizedWayId(raw: String?): String? = raw?.trim()?.ifBlank { null }
 
     private fun queryWayCandidates(
@@ -4556,6 +4625,39 @@ internal class V3SpeedLimitLookup(
         radiusM: Double,
         maxCandidates: Int,
         headingDeg: Double?,
+        matchContext: WayMatchContext,
+    ): List<WayCandidate> {
+        if (!hasWaysTable || !hasWayBoundsColumns) {
+            return emptyList()
+        }
+        val mergedByWayId = linkedMapOf<String, WayCandidate>()
+        val anonymousCandidates = ArrayList<WayCandidate>()
+        for (network in candidateNetworks(matchContext)) {
+            for (candidate in queryWayCandidatesForNetwork(lat, lon, radiusM, maxCandidates, headingDeg, network)) {
+                val wayId = normalizedWayId(candidate.wayId)
+                if (wayId == null) {
+                    anonymousCandidates += candidate
+                    continue
+                }
+                val existing = mergedByWayId[wayId]
+                if (existing == null || isBetterCandidate(candidate, existing)) {
+                    mergedByWayId[wayId] = candidate
+                }
+            }
+        }
+        val mergedCandidates = ArrayList<WayCandidate>(mergedByWayId.size + anonymousCandidates.size)
+        mergedCandidates += mergedByWayId.values
+        mergedCandidates += anonymousCandidates
+        return mergedCandidates.sortedWith(candidateComparator)
+    }
+
+    private fun queryWayCandidatesForNetwork(
+        lat: Double,
+        lon: Double,
+        radiusM: Double,
+        maxCandidates: Int,
+        headingDeg: Double?,
+        network: CandidateNetwork,
     ): List<WayCandidate> {
         if (!hasWaysTable || !hasWayBoundsColumns) {
             return emptyList()
@@ -4567,13 +4669,15 @@ internal class V3SpeedLimitLookup(
         val tunnelSelect = if (hasTunnelColumn) "w.tunnel" else "NULL"
         val wayGeomJoin = if (hasWayGeomTable) "LEFT JOIN way_geom g ON g.way_id = w.way_id" else ""
         val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
-        val useRtree = allowWaysRtreeQueries && hasWaysRtreeTable
-        val fromClause = if (useRtree) {
-            "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
-        } else {
-            "FROM ways w"
+        val useNetworkRtree = allowWaysRtreeQueries && hasNetworkRtreeTable(network)
+        val useGeneralRtree = allowWaysRtreeQueries && hasWaysRtreeTable
+        val fromClause = when {
+            useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
+            useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
+            else -> "FROM ways w"
         }
-        val boundsSource = if (useRtree) "r" else "w"
+        val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
+        val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
         val sql = """
             SELECT
               w.way_id,
@@ -4595,6 +4699,7 @@ internal class V3SpeedLimitLookup(
             $wayGeomJoin
             WHERE $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
               AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
+              $extraWhereClause
             ORDER BY
               (
                 CASE
@@ -4720,9 +4825,16 @@ internal class V3SpeedLimitLookup(
                 }
             }
         } catch (error: SQLiteException) {
-            if (useRtree && isRtreeModuleUnavailable(error)) {
+            if ((useNetworkRtree || useGeneralRtree) && isRtreeModuleUnavailable(error)) {
                 allowWaysRtreeQueries = false
-                return queryWayCandidates(lat = lat, lon = lon, radiusM = radiusM, maxCandidates = maxCandidates, headingDeg = headingDeg)
+                return queryWayCandidatesForNetwork(
+                    lat = lat,
+                    lon = lon,
+                    radiusM = radiusM,
+                    maxCandidates = maxCandidates,
+                    headingDeg = headingDeg,
+                    network = network,
+                )
             }
             throw error
         }

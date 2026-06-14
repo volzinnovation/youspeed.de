@@ -512,6 +512,29 @@ struct PartDownloadProgress: Sendable, Identifiable {
 struct WayMatchRecentFix: Sendable {
     let lat: Double
     let lon: Double
+    let headingDeg: Double?
+    let headingAccuracyDeg: Double?
+    let speedKmh: Double?
+    let horizontalAccuracyM: Double?
+    let gpsSignalBars: Int?
+
+    init(
+        lat: Double,
+        lon: Double,
+        headingDeg: Double? = nil,
+        headingAccuracyDeg: Double? = nil,
+        speedKmh: Double? = nil,
+        horizontalAccuracyM: Double? = nil,
+        gpsSignalBars: Int? = nil
+    ) {
+        self.lat = lat
+        self.lon = lon
+        self.headingDeg = headingDeg
+        self.headingAccuracyDeg = headingAccuracyDeg
+        self.speedKmh = speedKmh
+        self.horizontalAccuracyM = horizontalAccuracyM
+        self.gpsSignalBars = gpsSignalBars
+    }
 }
 
 struct CorridorMatchState: Codable, Sendable {
