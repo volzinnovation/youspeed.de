@@ -25,6 +25,7 @@ except Exception:
 EARTH_RADIUS_M = 6378137.0
 MAX_MERCATOR_LAT = 85.05112878
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+WAY_NETWORK_KINDS = ("surface", "tunnel", "motorway")
 
 
 def _lon_lat_to_mercator_m(lon: float, lat: float) -> Tuple[float, float]:
@@ -70,6 +71,18 @@ def _try_load_spatialite(conn: sqlite3.Connection) -> str:
         except Exception:
             pass
     return backend
+
+
+def _is_truthy_osm_tag(value: str | None) -> bool:
+    return (value or "").strip().lower() in {"yes", "true", "1"}
+
+
+def _way_network_kind(highway: str | None, tunnel: str | None) -> str:
+    if _is_truthy_osm_tag(tunnel):
+        return "tunnel"
+    if (highway or "").strip().lower() == "motorway":
+        return "motorway"
+    return "surface"
 
 
 def _downsample_closed_ring(points: List[Tuple[float, float]], max_points: int) -> List[Tuple[float, float]]:
@@ -433,6 +446,36 @@ def main() -> int:
           min_lat, max_lat
         );
 
+        CREATE TABLE surface_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE surface_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        CREATE TABLE tunnel_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE tunnel_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        CREATE TABLE motorway_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE motorway_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
         CREATE TABLE way_geom (
           way_id INTEGER PRIMARY KEY,
           points_json TEXT NOT NULL
@@ -525,11 +568,17 @@ def main() -> int:
             ("max_city_tiles", str(args.max_city_tiles)),
             ("max_city_ring_points", str(args.max_city_ring_points)),
             ("city_context_mode", "disabled"),
+            ("way_network_mode", "surface_tunnel_motorway_split_v1"),
         ],
     )
 
     ways_batch: List[Tuple] = []
     ways_rtree_batch: List[Tuple] = []
+    network_way_batches: Dict[str, List[Tuple[int]]] = {kind: [] for kind in WAY_NETWORK_KINDS}
+    network_rtree_batches: Dict[str, List[Tuple[int, float, float, float, float]]] = {
+        kind: [] for kind in WAY_NETWORK_KINDS
+    }
+    network_way_counts: Dict[str, int] = {kind: 0 for kind in WAY_NETWORK_KINDS}
     geom_batch: List[Tuple] = []
     way_tile_batch: List[Tuple] = []
     way_rows = 0
@@ -589,6 +638,10 @@ def main() -> int:
                 )
             )
             ways_rtree_batch.append((way_id, min_lon, max_lon, min_lat, max_lat))
+            network_kind = _way_network_kind(meta.get("highway"), meta.get("tunnel"))
+            network_way_batches[network_kind].append((way_id,))
+            network_rtree_batches[network_kind].append((way_id, min_lon, max_lon, min_lat, max_lat))
+            network_way_counts[network_kind] += 1
             geom_batch.append((way_id, json.dumps(points, separators=(",", ":"))))
 
             tx0, tx1, ty0, ty1 = _tile_range_for_bbox(min_lon, min_lat, max_lon, max_lat, args.tile_size_m)
@@ -621,6 +674,15 @@ def main() -> int:
                     "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
                     ways_rtree_batch,
                 )
+                for network_kind in WAY_NETWORK_KINDS:
+                    conn.executemany(
+                        f"INSERT INTO {network_kind}_way_network(way_id) VALUES(?)",
+                        network_way_batches[network_kind],
+                    )
+                    conn.executemany(
+                        f"INSERT INTO {network_kind}_way_network_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                        network_rtree_batches[network_kind],
+                    )
                 conn.executemany(
                     "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
                     geom_batch,
@@ -632,6 +694,9 @@ def main() -> int:
                 conn.commit()
                 ways_batch.clear()
                 ways_rtree_batch.clear()
+                for network_kind in WAY_NETWORK_KINDS:
+                    network_way_batches[network_kind].clear()
+                    network_rtree_batches[network_kind].clear()
                 geom_batch.clear()
                 way_tile_batch.clear()
 
@@ -653,6 +718,15 @@ def main() -> int:
             "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
             ways_rtree_batch,
         )
+        for network_kind in WAY_NETWORK_KINDS:
+            conn.executemany(
+                f"INSERT INTO {network_kind}_way_network(way_id) VALUES(?)",
+                network_way_batches[network_kind],
+            )
+            conn.executemany(
+                f"INSERT INTO {network_kind}_way_network_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                network_rtree_batches[network_kind],
+            )
         conn.executemany(
             "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
             geom_batch,
@@ -664,7 +738,16 @@ def main() -> int:
         conn.commit()
 
     print(f"Ways done: {way_rows}", file=sys.stderr)
+    print(
+        "Way networks: "
+        + ", ".join(f"{kind}={network_way_counts[kind]}" for kind in WAY_NETWORK_KINDS),
+        file=sys.stderr,
+    )
     print(f"Way-tile rows: {way_tile_rows} (center fallback={way_tile_fallback_rows})", file=sys.stderr)
+    conn.executemany(
+        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+        [(f"{kind}_way_network_count", str(network_way_counts[kind])) for kind in WAY_NETWORK_KINDS],
+    )
 
     areas_payload = json.loads(areas_idx.read_text(encoding="utf-8"))
     areas = areas_payload.get("areas", [])

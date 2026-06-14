@@ -96,6 +96,7 @@
       "country_code": "DEU",
       "iso2": "DE",
       "mode": "regional_shards",
+      "include_in_top_country_sequence": false,
       "regions": [
         {
           "region_id": "baden-wuerttemberg",

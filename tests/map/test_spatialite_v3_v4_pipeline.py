@@ -288,23 +288,23 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
                 conn.execute(
                     "SELECT value FROM metadata WHERE key='way_links_mode'"
                 ).fetchone()[0],
-                "shared_endpoint",
+                "shared_endpoint_detailed",
             )
             self.assertEqual(
                 conn.execute(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='corridor_progress'"
                 ).fetchone()[0],
-                1,
+                0,
             )
             self.assertEqual(
                 conn.execute(
                     "SELECT value FROM metadata WHERE key='corridor_progress_mode'"
                 ).fetchone()[0],
-                "portal_chain_v1",
+                "none",
             )
             links = conn.execute(
                 """
-                SELECT linked_way_id, shared_ref, link_kind
+                SELECT linked_way_id, shared_ref
                 FROM way_links
                 WHERE way_id = 101
                 ORDER BY linked_way_id
@@ -314,8 +314,8 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
         self.assertEqual(
             links,
             [
-                (102, 1, "shared_endpoint"),
-                (103, 0, "shared_endpoint"),
+                (102, 1),
+                (103, 0),
             ],
         )
 
@@ -426,6 +426,49 @@ class SpatialiteV3V4PipelineTests(unittest.TestCase):
             tunnel = conn.execute("SELECT tunnel FROM ways WHERE way_id=109").fetchone()
             self.assertIsNotNone(tunnel)
             self.assertEqual((tunnel[0] or "").lower(), "yes")
+
+    def test_v3_and_v4_build_isolated_way_network_tables(self):
+        for db_path in (self.db_v3, self.db_v4):
+            with self.subTest(db=db_path.name), sqlite3.connect(db_path) as conn:
+                for table_name in (
+                    "surface_way_network",
+                    "surface_way_network_rtree",
+                    "tunnel_way_network",
+                    "tunnel_way_network_rtree",
+                    "motorway_way_network",
+                    "motorway_way_network_rtree",
+                ):
+                    self.assertEqual(
+                        conn.execute(
+                            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?",
+                            (table_name,),
+                        ).fetchone()[0],
+                        1,
+                    )
+
+                self.assertEqual(
+                    conn.execute("SELECT value FROM metadata WHERE key='way_network_mode'").fetchone()[0],
+                    "surface_tunnel_motorway_split_v1",
+                )
+
+                total_way_count = conn.execute("SELECT COUNT(*) FROM ways").fetchone()[0]
+                network_way_count = sum(
+                    conn.execute(f"SELECT COUNT(*) FROM {kind}_way_network").fetchone()[0]
+                    for kind in ("surface", "tunnel", "motorway")
+                )
+                self.assertEqual(network_way_count, total_way_count)
+                self.assertEqual(
+                    conn.execute("SELECT COUNT(*) FROM tunnel_way_network WHERE way_id=109").fetchone()[0],
+                    1,
+                )
+                self.assertEqual(
+                    conn.execute("SELECT COUNT(*) FROM surface_way_network WHERE way_id=109").fetchone()[0],
+                    0,
+                )
+                self.assertEqual(
+                    conn.execute("SELECT COUNT(*) FROM motorway_way_network").fetchone()[0],
+                    0,
+                )
 
     def test_residential_polygons_exist_in_v3_and_v4(self):
         with sqlite3.connect(self.db_v3) as conn:

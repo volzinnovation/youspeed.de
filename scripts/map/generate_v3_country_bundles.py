@@ -65,6 +65,7 @@ class BundleTargetConfigCountry:
     iso2: str
     mode: str
     regions: List[BundleTargetConfigRegion]
+    include_in_top_country_sequence: bool = True
 
 
 def _slug(value: str) -> str:
@@ -150,10 +151,15 @@ def _load_bundle_target_config(path: Path) -> List[BundleTargetConfigCountry]:
                 iso2=iso2,
                 mode=mode,
                 regions=regions,
+                include_in_top_country_sequence=bool(row.get("include_in_top_country_sequence", True)),
             )
         )
     countries.sort(key=lambda item: (item.rank, item.country_id))
     return countries
+
+
+def _top_country_sequence_config(config_countries: List[BundleTargetConfigCountry]) -> List[BundleTargetConfigCountry]:
+    return [row for row in config_countries if row.include_in_top_country_sequence]
 
 
 def _now_bundle_version() -> str:
@@ -819,7 +825,7 @@ def main() -> int:
                 )
     else:
         if config_countries:
-            selected_config = config_countries[:top_n]
+            selected_config = _top_country_sequence_config(config_countries)[:top_n]
             targets = []
             for config_country in selected_config:
                 targets.extend(

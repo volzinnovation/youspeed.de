@@ -36,6 +36,7 @@ class ListGermanyReleaseTargetsTests(unittest.TestCase):
                     "country_code": "DEU",
                     "iso2": "DE",
                     "mode": "regional_shards",
+                    "include_in_top_country_sequence": False,
                     "regions": [
                         {"region_id": "baden-wuerttemberg"},
                         {"region_id": "bayern"},

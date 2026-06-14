@@ -317,6 +317,7 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
                     "country_code": "DEU",
                     "iso2": "DE",
                     "mode": "regional_shards",
+                    "include_in_top_country_sequence": False,
                     "regions": [
                         {"region_id": "germany/bayern"},
                         {"region_id": "germany/berlin"},
@@ -330,6 +331,8 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
             cfg = MODULE._load_bundle_target_config(path)
 
         self.assertEqual(len(cfg), 1)
+        self.assertFalse(cfg[0].include_in_top_country_sequence)
+        self.assertEqual(MODULE._top_country_sequence_config(cfg), [])
         targets = MODULE.plan_targets_for_country_from_config(
             config_country=cfg[0],
             index_by_id=by_id,
@@ -344,6 +347,39 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         )
         self.assertEqual([t.region_id for t in forced_targets], ["germany"])
         self.assertFalse(forced_targets[0].is_shard)
+
+    def test_top_country_sequence_config_keeps_opted_in_countries_only(self) -> None:
+        config_countries = [
+            MODULE.BundleTargetConfigCountry(
+                rank=1,
+                country_id="netherlands",
+                country_code="NLD",
+                iso2="NL",
+                mode="single_country",
+                regions=[MODULE.BundleTargetConfigRegion(region_id="netherlands")],
+            ),
+            MODULE.BundleTargetConfigCountry(
+                rank=8,
+                country_id="germany",
+                country_code="DEU",
+                iso2="DE",
+                mode="regional_shards",
+                regions=[MODULE.BundleTargetConfigRegion(region_id="germany/bayern")],
+                include_in_top_country_sequence=False,
+            ),
+            MODULE.BundleTargetConfigCountry(
+                rank=10,
+                country_id="united-kingdom",
+                country_code="GBR",
+                iso2="GB",
+                mode="single_country",
+                regions=[MODULE.BundleTargetConfigRegion(region_id="united-kingdom")],
+            ),
+        ]
+
+        filtered = MODULE._top_country_sequence_config(config_countries)
+
+        self.assertEqual([row.country_id for row in filtered], ["netherlands", "united-kingdom"])
 
     def test_derive_poly_url_from_pbf_url(self) -> None:
         self.assertEqual(

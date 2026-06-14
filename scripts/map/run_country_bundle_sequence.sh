@@ -140,6 +140,8 @@ from pathlib import Path
 path = Path(sys.argv[1])
 obj = json.loads(path.read_text(encoding="utf-8"))
 for row in obj.get("countries", []):
+    if row.get("include_in_top_country_sequence") is False:
+        continue
     cid = str(row.get("country_id", "")).strip().lower()
     if cid:
         print(cid)

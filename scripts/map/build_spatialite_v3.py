@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sqlite3
 import sys
 from collections import defaultdict, deque
@@ -29,6 +30,7 @@ except Exception:
 EARTH_RADIUS_M = 6378137.0
 MAX_MERCATOR_LAT = 85.05112878
 PLACE_VALUES = {"city", "town", "village", "hamlet"}
+WAY_NETWORK_KINDS = ("surface", "tunnel", "motorway")
 
 
 def _iter_jsonl(path: Path) -> Iterator[dict]:
@@ -133,6 +135,28 @@ def _is_truthy_osm_tag(value: str | None) -> bool:
     return (value or "").strip().lower() in {"yes", "true", "1"}
 
 
+def _way_network_kind(highway: str | None, tunnel: str | None) -> str:
+    if _is_truthy_osm_tag(tunnel):
+        return "tunnel"
+    if (highway or "").strip().lower() == "motorway":
+        return "motorway"
+    return "surface"
+
+
+_NORMALIZE_WS_RE = re.compile(r"\s+")
+
+
+def _normalize_ref(value: str | None) -> str:
+    return (value or "").replace(" ", "").upper()
+
+
+def _normalize_street_name(value: str | None) -> str:
+    if value is None:
+        return ""
+    normalized = _NORMALIZE_WS_RE.sub(" ", value.strip().lower())
+    return normalized
+
+
 def _coord_key(lon: float, lat: float) -> str:
     return f"{round(lon * 10_000_000)}:{round(lat * 10_000_000)}"
 
@@ -166,6 +190,229 @@ def _points_length_m(points: list) -> float:
             continue
         total += _haversine_m(float(lat1), float(lon1), float(lat2), float(lon2))
     return total
+
+
+class _RouteRoadRelationCollector(osmium.SimpleHandler if osmium is not None else object):
+    def __init__(self, allowed_way_ids: Set[int]) -> None:
+        if osmium is None:
+            raise RuntimeError("pyosmium unavailable")
+        super().__init__()
+        self.allowed_way_ids = allowed_way_ids
+        self.relations: List[Tuple[int, str, str, List[int]]] = []
+
+    def relation(self, relation: "osmium.osm.Relation") -> None:
+        tags = relation.tags
+        if tags.get("type") != "route" or tags.get("route") != "road":
+            return
+        member_way_ids: List[int] = []
+        seen_way_ids: Set[int] = set()
+        for member in relation.members:
+            if member.type != "w":
+                continue
+            member_way_id = int(member.ref)
+            if member_way_id not in self.allowed_way_ids or member_way_id in seen_way_ids:
+                continue
+            seen_way_ids.add(member_way_id)
+            member_way_ids.append(member_way_id)
+        if len(member_way_ids) < 2:
+            return
+        self.relations.append(
+            (
+                int(relation.id),
+                _normalize_ref(tags.get("ref")),
+                _normalize_street_name(tags.get("name")),
+                member_way_ids,
+            )
+        )
+
+
+def _build_way_continuity(
+    conn: sqlite3.Connection,
+    input_pbf: Path | None,
+    progress_every: int,
+) -> Tuple[int, int, int, int]:
+    conn.executescript(
+        """
+        CREATE TABLE way_continuity_group (
+          continuity_group_id INTEGER PRIMARY KEY,
+          continuity_kind TEXT NOT NULL,
+          source_relation_id INTEGER,
+          ref_norm TEXT,
+          street_name_norm TEXT,
+          member_count INTEGER NOT NULL
+        );
+
+        CREATE TABLE way_continuity_membership (
+          way_id INTEGER NOT NULL,
+          continuity_group_id INTEGER NOT NULL,
+          continuity_kind TEXT NOT NULL,
+          PRIMARY KEY(way_id, continuity_group_id)
+        );
+
+        CREATE INDEX idx_way_continuity_membership_way_id ON way_continuity_membership(way_id);
+        CREATE INDEX idx_way_continuity_membership_group_id ON way_continuity_membership(continuity_group_id);
+        CREATE INDEX idx_way_continuity_group_kind ON way_continuity_group(continuity_kind);
+        """
+    )
+
+    rows = conn.execute(
+        """
+        SELECT
+          e.way_id,
+          e.ref_norm,
+          e.start_node_key,
+          e.end_node_key,
+          COALESCE(w.street_name, '')
+        FROM way_endpoints e
+        JOIN ways w ON w.way_id = e.way_id
+        """
+    ).fetchall()
+    if not rows:
+        return (0, 0, 0, 0)
+
+    way_info: Dict[int, dict] = {}
+    node_to_way_ids: Dict[str, Set[int]] = defaultdict(set)
+    street_name_to_way_ids: Dict[str, Set[int]] = defaultdict(set)
+    for way_id, ref_norm, start_node_key, end_node_key, street_name in rows:
+        normalized_way_id = int(way_id)
+        street_name_norm = _normalize_street_name(street_name)
+        way_info[normalized_way_id] = {
+            "ref_norm": ref_norm or "",
+            "street_name_norm": street_name_norm,
+            "start_node_key": start_node_key,
+            "end_node_key": end_node_key,
+        }
+        node_to_way_ids[start_node_key].add(normalized_way_id)
+        node_to_way_ids[end_node_key].add(normalized_way_id)
+        if street_name_norm:
+            street_name_to_way_ids[street_name_norm].add(normalized_way_id)
+
+    def component_within_way_set(seed_way_id: int, remaining_way_ids: Set[int]) -> Set[int]:
+        component_way_ids = {seed_way_id}
+        pending_way_ids = [seed_way_id]
+        while pending_way_ids:
+            current_way_id = pending_way_ids.pop()
+            info = way_info[current_way_id]
+            for node_key in (info["start_node_key"], info["end_node_key"]):
+                for neighbor_way_id in node_to_way_ids.get(node_key, set()):
+                    if neighbor_way_id not in remaining_way_ids:
+                        continue
+                    remaining_way_ids.remove(neighbor_way_id)
+                    component_way_ids.add(neighbor_way_id)
+                    pending_way_ids.append(neighbor_way_id)
+        return component_way_ids
+
+    continuity_group_rows: List[Tuple[int, str, int | None, str, str, int]] = []
+    continuity_membership_rows: List[Tuple[int, int, str]] = []
+    seen_groups: Set[Tuple[str, Tuple[int, ...], int | None]] = set()
+    next_group_id = 1
+    relation_group_count = 0
+    same_name_group_count = 0
+
+    def append_group(
+        *,
+        continuity_kind: str,
+        member_way_ids: Set[int],
+        source_relation_id: int | None,
+        ref_norm: str,
+        street_name_norm: str,
+    ) -> None:
+        nonlocal next_group_id, relation_group_count, same_name_group_count
+        if len(member_way_ids) < 2:
+            return
+        ordered_members = tuple(sorted(member_way_ids))
+        dedupe_key = (continuity_kind, ordered_members, source_relation_id)
+        if dedupe_key in seen_groups:
+            return
+        seen_groups.add(dedupe_key)
+        continuity_group_id = next_group_id
+        next_group_id += 1
+        continuity_group_rows.append(
+            (
+                continuity_group_id,
+                continuity_kind,
+                source_relation_id,
+                ref_norm,
+                street_name_norm,
+                len(ordered_members),
+            )
+        )
+        continuity_membership_rows.extend(
+            (way_id, continuity_group_id, continuity_kind) for way_id in ordered_members
+        )
+        if continuity_kind == "route_relation_connected":
+            relation_group_count += 1
+        elif continuity_kind == "same_street_name_connected":
+            same_name_group_count += 1
+
+    processed_name_count = 0
+    for street_name_norm, initial_way_ids in street_name_to_way_ids.items():
+        remaining_way_ids = set(initial_way_ids)
+        while remaining_way_ids:
+            seed_way_id = remaining_way_ids.pop()
+            component_way_ids = component_within_way_set(seed_way_id, remaining_way_ids)
+            append_group(
+                continuity_kind="same_street_name_connected",
+                member_way_ids=component_way_ids,
+                source_relation_id=None,
+                ref_norm="",
+                street_name_norm=street_name_norm,
+            )
+        processed_name_count += 1
+        if processed_name_count % max(progress_every, 1) == 0:
+            print(
+                f"  same-name continuity groups processed: names={processed_name_count} groups={same_name_group_count}",
+                file=sys.stderr,
+            )
+
+    if input_pbf is not None and osmium is not None:
+        print(f"Extracting route-road continuity from PBF: {input_pbf}", file=sys.stderr)
+        collector = _RouteRoadRelationCollector(set(way_info.keys()))
+        collector.apply_file(str(input_pbf), locations=False)
+        for index, (relation_id, relation_ref_norm, relation_name_norm, member_way_ids) in enumerate(collector.relations, start=1):
+            remaining_way_ids = set(member_way_ids)
+            while remaining_way_ids:
+                seed_way_id = remaining_way_ids.pop()
+                component_way_ids = component_within_way_set(seed_way_id, remaining_way_ids)
+                append_group(
+                    continuity_kind="route_relation_connected",
+                    member_way_ids=component_way_ids,
+                    source_relation_id=relation_id,
+                    ref_norm=relation_ref_norm,
+                    street_name_norm=relation_name_norm,
+                )
+            if index % max(progress_every, 1) == 0:
+                print(
+                    f"  route-relation continuity processed: relations={index} groups={relation_group_count}",
+                    file=sys.stderr,
+                )
+
+    if continuity_group_rows:
+        conn.executemany(
+            """
+            INSERT INTO way_continuity_group(
+              continuity_group_id, continuity_kind, source_relation_id, ref_norm, street_name_norm, member_count
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            continuity_group_rows,
+        )
+    if continuity_membership_rows:
+        conn.executemany(
+            """
+            INSERT INTO way_continuity_membership(
+              way_id, continuity_group_id, continuity_kind
+            ) VALUES (?, ?, ?)
+            """,
+            continuity_membership_rows,
+        )
+    conn.commit()
+
+    return (
+        len(continuity_group_rows),
+        len(continuity_membership_rows),
+        relation_group_count,
+        same_name_group_count,
+    )
 
 
 class _CityContextExtractor(osmium.SimpleHandler if osmium is not None else object):
@@ -971,6 +1218,36 @@ def main() -> int:
           min_lat, max_lat
         );
 
+        CREATE TABLE surface_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE surface_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        CREATE TABLE tunnel_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE tunnel_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
+        CREATE TABLE motorway_way_network (
+          way_id INTEGER PRIMARY KEY
+        );
+
+        CREATE VIRTUAL TABLE motorway_way_network_rtree USING rtree(
+          way_id,
+          min_lon, max_lon,
+          min_lat, max_lat
+        );
+
         CREATE TABLE way_geom (
           way_id INTEGER PRIMARY KEY,
           points_json TEXT NOT NULL
@@ -1046,24 +1323,31 @@ def main() -> int:
         """
     )
 
+    conn.executescript(
+        """
+        CREATE TABLE way_endpoints (
+          way_id INTEGER PRIMARY KEY,
+          ref_norm TEXT,
+          highway TEXT,
+          tunnel_flag INTEGER NOT NULL DEFAULT 0,
+          start_node_key TEXT NOT NULL,
+          start_lon REAL NOT NULL,
+          start_lat REAL NOT NULL,
+          end_node_key TEXT NOT NULL,
+          end_lon REAL NOT NULL,
+          end_lat REAL NOT NULL,
+          way_length_m REAL NOT NULL
+        );
+
+        CREATE INDEX idx_way_endpoints_start_node_key ON way_endpoints(start_node_key);
+        CREATE INDEX idx_way_endpoints_end_node_key ON way_endpoints(end_node_key);
+        """
+    )
+
     if args.build_way_links:
         if args.way_links_schema == "detailed":
             conn.executescript(
                 """
-                CREATE TABLE way_endpoints (
-                  way_id INTEGER PRIMARY KEY,
-                  ref_norm TEXT,
-                  highway TEXT,
-                  tunnel_flag INTEGER NOT NULL DEFAULT 0,
-                  start_node_key TEXT NOT NULL,
-                  start_lon REAL NOT NULL,
-                  start_lat REAL NOT NULL,
-                  end_node_key TEXT NOT NULL,
-                  end_lon REAL NOT NULL,
-                  end_lat REAL NOT NULL,
-                  way_length_m REAL NOT NULL
-                );
-
                 CREATE TABLE way_links (
                   way_id INTEGER NOT NULL,
                   linked_way_id INTEGER NOT NULL,
@@ -1076,20 +1360,6 @@ def main() -> int:
         else:
             conn.executescript(
                 """
-                CREATE TABLE way_endpoints (
-                  way_id INTEGER PRIMARY KEY,
-                  ref_norm TEXT,
-                  highway TEXT,
-                  tunnel_flag INTEGER NOT NULL DEFAULT 0,
-                  start_node_key TEXT NOT NULL,
-                  start_lon REAL NOT NULL,
-                  start_lat REAL NOT NULL,
-                  end_node_key TEXT NOT NULL,
-                  end_lon REAL NOT NULL,
-                  end_lat REAL NOT NULL,
-                  way_length_m REAL NOT NULL
-                );
-
                 CREATE TABLE way_links (
                   way_id INTEGER NOT NULL,
                   linked_way_id INTEGER NOT NULL,
@@ -1113,11 +1383,18 @@ def main() -> int:
                 "way_links_mode",
                 f"shared_endpoint_{args.way_links_schema}" if args.build_way_links else "none",
             ),
+            ("way_endpoints_mode", "coord_key_length_v1"),
+            ("way_network_mode", "surface_tunnel_motorway_split_v1"),
         ],
     )
 
     ways_batch: List[Tuple] = []
     ways_rtree_batch: List[Tuple] = []
+    network_way_batches: Dict[str, List[Tuple[int]]] = {kind: [] for kind in WAY_NETWORK_KINDS}
+    network_rtree_batches: Dict[str, List[Tuple[int, float, float, float, float]]] = {
+        kind: [] for kind in WAY_NETWORK_KINDS
+    }
+    network_way_counts: Dict[str, int] = {kind: 0 for kind in WAY_NETWORK_KINDS}
     geom_batch: List[Tuple] = []
     endpoints_batch: List[Tuple] = []
     way_rows = 0
@@ -1178,28 +1455,39 @@ def main() -> int:
                     float(meta["max_lat"]),
                 )
             )
-            geom_batch.append((way_id, json.dumps(points, separators=(",", ":"))))
-            if args.build_way_links:
-                ref_norm = (meta.get("ref") or "").replace(" ", "").upper()
-                first_lon = float(meta["first_lon"])
-                first_lat = float(meta["first_lat"])
-                last_lon = float(meta["last_lon"])
-                last_lat = float(meta["last_lat"])
-                endpoints_batch.append(
-                    (
-                        way_id,
-                        ref_norm,
-                        meta.get("highway"),
-                        1 if _is_truthy_osm_tag(meta.get("tunnel")) else 0,
-                        _coord_key(first_lon, first_lat),
-                        first_lon,
-                        first_lat,
-                        _coord_key(last_lon, last_lat),
-                        last_lon,
-                        last_lat,
-                        _points_length_m(points),
-                    )
+            network_kind = _way_network_kind(meta.get("highway"), meta.get("tunnel"))
+            network_way_batches[network_kind].append((way_id,))
+            network_rtree_batches[network_kind].append(
+                (
+                    way_id,
+                    float(meta["min_lon"]),
+                    float(meta["max_lon"]),
+                    float(meta["min_lat"]),
+                    float(meta["max_lat"]),
                 )
+            )
+            network_way_counts[network_kind] += 1
+            geom_batch.append((way_id, json.dumps(points, separators=(",", ":"))))
+            ref_norm = (meta.get("ref") or "").replace(" ", "").upper()
+            first_lon = float(meta["first_lon"])
+            first_lat = float(meta["first_lat"])
+            last_lon = float(meta["last_lon"])
+            last_lat = float(meta["last_lat"])
+            endpoints_batch.append(
+                (
+                    way_id,
+                    ref_norm,
+                    meta.get("highway"),
+                    1 if _is_truthy_osm_tag(meta.get("tunnel")) else 0,
+                    _coord_key(first_lon, first_lat),
+                    first_lon,
+                    first_lat,
+                    _coord_key(last_lon, last_lat),
+                    last_lon,
+                    last_lat,
+                    _points_length_m(points),
+                )
+            )
 
             if len(ways_batch) >= args.batch_size:
                 conn.executemany(
@@ -1216,11 +1504,20 @@ def main() -> int:
                     "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
                     ways_rtree_batch,
                 )
+                for network_kind in WAY_NETWORK_KINDS:
+                    conn.executemany(
+                        f"INSERT INTO {network_kind}_way_network(way_id) VALUES(?)",
+                        network_way_batches[network_kind],
+                    )
+                    conn.executemany(
+                        f"INSERT INTO {network_kind}_way_network_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                        network_rtree_batches[network_kind],
+                    )
                 conn.executemany(
                     "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
                     geom_batch,
                 )
-                if args.build_way_links and endpoints_batch:
+                if endpoints_batch:
                     conn.executemany(
                         """
                         INSERT INTO way_endpoints(
@@ -1234,6 +1531,9 @@ def main() -> int:
                 conn.commit()
                 ways_batch.clear()
                 ways_rtree_batch.clear()
+                for network_kind in WAY_NETWORK_KINDS:
+                    network_way_batches[network_kind].clear()
+                    network_rtree_batches[network_kind].clear()
                 geom_batch.clear()
                 endpoints_batch.clear()
 
@@ -1255,11 +1555,20 @@ def main() -> int:
             "INSERT INTO ways_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
             ways_rtree_batch,
         )
+        for network_kind in WAY_NETWORK_KINDS:
+            conn.executemany(
+                f"INSERT INTO {network_kind}_way_network(way_id) VALUES(?)",
+                network_way_batches[network_kind],
+            )
+            conn.executemany(
+                f"INSERT INTO {network_kind}_way_network_rtree(way_id, min_lon, max_lon, min_lat, max_lat) VALUES(?, ?, ?, ?, ?)",
+                network_rtree_batches[network_kind],
+            )
         conn.executemany(
             "INSERT INTO way_geom(way_id, points_json) VALUES(?, ?)",
             geom_batch,
         )
-        if args.build_way_links and endpoints_batch:
+        if endpoints_batch:
             conn.executemany(
                 """
                 INSERT INTO way_endpoints(
@@ -1273,6 +1582,54 @@ def main() -> int:
         conn.commit()
 
     print(f"Ways done: {way_rows}", file=sys.stderr)
+    print(
+        "Way networks: "
+        + ", ".join(f"{kind}={network_way_counts[kind]}" for kind in WAY_NETWORK_KINDS),
+        file=sys.stderr,
+    )
+
+    way_endpoints_count = conn.execute("SELECT COUNT(*) FROM way_endpoints").fetchone()[0]
+    conn.execute(
+        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+        ("way_endpoints_count", str(way_endpoints_count)),
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+        [(f"{kind}_way_network_count", str(network_way_counts[kind])) for kind in WAY_NETWORK_KINDS],
+    )
+
+    (
+        way_continuity_group_count,
+        way_continuity_membership_count,
+        way_continuity_relation_group_count,
+        way_continuity_same_name_group_count,
+    ) = _build_way_continuity(
+        conn,
+        input_pbf=input_pbf if input_pbf and osmium is not None else None,
+        progress_every=args.progress_every,
+    )
+    continuity_mode_parts = ["same_street_name_connected"]
+    if input_pbf and osmium is not None:
+        continuity_mode_parts.insert(0, "route_relation_connected")
+    conn.executemany(
+        "INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)",
+        [
+            ("way_continuity_mode", "+".join(continuity_mode_parts)),
+            ("way_continuity_group_count", str(way_continuity_group_count)),
+            ("way_continuity_membership_count", str(way_continuity_membership_count)),
+            ("way_continuity_relation_group_count", str(way_continuity_relation_group_count)),
+            ("way_continuity_same_name_group_count", str(way_continuity_same_name_group_count)),
+        ],
+    )
+    conn.commit()
+    print(
+        "Way continuity done: "
+        + f"groups={way_continuity_group_count} "
+        + f"memberships={way_continuity_membership_count} "
+        + f"route_relation_groups={way_continuity_relation_group_count} "
+        + f"same_name_groups={way_continuity_same_name_group_count}",
+        file=sys.stderr,
+    )
 
     if args.build_way_links:
         conn.executescript(
@@ -1347,7 +1704,6 @@ def main() -> int:
         conn.executescript(
             """
             DROP TABLE endpoint_nodes;
-            DROP TABLE way_endpoints;
             """
         )
         way_links_count = conn.execute("SELECT COUNT(*) FROM way_links").fetchone()[0]
