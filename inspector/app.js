@@ -23,6 +23,8 @@ const traceDebugEl = document.getElementById("trace-debug");
 const selectionTraceEl = document.getElementById("selection-trace");
 const candidateTraceEl = document.getElementById("candidate-trace");
 const rawEntryEl = document.getElementById("raw-entry");
+const portalSummaryEl = document.getElementById("portal-summary");
+const portalTraceEl = document.getElementById("portal-trace");
 const adminBoundaryLegendEl = document.getElementById("admin-boundary-legend");
 
 const defaultDriveLogURL = "./drive_match_log.ndjson";
@@ -45,8 +47,15 @@ map.createPane("adminLabelPane");
 map.getPane("adminLabelPane").style.zIndex = "640";
 map.getPane("adminLabelPane").style.pointerEvents = "none";
 
+map.createPane("corridorOverlayPane");
+map.getPane("corridorOverlayPane").style.zIndex = "390";
+
+map.createPane("corridorPortalPane");
+map.getPane("corridorPortalPane").style.zIndex = "405";
+
 let locationMarker = null;
 let wayLayers = [];
+let portalOverlayLayers = [];
 let drivePathLayer = null;
 let selectedFixMarker = null;
 let adminBoundaryLayers = [];
@@ -63,6 +72,39 @@ const replayWayColors = {
   replay: "#ffb454",
   replayError: "#ff6a6a",
   hindsight: "#7fda8b"
+};
+
+const corridorPortalStyles = {
+  tunnelMain: {
+    color: "#48d7ff",
+    weight: 7,
+    opacity: 0.42
+  },
+  motorwayMain: {
+    color: "#ff6a5f",
+    weight: 7,
+    opacity: 0.42
+  },
+  surfaceTrigger: {
+    color: "#ffe082",
+    weight: 5,
+    opacity: 0.9,
+    dashArray: "12 8"
+  },
+  motorwayLinkTrigger: {
+    color: "#ffb454",
+    weight: 5,
+    opacity: 0.95,
+    dashArray: "12 8"
+  },
+  tunnelPortal: {
+    color: "#c7f4ff",
+    fillColor: "#48d7ff"
+  },
+  motorwayPortal: {
+    color: "#ffe1dc",
+    fillColor: "#ff6a5f"
+  }
 };
 
 const adminBoundaryLimit = 160;
@@ -110,6 +152,13 @@ function setAdminValue(value) {
   adminValueEl.textContent = value ?? "n/a";
 }
 
+function setPortalSummary(value) {
+  if (!portalSummaryEl) {
+    return;
+  }
+  portalSummaryEl.textContent = value ?? "";
+}
+
 function normalizeWayID(rawValue) {
   const trimmed = String(rawValue ?? "").trim();
   if (!/^\d+$/.test(trimmed)) {
@@ -142,6 +191,21 @@ function streetDisplay(streetName, ref) {
 
 function resultStreetLabel(result) {
   return streetDisplay(result?.streetName, result?.streetRef) ?? safeString(result?.streetBaseName) ?? null;
+}
+
+function corridorKindLabel(kind) {
+  switch (safeString(kind)) {
+    case "tunnel":
+      return "Tunnel";
+    case "motorway":
+      return "Motorway";
+    case "motorway_link":
+      return "Motorway-Link";
+    case "surface":
+      return "Surface";
+    default:
+      return safeString(kind) ?? "Korridor";
+  }
 }
 
 function replayDebug(entry) {
@@ -320,6 +384,13 @@ function formatCount(value) {
   return numeric == null ? "0" : String(Math.round(numeric));
 }
 
+function formatCoordinatePair(point) {
+  if (!Array.isArray(point) || point.length !== 2) {
+    return "n/a";
+  }
+  return `${Number(point[0]).toFixed(6)}, ${Number(point[1]).toFixed(6)}`;
+}
+
 function compareDriveLogEntries(left, right) {
   const leftTimestamp = Date.parse(left?.timestampUTC ?? "");
   const rightTimestamp = Date.parse(right?.timestampUTC ?? "");
@@ -360,7 +431,12 @@ function closeCurrentDatabase() {
   sqlDatabase = null;
   availableTables = new Set();
   clearAdminBoundaryLayers();
+  clearPortalOverlay();
   setAdminValue(null);
+  setPortalSummary("Noch kein Way gewählt.");
+  if (portalTraceEl) {
+    portalTraceEl.innerHTML = "";
+  }
 }
 
 function renderAdminBoundaryLegend() {
@@ -1021,6 +1097,119 @@ function renderHypothesisTraceBlock(title, result) {
   `);
 }
 
+function portalWayLabel(row) {
+  return streetDisplay(row?.street_name, row?.ref) ?? `Way ${row?.way_id ?? "n/a"}`;
+}
+
+function renderPortalWayChips(wayRows) {
+  if (!Array.isArray(wayRows) || !wayRows.length) {
+    return '<div class="trace-empty">Keine Ways.</div>';
+  }
+  return wayRows
+    .map(
+      (row) => `
+        <div class="portal-chip">
+          <strong>${escapeHTML(portalWayLabel(row))}</strong>
+          <span class="mono">Way ${escapeHTML(row?.way_id ?? "n/a")}</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderPortalFocusChips(focusWays) {
+  const rows = Array.from(focusWays.values()).sort((left, right) => {
+    const leftDepth = left.minDepthM == null ? Number.POSITIVE_INFINITY : left.minDepthM;
+    const rightDepth = right.minDepthM == null ? Number.POSITIVE_INFINITY : right.minDepthM;
+    if (leftDepth !== rightDepth) {
+      return leftDepth - rightDepth;
+    }
+    return left.wayID - right.wayID;
+  });
+  if (!rows.length) {
+    return '<div class="trace-empty">Keine Fokus-Ways.</div>';
+  }
+  return rows
+    .map((row) => {
+      const roleText = Array.from(row.roles.values())
+        .map((role) => (role === "inside" ? "inside" : "trigger"))
+        .join(" + ");
+      const depthText = row.minDepthM != null ? ` · ${formatDistance(row.minDepthM)} zum Portal` : "";
+      return `
+        <div class="portal-chip portal-chip-focus">
+          <strong class="mono">Way ${escapeHTML(row.wayID)}</strong>
+          <span>${escapeHTML(`${roleText}${depthText}`)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderPortalContextCards(contexts) {
+  if (!Array.isArray(contexts) || !contexts.length) {
+    return '<div class="trace-empty">Keine Portal-Kontexte für die aktuelle Auswahl.</div>';
+  }
+  return contexts
+    .map((context) => {
+      const outsideSections = context.outsideCorridors.length
+        ? context.outsideCorridors
+            .map(
+              (outside) => `
+                <div class="portal-copy-row portal-copy-stack">
+                  <span>Outside ${escapeHTML(corridorKindLabel(outside.kind))}</span>
+                  <div class="portal-chip-list">
+                    ${renderPortalWayChips(outside.ways)}
+                  </div>
+                </div>
+              `
+            )
+            .join("")
+        : `
+            <div class="portal-copy-row">
+              <span>Outside</span>
+              <strong>Kein verknüpfter Trigger-Korridor</strong>
+            </div>
+          `;
+      const spanText =
+        context.spanM != null || context.spanNodes != null
+          ? `${formatDistance(context.spanM)} · ${context.spanNodes != null ? `${formatCount(context.spanNodes)} nodes` : "n/a"}`
+          : "n/a";
+      return `
+        <article class="portal-card">
+          <div class="trace-section-head">
+            <strong>${escapeHTML(corridorKindLabel(context.mainKind))} entry / exit</strong>
+            <div class="pill-row">
+              <span class="pill neutral">#${escapeHTML(context.mainCorridorID)}</span>
+            </div>
+          </div>
+          <div class="portal-copy-row">
+            <span>Portal point</span>
+            <strong class="mono">${escapeHTML(formatCoordinatePair(context.portalPoint))}</strong>
+          </div>
+          <div class="portal-copy-row">
+            <span>Node</span>
+            <strong class="mono">${escapeHTML(context.sideNodeKey)}</strong>
+          </div>
+          <div class="portal-copy-row portal-copy-stack">
+            <span>Inside ${escapeHTML(corridorKindLabel(context.mainKind))}</span>
+            <div class="portal-chip-list">
+              ${renderPortalWayChips(context.insideWays)}
+            </div>
+          </div>
+          ${outsideSections}
+          <div class="portal-copy-row portal-copy-stack">
+            <span>Fokus</span>
+            <div class="portal-chip-list">
+              ${renderPortalFocusChips(context.focusWays)}
+            </div>
+          </div>
+          <div class="muted">Korridor ${escapeHTML(spanText)}</div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function selectedMarkerStyle(entry) {
   const debug = replayDebug(entry);
   if (debug?.isError) {
@@ -1041,6 +1230,53 @@ function selectedMarkerStyle(entry) {
   };
 }
 
+function updatePortalInspection(rawWayIDs, options = {}) {
+  const { sourceLabel = null } = options;
+  const focusWayIDs = buildPortalFocusState(rawWayIDs);
+
+  if (!focusWayIDs.length) {
+    clearPortalOverlay();
+    if (portalTraceEl) {
+      portalTraceEl.innerHTML = "";
+    }
+    setPortalSummary(sourceLabel ? `${sourceLabel}: keine Way-Auswahl.` : "Noch kein Way gewählt.");
+    return;
+  }
+
+  if (!sqlDatabase) {
+    clearPortalOverlay();
+    if (portalTraceEl) {
+      portalTraceEl.innerHTML = "";
+    }
+    setPortalSummary("SQLite-Bundle laden, um Tunnel-/Motorway-Portale zu sehen.");
+    return;
+  }
+
+  if (!tableExists("corridor_progress") || !tableExists("way_endpoints")) {
+    clearPortalOverlay();
+    if (portalTraceEl) {
+      portalTraceEl.innerHTML = "";
+    }
+    setPortalSummary("Dieses Bundle enthält keine Tunnel-/Motorway-Korridorportale.");
+    return;
+  }
+
+  const contexts = queryPortalContextsForWayIDs(focusWayIDs);
+  drawPortalOverlay(contexts);
+  if (portalTraceEl) {
+    portalTraceEl.innerHTML = renderPortalContextCards(contexts);
+  }
+
+  const prefix = sourceLabel ? `${sourceLabel}: ` : "";
+  if (!contexts.length) {
+    setPortalSummary(`${prefix}keine Tunnel-/Motorway-Portale für ${focusWayIDs.length} Way${focusWayIDs.length === 1 ? "" : "s"} gefunden.`);
+    return;
+  }
+  setPortalSummary(
+    `${prefix}${contexts.length} Entry-/Exit-Kontexte für ${focusWayIDs.length} Fokus-Way${focusWayIDs.length === 1 ? "" : "s"} dargestellt.`
+  );
+}
+
 function clearSelectedFixMarker() {
   if (selectedFixMarker) {
     selectedFixMarker.remove();
@@ -1059,6 +1295,11 @@ function renderSelectedDriveLogEntry(options = {}) {
     candidateTraceEl.innerHTML = "";
     rawEntryEl.textContent = "";
     clearWayLayers();
+    clearPortalOverlay();
+    if (portalTraceEl) {
+      portalTraceEl.innerHTML = "";
+    }
+    setPortalSummary("Noch kein Way gewählt.");
     clearSelectedFixMarker();
     return;
   }
@@ -1209,8 +1450,17 @@ function renderSelectedDriveLogEntry(options = {}) {
       });
     }
     drawWayHighlights(specs);
+    updatePortalInspection(
+      specs.map((spec) => spec.wayID),
+      {
+        sourceLabel: "Fix-Ways"
+      }
+    );
   } else {
     clearWayLayers();
+    updatePortalInspection([], {
+      sourceLabel: "Fix-Ways"
+    });
   }
 }
 
@@ -1583,6 +1833,13 @@ function clearWayLayers() {
   wayLayers = [];
 }
 
+function clearPortalOverlay() {
+  for (const layer of portalOverlayLayers) {
+    layer.remove();
+  }
+  portalOverlayLayers = [];
+}
+
 function clearAdminBoundaryLayers() {
   for (const layer of adminBoundaryLayers) {
     layer.remove();
@@ -1883,6 +2140,403 @@ function refreshCrosshairAdminContainment() {
   return containing;
 }
 
+function queryWayCorridorMemberships(wayID) {
+  if (!sqlDatabase || !tableExists("corridor_progress")) {
+    return [];
+  }
+  return executeRows(
+    `
+      SELECT
+        corridor_kind AS corridor_kind,
+        corridor_id AS corridor_id,
+        side_node_key AS side_node_key,
+        start_depth_m AS start_depth_m,
+        end_depth_m AS end_depth_m,
+        start_depth_nodes AS start_depth_nodes,
+        end_depth_nodes AS end_depth_nodes,
+        corridor_span_m AS corridor_span_m,
+        corridor_span_nodes AS corridor_span_nodes
+      FROM corridor_progress
+      WHERE way_id = ?1
+      ORDER BY corridor_kind ASC, corridor_id ASC, side_node_key ASC
+    `,
+    [wayID]
+  );
+}
+
+function queryCorridorSideRows(corridorKind, corridorID, sideNodeKey) {
+  if (!sqlDatabase || !tableExists("corridor_progress")) {
+    return [];
+  }
+  return executeRows(
+    `
+      SELECT
+        way_id AS way_id,
+        start_depth_m AS start_depth_m,
+        end_depth_m AS end_depth_m,
+        start_depth_nodes AS start_depth_nodes,
+        end_depth_nodes AS end_depth_nodes,
+        corridor_span_m AS corridor_span_m,
+        corridor_span_nodes AS corridor_span_nodes
+      FROM corridor_progress
+      WHERE corridor_kind = ?1
+        AND corridor_id = ?2
+        AND side_node_key = ?3
+      ORDER BY start_depth_m ASC, end_depth_m ASC, way_id ASC
+    `,
+    [corridorKind, corridorID, sideNodeKey]
+  );
+}
+
+function queryCorridorPairsByMain(corridorKind, corridorID, sideNodeKey) {
+  if (!sqlDatabase || !tableExists("corridor_pairs")) {
+    return [];
+  }
+  return executeRows(
+    `
+      SELECT
+        paired_kind AS paired_kind,
+        paired_corridor_id AS paired_corridor_id
+      FROM corridor_pairs
+      WHERE corridor_kind = ?1
+        AND corridor_id = ?2
+        AND side_node_key = ?3
+      ORDER BY paired_kind ASC, paired_corridor_id ASC
+    `,
+    [corridorKind, corridorID, sideNodeKey]
+  );
+}
+
+function queryCorridorPairsByPaired(pairedKind, pairedCorridorID) {
+  if (!sqlDatabase || !tableExists("corridor_pairs")) {
+    return [];
+  }
+  return executeRows(
+    `
+      SELECT
+        corridor_kind AS corridor_kind,
+        corridor_id AS corridor_id,
+        side_node_key AS side_node_key
+      FROM corridor_pairs
+      WHERE paired_kind = ?1
+        AND paired_corridor_id = ?2
+      ORDER BY corridor_kind ASC, corridor_id ASC, side_node_key ASC
+    `,
+    [pairedKind, pairedCorridorID]
+  );
+}
+
+function queryPortalNodePoint(nodeKey) {
+  if (!sqlDatabase || !tableExists("way_endpoints")) {
+    return null;
+  }
+  const rows = executeRows(
+    `
+      SELECT start_lat AS lat, start_lon AS lon
+      FROM way_endpoints
+      WHERE start_node_key = ?1
+      UNION ALL
+      SELECT end_lat AS lat, end_lon AS lon
+      FROM way_endpoints
+      WHERE end_node_key = ?1
+      LIMIT 1
+    `,
+    [nodeKey]
+  );
+  if (!rows.length) {
+    return null;
+  }
+  const lat = finiteNumber(rows[0].lat);
+  const lon = finiteNumber(rows[0].lon);
+  return lat != null && lon != null ? [lat, lon] : null;
+}
+
+function queryPortalWayRows(corridorKind, corridorID, sideNodeKey) {
+  if (!sqlDatabase) {
+    return [];
+  }
+  return executeRows(
+    `
+      SELECT DISTINCT
+        w.way_id AS way_id,
+        w.street_name AS street_name,
+        w.ref AS ref,
+        g.points_json AS points_json
+      FROM corridor_progress cp
+      JOIN ways w ON w.way_id = cp.way_id
+      LEFT JOIN way_geom g ON g.way_id = w.way_id
+      WHERE cp.corridor_kind = ?1
+        AND cp.corridor_id = ?2
+        AND cp.side_node_key = ?3
+        AND (
+          cp.start_depth_nodes = 0
+          OR cp.end_depth_nodes = 0
+          OR ABS(cp.start_depth_m) <= 0.001
+          OR ABS(cp.end_depth_m) <= 0.001
+        )
+      ORDER BY w.way_id ASC
+    `,
+    [corridorKind, corridorID, sideNodeKey]
+  );
+}
+
+function buildPortalFocusState(rawWayIDs) {
+  return Array.from(
+    new Set(
+      (Array.isArray(rawWayIDs) ? rawWayIDs : [])
+        .map((wayID) => normalizeWayID(wayID))
+        .filter((wayID) => wayID != null)
+    )
+  );
+}
+
+function queryPortalContextsForWayIDs(rawWayIDs) {
+  const focusWayIDs = buildPortalFocusState(rawWayIDs);
+  if (!focusWayIDs.length || !sqlDatabase || !tableExists("corridor_progress") || !tableExists("way_endpoints")) {
+    return [];
+  }
+
+  const contexts = new Map();
+  const corridorSideCache = new Map();
+  const mainPairCache = new Map();
+  const pairedRefCache = new Map();
+  const portalWayCache = new Map();
+  const portalPointCache = new Map();
+
+  const cachedCorridorSideRows = (corridorKind, corridorID, sideNodeKey) => {
+    const key = `${corridorKind}:${corridorID}:${sideNodeKey}`;
+    if (!corridorSideCache.has(key)) {
+      corridorSideCache.set(key, queryCorridorSideRows(corridorKind, corridorID, sideNodeKey));
+    }
+    return corridorSideCache.get(key) ?? [];
+  };
+
+  const cachedMainPairs = (corridorKind, corridorID, sideNodeKey) => {
+    const key = `${corridorKind}:${corridorID}:${sideNodeKey}`;
+    if (!mainPairCache.has(key)) {
+      mainPairCache.set(key, queryCorridorPairsByMain(corridorKind, corridorID, sideNodeKey));
+    }
+    return mainPairCache.get(key) ?? [];
+  };
+
+  const cachedPairedRefs = (pairedKind, pairedCorridorID) => {
+    const key = `${pairedKind}:${pairedCorridorID}`;
+    if (!pairedRefCache.has(key)) {
+      pairedRefCache.set(key, queryCorridorPairsByPaired(pairedKind, pairedCorridorID));
+    }
+    return pairedRefCache.get(key) ?? [];
+  };
+
+  const cachedPortalWays = (corridorKind, corridorID, sideNodeKey) => {
+    const key = `${corridorKind}:${corridorID}:${sideNodeKey}`;
+    if (!portalWayCache.has(key)) {
+      portalWayCache.set(key, queryPortalWayRows(corridorKind, corridorID, sideNodeKey));
+    }
+    return portalWayCache.get(key) ?? [];
+  };
+
+  const cachedPortalPoint = (sideNodeKey) => {
+    if (!portalPointCache.has(sideNodeKey)) {
+      portalPointCache.set(sideNodeKey, queryPortalNodePoint(sideNodeKey));
+    }
+    return portalPointCache.get(sideNodeKey) ?? null;
+  };
+
+  const ensureContext = (mainKind, mainCorridorID, sideNodeKey) => {
+    const key = `${mainKind}:${mainCorridorID}:${sideNodeKey}`;
+    let context = contexts.get(key);
+    if (context) {
+      return context;
+    }
+
+    const mainSideRows = cachedCorridorSideRows(mainKind, mainCorridorID, sideNodeKey);
+    const pairRows = cachedMainPairs(mainKind, mainCorridorID, sideNodeKey);
+    context = {
+      key,
+      mainKind,
+      mainCorridorID,
+      sideNodeKey,
+      spanM: finiteNumber(mainSideRows[0]?.corridor_span_m),
+      spanNodes: finiteNumber(mainSideRows[0]?.corridor_span_nodes),
+      portalPoint: cachedPortalPoint(sideNodeKey),
+      insideWays: cachedPortalWays(mainKind, mainCorridorID, sideNodeKey),
+      outsideCorridors: pairRows.map((row) => ({
+        kind: safeString(row.paired_kind),
+        corridorID: finiteNumber(row.paired_corridor_id),
+        ways: cachedPortalWays(row.paired_kind, row.paired_corridor_id, sideNodeKey)
+      })),
+      focusWays: new Map()
+    };
+    contexts.set(key, context);
+    return context;
+  };
+
+  const markFocus = (context, wayID, role, membershipRow = null) => {
+    let focus = context.focusWays.get(wayID);
+    if (!focus) {
+      focus = {
+        wayID,
+        roles: new Set(),
+        minDepthM: null
+      };
+      context.focusWays.set(wayID, focus);
+    }
+    focus.roles.add(role);
+    const depthCandidate = membershipRow
+      ? Math.min(
+          finiteNumber(membershipRow.start_depth_m) ?? Number.POSITIVE_INFINITY,
+          finiteNumber(membershipRow.end_depth_m) ?? Number.POSITIVE_INFINITY
+        )
+      : null;
+    if (depthCandidate != null && Number.isFinite(depthCandidate)) {
+      focus.minDepthM = focus.minDepthM == null ? depthCandidate : Math.min(focus.minDepthM, depthCandidate);
+    }
+  };
+
+  for (const wayID of focusWayIDs) {
+    const memberships = queryWayCorridorMemberships(wayID);
+    const grouped = new Map();
+    for (const row of memberships) {
+      const corridorKind = safeString(row.corridor_kind);
+      const corridorID = finiteNumber(row.corridor_id);
+      if (!corridorKind || corridorID == null) {
+        continue;
+      }
+      const groupKey = `${corridorKind}:${corridorID}`;
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, []);
+      }
+      grouped.get(groupKey).push(row);
+    }
+
+    for (const [groupKey, groupRows] of grouped.entries()) {
+      const [corridorKind, corridorIDText] = groupKey.split(":");
+      const corridorID = Number(corridorIDText);
+      if (corridorKind === "tunnel" || corridorKind === "motorway") {
+        for (const row of groupRows) {
+          const sideNodeKey = safeString(row.side_node_key);
+          if (!sideNodeKey) {
+            continue;
+          }
+          const context = ensureContext(corridorKind, corridorID, sideNodeKey);
+          markFocus(context, wayID, "inside", row);
+        }
+      } else if (corridorKind === "surface" || corridorKind === "motorway_link") {
+        const references = cachedPairedRefs(corridorKind, corridorID);
+        for (const reference of references) {
+          const sideNodeKey = safeString(reference.side_node_key);
+          const mainKind = safeString(reference.corridor_kind);
+          const mainCorridorID = finiteNumber(reference.corridor_id);
+          if (!sideNodeKey || !mainKind || mainCorridorID == null) {
+            continue;
+          }
+          const portalMembership = groupRows.find((row) => safeString(row.side_node_key) === sideNodeKey) ?? null;
+          const context = ensureContext(mainKind, mainCorridorID, sideNodeKey);
+          markFocus(context, wayID, "outside", portalMembership);
+        }
+      }
+    }
+  }
+
+  return Array.from(contexts.values()).sort((left, right) => {
+    const kindCompare = corridorKindLabel(left.mainKind).localeCompare(corridorKindLabel(right.mainKind), "de");
+    if (kindCompare !== 0) {
+      return kindCompare;
+    }
+    if (left.mainCorridorID !== right.mainCorridorID) {
+      return left.mainCorridorID - right.mainCorridorID;
+    }
+    return String(left.sideNodeKey).localeCompare(String(right.sideNodeKey), "de");
+  });
+}
+
+function portalLineStyle(kind, isTrigger = false) {
+  if (kind === "tunnel") {
+    return corridorPortalStyles.tunnelMain;
+  }
+  if (kind === "motorway") {
+    return corridorPortalStyles.motorwayMain;
+  }
+  if (isTrigger && kind === "motorway_link") {
+    return corridorPortalStyles.motorwayLinkTrigger;
+  }
+  return corridorPortalStyles.surfaceTrigger;
+}
+
+function portalPointStyle(mainKind) {
+  return mainKind === "motorway" ? corridorPortalStyles.motorwayPortal : corridorPortalStyles.tunnelPortal;
+}
+
+function drawPortalOverlay(contexts) {
+  clearPortalOverlay();
+  if (!Array.isArray(contexts) || !contexts.length) {
+    return;
+  }
+
+  const drawnWayKeys = new Set();
+  const drawnPortalKeys = new Set();
+
+  const drawWayRows = (wayRows, kind, isTrigger) => {
+    for (const row of wayRows) {
+      const wayID = normalizeWayID(row.way_id);
+      if (wayID == null) {
+        continue;
+      }
+      const drawKey = `${kind}:${isTrigger ? "trigger" : "main"}:${wayID}`;
+      if (drawnWayKeys.has(drawKey)) {
+        continue;
+      }
+      const points = parseWayPoints(row.points_json);
+      if (points.length < 2) {
+        continue;
+      }
+      const style = portalLineStyle(kind, isTrigger);
+      const layer = L.polyline(points, {
+        pane: "corridorOverlayPane",
+        color: style.color,
+        weight: style.weight,
+        opacity: style.opacity,
+        dashArray: style.dashArray
+      })
+        .bindTooltip(
+          `${corridorKindLabel(kind)} ${isTrigger ? "trigger" : "inside"} · ${streetDisplay(row.street_name, row.ref) ?? `Way ${wayID}`}`,
+          { sticky: true }
+        )
+        .addTo(map);
+      portalOverlayLayers.push(layer);
+      drawnWayKeys.add(drawKey);
+    }
+  };
+
+  for (const context of contexts) {
+    drawWayRows(context.insideWays, context.mainKind, false);
+    for (const outside of context.outsideCorridors) {
+      drawWayRows(outside.ways, outside.kind, true);
+    }
+
+    if (context.portalPoint) {
+      const portalKey = `${context.mainKind}:${context.sideNodeKey}`;
+      if (!drawnPortalKeys.has(portalKey)) {
+        const style = portalPointStyle(context.mainKind);
+        const layer = L.circleMarker(context.portalPoint, {
+          pane: "corridorPortalPane",
+          radius: 8,
+          color: style.color,
+          weight: 2,
+          fillColor: style.fillColor,
+          fillOpacity: 0.95
+        })
+          .bindTooltip(`${corridorKindLabel(context.mainKind)} entry / exit · ${formatCoordinatePair(context.portalPoint)}`, {
+            sticky: true
+          })
+          .addTo(map);
+        portalOverlayLayers.push(layer);
+        drawnPortalKeys.add(portalKey);
+      }
+    }
+  }
+}
+
 function drawWay(points) {
   clearWayLayers();
   if (points.length < 2) {
@@ -2096,11 +2750,17 @@ function loadAndCenterWay(rawWayID) {
   if (!row) {
     setStatus(`Way ${wayID} nicht im geladenen Bundle gefunden.`, true);
     setStreetAndWay(null, wayID);
+    updatePortalInspection([], {
+      sourceLabel: `Way ${wayID}`
+    });
     return;
   }
 
   const points = parseWayPoints(row.points_json);
   drawWay(points);
+  updatePortalInspection([wayID], {
+    sourceLabel: `Way ${wayID}`
+  });
 
   const street = streetDisplay(row.street_name, row.ref);
   setStreetAndWay(street, wayID);
@@ -2135,13 +2795,19 @@ function identifyStreetUnderCrosshair() {
   const best = queryBestWayAt(center.lat, center.lng, 50, 256);
   if (!best) {
     setStreetAndWay(null, null);
+    updatePortalInspection([], {
+      sourceLabel: "Way unter Fadenkreuz"
+    });
     setStatus(`Keine Straße im Suchradius gefunden. Admin: ${adminSummary}.`, true);
     return;
   }
 
   drawWay(best.points);
-  const street = streetDisplay(best.row.street_name, best.row.ref) ?? "unbekannt";
   const wayID = Number(best.row.way_id);
+  updatePortalInspection([wayID], {
+    sourceLabel: `Way ${wayID}`
+  });
+  const street = streetDisplay(best.row.street_name, best.row.ref) ?? "unbekannt";
   setStreetAndWay(street, wayID);
   wayInput.value = String(wayID);
 
@@ -2212,6 +2878,10 @@ map.whenReady(() => {
   setCoordinateValue(center.lat, center.lng);
   setStreetAndWay(null, null);
   setAdminValue(null);
+  setPortalSummary("Noch kein Way gewählt.");
+  if (portalTraceEl) {
+    portalTraceEl.innerHTML = "";
+  }
   setBundleValue("nicht geladen");
   setStatus("Bereit. SQLite-Bundle laden.");
   void loadDatabaseFromURL();

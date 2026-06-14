@@ -9,6 +9,7 @@ Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen 
 - Zeigt ein Fadenkreuz im Kartenmittelpunkt.
 - Identifiziert per Knopfdruck die Straße unter dem Fadenkreuz via `ways`/`way_geom`.
 - Nimmt eine Way-ID an und zentriert auf deren Geometrie.
+- Visualisiert Tunnel-/Motorway-Ein- und Ausstiege als Portalpunkte sowie zugehörige Inside-/Outside-Ways aus `corridor_progress` und `corridor_pairs`.
 - Zeigt das aktuell geladene Bundle inkl. Metadaten (falls vorhanden).
 - Liest die aktuelle Browser-Position (Geolocation).
 - Liest auch annotierte Replay-/Benchmark-Logs mit `replayDebug`-Feld und markiert Replay-Abweichungen, Hindsight-Fehler und Replay-Korrekturen direkt im Fix-Inspector.
