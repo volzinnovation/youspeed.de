@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+"""Build query-context snapshots for the seeded hard-case audit rows."""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+
+PAPER_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CORPUS = PAPER_DIR / "data" / "hard_case_audit_cases.csv"
+DEFAULT_DB = REPO_ROOT / "mapdata" / "dist-v3" / "karlsruhe-regbez" / "speeds_v3.sqlite"
+DEFAULT_OUT_DIR = PAPER_DIR / "results" / "hard_cases"
+
+
+def _as_float(value: Any) -> Optional[float]:
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _read_cases(path: Path) -> List[Dict[str, str]]:
+    with path.open(newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def _run_query(case: Dict[str, str], db: Path, top_k: int, mode: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+    script = REPO_ROOT / "scripts" / "map" / "query_speed_limit_v3.py"
+    cmd = [
+        sys.executable,
+        str(script),
+        "--db",
+        str(db),
+        "--lat",
+        case["lat"],
+        "--lon",
+        case["lon"],
+        "--top-k",
+        str(top_k),
+        "--distance-mode",
+        mode,
+        "--polyline-top-n",
+        "250",
+    ]
+    heading = _as_float(case.get("course_deg"))
+    if heading is not None and 0.0 <= heading <= 360.0:
+        cmd.extend(["--heading", f"{heading:.6f}"])
+    proc = subprocess.run(cmd, cwd=str(REPO_ROOT), text=True, capture_output=True, check=False)
+    if proc.returncode != 0:
+        return None, proc.stderr.strip() or f"exit {proc.returncode}"
+    try:
+        return json.loads(proc.stdout), None
+    except json.JSONDecodeError as exc:
+        return None, f"could not parse query output: {exc}"
+
+
+def _write_jsonl(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(json.dumps(row, sort_keys=True, ensure_ascii=False) + "\n")
+
+
+def _write_markdown(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        f.write("# Hard-Case Candidate Context\n\n")
+        f.write("These rows are audit aids. They are not manual labels.\n\n")
+        f.write("| Case | Category | Live | Pseudo | Oracle | Top S3 candidate | Candidate count |\n")
+        f.write("| --- | --- | --- | --- | --- | --- | ---: |\n")
+        for row in rows:
+            case = row["case"]
+            query = row.get("query") or {}
+            top = (query.get("top_candidates") or [{}])[0] if query else {}
+            top_label = ""
+            if top:
+                top_label = f"{top.get('way_id', '')} {top.get('street_name') or top.get('ref') or ''}".strip()
+            summary = query.get("summary") or {}
+            f.write(
+                f"| {case['case_id']} | {case['category']} | "
+                f"{case.get('live_way_id', '')} {case.get('live_street', '')} | "
+                f"{case.get('pseudo_label_way_id', '')} {case.get('pseudo_label_street', '')} | "
+                f"{case.get('oracle_way_id', '')} {case.get('oracle_street', '')} | "
+                f"{top_label} | {summary.get('candidate_way_ids', '')} |\n"
+            )
+
+
+def _write_tex(path: Path, rows: Sequence[Dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    labels = {
+        "distance_fallback_unknown": "Distance fallback / unnamed road",
+        "low_gps_high_uncertainty": "Low GPS, high uncertainty",
+        "low_speed_intersection": "Low-speed intersection",
+        "motorway_highspeed_same_ref": "Motorway same-reference",
+        "no_match_gap": "No-match gap",
+        "same_name_release": "Same-name release",
+        "same_ref_parallel": "Same-reference parallel",
+        "tunnel_low_speed_exit": "Tunnel low-speed exit",
+        "tunnel_portal": "Tunnel portal",
+        "urban_dense_low_gps": "Urban dense, low GPS",
+        "urban_same_name_parallel": "Urban same-name parallel",
+        "urban_transition_unnamed_to_named": "Urban unnamed-to-named transition",
+    }
+    counts: Dict[str, int] = {}
+    audited_counts: Dict[str, int] = {}
+    ambiguous_counts: Dict[str, int] = {}
+    for row in rows:
+        category = row["case"]["category"]
+        counts[category] = counts.get(category, 0) + 1
+        status = row["case"].get("manual_audit_status")
+        if status == "audited":
+            audited_counts[category] = audited_counts.get(category, 0) + 1
+        elif status == "ambiguous":
+            ambiguous_counts[category] = ambiguous_counts.get(category, 0) + 1
+    with path.open("w", encoding="utf-8") as f:
+        f.write("% Auto-generated by scripts/build_hard_case_context.py\n")
+        f.write("\\begin{tabular}{p{4.7cm}rrr}\n")
+        f.write("\\toprule\n")
+        f.write("Hard-case family & Seeded & Audited & Ambig.\\\\\n")
+        f.write("\\midrule\n")
+        for category, count in sorted(counts.items()):
+            escaped_category = labels.get(category, category.replace("_", " "))
+            f.write(
+                f"{escaped_category} & {count} & {audited_counts.get(category, 0)} & "
+                f"{ambiguous_counts.get(category, 0)}\\\\\n"
+            )
+        f.write("\\bottomrule\n")
+        f.write("\\end{tabular}\n")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS)
+    parser.add_argument("--db", type=Path, default=DEFAULT_DB)
+    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument("--top-k", type=int, default=8)
+    parser.add_argument("--distance-mode", default="hybrid", choices=("bbox", "hybrid", "polyline"))
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    cases = _read_cases(args.corpus)
+    rows: List[Dict[str, Any]] = []
+    for case in cases:
+        query, error = _run_query(case, args.db, args.top_k, args.distance_mode)
+        rows.append({"case": case, "query": query, "error": error})
+    _write_jsonl(args.out_dir / "hard_case_candidate_context.jsonl", rows)
+    _write_markdown(args.out_dir / "hard_case_candidate_context.md", rows)
+    _write_tex(args.out_dir / "hard_case_taxonomy_table.tex", rows)
+    print(f"Wrote hard-case candidate context for {len(rows)} cases to {args.out_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

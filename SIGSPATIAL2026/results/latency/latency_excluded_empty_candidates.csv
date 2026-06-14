@@ -1,0 +1,13 @@
+architecture,architecture_label,artifact_path,probe_id,stratum,region,lat,lon,heading,distance_mode,repeat,status,error,query_core_ms,reported_total_ms,host_wall_ms,load_index_ms,load_candidates_ms,city_resolve_ms,polyline_refine_ms,score_and_rank_ms,candidate_way_ids,matched_way_rows,scored_rows,effective_speed_kmh,city_name
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,bbox,0,ok,,0.05,267.25,310.917,202.91,0.0,0.04,0.0,0.01,0,0,0,100,
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,bbox,1,ok,,0.04,244.33,287.576,188.74,0.0,0.03,0.0,0.01,0,0,0,100,
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,hybrid,0,ok,,107.67,306.5,352.447,193.17,0.0,0.03,53.82,53.82,0,0,0,100,
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,hybrid,1,ok,,107.07,301.89,346.994,191.51,0.0,0.05,53.51,53.51,0,0,0,100,
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,polyline,0,ok,,110.32,300.67,346.553,187.19,0.0,0.04,55.14,55.14,0,0,0,100,
+S1,global index files,mapdata/dist/karlsruhe-regbez,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,polyline,1,ok,,110.55,304.34,350.527,192.33,0.0,0.04,55.25,55.26,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,bbox,0,ok,,0.2,0.56,29.871,0.32,0.19,0.01,0.0,0.0,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,bbox,1,ok,,0.2,0.62,29.167,0.37,0.19,0.01,0.0,0.0,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,hybrid,0,ok,,0.19,0.55,29.799,0.32,0.18,0.01,0.0,0.0,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,hybrid,1,ok,,0.2,0.54,29.208,0.31,0.19,0.01,0.0,0.0,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,polyline,0,ok,,0.19,0.59,30.072,0.35,0.18,0.01,0.0,0.0,0,0,0,100,
+S3,SQLite/RTree,mapdata/dist-v3/karlsruhe-regbez/speeds_v3.sqlite,berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,polyline,1,ok,,0.2,0.56,30.097,0.32,0.19,0.01,0.0,0.0,0,0,0,100,

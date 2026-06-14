@@ -1,0 +1,17 @@
+variant,distance_mode,probe_count,median_avg_ms,median_max_ms,max_ms
+v1,bbox,11,48.290,49.390,187.660
+v1,hybrid,11,48.530,50.790,58.700
+v1,polycontainment,11,1.040,1.230,3.170
+v1,polyline,11,50.370,52.320,59.930
+v2,bbox,11,7.090,7.190,10.170
+v2,hybrid,11,8.760,9.280,13.670
+v2,polycontainment,11,0.880,1.140,1.590
+v2,polyline,11,10.400,10.780,20.740
+v3,bbox,11,2.380,2.480,5.760
+v3,hybrid,11,4.370,4.770,9.810
+v3,polycontainment,11,0.830,0.900,1.580
+v3,polyline,11,6.670,6.730,16.000
+v4,bbox,11,11.560,12.950,51.590
+v4,hybrid,11,12.930,13.680,38.980
+v4,polycontainment,11,1.110,1.230,1.820
+v4,polyline,11,15.670,16.570,27.960

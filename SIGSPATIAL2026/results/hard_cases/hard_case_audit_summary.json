@@ -1,0 +1,27 @@
+{
+  "candidate_label_source_counts": {
+    "both_pseudo_and_oracle": 1,
+    "hindsight_pseudo_label": 3,
+    "valhalla_oracle": 8
+  },
+  "case_count": 12,
+  "category_counts": {
+    "distance_fallback_unknown": 1,
+    "low_gps_high_uncertainty": 1,
+    "low_speed_intersection": 1,
+    "motorway_highspeed_same_ref": 1,
+    "no_match_gap": 1,
+    "same_name_release": 1,
+    "same_ref_parallel": 1,
+    "tunnel_low_speed_exit": 1,
+    "tunnel_portal": 1,
+    "urban_dense_low_gps": 1,
+    "urban_same_name_parallel": 1,
+    "urban_transition_unnamed_to_named": 1
+  },
+  "manual_audit_status_counts": {
+    "ambiguous": 4,
+    "audited": 8
+  },
+  "validation_errors": []
+}

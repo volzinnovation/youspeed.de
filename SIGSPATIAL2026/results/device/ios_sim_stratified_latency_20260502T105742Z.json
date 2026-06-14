@@ -1,0 +1,1490 @@
+{
+  "datasetKind": "baden_wuerttemberg_v4",
+  "probeCount": 11,
+  "reports": [
+    {
+      "probe": {
+        "lat": 48.7630398,
+        "lon": 8.3375173,
+        "probeID": "gernsbach_low_gps_start",
+        "region": "karlsruhe-regbez",
+        "stratum": "urban_dense_low_gps"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 72.8,
+              "maxMs": 187.66,
+              "minMs": 43.28,
+              "p50Ms": 44.28
+            },
+            "hybrid": {
+              "avgMs": 46.72,
+              "maxMs": 47.38,
+              "minMs": 46.23,
+              "p50Ms": 46.66
+            },
+            "polycontainment": {
+              "avgMs": 1.5,
+              "maxMs": 3.17,
+              "minMs": 1.05,
+              "p50Ms": 1.08
+            },
+            "polyline": {
+              "avgMs": 50.92,
+              "maxMs": 53.57,
+              "minMs": 47.83,
+              "p50Ms": 52.05
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 4.52,
+              "maxMs": 6.93,
+              "minMs": 3.82,
+              "p50Ms": 3.94
+            },
+            "hybrid": {
+              "avgMs": 6.32,
+              "maxMs": 6.42,
+              "minMs": 6.21,
+              "p50Ms": 6.32
+            },
+            "polycontainment": {
+              "avgMs": 1.08,
+              "maxMs": 1.14,
+              "minMs": 1.06,
+              "p50Ms": 1.07
+            },
+            "polyline": {
+              "avgMs": 8.8,
+              "maxMs": 8.86,
+              "minMs": 8.77,
+              "p50Ms": 8.79
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 2.88,
+              "maxMs": 5.44,
+              "minMs": 2.17,
+              "p50Ms": 2.25
+            },
+            "hybrid": {
+              "avgMs": 4.82,
+              "maxMs": 4.86,
+              "minMs": 4.78,
+              "p50Ms": 4.83
+            },
+            "polycontainment": {
+              "avgMs": 1.1,
+              "maxMs": 1.17,
+              "minMs": 1.05,
+              "p50Ms": 1.08
+            },
+            "polyline": {
+              "avgMs": 7.48,
+              "maxMs": 7.68,
+              "minMs": 7.32,
+              "p50Ms": 7.42
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 15.09,
+              "maxMs": 51.59,
+              "minMs": 5.88,
+              "p50Ms": 5.99
+            },
+            "hybrid": {
+              "avgMs": 8.85,
+              "maxMs": 9.23,
+              "minMs": 8.6,
+              "p50Ms": 8.85
+            },
+            "polycontainment": {
+              "avgMs": 1.25,
+              "maxMs": 1.82,
+              "minMs": 1.1,
+              "p50Ms": 1.12
+            },
+            "polyline": {
+              "avgMs": 11.06,
+              "maxMs": 11.28,
+              "minMs": 10.79,
+              "p50Ms": 11.03
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:57:54Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 0,
+          "headingWeight": 0,
+          "lat": 48.7630398,
+          "lon": 8.3375173,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 10.953,
+        "lat": 48.7683984,
+        "lon": 8.3358246,
+        "probeID": "gernsbach_same_name_parallel",
+        "region": "karlsruhe-regbez",
+        "stratum": "urban_same_name_parallel"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 48.6,
+              "maxMs": 62.25,
+              "minMs": 42.86,
+              "p50Ms": 47.12
+            },
+            "hybrid": {
+              "avgMs": 48.23,
+              "maxMs": 52.32,
+              "minMs": 45.3,
+              "p50Ms": 48.54
+            },
+            "polycontainment": {
+              "avgMs": 1.1,
+              "maxMs": 1.23,
+              "minMs": 1.05,
+              "p50Ms": 1.05
+            },
+            "polyline": {
+              "avgMs": 48.46,
+              "maxMs": 50.02,
+              "minMs": 47.4,
+              "p50Ms": 47.85
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 3.91,
+              "maxMs": 4.32,
+              "minMs": 3.75,
+              "p50Ms": 3.82
+            },
+            "hybrid": {
+              "avgMs": 6.2,
+              "maxMs": 6.21,
+              "minMs": 6.18,
+              "p50Ms": 6.21
+            },
+            "polycontainment": {
+              "avgMs": 1.09,
+              "maxMs": 1.16,
+              "minMs": 1.07,
+              "p50Ms": 1.07
+            },
+            "polyline": {
+              "avgMs": 8.55,
+              "maxMs": 8.77,
+              "minMs": 8.44,
+              "p50Ms": 8.53
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 2.01,
+              "maxMs": 2.2,
+              "minMs": 1.93,
+              "p50Ms": 1.96
+            },
+            "hybrid": {
+              "avgMs": 4.37,
+              "maxMs": 4.43,
+              "minMs": 4.31,
+              "p50Ms": 4.39
+            },
+            "polycontainment": {
+              "avgMs": 1.07,
+              "maxMs": 1.14,
+              "minMs": 1.05,
+              "p50Ms": 1.06
+            },
+            "polyline": {
+              "avgMs": 6.67,
+              "maxMs": 6.73,
+              "minMs": 6.61,
+              "p50Ms": 6.68
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 5.71,
+              "maxMs": 5.82,
+              "minMs": 5.61,
+              "p50Ms": 5.65
+            },
+            "hybrid": {
+              "avgMs": 8.28,
+              "maxMs": 8.42,
+              "minMs": 8.05,
+              "p50Ms": 8.36
+            },
+            "polycontainment": {
+              "avgMs": 1.14,
+              "maxMs": 1.23,
+              "minMs": 1.1,
+              "p50Ms": 1.12
+            },
+            "polyline": {
+              "avgMs": 10.4,
+              "maxMs": 10.8,
+              "minMs": 10.24,
+              "p50Ms": 10.35
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:57:55Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 10.953,
+          "headingWeight": 2,
+          "lat": 48.7683984,
+          "lon": 8.3358246,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 41.369,
+        "lat": 48.7697322,
+        "lon": 8.3371191,
+        "probeID": "gernsbach_urban_transition",
+        "region": "karlsruhe-regbez",
+        "stratum": "urban_transition"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 43.31,
+              "maxMs": 44.21,
+              "minMs": 42.72,
+              "p50Ms": 43.02
+            },
+            "hybrid": {
+              "avgMs": 46.06,
+              "maxMs": 46.84,
+              "minMs": 45.53,
+              "p50Ms": 45.59
+            },
+            "polycontainment": {
+              "avgMs": 1.42,
+              "maxMs": 1.87,
+              "minMs": 1.28,
+              "p50Ms": 1.31
+            },
+            "polyline": {
+              "avgMs": 47.7,
+              "maxMs": 49.4,
+              "minMs": 47.05,
+              "p50Ms": 47.32
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 3.7,
+              "maxMs": 3.91,
+              "minMs": 3.59,
+              "p50Ms": 3.68
+            },
+            "hybrid": {
+              "avgMs": 6.02,
+              "maxMs": 6.08,
+              "minMs": 5.91,
+              "p50Ms": 6.04
+            },
+            "polycontainment": {
+              "avgMs": 1.32,
+              "maxMs": 1.36,
+              "minMs": 1.29,
+              "p50Ms": 1.3
+            },
+            "polyline": {
+              "avgMs": 8.18,
+              "maxMs": 8.22,
+              "minMs": 8.13,
+              "p50Ms": 8.19
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 1.98,
+              "maxMs": 2.17,
+              "minMs": 1.9,
+              "p50Ms": 1.92
+            },
+            "hybrid": {
+              "avgMs": 4.32,
+              "maxMs": 4.39,
+              "minMs": 4.27,
+              "p50Ms": 4.32
+            },
+            "polycontainment": {
+              "avgMs": 1.3,
+              "maxMs": 1.36,
+              "minMs": 1.27,
+              "p50Ms": 1.28
+            },
+            "polyline": {
+              "avgMs": 6.51,
+              "maxMs": 6.55,
+              "minMs": 6.47,
+              "p50Ms": 6.5
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 5.55,
+              "maxMs": 5.95,
+              "minMs": 5.4,
+              "p50Ms": 5.46
+            },
+            "hybrid": {
+              "avgMs": 7.92,
+              "maxMs": 7.99,
+              "minMs": 7.7,
+              "p50Ms": 7.97
+            },
+            "polycontainment": {
+              "avgMs": 1.35,
+              "maxMs": 1.44,
+              "minMs": 1.32,
+              "p50Ms": 1.33
+            },
+            "polyline": {
+              "avgMs": 10.03,
+              "maxMs": 10.16,
+              "minMs": 9.89,
+              "p50Ms": 10.03
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:57:56Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 41.369,
+          "headingWeight": 2,
+          "lat": 48.7697322,
+          "lon": 8.3371191,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 39.227,
+        "lat": 48.7719407,
+        "lon": 8.3394489,
+        "probeID": "gernsbach_regional_ref",
+        "region": "karlsruhe-regbez",
+        "stratum": "regional_arterial_ref"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 43.37,
+              "maxMs": 44.59,
+              "minMs": 42.73,
+              "p50Ms": 43.2
+            },
+            "hybrid": {
+              "avgMs": 45.12,
+              "maxMs": 45.32,
+              "minMs": 44.89,
+              "p50Ms": 45.11
+            },
+            "polycontainment": {
+              "avgMs": 1.29,
+              "maxMs": 1.41,
+              "minMs": 1.26,
+              "p50Ms": 1.27
+            },
+            "polyline": {
+              "avgMs": 47.16,
+              "maxMs": 47.59,
+              "minMs": 46.95,
+              "p50Ms": 47.02
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 3.59,
+              "maxMs": 3.84,
+              "minMs": 3.48,
+              "p50Ms": 3.55
+            },
+            "hybrid": {
+              "avgMs": 5.86,
+              "maxMs": 5.9,
+              "minMs": 5.79,
+              "p50Ms": 5.87
+            },
+            "polycontainment": {
+              "avgMs": 1.27,
+              "maxMs": 1.33,
+              "minMs": 1.24,
+              "p50Ms": 1.26
+            },
+            "polyline": {
+              "avgMs": 7.9,
+              "maxMs": 7.97,
+              "minMs": 7.87,
+              "p50Ms": 7.89
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 1.94,
+              "maxMs": 2.1,
+              "minMs": 1.87,
+              "p50Ms": 1.9
+            },
+            "hybrid": {
+              "avgMs": 4.23,
+              "maxMs": 4.26,
+              "minMs": 4.21,
+              "p50Ms": 4.22
+            },
+            "polycontainment": {
+              "avgMs": 1.27,
+              "maxMs": 1.32,
+              "minMs": 1.25,
+              "p50Ms": 1.26
+            },
+            "polyline": {
+              "avgMs": 6.22,
+              "maxMs": 6.25,
+              "minMs": 6.18,
+              "p50Ms": 6.21
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 5.56,
+              "maxMs": 5.94,
+              "minMs": 5.13,
+              "p50Ms": 5.65
+            },
+            "hybrid": {
+              "avgMs": 8.7,
+              "maxMs": 11.51,
+              "minMs": 7.76,
+              "p50Ms": 8.02
+            },
+            "polycontainment": {
+              "avgMs": 1.36,
+              "maxMs": 1.46,
+              "minMs": 1.33,
+              "p50Ms": 1.35
+            },
+            "polyline": {
+              "avgMs": 9.93,
+              "maxMs": 10.14,
+              "minMs": 9.73,
+              "p50Ms": 9.86
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:57:57Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 39.227,
+          "headingWeight": 2,
+          "lat": 48.7719407,
+          "lon": 8.3394489,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 310.29,
+        "lat": 48.8800067,
+        "lon": 8.7178683,
+        "probeID": "pforzheim_low_speed_start",
+        "region": "karlsruhe-regbez",
+        "stratum": "low_speed_intersection"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 53.71,
+              "maxMs": 70.06,
+              "minMs": 47.59,
+              "p50Ms": 49.16
+            },
+            "hybrid": {
+              "avgMs": 52.88,
+              "maxMs": 58.7,
+              "minMs": 50.26,
+              "p50Ms": 51.73
+            },
+            "polycontainment": {
+              "avgMs": 1.04,
+              "maxMs": 2.1,
+              "minMs": 0.77,
+              "p50Ms": 0.77
+            },
+            "polyline": {
+              "avgMs": 50.37,
+              "maxMs": 51.8,
+              "minMs": 49.77,
+              "p50Ms": 50.1
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 7.51,
+              "maxMs": 9.51,
+              "minMs": 6.06,
+              "p50Ms": 7.03
+            },
+            "hybrid": {
+              "avgMs": 8.76,
+              "maxMs": 9.59,
+              "minMs": 8.3,
+              "p50Ms": 8.45
+            },
+            "polycontainment": {
+              "avgMs": 0.88,
+              "maxMs": 1.31,
+              "minMs": 0.76,
+              "p50Ms": 0.77
+            },
+            "polyline": {
+              "avgMs": 10.4,
+              "maxMs": 10.78,
+              "minMs": 10.22,
+              "p50Ms": 10.23
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 2.38,
+              "maxMs": 3.11,
+              "minMs": 1.65,
+              "p50Ms": 2.65
+            },
+            "hybrid": {
+              "avgMs": 4.16,
+              "maxMs": 4.77,
+              "minMs": 3.97,
+              "p50Ms": 4.02
+            },
+            "polycontainment": {
+              "avgMs": 0.79,
+              "maxMs": 0.86,
+              "minMs": 0.76,
+              "p50Ms": 0.77
+            },
+            "polyline": {
+              "avgMs": 6.05,
+              "maxMs": 6.65,
+              "minMs": 5.88,
+              "p50Ms": 5.91
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 11.56,
+              "maxMs": 14.18,
+              "minMs": 10.29,
+              "p50Ms": 10.98
+            },
+            "hybrid": {
+              "avgMs": 12.93,
+              "maxMs": 13.68,
+              "minMs": 12.36,
+              "p50Ms": 12.75
+            },
+            "polycontainment": {
+              "avgMs": 1.11,
+              "maxMs": 1.74,
+              "minMs": 0.85,
+              "p50Ms": 1.01
+            },
+            "polyline": {
+              "avgMs": 15.67,
+              "maxMs": 16.57,
+              "minMs": 14.64,
+              "p50Ms": 15.59
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:57:58Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 310.29,
+          "headingWeight": 2,
+          "lat": 48.8800067,
+          "lon": 8.7178683,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 20,
+        "lat": 48.8840867,
+        "lon": 8.7115283,
+        "probeID": "pforzheim_same_ref_parallel",
+        "region": "karlsruhe-regbez",
+        "stratum": "same_ref_parallel"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 50.32,
+              "maxMs": 52.52,
+              "minMs": 48.24,
+              "p50Ms": 50.83
+            },
+            "hybrid": {
+              "avgMs": 53.73,
+              "maxMs": 58.28,
+              "minMs": 51.21,
+              "p50Ms": 52.09
+            },
+            "polycontainment": {
+              "avgMs": 0.83,
+              "maxMs": 0.92,
+              "minMs": 0.76,
+              "p50Ms": 0.79
+            },
+            "polyline": {
+              "avgMs": 56.49,
+              "maxMs": 58.38,
+              "minMs": 54.65,
+              "p50Ms": 55.97
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 8.87,
+              "maxMs": 10.17,
+              "minMs": 8.35,
+              "p50Ms": 8.45
+            },
+            "hybrid": {
+              "avgMs": 12.2,
+              "maxMs": 12.56,
+              "minMs": 11.88,
+              "p50Ms": 12.3
+            },
+            "polycontainment": {
+              "avgMs": 0.78,
+              "maxMs": 0.87,
+              "minMs": 0.76,
+              "p50Ms": 0.76
+            },
+            "polyline": {
+              "avgMs": 17.08,
+              "maxMs": 17.45,
+              "minMs": 16.21,
+              "p50Ms": 17.3
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 3.99,
+              "maxMs": 4.4,
+              "minMs": 3.79,
+              "p50Ms": 3.92
+            },
+            "hybrid": {
+              "avgMs": 7.53,
+              "maxMs": 7.76,
+              "minMs": 7.2,
+              "p50Ms": 7.57
+            },
+            "polycontainment": {
+              "avgMs": 0.8,
+              "maxMs": 0.89,
+              "minMs": 0.77,
+              "p50Ms": 0.78
+            },
+            "polyline": {
+              "avgMs": 12.3,
+              "maxMs": 12.59,
+              "minMs": 11.92,
+              "p50Ms": 12.35
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 14.77,
+              "maxMs": 17.56,
+              "minMs": 13.48,
+              "p50Ms": 14.31
+            },
+            "hybrid": {
+              "avgMs": 23.77,
+              "maxMs": 38.98,
+              "minMs": 17.58,
+              "p50Ms": 21.39
+            },
+            "polycontainment": {
+              "avgMs": 0.87,
+              "maxMs": 0.97,
+              "minMs": 0.83,
+              "p50Ms": 0.85
+            },
+            "polyline": {
+              "avgMs": 22.27,
+              "maxMs": 23.29,
+              "minMs": 21.16,
+              "p50Ms": 22.34
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:00Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 20,
+          "headingWeight": 2,
+          "lat": 48.8840867,
+          "lon": 8.7115283,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 305.74,
+        "lat": 48.881795,
+        "lon": 8.71611,
+        "probeID": "pforzheim_same_name_release",
+        "region": "karlsruhe-regbez",
+        "stratum": "same_name_release"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 48.83,
+              "maxMs": 50.9,
+              "minMs": 47.41,
+              "p50Ms": 48.47
+            },
+            "hybrid": {
+              "avgMs": 49.02,
+              "maxMs": 50.29,
+              "minMs": 48.48,
+              "p50Ms": 48.67
+            },
+            "polycontainment": {
+              "avgMs": 0.83,
+              "maxMs": 0.93,
+              "minMs": 0.78,
+              "p50Ms": 0.81
+            },
+            "polyline": {
+              "avgMs": 51.11,
+              "maxMs": 52.32,
+              "minMs": 50.47,
+              "p50Ms": 50.88
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 7.1,
+              "maxMs": 7.37,
+              "minMs": 6.81,
+              "p50Ms": 7.03
+            },
+            "hybrid": {
+              "avgMs": 10.31,
+              "maxMs": 10.43,
+              "minMs": 10.22,
+              "p50Ms": 10.3
+            },
+            "polycontainment": {
+              "avgMs": 0.88,
+              "maxMs": 0.95,
+              "minMs": 0.82,
+              "p50Ms": 0.87
+            },
+            "polyline": {
+              "avgMs": 12.91,
+              "maxMs": 13.25,
+              "minMs": 12.35,
+              "p50Ms": 13.02
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 2.41,
+              "maxMs": 2.48,
+              "minMs": 2.33,
+              "p50Ms": 2.4
+            },
+            "hybrid": {
+              "avgMs": 5.09,
+              "maxMs": 5.17,
+              "minMs": 4.98,
+              "p50Ms": 5.1
+            },
+            "polycontainment": {
+              "avgMs": 0.83,
+              "maxMs": 0.9,
+              "minMs": 0.79,
+              "p50Ms": 0.83
+            },
+            "polyline": {
+              "avgMs": 7.93,
+              "maxMs": 8.27,
+              "minMs": 7.82,
+              "p50Ms": 7.82
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 11.56,
+              "maxMs": 11.88,
+              "minMs": 11.24,
+              "p50Ms": 11.5
+            },
+            "hybrid": {
+              "avgMs": 15.66,
+              "maxMs": 20.69,
+              "minMs": 13.7,
+              "p50Ms": 14.73
+            },
+            "polycontainment": {
+              "avgMs": 0.86,
+              "maxMs": 0.95,
+              "minMs": 0.8,
+              "p50Ms": 0.87
+            },
+            "polyline": {
+              "avgMs": 16.89,
+              "maxMs": 17.15,
+              "minMs": 16.17,
+              "p50Ms": 17.04
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:01Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 305.74,
+          "headingWeight": 2,
+          "lat": 48.881795,
+          "lon": 8.71611,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 5.84,
+        "lat": 48.8944817,
+        "lon": 8.6943583,
+        "probeID": "pforzheim_tunnel_portal",
+        "region": "karlsruhe-regbez",
+        "stratum": "tunnel_portal"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 47.77,
+              "maxMs": 48.42,
+              "minMs": 47.41,
+              "p50Ms": 47.59
+            },
+            "hybrid": {
+              "avgMs": 51.45,
+              "maxMs": 52.22,
+              "minMs": 50.44,
+              "p50Ms": 51.54
+            },
+            "polycontainment": {
+              "avgMs": 0.79,
+              "maxMs": 0.88,
+              "minMs": 0.75,
+              "p50Ms": 0.76
+            },
+            "polyline": {
+              "avgMs": 58.71,
+              "maxMs": 59.93,
+              "minMs": 57.35,
+              "p50Ms": 58.69
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 9.22,
+              "maxMs": 9.43,
+              "minMs": 9.05,
+              "p50Ms": 9.19
+            },
+            "hybrid": {
+              "avgMs": 13.56,
+              "maxMs": 13.67,
+              "minMs": 13.46,
+              "p50Ms": 13.55
+            },
+            "polycontainment": {
+              "avgMs": 0.77,
+              "maxMs": 0.83,
+              "minMs": 0.74,
+              "p50Ms": 0.77
+            },
+            "polyline": {
+              "avgMs": 20.41,
+              "maxMs": 20.74,
+              "minMs": 20.11,
+              "p50Ms": 20.43
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 5.33,
+              "maxMs": 5.76,
+              "minMs": 5.19,
+              "p50Ms": 5.23
+            },
+            "hybrid": {
+              "avgMs": 9.39,
+              "maxMs": 9.81,
+              "minMs": 9.12,
+              "p50Ms": 9.39
+            },
+            "polycontainment": {
+              "avgMs": 0.78,
+              "maxMs": 0.83,
+              "minMs": 0.74,
+              "p50Ms": 0.78
+            },
+            "polyline": {
+              "avgMs": 15.67,
+              "maxMs": 16,
+              "minMs": 15.41,
+              "p50Ms": 15.58
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 14.53,
+              "maxMs": 15.39,
+              "minMs": 13.6,
+              "p50Ms": 14.4
+            },
+            "hybrid": {
+              "avgMs": 20.56,
+              "maxMs": 21.49,
+              "minMs": 19.47,
+              "p50Ms": 20.81
+            },
+            "polycontainment": {
+              "avgMs": 0.88,
+              "maxMs": 1.01,
+              "minMs": 0.82,
+              "p50Ms": 0.83
+            },
+            "polyline": {
+              "avgMs": 26.97,
+              "maxMs": 27.96,
+              "minMs": 26.28,
+              "p50Ms": 27.07
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:02Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 5.84,
+          "headingWeight": 2,
+          "lat": 48.8944817,
+          "lon": 8.6943583,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 302.12,
+        "lat": 48.90237,
+        "lon": 8.6597133,
+        "probeID": "pforzheim_distance_fallback",
+        "region": "karlsruhe-regbez",
+        "stratum": "distance_fallback"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 48.29,
+              "maxMs": 49.39,
+              "minMs": 46.45,
+              "p50Ms": 48.76
+            },
+            "hybrid": {
+              "avgMs": 51.87,
+              "maxMs": 52.79,
+              "minMs": 50.85,
+              "p50Ms": 51.89
+            },
+            "polycontainment": {
+              "avgMs": 0.77,
+              "maxMs": 0.87,
+              "minMs": 0.75,
+              "p50Ms": 0.75
+            },
+            "polyline": {
+              "avgMs": 54.76,
+              "maxMs": 55.78,
+              "minMs": 53.61,
+              "p50Ms": 54.66
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 7.61,
+              "maxMs": 7.86,
+              "minMs": 7.39,
+              "p50Ms": 7.67
+            },
+            "hybrid": {
+              "avgMs": 10.69,
+              "maxMs": 10.89,
+              "minMs": 10.53,
+              "p50Ms": 10.68
+            },
+            "polycontainment": {
+              "avgMs": 0.81,
+              "maxMs": 0.88,
+              "minMs": 0.78,
+              "p50Ms": 0.79
+            },
+            "polyline": {
+              "avgMs": 15.21,
+              "maxMs": 15.5,
+              "minMs": 14.96,
+              "p50Ms": 15.17
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 3.45,
+              "maxMs": 3.51,
+              "minMs": 3.36,
+              "p50Ms": 3.47
+            },
+            "hybrid": {
+              "avgMs": 6.37,
+              "maxMs": 6.51,
+              "minMs": 6.28,
+              "p50Ms": 6.36
+            },
+            "polycontainment": {
+              "avgMs": 0.81,
+              "maxMs": 0.9,
+              "minMs": 0.75,
+              "p50Ms": 0.81
+            },
+            "polyline": {
+              "avgMs": 10.52,
+              "maxMs": 11.18,
+              "minMs": 10.07,
+              "p50Ms": 10.16
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 12.02,
+              "maxMs": 12.95,
+              "minMs": 11.03,
+              "p50Ms": 12.07
+            },
+            "hybrid": {
+              "avgMs": 15.91,
+              "maxMs": 16.88,
+              "minMs": 15.08,
+              "p50Ms": 15.95
+            },
+            "polycontainment": {
+              "avgMs": 0.89,
+              "maxMs": 0.98,
+              "minMs": 0.85,
+              "p50Ms": 0.88
+            },
+            "polyline": {
+              "avgMs": 19.83,
+              "maxMs": 20.56,
+              "minMs": 19.21,
+              "p50Ms": 19.57
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:04Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 302.12,
+          "headingWeight": 2,
+          "lat": 48.90237,
+          "lon": 8.6597133,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 203.18,
+        "lat": 48.9053133,
+        "lon": 8.65062,
+        "probeID": "pforzheim_no_match_gap",
+        "region": "karlsruhe-regbez",
+        "stratum": "no_match_gap"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 45.76,
+              "maxMs": 46.38,
+              "minMs": 45.14,
+              "p50Ms": 45.76
+            },
+            "hybrid": {
+              "avgMs": 48.53,
+              "maxMs": 50.79,
+              "minMs": 47.1,
+              "p50Ms": 47.74
+            },
+            "polycontainment": {
+              "avgMs": 0.78,
+              "maxMs": 0.87,
+              "minMs": 0.75,
+              "p50Ms": 0.76
+            },
+            "polyline": {
+              "avgMs": 49.86,
+              "maxMs": 52.57,
+              "minMs": 48.16,
+              "p50Ms": 49.74
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 5.54,
+              "maxMs": 5.85,
+              "minMs": 5.4,
+              "p50Ms": 5.5
+            },
+            "hybrid": {
+              "avgMs": 7.83,
+              "maxMs": 8.05,
+              "minMs": 7.74,
+              "p50Ms": 7.76
+            },
+            "polycontainment": {
+              "avgMs": 0.8,
+              "maxMs": 0.85,
+              "minMs": 0.77,
+              "p50Ms": 0.78
+            },
+            "polyline": {
+              "avgMs": 9.89,
+              "maxMs": 10.15,
+              "minMs": 9.71,
+              "p50Ms": 9.8
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 1.84,
+              "maxMs": 1.93,
+              "minMs": 1.8,
+              "p50Ms": 1.81
+            },
+            "hybrid": {
+              "avgMs": 3.86,
+              "maxMs": 3.9,
+              "minMs": 3.82,
+              "p50Ms": 3.85
+            },
+            "polycontainment": {
+              "avgMs": 0.76,
+              "maxMs": 0.81,
+              "minMs": 0.74,
+              "p50Ms": 0.75
+            },
+            "polyline": {
+              "avgMs": 5.99,
+              "maxMs": 6.18,
+              "minMs": 5.81,
+              "p50Ms": 5.94
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 9.65,
+              "maxMs": 10.19,
+              "minMs": 9.16,
+              "p50Ms": 9.64
+            },
+            "hybrid": {
+              "avgMs": 11.25,
+              "maxMs": 11.74,
+              "minMs": 11,
+              "p50Ms": 11.18
+            },
+            "polycontainment": {
+              "avgMs": 0.83,
+              "maxMs": 0.9,
+              "minMs": 0.79,
+              "p50Ms": 0.81
+            },
+            "polyline": {
+              "avgMs": 13.33,
+              "maxMs": 13.62,
+              "minMs": 12.97,
+              "p50Ms": 13.4
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:05Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 203.18,
+          "headingWeight": 2,
+          "lat": 48.9053133,
+          "lon": 8.65062,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    },
+    {
+      "probe": {
+        "heading": 59.723,
+        "lat": 48.9621635,
+        "lon": 8.4127321,
+        "probeID": "karlsruhe_motorway_highspeed",
+        "region": "karlsruhe-regbez",
+        "stratum": "motorway_highspeed"
+      },
+      "report": {
+        "benchmarkMs": {
+          "v1": {
+            "bbox": {
+              "avgMs": 41.75,
+              "maxMs": 41.97,
+              "minMs": 41.4,
+              "p50Ms": 41.87
+            },
+            "hybrid": {
+              "avgMs": 43.67,
+              "maxMs": 44.05,
+              "minMs": 43.41,
+              "p50Ms": 43.58
+            },
+            "polycontainment": {
+              "avgMs": 1.51,
+              "maxMs": 1.62,
+              "minMs": 1.47,
+              "p50Ms": 1.48
+            },
+            "polyline": {
+              "avgMs": 45.12,
+              "maxMs": 45.95,
+              "minMs": 44.68,
+              "p50Ms": 44.98
+            }
+          },
+          "v2": {
+            "bbox": {
+              "avgMs": 7.09,
+              "maxMs": 7.19,
+              "minMs": 6.96,
+              "p50Ms": 7.1
+            },
+            "hybrid": {
+              "avgMs": 9.19,
+              "maxMs": 9.28,
+              "minMs": 9.09,
+              "p50Ms": 9.19
+            },
+            "polycontainment": {
+              "avgMs": 1.49,
+              "maxMs": 1.59,
+              "minMs": 1.45,
+              "p50Ms": 1.46
+            },
+            "polyline": {
+              "avgMs": 10.69,
+              "maxMs": 10.95,
+              "minMs": 10.21,
+              "p50Ms": 10.76
+            }
+          },
+          "v3": {
+            "bbox": {
+              "avgMs": 1.49,
+              "maxMs": 1.63,
+              "minMs": 1.44,
+              "p50Ms": 1.45
+            },
+            "hybrid": {
+              "avgMs": 3.55,
+              "maxMs": 3.57,
+              "minMs": 3.54,
+              "p50Ms": 3.55
+            },
+            "polycontainment": {
+              "avgMs": 1.51,
+              "maxMs": 1.58,
+              "minMs": 1.47,
+              "p50Ms": 1.51
+            },
+            "polyline": {
+              "avgMs": 5.15,
+              "maxMs": 5.31,
+              "minMs": 4.93,
+              "p50Ms": 5.12
+            }
+          },
+          "v4": {
+            "bbox": {
+              "avgMs": 12.09,
+              "maxMs": 12.97,
+              "minMs": 11.56,
+              "p50Ms": 12.08
+            },
+            "hybrid": {
+              "avgMs": 13.96,
+              "maxMs": 14.54,
+              "minMs": 13.37,
+              "p50Ms": 13.92
+            },
+            "polycontainment": {
+              "avgMs": 1.69,
+              "maxMs": 1.77,
+              "minMs": 1.63,
+              "p50Ms": 1.65
+            },
+            "polyline": {
+              "avgMs": 15.94,
+              "maxMs": 16.62,
+              "minMs": 15.5,
+              "p50Ms": 15.86
+            }
+          }
+        },
+        "dbPath": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v4/baden-wuerttemberg-bench/speeds_v4.sqlite",
+        "dbSizeBytes": 502030336,
+        "generatedAtUTC": "2026-05-02T10:58:06Z",
+        "hasRTreeSupport": true,
+        "hasWayTileTable": true,
+        "input": {
+          "heading": 59.723,
+          "headingWeight": 2,
+          "lat": 48.9621635,
+          "lon": 8.4127321,
+          "maxCandidates": 5000,
+          "polylineTopN": 250,
+          "repeats": 5,
+          "searchRadiusM": 1200,
+          "tileRadius": 1,
+          "topK": 5
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+variant,effective_variant,distance_mode,probe_count,median_avg_ms,median_max_ms,max_ms
+v1,v1,bbox,11,148.959,152.152,168.072
+v1,v1,hybrid,11,158.489,160.922,169.561
+v1,v1,polyline,11,166.794,168.471,199.862
+v2,v2,bbox,11,7.188,8.089,11.279
+v2,v2,hybrid,11,13.464,14.076,16.566
+v2,v2,polyline,11,20.554,21.113,41.776
+v3,v1,bbox,11,148.341,150.110,162.566
+v3,v1,hybrid,11,153.308,153.696,176.101
+v3,v1,polyline,11,170.897,172.285,238.745
+v4,v2,bbox,11,6.975,7.168,11.412
+v4,v2,hybrid,11,13.715,14.042,17.243
+v4,v2,polyline,11,21.348,22.288,42.275

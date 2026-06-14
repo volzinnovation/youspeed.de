@@ -59,6 +59,12 @@ paper/itsc2026/*.fls
 paper/itsc2026/*.log
 paper/itsc2026/*.out
 paper/itsc2026/*.synctex.gz
+paper/itsc2026/reviews/
+paper/icitt2026/*.bbl
+paper/icitt2026/*.blg
+paper/icitt2026/*.out
+paper/icitt2026/template/
+paper/osmscience2026/reviews/
 paper/techreport/*.aux
 paper/techreport/*.bbl
 paper/techreport/*.blg
@@ -70,6 +76,16 @@ paper/techreport/*.synctex.gz
 paper/techreport/rendered/
 paper/techreport/data/.device_benchmark_report*.swp
 paper/techreport/tmp/
+SIGSPATIAL2026/*.aux
+SIGSPATIAL2026/*.bbl
+SIGSPATIAL2026/*.blg
+SIGSPATIAL2026/*.fdb_latexmk
+SIGSPATIAL2026/*.fls
+SIGSPATIAL2026/*.log
+SIGSPATIAL2026/*.out
+SIGSPATIAL2026/*.synctex.gz
+SIGSPATIAL2026/scripts/__pycache__/
+SIGSPATIAL2026/results/**/*.log
 
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite

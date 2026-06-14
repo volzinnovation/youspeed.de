@@ -1,0 +1,13 @@
+probe_id,stratum,region,lat,lon,heading,source,notes
+berlin_dense_core,urban_dense_control,germany,52.5200000,13.4050000,90,prior_architecture_benchmark,Original fixed Berlin probe retained as a control point for comparability.
+gernsbach_low_gps_start,urban_dense_low_gps,karlsruhe-regbez,48.7630398,8.3375173,,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Low GPS bars and no reliable course at the start of a dense urban trace.
+gernsbach_same_name_parallel,urban_same_name_parallel,karlsruhe-regbez,48.7683984,8.3358246,10.953,tmp/m7_alllogs_replay.diff.csv,Hindsight label switches between nearby Bleichstrasse way segments.
+gernsbach_urban_transition,urban_transition,karlsruhe-regbez,48.7697322,8.3371191,41.369,tmp/m7_alllogs_replay.diff.csv,Urban transition on Hoerdener Strasse with candidate ambiguity.
+gernsbach_regional_ref,regional_arterial_ref,karlsruhe-regbez,48.7719407,8.3394489,39.227,tmp/m7_alllogs_replay.diff.csv,Fast regional road segment on B 462 / L-class corridor.
+pforzheim_low_speed_start,low_speed_intersection,karlsruhe-regbez,48.8800067,8.7178683,310.290,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Stationary or near-stationary fix with good GPS but competing nearby ways.
+pforzheim_same_ref_parallel,same_ref_parallel,karlsruhe-regbez,48.8840867,8.7115283,20.000,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Same-reference ambiguity on Tiefenbronner Strasse / K 9800.
+pforzheim_same_name_release,same_name_release,karlsruhe-regbez,48.8817950,8.7161100,305.740,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Low-speed same-name release-distance case near August-Kayser-Strasse.
+pforzheim_tunnel_portal,tunnel_portal,karlsruhe-regbez,48.8944817,8.6943583,5.840,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Tunnelstrasse / Berliner Strasse ambiguity near portal-like geometry.
+pforzheim_distance_fallback,distance_fallback,karlsruhe-regbez,48.9023700,8.6597133,302.120,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Distance fallback on sparse or unnamed local geometry.
+pforzheim_no_match_gap,no_match_gap,karlsruhe-regbez,48.9053133,8.6506200,203.180,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,Logged no-match gap near Westtangente/B-class corridor.
+karlsruhe_motorway_highspeed,motorway_highspeed,karlsruhe-regbez,48.9621635,8.4127321,59.723,tmp/20260320_bw_valhalla_oracle_benchmark.diff.csv,A 5 high-speed same-ref ambiguity.
