@@ -81,6 +81,7 @@ struct BundledMatchContextState {
         guard preferredWayID != nil ||
                 !recentWayIDs.isEmpty ||
                 !recentStreetRefs.isEmpty ||
+                !recentFixes.isEmpty ||
                 activeStreetName != nil ||
                 !recentHypotheses.isEmpty ||
                 !recentTunnelCandidateWayIDs.isEmpty ||
@@ -132,6 +133,8 @@ struct BundledMatchContextState {
         lat: Double? = nil,
         lon: Double? = nil,
         headingDeg: Double? = nil,
+        headingAccuracyDeg: Double? = nil,
+        speedKmh: Double? = nil,
         horizontalAccuracyM: Double,
         gpsSignalBars: Int
     ) {
@@ -145,9 +148,20 @@ struct BundledMatchContextState {
             preferredWayID = wayID
         }
         if let lat, let lon {
-            recentFixes.insert(WayMatchRecentFix(lat: lat, lon: lon), at: 0)
-            if recentFixes.count > 3 {
-                recentFixes.removeLast(recentFixes.count - 3)
+            recentFixes.insert(
+                WayMatchRecentFix(
+                    lat: lat,
+                    lon: lon,
+                    headingDeg: headingDeg,
+                    headingAccuracyDeg: headingAccuracyDeg,
+                    speedKmh: speedKmh,
+                    horizontalAccuracyM: horizontalAccuracyM,
+                    gpsSignalBars: gpsSignalBars
+                ),
+                at: 0
+            )
+            if recentFixes.count > 10 {
+                recentFixes.removeLast(recentFixes.count - 10)
             }
         }
         sameRefUrbanReleaseStreak = updatedSameRefUrbanReleaseStreak(after: result)
@@ -414,6 +428,13 @@ struct ModelLogSummary: Codable {
     let netCorrections: Int
 }
 
+struct QueryTimeSummary: Codable {
+    let count: Int
+    let p50Ms: Double
+    let p95Ms: Double
+    let p99Ms: Double
+}
+
 struct ModelSummary: Codable {
     let label: String
     let dbPath: String
@@ -430,6 +451,7 @@ struct ModelSummary: Codable {
     let recoveredExamples: Int
     let regressedExamples: Int
     let netCorrections: Int
+    let queryTimeSummary: QueryTimeSummary
     let perLog: [ModelLogSummary]
 }
 
@@ -665,11 +687,30 @@ func parseStringListEnv(_ name: String) -> Set<String> {
     )
 }
 
+func percentile(_ values: [Double], p: Double) -> Double {
+    guard !values.isEmpty else {
+        return 0.0
+    }
+    let ordered = values.sorted()
+    if ordered.count == 1 {
+        return ordered[0]
+    }
+    let rank = Double(ordered.count - 1) * p
+    let lower = Int(rank.rounded(.down))
+    let upper = Int(rank.rounded(.up))
+    if lower == upper {
+        return ordered[lower]
+    }
+    let weight = rank - Double(lower)
+    return ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+}
+
 @main
 enum Main {
     static func main() throws {
         let args = try parseArgs()
         let sweepOnly = ProcessInfo.processInfo.environment["YOUSPEED_SWEEP_ONLY"] == "1"
+        let summaryOnly = ProcessInfo.processInfo.environment["YOUSPEED_SUMMARY_ONLY"] == "1"
         let modelLabelFilter = parseStringListEnv("YOUSPEED_MODEL_LABELS")
         var modelConfigs = [
             ModelConfig(
@@ -706,6 +747,16 @@ enum Main {
                 label: "simpleSpeedRefStreetNameGuardNodeAware",
                 dbURL: args.baselineDB,
                 matchingModel: .simpleSpeedRefStreetNameGuardNodeAwareHeuristic
+            ),
+            ModelConfig(
+                label: "simpleSequenceParticle",
+                dbURL: args.baselineDB,
+                matchingModel: .simpleSequenceParticleHeuristic
+            ),
+            ModelConfig(
+                label: "simpleSequenceViterbi",
+                dbURL: args.baselineDB,
+                matchingModel: .simpleSequenceViterbiHeuristic
             ),
             ModelConfig(
                 label: "simpleSpeedRefConnected",
@@ -747,6 +798,7 @@ enum Main {
             var aggregate = DriveLogReplayMetrics()
             var perLog: [ModelLogSummary] = []
             var predictions: [FixKey: ModelPrediction] = [:]
+            var queryTimes: [Double] = []
 
             for logURL in args.logURLs {
                 let logName = logURL.lastPathComponent
@@ -773,6 +825,7 @@ enum Main {
                         horizontalAccuracyM: entry.horizontalAccM,
                         gpsSignalBars: entry.gpsSignalBars
                     )
+                    queryTimes.append(result.queryTimeMs)
 
                     logMetrics.replayedFixCount += 1
                     if result.selectionTrace.contains(where: { $0.step == "three_way_gate" }) {
@@ -813,28 +866,31 @@ enum Main {
                         }
                     }
 
-                    let key = "\(logName)#\(entry.fixID)"
-                    predictions[key] = ModelPrediction(
-                        label: config.label,
-                        wayID: result.wayID,
-                        streetName: result.streetName,
-                        streetRef: result.streetRef,
-                        speedLimitKmh: result.speedLimitKmh,
-                        isTunnelSegment: result.isTunnelSegment,
-                        usedMiniHMM: result.usedMiniHMM,
-                        usedThreeWayGate: result.selectionTrace.contains(where: { $0.step == "three_way_gate" }),
-                        selectedRank: candidateRank(for: result.wayID, in: result),
-                        pseudoLabelCandidateRank: candidateRank(for: pseudoLabelWayID, in: result),
-                        agreesWithLogged: result.wayID == loggedWayID,
-                        matchesPseudoLabel: pseudoLabelWayID.map { result.wayID == $0 },
-                        queryTimeMs: result.queryTimeMs
-                    )
+                    if !summaryOnly {
+                        let key = "\(logName)#\(index)#\(entry.fixID)"
+                        predictions[key] = ModelPrediction(
+                            label: config.label,
+                            wayID: result.wayID,
+                            streetName: result.streetName,
+                            streetRef: result.streetRef,
+                            speedLimitKmh: result.speedLimitKmh,
+                            isTunnelSegment: result.isTunnelSegment,
+                            usedMiniHMM: result.usedMiniHMM,
+                            usedThreeWayGate: result.selectionTrace.contains(where: { $0.step == "three_way_gate" }),
+                            selectedRank: candidateRank(for: result.wayID, in: result),
+                            pseudoLabelCandidateRank: candidateRank(for: pseudoLabelWayID, in: result),
+                            agreesWithLogged: result.wayID == loggedWayID,
+                            matchesPseudoLabel: pseudoLabelWayID.map { result.wayID == $0 },
+                            queryTimeMs: result.queryTimeMs
+                        )
+                    }
 
                     state.record(
                         result,
                         lat: entry.lat,
                         lon: entry.lon,
                         headingDeg: entry.courseDeg,
+                        speedKmh: entry.speedKmh,
                         horizontalAccuracyM: entry.horizontalAccM,
                         gpsSignalBars: entry.gpsSignalBars
                     )
@@ -875,7 +931,9 @@ enum Main {
                 )
             }
 
-            modelPredictionsByKey[config.label] = predictions
+            if !summaryOnly {
+                modelPredictionsByKey[config.label] = predictions
+            }
             modelSummaries.append(
                 ModelSummary(
                     label: config.label,
@@ -893,65 +951,73 @@ enum Main {
                     recoveredExamples: aggregate.recoveredExamples,
                     regressedExamples: aggregate.regressedExamples,
                     netCorrections: aggregate.netCorrections,
+                    queryTimeSummary: QueryTimeSummary(
+                        count: queryTimes.count,
+                        p50Ms: percentile(queryTimes, p: 0.50),
+                        p95Ms: percentile(queryTimes, p: 0.95),
+                        p99Ms: percentile(queryTimes, p: 0.99)
+                    ),
                     perLog: perLog
                 )
             )
         }
 
         var fixRows: [FixComparisonRow] = []
-        fixRows.reserveCapacity(entriesByLogName.values.reduce(0) { $0 + $1.count })
+        if !summaryOnly {
+            fixRows.reserveCapacity(entriesByLogName.values.reduce(0) { $0 + $1.count })
 
-        for logName in logNames {
-            guard let entries = entriesByLogName[logName] else {
-                continue
-            }
-            for (index, entry) in entries.enumerated() {
-                let key = "\(logName)#\(entry.fixID)"
-                let pseudoLabelWayID = hindsightPseudoLabelWayID(in: entries, at: index)
-                let pseudoTrace = candidateTrace(for: pseudoLabelWayID, in: entry.result)
-                let predictions = modelConfigs.compactMap { config in
-                    modelPredictionsByKey[config.label]?[key]
+            for logName in logNames {
+                guard let entries = entriesByLogName[logName] else {
+                    continue
                 }
-                let distinctPredictedWayCount = Set(predictions.compactMap(\.wayID)).count
-                let allModelsAgree = distinctPredictedWayCount <= 1
-                let loggedWayID = entry.result?.wayID
-                let anyModelDiffersFromLogged = predictions.contains { $0.wayID != loggedWayID }
-                let anyModelMatchesPseudoLabel = predictions.contains { $0.matchesPseudoLabel == true }
-                let bestMatchingModels = predictions.compactMap { prediction in
-                    prediction.matchesPseudoLabel == true ? prediction.label : nil
-                }
+                for (index, entry) in entries.enumerated() {
+                    let key = "\(logName)#\(index)#\(entry.fixID)"
+                    let pseudoLabelWayID = hindsightPseudoLabelWayID(in: entries, at: index)
+                    let pseudoTrace = candidateTrace(for: pseudoLabelWayID, in: entry.result)
+                    let predictions = modelConfigs.compactMap { config in
+                        modelPredictionsByKey[config.label]?[key]
+                    }
+                    let distinctPredictedWayCount = Set(predictions.compactMap(\.wayID)).count
+                    let allModelsAgree = distinctPredictedWayCount <= 1
+                    let loggedWayID = entry.result?.wayID
+                    let anyModelDiffersFromLogged = predictions.contains { $0.wayID != loggedWayID }
+                    let anyModelMatchesPseudoLabel = predictions.contains { $0.matchesPseudoLabel == true }
+                    let bestMatchingModels = predictions.compactMap { prediction in
+                        prediction.matchesPseudoLabel == true ? prediction.label : nil
+                    }
 
-                fixRows.append(
-                    FixComparisonRow(
-                        logName: logName,
-                        logIndex: index,
-                        fixID: entry.fixID,
-                        timestampUTC: entry.timestampUTC,
-                        lat: entry.lat,
-                        lon: entry.lon,
-                        speedKmh: entry.speedKmh,
-                        horizontalAccM: entry.horizontalAccM,
-                        courseDeg: entry.courseDeg,
-                        gpsSignalBars: entry.gpsSignalBars,
-                        status: entry.status,
-                        loggedWayID: loggedWayID,
-                        loggedStreetName: entry.result?.streetName,
-                        loggedStreetRef: entry.result?.streetRef,
-                        loggedMatchesPseudoLabel: pseudoLabelWayID.map { loggedWayID == $0 },
-                        loggedPseudoLabelCandidateRank: candidateRank(for: pseudoLabelWayID, in: entry.result),
-                        loggedSimpleReason: loggedSimpleReason(for: entry),
-                        pseudoLabelWayID: pseudoLabelWayID,
-                        pseudoLabelStreetName: pseudoTrace?.streetName,
-                        pseudoLabelStreetRef: pseudoTrace?.streetRef,
-                        isChangedExample: pseudoLabelWayID.map { loggedWayID != $0 },
-                        predictions: predictions,
-                        distinctPredictedWayCount: distinctPredictedWayCount,
-                        allModelsAgree: allModelsAgree,
-                        anyModelDiffersFromLogged: anyModelDiffersFromLogged,
-                        anyModelMatchesPseudoLabel: anyModelMatchesPseudoLabel,
-                        bestMatchingModels: bestMatchingModels
+                    fixRows.append(
+                        FixComparisonRow(
+                            logName: logName,
+                            logIndex: index,
+                            fixID: entry.fixID,
+                            timestampUTC: entry.timestampUTC,
+                            lat: entry.lat,
+                            lon: entry.lon,
+                            speedKmh: entry.speedKmh,
+                            horizontalAccM: entry.horizontalAccM,
+                            courseDeg: entry.courseDeg,
+                            gpsSignalBars: entry.gpsSignalBars,
+                            status: entry.status,
+                            loggedWayID: loggedWayID,
+                            loggedStreetName: entry.result?.streetName,
+                            loggedStreetRef: entry.result?.streetRef,
+                            loggedMatchesPseudoLabel: pseudoLabelWayID.map { loggedWayID == $0 },
+                            loggedPseudoLabelCandidateRank: candidateRank(for: pseudoLabelWayID, in: entry.result),
+                            loggedSimpleReason: loggedSimpleReason(for: entry),
+                            pseudoLabelWayID: pseudoLabelWayID,
+                            pseudoLabelStreetName: pseudoTrace?.streetName,
+                            pseudoLabelStreetRef: pseudoTrace?.streetRef,
+                            isChangedExample: pseudoLabelWayID.map { loggedWayID != $0 },
+                            predictions: predictions,
+                            distinctPredictedWayCount: distinctPredictedWayCount,
+                            allModelsAgree: allModelsAgree,
+                            anyModelDiffersFromLogged: anyModelDiffersFromLogged,
+                            anyModelMatchesPseudoLabel: anyModelMatchesPseudoLabel,
+                            bestMatchingModels: bestMatchingModels
+                        )
                     )
-                )
+                }
             }
         }
 
@@ -967,6 +1033,12 @@ enum Main {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try encoder.encode(payload).write(to: args.outputJSON)
+
+        if summaryOnly {
+            FileHandle.standardOutput.write(Data("Wrote JSON: \(args.outputJSON.path)\n".utf8))
+            FileHandle.standardOutput.write(Data("Summary-only mode skipped CSV materialization.\n".utf8))
+            return
+        }
 
         try ensureParentDirectory(for: args.outputCSV)
         let modelPrefixes = modelConfigs.map(\.label)

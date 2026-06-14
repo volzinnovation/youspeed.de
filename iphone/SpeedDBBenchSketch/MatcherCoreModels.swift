@@ -3,6 +3,29 @@ import Foundation
 struct WayMatchRecentFix: Sendable {
     let lat: Double
     let lon: Double
+    let headingDeg: Double?
+    let headingAccuracyDeg: Double?
+    let speedKmh: Double?
+    let horizontalAccuracyM: Double?
+    let gpsSignalBars: Int?
+
+    init(
+        lat: Double,
+        lon: Double,
+        headingDeg: Double? = nil,
+        headingAccuracyDeg: Double? = nil,
+        speedKmh: Double? = nil,
+        horizontalAccuracyM: Double? = nil,
+        gpsSignalBars: Int? = nil
+    ) {
+        self.lat = lat
+        self.lon = lon
+        self.headingDeg = headingDeg
+        self.headingAccuracyDeg = headingAccuracyDeg
+        self.speedKmh = speedKmh
+        self.horizontalAccuracyM = horizontalAccuracyM
+        self.gpsSignalBars = gpsSignalBars
+    }
 }
 
 struct CorridorMatchState: Codable, Sendable {
@@ -21,8 +44,12 @@ struct WayMatchContext: Sendable {
     let preferredEndpointProximityM: Double?
     let recentWayIDs: [String]
     let recentFixes: [WayMatchRecentFix]
+    let sameRefUrbanReleaseStreak: Int
     let preferredStreetRef: String?
+    let activeStreetRef: String?
+    let preferredStreetName: String?
     let recentStreetRefs: [String]
+    let consecutiveNoRefMatchCount: Int
     let recentTunnelCandidateWayIDs: [String]
     let recentTunnelCandidateRefs: [String]
     let recentTunnelApproachWayIDs: [String]
@@ -47,8 +74,12 @@ struct WayMatchContext: Sendable {
         preferredEndpointProximityM: Double? = nil,
         recentWayIDs: [String],
         recentFixes: [WayMatchRecentFix] = [],
+        sameRefUrbanReleaseStreak: Int = 0,
         preferredStreetRef: String?,
+        activeStreetRef: String? = nil,
+        preferredStreetName: String? = nil,
         recentStreetRefs: [String],
+        consecutiveNoRefMatchCount: Int = 0,
         recentTunnelCandidateWayIDs: [String] = [],
         recentTunnelCandidateRefs: [String] = [],
         recentTunnelApproachWayIDs: [String] = [],
@@ -72,8 +103,12 @@ struct WayMatchContext: Sendable {
         self.preferredEndpointProximityM = preferredEndpointProximityM
         self.recentWayIDs = recentWayIDs
         self.recentFixes = recentFixes
+        self.sameRefUrbanReleaseStreak = max(sameRefUrbanReleaseStreak, 0)
         self.preferredStreetRef = preferredStreetRef
+        self.activeStreetRef = activeStreetRef
+        self.preferredStreetName = preferredStreetName
         self.recentStreetRefs = recentStreetRefs
+        self.consecutiveNoRefMatchCount = max(consecutiveNoRefMatchCount, 0)
         self.recentTunnelCandidateWayIDs = recentTunnelCandidateWayIDs
         self.recentTunnelCandidateRefs = recentTunnelCandidateRefs
         self.recentTunnelApproachWayIDs = recentTunnelApproachWayIDs
@@ -110,6 +145,40 @@ struct WayMatchHypothesis: Codable, Sendable {
     let endLat: Double?
     let endLon: Double?
     let isTunnel: Bool
+
+    init(
+        wayID: String,
+        streetRef: String?,
+        highway: String?,
+        corridorState: String? = nil,
+        corridorKind: String? = nil,
+        corridorID: Int? = nil,
+        corridorSideNodeKey: String? = nil,
+        cumulativeCost: Double,
+        emissionScore: Double,
+        endpointProximityM: Double,
+        startLat: Double?,
+        startLon: Double?,
+        endLat: Double?,
+        endLon: Double?,
+        isTunnel: Bool
+    ) {
+        self.wayID = wayID
+        self.streetRef = streetRef
+        self.highway = highway
+        self.corridorState = corridorState
+        self.corridorKind = corridorKind
+        self.corridorID = corridorID
+        self.corridorSideNodeKey = corridorSideNodeKey
+        self.cumulativeCost = cumulativeCost
+        self.emissionScore = emissionScore
+        self.endpointProximityM = endpointProximityM
+        self.startLat = startLat
+        self.startLon = startLon
+        self.endLat = endLat
+        self.endLon = endLon
+        self.isTunnel = isTunnel
+    }
 
     var endpoints: [(Double, Double)] {
         var values: [(Double, Double)] = []
@@ -174,6 +243,8 @@ struct SpeedLimitResult: Codable, Sendable {
     let streetRef: String?
     let matchedEndpointProximityM: Double?
     let cityName: String?
+    let cityPlaceName: String?
+    let cityDistrictName: String?
     let insideCity: Bool?
     let citySource: String?
     let cityResolveMs: Double

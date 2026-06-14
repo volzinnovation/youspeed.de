@@ -36,6 +36,14 @@ private struct CityBoundaryCandidate {
     let maxLat: Double
 }
 
+private struct WayTableSchema {
+    let waysKeyColumn: String
+    let wayIDExpression: String
+    let rtreeKeyColumn: String
+    let geomKeyColumn: String
+    let tileKeyColumn: String?
+}
+
 final class SQLiteBenchmarkRunner {
     private let dbPath: String
 
@@ -63,6 +71,7 @@ final class SQLiteBenchmarkRunner {
         guard hasWays else {
             throw BenchmarkError.invalidDB("DB does not contain required table: ways")
         }
+        let waySchema = try queryWayTableSchema(db: db, hasWaysRTree: hasWaysRTree, hasWayTile: hasWayTile)
 
         let hasRTree = try queryCompileOption(db: db, option: "ENABLE_RTREE")
         let tileSizeM = try queryTileSize(db: db)
@@ -78,6 +87,7 @@ final class SQLiteBenchmarkRunner {
                         input: input,
                         variant: effectiveVariant,
                         mode: mode,
+                        waySchema: waySchema,
                         tileSizeM: tileSizeM
                     )
                 }
@@ -104,6 +114,7 @@ final class SQLiteBenchmarkRunner {
         input: ProbeInput,
         variant: BenchmarkVariant,
         mode: DistanceMode,
+        waySchema: WayTableSchema,
         tileSizeM: Double
     ) throws {
         if mode == .polycontainment {
@@ -116,7 +127,7 @@ final class SQLiteBenchmarkRunner {
             return
         }
 
-        let candidates = try loadCandidates(db: db, input: input, variant: variant, tileSizeM: tileSizeM)
+        let candidates = try loadCandidates(db: db, input: input, variant: variant, waySchema: waySchema, tileSizeM: tileSizeM)
         _ = rankCandidates(candidates: candidates, input: input, mode: mode)
     }
 
@@ -495,18 +506,22 @@ final class SQLiteBenchmarkRunner {
         db: OpaquePointer,
         input: ProbeInput,
         variant: BenchmarkVariant,
+        waySchema: WayTableSchema,
         tileSizeM: Double
     ) throws -> [CandidateRow] {
         let bounds = queryBounds(lat: input.lat, lon: input.lon, radiusM: input.searchRadiusM)
+        let key = waySchema.waysKeyColumn
+        let rowIDExpr = "w.\(key)"
+        let wayIDExpr = waySchema.wayIDExpression
 
         switch variant {
         case .v1:
             let sql = """
-            SELECT w.row_id, w.way_id, w.highway, w.approx_heading_deg,
+            SELECT \(rowIDExpr), \(wayIDExpr), w.highway, w.approx_heading_deg,
                    w.min_lon, w.min_lat, w.max_lon, w.max_lat,
                    g.points_json
             FROM ways w
-            LEFT JOIN way_geom g ON g.row_id = w.row_id
+            LEFT JOIN way_geom g ON g.\(waySchema.geomKeyColumn) = w.\(key)
             WHERE w.min_lon <= ?1 AND w.max_lon >= ?2
               AND w.min_lat <= ?3 AND w.max_lat >= ?4
             LIMIT ?5
@@ -524,6 +539,9 @@ final class SQLiteBenchmarkRunner {
             )
 
         case .v2:
+            guard let tileKeyColumn = waySchema.tileKeyColumn else {
+                return try loadCandidates(db: db, input: input, variant: .v1, waySchema: waySchema, tileSizeM: tileSizeM)
+            }
             let (tileX, tileY) = tileForLonLat(lon: input.lon, lat: input.lat, tileSizeM: tileSizeM)
             let tileXMin = tileX - input.tileRadius
             let tileXMax = tileX + input.tileRadius
@@ -531,17 +549,17 @@ final class SQLiteBenchmarkRunner {
             let tileYMax = tileY + input.tileRadius
             let sql = """
             WITH tile_rows AS (
-              SELECT DISTINCT row_id
+              SELECT DISTINCT \(tileKeyColumn) AS key_id
               FROM way_tile
               WHERE tile_x BETWEEN ?1 AND ?2
                 AND tile_y BETWEEN ?3 AND ?4
             )
-            SELECT w.row_id, w.way_id, w.highway, w.approx_heading_deg,
+            SELECT \(rowIDExpr), \(wayIDExpr), w.highway, w.approx_heading_deg,
                    w.min_lon, w.min_lat, w.max_lon, w.max_lat,
                    g.points_json
             FROM tile_rows t
-            JOIN ways w ON w.row_id = t.row_id
-            LEFT JOIN way_geom g ON g.row_id = t.row_id
+            JOIN ways w ON w.\(key) = t.key_id
+            LEFT JOIN way_geom g ON g.\(waySchema.geomKeyColumn) = t.key_id
             WHERE w.min_lon <= ?5 AND w.max_lon >= ?6
               AND w.min_lat <= ?7 AND w.max_lat >= ?8
             LIMIT ?9
@@ -564,12 +582,12 @@ final class SQLiteBenchmarkRunner {
 
         case .v3:
             let sql = """
-            SELECT w.row_id, w.way_id, w.highway, w.approx_heading_deg,
+            SELECT \(rowIDExpr), \(wayIDExpr), w.highway, w.approx_heading_deg,
                    w.min_lon, w.min_lat, w.max_lon, w.max_lat,
                    g.points_json
             FROM ways_rtree r
-            JOIN ways w ON w.row_id = r.row_id
-            LEFT JOIN way_geom g ON g.row_id = w.row_id
+            JOIN ways w ON w.\(key) = r.\(waySchema.rtreeKeyColumn)
+            LEFT JOIN way_geom g ON g.\(waySchema.geomKeyColumn) = w.\(key)
             WHERE r.min_lon <= ?1 AND r.max_lon >= ?2
               AND r.min_lat <= ?3 AND r.max_lat >= ?4
             LIMIT ?5
@@ -587,6 +605,9 @@ final class SQLiteBenchmarkRunner {
             )
 
         case .v4:
+            guard let tileKeyColumn = waySchema.tileKeyColumn else {
+                return try loadCandidates(db: db, input: input, variant: .v3, waySchema: waySchema, tileSizeM: tileSizeM)
+            }
             let (tileX, tileY) = tileForLonLat(lon: input.lon, lat: input.lat, tileSizeM: tileSizeM)
             let tileXMin = tileX - input.tileRadius
             let tileXMax = tileX + input.tileRadius
@@ -594,18 +615,18 @@ final class SQLiteBenchmarkRunner {
             let tileYMax = tileY + input.tileRadius
             let sql = """
             WITH tile_rows AS (
-              SELECT DISTINCT row_id
+              SELECT DISTINCT \(tileKeyColumn) AS key_id
               FROM way_tile
               WHERE tile_x BETWEEN ?1 AND ?2
                 AND tile_y BETWEEN ?3 AND ?4
             )
-            SELECT w.row_id, w.way_id, w.highway, w.approx_heading_deg,
+            SELECT \(rowIDExpr), \(wayIDExpr), w.highway, w.approx_heading_deg,
                    w.min_lon, w.min_lat, w.max_lon, w.max_lat,
                    g.points_json
             FROM tile_rows t
-            JOIN ways_rtree r ON r.row_id = t.row_id
-            JOIN ways w ON w.row_id = t.row_id
-            LEFT JOIN way_geom g ON g.row_id = t.row_id
+            JOIN ways_rtree r ON r.\(waySchema.rtreeKeyColumn) = t.key_id
+            JOIN ways w ON w.\(key) = t.key_id
+            LEFT JOIN way_geom g ON g.\(waySchema.geomKeyColumn) = t.key_id
             WHERE r.min_lon <= ?5 AND r.max_lon >= ?6
               AND r.min_lat <= ?7 AND r.max_lat >= ?8
             LIMIT ?9
@@ -626,6 +647,71 @@ final class SQLiteBenchmarkRunner {
                 }
             )
         }
+    }
+
+    private func queryWayTableSchema(
+        db: OpaquePointer,
+        hasWaysRTree: Bool,
+        hasWayTile: Bool
+    ) throws -> WayTableSchema {
+        let waysKeyColumn: String
+        let wayIDExpression: String
+        if try columnExists(db: db, tableName: "ways", columnName: "row_id") {
+            waysKeyColumn = "row_id"
+            wayIDExpression = "CAST(w.way_id AS TEXT)"
+        } else if try columnExists(db: db, tableName: "ways", columnName: "way_id") {
+            waysKeyColumn = "way_id"
+            wayIDExpression = "CAST(w.way_id AS TEXT)"
+        } else {
+            throw BenchmarkError.invalidDB("ways table must contain row_id or way_id")
+        }
+
+        let rtreeKeyColumn: String
+        let rtreeHasWaysKey = hasWaysRTree ? try columnExists(db: db, tableName: "ways_rtree", columnName: waysKeyColumn) : false
+        let rtreeHasRowID = hasWaysRTree ? try columnExists(db: db, tableName: "ways_rtree", columnName: "row_id") : false
+        let rtreeHasWayID = hasWaysRTree ? try columnExists(db: db, tableName: "ways_rtree", columnName: "way_id") : false
+        if rtreeHasWaysKey {
+            rtreeKeyColumn = waysKeyColumn
+        } else if rtreeHasRowID {
+            rtreeKeyColumn = "row_id"
+        } else if rtreeHasWayID {
+            rtreeKeyColumn = "way_id"
+        } else {
+            rtreeKeyColumn = waysKeyColumn
+        }
+
+        let geomKeyColumn: String
+        if try columnExists(db: db, tableName: "way_geom", columnName: waysKeyColumn) {
+            geomKeyColumn = waysKeyColumn
+        } else if try columnExists(db: db, tableName: "way_geom", columnName: "row_id") {
+            geomKeyColumn = "row_id"
+        } else if try columnExists(db: db, tableName: "way_geom", columnName: "way_id") {
+            geomKeyColumn = "way_id"
+        } else {
+            geomKeyColumn = waysKeyColumn
+        }
+
+        let tileKeyColumn: String?
+        let tileHasWaysKey = hasWayTile ? try columnExists(db: db, tableName: "way_tile", columnName: waysKeyColumn) : false
+        let tileHasRowID = hasWayTile ? try columnExists(db: db, tableName: "way_tile", columnName: "row_id") : false
+        let tileHasWayID = hasWayTile ? try columnExists(db: db, tableName: "way_tile", columnName: "way_id") : false
+        if tileHasWaysKey {
+            tileKeyColumn = waysKeyColumn
+        } else if tileHasRowID {
+            tileKeyColumn = "row_id"
+        } else if tileHasWayID {
+            tileKeyColumn = "way_id"
+        } else {
+            tileKeyColumn = nil
+        }
+
+        return WayTableSchema(
+            waysKeyColumn: waysKeyColumn,
+            wayIDExpression: wayIDExpression,
+            rtreeKeyColumn: rtreeKeyColumn,
+            geomKeyColumn: geomKeyColumn,
+            tileKeyColumn: tileKeyColumn
+        )
     }
 
     private func queryCandidates(
@@ -747,6 +833,27 @@ final class SQLiteBenchmarkRunner {
         defer { sqlite3_finalize(stmt) }
         sqlite3_bind_text(stmt, 1, tableName, -1, SQLITE_TRANSIENT)
         return sqlite3_step(stmt) == SQLITE_ROW
+    }
+
+    private func columnExists(db: OpaquePointer, tableName: String, columnName: String) throws -> Bool {
+        let sql = "PRAGMA table_info(\(tableName))"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw BenchmarkError.sqliteError("prepare failed (column exists)")
+        }
+        defer { sqlite3_finalize(stmt) }
+        while true {
+            let rc = sqlite3_step(stmt)
+            if rc == SQLITE_ROW {
+                if let ptr = sqlite3_column_text(stmt, 1), String(cString: ptr) == columnName {
+                    return true
+                }
+            } else if rc == SQLITE_DONE {
+                return false
+            } else {
+                throw BenchmarkError.sqliteError("step failed (column exists)")
+            }
+        }
     }
 
     private func queryTileSize(db: OpaquePointer) throws -> Double {

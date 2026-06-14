@@ -80,6 +80,7 @@ struct BundledMatchContextState {
         guard preferredWayID != nil ||
                 !recentWayIDs.isEmpty ||
                 !recentStreetRefs.isEmpty ||
+                !recentFixes.isEmpty ||
                 !recentHypotheses.isEmpty ||
                 !recentTunnelCandidateWayIDs.isEmpty ||
                 !recentTunnelCandidateRefs.isEmpty ||
@@ -125,6 +126,9 @@ struct BundledMatchContextState {
         _ result: SpeedLimitResult,
         lat: Double? = nil,
         lon: Double? = nil,
+        headingDeg: Double? = nil,
+        headingAccuracyDeg: Double? = nil,
+        speedKmh: Double? = nil,
         horizontalAccuracyM: Double,
         gpsSignalBars: Int
     ) {
@@ -138,9 +142,20 @@ struct BundledMatchContextState {
             preferredWayID = wayID
         }
         if let lat, let lon {
-            recentFixes.insert(WayMatchRecentFix(lat: lat, lon: lon), at: 0)
-            if recentFixes.count > 3 {
-                recentFixes.removeLast(recentFixes.count - 3)
+            recentFixes.insert(
+                WayMatchRecentFix(
+                    lat: lat,
+                    lon: lon,
+                    headingDeg: headingDeg,
+                    headingAccuracyDeg: headingAccuracyDeg,
+                    speedKmh: speedKmh,
+                    horizontalAccuracyM: horizontalAccuracyM,
+                    gpsSignalBars: gpsSignalBars
+                ),
+                at: 0
+            )
+            if recentFixes.count > 10 {
+                recentFixes.removeLast(recentFixes.count - 10)
             }
         }
         preferredHighway = result.highway
@@ -974,6 +989,8 @@ func collectFieldReplay(
                 result,
                 lat: entry.lat,
                 lon: entry.lon,
+                headingDeg: entry.courseDeg,
+                speedKmh: entry.speedKmh,
                 horizontalAccuracyM: entry.horizontalAccM,
                 gpsSignalBars: entry.gpsSignalBars
             )
@@ -1131,6 +1148,8 @@ func collectGeomReplay(
                 result,
                 lat: entry.lat,
                 lon: entry.lon,
+                headingDeg: entry.courseDeg,
+                speedKmh: entry.speedKmh,
                 horizontalAccuracyM: entry.horizontalAccM,
                 gpsSignalBars: entry.gpsSignalBars
             )
@@ -1312,6 +1331,8 @@ func profileSummaries(
                     result,
                     lat: entry.lat,
                     lon: entry.lon,
+                    headingDeg: entry.courseDeg,
+                    speedKmh: entry.speedKmh,
                     horizontalAccuracyM: entry.horizontalAccM,
                     gpsSignalBars: entry.gpsSignalBars
                 )
@@ -1377,6 +1398,8 @@ func profileSummaries(
                     result,
                     lat: entry.lat,
                     lon: entry.lon,
+                    headingDeg: entry.courseDeg,
+                    speedKmh: entry.speedKmh,
                     horizontalAccuracyM: entry.horizontalAccM,
                     gpsSignalBars: entry.gpsSignalBars
                 )

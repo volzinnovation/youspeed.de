@@ -13,6 +13,26 @@ final class SpeedDBBenchTests: XCTestCase {
         let report: KarlsruheVariantReport
     }
 
+    private struct StratifiedProbe: Codable {
+        let probeID: String
+        let stratum: String
+        let region: String
+        let lat: Double
+        let lon: Double
+        let heading: Double?
+    }
+
+    private struct StratifiedProbeReport: Codable {
+        let probe: StratifiedProbe
+        let report: BenchmarkReport
+    }
+
+    private struct StratifiedLogPayload: Codable {
+        let datasetKind: String
+        let probeCount: Int
+        let reports: [StratifiedProbeReport]
+    }
+
     func testBenchmarkRunnerOnSyntheticDB() throws {
         let (dbURL, datasetKind, cleanup) = try prepareBenchmarkDB()
         defer { cleanup() }
@@ -57,6 +77,69 @@ final class SpeedDBBenchTests: XCTestCase {
             }
         }
         XCTAssertTrue(report.hasWayTileTable)
+    }
+
+    func testStratifiedLatencyBenchmarkFromEnvironment() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let dbPath = env["SPEEDDBBENCH_DB_PATH"], !dbPath.isEmpty else {
+            throw XCTSkip("SPEEDDBBENCH_DB_PATH not set")
+        }
+        guard FileManager.default.fileExists(atPath: dbPath) else {
+            throw XCTSkip("Benchmark DB does not exist at \(dbPath)")
+        }
+        guard let probeCSVPath = env["SPEEDDBBENCH_PROBE_CSV"], !probeCSVPath.isEmpty else {
+            throw XCTSkip("SPEEDDBBENCH_PROBE_CSV not set")
+        }
+
+        let allProbes = try loadStratifiedProbes(path: probeCSVPath)
+        let regionFilter = env["SPEEDDBBENCH_REGION_FILTER"].map {
+            Set($0.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })
+        } ?? []
+        let probes = regionFilter.isEmpty ? allProbes : allProbes.filter { regionFilter.contains($0.region) }
+        if probes.isEmpty {
+            throw XCTSkip("No probes remain after SPEEDDBBENCH_REGION_FILTER")
+        }
+
+        let repeats = max(1, Int(env["SPEEDDBBENCH_REPEATS"] ?? "5") ?? 5)
+        let searchRadiusM = Double(env["SPEEDDBBENCH_SEARCH_RADIUS_M"] ?? "1200") ?? 1200.0
+        let maxCandidates = max(1, Int(env["SPEEDDBBENCH_MAX_CANDIDATES"] ?? "5000") ?? 5000)
+        let tileRadius = max(0, Int(env["SPEEDDBBENCH_TILE_RADIUS"] ?? "1") ?? 1)
+        let polylineTopN = max(1, Int(env["SPEEDDBBENCH_POLYLINE_TOP_N"] ?? "250") ?? 250)
+
+        let runner = SQLiteBenchmarkRunner(dbPath: dbPath)
+        var reports: [StratifiedProbeReport] = []
+        for probe in probes {
+            let hasHeading = probe.heading != nil && (0.0...360.0).contains(probe.heading ?? -1.0)
+            let input = ProbeInput(
+                lat: probe.lat,
+                lon: probe.lon,
+                heading: hasHeading ? (probe.heading ?? 0.0) : 0.0,
+                repeats: repeats,
+                searchRadiusM: searchRadiusM,
+                tileRadius: tileRadius,
+                maxCandidates: maxCandidates,
+                topK: 5,
+                headingWeight: hasHeading ? 2.0 : 0.0,
+                polylineTopN: polylineTopN
+            )
+            let report = try runner.run(input: input)
+            reports.append(StratifiedProbeReport(probe: probe, report: report))
+        }
+
+        let payload = StratifiedLogPayload(
+            datasetKind: env["SPEEDDBBENCH_DATASET_KIND"] ?? "external_sqlite",
+            probeCount: reports.count,
+            reports: reports
+        )
+        let data = try JSONEncoder().encode(payload)
+        if let json = String(data: data, encoding: .utf8) {
+            print("STRATIFIED_BENCHMARK_JSON=\(json)")
+        }
+
+        XCTAssertFalse(reports.isEmpty)
+        if env["SPEEDDBBENCH_REQUIRE_WAY_TILE"] == "1" {
+            XCTAssertTrue(reports.contains { $0.report.hasWayTileTable })
+        }
     }
 
     func testKarlsruheVariantRouteBenchmarksIfPrepared() throws {
@@ -145,6 +228,75 @@ final class SpeedDBBenchTests: XCTestCase {
             try fm.copyItem(at: src, to: dst)
             out.append((dst, variant.datasetKind, variant.mode))
         }
+        return out
+    }
+
+    private func loadStratifiedProbes(path: String) throws -> [StratifiedProbe] {
+        let raw = try String(contentsOfFile: path, encoding: .utf8)
+        let lines = raw.split(whereSeparator: { $0.isNewline }).map(String.init)
+        guard let headerLine = lines.first else {
+            return []
+        }
+        let headers = parseCSVLine(headerLine)
+        var probes: [StratifiedProbe] = []
+        for line in lines.dropFirst() where !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let values = parseCSVLine(line)
+            var row: [String: String] = [:]
+            for (idx, header) in headers.enumerated() where idx < values.count {
+                row[header] = values[idx]
+            }
+            guard let probeID = row["probe_id"],
+                  let stratum = row["stratum"],
+                  let region = row["region"],
+                  let lat = Double(row["lat"] ?? ""),
+                  let lon = Double(row["lon"] ?? "") else {
+                continue
+            }
+            let heading = Double(row["heading"] ?? "")
+            probes.append(
+                StratifiedProbe(
+                    probeID: probeID,
+                    stratum: stratum,
+                    region: region,
+                    lat: lat,
+                    lon: lon,
+                    heading: heading
+                )
+            )
+        }
+        return probes
+    }
+
+    private func parseCSVLine(_ line: String) -> [String] {
+        var out: [String] = []
+        var current = ""
+        var inQuotes = false
+        var iterator = line.makeIterator()
+        while let ch = iterator.next() {
+            if ch == "\"" {
+                if inQuotes, let next = iterator.next() {
+                    if next == "\"" {
+                        current.append("\"")
+                    } else {
+                        inQuotes = false
+                        if next == "," {
+                            out.append(current)
+                            current = ""
+                        } else {
+                            current.append(next)
+                        }
+                    }
+                } else {
+                    inQuotes.toggle()
+                }
+            } else if ch == "," && !inQuotes {
+                out.append(current)
+                current = ""
+            } else {
+                current.append(ch)
+            }
+        }
+        out.append(current)
         return out
     }
 
