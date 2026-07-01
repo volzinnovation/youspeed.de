@@ -725,6 +725,56 @@ tbody tr.highlight td {
   margin-top: 0.4rem;
 }
 
+/* ---------- Offline readiness ---------- */
+.readiness-panel {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.4rem;
+  border: 1px solid rgba(245, 166, 35, 0.26);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(135deg, rgba(230, 60, 47, 0.12), rgba(245, 166, 35, 0.08)),
+    var(--bg-card);
+}
+
+.readiness-copy h3 {
+  font-size: 1.18rem;
+  margin-bottom: 0.5rem;
+}
+
+.readiness-copy p,
+.readiness-metrics p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.readiness-metrics {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.readiness-metrics div {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.readiness-metrics span {
+  display: block;
+  color: var(--amber);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.readiness-metrics strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-head);
+  font-size: clamp(1.7rem, 5vw, 2.35rem);
+  line-height: 1;
+}
+
 /* ---------- Footer ---------- */
 .site-footer {
   border-top: 1px solid var(--line);
@@ -786,6 +836,9 @@ tbody tr.highlight td {
   .speech-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .readiness-metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
   .shots-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
@@ -807,6 +860,11 @@ tbody tr.highlight td {
   }
   .hero h1 {
     letter-spacing: -0.03em;
+  }
+  .readiness-panel {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    align-items: center;
+    padding: 1.8rem;
   }
 }
 

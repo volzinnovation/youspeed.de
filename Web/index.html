@@ -37,6 +37,7 @@
       <div class="nav-links" id="nav-links">
         <a href="#features">Funktionen</a>
         <a href="#warnstufen">Warnstufen</a>
+        <a href="#readiness">Readiness</a>
         <a href="#daten">Daten</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Menü öffnen">
@@ -48,6 +49,7 @@
     <div class="mobile-menu" id="mobile-menu">
       <a href="#features">Funktionen</a>
       <a href="#warnstufen">Warnstufen</a>
+      <a href="#readiness">Readiness</a>
       <a href="#daten">Daten</a>
     </div>
 
@@ -387,6 +389,47 @@
               <li>Fehler können in OpenStreetMap manuell korrigiert werden.</li>
             </ol>
           </article>
+        </div>
+      </section>
+
+      <!-- ========== Offline Readiness ========== -->
+      <section class="container" id="readiness">
+        <div class="section-header reveal">
+          <h2>Offline-Daten, messbar gemacht</h2>
+          <p>
+            YouSpeed ist nicht nur eine Anzeige. Die App basiert auf einem
+            reproduzierbaren Bundle- und Update-Workflow, der im Repository mit
+            Benchmarks und Paper-Artefakten belegt ist.
+          </p>
+        </div>
+
+        <div class="readiness-panel reveal">
+          <div class="readiness-copy">
+            <h3>Was vor einem Release geprüft wird</h3>
+            <p>
+              Die aktuellen Artefakte messen 30 OSM-Update-Tage, vergleichen
+              Bundle-Architekturen und halten iOS-/Android-Latenzwerte getrennt
+              fest. So bleiben Offline-Daten, Matcher und App-Performance
+              nachvollziehbar.
+            </p>
+          </div>
+          <div class="readiness-metrics" aria-label="YouSpeed Readiness Kennzahlen">
+            <div>
+              <span>Update-Sample</span>
+              <strong>30 Tage</strong>
+              <p>normalisierte OSM-Aenderungen</p>
+            </div>
+            <div>
+              <span>S2 Payload</span>
+              <strong>57 MB</strong>
+              <p>Median pro Update-Tag</p>
+            </div>
+            <div>
+              <span>S3 Apply</span>
+              <strong>1,03 s</strong>
+              <p>Median Patch-Lauf pro Tag</p>
+            </div>
+          </div>
         </div>
       </section>
 
