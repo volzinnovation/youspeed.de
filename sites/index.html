@@ -3,12 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      YouSpeed – Dein Intelligent Speed Assistant (ISA) für iOS &amp; Android
-    </title>
+    <title>YouSpeed – Dein Intelligent Speed Assistant (ISA) für Deutschland</title>
     <meta
       name="description"
-      content="YouSpeed ist dein Intelligent Speed Assistant (ISA): Live-Tempolimit, Bußgeld-Warnung und Führerschein-Schutz. Jetzt kostenlos für iPhone und Android."
+      content="YouSpeed ist dein Intelligent Speed Assistant (ISA): Live-Tempolimit, Bußgeld-Warnung und Führerschein-Schutz. Deutschland-Start zuerst für iPhone."
     />
 
     <!-- Open Graph -->
@@ -18,9 +16,10 @@
     />
     <meta
       property="og:description"
-      content="Live-Tempolimit, Warnstufen & Bußgeld-Warnung auf einen Blick. Kostenlos für iOS & Android."
+      content="Live-Tempolimit, Warnstufen & Bußgeld-Warnung auf einen Blick. Deutschland-Start zuerst für iPhone."
     />
     <meta property="og:type" content="website" />
+    <link rel="icon" href="data:," />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,6 +36,7 @@
       <div class="nav-links" id="nav-links">
         <a href="#features">Funktionen</a>
         <a href="#warnstufen">Warnstufen</a>
+        <a href="#launchstatus">Launch</a>
         <a href="#readiness">Readiness</a>
         <a href="#daten">Daten</a>
       </div>
@@ -49,6 +49,7 @@
     <div class="mobile-menu" id="mobile-menu">
       <a href="#features">Funktionen</a>
       <a href="#warnstufen">Warnstufen</a>
+      <a href="#launchstatus">Launch</a>
       <a href="#readiness">Readiness</a>
       <a href="#daten">Daten</a>
     </div>
@@ -57,7 +58,7 @@
       <!-- ========== Hero ========== -->
       <section class="hero" id="hero">
         <span class="hero-badge">
-          <span class="dot"></span> Intelligent Speed Assistant (ISA)
+          <span class="dot"></span> Deutschland-Start · iPhone zuerst
         </span>
         <h1>Dein Tempo im Blick.</h1>
         <p class="lead">
@@ -69,9 +70,7 @@
         <div class="hero-actions" id="download">
           <a
             class="btn btn-primary"
-            href="#"
-            target="_blank"
-            rel="noreferrer"
+            href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
             id="btn-appstore"
           >
             <svg
@@ -88,14 +87,11 @@
                 d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
               />
             </svg>
-            App Store
+            Launch-Update anfragen
           </a>
           <a
-            class="btn btn-primary"
-            href="#"
-            target="_blank"
-            rel="noreferrer"
-            id="btn-playstore"
+            class="btn btn-ghost"
+            href="#launchstatus"
           >
             <svg
               width="20"
@@ -109,8 +105,15 @@
             >
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
-            Google Play
+            Release-Stand ansehen
           </a>
+        </div>
+
+        <div class="launch-strip" aria-label="Aktueller YouSpeed Launch-Status">
+          <span>iPhone Launch Candidate</span>
+          <span>Deutschland-Daten</span>
+          <span>Android intern</span>
+          <span>Store-Link folgt</span>
         </div>
 
         <div class="hero-stats">
@@ -126,6 +129,48 @@
             <div class="num">0 %</div>
             <div class="label">Tracking</div>
           </div>
+        </div>
+      </section>
+
+      <!-- ========== Launch status ========== -->
+      <section class="container" id="launchstatus">
+        <div class="section-header reveal">
+          <h2>Aktueller Launch-Stand</h2>
+          <p>
+            Die öffentliche Seite zeigt nur, was zur realen Auslieferung passt:
+            Deutschland zuerst, iPhone zuerst, Android noch ohne öffentliche
+            Download-Zusage.
+          </p>
+        </div>
+
+        <div class="launch-grid">
+          <article class="launch-card launch-card-active reveal reveal-d1">
+            <span class="launch-state">Jetzt im Fokus</span>
+            <h3>iPhone · Deutschland</h3>
+            <p>
+              Der Launch-Kandidat nutzt Deutschland-Bundles, lokale
+              Tempolimit-Suche, Warnstufen und Offline-Betrieb. Der App-Store-Link
+              wird erst ergänzt, wenn die Store-Seite wirklich live ist.
+            </p>
+          </article>
+          <article class="launch-card reveal reveal-d2">
+            <span class="launch-state">Interner Track</span>
+            <h3>Android · Alpha</h3>
+            <p>
+              Android nutzt denselben Bundle-Vertrag und läuft als interne
+              Alpha-Parität. Es gibt bewusst keinen öffentlichen Google-Play-Link,
+              solange Release-Parität und Feldtests nicht abgeschlossen sind.
+            </p>
+          </article>
+          <article class="launch-card reveal reveal-d3">
+            <span class="launch-state">Datenumfang</span>
+            <h3>Deutschland · offline</h3>
+            <p>
+              Der Start konzentriert sich auf reproduzierbare Deutschland-Daten,
+              lokale Verarbeitung und transparente OSM-Quellen statt auf
+              mehrsprachige oder europaweite Versprechen.
+            </p>
+          </article>
         </div>
       </section>
 
@@ -297,13 +342,14 @@
       <section class="container reveal" id="cta-mid">
         <div class="cta-banner">
           <h2>Schütze deinen Führerschein.</h2>
-          <p>Lade YouSpeed jetzt kostenlos herunter und fahr entspannt.</p>
+          <p>
+            Der öffentliche Start ist iPhone-first. Bis der App-Store-Link live
+            ist, kannst du dir ein Launch-Update geben lassen.
+          </p>
           <div class="cta-actions">
             <a
               class="btn btn-primary"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
+              href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
             >
               <svg
                 width="18"
@@ -319,13 +365,11 @@
                   d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
                 />
               </svg>
-              App Store
+              Launch-Update anfragen
             </a>
             <a
-              class="btn btn-primary"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
+              class="btn btn-ghost"
+              href="#launchstatus"
             >
               <svg
                 width="18"
@@ -339,7 +383,7 @@
               >
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              Google Play
+              Release-Stand ansehen
             </a>
           </div>
         </div>
@@ -484,14 +528,15 @@
       <!-- ========== Final CTA ========== -->
       <section class="container reveal" id="download-bottom">
         <div class="cta-banner">
-          <h2>Bereit? Lade YouSpeed jetzt herunter.</h2>
-          <p>Kostenlos für iPhone und Android. Kein Abo, keine Werbung.</p>
+          <h2>Bereit für den Deutschland-Start?</h2>
+          <p>
+            YouSpeed startet zuerst auf dem iPhone. Android bleibt intern, bis
+            die öffentliche Parität wirklich erreicht ist.
+          </p>
           <div class="cta-actions">
             <a
               class="btn btn-primary btn-lg"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
+              href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
             >
               <svg
                 width="22"
@@ -507,13 +552,11 @@
                   d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
                 />
               </svg>
-              Im App Store laden
+              Launch-Update anfragen
             </a>
             <a
-              class="btn btn-primary btn-lg"
-              href="#"
-              target="_blank"
-              rel="noreferrer"
+              class="btn btn-ghost btn-lg"
+              href="#readiness"
             >
               <svg
                 width="22"
@@ -527,7 +570,7 @@
               >
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              Bei Google Play laden
+              Readiness ansehen
             </a>
           </div>
         </div>

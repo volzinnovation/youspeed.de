@@ -105,10 +105,19 @@ function hasAnchor(targetFile, fragment) {
   return anchorPattern.test(html);
 }
 
-function checkLocalUrl(ownerFile, rawValue) {
+function checkLocalUrl(ownerFile, rawValue, attribute = "url") {
   const { value, pathname, fragment } = splitUrl(stripQuotes(rawValue));
 
-  if (!value || value === "#") {
+  if (!value) {
+    if (attribute === "href") {
+      addFailure(ownerFile, "empty href attribute");
+    }
+    return;
+  }
+  if (value === "#") {
+    if (attribute === "href") {
+      addFailure(ownerFile, "placeholder href #");
+    }
     return;
   }
   if (skippedSchemes.test(value)) {
@@ -128,11 +137,11 @@ function checkLocalUrl(ownerFile, rawValue) {
 
 function checkHtml(file) {
   const html = readFileSync(file, "utf8");
-  const attrPattern = /\b(?:href|src)\s*=\s*(["'])(.*?)\1/gi;
+  const attrPattern = /\b(href|src)\s*=\s*(["'])(.*?)\2/gi;
   const srcsetPattern = /\bsrcset\s*=\s*(["'])(.*?)\1/gi;
 
   for (const match of html.matchAll(attrPattern)) {
-    checkLocalUrl(file, match[2]);
+    checkLocalUrl(file, match[3], match[1].toLowerCase());
   }
 
   for (const match of html.matchAll(srcsetPattern)) {

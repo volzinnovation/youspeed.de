@@ -1,6 +1,14 @@
 name: Publish Web Site
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Web/**"
+      - "sites/**"
+      - "scripts/web/**"
+      - ".github/workflows/web_pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -22,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Publish Web to sites
         run: ./scripts/web/publish_web_to_sites.sh

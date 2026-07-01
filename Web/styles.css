@@ -380,6 +380,26 @@ ol {
   margin-top: 0.15rem;
 }
 
+.launch-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+  max-width: 760px;
+}
+
+.launch-strip span {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #d7d7dc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+}
+
 /* ---------- Section base ---------- */
 section {
   padding: 4rem 0;
@@ -558,6 +578,50 @@ section {
   margin-bottom: 0.35rem;
 }
 .feature-card p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* ---------- Launch status ---------- */
+.launch-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.launch-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-width: 0;
+  padding: 1.35rem;
+}
+
+.launch-card-active {
+  border-color: rgba(52, 211, 153, 0.45);
+  background:
+    linear-gradient(135deg, rgba(52, 211, 153, 0.12), rgba(255, 255, 255, 0.04)),
+    var(--bg-card);
+}
+
+.launch-state {
+  color: var(--green);
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+
+.launch-card h3 {
+  font-size: 1.12rem;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+}
+
+.launch-card p {
   color: var(--text-muted);
   font-size: 0.92rem;
   line-height: 1.5;
@@ -838,6 +902,9 @@ tbody tr.highlight td {
   }
   .readiness-metrics {
     grid-template-columns: repeat(3, 1fr);
+  }
+  .launch-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .shots-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
