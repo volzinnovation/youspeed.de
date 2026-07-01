@@ -1,0 +1,21 @@
+=================== Review Comments ===================
+====================== Reviewer 1 ======================
+This abstract presents a full system for providing speed-limit information to drivers through an offline smartphone app. The feasibility of such a system is tested through four components: assessing maxspeed tag completeness across Europe, testing different architectures for storing the data, assessing the resources required for regularly updating the data based on OSM changes, and evaluating performance using a set of GPS trajectories. The results show strong performance and suggest that, when considered as part of a broader system, OSM can serve as infrastructure for real-time speed-limit notifications.
+
+This is interesting work that presents a technical development while also framing it as a scientific contribution. However, the abstract does not sufficiently position the work in relation to existing developments, either within OSM or beyond it. As a result, it is not entirely clear what generalizable insights can be derived from the work beyond the specific application presented. In addition, the abstract is very dense, and at times it is difficult to understand exactly what was carried out. Some editing is needed to ensure that all required details are presented clearly and accurately.
+
+Results are reported for most components, but more numerical detail is needed regarding the analysis of database updates. It is also unclear whether replay accuracy refers only to map matching, to the inferred speed-limit label, or to both. The authors mention several ways in which maximum driving speeds are represented in OSM, but the reported empirical analysis appears to focus mainly on the explicit maxspeed=* tag. It would be useful to clarify whether other forms of speed-limit evidence are implemented, and to discuss how they could be integrated to improve reliability and accuracy. Finally, the abstract provides a link to the demonstrator/application, but it is not clear whether the code and reproducible pipeline behind the app, benchmarks, and analyses are publicly available.
+====================== Reviewer 2 ======================
+This paper describes a systems engineering study focused on mobile deployment of speed-limit information derived from OpenStreetMap, with emphasis on reproducibility, provenance, and real-time performance.
+The threefold contribution includes:
+- a quantitative view of European OSM speed-limit provenance
+- a reproducible architecture benchmark for transforming OSM speed and area context into mobile runtime artifacts
+- a deployment-facing analysis linking lookup latency, daily diff behavior, and lightweight map matching
+
+The core conclusion is that OSM can support offline speed-limit assistance when speed provenance, jurisdictional fallback, artifact packaging, and update mechanics are evaluated as one integrated system.
+
+I can see some of the potential implications but I am not entirely convinced at this stage.
+
+The webpage for the application is German only so I could not make much of it.
+The link to the code in GitHub is dead but I suppose that the link being there means the authors mean for the code to be open?
+This need to be more explicit.
