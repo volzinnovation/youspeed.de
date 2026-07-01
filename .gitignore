@@ -8,6 +8,12 @@
 __pycache__/
 *.py[cod]
 
+# JavaScript/static-site tooling
+node_modules/
+npm-debug.log*
+.parcel-cache/
+coverage/
+
 # Local build/runtime outputs
 .codex-tmp/
 .tmp/
