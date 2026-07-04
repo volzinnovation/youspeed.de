@@ -22,7 +22,7 @@ const locales = {
       product: "App",
       warnings: "Warnstufen",
       offline: "Offline-Daten",
-      launch: "Launch",
+      launch: "Status",
       trust: "Vertrauen",
     },
     aria: {
@@ -31,38 +31,38 @@ const locales = {
       visual: "YouSpeed App-Bildschirme",
     },
     hero: {
-      badge: "iPhone zuerst · Android Alpha · Offline-Karten",
+      badge: "iOS & Android · Offline-Karten · Keine Werbung",
       title: "YouSpeed",
       kicker: "Live-Tempolimit-Assistent",
       lead:
         "Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.",
-      primary: "Launch-Update anfragen",
-      secondary: "Release-Stand ansehen",
-      facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Deutschland zuerst"],
+      primary: "Kontakt aufnehmen",
+      secondary: "App-Status ansehen",
+      facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Lokale Kartendaten"],
     },
     launch: {
-      eyebrow: "Stand aus den Apps",
-      title: "Öffentlich nur versprechen, was die Apps heute tragen",
+      eyebrow: "App-Status",
+      title: "Transparente Funktionen statt Launch-Versprechen",
       body:
-        "Die Website folgt dem aktuellen iPhone- und Android-Stand im Repository: iPhone ist der öffentliche Startpfad, Android bleibt Alpha, und beide teilen denselben Offline-Bundle-Vertrag.",
+        "YouSpeed beschreibt nur Funktionen, die von den Apps getragen werden: lokale Tempolimit-Suche, Warnstufen, On-Device-Spracherfassung und Offline-Bundles für Länder und Regionen.",
       items: [
         {
-          state: "Public first",
-          title: "iPhone Consumer App",
+          state: "iOS & Android",
+          title: "Gemeinsame App-Basis",
           body:
-            "Deutschland-Datensatz, lokale Tempolimit-Suche, Warnstufen, On-Device-Spracherfassung und OSM-Attribution sind im Launch-Pfad gebündelt.",
+            "App-Oberflächen, lokalisierte Texte und Offline-Datenverträge werden plattformübergreifend geführt.",
         },
         {
-          state: "Internal alpha",
-          title: "Android App",
+          state: "Offline-Betrieb",
+          title: "Lokale Tempolimit-Daten",
           body:
-            "Android nutzt dieselben Bundle-Ziele und lokalisierten App-Texte. Es bleibt ohne öffentlichen Store-CTA, bis Feldtests und Parität abgeschlossen sind.",
+            "Während der Fahrt arbeitet die App mit lokalen Kartendaten; Internet wird nur für optionale Datenaktualisierungen benötigt.",
         },
         {
-          state: "Shared contract",
-          title: "Offline bundles",
+          state: "Offene Daten",
+          title: "OSM-Attribution",
           body:
-            "Länder- und Regionspakete werden als reproduzierbare Assets behandelt. Der Start bleibt fokussiert, ohne einen europaweiten Live-Betrieb zu überzeichnen.",
+            "Geschwindigkeitsdaten basieren auf OpenStreetMap und werden mit klarer Lizenz- und Quellenangabe verwendet.",
         },
       ],
     },
@@ -98,7 +98,7 @@ const locales = {
         "Die App arbeitet mit lokalen OSM-Bundles, reproduzierbaren Targets und getrennten Release-Pfaden für iOS und Android.",
       metrics: [
         ["Top bundle target", "NLD, ROU, LUX", "kleine Länder als kompakte Einzelpakete"],
-        ["Deutschland", "16 Regionen", "regionale Shards für handhabbare Downloads"],
+        ["Länder & Regionen", "Pakete", "regionale Shards für handhabbare Downloads"],
         ["Fahrtbetrieb", "lokal", "Internet nur für optionale Datenaktualisierungen"],
       ],
     },
@@ -114,15 +114,18 @@ const locales = {
       ],
     },
     cta: {
-      title: "Bereit für den Deutschland-Start?",
+      title: "Fragen zu YouSpeed?",
       body:
-        "Der Store-Link wird erst ersetzt, wenn die öffentliche Seite live ist. Bis dahin führt der CTA bewusst zum Launch-Update.",
-      primary: "Launch-Update anfragen",
+        "Moonshots Studios betreibt und vertreibt YouSpeed. Für Datenschutz-, Store- und Vertriebsfragen führt der direkte Kontakt zum Betreiber.",
+      primary: "Kontakt aufnehmen",
       secondary: "Datenbasis ansehen",
     },
     footer: {
       imprint: "Impressum",
-      lab: "Labor für intelligente Mobilität und autonome Systeme (IMAS)",
+      company: "Moonshots Studios GmbH",
+      address: "Auguststr. 2, 10117 Berlin, Deutschland",
+      office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
+      development: "Technische Entwicklung: Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Datenschutz",
       github: "Open Source auf GitHub",
     },
@@ -140,7 +143,7 @@ const locales = {
       product: "App",
       warnings: "Warnings",
       offline: "Offline data",
-      launch: "Launch",
+      launch: "Status",
       trust: "Trust",
     },
     aria: {
@@ -149,38 +152,38 @@ const locales = {
       visual: "YouSpeed app screens",
     },
     hero: {
-      badge: "iPhone first · Android alpha · Offline maps",
+      badge: "iOS & Android · Offline maps · No ads",
       title: "YouSpeed",
       kicker: "Live speed-limit assistance",
       lead:
         "The app keeps the detected speed limit and your current speed visible at a glance. Fine, points, and driving-ban information stays advisory and runs on local map data.",
-      primary: "Request launch update",
-      secondary: "View release status",
-      facts: ["Offline while driving", "No ads, no tracking", "Germany first"],
+      primary: "Contact us",
+      secondary: "View app status",
+      facts: ["Offline while driving", "No ads, no tracking", "Local map data"],
     },
     launch: {
-      eyebrow: "Current app status",
-      title: "The website only promises what the apps can support",
+      eyebrow: "App status",
+      title: "Transparent functions instead of launch promises",
       body:
-        "The page follows the current iPhone and Android state in the repository: iPhone is the public launch path, Android remains alpha, and both share the same offline bundle contract.",
+        "YouSpeed describes only functionality supported by the apps: local speed-limit lookup, warning levels, on-device spoken capture, and offline bundles for countries and regions.",
       items: [
         {
-          state: "Public first",
-          title: "iPhone consumer app",
+          state: "iOS & Android",
+          title: "Shared app basis",
           body:
-            "Germany data, local speed-limit lookup, warning levels, on-device spoken capture, and OSM attribution are bundled into the launch path.",
+            "App surfaces, localized text, and offline data contracts are maintained across platforms.",
         },
         {
-          state: "Internal alpha",
-          title: "Android app",
+          state: "Offline operation",
+          title: "Local speed-limit data",
           body:
-            "Android uses the same bundle targets and localized app text. It stays without a public store CTA until field tests and parity are complete.",
+            "While driving, the app uses local map data; internet access is only needed for optional data updates.",
         },
         {
-          state: "Shared contract",
-          title: "Offline bundles",
+          state: "Open data",
+          title: "OSM attribution",
           body:
-            "Country and region packages are treated as reproducible assets. The launch remains focused without overstating Europe-wide live operation.",
+            "Speed data is based on OpenStreetMap and is used with clear license and source attribution.",
         },
       ],
     },
@@ -216,7 +219,7 @@ const locales = {
         "The app runs on local OSM bundles, reproducible targets, and separate release paths for iOS and Android.",
       metrics: [
         ["Top bundle target", "NLD, ROU, LUX", "small countries as compact single packages"],
-        ["Germany", "16 regions", "regional shards for manageable downloads"],
+        ["Countries & regions", "Packages", "regional shards for manageable downloads"],
         ["Driving mode", "local", "internet only for optional data updates"],
       ],
     },
@@ -232,15 +235,18 @@ const locales = {
       ],
     },
     cta: {
-      title: "Ready for the Germany launch?",
+      title: "Questions about YouSpeed?",
       body:
-        "The store link will only replace this CTA once the public listing is live. Until then, the action deliberately requests a launch update.",
-      primary: "Request launch update",
+        "Moonshots Studios operates and distributes YouSpeed. For privacy, store, and distribution questions, contact the operator directly.",
+      primary: "Contact us",
       secondary: "View data basis",
     },
     footer: {
       imprint: "Legal notice",
-      lab: "Laboratory for Intelligent Mobility and Autonomous Systems (IMAS)",
+      company: "Moonshots Studios GmbH",
+      address: "Auguststr. 2, 10117 Berlin, Germany",
+      office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
+      development: "Technical development: Prof. Dr. Raphael Volz, Pforzheim University",
       privacy: "Privacy",
       github: "Open source on GitHub",
     },
@@ -258,7 +264,7 @@ const locales = {
       product: "App",
       warnings: "Alertes",
       offline: "Donnees hors ligne",
-      launch: "Lancement",
+      launch: "Statut",
       trust: "Confiance",
     },
     aria: {
@@ -267,38 +273,38 @@ const locales = {
       visual: "Écrans de l'app YouSpeed",
     },
     hero: {
-      badge: "iPhone d'abord · Android alpha · Cartes hors ligne",
+      badge: "iOS & Android · Cartes hors ligne · Sans publicité",
       title: "YouSpeed",
       kicker: "Assistant de limitation de vitesse",
       lead:
         "L'app garde la limitation détectée et votre vitesse actuelle visibles en un coup d'oeil. Les informations d'amende, de points et d'interdiction restent indicatives et s'appuient sur des données locales.",
-      primary: "Demander l'info lancement",
-      secondary: "Voir l'état de sortie",
-      facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Allemagne d'abord"],
+      primary: "Nous contacter",
+      secondary: "Voir le statut",
+      facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Données cartographiques locales"],
     },
     launch: {
-      eyebrow: "État actuel des apps",
-      title: "Le site ne promet que ce que les apps prennent déjà en charge",
+      eyebrow: "Statut de l'app",
+      title: "Des fonctions transparentes, pas des promesses de lancement",
       body:
-        "La page suit l'état actuel iPhone et Android du dépôt : iPhone est le chemin de lancement public, Android reste en alpha, et les deux partagent le même contrat de bundles hors ligne.",
+        "YouSpeed décrit uniquement les fonctions prises en charge par les apps : recherche locale des limitations, niveaux d'alerte, saisie vocale sur l'appareil et bundles hors ligne pour pays et régions.",
       items: [
         {
-          state: "Public d'abord",
-          title: "App iPhone grand public",
+          state: "iOS & Android",
+          title: "Base d'app commune",
           body:
-            "Données Allemagne, recherche locale de limitations, niveaux d'alerte, saisie vocale sur l'appareil et attribution OSM sont regroupés dans le chemin de lancement.",
+            "Les interfaces, les textes localisés et les contrats de données hors ligne sont maintenus entre plateformes.",
         },
         {
-          state: "Alpha interne",
-          title: "App Android",
+          state: "Fonctionnement hors ligne",
+          title: "Données de vitesse locales",
           body:
-            "Android utilise les mêmes cibles de bundles et les mêmes textes localisés. Il reste sans CTA public de store jusqu'à la fin des tests terrain et de la parité.",
+            "En conduite, l'app utilise des données cartographiques locales ; internet n'est nécessaire que pour les mises à jour optionnelles.",
         },
         {
-          state: "Contrat commun",
-          title: "Bundles hors ligne",
+          state: "Données ouvertes",
+          title: "Attribution OSM",
           body:
-            "Les packages pays et régions sont traités comme des artefacts reproductibles. Le lancement reste ciblé, sans surestimer une exploitation live européenne.",
+            "Les données de vitesse reposent sur OpenStreetMap et sont utilisées avec une attribution claire des licences et sources.",
         },
       ],
     },
@@ -334,7 +340,7 @@ const locales = {
         "L'app utilise des bundles OSM locaux, des cibles reproductibles et des chemins de sortie séparés pour iOS et Android.",
       metrics: [
         ["Premières cibles", "NLD, ROU, LUX", "petits pays en packages compacts"],
-        ["Allemagne", "16 régions", "shards régionaux pour des téléchargements gérables"],
+        ["Pays & régions", "Packages", "shards régionaux pour des téléchargements gérables"],
         ["Mode conduite", "local", "internet seulement pour les mises à jour optionnelles"],
       ],
     },
@@ -350,15 +356,18 @@ const locales = {
       ],
     },
     cta: {
-      title: "Prêt pour le lancement Allemagne ?",
+      title: "Questions sur YouSpeed ?",
       body:
-        "Le lien store ne remplacera ce CTA que lorsque la fiche publique sera live. D'ici là, l'action demande volontairement une information de lancement.",
-      primary: "Demander l'info lancement",
+        "Moonshots Studios exploite et distribue YouSpeed. Pour les questions de confidentialité, de store et de distribution, contactez directement l'exploitant.",
+      primary: "Nous contacter",
       secondary: "Voir la base de données",
     },
     footer: {
       imprint: "Mentions legales",
-      lab: "Laboratoire de mobilité intelligente et systèmes autonomes (IMAS)",
+      company: "Moonshots Studios GmbH",
+      address: "Auguststr. 2, 10117 Berlin, Allemagne",
+      office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
+      development: "Développement technique : Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Confidentialite",
       github: "Open source sur GitHub",
     },
@@ -376,7 +385,7 @@ const locales = {
       product: "App",
       warnings: "Waarschuwingen",
       offline: "Offline data",
-      launch: "Launch",
+      launch: "Status",
       trust: "Vertrouwen",
     },
     aria: {
@@ -385,38 +394,38 @@ const locales = {
       visual: "YouSpeed app-schermen",
     },
     hero: {
-      badge: "iPhone eerst · Android alpha · Offline kaarten",
+      badge: "iOS & Android · Offline kaarten · Geen advertenties",
       title: "YouSpeed",
       kicker: "Live snelheidslimietassistent",
       lead:
         "De app houdt de herkende snelheidslimiet en je actuele snelheid direct zichtbaar. Boete-, punten- en rijverbodsinformatie blijft indicatief en draait op lokale kaartgegevens.",
-      primary: "Launch-update aanvragen",
-      secondary: "Release-status bekijken",
-      facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Duitsland eerst"],
+      primary: "Contact opnemen",
+      secondary: "App-status bekijken",
+      facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Lokale kaartgegevens"],
     },
     launch: {
-      eyebrow: "Huidige app-status",
-      title: "De website belooft alleen wat de apps kunnen dragen",
+      eyebrow: "App-status",
+      title: "Transparante functies in plaats van launchbeloftes",
       body:
-        "De pagina volgt de huidige iPhone- en Android-status in de repository: iPhone is het openbare launchpad, Android blijft alpha, en beide delen hetzelfde offline bundlecontract.",
+        "YouSpeed beschrijft alleen functies die de apps ondersteunen: lokale snelheidslimietzoeker, waarschuwingsniveaus, spraakinvoer op het apparaat en offline bundles voor landen en regio's.",
       items: [
         {
-          state: "Publiek eerst",
-          title: "iPhone consumentenapp",
+          state: "iOS & Android",
+          title: "Gedeelde appbasis",
           body:
-            "Duitsland-data, lokale snelheidslimietzoeker, waarschuwingsniveaus, spraakinvoer op het apparaat en OSM-attributie zitten in het launchpad.",
+            "App-schermen, gelokaliseerde teksten en offline datacontracten worden platformoverstijgend beheerd.",
         },
         {
-          state: "Interne alpha",
-          title: "Android app",
+          state: "Offline werking",
+          title: "Lokale snelheidsdata",
           body:
-            "Android gebruikt dezelfde bundledoelen en gelokaliseerde appteksten. Er is geen publieke store-CTA totdat veldtests en pariteit klaar zijn.",
+            "Tijdens het rijden gebruikt de app lokale kaartgegevens; internet is alleen nodig voor optionele data-updates.",
         },
         {
-          state: "Gedeeld contract",
-          title: "Offline bundles",
+          state: "Open data",
+          title: "OSM-attributie",
           body:
-            "Land- en regiopakketten worden als reproduceerbare assets behandeld. De launch blijft gericht zonder live gebruik in heel Europa te overdrijven.",
+            "Snelheidsgegevens zijn gebaseerd op OpenStreetMap en worden gebruikt met duidelijke licentie- en bronvermelding.",
         },
       ],
     },
@@ -452,7 +461,7 @@ const locales = {
         "De app draait op lokale OSM-bundles, reproduceerbare doelen en aparte releasepaden voor iOS en Android.",
       metrics: [
         ["Top bundledoel", "NLD, ROU, LUX", "kleine landen als compacte pakketten"],
-        ["Duitsland", "16 regio's", "regionale shards voor beheersbare downloads"],
+        ["Landen & regio's", "Pakketten", "regionale shards voor beheersbare downloads"],
         ["Rijmodus", "lokaal", "internet alleen voor optionele data-updates"],
       ],
     },
@@ -468,15 +477,18 @@ const locales = {
       ],
     },
     cta: {
-      title: "Klaar voor de Duitsland-launch?",
+      title: "Vragen over YouSpeed?",
       body:
-        "De storelink vervangt deze CTA pas wanneer de publieke listing live is. Tot die tijd vraagt de actie bewust om een launch-update.",
-      primary: "Launch-update aanvragen",
+        "Moonshots Studios beheert en distribueert YouSpeed. Neem voor privacy-, store- en distributievragen rechtstreeks contact op met de exploitant.",
+      primary: "Contact opnemen",
       secondary: "Databasis bekijken",
     },
     footer: {
       imprint: "Juridische informatie",
-      lab: "Laboratorium voor intelligente mobiliteit en autonome systemen (IMAS)",
+      company: "Moonshots Studios GmbH",
+      address: "Auguststr. 2, 10117 Berlijn, Duitsland",
+      office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
+      development: "Technische ontwikkeling: Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Privacy",
       github: "Open source op GitHub",
     },
@@ -485,7 +497,7 @@ const locales = {
 
 const localeCodes = Object.keys(locales);
 const mailto =
-  "mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update";
+  "mailto:studios@moonshots.gmbh?subject=YouSpeed";
 
 function escapeHtml(value) {
   return String(value)
@@ -627,8 +639,8 @@ function renderStructuredData(locale, content) {
       inLanguage: content.htmlLang,
       publisher: {
         "@type": "Organization",
-        name: "Labor für intelligente Mobilität und autonome Systeme (IMAS)",
-        url: "https://www.hs-pforzheim.de",
+        name: "Moonshots Studios GmbH",
+        url: "https://studios.moonshots.gmbh",
       },
       sameAs: ["https://github.com/volzinnovation/youspeed.de"],
     },
@@ -814,14 +826,13 @@ ${renderLanguageSwitch(locale)}
       <div class="container footer-grid">
         <div>
           <p><strong>${escapeHtml(content.footer.imprint)}</strong></p>
-          <p><a href="https://www.raphaelvolz.de">Prof. Dr. Raphael Volz</a></p>
-          <p>${escapeHtml(content.footer.lab)}</p>
-          <p>Tiefenbronner Str. 65, 75175 Pforzheim</p>
+          <p><a href="https://studios.moonshots.gmbh/" target="_blank" rel="noreferrer">${escapeHtml(content.footer.company)}</a></p>
+          <p>${escapeHtml(content.footer.address)}</p>
+          <p>${escapeHtml(content.footer.office)}</p>
         </div>
         <div>
-          <p><a href="https://techpf.hs-pforzheim.de">TechPF - Fakultät für Technik</a></p>
-          <p><a href="https://www.hs-pforzheim.de">Hochschule Pforzheim - Pforzheim University</a></p>
-          <p><a href="mailto:raphael.volz@hs-pforzheim.de">raphael.volz@hs-pforzheim.de</a></p>
+          <p>${escapeHtml(content.footer.development)}</p>
+          <p><a href="mailto:studios@moonshots.gmbh">studios@moonshots.gmbh</a></p>
           <p><a href="${assetPrefix}datenschutz.html">${escapeHtml(content.footer.privacy)}</a></p>
           <p><a href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">${escapeHtml(content.footer.github)}</a></p>
         </div>
