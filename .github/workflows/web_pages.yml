@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install web asset dependencies
+        run: python3 -m pip install --user pillow
+
       - name: Publish Web to sites
         run: ./scripts/web/publish_web_to_sites.sh
 
