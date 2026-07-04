@@ -22,5 +22,5 @@ YouSpeed does not use third-party advertising, tracking SDKs, or data brokers.
 
 ## Required URLs
 
-- Privacy policy: https://youspeed.de/privacy
+- Privacy policy: https://youspeed.de/datenschutz.html
 - Support: https://youspeed.de/support

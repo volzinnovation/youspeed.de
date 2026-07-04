@@ -3,649 +3,339 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouSpeed – Dein Intelligent Speed Assistant (ISA) für Deutschland</title>
-    <meta
-      name="description"
-      content="YouSpeed ist dein Intelligent Speed Assistant (ISA): Live-Tempolimit, Bußgeld-Warnung und Führerschein-Schutz. Deutschland-Start zuerst für iPhone."
-    />
-
-    <!-- Open Graph -->
-    <meta
-      property="og:title"
-      content="YouSpeed – Intelligent Speed Assistant (ISA)"
-    />
-    <meta
-      property="og:description"
-      content="Live-Tempolimit, Warnstufen & Bußgeld-Warnung auf einen Blick. Deutschland-Start zuerst für iPhone."
-    />
+    <title>YouSpeed - Live-Tempolimit-Assistent mit Offline-Karten</title>
+    <meta name="description" content="YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://youspeed.de/" />
+    <link rel="alternate" hreflang="de" href="https://youspeed.de/" />
+    <link rel="alternate" hreflang="en" href="https://youspeed.de/en/" />
+    <link rel="alternate" hreflang="fr" href="https://youspeed.de/fr/" />
+    <link rel="alternate" hreflang="nl" href="https://youspeed.de/nl/" />
+    <link rel="alternate" hreflang="x-default" href="https://youspeed.de/" />
+    <meta property="og:site_name" content="YouSpeed" />
+    <meta property="og:title" content="YouSpeed - Live-Tempolimit-Assistent mit Offline-Karten" />
+    <meta property="og:description" content="YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten." />
     <meta property="og:type" content="website" />
-    <link rel="icon" href="data:," />
-
+    <meta property="og:url" content="https://youspeed.de/" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="nl_NL" />
+    <meta property="og:image" content="https://youspeed.de/assets/social/youspeed-og-de.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="YouSpeed - Live-Tempolimit-Assistent" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="YouSpeed - Live-Tempolimit-Assistent mit Offline-Karten" />
+    <meta name="twitter:description" content="YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten." />
+    <meta name="twitter:image" content="https://youspeed.de/assets/social/youspeed-og-de.png" />
+    <meta name="theme-color" content="#0b0e10" />
+    <script>document.documentElement.classList.add("js");</script>
+    <link rel="icon" href="./assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./assets/icons/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Chakra+Petch:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Chakra+Petch:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "YouSpeed",
+  "applicationCategory": "NavigationApplication",
+  "operatingSystem": "iOS, Android",
+  "url": "https://youspeed.de/",
+  "description": "YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten.",
+  "inLanguage": "de",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Labor für intelligente Mobilität und autonome Systeme (IMAS)",
+    "url": "https://www.hs-pforzheim.de"
+  },
+  "sameAs": [
+    "https://github.com/volzinnovation/youspeed.de"
+  ]
+}
+    </script>
   </head>
   <body>
-    <!-- ========== Navigation ========== -->
-    <nav class="nav" id="navbar">
-      <div class="nav-brand"><span class="logo-dot"></span>YouSpeed</div>
-      <div class="nav-links" id="nav-links">
-        <a href="#features">Funktionen</a>
-        <a href="#warnstufen">Warnstufen</a>
-        <a href="#launchstatus">Launch</a>
-        <a href="#readiness">Readiness</a>
-        <a href="#daten">Daten</a>
-      </div>
-      <button class="hamburger" id="hamburger" aria-label="Menü öffnen">
+    <nav class="nav" id="navbar" aria-label="YouSpeed">
+      <a class="nav-brand" href="./" aria-label="YouSpeed">
+        <span class="brand-mark" aria-hidden="true">YS</span>
+        <span>YouSpeed</span>
+      </a>
+      <div class="nav-links" id="nav-links"><a href="#app">App</a><a href="#warnstufen">Warnstufen</a><a href="#offline">Offline-Daten</a><a href="#launch">Launch</a><a href="#trust">Vertrauen</a></div>
+
+        <div class="language-switch" aria-label="Sprache wechseln">
+          <a href="./" aria-current="page">DE</a><a href="./en/" >EN</a><a href="./fr/" >FR</a><a href="./nl/" >NL</a>
+        </div>
+      <button class="hamburger" id="hamburger" aria-label="Menü öffnen" aria-controls="mobile-menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </nav>
 
-    <!-- Mobile flyout -->
     <div class="mobile-menu" id="mobile-menu">
-      <a href="#features">Funktionen</a>
-      <a href="#warnstufen">Warnstufen</a>
-      <a href="#launchstatus">Launch</a>
-      <a href="#readiness">Readiness</a>
-      <a href="#daten">Daten</a>
+      <a href="#app">App</a><a href="#warnstufen">Warnstufen</a><a href="#offline">Offline-Daten</a><a href="#launch">Launch</a><a href="#trust">Vertrauen</a>
+
+        <div class="language-switch" aria-label="Sprache wechseln">
+          <a href="./" aria-current="page">DE</a><a href="./en/" >EN</a><a href="./fr/" >FR</a><a href="./nl/" >NL</a>
+        </div>
     </div>
 
     <main>
-      <!-- ========== Hero ========== -->
-      <section class="hero" id="hero">
-        <span class="hero-badge">
-          <span class="dot"></span> Deutschland-Start · iPhone zuerst
-        </span>
-        <h1>Dein Tempo im Blick.</h1>
-        <p class="lead">
-          YouSpeed zeigt dir live das geltende Tempolimit und warnt dich
-          rechtzeitig vor Bußgeldern, Punkten und Fahrverboten. Dein
-          persönlicher Geschwindigkeitsassistent – direkt auf deinem Smartphone.
-        </p>
-
-        <div class="hero-actions" id="download">
-          <a
-            class="btn btn-primary"
-            href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
-            id="btn-appstore"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                d="M16.365 12.77c.02 2.17 1.93 2.9 1.95 2.91-.02.05-.3 1.03-1 2.03-.61.86-1.24 1.72-2.24 1.74-.98.02-1.3-.58-2.42-.58-1.13 0-1.48.56-2.4.6-.95.04-1.68-.95-2.3-1.8-1.27-1.84-2.24-5.2-.94-7.46.64-1.12 1.79-1.83 3.04-1.85.95-.02 1.85.64 2.42.64.57 0 1.65-.79 2.78-.68.47.02 1.8.19 2.65 1.43-.07.04-1.58.92-1.56 2.72z"
-              />
-              <path
-                d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
-              />
-            </svg>
-            Launch-Update anfragen
-          </a>
-          <a
-            class="btn btn-ghost"
-            href="#launchstatus"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            Release-Stand ansehen
-          </a>
-        </div>
-
-        <div class="launch-strip" aria-label="Aktueller YouSpeed Launch-Status">
-          <span>iPhone Launch Candidate</span>
-          <span>Deutschland-Daten</span>
-          <span>Android intern</span>
-          <span>Store-Link folgt</span>
-        </div>
-
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="num">4</div>
-            <div class="label">Warnstufen</div>
+      <section class="hero" id="app">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">iPhone zuerst · Android Alpha · Offline-Karten</p>
+            <h1>YouSpeed</h1>
+            <p class="hero-kicker">Live-Tempolimit-Assistent</p>
+            <p class="lead">Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update">Launch-Update anfragen</a>
+              <a class="btn btn-secondary" href="#launch">Release-Stand ansehen</a>
+            </div>
+            <ul class="hero-facts" aria-label="YouSpeed facts">
+              <li>Offline im Fahrbetrieb</li><li>Keine Werbung, kein Tracking</li><li>Deutschland zuerst</li>
+            </ul>
           </div>
-          <div class="hero-stat">
-            <div class="num">100 %</div>
-            <div class="label">Offline-fähig</div>
-          </div>
-          <div class="hero-stat">
-            <div class="num">0 %</div>
-            <div class="label">Tracking</div>
+          <div class="app-visual reveal visible" aria-label="YouSpeed App-Bildschirme">
+            <div class="road-lines" aria-hidden="true"></div>
+            <figure class="phone-frame phone-side phone-side-left">
+              <img src="./assets/screenshots/warn-level-1-money.png" alt="" width="1179" height="2556" />
+            </figure>
+            <figure class="phone-frame phone-main">
+              <img src="./assets/screenshots/warn-level-2-points.png" alt="" width="1179" height="2556" />
+            </figure>
+            <figure class="phone-frame phone-side phone-side-right">
+              <img src="./assets/screenshots/autobahn-unlimited-over-130.png" alt="" width="1179" height="2556" />
+            </figure>
           </div>
         </div>
       </section>
 
-      <!-- ========== Launch status ========== -->
-      <section class="container" id="launchstatus">
+      <section class="section container" id="launch">
         <div class="section-header reveal">
-          <h2>Aktueller Launch-Stand</h2>
-          <p>
-            Die öffentliche Seite zeigt nur, was zur realen Auslieferung passt:
-            Deutschland zuerst, iPhone zuerst, Android noch ohne öffentliche
-            Download-Zusage.
-          </p>
+          <p class="eyebrow">Stand aus den Apps</p>
+          <h2>Öffentlich nur versprechen, was die Apps heute tragen</h2>
+          <p>Die Website folgt dem aktuellen iPhone- und Android-Stand im Repository: iPhone ist der öffentliche Startpfad, Android bleibt Alpha, und beide teilen denselben Offline-Bundle-Vertrag.</p>
         </div>
-
-        <div class="launch-grid">
-          <article class="launch-card launch-card-active reveal reveal-d1">
-            <span class="launch-state">Jetzt im Fokus</span>
-            <h3>iPhone · Deutschland</h3>
-            <p>
-              Der Launch-Kandidat nutzt Deutschland-Bundles, lokale
-              Tempolimit-Suche, Warnstufen und Offline-Betrieb. Der App-Store-Link
-              wird erst ergänzt, wenn die Store-Seite wirklich live ist.
-            </p>
+        <div class="status-grid">
+          <article class="status-item reveal reveal-d1">
+            <span>Public first</span>
+            <h3>iPhone Consumer App</h3>
+            <p>Deutschland-Datensatz, lokale Tempolimit-Suche, Warnstufen, On-Device-Spracherfassung und OSM-Attribution sind im Launch-Pfad gebündelt.</p>
           </article>
-          <article class="launch-card reveal reveal-d2">
-            <span class="launch-state">Interner Track</span>
-            <h3>Android · Alpha</h3>
-            <p>
-              Android nutzt denselben Bundle-Vertrag und läuft als interne
-              Alpha-Parität. Es gibt bewusst keinen öffentlichen Google-Play-Link,
-              solange Release-Parität und Feldtests nicht abgeschlossen sind.
-            </p>
+          <article class="status-item reveal reveal-d2">
+            <span>Internal alpha</span>
+            <h3>Android App</h3>
+            <p>Android nutzt dieselben Bundle-Ziele und lokalisierten App-Texte. Es bleibt ohne öffentlichen Store-CTA, bis Feldtests und Parität abgeschlossen sind.</p>
           </article>
-          <article class="launch-card reveal reveal-d3">
-            <span class="launch-state">Datenumfang</span>
-            <h3>Deutschland · offline</h3>
-            <p>
-              Der Start konzentriert sich auf reproduzierbare Deutschland-Daten,
-              lokale Verarbeitung und transparente OSM-Quellen statt auf
-              mehrsprachige oder europaweite Versprechen.
-            </p>
-          </article>
-        </div>
+          <article class="status-item reveal reveal-d3">
+            <span>Shared contract</span>
+            <h3>Offline bundles</h3>
+            <p>Länder- und Regionspakete werden als reproduzierbare Assets behandelt. Der Start bleibt fokussiert, ohne einen europaweiten Live-Betrieb zu überzeichnen.</p>
+          </article></div>
       </section>
 
-      <!-- ========== Screenshots / Warnstufen ========== -->
-      <section class="container shots-section" id="warnstufen">
-        <div class="section-header reveal">
-          <h2>Warnstufen &amp; Autobahn frei</h2>
-          <p>
-            Je schneller du fährst, desto ernster wird die Warnung. Von
-            entspannt bis kritisch – und auf deutschen Autobahnen auch freie
-            Fahrt ohne Tempolimit über 130 km/h.
-          </p>
-        </div>
-
-        <div class="shots-grid">
-          <figure class="shot-card reveal reveal-d1">
-            <img
-              src="./assets/screenshots/warn-level-0-no-violation.png"
-              alt="Warnstufe 0: keine Überschreitung"
-              loading="lazy"
-            />
+      <section class="section section-contrast" id="warnstufen">
+        <div class="container">
+          <div class="section-header reveal">
+            <p class="eyebrow">Live-Anzeige</p>
+            <h2>Warnstufen, die im Auto sofort lesbar bleiben</h2>
+            <p>YouSpeed reduziert die Fahrtansicht auf Tempo, Limit und Konsequenz. Die Farben folgen dem App-Verhalten: neutral, Geldbuße, Punkte, Fahrverbot und Autobahn frei.</p>
+          </div>
+          <div class="shots-grid">
+          <figure class="shot reveal reveal-d1">
+            <img src="./assets/screenshots/warn-level-0-no-violation.png" alt="Stufe 0: Keine Überschreitung" loading="lazy" width="1179" height="2556" />
             <figcaption>
-              <strong>Stufe 0 – Alles ok</strong>
-              <span>Keine Überschreitung, schwarzer Hintergrund</span>
+              <strong>Stufe 0</strong>
+              <span>Keine Überschreitung</span>
             </figcaption>
           </figure>
-
-          <figure class="shot-card reveal reveal-d2">
-            <img
-              src="./assets/screenshots/warn-level-1-money.png"
-              alt="Warnstufe 1: Geldbuße"
-              loading="lazy"
-            />
+          <figure class="shot reveal reveal-d2">
+            <img src="./assets/screenshots/warn-level-1-money.png" alt="Stufe 1: Bußgeld möglich" loading="lazy" width="1179" height="2556" />
             <figcaption>
-              <strong>Stufe 1 – Bußgeld</strong>
-              <span>Geldbuße droht, gelber Hintergrund</span>
+              <strong>Stufe 1</strong>
+              <span>Bußgeld möglich</span>
             </figcaption>
           </figure>
-
-          <figure class="shot-card reveal reveal-d3">
-            <img
-              src="./assets/screenshots/warn-level-2-points.png"
-              alt="Warnstufe 2: Punkte"
-              loading="lazy"
-            />
+          <figure class="shot reveal reveal-d3">
+            <img src="./assets/screenshots/warn-level-2-points.png" alt="Stufe 2: Punkte möglich" loading="lazy" width="1179" height="2556" />
             <figcaption>
-              <strong>Stufe 2 – Punkte</strong>
-              <span>Punkte in Flensburg, oranger Hintergrund</span>
+              <strong>Stufe 2</strong>
+              <span>Punkte möglich</span>
             </figcaption>
           </figure>
-
-          <figure class="shot-card reveal reveal-d4">
-            <img
-              src="./assets/screenshots/warn-level-3-driving-ban.png"
-              alt="Warnstufe 3: Fahrverbot"
-              loading="lazy"
-            />
+          <figure class="shot reveal reveal-d4">
+            <img src="./assets/screenshots/warn-level-3-driving-ban.png" alt="Stufe 3: Fahrverbot möglich" loading="lazy" width="1179" height="2556" />
             <figcaption>
-              <strong>Stufe 3 – Fahrverbot</strong>
-              <span>Kritisch: Fahrverbot droht, dunkelrot pulsierend</span>
+              <strong>Stufe 3</strong>
+              <span>Fahrverbot möglich</span>
             </figcaption>
           </figure>
-
-          <figure class="shot-card reveal reveal-d5">
-            <img
-              src="./assets/screenshots/autobahn-unlimited-over-130.png"
-              alt="Autobahn ohne Tempolimit über 130 km/h"
-              loading="lazy"
-            />
+          <figure class="shot reveal reveal-d5">
+            <img src="./assets/screenshots/autobahn-unlimited-over-130.png" alt="Autobahn frei: Ohne Tempolimit über 130 km/h" loading="lazy" width="1179" height="2556" />
             <figcaption>
               <strong>Autobahn frei</strong>
-              <span>Über 130 km/h ohne Tempolimit, blauer Hintergrund</span>
+              <span>Ohne Tempolimit über 130 km/h</span>
             </figcaption>
-          </figure>
+          </figure></div>
         </div>
       </section>
 
-      <!-- ========== Pain points ========== -->
-      <section class="container" id="problem">
-        <div class="section-header reveal">
-          <h2>Warum YouSpeed?</h2>
-          <p>
-            Millionen Menschen kassieren jedes Jahr Bußgelder, Punkte oder sogar
-            ein Fahrverbot – meist ungewollt, oft ohne es zu merken, aber die
-            Abrechnung kommt später.
-          </p>
+      <section class="section container" id="features">
+        <div class="section-header section-header-left reveal">
+          <p class="eyebrow">Was die App kann</p>
+          <h2>Gebaut für Orientierung, nicht Ablenkung</h2>
+          <p>Die wichtigsten Funktionen kommen direkt aus den bestehenden App-Oberflächen und Store-Metadaten.</p>
         </div>
-
-        <div class="help-banner reveal">
-          <span class="help-check">✓</span>
-          <span class="help-text">YouSpeed hilft dir rechtzeitig.</span>
-        </div>
-
-        <div class="pain-grid">
-          <article class="pain-card reveal reveal-d1">
-            <div class="pain-icon money">💶</div>
-            <h3>Bußgelder ab 20 €</h3>
-            <p>
-              Schon 1 km/h zu viel innerorts kostet. Bei 21 km/h drüber sind es
-              schnell 115 € oder mehr.
-            </p>
-          </article>
-          <article class="pain-card reveal reveal-d2">
-            <div class="pain-icon points">📍</div>
-            <h3>Punkte in Flensburg</h3>
-            <p>
-              Ab 21 km/h Überschreitung innerorts gibt es einen Punkt. Ab 31
-              km/h sogar zwei – und deinen Führerschein riskierst du ab 8
-              Punkten.
-            </p>
-          </article>
-          <article class="pain-card reveal reveal-d3">
-            <div class="pain-icon ban">🚫</div>
-            <h3>Fahrverbot droht</h3>
-            <p>
-              Ab 31 km/h innerorts droht 1 Monat Fahrverbot. Außerorts ab 41
-              km/h. Für Berufspendler eine Katastrophe.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <!-- ========== Features ========== -->
-      <section class="container" id="features">
-        <div class="section-header reveal">
-          <h2>Was YouSpeed kann</h2>
-          <p>
-            Alles, was du brauchst, um sicher und stressfrei unterwegs zu sein.
-          </p>
-        </div>
-
-        <div class="features-grid">
-          <article class="feature-card reveal reveal-d1">
-            <div class="icon">🚗</div>
+        <div class="feature-grid">
+          <article class="feature-item reveal reveal-d1">
+            <span class="feature-index">01</span>
             <h3>Live-Tempolimit</h3>
-            <p>
-              Klare Anzeige mit dem aktuellen Tempolimit-Schild und deiner
-              Geschwindigkeit – auf einen Blick.
-            </p>
+            <p>Aktuelles Limit und Geschwindigkeit stehen im Zentrum der Fahrtansicht.</p>
           </article>
-          <article class="feature-card reveal reveal-d2">
-            <div class="icon">⚠️</div>
-            <h3>4 Warnstufen</h3>
-            <p>
-              Von schwarz (alles ok) über gelb (Bußgeld) und orange (Punkte) bis
-              dunkelrot (Fahrverbot) – du siehst sofort, was droht.
-            </p>
+          <article class="feature-item reveal reveal-d2">
+            <span class="feature-index">02</span>
+            <h3>Unverbindliche Hinweise</h3>
+            <p>Bußgeld, Punkte und Fahrverbot werden als Orientierung angezeigt, nicht als Rechtsberatung.</p>
           </article>
-          <article class="feature-card reveal reveal-d3">
-            <div class="icon">📡</div>
-            <h3>Offline-fähig</h3>
-            <p>
-              Funktioniert komplett ohne Internet. Die Kartendaten werden lokal
-              auf deinem Gerät gespeichert.
-            </p>
+          <article class="feature-item reveal reveal-d3">
+            <span class="feature-index">03</span>
+            <h3>Offline-Karten</h3>
+            <p>Kartendaten liegen lokal auf dem Gerät und funktionieren während der Fahrt ohne Netz.</p>
           </article>
-          <article class="feature-card reveal reveal-d4">
-            <div class="icon">🎤</div>
-            <h3>Sprachkorrektur</h3>
-            <p>
-              Stimmt ein Tempolimit nicht? Doppeltipp & Geschwindigkeit
-              einsprechen – die Korrektur wird lokal gespeichert.
-            </p>
-          </article>
+          <article class="feature-item reveal reveal-d4">
+            <span class="feature-index">04</span>
+            <h3>Lokale Korrektur</h3>
+            <p>Erkannte Tempolimits können per Sprache lokal erfasst und später geprüft werden.</p>
+          </article></div>
+      </section>
+
+      <section class="section container" id="offline">
+        <div class="offline-layout">
+          <div class="section-header section-header-left reveal">
+            <p class="eyebrow">Daten &amp; Betrieb</p>
+            <h2>Offline zuerst, nachvollziehbar gepflegt</h2>
+            <p>Die App arbeitet mit lokalen OSM-Bundles, reproduzierbaren Targets und getrennten Release-Pfaden für iOS und Android.</p>
+          </div>
+          <div class="metric-grid">
+          <div class="metric reveal">
+            <span>Top bundle target</span>
+            <strong>NLD, ROU, LUX</strong>
+            <p>kleine Länder als kompakte Einzelpakete</p>
+          </div>
+          <div class="metric reveal">
+            <span>Deutschland</span>
+            <strong>16 Regionen</strong>
+            <p>regionale Shards für handhabbare Downloads</p>
+          </div>
+          <div class="metric reveal">
+            <span>Fahrtbetrieb</span>
+            <strong>lokal</strong>
+            <p>Internet nur für optionale Datenaktualisierungen</p>
+          </div></div>
         </div>
       </section>
 
-      <!-- ========== CTA Banner ========== -->
-      <section class="container reveal" id="cta-mid">
-        <div class="cta-banner">
-          <h2>Schütze deinen Führerschein.</h2>
-          <p>
-            Der öffentliche Start ist iPhone-first. Bis der App-Store-Link live
-            ist, kannst du dir ein Launch-Update geben lassen.
+      <section class="section section-contrast" id="trust">
+        <div class="container">
+          <div class="section-header reveal">
+            <p class="eyebrow">Vertrauen</p>
+            <h2>Klare Grenzen, offene Daten</h2>
+            <p>YouSpeed ist ein Assistenzsystem. Verkehrszeichen, Verkehrsregeln und amtliche Bescheide bleiben maßgeblich.</p>
+          </div>
+          <div class="trust-grid">
+          <article class="trust-item reveal reveal-d1">
+            <h3>OpenStreetMap</h3>
+            <p>Geschwindigkeitsdaten basieren auf OSM-Tags wie maxspeed, maxspeed:type und source:maxspeed.</p>
+          </article>
+          <article class="trust-item reveal reveal-d2">
+            <h3>ODbL 1.0</h3>
+            <p>Die Daten stehen unter der Open Database License. Attribution geht an OpenStreetMap-Mitwirkende.</p>
+          </article>
+          <article class="trust-item reveal reveal-d3">
+            <h3>Privatsphäre</h3>
+            <p>Die App-Positionierung bleibt klar: keine Werbung und kein Tracking.</p>
+          </article></div>
+          <p class="license-note reveal">
+            <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a>
+            ·
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
           </p>
+        </div>
+      </section>
+
+      <section class="section container">
+        <div class="cta-band reveal">
+          <div>
+            <h2>Bereit für den Deutschland-Start?</h2>
+            <p>Der Store-Link wird erst ersetzt, wenn die öffentliche Seite live ist. Bis dahin führt der CTA bewusst zum Launch-Update.</p>
+          </div>
           <div class="cta-actions">
-            <a
-              class="btn btn-primary"
-              href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="M16.365 12.77c.02 2.17 1.93 2.9 1.95 2.91-.02.05-.3 1.03-1 2.03-.61.86-1.24 1.72-2.24 1.74-.98.02-1.3-.58-2.42-.58-1.13 0-1.48.56-2.4.6-.95.04-1.68-.95-2.3-1.8-1.27-1.84-2.24-5.2-.94-7.46.64-1.12 1.79-1.83 3.04-1.85.95-.02 1.85.64 2.42.64.57 0 1.65-.79 2.78-.68.47.02 1.8.19 2.65 1.43-.07.04-1.58.92-1.56 2.72z"
-                />
-                <path
-                  d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
-                />
-              </svg>
-              Launch-Update anfragen
-            </a>
-            <a
-              class="btn btn-ghost"
-              href="#launchstatus"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Release-Stand ansehen
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== Speech / Workflow ========== -->
-      <section class="container" id="sprachkorrektur">
-        <div class="section-header reveal">
-          <h2>Spracherkennung &amp; Korrektur</h2>
-          <p>
-            Wenn ein Tempolimit nicht stimmt, korrigierst du es einfach selbst –
-            direkt beim Fahren, per Sprache.
-          </p>
-        </div>
-
-        <div class="speech-grid">
-          <article class="speech-card reveal reveal-d1">
-            <h3>So funktioniert's</h3>
-            <p>
-              Die Korrektur läuft direkt auf dem Gerät über
-              On-Device-Spracherkennung (Deutsch). Start per Doppeltipp auf das
-              Tempolimitschild, dann den erkannten Wert als Zahl einsprechen.
-            </p>
-            <p>
-              Der Sprachparser akzeptiert verkehrsrelevante Werte: 10–130 km/h
-              sowie Fußgängerzone. So werden Fehleingaben minimiert.
-            </p>
-          </article>
-          <article class="speech-card reveal reveal-d2">
-            <h3>Korrektur-Workflow</h3>
-            <ol class="workflow-list">
-              <li>
-                Doppeltipp auf das Tempolimitschild startet die Erfassung.
-              </li>
-              <li>Die App lauscht kurz und wertet das Transkript lokal aus.</li>
-              <li>
-                Bei gültigem Wert wird eine lokale Beobachtung mit Alt-/Neu-Wert
-                und Way-ID gespeichert.
-              </li>
-              <li>
-                Die Korrektur wird direkt als lokale Übersteuerung genutzt.
-              </li>
-              <li>
-                Unter „Lokale Erfassungen" können Einträge geprüft, gelöscht
-                oder als <code>changes.osc</code> exportiert werden.
-              </li>
-              <li>Fehler können in OpenStreetMap manuell korrigiert werden.</li>
-            </ol>
-          </article>
-        </div>
-      </section>
-
-      <!-- ========== Offline Readiness ========== -->
-      <section class="container" id="readiness">
-        <div class="section-header reveal">
-          <h2>Offline-Daten, messbar gemacht</h2>
-          <p>
-            YouSpeed ist nicht nur eine Anzeige. Die App basiert auf einem
-            reproduzierbaren Bundle- und Update-Workflow, der im Repository mit
-            Benchmarks und Paper-Artefakten belegt ist.
-          </p>
-        </div>
-
-        <div class="readiness-panel reveal">
-          <div class="readiness-copy">
-            <h3>Was vor einem Release geprüft wird</h3>
-            <p>
-              Die aktuellen Artefakte messen 30 OSM-Update-Tage, vergleichen
-              Bundle-Architekturen und halten iOS-/Android-Latenzwerte getrennt
-              fest. So bleiben Offline-Daten, Matcher und App-Performance
-              nachvollziehbar.
-            </p>
-          </div>
-          <div class="readiness-metrics" aria-label="YouSpeed Readiness Kennzahlen">
-            <div>
-              <span>Update-Sample</span>
-              <strong>30 Tage</strong>
-              <p>normalisierte OSM-Aenderungen</p>
-            </div>
-            <div>
-              <span>S2 Payload</span>
-              <strong>57 MB</strong>
-              <p>Median pro Update-Tag</p>
-            </div>
-            <div>
-              <span>S3 Apply</span>
-              <strong>1,03 s</strong>
-              <p>Median Patch-Lauf pro Tag</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== Data & Trust ========== -->
-      <section class="container" id="daten">
-        <div class="section-header reveal">
-          <h2>Vertrauenswürdige Daten</h2>
-          <p>
-            YouSpeed nutzt offene Kartendaten und funktioniert komplett ohne
-            Cloud.
-          </p>
-        </div>
-
-        <div class="trust-grid">
-          <article class="trust-card reveal reveal-d1">
-            <h3>📂 OpenStreetMap</h3>
-            <p>
-              Die Geschwindigkeitsinformationen basieren auf OpenStreetMap
-              (OSM), insbesondere Tags wie <code>maxspeed</code>,
-              <code>maxspeed:type</code> und <code>source:maxspeed</code>.
-            </p>
-          </article>
-          <article class="trust-card reveal reveal-d2">
-            <h3>📜 Offene Lizenz</h3>
-            <p>
-              Datenlizenz:
-              <a
-                href="https://opendatacommons.org/licenses/odbl/1-0/"
-                target="_blank"
-                rel="noreferrer"
-                >ODbL 1.0</a
-              >, Attribution:
-              <a
-                href="https://www.openstreetmap.org/copyright"
-                target="_blank"
-                rel="noreferrer"
-                >© OpenStreetMap-Mitwirkende</a
-              >. Fehler können im OSM-iD-Editor korrigiert werden.
-            </p>
-          </article>
-          <article class="trust-card reveal reveal-d3">
-            <h3>✈️ Offline-Betrieb</h3>
-            <p>
-              YouSpeed funktioniert im Fahrbetrieb vollständig offline mit lokal
-              gespeicherten Kartendaten. Internet wird nur für optionale
-              Datenaktualisierungen benötigt.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <!-- ========== Final CTA ========== -->
-      <section class="container reveal" id="download-bottom">
-        <div class="cta-banner">
-          <h2>Bereit für den Deutschland-Start?</h2>
-          <p>
-            YouSpeed startet zuerst auf dem iPhone. Android bleibt intern, bis
-            die öffentliche Parität wirklich erreicht ist.
-          </p>
-          <div class="cta-actions">
-            <a
-              class="btn btn-primary btn-lg"
-              href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  d="M16.365 12.77c.02 2.17 1.93 2.9 1.95 2.91-.02.05-.3 1.03-1 2.03-.61.86-1.24 1.72-2.24 1.74-.98.02-1.3-.58-2.42-.58-1.13 0-1.48.56-2.4.6-.95.04-1.68-.95-2.3-1.8-1.27-1.84-2.24-5.2-.94-7.46.64-1.12 1.79-1.83 3.04-1.85.95-.02 1.85.64 2.42.64.57 0 1.65-.79 2.78-.68.47.02 1.8.19 2.65 1.43-.07.04-1.58.92-1.56 2.72z"
-                />
-                <path
-                  d="M14.8 3.86c.5-.6.85-1.44.76-2.28-.73.03-1.62.49-2.15 1.09-.48.54-.9 1.4-.78 2.22.81.06 1.67-.41 2.17-1.03z"
-                />
-              </svg>
-              Launch-Update anfragen
-            </a>
-            <a
-              class="btn btn-ghost btn-lg"
-              href="#readiness"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Readiness ansehen
-            </a>
+            <a class="btn btn-primary" href="mailto:raphael.volz@hs-pforzheim.de?subject=YouSpeed%20Launch-Update">Launch-Update anfragen</a>
+            <a class="btn btn-secondary" href="#offline">Datenbasis ansehen</a>
           </div>
         </div>
       </section>
     </main>
 
-    <!-- ========== Footer ========== -->
     <footer class="site-footer">
-      <div class="container">
-        <p><strong>Impressum</strong></p>
-        <p><a href="https://www.raphaelvolz.de">Prof. Dr. Raphael Volz</a></p>
-        <p>Labor für intelligente Mobilität und autonome Systeme (IMAS)</p>
-        <p>
-          <a href="https://techpf.hs-pforzheim.de"
-            >TechPF - Fakultät für Technik</a
-          >
-        </p>
-        <p>
-          <a href="https://www.hs-pforzheim.de"
-            >Hochschule Pforzheim - Pforzheim University</a
-          >
-        </p>
-        <p>Tiefenbronner Str. 65, 75175 Pforzheim</p>
-        <p>
-          E-Mail:
-          <a href="mailto:raphael.volz@hs-pforzheim.de"
-            >raphael.volz@hs-pforzheim.de</a
-          >
-        </p>
-        <p style="margin-top: 0.6rem">
-          <a
-            href="https://github.com/volzinnovation/youspeed.de"
-            target="_blank"
-            rel="noreferrer"
-            >Open Source auf GitHub</a
-          >
-        </p>
+      <div class="container footer-grid">
+        <div>
+          <p><strong>Impressum</strong></p>
+          <p><a href="https://www.raphaelvolz.de">Prof. Dr. Raphael Volz</a></p>
+          <p>Labor für intelligente Mobilität und autonome Systeme (IMAS)</p>
+          <p>Tiefenbronner Str. 65, 75175 Pforzheim</p>
+        </div>
+        <div>
+          <p><a href="https://techpf.hs-pforzheim.de">TechPF - Fakultät für Technik</a></p>
+          <p><a href="https://www.hs-pforzheim.de">Hochschule Pforzheim - Pforzheim University</a></p>
+          <p><a href="mailto:raphael.volz@hs-pforzheim.de">raphael.volz@hs-pforzheim.de</a></p>
+          <p><a href="./datenschutz.html">Datenschutz</a></p>
+          <p><a href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">Open Source auf GitHub</a></p>
+        </div>
       </div>
     </footer>
 
-    <!-- ========== JS: reveal + hamburger ========== -->
     <script>
-      // Scroll-reveal via Intersection Observer
       const reveals = document.querySelectorAll(".reveal");
       const observer = new IntersectionObserver(
         (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add("visible");
-              observer.unobserve(e.target);
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              observer.unobserve(entry.target);
             }
           });
         },
-        { threshold: 0.12 },
+        { threshold: 0.14 },
       );
-      reveals.forEach((el) => observer.observe(el));
+      reveals.forEach((element) => observer.observe(element));
 
-      // Hamburger menu
       const hamburger = document.getElementById("hamburger");
       const mobileMenu = document.getElementById("mobile-menu");
       hamburger.addEventListener("click", () => {
-        hamburger.classList.toggle("open");
-        mobileMenu.classList.toggle("open");
+        const isOpen = hamburger.classList.toggle("open");
+        mobileMenu.classList.toggle("open", isOpen);
+        hamburger.setAttribute("aria-expanded", String(isOpen));
       });
-      mobileMenu.querySelectorAll("a").forEach((a) => {
-        a.addEventListener("click", () => {
+      mobileMenu.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
           hamburger.classList.remove("open");
           mobileMenu.classList.remove("open");
+          hamburger.setAttribute("aria-expanded", "false");
         });
       });
 
-      // Shrink nav on scroll
-      const nav = document.getElementById("navbar");
+      const navElement = document.getElementById("navbar");
       window.addEventListener("scroll", () => {
-        nav.classList.toggle("scrolled", window.scrollY > 60);
+        navElement.classList.toggle("scrolled", window.scrollY > 32);
       });
     </script>
   </body>
