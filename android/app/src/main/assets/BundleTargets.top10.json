@@ -166,6 +166,136 @@
     },
     {
       "rank": 9,
+      "country_id": "france",
+      "country_code": "FRA",
+      "iso2": "FR",
+      "mode": "regional_shards",
+      "include_in_top_country_sequence": false,
+      "regions": [
+        {
+          "region_id": "alsace",
+          "name": "Alsace"
+        },
+        {
+          "region_id": "aquitaine",
+          "name": "Aquitaine"
+        },
+        {
+          "region_id": "auvergne",
+          "name": "Auvergne"
+        },
+        {
+          "region_id": "basse-normandie",
+          "name": "Basse-Normandie"
+        },
+        {
+          "region_id": "bourgogne",
+          "name": "Bourgogne"
+        },
+        {
+          "region_id": "bretagne",
+          "name": "Bretagne"
+        },
+        {
+          "region_id": "centre",
+          "name": "Centre"
+        },
+        {
+          "region_id": "champagne-ardenne",
+          "name": "Champagne Ardenne"
+        },
+        {
+          "region_id": "corse",
+          "name": "Corse"
+        },
+        {
+          "region_id": "franche-comte",
+          "name": "Franche Comte"
+        },
+        {
+          "region_id": "guadeloupe",
+          "name": "Guadeloupe"
+        },
+        {
+          "region_id": "guyane",
+          "name": "Guyane"
+        },
+        {
+          "region_id": "haute-normandie",
+          "name": "Haute-Normandie"
+        },
+        {
+          "region_id": "ile-de-france",
+          "name": "Ile-de-France"
+        },
+        {
+          "region_id": "languedoc-roussillon",
+          "name": "Languedoc-Roussillon"
+        },
+        {
+          "region_id": "limousin",
+          "name": "Limousin"
+        },
+        {
+          "region_id": "lorraine",
+          "name": "Lorraine"
+        },
+        {
+          "region_id": "martinique",
+          "name": "Martinique"
+        },
+        {
+          "region_id": "mayotte",
+          "name": "Mayotte"
+        },
+        {
+          "region_id": "midi-pyrenees",
+          "name": "Midi-Pyrenees"
+        },
+        {
+          "region_id": "nord-pas-de-calais",
+          "name": "Nord-Pas-de-Calais"
+        },
+        {
+          "region_id": "pays-de-la-loire",
+          "name": "Pays de la Loire"
+        },
+        {
+          "region_id": "picardie",
+          "name": "Picardie"
+        },
+        {
+          "region_id": "poitou-charentes",
+          "name": "Poitou-Charentes"
+        },
+        {
+          "region_id": "provence-alpes-cote-d-azur",
+          "name": "Provence Alpes-Cote-d'Azur"
+        },
+        {
+          "region_id": "reunion",
+          "name": "Reunion"
+        },
+        {
+          "region_id": "rhone-alpes",
+          "name": "Rhone-Alpes"
+        }
+      ]
+    },
+    {
+      "rank": 10,
+      "country_id": "switzerland",
+      "country_code": "CHE",
+      "iso2": "CH",
+      "mode": "single_country",
+      "regions": [
+        {
+          "region_id": "switzerland"
+        }
+      ]
+    },
+    {
+      "rank": 11,
       "country_id": "monaco",
       "country_code": "MCO",
       "iso2": "MC",

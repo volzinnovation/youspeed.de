@@ -206,7 +206,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(config.format, "youspeed.v3.bundle.targets")
         XCTAssertEqual(config.schemaVersion, 1)
         XCTAssertEqual(config.variant, "v3")
-        XCTAssertGreaterThanOrEqual(config.countries.count, 9)
+        XCTAssertGreaterThanOrEqual(config.countries.count, 11)
 
         let germany = try XCTUnwrap(config.country(countryID: "germany"))
         XCTAssertEqual(germany.countryCode, "DEU")
@@ -217,6 +217,17 @@ final class SpeedConsumerTests: XCTestCase {
         let netherlands = try XCTUnwrap(config.country(countryID: "netherlands"))
         XCTAssertEqual(netherlands.countryCode, "NLD")
         XCTAssertEqual(netherlands.mode, "single_country")
+
+        let france = try XCTUnwrap(config.country(countryID: "france"))
+        XCTAssertEqual(france.countryCode, "FRA")
+        XCTAssertEqual(france.mode, "regional_shards")
+        XCTAssertEqual(france.regions.count, 27)
+        XCTAssertTrue(france.regions.contains(where: { $0.regionID == "ile-de-france" }))
+        XCTAssertTrue(france.regions.contains(where: { $0.regionID == "rhone-alpes" }))
+
+        let switzerland = try XCTUnwrap(config.country(countryID: "switzerland"))
+        XCTAssertEqual(switzerland.countryCode, "CHE")
+        XCTAssertEqual(switzerland.mode, "single_country")
 
         XCTAssertNil(config.country(countryID: "united-kingdom"))
     }
@@ -241,6 +252,22 @@ final class SpeedConsumerTests: XCTestCase {
         let netherlandsEndpoints = endpoints.filter { $0.countryCode.uppercased() == "NLD" }
         XCTAssertEqual(netherlandsEndpoints.count, 1)
         XCTAssertEqual(netherlandsEndpoints.first?.regionID, "netherlands")
+
+        let franceEndpoints = endpoints.filter { $0.countryCode.uppercased() == "FRA" }
+        XCTAssertEqual(franceEndpoints.count, 27)
+        XCTAssertTrue(franceEndpoints.contains(where: { $0.regionID == "france/ile-de-france" }))
+        XCTAssertTrue(
+            franceEndpoints.contains {
+                $0.manifestURL == URL(
+                    string: "https://github.com/volzinnovation/youspeed.de/releases/download/ile-de-france/ile-de-france_manifest.json"
+                )!
+            }
+        )
+
+        let swissManifestURL = URL(
+            string: "https://github.com/volzinnovation/youspeed.de/releases/download/switzerland/switzerland_manifest.json"
+        )!
+        XCTAssertTrue(endpoints.contains(where: { $0.manifestURL == swissManifestURL }))
 
         let germanyEndpoints = endpoints.filter { $0.countryCode.uppercased() == "DEU" }
         XCTAssertGreaterThan(germanyEndpoints.count, 1)

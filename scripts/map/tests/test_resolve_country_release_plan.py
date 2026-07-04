@@ -242,6 +242,72 @@ class ResolveCountryReleasePlanTests(unittest.TestCase):
         self.assertEqual(plan["pbf_asset_name"], "karlsruhe-regbez-latest.osm.pbf")
         self.assertEqual(plan["daily_delta_prefix"], "karlsruhe-regbez")
 
+    def test_resolves_france_regional_shard_with_parent_country(self) -> None:
+        index_payload = {
+            "features": [
+                {
+                    "properties": {
+                        "id": "france",
+                        "name": "France",
+                        "parent": "europe",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/france-latest.osm.pbf",
+                        },
+                        "iso3166-1:alpha2": ["FR"],
+                    }
+                },
+                {
+                    "properties": {
+                        "id": "ile-de-france",
+                        "name": "Ile-de-France",
+                        "parent": "france",
+                        "urls": {
+                            "pbf": "https://download.geofabrik.de/europe/france/ile-de-france-latest.osm.pbf",
+                        },
+                    }
+                },
+            ]
+        }
+        config_payload = {
+            "format": "youspeed.v3.bundle.targets",
+            "schema_version": 1,
+            "variant": "v3",
+            "countries": [
+                {
+                    "rank": 9,
+                    "country_id": "france",
+                    "country_code": "FRA",
+                    "iso2": "FR",
+                    "mode": "regional_shards",
+                    "regions": [{"region_id": "ile-de-france"}],
+                }
+            ],
+        }
+
+        with tempfile.TemporaryDirectory(prefix="youspeed-release-plan-") as td:
+            root = Path(td)
+            index_path = root / "index-v1.json"
+            config_path = root / "BundleTargets.top10.json"
+            index_path.write_text(json.dumps(index_payload), encoding="utf-8")
+            config_path.write_text(json.dumps(config_payload), encoding="utf-8")
+
+            plan = MODULE.resolve_country_release_plan(
+                repo_root=root,
+                bundle_country="france/ile-de-france",
+                geofabrik_index=index_path,
+                bundle_target_config=config_path,
+                geofabrik_index_url="https://download.geofabrik.de/index-v1.json",
+            )
+
+        self.assertEqual(plan["country_code"], "FRA")
+        self.assertEqual(plan["iso2"], "FR")
+        self.assertEqual(plan["root_country_id"], "france")
+        self.assertEqual(plan["bundle_release_tag_default"], "ile-de-france")
+        self.assertEqual(plan["pbf_release_tag_default"], "ile-de-france-pbf-latest")
+        self.assertEqual(plan["pbf_asset_name"], "ile-de-france-latest.osm.pbf")
+        self.assertEqual(plan["state_asset_name"], "ile-de-france.diff_state.json")
+        self.assertEqual(plan["daily_delta_prefix"], "ile-de-france")
+
     def test_rejects_non_latest_geofabrik_url(self) -> None:
         with self.assertRaises(SystemExit):
             MODULE._updates_url_from_pbf_url("https://example.com/netherlands.osm.pbf")

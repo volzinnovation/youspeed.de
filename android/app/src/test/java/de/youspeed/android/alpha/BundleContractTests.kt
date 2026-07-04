@@ -31,6 +31,17 @@ class BundleContractTests {
         assertTrue(germany.regions.any { it.regionId == "bayern" })
         assertTrue(germany.regions.any { it.regionId == "berlin" })
 
+        val france = requireNotNull(config.countryById("france"))
+        assertEquals("FRA", france.countryCode)
+        assertEquals("regional_shards", france.mode)
+        assertEquals(27, france.regions.size)
+        assertTrue(france.regions.any { it.regionId == "ile-de-france" })
+        assertTrue(france.regions.any { it.regionId == "rhone-alpes" })
+
+        val switzerland = requireNotNull(config.countryById("switzerland"))
+        assertEquals("CHE", switzerland.countryCode)
+        assertEquals("single_country", switzerland.mode)
+
         val endpoints = config.manifestEndpoints(preferredCountryCode = "DEU")
         assertFalse(endpoints.isEmpty())
         assertEquals("DEU", endpoints.first().countryCode)
@@ -39,6 +50,18 @@ class BundleContractTests {
         assertTrue(
             endpoints.any {
                 it.manifestUrl == "https://github.com/volzinnovation/youspeed.de/releases/download/netherlands/netherlands_manifest.json"
+            }
+        )
+        assertEquals(27, endpoints.count { it.countryCode.uppercase() == "FRA" })
+        assertTrue(endpoints.any { it.regionId == "france/ile-de-france" })
+        assertTrue(
+            endpoints.any {
+                it.manifestUrl == "https://github.com/volzinnovation/youspeed.de/releases/download/ile-de-france/ile-de-france_manifest.json"
+            }
+        )
+        assertTrue(
+            endpoints.any {
+                it.manifestUrl == "https://github.com/volzinnovation/youspeed.de/releases/download/switzerland/switzerland_manifest.json"
             }
         )
     }

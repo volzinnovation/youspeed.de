@@ -26,6 +26,8 @@ ISO2_TO_ISO3: Dict[str, str] = {
     "IS": "ISL",
     "MC": "MCO",
     "GB": "GBR",
+    "FR": "FRA",
+    "CH": "CHE",
 }
 ISO3_TO_ISO2: Dict[str, str] = {iso3: iso2 for iso2, iso3 in ISO2_TO_ISO3.items()}
 
