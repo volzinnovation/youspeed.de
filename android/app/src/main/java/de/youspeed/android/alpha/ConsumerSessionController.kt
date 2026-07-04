@@ -33,6 +33,8 @@ import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.InflaterInputStream
 import kotlin.math.abs
@@ -281,6 +283,7 @@ class ConsumerSessionController(
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val isDisposed = AtomicBoolean(false)
     private val assetReader = AndroidAssetReader(appContext)
     private val githubReleaseToken = BuildConfig.YOUSPEED_RELEASE_READ_TOKEN.trim()
     private val bootstrapper = BundleBootstrapper(
@@ -423,7 +426,12 @@ class ConsumerSessionController(
     }
 
     fun dispose() {
+        if (!isDisposed.compareAndSet(false, true)) {
+            return
+        }
         stopDriving()
+        mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
+        mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
         appendRuntimeDiagnosticEvent(
             event = "session_dispose",
             details = mapOf(
@@ -443,6 +451,9 @@ class ConsumerSessionController(
     }
 
     fun beginStartupDataLoadIfNeeded(force: Boolean = false) {
+        if (isDisposed.get()) {
+            return
+        }
         if (!force && uiState.startupDataState == StartupDataState.READY) {
             return
         }
@@ -459,7 +470,7 @@ class ConsumerSessionController(
                 localObservationStatus = "",
             )
         }
-        executor.execute {
+        submitBackgroundTask {
             try {
                 bootstrapBundledSeedIfNeeded()
                 refreshDownloadedBundleInventory()
@@ -724,7 +735,7 @@ class ConsumerSessionController(
                 lastError = "",
             )
         }
-        executor.execute {
+        submitBackgroundTask {
             val endpoints = manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) == "DEU" } +
                 manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) != "DEU" }
             for (endpoint in endpoints) {
@@ -765,7 +776,7 @@ class ConsumerSessionController(
                             lastError = "",
                         )
                     }
-                    return@execute
+                    return@submitBackgroundTask
                 } catch (error: Exception) {
                     lastFailure = error
                 }
@@ -775,7 +786,7 @@ class ConsumerSessionController(
     }
 
     fun deleteDownloadedBundlesKeepingSeed() {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val removed = bootstrapper.removeDownloadedBundlesKeepingSeed()
                 refreshDownloadedBundleInventory()
@@ -825,7 +836,7 @@ class ConsumerSessionController(
                 lastError = "",
             )
         }
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val sync = bootstrapper.syncFromManifestUrl(
                     manifestUrl = option.endpoint.manifestUrl,
@@ -859,7 +870,7 @@ class ConsumerSessionController(
     }
 
     fun deleteSelectedBundle(option: BundleDownloadOption) {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val removed = bootstrapper.removeDownloadedBundles(option.endpoint.manifestRegion)
                 refreshDownloadedBundleInventory()
@@ -885,7 +896,7 @@ class ConsumerSessionController(
 
     private fun persistSpeedCaptureSelection(selection: SpeedCaptureSelection) {
         val selectedValue = selection.value
-        executor.execute {
+        submitBackgroundTask {
             try {
                 postState { copy(speedCaptureMode = SpeedCaptureModeState.SAVING) }
                 val savedObservation = localObservationStore.recordSpeedLimitChange(
@@ -932,7 +943,7 @@ class ConsumerSessionController(
     }
 
     fun deleteLocalObservation(observationId: String) {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 localObservationStore.deleteObservation(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
@@ -953,7 +964,7 @@ class ConsumerSessionController(
     }
 
     fun deleteAllLocalObservations() {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val removed = localObservationStore.deleteAllObservations()
                 localSpeedOverridesByWayId = emptyMap()
@@ -973,7 +984,7 @@ class ConsumerSessionController(
     }
 
     fun exportAllLocalObservations() {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val result = localObservationStore.exportAllLocalObservationsAsOsc()
                 val updated = localObservationStore.fetchObservations(limit = 500)
@@ -994,7 +1005,7 @@ class ConsumerSessionController(
     }
 
     fun approveLocalObservation(observationId: String) {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 localObservationStore.reviewAndApproveProposal(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
@@ -1014,7 +1025,7 @@ class ConsumerSessionController(
     }
 
     fun discardLocalObservation(observationId: String) {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 localObservationStore.discardObservation(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
@@ -1034,7 +1045,7 @@ class ConsumerSessionController(
     }
 
     fun exportLocalObservation(observationId: String) {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val result = localObservationStore.exportProposalAsOscPackage(observationId)
                 val updated = localObservationStore.fetchObservations(limit = 500)
@@ -1071,7 +1082,7 @@ class ConsumerSessionController(
     }
 
     fun clearDrivingLogs() {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 resetDrivingLogFiles(gpsLogFile = gpsLogFile(), matchLogFile = matchLogFile())
                 postState {
@@ -1089,7 +1100,7 @@ class ConsumerSessionController(
     }
 
     fun clearRuntimeDiagnosticsLog() {
-        executor.execute {
+        submitBackgroundTask {
             try {
                 ensureRuntimeDiagnosticsLogExists()
                 runtimeDiagnosticsLogFile().writeText("")
@@ -1249,7 +1260,7 @@ class ConsumerSessionController(
                 lastError = "",
             )
         }
-        executor.execute {
+        submitBackgroundTask {
             try {
                 val updated = work(uiState)
                 postState { updated }
@@ -1540,7 +1551,7 @@ class ConsumerSessionController(
         val fallbackBundleVersion = uiState.activeBundleVersion
         val fallbackPenaltyRules = uiState.activePenaltyRules
 
-        executor.execute {
+        submitBackgroundTask {
             val route = runCatching {
                 bootstrapper.resolveLocalBundleRoute(
                     lat = location.latitude,
@@ -1642,7 +1653,7 @@ class ConsumerSessionController(
                         matchLogPath = matchLogFile().absolutePath,
                     )
                 }
-                return@execute
+                return@submitBackgroundTask
             }
 
             try {
@@ -1706,7 +1717,7 @@ class ConsumerSessionController(
                 )
 
                 if (lookupToken.get() != token) {
-                    return@execute
+                    return@submitBackgroundTask
                 }
                 wayMatchTracker.record(
                     result = result,
@@ -2060,6 +2071,9 @@ class ConsumerSessionController(
         force: Boolean,
         userInitiated: Boolean,
     ) {
+        if (isDisposed.get()) {
+            return
+        }
         if (isGermanSpeechModelCheckInFlight) {
             return
         }
@@ -2072,7 +2086,7 @@ class ConsumerSessionController(
             status = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet.",
             updateCaptureStatus = userInitiated || uiState.speedCaptureMode == SpeedCaptureModeState.PREPARING,
         )
-        executor.execute {
+        val submitted = submitBackgroundTask {
             runCatching { bundledVoskModelStore.prepareModel() }
                 .onSuccess { handle ->
                     replaceBundledVoskModel(handle)
@@ -2097,6 +2111,9 @@ class ConsumerSessionController(
                         }
                     }
                 }
+        }
+        if (!submitted) {
+            isGermanSpeechModelCheckInFlight = false
         }
     }
 
@@ -2918,12 +2935,37 @@ class ConsumerSessionController(
     }
 
     private fun updateState(transform: ConsumerUiState.() -> ConsumerUiState) {
+        if (isDisposed.get()) {
+            return
+        }
         uiState = uiState.transform()
     }
 
     private fun postState(transform: ConsumerUiState.() -> ConsumerUiState) {
+        if (isDisposed.get()) {
+            return
+        }
         mainHandler.post {
+            if (isDisposed.get()) {
+                return@post
+            }
             uiState = uiState.transform()
+        }
+    }
+
+    private fun submitBackgroundTask(task: () -> Unit): Boolean {
+        if (isDisposed.get() || executor.isShutdown || executor.isTerminated) {
+            return false
+        }
+        return try {
+            executor.execute {
+                if (!isDisposed.get()) {
+                    task()
+                }
+            }
+            true
+        } catch (_: RejectedExecutionException) {
+            false
         }
     }
 
