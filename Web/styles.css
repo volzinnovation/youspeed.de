@@ -332,6 +332,47 @@ ul {
   background: rgba(255, 255, 255, 0.1);
 }
 
+.store-btn {
+  gap: 10px;
+  padding: 10px 18px;
+  text-align: left;
+  min-width: 170px;
+}
+
+.store-btn span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.store-btn small {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.82;
+  text-transform: none;
+}
+
+.store-btn-apple {
+  background: #1c1c1e;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.store-btn-apple:hover {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.store-btn-google {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.store-btn-google:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .hero-facts {
   display: flex;
   flex-wrap: wrap;
