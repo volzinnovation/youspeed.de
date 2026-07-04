@@ -84,6 +84,46 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                   min_lat, max_lat
                 );
 
+                CREATE TABLE city_boundary (
+                  row_id INTEGER PRIMARY KEY,
+                  osm_type TEXT NOT NULL,
+                  osm_id INTEGER NOT NULL,
+                  admin_level INTEGER NOT NULL,
+                  name TEXT,
+                  min_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL,
+                  max_lon REAL NOT NULL,
+                  max_lat REAL NOT NULL
+                );
+
+                CREATE VIRTUAL TABLE city_boundary_rtree USING rtree(
+                  row_id,
+                  min_lon, max_lon,
+                  min_lat, max_lat
+                );
+
+                CREATE TABLE city_ring (
+                  boundary_row_id INTEGER NOT NULL,
+                  ring_index INTEGER NOT NULL,
+                  outer_index INTEGER NOT NULL,
+                  is_hole INTEGER NOT NULL,
+                  points_json TEXT NOT NULL
+                );
+
+                CREATE TABLE city_place (
+                  row_id INTEGER PRIMARY KEY,
+                  place TEXT NOT NULL,
+                  name TEXT NOT NULL,
+                  lon REAL NOT NULL,
+                  lat REAL NOT NULL
+                );
+
+                CREATE VIRTUAL TABLE city_place_rtree USING rtree(
+                  row_id,
+                  min_lon, max_lon,
+                  min_lat, max_lat
+                );
+
                 INSERT INTO ways(way_id, highway, street_name, ref, maxspeed, maxspeed_type, source_maxspeed, zone_maxspeed, traffic_sign, approx_heading_deg, service, tunnel, min_lon, min_lat, max_lon, max_lat)
                 VALUES (100, 'residential', 'Fixture Street', 'K 9652', '30', NULL, NULL, NULL, NULL, 90.0, 'main', NULL, 13.4050, 52.5200, 13.4060, 52.5210);
 
@@ -102,6 +142,27 @@ class ValidateV3ReleaseRegressionsTests(unittest.TestCase):
                 VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
                 INSERT INTO areas_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
                 VALUES (2, 13.4050, 13.4060, 52.5200, 52.5210);
+
+                INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
+                VALUES (1, 'relation', 9001, 8, 'Fixture City', 13.4040, 52.5190, 13.4090, 52.5240);
+                INSERT INTO city_boundary(row_id, osm_type, osm_id, admin_level, name, min_lon, min_lat, max_lon, max_lat)
+                VALUES (2, 'relation', 9002, 6, 'Fixture District', 13.4000, 52.5100, 13.4200, 52.5300);
+
+                INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (1, 13.4040, 13.4090, 52.5190, 52.5240);
+                INSERT INTO city_boundary_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (2, 13.4000, 13.4200, 52.5100, 52.5300);
+
+                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                VALUES (1, 0, 0, 0, '[[13.4040,52.5190],[13.4090,52.5190],[13.4090,52.5240],[13.4040,52.5240],[13.4040,52.5190]]');
+                INSERT INTO city_ring(boundary_row_id, ring_index, outer_index, is_hole, points_json)
+                VALUES (2, 0, 0, 0, '[[13.4000,52.5100],[13.4200,52.5100],[13.4200,52.5300],[13.4000,52.5300],[13.4000,52.5100]]');
+
+                INSERT INTO city_place(row_id, place, name, lon, lat)
+                VALUES (1, 'city', 'Fixture City', 13.4055, 52.5205);
+
+                INSERT INTO city_place_rtree(row_id, min_lon, max_lon, min_lat, max_lat)
+                VALUES (1, 13.1055, 13.7055, 52.2205, 52.8205);
                 """
             )
             conn.commit()

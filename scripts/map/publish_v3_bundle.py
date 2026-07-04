@@ -340,13 +340,15 @@ def main() -> int:
     if should_split_db and args.no_copy_db:
         raise SystemExit("--no-copy-db cannot be combined with split DB output")
 
+    db_download_file_name = f"{db_file_name}.gz" if normalized_db_compression == "gzip" else db_file_name
+
     part_paths: List[Path] = []
     if should_split_db:
         dst_db.unlink(missing_ok=True)
         part_paths = _split_file_to_parts(
             src=publish_db_path,
             out_dir=out_dir,
-            base_name=publish_db_path.name,
+            base_name=db_download_file_name,
             max_part_bytes=int(args.max_release_asset_bytes),
         )
     else:
@@ -392,7 +394,6 @@ def main() -> int:
             return _join_url(args.base_url, args.region, bundle_dir_name, file_name)
         return None
 
-    db_download_file_name = publish_db_path.name
     db_url: Optional[str]
     if should_split_db:
         db_url = None
