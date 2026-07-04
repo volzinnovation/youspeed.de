@@ -102,6 +102,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
@@ -256,7 +257,7 @@ private fun StartupScreen(
             modifier = Modifier.widthIn(max = 420.dp),
         ) {
             Text("YouSpeed", color = Color.White, style = roundedUiTextStyle(size = 42.sp, weight = FontWeight.Bold))
-            Text("Lade lokale Kartendaten", color = Color.White, style = roundedUiTextStyle(size = 20.sp, weight = FontWeight.SemiBold))
+            Text(stringResource(R.string.startup_loading_map_data), color = Color.White, style = roundedUiTextStyle(size = 20.sp, weight = FontWeight.SemiBold))
             LinearProgress(ui.startupProgress)
             Text(
                 "${(ui.startupProgress.coerceIn(0.0, 1.0) * 100).toInt()}%",
@@ -281,7 +282,7 @@ private fun StartupScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                     modifier = Modifier.testTag("startup-retry-button"),
                 ) {
-                    Text("Erneut versuchen", style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold))
+                    Text(stringResource(R.string.startup_retry), style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold))
                 }
             }
         }
@@ -311,14 +312,14 @@ private fun WelcomeScreen(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Text(
-                "Willkommen bei YouSpeed",
+                stringResource(R.string.welcome_title),
                 color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
                 style = roundedUiTextStyle(size = 34.sp, weight = FontWeight.Bold),
             )
             Text(
-                "Geld sparen. Fahrverbot vermeiden. Sicher ankommen. YouSpeed zeigt dir live, was Dich Dein zu schnelles Fahren kostet. Achtung: Auch YouSpeed kann Fehler machen - Augen auf die Strasse!",
+                stringResource(R.string.welcome_copy),
                 color = Color.White.copy(alpha = 0.92f),
                 textAlign = TextAlign.Center,
                 style = roundedUiTextStyle(size = 18.sp, weight = FontWeight.SemiBold),
@@ -326,9 +327,9 @@ private fun WelcomeScreen(
             CoverageCard(activeBundleVersion = ui.activeBundleVersion)
             Text(
                 if (ui.activeBundleVersion == "seed" || ui.activeBundleVersion == "none") {
-                    "Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfuegbar. Den Download startest Du in den Einstellungen."
+                    stringResource(R.string.welcome_scope_seed)
                 } else {
-                    "Deutschland-Datensatz aktiv: ${ui.activeBundleVersion}"
+                    stringResource(R.string.welcome_scope_active, ui.activeBundleVersion)
                 },
                 color = Color.White.copy(alpha = 0.88f),
                 textAlign = TextAlign.Center,
@@ -337,12 +338,12 @@ private fun WelcomeScreen(
             Card(colors = CardDefaults.cardColors(containerColor = Color(0x33FFD54F))) {
                 Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Rechtlicher Hinweis",
+                        stringResource(R.string.welcome_legal_heading),
                         color = Color.Yellow,
                         style = roundedUiTextStyle(size = 14.sp, weight = FontWeight.Bold),
                     )
                     Text(
-                        LegalDisclaimer.short,
+                        stringResource(R.string.legal_disclaimer_short),
                         color = Color.White.copy(alpha = 0.86f),
                         style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
                     )
@@ -350,7 +351,7 @@ private fun WelcomeScreen(
             }
             Card(colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))) {
                 Text(
-                    "Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright",
+                    stringResource(R.string.welcome_osm_credit),
                     color = Color.White.copy(alpha = 0.76f),
                     modifier = Modifier.padding(12.dp),
                     style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
@@ -362,7 +363,7 @@ private fun WelcomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("welcome-open-settings-button"),
-            ) { Text("Daten laden / App einstellen", style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold)) }
+            ) { Text(stringResource(R.string.welcome_open_settings), style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold)) }
             OutlinedButton(
                 onClick = onContinue,
                 modifier = Modifier
@@ -370,7 +371,7 @@ private fun WelcomeScreen(
                     .testTag("welcome-continue-button"),
             ) {
                 Text(
-                    "Mit vorhandenen Daten fortfahren",
+                    stringResource(R.string.welcome_continue),
                     color = Color.White,
                     style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold),
                 )
@@ -384,7 +385,7 @@ private fun WelcomeScreen(
             ) {
                 androidx.compose.material3.Checkbox(checked = ui.hideWelcomeScreen, onCheckedChange = onHideWelcomeChanged)
                 Text(
-                    "Nicht mehr anzeigen",
+                    stringResource(R.string.welcome_hide),
                     color = Color.White.copy(alpha = 0.92f),
                     style = roundedUiTextStyle(size = 15.sp, weight = FontWeight.SemiBold),
                 )
@@ -537,9 +538,12 @@ private fun MainScreen(
             .padding(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding()),
     ) {
         val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
+        val compactPhoneLayout = maxHeight.value < 780f
         val screenInset = (minDimensionDp.value * 0.02f).dp
-        val signSize = min(maxWidth.value * 0.74f, maxWidth.value - (screenInset.value * 2f)).dp
-        val primaryMetricFont = (signSize.value * SPEED_LIMIT_NUMBER_SCALE).sp
+        val signWidthFactor = if (compactPhoneLayout) 0.62f else 0.74f
+        val signSize = min(maxWidth.value * signWidthFactor, maxWidth.value - (screenInset.value * 2f)).dp
+        val primaryMetricScale = if (compactPhoneLayout) 0.42f else SPEED_LIMIT_NUMBER_SCALE
+        val primaryMetricFont = (signSize.value * primaryMetricScale).sp
         val secondaryScale = sharedSecondaryScale(
             baseSecondaryFontSp = primaryMetricFont.value * SECONDARY_TEXT_RATIO,
             availableWidthSp = maxWidth.value - (max(12f, maxWidth.value * 0.04f) * 2f),
@@ -565,7 +569,7 @@ private fun MainScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = screenInset, bottom = 12.dp),
+                .padding(top = screenInset, bottom = CONTROL_BUTTON_DIAMETER + 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             TopCornerButtons(
@@ -617,18 +621,19 @@ private fun MainScreen(
                 runtimeBanner = runtimeBanner,
                 onOpenDebug = onOpenDebug,
             )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            BottomCornerButtons(
-                horizontalPadding = screenInset,
-                foreground = foreground,
-                buttonBg = buttonBg,
-                buttonBorder = buttonBorder,
-                onOpenLegal = onOpenLegal,
-                onOpenSettings = onOpenSettings,
-            )
         }
+
+        BottomCornerButtons(
+            horizontalPadding = screenInset,
+            foreground = foreground,
+            buttonBg = buttonBg,
+            buttonBorder = buttonBorder,
+            onOpenLegal = onOpenLegal,
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp),
+        )
     }
 }
 
@@ -671,9 +676,10 @@ private fun BottomCornerButtons(
     buttonBorder: Color,
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1130,16 +1136,11 @@ private fun SettingsSheet(
                 SectionCard("Kartendaten-Download") {
                     DebugLabel("Status", controller.formattedSyncStatus())
                     DebugLabel("Bundle", ui.activeBundleVersion)
-                    DebugLabel("GH Token", if (ui.hasGitHubReleaseToken) "vorhanden" else "fehlt")
+                    if (ui.hasGitHubReleaseToken) {
+                        DebugLabel("GH Token", "Debug")
+                    }
                     syncMessageLine(ui)?.let { (text, color) ->
                         Text(text, color = color, fontSize = 13.sp)
-                    }
-                    if (!ui.hasGitHubReleaseToken) {
-                        Text(
-                            "GitHub Release Token fehlt. Downloads aus Releases schlagen fehl (YOUSPEED_RELEASE_READ_TOKEN).",
-                            color = SignalRed,
-                            fontSize = 13.sp,
-                        )
                     }
                     Text(
                         "Top-10 Laender (A-Z). Bundles koennen einzeln geladen oder geloescht werden.",
@@ -1538,7 +1539,7 @@ private fun LegalSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             SectionCard("Rechtlicher Hinweis") {
-                Text(LegalDisclaimer.long, color = Color.Black)
+                Text(stringResource(R.string.legal_disclaimer_long), color = Color.Black)
             }
             Text(ui.legalText.ifBlank { "Keine rechtlichen Hinweise gebuendelt." }, color = Color.Black, lineHeight = 22.sp)
         }
@@ -1894,11 +1895,6 @@ private fun progressBytesText(
         normalizedCompletedBytes > 0L -> Formatter.formatShortFileSize(context, normalizedCompletedBytes)
         else -> ""
     }
-}
-
-private object LegalDisclaimer {
-    const val short = "Hinweis: Angezeigte Bussgelder, Punkte und Fahrverbote sind unverbindliche Orientierung und keine Rechtsberatung. Massgeblich sind amtliche Bescheide und die jeweils gueltige Rechtslage."
-    const val long = "Die in YouSpeed angezeigten Werte zu Bussgeld, Punkten und Fahrverbot dienen nur der unverbindlichen Orientierung. Sie stellen keine Rechtsberatung und keine verbindliche Rechtsauskunft dar. Massgeblich sind ausschliesslich amtliche Bescheide sowie die zum Tatzeitpunkt geltende Rechtslage; zusaetzliche Gebuehren und Auslagen koennen anfallen."
 }
 
 private fun syncMessageLine(ui: ConsumerUiState): Pair<String, Color>? {

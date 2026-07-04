@@ -18,8 +18,8 @@ class MainActivity : ComponentActivity(), ConsumerHost {
     private val sessionController by lazy {
         ConsumerSessionController(
             context = this,
-            rootDir = File(filesDir, "bundle-alpha"),
-            preferences = getSharedPreferences("youspeed-alpha", Context.MODE_PRIVATE),
+            rootDir = File(filesDir, "bundle"),
+            preferences = getSharedPreferences("youspeed", Context.MODE_PRIVATE),
             clock = Clock.systemUTC(),
             launchScreenshotState = AppScreenshotState.fromRaw(intent?.getStringExtra("screenshot_state") ?: System.getenv("YOUSPEED_SCREENSHOT_STATE")),
         )

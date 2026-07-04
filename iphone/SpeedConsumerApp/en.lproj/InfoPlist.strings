@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "YouSpeed";
+"NSLocationWhenInUseUsageDescription" = "YouSpeed uses your location to compare your current speed with local speed-limit data.";
+"NSMicrophoneUsageDescription" = "YouSpeed uses the microphone only on your device to capture spoken speed limits.";
+"NSSpeechRecognitionUsageDescription" = "YouSpeed uses speech recognition only on your device to capture speed limits such as 30 or pedestrian zone.";

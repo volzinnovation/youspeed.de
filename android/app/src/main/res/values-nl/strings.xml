@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Live snelheidslimietassistent met offline kaartgegevens en indicatieve waarschuwingen.</string>
+    <string name="action_refresh">Kaartdoelen opnieuw laden</string>
+    <string name="action_fetch_manifest">Manifest voor Duitsland testen</string>
+    <string name="action_bootstrap">Kaartgegevens downloaden</string>
+    <string name="store_short_description">Live snelheidslimietassistent met offline kaarten en waarschuwingen.</string>
+    <string name="startup_loading_map_data">Lokale kaartgegevens laden</string>
+    <string name="startup_retry">Opnieuw proberen</string>
+    <string name="welcome_title">Welkom bij YouSpeed</string>
+    <string name="welcome_copy">Kom veilig aan. YouSpeed toont live de herkende snelheidslimiet en geeft aan wanneer waarschuwingen voor boetes, punten of rijverboden relevant kunnen worden. YouSpeed kan fouten maken - houd je ogen op de weg.</string>
+    <string name="welcome_scope_seed">Zonder Duitsland-download is alleen het Regierungsbezirk Karlsruhe beschikbaar. Start de download in de instellingen.</string>
+    <string name="welcome_scope_active">Duitsland-dataset actief: %1$s</string>
+    <string name="welcome_legal_heading">Juridische opmerking</string>
+    <string name="welcome_osm_credit">Kaartgegevens: copyright OpenStreetMap-bijdragers, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Gegevens downloaden / app instellen</string>
+    <string name="welcome_continue">Doorgaan met bestaande gegevens</string>
+    <string name="welcome_hide">Niet meer tonen</string>
+    <string name="legal_disclaimer_short">Opmerking: getoonde boetes, punten en rijverboden zijn alleen indicatief en geen juridisch advies. Officiele besluiten en de geldende wet zijn bepalend.</string>
+    <string name="legal_disclaimer_long">De in YouSpeed getoonde waarden voor boetes, punten en rijverboden zijn alleen indicatief. Ze vormen geen juridisch advies en geen bindende juridische informatie. Alleen officiele besluiten en de wet die op dat moment geldt zijn bepalend; extra kosten kunnen van toepassing zijn.</string>
+</resources>

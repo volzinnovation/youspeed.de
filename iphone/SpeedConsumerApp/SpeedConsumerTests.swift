@@ -201,6 +201,69 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(rules.bands.last?.penaltyPoints, 2)
     }
 
+    func testLoadBundledFranceAndSwitzerlandRules() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let france = try SpeedPenaltyRuleSet.loadBundled(named: "FRA-rules", bundle: bundle)
+        let switzerland = try SpeedPenaltyRuleSet.loadBundled(named: "CHE-rules", bundle: bundle)
+
+        XCTAssertEqual(france.countryCode, "FRA")
+        XCTAssertEqual(france.currencyCode, "EUR")
+        XCTAssertGreaterThanOrEqual(france.bands.count, 6)
+
+        let franceUrbanLow = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 4,
+            rules: france,
+            insideCity: true
+        )
+        let franceRuralLow = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 4,
+            rules: france,
+            insideCity: false
+        )
+        let franceOffence = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 55,
+            rules: france,
+            insideCity: true
+        )
+
+        XCTAssertEqual(franceUrbanLow?.moneyFineEUR, 135)
+        XCTAssertEqual(franceUrbanLow?.penaltyPoints, 0)
+        XCTAssertEqual(franceRuralLow?.moneyFineEUR, 68)
+        XCTAssertEqual(franceOffence?.penaltyPoints, 6)
+        XCTAssertEqual(franceOffence?.moneyFineEUR, 300)
+        XCTAssertEqual(franceOffence?.conditionalDrivingBanMonths, 36)
+
+        XCTAssertEqual(switzerland.countryCode, "CHE")
+        XCTAssertEqual(switzerland.currencyCode, "CHF")
+        XCTAssertGreaterThanOrEqual(switzerland.bands.count, 10)
+
+        let swissUrbanFine = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 8,
+            rules: switzerland,
+            insideCity: true
+        )
+        let swissRuralFine = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 8,
+            rules: switzerland,
+            insideCity: false
+        )
+        let swissUrbanWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 22,
+            rules: switzerland,
+            insideCity: true
+        )
+        let swissRuralWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh: 27,
+            rules: switzerland,
+            insideCity: false
+        )
+
+        XCTAssertEqual(swissUrbanFine?.moneyFineEUR, 120)
+        XCTAssertEqual(swissRuralFine?.moneyFineEUR, 100)
+        XCTAssertEqual(swissUrbanWithdrawal?.drivingBanMonths, 1)
+        XCTAssertEqual(swissRuralWithdrawal?.drivingBanMonths, 1)
+    }
+
     func testLoadBundledTopCountryBundleTargetsConfig() throws {
         let config = try V3BundleTargetsConfig.loadBundled(bundle: Bundle(for: SpeedConsumerAppDelegate.self))
         XCTAssertEqual(config.format, "youspeed.v3.bundle.targets")

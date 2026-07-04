@@ -13,7 +13,7 @@ struct StartupView: View {
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text("Lade lokale Kartendaten")
+                Text("startup.loading_map_data")
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
 
@@ -41,7 +41,7 @@ struct StartupView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    Button("Erneut versuchen") {
+                    Button("startup.retry") {
                         viewModel.retryStartupDataPreparation()
                     }
                     .font(.system(size: 17, weight: .bold, design: .rounded))
@@ -70,12 +70,12 @@ struct FirstUserWelcomeView: View {
 
             ScrollView {
                 VStack(spacing: 18) {
-                    Text("Willkommen bei YouSpeed")
+                    Text("welcome.title")
                         .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
 
-                    Text("Geld sparen. Fahrverbot vermeiden. Sicher ankommen. YouSpeed zeigt dir live, was Dich Dein zu schnelles Fahren kostet. Achtung: Auch YouSpeed kann Fehler machen – Augen auf die Straße!")
+                    Text("welcome.copy")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.92))
                         .multilineTextAlignment(.center)
@@ -90,7 +90,7 @@ struct FirstUserWelcomeView: View {
                         .padding(.horizontal, 8)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Rechtlicher Hinweis")
+                        Text("welcome.legal_heading")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(.yellow.opacity(0.96))
                         Text(LegalDisclaimerText.short)
@@ -102,7 +102,7 @@ struct FirstUserWelcomeView: View {
                     .padding(12)
                     .background(Color.yellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-                    Text("Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright")
+                    Text("welcome.osm_credit")
                         .font(.system(size: 13, weight: .regular, design: .rounded))
                         .foregroundStyle(.white.opacity(0.76))
                         .multilineTextAlignment(.leading)
@@ -113,7 +113,7 @@ struct FirstUserWelcomeView: View {
                         Button {
                             onContinue(true)
                         } label: {
-                            Text("Daten laden /  App einstellen")
+                            Text("welcome.open_settings")
                                 .frame(maxWidth: .infinity)
                         }
                         .font(.system(size: 17, weight: .bold, design: .rounded))
@@ -123,7 +123,7 @@ struct FirstUserWelcomeView: View {
                         Button {
                             onContinue(false)
                         } label: {
-                            Text("Mit vorhandenen Daten fortfahren")
+                            Text("welcome.continue")
                                 .frame(maxWidth: .infinity)
                         }
                         .font(.system(size: 17, weight: .bold, design: .rounded))
@@ -137,7 +137,7 @@ struct FirstUserWelcomeView: View {
                         HStack(spacing: 10) {
                             Image(systemName: viewModel.hideWelcomeScreen ? "checkmark.square.fill" : "square")
                                 .font(.system(size: 18, weight: .semibold))
-                            Text("Nicht mehr anzeigen")
+                            Text("welcome.hide")
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                         }
                         .foregroundStyle(.white.opacity(0.92))
@@ -158,9 +158,9 @@ struct FirstUserWelcomeView: View {
 
     private var scopeDescriptionText: String {
         if viewModel.activeBundleVersion == "seed" || viewModel.activeBundleVersion == "none" {
-            return "Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfügbar. Den Download startest Du in den Einstellungen."
+            return NSLocalizedString("welcome.scope.seed", comment: "")
         }
-        return "Deutschland-Datensatz aktiv: \(viewModel.activeBundleVersion)"
+        return String(format: NSLocalizedString("welcome.scope.active", comment: ""), viewModel.activeBundleVersion)
     }
 }
 

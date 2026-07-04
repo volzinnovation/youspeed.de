@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "YouSpeedAndroidAlpha"
+rootProject.name = "YouSpeedAndroid"
 include(":app")

@@ -11,9 +11,13 @@ private let gpsBadgeSlotMinHeight: CGFloat = 58
 private let cityBadgeSlotMinHeight: CGFloat = 84
 
 enum LegalDisclaimerText {
-    static let short = "Hinweis: Angezeigte Bußgelder, Punkte und Fahrverbote sind unverbindliche Orientierung und keine Rechtsberatung. Maßgeblich sind amtliche Bescheide und die jeweils gültige Rechtslage."
+    static var short: String {
+        NSLocalizedString("legal.disclaimer.short", comment: "")
+    }
 
-    static let long = "Die in YouSpeed angezeigten Werte zu Bußgeld, Punkten und Fahrverbot dienen nur der unverbindlichen Orientierung. Sie stellen keine Rechtsberatung und keine verbindliche Rechtsauskunft dar. Maßgeblich sind ausschließlich amtliche Bescheide sowie die zum Tatzeitpunkt geltende Rechtslage; zusätzliche Gebühren und Auslagen können anfallen."
+    static var long: String {
+        NSLocalizedString("legal.disclaimer.long", comment: "")
+    }
 }
 
 struct MainView: View {
@@ -334,19 +338,19 @@ struct MainView: View {
             return viewModel.speedCaptureSecondaryMetricText ?? "sprechen"
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
-            return drivingBanMonths == 1 ? "Monat Fahrverbot" : "Monate Fahrverbot"
+            return NSLocalizedString(drivingBanMonths == 1 ? "penalty.driving_ban.month.one" : "penalty.driving_ban.month.many", comment: "")
         }
         switch finePresentation?.severity {
         case .moneyOnly:
             return viewModel.activePenaltyRules.currencyCode
         case .pointsAndFine:
             if let points = finePresentation?.penaltyPoints {
-                return points == 1 ? "Punkt" : "Punkte"
+                return NSLocalizedString(points == 1 ? "penalty.points.one" : "penalty.points.many", comment: "")
             }
-            return "Punkte"
+            return NSLocalizedString("penalty.points.many", comment: "")
         case .none:
             guard !isSearchingSignal else {
-                return "Suche Signal"
+                return NSLocalizedString("metric.searching_signal", comment: "")
             }
             return "km/h"
         }
@@ -1039,10 +1043,10 @@ private struct SettingsView: View {
                 LabeledContent("Bundle", value: viewModel.activeBundleVersion)
                 LabeledContent("GH Token", value: viewModel.hasGitHubReleaseToken ? "vorhanden" : "fehlt")
 
-                if !viewModel.hasGitHubReleaseToken {
-                    Text("GitHub Release Token fehlt. Downloads aus Releases schlagen fehl (YOUSPEED_RELEASE_READ_TOKEN).")
+                if viewModel.hasGitHubReleaseToken {
+                    Text("Debug-Token aktiv")
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let syncMessage = syncMessageLine {

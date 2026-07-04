@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "YouSpeed";
+"NSLocationWhenInUseUsageDescription" = "YouSpeed gebruikt je locatie om je actuele snelheid met lokale snelheidslimieten te vergelijken.";
+"NSMicrophoneUsageDescription" = "YouSpeed gebruikt de microfoon alleen lokaal op je apparaat om uitgesproken snelheidslimieten vast te leggen.";
+"NSSpeechRecognitionUsageDescription" = "YouSpeed gebruikt spraakherkenning alleen lokaal op je apparaat om limieten zoals 30 of voetgangerszone vast te leggen.";

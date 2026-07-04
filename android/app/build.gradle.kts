@@ -3,25 +3,54 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val githubReleaseReadToken = (System.getenv("YOUSPEED_RELEASE_READ_TOKEN") ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
+fun escapedBuildConfigString(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
+
+val githubReleaseReadToken = escapedBuildConfigString(System.getenv("YOUSPEED_RELEASE_READ_TOKEN") ?: "")
+val releaseStoreFile = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_STORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_STORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
 android {
     namespace = "de.youspeed.android.alpha"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "de.youspeed.android.alpha"
+        applicationId = "de.youspeed.android"
         minSdk = 34
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-alpha"
+        versionCode = 10000
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "YOUSPEED_RELEASE_READ_TOKEN", "\"$githubReleaseReadToken\"")
+    }
+
+    signingConfigs {
+        if (!releaseStoreFile.isNullOrBlank() &&
+            !releaseStorePassword.isNullOrBlank() &&
+            !releaseKeyAlias.isNullOrBlank() &&
+            !releaseKeyPassword.isNullOrBlank()
+        ) {
+            create("releaseUpload") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            buildConfigField("String", "YOUSPEED_RELEASE_READ_TOKEN", "\"$githubReleaseReadToken\"")
+        }
         release {
+            buildConfigField("String", "YOUSPEED_RELEASE_READ_TOKEN", "\"\"")
             isMinifyEnabled = false
+            signingConfigs.findByName("releaseUpload")?.let {
+                signingConfig = it
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

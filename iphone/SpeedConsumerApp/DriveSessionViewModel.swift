@@ -548,7 +548,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let recentMatchedStreetRefHistoryLimit = 6
     private static let derivedSpeedComputationMinWindowSeconds: TimeInterval = 2.0
     private static let derivedSpeedComputationMaxWindowSeconds: TimeInterval = 4.5
-    private static let lowSpeedDerivedFallbackThresholdKmh: Double = 7.0
+    nonisolated private static let lowSpeedDerivedFallbackThresholdKmh: Double = 7.0
     private static let speedCaptureSpeechLocaleIdentifier = "de-DE"
     private static let speedCaptureListeningWindowSeconds: UInt64 = 4
     private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
@@ -1239,15 +1239,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
                 await bundleManager.setGitHubToken(githubReleaseToken)
 
-                if githubReleaseToken.isEmpty {
-                    let host = option.endpoint.manifestURL.host?.lowercased() ?? ""
-                    if host.contains("github.com") || host.contains("githubusercontent.com") {
-                        throw ConsumerAppError.network(
-                            "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
-                        )
-                    }
-                }
-
                 syncStatus = "syncing"
                 let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
                 let countryRegion = countryManifestRegionToken(for: option)
@@ -1460,21 +1451,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                     }
                     Self.logger.notice("sync seed_only no_manifest_endpoint")
-                    return
-                }
-
-                let hasGitHubManifest = manifestEndpoints.contains { endpoint in
-                    let host = endpoint.manifestURL.host?.lowercased() ?? ""
-                    return host.contains("github.com") || host.contains("githubusercontent.com")
-                }
-                if githubReleaseToken.isEmpty, hasGitHubManifest {
-                    syncStatus = "sync_failed"
-                    lastError = "GitHub release token is missing in app configuration (YOUSPEED_RELEASE_READ_TOKEN)."
-                    if !activeDBPath.isEmpty {
-                        await applyPenaltyRulesForActiveBundle()
-                        speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
-                    }
-                    Self.logger.error("sync failed missing_github_token")
                     return
                 }
 

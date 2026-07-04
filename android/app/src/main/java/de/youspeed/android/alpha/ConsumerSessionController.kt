@@ -692,9 +692,6 @@ class ConsumerSessionController(
     fun fetchFirstGermanyManifest() {
         val endpoint = manifestEndpoints.firstOrNull { it.countryCode.uppercase(Locale.US) == "DEU" }
             ?: return setError("Keine Deutschland-Endpunkte in BundleTargets.top10.json gefunden.")
-        if (requiresGitHubToken(endpoint.manifestUrl) && githubReleaseToken.isBlank()) {
-            return setError("GitHub Release Token fehlt (YOUSPEED_RELEASE_READ_TOKEN).")
-        }
         runSyncTask(status = "syncing", detail = "Lade Manifest") {
             val manifest = bootstrapper.fetchManifest(endpoint.manifestUrl)
             copy(
@@ -709,10 +706,6 @@ class ConsumerSessionController(
     fun bootstrapAndSync() {
         if (manifestEndpoints.isEmpty()) {
             setError("Keine Manifest-Endpunkte konfiguriert.")
-            return
-        }
-        if (manifestEndpoints.any { requiresGitHubToken(it.manifestUrl) } && githubReleaseToken.isBlank()) {
-            setError("GitHub Release Token fehlt in der Android-Build-Konfiguration (YOUSPEED_RELEASE_READ_TOKEN).")
             return
         }
         if (isSyncingNow()) {
@@ -817,10 +810,6 @@ class ConsumerSessionController(
     }
 
     fun downloadSelectedBundle(option: BundleDownloadOption) {
-        if (requiresGitHubToken(option.endpoint.manifestUrl) && githubReleaseToken.isBlank()) {
-            setError("GitHub Release Token fehlt (YOUSPEED_RELEASE_READ_TOKEN).")
-            return
-        }
         if (isSyncingNow()) {
             setError("Download blockiert: Es laeuft bereits eine Synchronisierung.")
             return
@@ -1395,10 +1384,6 @@ class ConsumerSessionController(
         }
         val parsed = runCatching { PenaltyRulesParser.parse(raw) }.getOrElse { return ActivePenaltyRules.fallback() }
         return ActivePenaltyRules(fileName = fileName, ruleSet = parsed)
-    }
-
-    private fun requiresGitHubToken(url: String): Boolean {
-        return HttpUrlFetcher.parseGitHubReleaseAssetUrl(url) != null
     }
 
     private fun tokenize(raw: String): String {

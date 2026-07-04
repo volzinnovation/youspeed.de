@@ -9,9 +9,12 @@
 /* Begin PBXBuildFile section */
 		014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */ = {isa = PBXBuildFile; fileRef = B4180056200225822BF33821 /* BundleTargets.top10.json */; };
 		05136C0FECBCD839A9FA22E6 /* MatcherCoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80D535552D317D1536F88DCD /* MatcherCoreModels.swift */; };
+		064190B3F897D77B2A1B97F8 /* de.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 0DBC61BE4404AA5DD74A305E /* de.lproj */; };
 		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
+		10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 881D085EDE2D348B7DF817C8 /* fr.lproj */; };
 		133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = E178F2DA753300F0D332FA56 /* DEU-rules.json */; };
 		139953D0B7FF3D66900A1C04 /* ROU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 360D323F4A434E6359337C9F /* ROU-rules.json */; };
+		C0E7A5E2D16F42D4B8C73002 /* CHE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */; };
 		1828C8976EB0DD8023057E03 /* replay_expected.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DEC815A724E0702C9E8EC7B /* replay_expected.json */; };
 		197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */; };
 		1F1321E8954330ADD63D4419 /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = CE138CD23AE2B4EC6E7F347B /* .gitkeep */; };
@@ -50,12 +53,14 @@
 		9CF7C18F0CF65CD5E93E2803 /* karlsruhe-regbez_speeds.sqlite.zlib in Resources */ = {isa = PBXBuildFile; fileRef = 4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */; };
 		9D5415A12FA9D38F9D3B9B88 /* RouteScenarioBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */; };
 		9EF2F2CAF5F8F36228B12709 /* karlsruhe_variants.json in Resources */ = {isa = PBXBuildFile; fileRef = A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */; };
+		A1603A09C28279C2E9825652 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */; };
 		A24C7E4649B965832FA1F8DC /* MCO-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 90BBFB9F7617C62DA131B89F /* MCO-rules.json */; };
 		A65EE1B5A52B3FAF53EBE779 /* bayern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 4E59D10489F12AEFC1961E8F /* bayern.poly */; };
 		A75797D06DDA6313931524D2 /* romania.poly in Resources */ = {isa = PBXBuildFile; fileRef = 04E3DFEEB128C612F8014906 /* romania.poly */; };
 		AC731F9E9226A8DA8A79D771 /* GBR-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = D1048BD4E2D87A460F10A013 /* GBR-rules.json */; };
 		AFD42A12AE2E643AE69406D0 /* BEL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B039211EBB57486701EE3554 /* BEL-rules.json */; };
 		B0F7FB9AB928E5D1815E50A5 /* thueringen.poly in Resources */ = {isa = PBXBuildFile; fileRef = DD9CC95F2104420AF1B222D3 /* thueringen.poly */; };
+		B24C32C4A3053C7B544A978E /* nl.lproj in Resources */ = {isa = PBXBuildFile; fileRef = E1EF5534FE6EF8015DB05730 /* nl.lproj */; };
 		B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */; };
 		B8B46021B8A3539C77EE884E /* monaco.poly in Resources */ = {isa = PBXBuildFile; fileRef = C581EF7B8F3025A2F6113FAB /* monaco.poly */; };
 		B9EC55825741DB7817CAE5CE /* rheinland-pfalz.poly in Resources */ = {isa = PBXBuildFile; fileRef = 93E309A6D9FCEB5490D68E8B /* rheinland-pfalz.poly */; };
@@ -63,6 +68,7 @@
 		C3B74CEE6BBBB1DC70671679 /* sachsen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 99EFDB87BFD240828F9F259E /* sachsen.poly */; };
 		C50F2EC0DB9D91313144E96C /* NLD-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = BAE57B2D550576F7CF0C64CB /* NLD-rules.json */; };
 		C51E0551D982E3019382AA07 /* niedersachsen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 1A4DFF1458783C22C951DD6D /* niedersachsen.poly */; };
+		CB5F5940B7339F66D9C7A41B /* en.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 5393AC2745A8215F4024E5DF /* en.lproj */; };
 		CC4EA803C4F7EFEBAA1DB1EE /* replay_track.gpx in Resources */ = {isa = PBXBuildFile; fileRef = AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */; };
 		CD944493365287C44D291E6E /* sweden.poly in Resources */ = {isa = PBXBuildFile; fileRef = 35751CA31400D0ACB6FC9A0E /* sweden.poly */; };
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
@@ -71,6 +77,7 @@
 		E0878342351689F72CF6243B /* sachsen-anhalt.poly in Resources */ = {isa = PBXBuildFile; fileRef = CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */; };
 		E93B7697F175F99D0D1E163B /* LUX-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 851DCDB1BD9140D246609FF4 /* LUX-rules.json */; };
 		EBBAE7DC4BD4EAE590C1D7BB /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
+		F1A8A48C99A34B1D8A2CF002 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */; };
 		F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */; };
 		F7D2DE4400D2E357D6C3EA9E /* nordrhein-westfalen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 1C5127D2273F9BD3C32AB6EE /* nordrhein-westfalen.poly */; };
 /* End PBXBuildFile section */
@@ -102,6 +109,8 @@
 /* Begin PBXFileReference section */
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
+		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
+		0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3SpeedLimitService.swift; sourceTree = "<group>"; };
 		12B7F7EA0C73DB02413070D3 /* netherlands.poly */ = {isa = PBXFileReference; path = netherlands.poly; sourceTree = "<group>"; };
 		16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedPenaltyRules.swift; sourceTree = "<group>"; };
@@ -121,6 +130,7 @@
 		4E59D10489F12AEFC1961E8F /* bayern.poly */ = {isa = PBXFileReference; path = bayern.poly; sourceTree = "<group>"; };
 		4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */ = {isa = PBXFileReference; path = "karlsruhe-regbez_speeds.sqlite.zlib"; sourceTree = "<group>"; };
 		50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerModels.swift; sourceTree = "<group>"; };
+		5393AC2745A8215F4024E5DF /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteScenarioBenchmarkRunner.swift; sourceTree = "<group>"; };
@@ -134,6 +144,7 @@
 		817610973D395000FCEA8AF3 /* bremen.poly */ = {isa = PBXFileReference; path = bremen.poly; sourceTree = "<group>"; };
 		842C85ABC573B8DFE3005109 /* SpeedDBBenchTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		851DCDB1BD9140D246609FF4 /* LUX-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LUX-rules.json"; sourceTree = "<group>"; };
+		881D085EDE2D348B7DF817C8 /* fr.lproj */ = {isa = PBXFileReference; path = fr.lproj; sourceTree = "<group>"; };
 		898DCF45AF918F33ECAF906A /* berlin.poly */ = {isa = PBXFileReference; path = berlin.poly; sourceTree = "<group>"; };
 		8DEC815A724E0702C9E8EC7B /* replay_expected.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = replay_expected.json; sourceTree = "<group>"; };
 		90BBFB9F7617C62DA131B89F /* MCO-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "MCO-rules.json"; sourceTree = "<group>"; };
@@ -154,6 +165,7 @@
 		B8328EABB25B7CC160EFDDC9 /* SWE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "SWE-rules.json"; sourceTree = "<group>"; };
 		BAE57B2D550576F7CF0C64CB /* NLD-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-rules.json"; sourceTree = "<group>"; };
 		BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSessionViewModel.swift; sourceTree = "<group>"; };
+		C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CHE-rules.json"; sourceTree = "<group>"; };
 		C30AA5A019882EBB0B4B0DA3 /* SpeedConsumer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpeedConsumer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C581EF7B8F3025A2F6113FAB /* monaco.poly */ = {isa = PBXFileReference; path = monaco.poly; sourceTree = "<group>"; };
 		CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */ = {isa = PBXFileReference; path = "schleswig-holstein.poly"; sourceTree = "<group>"; };
@@ -163,7 +175,9 @@
 		D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkModels.swift; sourceTree = "<group>"; };
 		DD9CC95F2104420AF1B222D3 /* thueringen.poly */ = {isa = PBXFileReference; path = thueringen.poly; sourceTree = "<group>"; };
 		E178F2DA753300F0D332FA56 /* DEU-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "DEU-rules.json"; sourceTree = "<group>"; };
+		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LIE-rules.json"; sourceTree = "<group>"; };
+		F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "FRA-rules.json"; sourceTree = "<group>"; };
 		F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = karlsruhe_v3_A_geom16.sqlite; sourceTree = "<group>"; };
 		FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteBenchmarkRunner.swift; sourceTree = "<group>"; };
@@ -180,10 +194,15 @@
 				4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */,
 				B4180056200225822BF33821 /* BundleTargets.top10.json */,
 				50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */,
+				0DBC61BE4404AA5DD74A305E /* de.lproj */,
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
+				5393AC2745A8215F4024E5DF /* en.lproj */,
+				881D085EDE2D348B7DF817C8 /* fr.lproj */,
 				4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */,
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
 				5460B7376654275955039717 /* MainView.swift */,
+				E1EF5534FE6EF8015DB05730 /* nl.lproj */,
+				0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
 				7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */,
@@ -201,7 +220,9 @@
 			isa = PBXGroup;
 			children = (
 				B039211EBB57486701EE3554 /* BEL-rules.json */,
+				C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */,
 				E178F2DA753300F0D332FA56 /* DEU-rules.json */,
+				F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */,
 				D1048BD4E2D87A460F10A013 /* GBR-rules.json */,
 				91B1B7ECB133C4AB02844194 /* ISL-rules.json */,
 				EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */,
@@ -490,13 +511,16 @@
 				5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */,
 				AFD42A12AE2E643AE69406D0 /* BEL-rules.json in Resources */,
 				014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */,
+				C0E7A5E2D16F42D4B8C73002 /* CHE-rules.json in Resources */,
 				133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */,
+				F1A8A48C99A34B1D8A2CF002 /* FRA-rules.json in Resources */,
 				AC731F9E9226A8DA8A79D771 /* GBR-rules.json in Resources */,
 				6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */,
 				D679D5F480EAB8BF637CB901 /* LIE-rules.json in Resources */,
 				E93B7697F175F99D0D1E163B /* LUX-rules.json in Resources */,
 				A24C7E4649B965832FA1F8DC /* MCO-rules.json in Resources */,
 				C50F2EC0DB9D91313144E96C /* NLD-rules.json in Resources */,
+				A1603A09C28279C2E9825652 /* PrivacyInfo.xcprivacy in Resources */,
 				139953D0B7FF3D66900A1C04 /* ROU-rules.json in Resources */,
 				9B5664EEF88D53D2381D3C7A /* SWE-rules.json in Resources */,
 				828070161944FD011DF0C9BE /* baden-wuerttemberg.poly in Resources */,
@@ -505,6 +529,9 @@
 				928F5C48A6B186706C9C300C /* berlin.poly in Resources */,
 				35CFC19C37CA5FF52FDF506E /* brandenburg.poly in Resources */,
 				742D763EA2475FF202180A34 /* bremen.poly in Resources */,
+				064190B3F897D77B2A1B97F8 /* de.lproj in Resources */,
+				CB5F5940B7339F66D9C7A41B /* en.lproj in Resources */,
+				10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */,
 				7B95EF995D7D187B2EF50727 /* hamburg.poly in Resources */,
 				818F634B507A352BB849827C /* hessen.poly in Resources */,
 				4E22751463668A7F86A3E491 /* iceland.poly in Resources */,
@@ -516,6 +543,7 @@
 				B8B46021B8A3539C77EE884E /* monaco.poly in Resources */,
 				9B41B04685CA7CB763B41453 /* netherlands.poly in Resources */,
 				C51E0551D982E3019382AA07 /* niedersachsen.poly in Resources */,
+				B24C32C4A3053C7B544A978E /* nl.lproj in Resources */,
 				F7D2DE4400D2E357D6C3EA9E /* nordrhein-westfalen.poly in Resources */,
 				B9EC55825741DB7817CAE5CE /* rheinland-pfalz.poly in Resources */,
 				A75797D06DDA6313931524D2 /* romania.poly in Resources */,
@@ -646,7 +674,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -742,7 +769,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10000;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -756,7 +783,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -789,7 +816,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -885,7 +911,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 10000;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -905,7 +931,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -955,7 +981,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedConsumer;
 				PRODUCT_NAME = SpeedConsumer;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -979,7 +1005,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedConsumer;
 				PRODUCT_NAME = SpeedConsumer;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};

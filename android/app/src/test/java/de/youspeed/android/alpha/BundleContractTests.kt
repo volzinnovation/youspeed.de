@@ -67,6 +67,69 @@ class BundleContractTests {
     }
 
     @Test
+    fun loadsBundledFranceAndSwitzerlandPenaltyRules() {
+        val france = PenaltyRulesParser.parse(bundledRulesAsset("FRA-rules.json").readText())
+        val switzerland = PenaltyRulesParser.parse(bundledRulesAsset("CHE-rules.json").readText())
+
+        assertEquals("FRA", france.countryCode)
+        assertEquals("EUR", france.currencyCode)
+        assertTrue(france.bands.size >= 6)
+
+        val franceUrbanLow = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 4,
+            rules = france,
+            insideCity = true,
+        )
+        val franceRuralLow = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 4,
+            rules = france,
+            insideCity = false,
+        )
+        val franceOffence = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 55,
+            rules = france,
+            insideCity = true,
+        )
+
+        assertEquals(135, franceUrbanLow?.moneyFineEUR)
+        assertEquals(0, franceUrbanLow?.penaltyPoints)
+        assertEquals(68, franceRuralLow?.moneyFineEUR)
+        assertEquals(6, franceOffence?.penaltyPoints)
+        assertEquals(300, franceOffence?.moneyFineEUR)
+        assertEquals(36, franceOffence?.conditionalDrivingBanMonths)
+
+        assertEquals("CHE", switzerland.countryCode)
+        assertEquals("CHF", switzerland.currencyCode)
+        assertTrue(switzerland.bands.size >= 10)
+
+        val swissUrbanFine = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 8,
+            rules = switzerland,
+            insideCity = true,
+        )
+        val swissRuralFine = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 8,
+            rules = switzerland,
+            insideCity = false,
+        )
+        val swissUrbanWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 22,
+            rules = switzerland,
+            insideCity = true,
+        )
+        val swissRuralWithdrawal = SpeedPenaltyRuleEngine.resolveNotice(
+            overspeedKmh = 27,
+            rules = switzerland,
+            insideCity = false,
+        )
+
+        assertEquals(120, swissUrbanFine?.moneyFineEUR)
+        assertEquals(100, swissRuralFine?.moneyFineEUR)
+        assertEquals(1, swissUrbanWithdrawal?.drivingBanMonths)
+        assertEquals(1, swissRuralWithdrawal?.drivingBanMonths)
+    }
+
+    @Test
     fun decodesBundleManifestCoverage() {
         val raw = """
             {
@@ -508,6 +571,16 @@ private fun bundledTargetsAsset(): File {
     )
     return candidates.firstOrNull { it.exists() }
         ?: error("Unable to locate BundleTargets.top10.json from ${System.getProperty("user.dir")}")
+}
+
+private fun bundledRulesAsset(fileName: String): File {
+    val candidates = listOf(
+        File("app/src/main/assets/Rules/$fileName"),
+        File("src/main/assets/Rules/$fileName"),
+        File("../app/src/main/assets/Rules/$fileName"),
+    )
+    return candidates.firstOrNull { it.exists() }
+        ?: error("Unable to locate $fileName from ${System.getProperty("user.dir")}")
 }
 
 private fun bundledSharedAssetsRoot(): File {

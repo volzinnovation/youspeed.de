@@ -15,6 +15,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ConsumerSmokeTest {
+    private val targetPackage: String = InstrumentationRegistry.getInstrumentation().targetContext.packageName
     private val device: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
     @Before
@@ -72,7 +73,7 @@ class ConsumerSmokeTest {
         val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
         device.pressHome()
         val intent = Intent(Intent.ACTION_MAIN).apply {
-            setClassName(PACKAGE_NAME, "$PACKAGE_NAME.MainActivity")
+            setClassName(targetPackage, ACTIVITY_CLASS)
             addCategory(Intent.CATEGORY_LAUNCHER)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             screenshotState?.let { putExtra("screenshot_state", it) }
@@ -80,20 +81,20 @@ class ConsumerSmokeTest {
         targetContext.startActivity(intent)
         val deadline = SystemClock.uptimeMillis() + 20_000
         while (SystemClock.uptimeMillis() < deadline) {
-            if (device.hasObject(By.pkg(PACKAGE_NAME))) {
+            if (device.hasObject(By.pkg(targetPackage))) {
                 device.waitForIdle()
                 return
             }
             if (device.hasObject(By.pkg(PERMISSION_PACKAGE))) {
                 allowRuntimePermissionIfPrompted()
-                if (device.wait(Until.hasObject(By.pkg(PACKAGE_NAME)), 10_000)) {
+                if (device.wait(Until.hasObject(By.pkg(targetPackage)), 10_000)) {
                     device.waitForIdle()
                     return
                 }
             }
             SystemClock.sleep(250)
         }
-        throw AssertionError("App did not reach foreground package=$PACKAGE_NAME")
+        throw AssertionError("App did not reach foreground package=$targetPackage")
     }
 
     private fun clickByRes(tag: String) {
@@ -157,7 +158,8 @@ class ConsumerSmokeTest {
 
     private fun selectorsForTag(tag: String): List<BySelector> {
         val selectors = mutableListOf(
-            By.res(PACKAGE_NAME, tag),
+            By.res(targetPackage, tag),
+            By.res(SOURCE_PACKAGE, tag),
             By.res(tag),
         )
         fallbackTextForTag(tag)?.let { selectors += By.text(it) }
@@ -206,7 +208,8 @@ class ConsumerSmokeTest {
     }
 
     companion object {
-        private const val PACKAGE_NAME = "de.youspeed.android.alpha"
+        private const val ACTIVITY_CLASS = "de.youspeed.android.alpha.MainActivity"
+        private const val SOURCE_PACKAGE = "de.youspeed.android.alpha"
         private const val PERMISSION_PACKAGE = "com.google.android.permissioncontroller"
     }
 }

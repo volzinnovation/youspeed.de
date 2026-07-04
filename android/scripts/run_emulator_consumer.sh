@@ -93,8 +93,8 @@ export ANDROID_SDK_ROOT
 ADB="$ANDROID_SDK_ROOT/platform-tools/adb"
 EMU="$ANDROID_SDK_ROOT/emulator/emulator"
 APK="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
-PKG="de.youspeed.android.alpha"
-ACTIVITY=".MainActivity"
+PKG="${PACKAGE_ID:-de.youspeed.android.debug}"
+ACTIVITY="de.youspeed.android.alpha.MainActivity"
 LOG_FILE="/tmp/youspeed-consumer-emu.log"
 
 [[ -x "$ADB" ]] || fail "adb not found at: $ADB"

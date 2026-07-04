@@ -106,7 +106,7 @@ class HttpUrlFetcher(
         connection.instanceFollowRedirects = true
         connection.connectTimeout = 15_000
         connection.readTimeout = 60_000
-        connection.setRequestProperty("User-Agent", "YouSpeedAndroidAlpha/0.1")
+        connection.setRequestProperty("User-Agent", "YouSpeedAndroid/1.0")
         connection.setRequestProperty("Accept", accept)
         if (useGitHubHeaders) {
             connection.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
@@ -136,7 +136,7 @@ class HttpUrlFetcher(
         connection.instanceFollowRedirects = true
         connection.connectTimeout = 15_000
         connection.readTimeout = 60_000
-        connection.setRequestProperty("User-Agent", "YouSpeedAndroidAlpha/0.1")
+        connection.setRequestProperty("User-Agent", "YouSpeedAndroid/1.0")
         if (isGitHubReleaseAssetApiUrl(requestUrl)) {
             connection.setRequestProperty("Accept", "application/octet-stream")
         } else if (requestUrl.contains("api.github.com/")) {

@@ -15,7 +15,7 @@ Options:
   --scheme <name>                   Xcode scheme (default: SpeedConsumer)
   --token <value>                   Token value for YOUSPEED_RELEASE_READ_TOKEN build setting
   --use-gh-token                    Resolve token from `gh auth token`
-  --allow-empty-token               Allow empty token even for GitHub-hosted manifest URL
+  --allow-empty-token               Compatibility flag; public assets do not require a token
   --skip-project-gen                Skip running scripts/iphone/generate_xcode_project.sh
   --clean                           Run xcodebuild clean before build
   --allow-provisioning-updates      Pass -allowProvisioningUpdates and -allowProvisioningDeviceRegistration
@@ -109,7 +109,7 @@ if [[ -z "${token}" && -n "${GH_TOKEN:-}" ]]; then
   token="${GH_TOKEN}"
 fi
 
-if [[ "${use_gh_token}" == "1" || -z "${token}" ]]; then
+if [[ "${use_gh_token}" == "1" ]]; then
   if command -v gh >/dev/null 2>&1; then
     gh_token_candidate="$(gh auth token 2>/dev/null || true)"
     if [[ -n "${gh_token_candidate}" ]]; then
@@ -126,26 +126,6 @@ fi
 
 if [[ "${skip_project_gen}" != "1" ]]; then
   "${repo_root}/scripts/iphone/generate_xcode_project.sh"
-fi
-
-manifest_url="$(/usr/libexec/PlistBuddy -c 'Print :YouSpeedV3ManifestURL' "${repo_root}/iphone/SpeedConsumerApp/Info.plist" 2>/dev/null || true)"
-manifest_host="$(python3 - <<'PY' "${manifest_url}"
-import sys
-from urllib.parse import urlparse
-url = (sys.argv[1] or "").strip()
-if not url:
-    print("")
-else:
-    print((urlparse(url).hostname or "").lower())
-PY
-)"
-
-if [[ "${allow_empty_token}" != "1" && -z "${token}" ]]; then
-  if [[ "${manifest_host}" == "github.com" || "${manifest_host}" == "www.github.com" || "${manifest_host}" == "githubusercontent.com" || "${manifest_host}" == *.githubusercontent.com ]]; then
-    echo "Missing YOUSPEED_RELEASE_READ_TOKEN for GitHub-hosted manifest URL: ${manifest_url}" >&2
-    echo "Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN), or pass --token <value>. Use --allow-empty-token only for public assets." >&2
-    exit 2
-  fi
 fi
 
 mkdir -p "${derived_data}"

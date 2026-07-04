@@ -73,15 +73,15 @@ object ConsumerMainScreenLogic {
         val notice = currentPenaltyNotice(state)
         val drivingBanMonths = notice?.drivingBanMonths ?: 0
         if (drivingBanMonths > 0) {
-            return if (drivingBanMonths == 1) "Monat Fahrverbot" else "Monate Fahrverbot"
+            return localizedDrivingBanLabel(drivingBanMonths)
         }
         return when (notice?.severity) {
             PenaltySeverity.MONEY_ONLY -> state.activePenaltyRules.currencyCode
             PenaltySeverity.POINTS_AND_FINE -> {
                 val points = notice.penaltyPoints
-                if (points == 1) "Punkt" else "Punkte"
+                localizedPointsLabel(points ?: 2)
             }
-            null -> if (isSearchingSignal(state)) "Suche Signal" else "km/h"
+            null -> if (isSearchingSignal(state)) localizedSearchingSignalLabel() else "km/h"
         }
     }
 
@@ -210,6 +210,35 @@ object ConsumerMainScreenLogic {
     private fun normalizedPlaceText(raw: String?): String? {
         val trimmed = raw?.trim().orEmpty()
         return trimmed.ifEmpty { null }
+    }
+
+    private fun localizedDrivingBanLabel(months: Int): String {
+        val one = months == 1
+        return when (Locale.getDefault().language.lowercase(Locale.US)) {
+            "de" -> if (one) "Monat Fahrverbot" else "Monate Fahrverbot"
+            "nl" -> if (one) "maand rijverbod" else "maanden rijverbod"
+            "fr" -> "mois d'interdiction"
+            else -> if (one) "month driving ban" else "months driving ban"
+        }
+    }
+
+    private fun localizedPointsLabel(points: Int): String {
+        val one = points == 1
+        return when (Locale.getDefault().language.lowercase(Locale.US)) {
+            "de" -> if (one) "Punkt" else "Punkte"
+            "nl" -> if (one) "punt" else "punten"
+            "fr" -> if (one) "point" else "points"
+            else -> if (one) "point" else "points"
+        }
+    }
+
+    private fun localizedSearchingSignalLabel(): String {
+        return when (Locale.getDefault().language.lowercase(Locale.US)) {
+            "de" -> "Suche Signal"
+            "nl" -> "Signaal zoeken"
+            "fr" -> "Recherche signal"
+            else -> "Searching signal"
+        }
     }
 
     private fun iso6709Coordinate(latitude: Double, longitude: Double, fractionalDigits: Int): String {

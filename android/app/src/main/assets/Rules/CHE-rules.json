@@ -1,0 +1,158 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "CHE",
+  "country_name": "Switzerland",
+  "currency_code": "CHF",
+  "default_language": "en",
+  "source_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
+  "source_checked_at": "2026-07-04",
+  "note": "Indicative warning bands for standard passenger-car speeding violations in Switzerland. Fixed fines come from the federal Ordnungsbussenverordnung SR 314.11 item 303 after ASTRA measurement/safety deduction. The current app schema has urban/rural variants only, so motorway-specific fines and withdrawal thresholds are included in detail text.",
+  "bands": [
+    {
+      "min_delta_kmh": 1,
+      "max_delta_kmh": 5,
+      "severity": "money_only",
+      "title_template": "Fixed fine likely",
+      "detail_template": "After ASTRA deduction: urban 40 {currency}, rural/autostrasse 40 {currency}, motorway 20 {currency}.",
+      "locality_variants": {
+        "urban": { "money_fine_eur": 40 },
+        "rural": { "money_fine_eur": 40 }
+      }
+    },
+    {
+      "min_delta_kmh": 6,
+      "max_delta_kmh": 10,
+      "severity": "money_only",
+      "title_template": "Fixed fine likely",
+      "detail_template": "After ASTRA deduction: urban 120 {currency}, rural/autostrasse 100 {currency}, motorway 60 {currency}.",
+      "locality_variants": {
+        "urban": { "money_fine_eur": 120 },
+        "rural": { "money_fine_eur": 100 }
+      }
+    },
+    {
+      "min_delta_kmh": 11,
+      "max_delta_kmh": 15,
+      "severity": "money_only",
+      "title_template": "Fixed fine likely",
+      "detail_template": "After ASTRA deduction: urban 250 {currency}, rural/autostrasse 160 {currency}, motorway 120 {currency}.",
+      "locality_variants": {
+        "urban": { "money_fine_eur": 250 },
+        "rural": { "money_fine_eur": 160 }
+      }
+    },
+    {
+      "min_delta_kmh": 16,
+      "max_delta_kmh": 20,
+      "severity": "money_only",
+      "title_template": "Report or fixed fine risk",
+      "detail_template": "Urban: report and warning risk from 16 km/h. Rural/autostrasse: fixed fine 240 {currency}. Motorway: fixed fine 180 {currency}.",
+      "locality_variants": {
+        "urban": { "driving_ban_condition": "report_warning" },
+        "rural": { "money_fine_eur": 240 }
+      }
+    },
+    {
+      "min_delta_kmh": 21,
+      "max_delta_kmh": 24,
+      "severity": "points_and_fine",
+      "title_template": "Withdrawal risk",
+      "detail_template": "Urban: report and at least 1 month licence withdrawal. Rural/autostrasse: report and warning risk through 25 km/h. Motorway: fixed fine 260 {currency} through 25 km/h.",
+      "locality_variants": {
+        "urban": { "driving_ban_months": 1, "driving_ban_condition": "minimum_withdrawal" },
+        "rural": { "driving_ban_condition": "report_warning" }
+      }
+    },
+    {
+      "min_delta_kmh": 25,
+      "max_delta_kmh": 25,
+      "severity": "points_and_fine",
+      "title_template": "Withdrawal risk",
+      "detail_template": "Urban: at least 3 months licence withdrawal. Rural/autostrasse: report and warning risk. Motorway: fixed fine 260 {currency}.",
+      "locality_variants": {
+        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
+        "rural": { "driving_ban_condition": "report_warning" }
+      }
+    },
+    {
+      "min_delta_kmh": 26,
+      "max_delta_kmh": 29,
+      "severity": "points_and_fine",
+      "title_template": "Withdrawal risk",
+      "detail_template": "Urban: at least 3 months licence withdrawal. Rural/autostrasse: at least 1 month withdrawal. Motorway: report and warning risk through 30 km/h.",
+      "locality_variants": {
+        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
+        "rural": { "driving_ban_months": 1, "driving_ban_condition": "minimum_withdrawal" }
+      }
+    },
+    {
+      "min_delta_kmh": 30,
+      "max_delta_kmh": 30,
+      "severity": "points_and_fine",
+      "title_template": "Withdrawal risk",
+      "detail_template": "Urban and rural/autostrasse: at least 3 months licence withdrawal. Motorway: report and warning risk.",
+      "locality_variants": {
+        "urban": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" },
+        "rural": { "driving_ban_months": 3, "driving_ban_condition": "minimum_withdrawal" }
+      }
+    },
+    {
+      "min_delta_kmh": 31,
+      "max_delta_kmh": 34,
+      "severity": "points_and_fine",
+      "title_template": "Withdrawal risk",
+      "detail_template": "Urban and rural/autostrasse: at least 3 months licence withdrawal. Motorway: at least 1 month withdrawal.",
+      "driving_ban_months": 3,
+      "driving_ban_condition": "minimum_withdrawal"
+    },
+    {
+      "min_delta_kmh": 35,
+      "max_delta_kmh": 39,
+      "severity": "points_and_fine",
+      "title_template": "Severe overspeed",
+      "detail_template": "At least 3 months licence withdrawal risk. Case may trigger criminal/report handling and high fees.",
+      "driving_ban_months": 3,
+      "driving_ban_condition": "minimum_withdrawal"
+    },
+    {
+      "min_delta_kmh": 40,
+      "max_delta_kmh": 49,
+      "severity": "points_and_fine",
+      "title_template": "Severe overspeed",
+      "detail_template": "Severe report handling likely. Raser threshold is posted-limit dependent and begins at +40 km/h only where the posted limit is 30 km/h or lower.",
+      "driving_ban_months": 3,
+      "conditional_driving_ban_months": 24,
+      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+    },
+    {
+      "min_delta_kmh": 50,
+      "max_delta_kmh": 59,
+      "severity": "points_and_fine",
+      "title_template": "Severe overspeed",
+      "detail_template": "Severe report handling likely. Raser threshold is posted-limit dependent and is reached at +50 km/h where the posted limit is 50 km/h or lower.",
+      "driving_ban_months": 3,
+      "conditional_driving_ban_months": 24,
+      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+    },
+    {
+      "min_delta_kmh": 60,
+      "max_delta_kmh": 79,
+      "severity": "points_and_fine",
+      "title_template": "Severe overspeed",
+      "detail_template": "Very severe report handling likely. Raser threshold is posted-limit dependent and is reached at +60 km/h where the posted limit is 80 km/h or lower.",
+      "driving_ban_months": 3,
+      "conditional_driving_ban_months": 24,
+      "driving_ban_condition": "posted_limit_dependent_raser_threshold"
+    },
+    {
+      "min_delta_kmh": 80,
+      "max_delta_kmh": null,
+      "severity": "points_and_fine",
+      "title_template": "Raser-level overspeed risk",
+      "detail_template": "Raser-level threshold is generally reached at +80 km/h on roads posted above 80 km/h, with criminal, vehicle and long licence-withdrawal risk.",
+      "driving_ban_months": 24,
+      "driving_ban_condition": "raser_threshold"
+    }
+  ]
+}

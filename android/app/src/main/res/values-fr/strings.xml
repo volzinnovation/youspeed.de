@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Assistant de limitation de vitesse en direct avec cartes hors ligne et alertes indicatives.</string>
+    <string name="action_refresh">Recharger les zones de carte</string>
+    <string name="action_fetch_manifest">Tester le manifeste Allemagne</string>
+    <string name="action_bootstrap">Telecharger les donnees cartographiques</string>
+    <string name="store_short_description">Assistant de limitation de vitesse avec cartes hors ligne et alertes.</string>
+    <string name="startup_loading_map_data">Chargement des cartes locales</string>
+    <string name="startup_retry">Reessayer</string>
+    <string name="welcome_title">Bienvenue dans YouSpeed</string>
+    <string name="welcome_copy">Arrivez en securite. YouSpeed affiche en direct la limitation detectee et indique quand les alertes d\'amende, de points ou d\'interdiction de conduire peuvent devenir pertinentes. YouSpeed peut se tromper : gardez les yeux sur la route.</string>
+    <string name="welcome_scope_seed">Sans telechargement Allemagne, seul le district administratif de Karlsruhe est disponible. Lancez le telechargement dans les reglages.</string>
+    <string name="welcome_scope_active">Jeu de donnees Allemagne actif : %1$s</string>
+    <string name="welcome_legal_heading">Mention legale</string>
+    <string name="welcome_osm_credit">Donnees cartographiques : copyright contributeurs OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Telecharger les donnees / regler l\'app</string>
+    <string name="welcome_continue">Continuer avec les donnees existantes</string>
+    <string name="welcome_hide">Ne plus afficher</string>
+    <string name="legal_disclaimer_short">Remarque : les amendes, points et interdictions de conduire affiches sont indicatifs et ne constituent pas un conseil juridique. Les avis officiels et le droit applicable font foi.</string>
+    <string name="legal_disclaimer_long">Les valeurs d\'amende, de points et d\'interdiction de conduire affichees dans YouSpeed sont uniquement indicatives. Elles ne constituent ni un conseil juridique ni une information juridique contraignante. Seuls les avis officiels et le droit applicable au moment des faits font foi ; des frais supplementaires peuvent s\'appliquer.</string>
+</resources>

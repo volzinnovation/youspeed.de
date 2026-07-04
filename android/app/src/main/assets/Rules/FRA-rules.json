@@ -1,0 +1,81 @@
+{
+  "format": "youspeed.penalty.rules",
+  "schema_version": 1,
+  "country_code": "FRA",
+  "country_name": "France",
+  "currency_code": "EUR",
+  "default_language": "en",
+  "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
+  "source_checked_at": "2026-07-04",
+  "note": "Indicative warning bands for standard passenger-car speeding violations in France. Bands use retained overspeed after any enforcement tolerance. Sources checked include Service-Public, Code de la route R413-14 and the 2025-12-29 change making 50 km/h or more over the limit an offence.",
+  "bands": [
+    {
+      "min_delta_kmh": 1,
+      "max_delta_kmh": 4,
+      "severity": "money_only",
+      "title_template": "Likely fine",
+      "detail_template": "Fixed fine: 68 {currency} when the posted limit is above 50 km/h, otherwise 135 {currency}; no point loss.",
+      "money_fine_eur": 135,
+      "penalty_points": 0,
+      "locality_variants": {
+        "urban": { "money_fine_eur": 135, "penalty_points": 0 },
+        "rural": { "money_fine_eur": 68, "penalty_points": 0 }
+      }
+    },
+    {
+      "min_delta_kmh": 5,
+      "max_delta_kmh": 19,
+      "severity": "points_and_fine",
+      "title_template": "Point and fine risk",
+      "detail_template": "Fixed fine: 68 {currency} when the posted limit is above 50 km/h, otherwise 135 {currency}; likely 1 point.",
+      "money_fine_eur": 135,
+      "penalty_points": 1,
+      "locality_variants": {
+        "urban": { "money_fine_eur": 135, "penalty_points": 1 },
+        "rural": { "money_fine_eur": 68, "penalty_points": 1 }
+      }
+    },
+    {
+      "min_delta_kmh": 20,
+      "max_delta_kmh": 29,
+      "severity": "points_and_fine",
+      "title_template": "Point and fine risk",
+      "detail_template": "Likely fixed fine 135 {currency} and 2 points.",
+      "money_fine_eur": 135,
+      "penalty_points": 2
+    },
+    {
+      "min_delta_kmh": 30,
+      "max_delta_kmh": 39,
+      "severity": "points_and_fine",
+      "title_template": "High overspeed",
+      "detail_template": "Likely fixed fine 135 {currency}, 3 points, and possible licence suspension up to 3 years.",
+      "money_fine_eur": 135,
+      "penalty_points": 3,
+      "conditional_driving_ban_months": 36,
+      "driving_ban_condition": "court_discretion"
+    },
+    {
+      "min_delta_kmh": 40,
+      "max_delta_kmh": 49,
+      "severity": "points_and_fine",
+      "title_template": "Severe overspeed",
+      "detail_template": "Likely fixed fine 135 {currency}, 4 points, and possible licence suspension up to 3 years.",
+      "money_fine_eur": 135,
+      "penalty_points": 4,
+      "conditional_driving_ban_months": 36,
+      "driving_ban_condition": "court_discretion"
+    },
+    {
+      "min_delta_kmh": 50,
+      "max_delta_kmh": null,
+      "severity": "points_and_fine",
+      "title_template": "Offence-level overspeed",
+      "detail_template": "50 km/h or more over the limit is offence-level: 6 points, possible 300 {currency} fixed delict fine, court exposure up to 3750 {currency}, and possible licence sanctions.",
+      "money_fine_eur": 300,
+      "penalty_points": 6,
+      "conditional_driving_ban_months": 36,
+      "driving_ban_condition": "offence_or_court_discretion"
+    }
+  ]
+}
