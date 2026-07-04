@@ -11,7 +11,6 @@ if [[ ! -f "${src}/index.html" ]]; then
 fi
 
 python3 "${repo_root}/scripts/web/render_social_assets.py"
-node "${repo_root}/scripts/web/build_localized_site.mjs"
 
 rm -rf "${dst}"
 mkdir -p "${dst}"

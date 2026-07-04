@@ -1,6 +1,6 @@
 {
-  "name": "YouSpeed",
-  "short_name": "YouSpeed",
+  "name": "YouSpeed.de",
+  "short_name": "YouSpeed.de",
   "description": "YouSpeed shows detected speed limits live, gives advisory fine, points, and driving-ban warnings, and works with local offline map data.",
   "start_url": "/",
   "display": "standalone",

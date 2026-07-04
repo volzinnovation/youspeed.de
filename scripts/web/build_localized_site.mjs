@@ -15,7 +15,7 @@ const locales = {
     route: "",
     label: "Deutsch",
     shortLabel: "DE",
-    title: "YouSpeed - Live-Tempolimit-Assistent mit Offline-Karten",
+    title: "YouSpeed.de - Dein Tempo immer im Blick.",
     description:
       "YouSpeed zeigt erkannte Tempolimits live, warnt unverbindlich vor Bußgeld, Punkten und Fahrverbot und funktioniert mit lokalen Offline-Kartendaten.",
     nav: {
@@ -32,8 +32,8 @@ const locales = {
     },
     hero: {
       badge: "iOS & Android · Offline-Karten · Keine Werbung",
-      title: "YouSpeed",
-      kicker: "Live-Tempolimit-Assistent",
+      title: "YouSpeed.de",
+      kicker: "„Dein Tempo immer im Blick.“",
       lead:
         "Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.",
       primary: "Kontakt aufnehmen",
@@ -68,7 +68,7 @@ const locales = {
     },
     warnings: {
       eyebrow: "Live-Anzeige",
-      title: "Warnstufen, die im Auto sofort lesbar bleiben",
+      title: "Klare Ansagen bei zu hohem Tempo",
       body:
         "YouSpeed reduziert die Fahrtansicht auf Tempo, Limit und Konsequenz. Die Farben folgen dem App-Verhalten: neutral, Geldbuße, Punkte, Fahrverbot und Autobahn frei.",
       shots: [
@@ -118,7 +118,7 @@ const locales = {
       body:
         "Moonshots Studios betreibt und vertreibt YouSpeed. Für Datenschutz-, Store- und Vertriebsfragen führt der direkte Kontakt zum Betreiber.",
       primary: "Kontakt aufnehmen",
-      secondary: "Datenbasis ansehen",
+      secondary: "Warnstufen ansehen",
     },
     footer: {
       imprint: "Impressum",
@@ -136,7 +136,7 @@ const locales = {
     route: "en/",
     label: "English",
     shortLabel: "EN",
-    title: "YouSpeed - Live speed-limit assistance with offline maps",
+    title: "YouSpeed.de - Live speed-limit assistance with offline maps",
     description:
       "YouSpeed shows detected speed limits live, gives advisory fine, points, and driving-ban warnings, and works with local offline map data.",
     nav: {
@@ -153,7 +153,7 @@ const locales = {
     },
     hero: {
       badge: "iOS & Android · Offline maps · No ads",
-      title: "YouSpeed",
+      title: "YouSpeed.de",
       kicker: "Live speed-limit assistance",
       lead:
         "The app keeps the detected speed limit and your current speed visible at a glance. Fine, points, and driving-ban information stays advisory and runs on local map data.",
@@ -239,7 +239,7 @@ const locales = {
       body:
         "Moonshots Studios operates and distributes YouSpeed. For privacy, store, and distribution questions, contact the operator directly.",
       primary: "Contact us",
-      secondary: "View data basis",
+      secondary: "View warnings",
     },
     footer: {
       imprint: "Legal notice",
@@ -257,7 +257,7 @@ const locales = {
     route: "fr/",
     label: "Français",
     shortLabel: "FR",
-    title: "YouSpeed - Assistant de vitesse avec cartes hors ligne",
+    title: "YouSpeed.de - Assistant de vitesse avec cartes hors ligne",
     description:
       "YouSpeed affiche les limitations détectées en direct, fournit des alertes indicatives pour amendes, points et interdictions de conduire, et fonctionne avec des cartes locales hors ligne.",
     nav: {
@@ -274,7 +274,7 @@ const locales = {
     },
     hero: {
       badge: "iOS & Android · Cartes hors ligne · Sans publicité",
-      title: "YouSpeed",
+      title: "YouSpeed.de",
       kicker: "Assistant de limitation de vitesse",
       lead:
         "L'app garde la limitation détectée et votre vitesse actuelle visibles en un coup d'oeil. Les informations d'amende, de points et d'interdiction restent indicatives et s'appuient sur des données locales.",
@@ -360,7 +360,7 @@ const locales = {
       body:
         "Moonshots Studios exploite et distribue YouSpeed. Pour les questions de confidentialité, de store et de distribution, contactez directement l'exploitant.",
       primary: "Nous contacter",
-      secondary: "Voir la base de données",
+      secondary: "Voir les alertes",
     },
     footer: {
       imprint: "Mentions legales",
@@ -378,7 +378,7 @@ const locales = {
     route: "nl/",
     label: "Nederlands",
     shortLabel: "NL",
-    title: "YouSpeed - Live snelheidslimietassistent met offline kaarten",
+    title: "YouSpeed.de - Live snelheidslimietassistent met offline kaarten",
     description:
       "YouSpeed toont herkende snelheidslimieten live, geeft indicatieve waarschuwingen voor boetes, punten en rijverboden, en werkt met lokale offline kaartgegevens.",
     nav: {
@@ -395,7 +395,7 @@ const locales = {
     },
     hero: {
       badge: "iOS & Android · Offline kaarten · Geen advertenties",
-      title: "YouSpeed",
+      title: "YouSpeed.de",
       kicker: "Live snelheidslimietassistent",
       lead:
         "De app houdt de herkende snelheidslimiet en je actuele snelheid direct zichtbaar. Boete-, punten- en rijverbodsinformatie blijft indicatief en draait op lokale kaartgegevens.",
@@ -481,7 +481,7 @@ const locales = {
       body:
         "Moonshots Studios beheert en distribueert YouSpeed. Neem voor privacy-, store- en distributievragen rechtstreeks contact op met de exploitant.",
       primary: "Contact opnemen",
-      secondary: "Databasis bekijken",
+      secondary: "Waarschuwingen bekijken",
     },
     footer: {
       imprint: "Juridische informatie",
@@ -532,7 +532,6 @@ function navLinks(content) {
   return [
     ["#app", content.nav.product],
     ["#warnstufen", content.nav.warnings],
-    ["#offline", content.nav.offline],
     ["#launch", content.nav.launch],
     ["#trust", content.nav.trust],
   ];
@@ -631,7 +630,7 @@ function renderStructuredData(locale, content) {
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: "YouSpeed",
+      name: "YouSpeed.de",
       applicationCategory: "NavigationApplication",
       operatingSystem: "iOS, Android",
       url: absoluteUrl(locale),
@@ -668,7 +667,7 @@ function renderPage(locale) {
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <link rel="canonical" href="${pageUrl}" />
     ${renderAlternates()}
-    <meta property="og:site_name" content="YouSpeed" />
+    <meta property="og:site_name" content="YouSpeed.de" />
     <meta property="og:title" content="${escapeHtml(content.title)}" />
     <meta property="og:description" content="${escapeHtml(content.description)}" />
     <meta property="og:type" content="website" />
@@ -704,10 +703,10 @@ ${renderStructuredData(locale, content)}
     </script>
   </head>
   <body>
-    <nav class="nav" id="navbar" aria-label="YouSpeed">
-      <a class="nav-brand" href="${localizedHref(locale, locale)}" aria-label="YouSpeed">
-        <span class="brand-mark" aria-hidden="true">YS</span>
-        <span>YouSpeed</span>
+    <nav class="nav" id="navbar" aria-label="YouSpeed.de">
+      <a class="nav-brand" href="${localizedHref(locale, locale)}" aria-label="YouSpeed.de">
+        <img class="brand-icon" src="${assetPrefix}assets/icons/app-icon-mark-192.png" alt="" width="36" height="36" />
+        <span>YouSpeed.de</span>
       </a>
       <div class="nav-links" id="nav-links">${nav}</div>
 ${renderLanguageSwitch(locale)}
@@ -772,26 +771,6 @@ ${renderLanguageSwitch(locale)}
         </div>
       </section>
 
-      <section class="section container" id="features">
-        <div class="section-header section-header-left reveal">
-          <p class="eyebrow">${escapeHtml(content.features.eyebrow)}</p>
-          <h2>${escapeHtml(content.features.title)}</h2>
-          <p>${escapeHtml(content.features.body)}</p>
-        </div>
-        <div class="feature-grid">${renderFeatureItems(content.features.items)}</div>
-      </section>
-
-      <section class="section container" id="offline">
-        <div class="offline-layout">
-          <div class="section-header section-header-left reveal">
-            <p class="eyebrow">${escapeHtml(content.offline.eyebrow)}</p>
-            <h2>${escapeHtml(content.offline.title)}</h2>
-            <p>${escapeHtml(content.offline.body)}</p>
-          </div>
-          <div class="metric-grid">${renderMetrics(content.offline.metrics)}</div>
-        </div>
-      </section>
-
       <section class="section section-contrast" id="trust">
         <div class="container">
           <div class="section-header reveal">
@@ -816,7 +795,7 @@ ${renderLanguageSwitch(locale)}
           </div>
           <div class="cta-actions">
             <a class="btn btn-primary" href="${mailto}">${escapeHtml(content.cta.primary)}</a>
-            <a class="btn btn-secondary" href="#offline">${escapeHtml(content.cta.secondary)}</a>
+            <a class="btn btn-secondary" href="#warnstufen">${escapeHtml(content.cta.secondary)}</a>
           </div>
         </div>
       </section>
@@ -932,8 +911,8 @@ function writeManifest() {
     path.join(webRoot, "site.webmanifest"),
     `${JSON.stringify(
       {
-        name: "YouSpeed",
-        short_name: "YouSpeed",
+        name: "YouSpeed.de",
+        short_name: "YouSpeed.de",
         description: locales.en.description,
         start_url: "/",
         display: "standalone",

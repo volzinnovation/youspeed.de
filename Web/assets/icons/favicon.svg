@@ -2,5 +2,5 @@
   <rect width="64" height="64" rx="14" fill="#0b0e10"/>
   <circle cx="32" cy="32" r="24" fill="#fff"/>
   <circle cx="32" cy="32" r="21" fill="none" stroke="#e63c2f" stroke-width="6"/>
-  <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111">YS</text>
+  <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111">30</text>
 </svg>

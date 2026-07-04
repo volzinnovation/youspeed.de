@@ -116,9 +116,17 @@ ul {
   font-weight: 700;
 }
 
+.brand-icon,
 .brand-mark {
   width: 36px;
   height: 36px;
+}
+
+.brand-icon {
+  object-fit: contain;
+}
+
+.brand-mark {
   display: inline-grid;
   place-items: center;
   border: 2px solid var(--brand);
@@ -257,6 +265,7 @@ ul {
 
 .hero-copy {
   max-width: 660px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -270,7 +279,7 @@ ul {
 .hero h1 {
   margin-top: 12px;
   font-family: var(--font-display);
-  font-size: clamp(4rem, 10vw, 7rem);
+  font-size: 3.25rem;
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: 0;
@@ -330,6 +339,47 @@ ul {
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.store-btn {
+  gap: 10px;
+  padding: 10px 18px;
+  text-align: left;
+  min-width: 170px;
+}
+
+.store-btn span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.store-btn small {
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.82;
+  text-transform: none;
+}
+
+.store-btn-apple {
+  background: #1c1c1e;
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.store-btn-apple:hover {
+  background: #2c2c2e;
+  border-color: rgba(255, 255, 255, 0.38);
+}
+
+.store-btn-google {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.store-btn-google:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .hero-facts {
@@ -512,8 +562,9 @@ ul {
 
 .shots-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(136px, 168px));
+  justify-content: center;
+  gap: 14px;
 }
 
 .shot {
@@ -531,8 +582,10 @@ ul {
 
 .shot img {
   width: 100%;
-  aspect-ratio: 9 / 18.2;
-  object-fit: cover;
+  height: auto;
+  aspect-ratio: 1179 / 2556;
+  object-fit: contain;
+  background: #020303;
 }
 
 .shot figcaption {
@@ -783,11 +836,13 @@ ul {
   transition-delay: 360ms;
 }
 
-@media (min-width: 640px) {
-  .shots-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (min-width: 480px) {
+  .hero h1 {
+    font-size: 4rem;
   }
+}
 
+@media (min-width: 640px) {
   .feature-grid,
   .metric-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -798,7 +853,7 @@ ul {
   }
 }
 
-@media (min-width: 760px) {
+@media (min-width: 820px) {
   .nav-links,
   .nav > .language-switch {
     display: inline-flex;
@@ -814,6 +869,10 @@ ul {
 }
 
 @media (min-width: 900px) {
+  .hero h1 {
+    font-size: 6.25rem;
+  }
+
   .hero-grid {
     grid-template-columns: minmax(0, 1fr) minmax(400px, 0.78fr);
   }
@@ -854,8 +913,11 @@ ul {
     grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
   }
 
-  .shots-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (min-width: 1120px) {
+  .hero h1 {
+    font-size: 7rem;
   }
 }
 

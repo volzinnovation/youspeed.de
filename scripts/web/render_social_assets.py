@@ -26,24 +26,24 @@ FONT_BOLD = Path("/System/Library/Fonts/Supplemental/Arial Bold.ttf")
 
 LOCALES = {
     "de": {
-        "title": "YouSpeed",
-        "subtitle": "Live-Tempolimit mit Offline-Karten",
-        "detail": "iPhone zuerst · Android Alpha · Keine Werbung, kein Tracking",
+        "title": "YouSpeed.de",
+        "subtitle": "Dein Tempo immer im Blick.",
+        "detail": "Demnächst im App Store & Google Play · Offline · Keine Werbung",
     },
     "en": {
-        "title": "YouSpeed",
+        "title": "YouSpeed.de",
         "subtitle": "Live speed-limit assist with offline maps",
-        "detail": "iPhone first · Android alpha · No ads, no tracking",
+        "detail": "Coming soon to App Store & Google Play · Offline · No ads",
     },
     "fr": {
-        "title": "YouSpeed",
+        "title": "YouSpeed.de",
         "subtitle": "Assistant de vitesse avec cartes hors ligne",
-        "detail": "iPhone d'abord · Android alpha · Sans publicité, sans suivi",
+        "detail": "Bientôt sur App Store et Google Play · Hors ligne · Sans publicité",
     },
     "nl": {
-        "title": "YouSpeed",
+        "title": "YouSpeed.de",
         "subtitle": "Live snelheidslimiet met offline kaarten",
-        "detail": "iPhone eerst · Android alpha · Geen advertenties, geen tracking",
+        "detail": "Binnenkort in App Store en Google Play · Offline · Geen advertenties",
     },
 }
 
@@ -72,6 +72,24 @@ def rounded_mask(size: tuple[int, int], radius: int) -> Image.Image:
     draw = ImageDraw.Draw(mask)
     draw.rounded_rectangle((0, 0, size[0], size[1]), radius=radius, fill=255)
     return mask
+
+
+def circle_mask(size: int, radius_ratio: float = 0.388) -> Image.Image:
+    scale = 4
+    mask = Image.new("L", (size * scale, size * scale), 0)
+    draw = ImageDraw.Draw(mask)
+    center = size * scale / 2
+    radius = size * scale * radius_ratio
+    draw.ellipse(
+        (
+            round(center - radius),
+            round(center - radius),
+            round(center + radius),
+            round(center + radius),
+        ),
+        fill=255,
+    )
+    return mask.resize((size, size), Image.Resampling.LANCZOS)
 
 
 def paste_rounded(
@@ -190,12 +208,16 @@ def render_icons() -> None:
     for filename, size in sizes.items():
         icon.resize((size, size), Image.Resampling.LANCZOS).save(ICON_ROOT / filename)
 
+    mark = icon.resize((192, 192), Image.Resampling.LANCZOS)
+    mark.putalpha(circle_mask(192))
+    mark.save(ICON_ROOT / "app-icon-mark-192.png")
+
     (ICON_ROOT / "favicon.svg").write_text(
         """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#0b0e10"/>
   <circle cx="32" cy="32" r="24" fill="#fff"/>
   <circle cx="32" cy="32" r="21" fill="none" stroke="#e63c2f" stroke-width="6"/>
-  <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111">YS</text>
+  <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#111">30</text>
 </svg>
 """,
         encoding="utf-8",
