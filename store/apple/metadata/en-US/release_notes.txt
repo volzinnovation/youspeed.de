@@ -1,0 +1,1 @@
+Initial public release with offline map data, live speed-limit display, and localized app text.

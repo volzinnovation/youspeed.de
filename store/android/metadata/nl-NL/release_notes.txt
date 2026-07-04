@@ -1,0 +1,1 @@
+Eerste openbare versie met offline kaartgegevens, live snelheidslimietweergave en gelokaliseerde appteksten.

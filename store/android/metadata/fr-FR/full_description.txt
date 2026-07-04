@@ -1,0 +1,10 @@
+YouSpeed affiche pendant la conduite la limitation detectee et votre vitesse actuelle. L'app utilise des donnees cartographiques locales hors ligne et fournit des alertes indicatives lorsqu'un exces de vitesse peut avoir des consequences.
+
+Fonctions :
+- Affichage en direct de la limitation et de la vitesse
+- Cartes hors ligne pour les pays et regions pris en charge
+- Alertes indicatives pour amendes, points et interdictions de conduire
+- Saisie vocale locale des limitations
+- Pas de publicite et pas de suivi
+
+YouSpeed est une app d'assistance. Les panneaux, les regles de circulation et les avis officiels font toujours foi.

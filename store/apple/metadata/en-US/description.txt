@@ -1,0 +1,10 @@
+YouSpeed shows the detected speed limit and your current speed while you drive. The app works with local offline map data and gives advisory warnings when a speeding violation may become costly.
+
+Features:
+- Live speed-limit and speed display
+- Offline map data for supported countries and regions
+- Advisory fine, points, and driving-ban warnings
+- Local spoken speed-limit capture
+- No ads and no tracking
+
+Important: YouSpeed is an assistance app. Road signs, traffic law, and official notices are always authoritative.

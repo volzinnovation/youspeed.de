@@ -1,0 +1,10 @@
+YouSpeed toont tijdens het rijden de herkende snelheidslimiet en je actuele snelheid. De app werkt met lokale offline kaartgegevens en geeft indicatieve waarschuwingen wanneer een snelheidsovertreding gevolgen kan hebben.
+
+Functies:
+- Live weergave van snelheidslimiet en snelheid
+- Offline kaartgegevens voor ondersteunde landen en regio's
+- Indicatieve waarschuwingen voor boetes, punten en rijverboden
+- Lokale spraakinvoer voor snelheidslimieten
+- Geen advertenties en geen tracking
+
+Belangrijk: YouSpeed is een assistentie-app. Verkeersborden, verkeersregels en officiele besluiten blijven altijd bepalend.

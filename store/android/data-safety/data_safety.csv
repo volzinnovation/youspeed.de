@@ -1,0 +1,8 @@
+section,answer,notes
+data_collection,yes,"Precise location, optional audio input, optional user-exported observations, optional diagnostics."
+data_sharing,no,"No analytics or advertising sharing. User-initiated exports are controlled by the user."
+tracking,no,"No third-party tracking or advertising SDK."
+encryption_in_transit,yes,"Map bundles are downloaded over HTTPS."
+delete_data,not_applicable,"Routine data is local; users can delete downloaded bundles and local observations in app."
+location_precise,yes,"Used for speed-limit lookup while the app is active."
+microphone,yes,"Used only for optional local speed-limit capture."
