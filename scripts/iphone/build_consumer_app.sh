@@ -130,23 +130,6 @@ fi
 
 mkdir -p "${derived_data}"
 
-token_xcconfig=""
-cleanup() {
-  if [[ -n "${token_xcconfig}" && -f "${token_xcconfig}" ]]; then
-    rm -f "${token_xcconfig}"
-  fi
-}
-trap cleanup EXIT
-
-if [[ -n "${token}" ]]; then
-  token_xcconfig="$(mktemp "${TMPDIR:-/tmp}/speedconsumer-token.XXXXXX.xcconfig")"
-  chmod 600 "${token_xcconfig}"
-  cat > "${token_xcconfig}" <<EOF
-YOUSPEED_RELEASE_READ_TOKEN = ${token}
-GITHUB_RELEASE_TOKEN = \$(YOUSPEED_RELEASE_READ_TOKEN)
-EOF
-fi
-
 build_cmd=(
   xcodebuild
   -project "${project_path}"
@@ -154,13 +137,9 @@ build_cmd=(
   -configuration "${configuration}"
   -destination "${destination}"
   -derivedDataPath "${derived_data}"
+  -hideShellScriptEnvironment
   build
 )
-if [[ -n "${token_xcconfig}" ]]; then
-  build_cmd+=(
-    -xcconfig "${token_xcconfig}"
-  )
-fi
 
 if [[ "${allow_provisioning_updates}" == "1" ]]; then
   build_cmd+=(
@@ -177,6 +156,7 @@ if [[ "${run_clean}" == "1" ]]; then
     -configuration "${configuration}"
     -destination "${destination}"
     -derivedDataPath "${derived_data}"
+    -hideShellScriptEnvironment
     clean
   )
   if [[ "${allow_provisioning_updates}" == "1" ]]; then
@@ -185,12 +165,7 @@ if [[ "${run_clean}" == "1" ]]; then
       -allowProvisioningDeviceRegistration
     )
   fi
-  if [[ -n "${token_xcconfig}" ]]; then
-    clean_cmd+=(
-      -xcconfig "${token_xcconfig}"
-    )
-  fi
-  "${clean_cmd[@]}"
+  YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${clean_cmd[@]}"
 fi
 
 if [[ -n "${token}" ]]; then
@@ -199,7 +174,7 @@ else
   echo "Building without YOUSPEED_RELEASE_READ_TOKEN."
 fi
 
-"${build_cmd[@]}"
+YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${build_cmd[@]}"
 
 echo "Build finished successfully."
 echo "DerivedData: ${derived_data}"

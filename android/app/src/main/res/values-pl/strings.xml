@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Asystent limitow predkosci na zywo z mapami offline i orientacyjnymi ostrzezeniami o kosztach.</string>
+    <string name="action_refresh">Przeladuj obszary mapy</string>
+    <string name="action_fetch_manifest">Testuj manifest Niemiec</string>
+    <string name="action_bootstrap">Pobierz dane mapy</string>
+    <string name="store_short_description">Asystent limitow predkosci z mapami offline i ostrzezeniami.</string>
+    <string name="startup_loading_map_data">Ladowanie lokalnych danych map</string>
+    <string name="startup_retry">Sprobuj ponownie</string>
+    <string name="welcome_title">Witamy w YouSpeed</string>
+    <string name="welcome_copy">Dotrzyj bezpiecznie. YouSpeed pokazuje na zywo wykryty limit predkosci i wskazuje, kiedy moga byc istotne ostrzezenia o mandatach, punktach lub zakazie prowadzenia. YouSpeed moze sie mylic - patrz na droge.</string>
+    <string name="welcome_scope_seed">Bez pobrania danych Niemiec dostepny jest tylko okreg administracyjny Karlsruhe. Pobieranie uruchomisz w Ustawieniach.</string>
+    <string name="welcome_scope_active">Aktywny zestaw danych Niemiec: %1$s</string>
+    <string name="welcome_legal_heading">Informacja prawna</string>
+    <string name="welcome_osm_credit">Dane map: copyright wspoltworcy OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Pobierz dane / skonfiguruj aplikacje</string>
+    <string name="welcome_continue">Kontynuuj z istniejacymi danymi</string>
+    <string name="welcome_hide">Nie pokazuj ponownie</string>
+    <string name="legal_disclaimer_short">Uwaga: pokazywane mandaty, punkty i zakazy prowadzenia sa tylko orientacyjne i nie stanowia porady prawnej. Decydujace sa urzedowe zawiadomienia i obowiazujace prawo.</string>
+    <string name="legal_disclaimer_long">Wartosci mandatow, punktow i zakazow prowadzenia pokazywane w YouSpeed sa tylko orientacyjne. Nie stanowia porady prawnej ani wiazacej oceny prawnej. Decydujace sa wylacznie urzedowe zawiadomienia oraz prawo obowiazujace w chwili zdarzenia; moga obowiazywac dodatkowe oplaty i koszty.</string>
+</resources>

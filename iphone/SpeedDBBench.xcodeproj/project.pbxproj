@@ -12,9 +12,9 @@
 		064190B3F897D77B2A1B97F8 /* de.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 0DBC61BE4404AA5DD74A305E /* de.lproj */; };
 		0B40049C2440D677338FE301 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB92E272687221B6BEE64B1 /* ContentView.swift */; };
 		10ACA8C8418BC0D1F9D11224 /* fr.lproj in Resources */ = {isa = PBXBuildFile; fileRef = 881D085EDE2D348B7DF817C8 /* fr.lproj */; };
+		11C193D09FBB934B053A58FC /* CHE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 8BABF9699F30E53D125F3E9A /* CHE-rules.json */; };
 		133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = E178F2DA753300F0D332FA56 /* DEU-rules.json */; };
 		139953D0B7FF3D66900A1C04 /* ROU-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 360D323F4A434E6359337C9F /* ROU-rules.json */; };
-		C0E7A5E2D16F42D4B8C73002 /* CHE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */; };
 		1828C8976EB0DD8023057E03 /* replay_expected.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DEC815A724E0702C9E8EC7B /* replay_expected.json */; };
 		197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */; };
 		1F1321E8954330ADD63D4419 /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = CE138CD23AE2B4EC6E7F347B /* .gitkeep */; };
@@ -37,6 +37,7 @@
 		6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 91B1B7ECB133C4AB02844194 /* ISL-rules.json */; };
 		7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */; };
 		742D763EA2475FF202180A34 /* bremen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 817610973D395000FCEA8AF3 /* bremen.poly */; };
+		7759FCB46ECFFAF4384D9A57 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = A5208F27A82E4F9044943104 /* FRA-rules.json */; };
 		7A8782BF58A82747D013A8F3 /* saarland.poly in Resources */ = {isa = PBXBuildFile; fileRef = 47046B94A6EDE1D906F83F16 /* saarland.poly */; };
 		7B95EF995D7D187B2EF50727 /* hamburg.poly in Resources */ = {isa = PBXBuildFile; fileRef = FBE90CAE15446042E62B6F56 /* hamburg.poly */; };
 		818F634B507A352BB849827C /* hessen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 69FF9109F78E912ED14AD0E5 /* hessen.poly */; };
@@ -50,7 +51,6 @@
 		9B41B04685CA7CB763B41453 /* netherlands.poly in Resources */ = {isa = PBXBuildFile; fileRef = 12B7F7EA0C73DB02413070D3 /* netherlands.poly */; };
 		9B5664EEF88D53D2381D3C7A /* SWE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B8328EABB25B7CC160EFDDC9 /* SWE-rules.json */; };
 		9C51C7D96113128012CC2134 /* mecklenburg-vorpommern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */; };
-		9CF7C18F0CF65CD5E93E2803 /* karlsruhe-regbez_speeds.sqlite.zlib in Resources */ = {isa = PBXBuildFile; fileRef = 4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */; };
 		9D5415A12FA9D38F9D3B9B88 /* RouteScenarioBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */; };
 		9EF2F2CAF5F8F36228B12709 /* karlsruhe_variants.json in Resources */ = {isa = PBXBuildFile; fileRef = A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */; };
 		A1603A09C28279C2E9825652 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */; };
@@ -77,7 +77,6 @@
 		E0878342351689F72CF6243B /* sachsen-anhalt.poly in Resources */ = {isa = PBXBuildFile; fileRef = CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */; };
 		E93B7697F175F99D0D1E163B /* LUX-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 851DCDB1BD9140D246609FF4 /* LUX-rules.json */; };
 		EBBAE7DC4BD4EAE590C1D7BB /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
-		F1A8A48C99A34B1D8A2CF002 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */; };
 		F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */; };
 		F7D2DE4400D2E357D6C3EA9E /* nordrhein-westfalen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 1C5127D2273F9BD3C32AB6EE /* nordrhein-westfalen.poly */; };
 /* End PBXBuildFile section */
@@ -128,7 +127,6 @@
 		4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerApp.swift; sourceTree = "<group>"; };
 		4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundDownloadCenter.swift; sourceTree = "<group>"; };
 		4E59D10489F12AEFC1961E8F /* bayern.poly */ = {isa = PBXFileReference; path = bayern.poly; sourceTree = "<group>"; };
-		4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */ = {isa = PBXFileReference; path = "karlsruhe-regbez_speeds.sqlite.zlib"; sourceTree = "<group>"; };
 		50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerModels.swift; sourceTree = "<group>"; };
 		5393AC2745A8215F4024E5DF /* en.lproj */ = {isa = PBXFileReference; path = en.lproj; sourceTree = "<group>"; };
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -146,6 +144,7 @@
 		851DCDB1BD9140D246609FF4 /* LUX-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LUX-rules.json"; sourceTree = "<group>"; };
 		881D085EDE2D348B7DF817C8 /* fr.lproj */ = {isa = PBXFileReference; path = fr.lproj; sourceTree = "<group>"; };
 		898DCF45AF918F33ECAF906A /* berlin.poly */ = {isa = PBXFileReference; path = berlin.poly; sourceTree = "<group>"; };
+		8BABF9699F30E53D125F3E9A /* CHE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CHE-rules.json"; sourceTree = "<group>"; };
 		8DEC815A724E0702C9E8EC7B /* replay_expected.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = replay_expected.json; sourceTree = "<group>"; };
 		90BBFB9F7617C62DA131B89F /* MCO-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "MCO-rules.json"; sourceTree = "<group>"; };
 		91B1B7ECB133C4AB02844194 /* ISL-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "ISL-rules.json"; sourceTree = "<group>"; };
@@ -155,6 +154,7 @@
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
 		A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchUITests.swift; sourceTree = "<group>"; };
 		A4F8CBDC0E618FFC06F261B6 /* brandenburg.poly */ = {isa = PBXFileReference; path = brandenburg.poly; sourceTree = "<group>"; };
+		A5208F27A82E4F9044943104 /* FRA-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "FRA-rules.json"; sourceTree = "<group>"; };
 		A6ED7E750AD7935392C27FFB /* belgium.poly */ = {isa = PBXFileReference; path = belgium.poly; sourceTree = "<group>"; };
 		A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = karlsruhe_variants.json; sourceTree = "<group>"; };
 		AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchApp.swift; sourceTree = "<group>"; };
@@ -165,7 +165,6 @@
 		B8328EABB25B7CC160EFDDC9 /* SWE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "SWE-rules.json"; sourceTree = "<group>"; };
 		BAE57B2D550576F7CF0C64CB /* NLD-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "NLD-rules.json"; sourceTree = "<group>"; };
 		BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSessionViewModel.swift; sourceTree = "<group>"; };
-		C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CHE-rules.json"; sourceTree = "<group>"; };
 		C30AA5A019882EBB0B4B0DA3 /* SpeedConsumer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpeedConsumer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C581EF7B8F3025A2F6113FAB /* monaco.poly */ = {isa = PBXFileReference; path = monaco.poly; sourceTree = "<group>"; };
 		CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */ = {isa = PBXFileReference; path = "schleswig-holstein.poly"; sourceTree = "<group>"; };
@@ -177,7 +176,6 @@
 		E178F2DA753300F0D332FA56 /* DEU-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "DEU-rules.json"; sourceTree = "<group>"; };
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LIE-rules.json"; sourceTree = "<group>"; };
-		F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "FRA-rules.json"; sourceTree = "<group>"; };
 		F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = karlsruhe_v3_A_geom16.sqlite; sourceTree = "<group>"; };
 		FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteBenchmarkRunner.swift; sourceTree = "<group>"; };
@@ -198,7 +196,6 @@
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
 				5393AC2745A8215F4024E5DF /* en.lproj */,
 				881D085EDE2D348B7DF817C8 /* fr.lproj */,
-				4F3F384830E51C841EBF03F4 /* karlsruhe-regbez_speeds.sqlite.zlib */,
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
 				5460B7376654275955039717 /* MainView.swift */,
 				E1EF5534FE6EF8015DB05730 /* nl.lproj */,
@@ -220,9 +217,9 @@
 			isa = PBXGroup;
 			children = (
 				B039211EBB57486701EE3554 /* BEL-rules.json */,
-				C0E7A5E2D16F42D4B8C73001 /* CHE-rules.json */,
+				8BABF9699F30E53D125F3E9A /* CHE-rules.json */,
 				E178F2DA753300F0D332FA56 /* DEU-rules.json */,
-				F1A8A48C99A34B1D8A2CF001 /* FRA-rules.json */,
+				A5208F27A82E4F9044943104 /* FRA-rules.json */,
 				D1048BD4E2D87A460F10A013 /* GBR-rules.json */,
 				91B1B7ECB133C4AB02844194 /* ISL-rules.json */,
 				EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */,
@@ -404,7 +401,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3A7AC18D607C4D044195A90A /* Build configuration list for PBXNativeTarget "SpeedConsumer" */;
 			buildPhases = (
-				17803A779F64558CB6A7D8D0 /* Inflate seed bundle */,
 				9CDD076D821987C8D704F332 /* Sources */,
 				BCB93BC405FA3D80B8DC3303 /* Resources */,
 			);
@@ -511,9 +507,9 @@
 				5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */,
 				AFD42A12AE2E643AE69406D0 /* BEL-rules.json in Resources */,
 				014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */,
-				C0E7A5E2D16F42D4B8C73002 /* CHE-rules.json in Resources */,
+				11C193D09FBB934B053A58FC /* CHE-rules.json in Resources */,
 				133615266DB5218148D4BDC8 /* DEU-rules.json in Resources */,
-				F1A8A48C99A34B1D8A2CF002 /* FRA-rules.json in Resources */,
+				7759FCB46ECFFAF4384D9A57 /* FRA-rules.json in Resources */,
 				AC731F9E9226A8DA8A79D771 /* GBR-rules.json in Resources */,
 				6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */,
 				D679D5F480EAB8BF637CB901 /* LIE-rules.json in Resources */,
@@ -535,7 +531,6 @@
 				7B95EF995D7D187B2EF50727 /* hamburg.poly in Resources */,
 				818F634B507A352BB849827C /* hessen.poly in Resources */,
 				4E22751463668A7F86A3E491 /* iceland.poly in Resources */,
-				9CF7C18F0CF65CD5E93E2803 /* karlsruhe-regbez_speeds.sqlite.zlib in Resources */,
 				4F0869F2CF922E1DDBAA2D65 /* legal.txt in Resources */,
 				39F558FC00EF4122DD334E94 /* liechtenstein.poly in Resources */,
 				3DB5A95CCF0E10954593C7A9 /* luxembourg.poly in Resources */,
@@ -568,29 +563,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		17803A779F64558CB6A7D8D0 /* Inflate seed bundle */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(PROJECT_DIR)/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib",
-			);
-			name = "Inflate seed bundle";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/karlsruhe-regbez_speeds.sqlite",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "python3 \"${PROJECT_DIR}/../scripts/iphone/inflate_bundled_seed.py\" \\\n  \"${PROJECT_DIR}/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib\" \\\n  \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/karlsruhe-regbez_speeds.sqlite\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9CDD076D821987C8D704F332 /* Sources */ = {
@@ -769,7 +741,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10000;
+				CURRENT_PROJECT_VERSION = 10002;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -783,7 +755,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -911,7 +883,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10000;
+				CURRENT_PROJECT_VERSION = 10002;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -931,7 +903,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

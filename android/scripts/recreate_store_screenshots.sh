@@ -17,8 +17,13 @@ captures=(
 locales=(
   "de-DE"
   "en-US"
-  "nl-NL"
+  "es-ES"
   "fr-FR"
+  "it-IT"
+  "nl-NL"
+  "pl-PL"
+  "pt-BR"
+  "sv-SE"
 )
 
 cd "$ROOT_DIR/android"

@@ -799,13 +799,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                    let bytes = await fetchExpectedBundleBytes(from: option.endpoint.manifestURL) {
                     sizes[primaryRegion] = bytes
                 }
-
-                if sizes[primaryRegion] == nil,
-                   let fallbackURL = countryFallbackManifestURL(for: option),
-                   let bytes = await fetchExpectedBundleBytes(from: fallbackURL) {
-                    let countryRegion = countryManifestRegionToken(for: option)
-                    sizes[countryRegion] = bytes
-                }
             }
         }
         expectedBundleBytesByRegion = sizes
@@ -901,30 +894,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func countryManifestRegionToken(for option: BundleDownloadOption) -> String {
         idToken(option.endpoint.countryID)
-    }
-
-    private func countryFallbackManifestURL(for option: BundleDownloadOption) -> URL? {
-        let countryToken = countryManifestRegionToken(for: option)
-        guard !countryToken.isEmpty else {
-            return nil
-        }
-        guard let components = URLComponents(url: option.endpoint.manifestURL, resolvingAgainstBaseURL: false) else {
-            return nil
-        }
-        let pathParts = components.path.split(separator: "/", omittingEmptySubsequences: true)
-        guard pathParts.count >= 6,
-              pathParts[2] == "releases",
-              pathParts[3] == "download" else {
-            return nil
-        }
-        let owner = String(pathParts[0])
-        let repo = String(pathParts[1])
-        let manifestFile = "\(countryToken)_manifest.json"
-        var rebuilt = components
-        rebuilt.path = "/\(owner)/\(repo)/releases/download/\(countryToken)/\(manifestFile)"
-        rebuilt.query = nil
-        rebuilt.fragment = nil
-        return rebuilt.url
     }
 
     private func normalizedCountryCode(_ raw: String?) -> String? {
@@ -1240,31 +1209,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 await bundleManager.setGitHubToken(githubReleaseToken)
 
                 syncStatus = "syncing"
-                let primaryRegion = normalizedManifestRegion(option.endpoint.manifestRegion)
-                let countryRegion = countryManifestRegionToken(for: option)
-                let fallbackManifestURL = countryFallbackManifestURL(for: option)
 
                 let sync: BundleSyncResult
-                var usedCountryFallback = false
-                do {
-                    sync = try await bundleManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
-                        Task { @MainActor [weak self] in
-                            self?.applySyncProgress(progress)
-                        }
-                    }
-                } catch {
-                    let shouldTryCountryFallback = countryRegion != primaryRegion && fallbackManifestURL != nil
-                    guard shouldTryCountryFallback, let fallbackManifestURL else {
-                        throw error
-                    }
-                    usedCountryFallback = true
-                    Self.logger.notice(
-                        "download_selected retry country_fallback bundle=\(option.displayName, privacy: .public) fallback_url=\(fallbackManifestURL.absoluteString, privacy: .public)"
-                    )
-                    sync = try await bundleManager.syncFromManifestURL(fallbackManifestURL) { progress in
-                        Task { @MainActor [weak self] in
-                            self?.applySyncProgress(progress)
-                        }
+                sync = try await bundleManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
+                    Task { @MainActor [weak self] in
+                        self?.applySyncProgress(progress)
                     }
                 }
                 activeBundleVersion = sync.bundleVersion
@@ -1280,11 +1229,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressBytesPerSecond = 0
                 syncProgressETASeconds = 0
                 syncPartDownloads = []
-                if usedCountryFallback {
-                    maintenanceMessage = "Bundle geladen (Landes-Fallback): \(option.displayName) (\(sync.bundleVersion))"
-                } else {
-                    maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
-                }
+                maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
                 await refreshDownloadedBundleInventory()
             } catch {
                 syncStatus = "sync_failed"

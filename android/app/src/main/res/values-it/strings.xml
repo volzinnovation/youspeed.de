@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Assistenza live sui limiti di velocita con mappe offline e avvisi orientativi sui costi.</string>
+    <string name="action_refresh">Ricarica aree mappa</string>
+    <string name="action_fetch_manifest">Prova manifesto Germania</string>
+    <string name="action_bootstrap">Scarica dati mappa</string>
+    <string name="store_short_description">Assistenza live sui limiti di velocita con mappe offline e avvisi.</string>
+    <string name="startup_loading_map_data">Caricamento mappe locali</string>
+    <string name="startup_retry">Riprova</string>
+    <string name="welcome_title">Benvenuto in YouSpeed</string>
+    <string name="welcome_copy">Arriva in sicurezza. YouSpeed mostra in diretta il limite rilevato e indica quando possono diventare rilevanti avvisi su multe, punti o divieti di guida. YouSpeed puo sbagliare: tieni gli occhi sulla strada.</string>
+    <string name="welcome_scope_seed">Senza il download della Germania e disponibile solo il distretto amministrativo di Karlsruhe. Avvia il download nelle Impostazioni.</string>
+    <string name="welcome_scope_active">Set di dati Germania attivo: %1$s</string>
+    <string name="welcome_legal_heading">Avviso legale</string>
+    <string name="welcome_osm_credit">Dati mappa: copyright collaboratori OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Scarica dati / configura app</string>
+    <string name="welcome_continue">Continua con i dati esistenti</string>
+    <string name="welcome_hide">Non mostrare piu</string>
+    <string name="legal_disclaimer_short">Nota: multe, punti e divieti di guida mostrati sono solo indicativi e non costituiscono consulenza legale. Fanno fede gli avvisi ufficiali e la legge vigente.</string>
+    <string name="legal_disclaimer_long">I valori relativi a multe, punti e divieti di guida mostrati in YouSpeed sono solo indicativi. Non costituiscono consulenza legale ne una valutazione giuridica vincolante. Fanno fede solo gli avvisi ufficiali e la legge vigente al momento dei fatti; possono essere applicati costi e commissioni aggiuntivi.</string>
+</resources>

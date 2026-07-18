@@ -1,0 +1,1 @@
+Pierwsza wersja publiczna z mapami offline, podgladem limitow predkosci na zywo i zlokalizowanymi tekstami.

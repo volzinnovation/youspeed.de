@@ -1,0 +1,10 @@
+YouSpeed mostra durante a conducao o limite de velocidade detectado e a sua velocidade atual. O app usa dados de mapa locais offline e fornece alertas orientativos quando uma infracao de velocidade pode ter consequencias.
+
+Recursos:
+- Exibicao ao vivo do limite de velocidade e da velocidade
+- Mapas offline para paises e regioes compativeis
+- Alertas orientativos sobre multas, pontos e proibicoes de dirigir
+- Captura local por voz de limites de velocidade
+- Sem anuncios e sem rastreamento
+
+YouSpeed e um app de assistencia. Placas de transito, regras de circulacao e avisos oficiais sempre prevalecem.

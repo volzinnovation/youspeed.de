@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Asistente de limites de velocidad en directo con mapas offline y avisos orientativos de coste.</string>
+    <string name="action_refresh">Recargar zonas de mapa</string>
+    <string name="action_fetch_manifest">Probar manifiesto de Alemania</string>
+    <string name="action_bootstrap">Descargar datos de mapa</string>
+    <string name="store_short_description">Asistente de limites de velocidad con mapas offline y avisos.</string>
+    <string name="startup_loading_map_data">Cargando mapas locales</string>
+    <string name="startup_retry">Intentar de nuevo</string>
+    <string name="welcome_title">Bienvenido a YouSpeed</string>
+    <string name="welcome_copy">Llega con seguridad. YouSpeed muestra en directo el limite detectado e indica cuando pueden ser relevantes los avisos de multas, puntos o prohibicion de conducir. YouSpeed puede equivocarse: manten la vista en la carretera.</string>
+    <string name="welcome_scope_seed">Sin la descarga de Alemania, solo esta disponible el distrito administrativo de Karlsruhe. Inicia la descarga en Ajustes.</string>
+    <string name="welcome_scope_active">Conjunto de datos de Alemania activo: %1$s</string>
+    <string name="welcome_legal_heading">Aviso legal</string>
+    <string name="welcome_osm_credit">Datos de mapa: copyright colaboradores de OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Descargar datos / configurar app</string>
+    <string name="welcome_continue">Continuar con los datos existentes</string>
+    <string name="welcome_hide">No volver a mostrar</string>
+    <string name="legal_disclaimer_short">Nota: Las multas, puntos y prohibiciones de conducir mostrados son solo orientativos y no son asesoramiento legal. Los avisos oficiales y la ley vigente son determinantes.</string>
+    <string name="legal_disclaimer_long">Los valores de multas, puntos y prohibiciones de conducir que muestra YouSpeed son solo orientativos. No son asesoramiento legal ni una evaluacion juridica vinculante. Solo son determinantes los avisos oficiales y la ley vigente en el momento de los hechos; pueden aplicarse tasas y costes adicionales.</string>
+</resources>

@@ -1,0 +1,1 @@
+Assistente de limite de velocidade com mapas offline e alertas.

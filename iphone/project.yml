@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10000
-    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: 10002
+    MARKETING_VERSION: "1.0.1"
     DEVELOPMENT_TEAM: F4CT29PZS5
 targets:
   SpeedConsumer:
@@ -41,18 +41,6 @@ targets:
         buildPhase: resources
       - path: ../shared/CoveragePolys
         buildPhase: resources
-      - path: SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib
-        buildPhase: resources
-    preBuildScripts:
-      - name: Inflate seed bundle
-        script: |
-          python3 "${PROJECT_DIR}/../scripts/iphone/inflate_bundled_seed.py" \
-            "${PROJECT_DIR}/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib" \
-            "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/karlsruhe-regbez_speeds.sqlite"
-        inputFiles:
-          - $(PROJECT_DIR)/SpeedConsumerApp/karlsruhe-regbez_speeds.sqlite.zlib
-        outputFiles:
-          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/karlsruhe-regbez_speeds.sqlite
     settings:
       base:
         DEVELOPMENT_TEAM: F4CT29PZS5

@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">YouSpeed</string>
+    <string name="header_title">YouSpeed</string>
+    <string name="header_summary">Assistente ao vivo de limite de velocidade com mapas offline e alertas orientativos de custos.</string>
+    <string name="action_refresh">Recarregar areas de mapa</string>
+    <string name="action_fetch_manifest">Testar manifesto da Alemanha</string>
+    <string name="action_bootstrap">Baixar dados de mapa</string>
+    <string name="store_short_description">Assistente de limite de velocidade com mapas offline e alertas.</string>
+    <string name="startup_loading_map_data">Carregando mapas locais</string>
+    <string name="startup_retry">Tentar novamente</string>
+    <string name="welcome_title">Boas-vindas ao YouSpeed</string>
+    <string name="welcome_copy">Chegue com seguranca. YouSpeed mostra ao vivo o limite detectado e indica quando avisos de multa, pontos ou proibicao de dirigir podem ser relevantes. YouSpeed pode errar - mantenha os olhos na estrada.</string>
+    <string name="welcome_scope_seed">Sem o download da Alemanha, apenas o distrito administrativo de Karlsruhe esta disponivel. Inicie o download em Configuracoes.</string>
+    <string name="welcome_scope_active">Conjunto de dados da Alemanha ativo: %1$s</string>
+    <string name="welcome_legal_heading">Aviso legal</string>
+    <string name="welcome_osm_credit">Dados de mapa: copyright colaboradores do OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
+    <string name="welcome_open_settings">Baixar dados / configurar app</string>
+    <string name="welcome_continue">Continuar com dados existentes</string>
+    <string name="welcome_hide">Nao mostrar novamente</string>
+    <string name="legal_disclaimer_short">Observacao: multas, pontos e proibicoes de dirigir exibidos sao apenas orientativos e nao constituem aconselhamento juridico. Avisos oficiais e a lei vigente prevalecem.</string>
+    <string name="legal_disclaimer_long">Os valores de multa, pontos e proibicao de dirigir mostrados no YouSpeed sao apenas orientativos. Eles nao constituem aconselhamento juridico nem avaliacao legal vinculante. Apenas avisos oficiais e a lei vigente no momento do fato prevalecem; taxas e custos adicionais podem ser aplicados.</string>
+</resources>

@@ -1,0 +1,10 @@
+YouSpeed visar den upptackta hastighetsgransen och din aktuella hastighet medan du kor. Appen anvander lokala offlinekartor och ger vagledande varningar nar en hastighetsovertradelse kan fa konsekvenser.
+
+Funktioner:
+- Livevisning av hastighetsgrans och hastighet
+- Offlinekartor for lander och regioner som stods
+- Vagledande varningar om boter, punkter och korforbud
+- Lokal rostinmatning av hastighetsgranser
+- Ingen reklam och ingen sparning
+
+YouSpeed ar en assistansapp. Vagmarken, trafikregler och officiella beslut ar alltid avgorande.

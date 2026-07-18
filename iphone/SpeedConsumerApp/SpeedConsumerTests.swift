@@ -306,6 +306,14 @@ final class SpeedConsumerTests: XCTestCase {
             string: "https://github.com/volzinnovation/youspeed.de/releases/download/bayern/bayern_manifest.json"
         )!
         XCTAssertTrue(endpoints.contains(where: { $0.manifestURL == germanyBayernURL }))
+        let germanyBadenWuerttembergURL = URL(
+            string: "https://github.com/volzinnovation/youspeed.de/releases/download/baden-wuerttemberg/baden-wuerttemberg_manifest.json"
+        )!
+        XCTAssertTrue(endpoints.contains(where: { $0.manifestURL == germanyBadenWuerttembergURL }))
+        let invalidGermanyCountryFallbackURL = URL(
+            string: "https://github.com/volzinnovation/youspeed.de/releases/download/germany/germany_manifest.json"
+        )!
+        XCTAssertFalse(endpoints.contains(where: { $0.manifestURL == invalidGermanyCountryFallbackURL }))
 
         let netherlandsManifestURL = URL(
             string: "https://github.com/volzinnovation/youspeed.de/releases/download/netherlands/netherlands_manifest.json"
@@ -4093,7 +4101,7 @@ final class SpeedConsumerTests: XCTestCase {
             await manager.setGitHubToken(token)
 
             let manifestURL = embeddedManifestURL()
-                ?? URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json")!
+                ?? URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/baden-wuerttemberg/baden-wuerttemberg_manifest.json")!
             let sync = try await manager.syncFromManifestURL(manifestURL)
             XCTAssertTrue([BundleSyncResult.Mode.fullDownload, BundleSyncResult.Mode.upToDate].contains(sync.mode))
         }

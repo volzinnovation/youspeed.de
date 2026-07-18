@@ -8,7 +8,7 @@ Status date: 2026-07-04
 - Germany regional data sequence dispatched on `main`: https://github.com/volzinnovation/youspeed.de/actions/runs/28707346045
 - Latest local check: both workflows were still `in_progress`.
 - Verify both workflows complete successfully before submitting store binaries.
-- Verify release manifests are public or served from a public HTTPS endpoint; production apps must not require an embedded GitHub token.
+- Until release manifests are public, iPhone App Store/TestFlight builds must embed `YOUSPEED_RELEASE_READ_TOKEN` through the verified archive script.
 
 ## Local Verification
 
@@ -26,7 +26,7 @@ Status date: 2026-07-04
 - Build uploads must use the current App Store SDK requirement. Apple announced that, starting April 28, 2026, iOS/iPadOS uploads need the iOS 26/iPadOS 26 SDK or later.
 - SpeedConsumer is configured as iPhone-only for the first public release to avoid an unverified iPad screenshot/layout track.
 - Regenerate project with `scripts/iphone/generate_xcode_project.sh` after project.yml changes.
-- Archive with distribution signing and upload through Xcode Organizer or Transporter.
+- Archive/export iPhone with `scripts/iphone/archive_consumer_appstore.sh --use-gh-token --allow-provisioning-updates`; the script verifies `YOUSPEED_RELEASE_READ_TOKEN` in both the `.xcarchive` and exported `.ipa`.
 - Submit localized metadata from `store/apple/metadata`.
 - Submit privacy answers using `store/apple/privacy/app_privacy.md`.
 - Generate screenshots with `scripts/iphone/recreate_store_screenshots.sh`.

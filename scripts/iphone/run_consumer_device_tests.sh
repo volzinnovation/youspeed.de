@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 usage() {
   cat <<'EOF'
@@ -12,6 +13,8 @@ Options:
   --derived-data <path>              DerivedData path (default: iphone/.derived/SpeedConsumerTokenDeviceTest)
   --project <path>                   Xcode project path (default: iphone/SpeedDBBench.xcodeproj)
   --scheme <name>                    Xcode scheme (default: SpeedConsumer)
+  --token <value>                    Token value for YOUSPEED_RELEASE_READ_TOKEN
+  --use-gh-token                     Resolve token from `gh auth token`
   --skip-project-gen                 Skip scripts/iphone/generate_xcode_project.sh
   --allow-provisioning-updates       Pass provisioning update flags to xcodebuild
   -h, --help                         Show this help text
@@ -30,6 +33,8 @@ project_path="${repo_root}/iphone/SpeedDBBench.xcodeproj"
 scheme="SpeedConsumer"
 skip_project_gen=0
 allow_provisioning_updates=0
+token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-${GH_TOKEN:-}}}"
+use_gh_token=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,6 +53,14 @@ while [[ $# -gt 0 ]]; do
     --scheme)
       scheme="${2:-}"
       shift 2
+      ;;
+    --token)
+      token="${2:-}"
+      shift 2
+      ;;
+    --use-gh-token)
+      use_gh_token=1
+      shift
       ;;
     --skip-project-gen)
       skip_project_gen=1
@@ -69,9 +82,27 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-${GH_TOKEN:-}}}"
+if [[ "${use_gh_token}" == "1" ]]; then
+  if command -v gh >/dev/null 2>&1; then
+    gh_token_candidate="$(gh auth token 2>/dev/null || true)"
+    if [[ -n "${gh_token_candidate}" ]]; then
+      token="${gh_token_candidate}"
+    else
+      echo "gh auth token was requested, but no GitHub token is configured in gh." >&2
+      exit 2
+    fi
+  else
+    echo "gh is not installed; cannot use --use-gh-token." >&2
+    exit 2
+  fi
+fi
+
 if [[ -z "${token}" ]]; then
-  echo "Missing GitHub token. Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN) before running this script." >&2
+  echo "Missing GitHub token. Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN), or pass --use-gh-token." >&2
+  exit 2
+fi
+if [[ "${token}" == *'$('* || "${token}" == *'${'* || "${token}" == *$'\n'* || "${token}" == *$'\r'* ]]; then
+  echo "Refusing to use an unresolved or multiline GitHub token." >&2
   exit 2
 fi
 
@@ -88,6 +119,7 @@ build_cmd=(
   -scheme "${scheme}"
   -destination "${destination}"
   -derivedDataPath "${derived_data}"
+  -hideShellScriptEnvironment
 )
 
 if [[ "${allow_provisioning_updates}" == "1" ]]; then
@@ -98,10 +130,8 @@ if [[ "${allow_provisioning_updates}" == "1" ]]; then
 fi
 
 echo "Running tests with injected token (length=${#token})."
-if ! YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" SPEEDCONSUMER_GITHUB_TOKEN="${token}" "${build_cmd[@]}"; then
-  echo "xcodebuild test failed before token verification." >&2
-  exit 10
-fi
+build_status=0
+YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${build_cmd[@]}" || build_status=$?
 
 plist_path="$(find "${derived_data}/Build/Products" -maxdepth 4 -path "*/${scheme}.app/Info.plist" | head -n 1)"
 if [[ -z "${plist_path}" || ! -f "${plist_path}" ]]; then
@@ -121,5 +151,13 @@ if [[ "${embedded_token}" == *'$('* || "${embedded_token}" == *'${'* ]]; then
   echo "Embedded token appears unresolved placeholder in ${plist_path}" >&2
   exit 5
 fi
+if [[ "${embedded_token}" != "${token}" ]]; then
+  echo "Embedded token does not match injected token in ${plist_path} (embedded length=${#embedded_token}, expected length=${#token})." >&2
+  exit 6
+fi
 
 echo "Verified embedded token in ${plist_path} (length=${#embedded_token})."
+if [[ "${build_status}" != "0" ]]; then
+  echo "xcodebuild test failed after token verification." >&2
+  exit 10
+fi

@@ -1,0 +1,10 @@
+YouSpeed mostra durante la guida il limite di velocita rilevato e la velocita attuale. L'app usa dati cartografici locali offline e offre avvisi orientativi quando un eccesso di velocita puo avere conseguenze.
+
+Funzioni:
+- Visualizzazione live del limite di velocita e della velocita
+- Mappe offline per paesi e regioni supportati
+- Avvisi orientativi su multe, punti e divieti di guida
+- Acquisizione vocale locale dei limiti di velocita
+- Nessuna pubblicita e nessun tracciamento
+
+YouSpeed e un'app di assistenza. Segnali stradali, regole del traffico e comunicazioni ufficiali restano sempre determinanti.
