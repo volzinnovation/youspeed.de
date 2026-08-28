@@ -62,3 +62,69 @@ The software is provided without warranty and does not replace attentive driving
 ## Contributing
 
 Keep changes focused, add or update tests for behavioural changes, and do not commit generated builds, credentials, precise personal traces, or local machine configuration. Before opening a change, run the relevant platform tests and `git diff --check`.
+
+## Map bundles
+
+The following map bundles are available from their continuously updated [GitHub releases](https://github.com/volzinnovation/youspeed.de/releases). Each link opens the latest release for that bundle.
+
+- [Belgium](https://github.com/volzinnovation/youspeed.de/releases/tag/belgium)
+- France
+  - [Alsace](https://github.com/volzinnovation/youspeed.de/releases/tag/alsace)
+  - [Aquitaine](https://github.com/volzinnovation/youspeed.de/releases/tag/aquitaine)
+  - [Auvergne](https://github.com/volzinnovation/youspeed.de/releases/tag/auvergne)
+  - [Basse-Normandie](https://github.com/volzinnovation/youspeed.de/releases/tag/basse-normandie)
+  - [Bourgogne](https://github.com/volzinnovation/youspeed.de/releases/tag/bourgogne)
+  - [Bretagne](https://github.com/volzinnovation/youspeed.de/releases/tag/bretagne)
+  - [Centre](https://github.com/volzinnovation/youspeed.de/releases/tag/centre)
+  - [Champagne Ardenne](https://github.com/volzinnovation/youspeed.de/releases/tag/champagne-ardenne)
+  - [Corse](https://github.com/volzinnovation/youspeed.de/releases/tag/corse)
+  - [Franche Comte](https://github.com/volzinnovation/youspeed.de/releases/tag/franche-comte)
+  - [Guadeloupe](https://github.com/volzinnovation/youspeed.de/releases/tag/guadeloupe)
+  - [Haute-Normandie](https://github.com/volzinnovation/youspeed.de/releases/tag/haute-normandie)
+  - [Ile-de-France](https://github.com/volzinnovation/youspeed.de/releases/tag/ile-de-france)
+  - [Languedoc-Roussillon](https://github.com/volzinnovation/youspeed.de/releases/tag/languedoc-roussillon)
+  - [Limousin](https://github.com/volzinnovation/youspeed.de/releases/tag/limousin)
+  - [Lorraine](https://github.com/volzinnovation/youspeed.de/releases/tag/lorraine)
+  - [Martinique](https://github.com/volzinnovation/youspeed.de/releases/tag/martinique)
+  - [Mayotte](https://github.com/volzinnovation/youspeed.de/releases/tag/mayotte)
+  - [Midi-Pyrenees](https://github.com/volzinnovation/youspeed.de/releases/tag/midi-pyrenees)
+  - [Nord-Pas-de-Calais](https://github.com/volzinnovation/youspeed.de/releases/tag/nord-pas-de-calais)
+  - [Pays de la Loire](https://github.com/volzinnovation/youspeed.de/releases/tag/pays-de-la-loire)
+  - [Picardie](https://github.com/volzinnovation/youspeed.de/releases/tag/picardie)
+  - [Poitou-Charentes](https://github.com/volzinnovation/youspeed.de/releases/tag/poitou-charentes)
+  - [Provence Alpes-Cote-d'Azur](https://github.com/volzinnovation/youspeed.de/releases/tag/provence-alpes-cote-d-azur)
+  - [Reunion](https://github.com/volzinnovation/youspeed.de/releases/tag/reunion)
+  - [Rhone-Alpes](https://github.com/volzinnovation/youspeed.de/releases/tag/rhone-alpes)
+- Germany
+  - [Baden-Württemberg](https://github.com/volzinnovation/youspeed.de/releases/tag/baden-wuerttemberg)
+  - [Bayern](https://github.com/volzinnovation/youspeed.de/releases/tag/bayern)
+  - [Berlin](https://github.com/volzinnovation/youspeed.de/releases/tag/berlin)
+  - [Brandenburg (including Berlin)](https://github.com/volzinnovation/youspeed.de/releases/tag/brandenburg)
+  - [Bremen](https://github.com/volzinnovation/youspeed.de/releases/tag/bremen)
+  - [Hamburg](https://github.com/volzinnovation/youspeed.de/releases/tag/hamburg)
+  - [Hessen](https://github.com/volzinnovation/youspeed.de/releases/tag/hessen)
+  - [Mecklenburg-Vorpommern](https://github.com/volzinnovation/youspeed.de/releases/tag/mecklenburg-vorpommern)
+  - [Niedersachsen](https://github.com/volzinnovation/youspeed.de/releases/tag/niedersachsen)
+  - [Nordrhein-Westfalen](https://github.com/volzinnovation/youspeed.de/releases/tag/nordrhein-westfalen)
+  - [Rheinland-Pfalz](https://github.com/volzinnovation/youspeed.de/releases/tag/rheinland-pfalz)
+  - [Saarland](https://github.com/volzinnovation/youspeed.de/releases/tag/saarland)
+  - [Sachsen](https://github.com/volzinnovation/youspeed.de/releases/tag/sachsen)
+  - [Sachsen-Anhalt](https://github.com/volzinnovation/youspeed.de/releases/tag/sachsen-anhalt)
+  - [Schleswig-Holstein](https://github.com/volzinnovation/youspeed.de/releases/tag/schleswig-holstein)
+  - [Thüringen](https://github.com/volzinnovation/youspeed.de/releases/tag/thueringen)
+- [Iceland](https://github.com/volzinnovation/youspeed.de/releases/tag/iceland)
+- [Liechtenstein](https://github.com/volzinnovation/youspeed.de/releases/tag/liechtenstein)
+- [Luxembourg](https://github.com/volzinnovation/youspeed.de/releases/tag/luxembourg)
+- [Monaco](https://github.com/volzinnovation/youspeed.de/releases/tag/monaco)
+- [Netherlands](https://github.com/volzinnovation/youspeed.de/releases/tag/netherlands)
+- [Romania](https://github.com/volzinnovation/youspeed.de/releases/tag/romania)
+- [Sweden](https://github.com/volzinnovation/youspeed.de/releases/tag/sweden)
+- [Switzerland](https://github.com/volzinnovation/youspeed.de/releases/tag/switzerland)
+
+The bundle data is derived from [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright) and is made available under the [Open Data Commons Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1-0/).
+
+### Max-speed provenance
+
+The max-speed provenance tables from the paper shown below are a snapshot from 23 February 2026.
+
+![Max-speed provenance summary and country ranking from the paper](docs/maxspeed-provenance-2026-02-23.png)
