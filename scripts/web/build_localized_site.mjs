@@ -36,8 +36,8 @@ const locales = {
       kicker: "„Dein Tempo immer im Blick.“",
       lead:
         "Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.",
-      primary: "Kontakt aufnehmen",
-      secondary: "App-Status ansehen",
+      googlePlay: ["Android-App", "Google Play"],
+      testFlight: ["iPhone-Testversion", "TestFlight"],
       facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Lokale Kartendaten"],
     },
     launch: {
@@ -157,8 +157,8 @@ const locales = {
       kicker: "Live speed-limit assistance",
       lead:
         "The app keeps the detected speed limit and your current speed visible at a glance. Fine, points, and driving-ban information stays advisory and runs on local map data.",
-      primary: "Contact us",
-      secondary: "View app status",
+      googlePlay: ["Android app", "Google Play"],
+      testFlight: ["iPhone beta", "TestFlight"],
       facts: ["Offline while driving", "No ads, no tracking", "Local map data"],
     },
     launch: {
@@ -278,8 +278,8 @@ const locales = {
       kicker: "Assistant de limitation de vitesse",
       lead:
         "L'app garde la limitation détectée et votre vitesse actuelle visibles en un coup d'oeil. Les informations d'amende, de points et d'interdiction restent indicatives et s'appuient sur des données locales.",
-      primary: "Nous contacter",
-      secondary: "Voir le statut",
+      googlePlay: ["App Android", "Google Play"],
+      testFlight: ["Test iPhone", "TestFlight"],
       facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Données cartographiques locales"],
     },
     launch: {
@@ -399,8 +399,8 @@ const locales = {
       kicker: "Live snelheidslimietassistent",
       lead:
         "De app houdt de herkende snelheidslimiet en je actuele snelheid direct zichtbaar. Boete-, punten- en rijverbodsinformatie blijft indicatief en draait op lokale kaartgegevens.",
-      primary: "Contact opnemen",
-      secondary: "App-status bekijken",
+      googlePlay: ["Android-app", "Google Play"],
+      testFlight: ["iPhone-test", "TestFlight"],
       facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Lokale kaartgegevens"],
     },
     launch: {
@@ -498,6 +498,9 @@ const locales = {
 const localeCodes = Object.keys(locales);
 const mailto =
   "mailto:studios@moonshots.gmbh?subject=YouSpeed";
+const googlePlayUrl =
+  "https://play.google.com/store/apps/details?id=de.youspeed.android";
+const testFlightUrl = "https://testflight.apple.com/join/k3a1pgce";
 
 function escapeHtml(value) {
   return String(value)
@@ -642,6 +645,7 @@ function renderStructuredData(locale, content) {
         url: "https://studios.moonshots.gmbh",
       },
       sameAs: ["https://github.com/volzinnovation/youspeed.de"],
+      installUrl: [googlePlayUrl, testFlightUrl],
     },
     null,
     2,
@@ -729,8 +733,12 @@ ${renderLanguageSwitch(locale)}
             <p class="hero-kicker">${escapeHtml(content.hero.kicker)}</p>
             <p class="lead">${escapeHtml(content.hero.lead)}</p>
             <div class="hero-actions">
-              <a class="btn btn-primary" href="${mailto}">${escapeHtml(content.hero.primary)}</a>
-              <a class="btn btn-secondary" href="#launch">${escapeHtml(content.hero.secondary)}</a>
+              <a class="btn store-btn store-btn-google" href="${googlePlayUrl}" target="_blank" rel="noreferrer">
+                <span><small>${escapeHtml(content.hero.googlePlay[0])}</small>${escapeHtml(content.hero.googlePlay[1])}</span>
+              </a>
+              <a class="btn store-btn store-btn-apple" href="${testFlightUrl}" target="_blank" rel="noreferrer">
+                <span><small>${escapeHtml(content.hero.testFlight[0])}</small>${escapeHtml(content.hero.testFlight[1])}</span>
+              </a>
             </div>
             <ul class="hero-facts" aria-label="YouSpeed facts">
               ${content.hero.facts.map((fact) => `<li>${escapeHtml(fact)}</li>`).join("")}
