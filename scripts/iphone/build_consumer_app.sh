@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Usage: build_consumer_app.sh [options]
 
-Build the SpeedConsumer iOS app and optionally inject a GitHub release token at build time.
+Build the SpeedConsumer iOS app from public release assets.
 
 Options:
   --configuration <Debug|Release>   Build configuration (default: Debug)
@@ -13,18 +13,11 @@ Options:
   --derived-data <path>             DerivedData path (default: iphone/.derived/SpeedConsumerBuild)
   --project <path>                  Xcode project path (default: iphone/SpeedDBBench.xcodeproj)
   --scheme <name>                   Xcode scheme (default: SpeedConsumer)
-  --token <value>                   Token value for YOUSPEED_RELEASE_READ_TOKEN build setting
-  --use-gh-token                    Resolve token from `gh auth token`
-  --allow-empty-token               Compatibility flag; public assets do not require a token
   --skip-project-gen                Skip running scripts/iphone/generate_xcode_project.sh
   --clean                           Run xcodebuild clean before build
   --allow-provisioning-updates      Pass -allowProvisioningUpdates and -allowProvisioningDeviceRegistration
   -h, --help                        Show this help text
 
-Environment:
-  YOUSPEED_RELEASE_READ_TOKEN       Preferred token source when --token/--use-gh-token are not passed
-  GITHUB_RELEASE_TOKEN              Legacy fallback token source
-  GH_TOKEN                          Fallback token source if release token vars are not set
 EOF
 }
 
@@ -34,9 +27,6 @@ destination="generic/platform=iOS Simulator"
 derived_data="${repo_root}/iphone/.derived/SpeedConsumerBuild"
 project_path="${repo_root}/iphone/SpeedDBBench.xcodeproj"
 scheme="SpeedConsumer"
-token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-}}"
-use_gh_token=0
-allow_empty_token=0
 skip_project_gen=0
 run_clean=0
 allow_provisioning_updates=0
@@ -62,18 +52,6 @@ while [[ $# -gt 0 ]]; do
     --scheme)
       scheme="${2:-}"
       shift 2
-      ;;
-    --token)
-      token="${2:-}"
-      shift 2
-      ;;
-    --use-gh-token)
-      use_gh_token=1
-      shift
-      ;;
-    --allow-empty-token)
-      allow_empty_token=1
-      shift
       ;;
     --skip-project-gen)
       skip_project_gen=1
@@ -103,25 +81,6 @@ if [[ -z "${configuration}" || -z "${destination}" || -z "${derived_data}" || -z
   echo "Missing required option value." >&2
   usage >&2
   exit 1
-fi
-
-if [[ -z "${token}" && -n "${GH_TOKEN:-}" ]]; then
-  token="${GH_TOKEN}"
-fi
-
-if [[ "${use_gh_token}" == "1" ]]; then
-  if command -v gh >/dev/null 2>&1; then
-    gh_token_candidate="$(gh auth token 2>/dev/null || true)"
-    if [[ -n "${gh_token_candidate}" ]]; then
-      token="${gh_token_candidate}"
-    elif [[ "${use_gh_token}" == "1" ]]; then
-      echo "gh auth token was requested, but no GitHub token is configured in gh." >&2
-      exit 1
-    fi
-  elif [[ "${use_gh_token}" == "1" ]]; then
-    echo "gh is not installed; cannot use --use-gh-token." >&2
-    exit 1
-  fi
 fi
 
 if [[ "${skip_project_gen}" != "1" ]]; then
@@ -165,16 +124,10 @@ if [[ "${run_clean}" == "1" ]]; then
       -allowProvisioningDeviceRegistration
     )
   fi
-  YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${clean_cmd[@]}"
+  "${clean_cmd[@]}"
 fi
 
-if [[ -n "${token}" ]]; then
-  echo "Building with YOUSPEED_RELEASE_READ_TOKEN (length=${#token})."
-else
-  echo "Building without YOUSPEED_RELEASE_READ_TOKEN."
-fi
-
-YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${build_cmd[@]}"
+"${build_cmd[@]}"
 
 echo "Build finished successfully."
 echo "DerivedData: ${derived_data}"

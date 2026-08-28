@@ -1163,27 +1163,6 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testDefaultGitHubReleaseTokenFromInfoDictionary() {
-        let token = DriveSessionViewModel.defaultGitHubReleaseToken(
-            infoDictionary: [
-                "YOUSPEED_RELEASE_READ_TOKEN": "  built-in-token  ",
-            ]
-        )
-        XCTAssertEqual(token, "built-in-token")
-    }
-
-    @MainActor
-    func testDefaultGitHubReleaseTokenIgnoresPlaceholderAndUsesFallbackKey() {
-        let token = DriveSessionViewModel.defaultGitHubReleaseToken(
-            infoDictionary: [
-                "YOUSPEED_RELEASE_READ_TOKEN": "$(YOUSPEED_RELEASE_READ_TOKEN)",
-                "YouSpeedGitHubReleaseToken": "fallback-token",
-            ]
-        )
-        XCTAssertEqual(token, "fallback-token")
-    }
-
-    @MainActor
     func testDefaultManifestURLFromInfoDictionary() {
         let raw = "https://github.com/volzinnovation/youspeed.de/releases/download/karlsruhe-regbez/karlsruhe-regbez_manifest.json"
         let url = DriveSessionViewModel.defaultManifestURL(
@@ -2583,7 +2562,7 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testSyncResolvesGitHubReleaseURLsViaAPIWithAuthorization() async throws {
+    func testSyncDownloadsPublicGitHubReleaseURLsDirectly() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
         if fm.fileExists(atPath: supportDir.path) {
@@ -2593,7 +2572,7 @@ final class SpeedConsumerTests: XCTestCase {
             try? fm.removeItem(at: supportDir)
         }
 
-        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-auth-tests-\(UUID().uuidString)", isDirectory: true)
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-public-release-tests-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer {
             try? fm.removeItem(at: tempDir)
@@ -2605,16 +2584,6 @@ final class SpeedConsumerTests: XCTestCase {
 
         let manifestURL = URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.bundle-manifest.v3.json")!
         let dbURL = URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/deu-v3-data-latest/DEU-latest.speeds_v3.sqlite")!
-        let releaseTagURL = URL(string: "https://api.github.com/repos/volzinnovation/youspeed.de/releases/tags/deu-v3-data-latest")!
-        let manifestAssetURL = URL(string: "https://api.github.com/repos/volzinnovation/youspeed.de/releases/assets/1001")!
-        let dbAssetURL = URL(string: "https://api.github.com/repos/volzinnovation/youspeed.de/releases/assets/1002")!
-        let token = DriveSessionViewModel.defaultGitHubReleaseToken(
-            infoDictionary: [
-                "YOUSPEED_RELEASE_READ_TOKEN": "test-token",
-            ]
-        )
-        XCTAssertEqual(token, "test-token")
-
         let manifest = V3BundleManifest(
             format: "youspeed.v3.bundle.manifest",
             schemaVersion: 1,
@@ -2634,34 +2603,18 @@ final class SpeedConsumerTests: XCTestCase {
         )
         let manifestData = try JSONEncoder().encode(manifest)
 
-        let releasePayload = """
-        {
-          "assets": [
-            { "id": 1001, "name": "DEU-latest.bundle-manifest.v3.json" },
-            { "id": 1002, "name": "DEU-latest.speeds_v3.sqlite" }
-          ]
-        }
-        """
         MockURLProtocol.responses = [
-            releaseTagURL.absoluteString: (status: 200, body: Data(releasePayload.utf8)),
-            manifestAssetURL.absoluteString: (status: 200, body: manifestData),
-            dbAssetURL.absoluteString: (status: 200, body: sourceData),
-        ]
-        MockURLProtocol.requiredAuthorizationPrefixByURL = [
-            releaseTagURL.absoluteString: "Bearer \(token)",
-            manifestAssetURL.absoluteString: "Bearer \(token)",
-            dbAssetURL.absoluteString: "Bearer \(token)",
+            manifestURL.absoluteString: (status: 200, body: manifestData),
+            dbURL.absoluteString: (status: 200, body: sourceData),
         ]
         defer {
             MockURLProtocol.responses = [:]
-            MockURLProtocol.requiredAuthorizationPrefixByURL = [:]
         }
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
         let session = URLSession(configuration: config)
         let manager = V3BundleManager(fileManager: fm, session: session)
-        await manager.setGitHubToken(token)
 
         let sync = try await manager.syncFromManifestURL(manifestURL)
         XCTAssertEqual(sync.mode, .fullDownload)
@@ -2717,12 +2670,8 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("Bundled seed DB does not contain required drive-log regression ways: \(missingWayIDs.sorted())")
         }
 
-        let logURL = try driveMatchLogURL(named: "202603101_drive_match_log.ndjson")
+        let logURL = try privateDriveMatchLogURL(environmentKey: "YOUSPEED_TEST_THREE_WAY_LOG")
         let entries = try loadDriveMatchLogEntries(url: logURL, fixIDRange: 34 ... 44)
-            .filter {
-                $0.timestampUTC >= "2026-03-10T13:35:22.999Z" &&
-                    $0.timestampUTC <= "2026-03-10T13:35:32.999Z"
-            }
         XCTAssertEqual(entries.count, 11, "Expected exact drive-log window for the three-way gate regression")
 
         let targetFixID = 38
@@ -2781,7 +2730,7 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("Bundled seed DB does not contain required Loffenau regression ways: \(missingWayIDs.sorted())")
         }
 
-        let logURL = try driveMatchLogURL(named: "Lof drive_match_log.ndjson")
+        let logURL = try privateDriveMatchLogURL(environmentKey: "YOUSPEED_TEST_LOFFENAU_LOG")
         let entries = try loadDriveMatchLogEntries(url: logURL)
         let targetFixID = 2497
         let target = try XCTUnwrap(
@@ -2835,7 +2784,7 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
         }
 
-        let logURL = try driveMatchLogURL(named: "Lof drive_match_log.ndjson")
+        let logURL = try privateDriveMatchLogURL(environmentKey: "YOUSPEED_TEST_LOFFENAU_LOG")
         let entries = try loadDriveMatchLogEntries(url: logURL)
         let target = try XCTUnwrap(
             entries.first(where: { $0.fixID == 2497 }),
@@ -3426,7 +3375,7 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("Bundled speeds_v3.sqlite not found in test host app")
         }
 
-        let logURL = try driveMatchLogURL(named: "20260312_000427_801_drive_match_log.ndjson")
+        let logURL = try privateDriveMatchLogURL(environmentKey: "YOUSPEED_TEST_WALKING_LOG")
         let entries = try loadDriveMatchLogEntries(url: logURL)
             .sorted {
                 if $0.fixID != $1.fixID {
@@ -4061,16 +4010,6 @@ final class SpeedConsumerTests: XCTestCase {
             throw XCTSkip("SPEEDCONSUMER_SKIP_REAL_RELEASE_SYNC=1")
         }
         let autoTapSyncEnabled = isAutoTapSyncEnabled(env: env)
-        let envTokenCandidates = ["SPEEDCONSUMER_GITHUB_TOKEN", "YOUSPEED_RELEASE_READ_TOKEN", "GITHUB_RELEASE_TOKEN"]
-        let envToken = envTokenCandidates
-            .compactMap { env[$0] }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty && !$0.contains("$(") } ?? ""
-        let token = !envToken.isEmpty ? envToken : embeddedGitHubReleaseToken()
-        guard !token.isEmpty else {
-            throw XCTSkip("Set SPEEDCONSUMER_GITHUB_TOKEN or YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN) to access private GitHub release assets")
-        }
-
         let lat = Double(env["SPEEDCONSUMER_TEST_LAT"] ?? "48.801157") ?? 48.801157
         let lon = Double(env["SPEEDCONSUMER_TEST_LON"] ?? "8.442467") ?? 8.442467
 
@@ -4098,8 +4037,6 @@ final class SpeedConsumerTests: XCTestCase {
             config.timeoutIntervalForResource = 14_400
             let session = URLSession(configuration: config)
             manager = V3BundleManager(fileManager: fm, session: session)
-            await manager.setGitHubToken(token)
-
             let manifestURL = embeddedManifestURL()
                 ?? URL(string: "https://github.com/volzinnovation/youspeed.de/releases/download/baden-wuerttemberg/baden-wuerttemberg_manifest.json")!
             let sync = try await manager.syncFromManifestURL(manifestURL)
@@ -9482,20 +9419,17 @@ final class SpeedConsumerTests: XCTestCase {
         )
     }
 
-    private func driveMatchLogURL(named name: String) throws -> URL {
-        let candidates = [
-            repoRootURL()
-                .appendingPathComponent("inspector", isDirectory: true)
-                .appendingPathComponent(name),
-            repoRootURL()
-                .appendingPathComponent("inspector", isDirectory: true)
-                .appendingPathComponent("logs", isDirectory: true)
-                .appendingPathComponent(name),
-        ]
-        for url in candidates where FileManager.default.fileExists(atPath: url.path) {
-            return url
+    private func privateDriveMatchLogURL(environmentKey: String) throws -> URL {
+        guard let rawPath = ProcessInfo.processInfo.environment[environmentKey]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !rawPath.isEmpty else {
+            throw XCTSkip("Set \(environmentKey) to an untracked local drive-log fixture to run this optional regression")
         }
-        throw XCTSkip("Missing optional drive match log fixture \(name) at \(candidates.map { $0.path }.joined(separator: ", "))")
+        let url = URL(fileURLWithPath: rawPath)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw XCTSkip("Optional private drive-log fixture does not exist: \(url.path)")
+        }
+        return url
     }
 
     private func allInspectorDriveMatchLogURLs() throws -> [URL] {
@@ -10217,15 +10151,6 @@ final class SpeedConsumerTests: XCTestCase {
         return false
     }
 
-    private func embeddedGitHubReleaseToken() -> String {
-        let info = Bundle.main.infoDictionary ?? [:]
-        let tokenCandidates = ["YOUSPEED_RELEASE_READ_TOKEN", "YouSpeedGitHubReleaseToken", "GITHUB_RELEASE_TOKEN"]
-        return tokenCandidates
-            .compactMap { info[$0] as? String }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty && !$0.contains("$(") } ?? ""
-    }
-
     private func embeddedManifestURL() -> URL? {
         let info = Bundle.main.infoDictionary ?? [:]
         let manifestCandidates = ["YouSpeedV3ManifestURL", "YouSpeedBundleManifestURL"]
@@ -10253,14 +10178,6 @@ final class SpeedConsumerTests: XCTestCase {
         throw XCTSkip("Connected-device only test")
 #else
         let info = Bundle.main.infoDictionary ?? [:]
-        let tokenCandidates = ["YOUSPEED_RELEASE_READ_TOKEN", "YouSpeedGitHubReleaseToken", "GITHUB_RELEASE_TOKEN"]
-        let token = tokenCandidates
-            .compactMap { info[$0] as? String }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty && !$0.contains("$(") } ?? ""
-        guard !token.isEmpty else {
-            throw XCTSkip("Missing embedded GitHub release token in app Info.plist")
-        }
         let manifestCandidates = ["YouSpeedV3ManifestURL", "YouSpeedBundleManifestURL"]
         let manifestRaw = manifestCandidates
             .compactMap { info[$0] as? String }
@@ -10278,24 +10195,17 @@ final class SpeedConsumerTests: XCTestCase {
         config.timeoutIntervalForResource = 300
         let session = URLSession(configuration: config)
 
-        let manifestFetchURL = try await resolveReleaseAssetAPIURL(
-            fromGitHubReleaseURL: manifestURL,
-            token: token,
-            session: session
-        ) ?? manifestURL
-
-        var manifestRequest = URLRequest(url: manifestFetchURL)
+        var manifestRequest = URLRequest(url: manifestURL)
         manifestRequest.setValue("YouSpeedConsumerTests/1.0", forHTTPHeaderField: "User-Agent")
-        manifestRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         manifestRequest.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
 
         let (manifestData, manifestResponse) = try await session.data(for: manifestRequest)
         guard let manifestHTTP = manifestResponse as? HTTPURLResponse else {
-            XCTFail("Non-HTTP response for manifest: \(manifestFetchURL.absoluteString)")
+            XCTFail("Non-HTTP response for manifest: \(manifestURL.absoluteString)")
             return
         }
-        print("RELEASE_MANIFEST_CHECK status=\(manifestHTTP.statusCode) url=\(manifestFetchURL.absoluteString)")
-        XCTAssertTrue((200...299).contains(manifestHTTP.statusCode), "Manifest status=\(manifestHTTP.statusCode) url=\(manifestFetchURL.absoluteString)")
+        print("RELEASE_MANIFEST_CHECK status=\(manifestHTTP.statusCode) url=\(manifestURL.absoluteString)")
+        XCTAssertTrue((200...299).contains(manifestHTTP.statusCode), "Manifest status=\(manifestHTTP.statusCode) url=\(manifestURL.absoluteString)")
 
         let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: manifestData)
         var artifacts: [BundleArtifact] = []
@@ -10319,25 +10229,10 @@ final class SpeedConsumerTests: XCTestCase {
                 continue
             }
 
-            let candidateURL: URL
-            if rawURL.host?.lowercased().contains("github.com") == true {
-                if let apiURL = try await resolveReleaseAssetAPIURL(
-                    fromGitHubReleaseURL: rawURL,
-                    token: token,
-                    session: session
-                ) {
-                    candidateURL = apiURL
-                } else {
-                    candidateURL = rawURL
-                    print("RELEASE_ARTIFACT_CHECK fallback=direct file=\(artifact.file) url=\(rawURL.absoluteString)")
-                }
-            } else {
-                candidateURL = rawURL
-            }
+            let candidateURL = rawURL
 
             var req = URLRequest(url: candidateURL)
             req.setValue("YouSpeedConsumerTests/1.0", forHTTPHeaderField: "User-Agent")
-            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             req.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
             req.setValue("bytes=0-0", forHTTPHeaderField: "Range")
 
@@ -10354,49 +10249,6 @@ final class SpeedConsumerTests: XCTestCase {
             )
         }
 #endif
-    }
-
-    private func resolveReleaseAssetAPIURL(fromGitHubReleaseURL url: URL, token: String, session: URLSession) async throws -> URL? {
-        guard let host = url.host?.lowercased(),
-              host == "github.com" || host == "www.github.com" else {
-            return url
-        }
-        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true)
-        guard parts.count >= 6,
-              parts[2] == "releases",
-              parts[3] == "download" else {
-            return url
-        }
-
-        let owner = String(parts[0])
-        let repo = String(parts[1])
-        let tag = String(parts[4])
-        let assetName = parts[5...].joined(separator: "/")
-        guard !owner.isEmpty, !repo.isEmpty, !tag.isEmpty, !assetName.isEmpty else {
-            return nil
-        }
-
-        guard let tagAPIURL = URL(string: "https://api.github.com/repos/\(owner)/\(repo)/releases/tags/\(tag)") else {
-            return nil
-        }
-        var req = URLRequest(url: tagAPIURL)
-        req.setValue("YouSpeedConsumerTests/1.0", forHTTPHeaderField: "User-Agent")
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        req.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-
-        let (data, response) = try await session.data(for: req)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            return nil
-        }
-
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        let assets = json?["assets"] as? [[String: Any]] ?? []
-        let assetID = assets.first(where: { ($0["name"] as? String) == assetName })?["id"] as? Int
-        guard let assetID else {
-            return nil
-        }
-        return URL(string: "https://api.github.com/repos/\(owner)/\(repo)/releases/assets/\(assetID)")
     }
 
     private func loadReplayExpectations(url: URL) throws -> [ReplayExpectation] {
@@ -10489,7 +10341,6 @@ private struct WayRow {
 
 private final class MockURLProtocol: URLProtocol {
     static var responses: [String: (status: Int, body: Data)] = [:]
-    static var requiredAuthorizationPrefixByURL: [String: String] = [:]
 
     override class func canInit(with request: URLRequest) -> Bool {
         guard let scheme = request.url?.scheme?.lowercased() else { return false }
@@ -10507,14 +10358,6 @@ private final class MockURLProtocol: URLProtocol {
         else {
             client?.urlProtocol(self, didFailWithError: URLError(.resourceUnavailable))
             return
-        }
-
-        if let expectedPrefix = Self.requiredAuthorizationPrefixByURL[url.absoluteString] {
-            let actual = request.value(forHTTPHeaderField: "Authorization") ?? ""
-            guard actual.hasPrefix(expectedPrefix) else {
-                client?.urlProtocol(self, didFailWithError: URLError(.userAuthenticationRequired))
-                return
-            }
         }
 
         guard let http = HTTPURLResponse(

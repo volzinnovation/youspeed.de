@@ -19,7 +19,8 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-query_script="/Users/raphaelvolz/Github/youspeed.de/scripts/map/query_speed_limit.py"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+query_script="${script_dir}/query_speed_limit.py"
 if [[ ! -x "$query_script" ]]; then
   echo "Missing executable query script: $query_script" >&2
   exit 1

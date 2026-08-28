@@ -1136,9 +1136,6 @@ private fun SettingsSheet(
                 SectionCard("Kartendaten-Download") {
                     DebugLabel("Status", controller.formattedSyncStatus())
                     DebugLabel("Bundle", ui.activeBundleVersion)
-                    if (ui.hasGitHubReleaseToken) {
-                        DebugLabel("GH Token", "Debug")
-                    }
                     syncMessageLine(ui)?.let { (text, color) ->
                         Text(text, color = color, fontSize = 13.sp)
                     }

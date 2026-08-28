@@ -1,6 +1,6 @@
-# Android Alpha
+# YouSpeed for Android
 
-Internal alpha scaffold for Track E. This app consumes the same bundled target config and v3 bundle manifest contract as the iPhone app, but it is not part of the public May 22 release gate.
+The Android app uses the same bundled target configuration and v3 map-bundle contract as the iPhone app. It is part of the public YouSpeed release on 29 August 2026.
 
 ## Current scope
 
@@ -30,16 +30,15 @@ cd android
 ./scripts/run_replay_regressions.sh
 ```
 
-That script builds a plain-table replay DB from `karlsruhe-regbez_speeds.sqlite.zlib` using the recorded `inspector/logs` windows, emits a compact replay trace bundle, pushes both into app-internal storage, and runs `V3ReplayInstrumentedTest`. The replay suite now covers GPX/KML fixtures, bundled Karlsruhe window regressions, and longer field/geom/walking trace replays. The general `./gradlew :app:connectedDebugAndroidTest` suite stays green without a replay DB, but it only runs the longer trace diagnostics when replay files are present under app-internal `files/replay/`.
+That script builds a plain-table replay DB from `karlsruhe-regbez_speeds.sqlite.zlib`, pushes it into app-internal storage, and runs `V3ReplayInstrumentedTest`. The public test suite uses synthetic GPX/KML fixtures. Optional local trace diagnostics run only when replay files are supplied under app-internal `files/replay/`; personal traces must not be committed.
 
 For a deliberate live Germany shard bootstrap on a connected emulator/device:
 
 ```bash
 cd android
-export YOUSPEED_RELEASE_READ_TOKEN="$(gh auth token)"
 ./gradlew :app:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.LiveBundleBootstrapInstrumentedTest \
   -Pandroid.testInstrumentationRunnerArguments.run_live_bootstrap=1
 ```
 
-That test fetches `baden-wuerttemberg_manifest.json` from the live GitHub release path, streams the real shard DB asset to app-internal storage, validates size/SHA-256, and verifies bundle activation in an isolated test root.
+That test fetches `baden-wuerttemberg_manifest.json` from the public GitHub release path, streams the real shard DB asset to app-internal storage, validates size/SHA-256, and verifies bundle activation in an isolated test root.

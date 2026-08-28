@@ -55,7 +55,7 @@ Implement Android first for the prototype, then port the stabilized contract to 
 
 Android is the better first integration target in this repo because:
 
-- Android is already an internal alpha track, so CV work is less likely to disturb the iPhone launch/reference path.
+- Android offers a contained first integration surface, so CV work is less likely to disturb the iPhone reference path.
 - CameraX `ImageAnalysis` maps cleanly to the desired latest-frame analyzer loop and stale-frame dropping strategy.
 - LiteRT / TensorFlow Lite is a natural target for YOLO mobile inference and keeps the pipeline easy to inspect with Kotlin tests and instrumentation.
 - Android already needs enum/schema parity work, so the CV contract can be introduced there before touching the iPhone reference app.
@@ -64,7 +64,7 @@ iPhone may be cleaner for final end-user performance once a Core ML export is st
 
 ### Separate app first or integrated into the current app?
 
-Do not build a long-lived separate app. Build a short-lived Android camera/model spike first, then integrate into the current app behind a debug/internal flag.
+Do not build a long-lived separate app. Build a short-lived Android camera/model spike first, then integrate it into the current app behind a development-only flag.
 
 Recommended sequence:
 

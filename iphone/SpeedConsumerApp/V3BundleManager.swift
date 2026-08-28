@@ -31,9 +31,6 @@ actor V3BundleManager {
     private let resourceBundle: Bundle
     private let minimumFreeDiskReserveBytes: Int64 = 256 * 1024 * 1024
     private let coverageCacheTTLSeconds: TimeInterval = 60
-    private var githubToken: String?
-    private var githubAssetURLByReleaseURL: [String: URL] = [:]
-    private var githubReleaseAssetsByTagKey: [String: [String: Int64]] = [:]
     private var coverageCacheUpdatedAt: Date?
     private var cachedCoverageEntries: [CoverageEntry] = []
 
@@ -54,16 +51,6 @@ actor V3BundleManager {
         self.session = session
         self.decoder = JSONDecoder()
         self.resourceBundle = resourceBundle
-    }
-
-    func setGitHubToken(_ token: String?) {
-        let trimmed = token?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let normalized = trimmed.isEmpty ? nil : trimmed
-        if githubToken != normalized {
-            githubAssetURLByReleaseURL = [:]
-            githubReleaseAssetsByTagKey = [:]
-        }
-        githubToken = normalized
     }
 
     func syncFromManifestEndpoints(
@@ -2454,108 +2441,13 @@ actor V3BundleManager {
     }
 
     private func resolveGitHubReleaseAssetAPIURLIfNeeded(_ url: URL) async throws -> URL {
-        guard githubToken != nil,
-              let releaseAsset = parseGitHubReleaseAssetURL(url) else {
-            return url
-        }
-
-        let originalKey = url.absoluteString
-        if let cached = githubAssetURLByReleaseURL[originalKey] {
-            return cached
-        }
-
-        let tagAssets: [String: Int64]
-        do {
-            tagAssets = try await fetchGitHubReleaseAssets(
-                owner: releaseAsset.owner,
-                repo: releaseAsset.repo,
-                tag: releaseAsset.tag
-            )
-        } catch {
-            return url
-        }
-        guard let assetID = tagAssets[releaseAsset.assetName] else {
-            return url
-        }
-        guard let apiURL = URL(
-            string: "https://api.github.com/repos/\(releaseAsset.owner)/\(releaseAsset.repo)/releases/assets/\(assetID)"
-        ) else {
-            return url
-        }
-        githubAssetURLByReleaseURL[originalKey] = apiURL
-        return apiURL
-    }
-
-    private func fetchGitHubReleaseAssets(owner: String, repo: String, tag: String) async throws -> [String: Int64] {
-        let key = "\(owner)/\(repo)/\(tag)"
-        if let cached = githubReleaseAssetsByTagKey[key] {
-            return cached
-        }
-        guard let token = githubToken else {
-            throw ConsumerAppError.network("Missing GitHub token for private release download")
-        }
-        guard let url = URL(string: "https://api.github.com/repos/\(owner)/\(repo)/releases/tags/\(tag)") else {
-            throw ConsumerAppError.invalidManifest("Unable to build GitHub release tag API URL")
-        }
-
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 120
-        request.setValue("YouSpeedConsumer/1.0", forHTTPHeaderField: "User-Agent")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw ConsumerAppError.network("Unexpected non-HTTP response for \(url.absoluteString)")
-        }
-        guard (200...299).contains(http.statusCode) else {
-            throw ConsumerAppError.network(httpErrorMessage(requestURL: url, response: http, bodyPreviewData: data))
-        }
-
-        let release: GitHubReleaseTagResponse
-        do {
-            release = try decoder.decode(GitHubReleaseTagResponse.self, from: data)
-        } catch {
-            throw ConsumerAppError.invalidManifest("Unable to decode GitHub release metadata for tag \(tag)")
-        }
-        let mapping = Dictionary(uniqueKeysWithValues: release.assets.map { ($0.name, $0.id) })
-        githubReleaseAssetsByTagKey[key] = mapping
-        return mapping
-    }
-
-    private func parseGitHubReleaseAssetURL(_ url: URL) -> GitHubReleaseAssetPath? {
-        guard let host = url.host?.lowercased(),
-              host == "github.com" || host == "www.github.com" else {
-            return nil
-        }
-        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true)
-        guard parts.count >= 6,
-              parts[2] == "releases",
-              parts[3] == "download" else {
-            return nil
-        }
-
-        let owner = String(parts[0])
-        let repo = String(parts[1])
-        let tag = String(parts[4])
-        let assetName = parts[5...].joined(separator: "/")
-        guard !owner.isEmpty, !repo.isEmpty, !tag.isEmpty, !assetName.isEmpty else {
-            return nil
-        }
-        return GitHubReleaseAssetPath(owner: owner, repo: repo, tag: tag, assetName: assetName)
+        url
     }
 
     private func makeRequest(url: URL) -> URLRequest {
         var request = URLRequest(url: url)
         request.timeoutInterval = 120
         request.setValue("YouSpeedConsumer/1.0", forHTTPHeaderField: "User-Agent")
-        if let token = githubToken,
-           let host = url.host?.lowercased(),
-           host == "api.github.com" || host.contains("github.com") || host.contains("githubusercontent.com") {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
-        }
         return request
     }
 
@@ -2861,22 +2753,6 @@ actor V3BundleManager {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.date(from: value)
     }
-}
-
-private struct GitHubReleaseAssetPath {
-    let owner: String
-    let repo: String
-    let tag: String
-    let assetName: String
-}
-
-private struct GitHubReleaseTagResponse: Decodable {
-    let assets: [GitHubReleaseAssetEntry]
-}
-
-private struct GitHubReleaseAssetEntry: Decodable {
-    let id: Int64
-    let name: String
 }
 
 private struct MultipartAssembleCheckpoint: Codable, Sendable {

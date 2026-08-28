@@ -21,9 +21,6 @@ class LiveBundleBootstrapInstrumentedTest {
             args.getString("run_live_bootstrap") == "1",
         )
 
-        val githubToken = BuildConfig.YOUSPEED_RELEASE_READ_TOKEN.trim()
-        assumeTrue("YOUSPEED_RELEASE_READ_TOKEN missing in app BuildConfig", githubToken.isNotBlank())
-
         val appContext = instrumentation.targetContext
         val targetsRaw = appContext.assets.open("BundleTargets.top10.json").bufferedReader().use { it.readText() }
         val manifestEndpoints = ContractJson.decodeBundleTargets(targetsRaw).manifestEndpoints(preferredCountryCode = "DEU")
@@ -39,7 +36,7 @@ class LiveBundleBootstrapInstrumentedTest {
         try {
             val bootstrapper = BundleBootstrapper(
                 rootDir = rootDir,
-                httpFetcher = HttpUrlFetcher(githubToken),
+                httpFetcher = HttpUrlFetcher(),
             )
 
             val manifest = bootstrapper.fetchManifest(requireNotNull(endpoint).manifestUrl)

@@ -53,10 +53,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>YouSpeedGitHubReleaseToken</key>
-	<string>$(YOUSPEED_RELEASE_READ_TOKEN)</string>
-	<key>YOUSPEED_RELEASE_READ_TOKEN</key>
-	<string>$(YOUSPEED_RELEASE_READ_TOKEN)</string>
 	<key>YouSpeedTestAutoTapSync</key>
 	<string>$(SPEEDCONSUMER_TEST_AUTOTAP_SYNC)</string>
 	<key>YouSpeedV3ManifestURL</key>

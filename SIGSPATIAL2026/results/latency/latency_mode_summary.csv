@@ -1,7 +1,0 @@
-architecture,architecture_label,distance_mode,strata,median_p50_core_ms,median_p95_core_ms,max_p95_core_ms,median_candidate_way_ids
-S1,global index files,bbox,11,8.330,8.490,16.130,903.0
-S1,global index files,hybrid,11,123.015,124.460,135.650,903.0
-S1,global index files,polyline,11,135.855,137.830,188.270,903.0
-S3,SQLite/RTree,bbox,11,12.620,12.630,19.790,650.0
-S3,SQLite/RTree,hybrid,11,15.005,15.140,22.230,650.0
-S3,SQLite/RTree,polyline,11,19.035,19.150,33.610,650.0

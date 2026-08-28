@@ -3,9 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-fun escapedBuildConfigString(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
-
-val githubReleaseReadToken = escapedBuildConfigString(System.getenv("YOUSPEED_RELEASE_READ_TOKEN") ?: "")
 val releaseStoreFile = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_STORE_FILE").orNull
 val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_STORE_PASSWORD").orNull
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
@@ -43,10 +40,8 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
-            buildConfigField("String", "YOUSPEED_RELEASE_READ_TOKEN", "\"$githubReleaseReadToken\"")
         }
         release {
-            buildConfigField("String", "YOUSPEED_RELEASE_READ_TOKEN", "\"\"")
             isMinifyEnabled = false
             signingConfigs.findByName("releaseUpload")?.let {
                 signingConfig = it

@@ -467,7 +467,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let locationManager = CLLocationManager()
     private let speechSynthesizer = AVSpeechSynthesizer()
     private let captureConfirmationTonePlayer = ConfirmationTonePlayer()
-    private let githubReleaseToken: String
     private let bundledTargetsConfig: V3BundleTargetsConfig?
     private let manifestEndpoints: [V3ManifestEndpoint]
     private var speedLimitService: V3SpeedLimitService?
@@ -645,29 +644,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return formatter
     }()
 
-    static func defaultGitHubReleaseToken(bundle: Bundle = .main) -> String {
-        defaultGitHubReleaseToken(infoDictionary: bundle.infoDictionary)
-    }
-
-    static func defaultGitHubReleaseToken(infoDictionary: [String: Any]?) -> String {
-        let candidates = [
-            "YOUSPEED_RELEASE_READ_TOKEN",
-            "YouSpeedGitHubReleaseToken",
-            "GITHUB_RELEASE_TOKEN",
-        ]
-        for key in candidates {
-            guard let raw = infoDictionary?[key] as? String else {
-                continue
-            }
-            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty || trimmed.contains("$(") {
-                continue
-            }
-            return trimmed
-        }
-        return ""
-    }
-
     static func defaultManifestURL(bundle: Bundle = .main) -> URL? {
         defaultManifestURL(infoDictionary: bundle.infoDictionary)
     }
@@ -808,12 +784,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         do {
             var request = URLRequest(url: manifestURL)
             request.timeoutInterval = 15
-            let host = manifestURL.host?.lowercased() ?? ""
-            if !githubReleaseToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               host.contains("github.com") || host.contains("githubusercontent.com") {
-                request.setValue("Bearer \(githubReleaseToken)", forHTTPHeaderField: "Authorization")
-                request.setValue("application/octet-stream", forHTTPHeaderField: "Accept")
-            }
             let (data, response) = try await URLSession.shared.data(for: request)
             guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
                 return nil
@@ -991,7 +961,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
         matcherDebugProfile = initialMatcherProfile
-        githubReleaseToken = Self.defaultGitHubReleaseToken()
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
         let endpointCount = manifestEndpoints.count
@@ -1040,10 +1009,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var configuredManifestEndpointCount: Int {
         manifestEndpoints.count
-    }
-
-    var hasGitHubReleaseToken: Bool {
-        !githubReleaseToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var configuredManifestCountryCodes: String {
@@ -1206,7 +1171,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 Self.logger.notice(
                     "download_selected start bundle=\(option.displayName, privacy: .public) region=\(option.endpoint.manifestRegion, privacy: .public) url=\(option.endpoint.manifestURL.absoluteString, privacy: .public)"
                 )
-                await bundleManager.setGitHubToken(githubReleaseToken)
 
                 syncStatus = "syncing"
 
@@ -1380,7 +1344,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncPartDownloads = []
                 lastDownloadProgressAt = nil
                 lastDownloadProgressBytes = nil
-                await bundleManager.setGitHubToken(githubReleaseToken)
                 syncStatus = "bootstrapping"
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
                 activeBundleVersion = bootstrap.bundleVersion
@@ -1555,7 +1518,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
             do {
                 lastError = ""
-                await bundleManager.setGitHubToken(githubReleaseToken)
                 let recovered = try await bundleManager.recoverLocalDataAtStartup { detail, fraction in
                     Task { @MainActor [weak self] in
                         guard let self else {

@@ -31,7 +31,7 @@ const locales = {
       visual: "YouSpeed App-Bildschirme",
     },
     hero: {
-      badge: "iOS & Android · Offline-Karten · Keine Werbung",
+      badge: "Ab 29. August 2026 · iOS & Android · Offline-Karten · Keine Werbung",
       title: "YouSpeed.de",
       kicker: "„Dein Tempo immer im Blick.“",
       lead:
@@ -41,10 +41,10 @@ const locales = {
       facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Lokale Kartendaten"],
     },
     launch: {
-      eyebrow: "App-Status",
-      title: "Transparente Funktionen statt Launch-Versprechen",
+      eyebrow: "Öffentlicher Start · 29. August 2026",
+      title: "YouSpeed startet auf iOS und Android",
       body:
-        "YouSpeed beschreibt nur Funktionen, die von den Apps getragen werden: lokale Tempolimit-Suche, Warnstufen, On-Device-Spracherfassung und Offline-Bundles für Länder und Regionen.",
+        "Zum Start bietet YouSpeed lokale Tempolimit-Suche, verständliche Warnstufen, optionale Spracheingabe auf dem Gerät und Offline-Datenpakete für Länder und Regionen.",
       items: [
         {
           state: "iOS & Android",
@@ -162,10 +162,10 @@ const locales = {
       facts: ["Offline while driving", "No ads, no tracking", "Local map data"],
     },
     launch: {
-      eyebrow: "App status",
-      title: "Transparent functions instead of launch promises",
+      eyebrow: "Public launch · 29 August 2026",
+      title: "YouSpeed launches on iOS and Android",
       body:
-        "YouSpeed describes only functionality supported by the apps: local speed-limit lookup, warning levels, on-device spoken capture, and offline bundles for countries and regions.",
+        "At launch, YouSpeed provides local speed-limit lookup, clear warning levels, optional on-device spoken capture, and offline bundles for countries and regions.",
       items: [
         {
           state: "iOS & Android",
@@ -283,10 +283,10 @@ const locales = {
       facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Données cartographiques locales"],
     },
     launch: {
-      eyebrow: "Statut de l'app",
-      title: "Des fonctions transparentes, pas des promesses de lancement",
+      eyebrow: "Lancement public · 29 août 2026",
+      title: "YouSpeed arrive sur iOS et Android",
       body:
-        "YouSpeed décrit uniquement les fonctions prises en charge par les apps : recherche locale des limitations, niveaux d'alerte, saisie vocale sur l'appareil et bundles hors ligne pour pays et régions.",
+        "Au lancement, YouSpeed proposera la recherche locale des limitations, des niveaux d'alerte clairs, la saisie vocale optionnelle sur l'appareil et des bundles hors ligne pour pays et régions.",
       items: [
         {
           state: "iOS & Android",
@@ -404,10 +404,10 @@ const locales = {
       facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Lokale kaartgegevens"],
     },
     launch: {
-      eyebrow: "App-status",
-      title: "Transparante functies in plaats van launchbeloftes",
+      eyebrow: "Publieke lancering · 29 augustus 2026",
+      title: "YouSpeed start op iOS en Android",
       body:
-        "YouSpeed beschrijft alleen functies die de apps ondersteunen: lokale snelheidslimietzoeker, waarschuwingsniveaus, spraakinvoer op het apparaat en offline bundles voor landen en regio's.",
+        "Bij de lancering biedt YouSpeed lokale snelheidslimietherkenning, duidelijke waarschuwingen, optionele spraakinvoer op het apparaat en offline bundels voor landen en regio's.",
       items: [
         {
           state: "iOS & Android",

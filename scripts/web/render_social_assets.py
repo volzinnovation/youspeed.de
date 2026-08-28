@@ -28,7 +28,7 @@ LOCALES = {
     "de": {
         "title": "YouSpeed.de",
         "subtitle": "Dein Tempo immer im Blick.",
-        "detail": "Demnächst im App Store & Google Play · Offline · Keine Werbung",
+        "detail": "Start am 29. August 2026 · iOS & Android · Offline · Keine Werbung",
     },
     "en": {
         "title": "YouSpeed.de",

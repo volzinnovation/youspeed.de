@@ -5,8 +5,8 @@ usage() {
   cat <<'EOF'
 Usage: archive_consumer_appstore.sh [options]
 
-Archive SpeedConsumer for App Store Connect with mandatory GitHub release token
-injection, then verify the token survived in the .xcarchive and exported .ipa.
+Archive SpeedConsumer for App Store Connect and verify that no client-side
+release credential is present in the .xcarchive or exported .ipa.
 
 Options:
   --configuration <name>             Build configuration (default: Release)
@@ -16,9 +16,6 @@ Options:
   --export-options <path>            ExportOptions.plist path (default: generated temporary plist)
   --project <path>                   Xcode project path (default: iphone/SpeedDBBench.xcodeproj)
   --scheme <name>                    Xcode scheme/product name (default: SpeedConsumer)
-  --token <value>                    Token value for YOUSPEED_RELEASE_READ_TOKEN
-  --use-gh-token                     Resolve token from `gh auth token`
-  --no-gh-token-fallback             Do not fall back to `gh auth token` when env token vars are unset
   --skip-export                      Create and verify .xcarchive only
   --skip-project-gen                 Skip scripts/iphone/generate_xcode_project.sh
   --allow-provisioning-updates       Pass provisioning update flags to xcodebuild
@@ -26,9 +23,6 @@ Options:
   -h, --help                         Show this help text
 
 Environment:
-  YOUSPEED_RELEASE_READ_TOKEN        Preferred token source
-  GITHUB_RELEASE_TOKEN               Legacy fallback token source
-  GH_TOKEN                           Fallback token source before gh auth lookup
   DEVELOPMENT_TEAM                   Optional export team override
 EOF
 }
@@ -42,9 +36,6 @@ export_path="${derived_root}/export"
 export_options=""
 project_path="${repo_root}/iphone/SpeedDBBench.xcodeproj"
 scheme="SpeedConsumer"
-token="${YOUSPEED_RELEASE_READ_TOKEN:-${GITHUB_RELEASE_TOKEN:-${GH_TOKEN:-}}}"
-use_gh_token=0
-gh_token_fallback=1
 skip_export=0
 skip_project_gen=0
 allow_provisioning_updates=0
@@ -80,18 +71,6 @@ while [[ $# -gt 0 ]]; do
     --scheme)
       scheme="${2:-}"
       shift 2
-      ;;
-    --token)
-      token="${2:-}"
-      shift 2
-      ;;
-    --use-gh-token)
-      use_gh_token=1
-      shift
-      ;;
-    --no-gh-token-fallback)
-      gh_token_fallback=0
-      shift
       ;;
     --skip-export)
       skip_export=1
@@ -131,32 +110,6 @@ if [[ "${skip_export}" != "1" && -z "${export_path}" ]]; then
   exit 1
 fi
 
-resolve_gh_token() {
-  if ! command -v gh >/dev/null 2>&1; then
-    return 1
-  fi
-  gh auth token 2>/dev/null || true
-}
-
-if [[ "${use_gh_token}" == "1" || ( -z "${token}" && "${gh_token_fallback}" == "1" ) ]]; then
-  gh_token_candidate="$(resolve_gh_token)"
-  if [[ -n "${gh_token_candidate}" ]]; then
-    token="${gh_token_candidate}"
-  elif [[ "${use_gh_token}" == "1" ]]; then
-    echo "gh auth token was requested, but no GitHub token is configured in gh." >&2
-    exit 2
-  fi
-fi
-
-if [[ -z "${token}" ]]; then
-  echo "Missing GitHub token. Set YOUSPEED_RELEASE_READ_TOKEN (or GITHUB_RELEASE_TOKEN/GH_TOKEN), or configure gh auth." >&2
-  exit 2
-fi
-if [[ "${token}" == *'$('* || "${token}" == *'${'* || "${token}" == *$'\n'* || "${token}" == *$'\r'* ]]; then
-  echo "Refusing to use an unresolved or multiline GitHub token." >&2
-  exit 2
-fi
-
 if [[ "${skip_project_gen}" != "1" ]]; then
   "${repo_root}/scripts/iphone/generate_xcode_project.sh"
 fi
@@ -185,7 +138,7 @@ plist_value() {
   /usr/libexec/PlistBuddy -c "Print :${key}" "${plist_path}" 2>/dev/null || true
 }
 
-verify_token_plist() {
+verify_no_release_credentials() {
   local plist_path="$1"
   local label="$2"
   if [[ ! -f "${plist_path}" ]]; then
@@ -193,28 +146,14 @@ verify_token_plist() {
     exit 3
   fi
 
-  local embedded_token
-  embedded_token="$(plist_value "${plist_path}" "YouSpeedGitHubReleaseToken")"
-  if [[ -z "${embedded_token}" ]]; then
-    embedded_token="$(plist_value "${plist_path}" "YOUSPEED_RELEASE_READ_TOKEN")"
-  fi
-  embedded_token="${embedded_token#"${embedded_token%%[![:space:]]*}"}"
-  embedded_token="${embedded_token%"${embedded_token##*[![:space:]]}"}"
-
-  if [[ -z "${embedded_token}" ]]; then
-    echo "Embedded GitHub token missing in ${label} (${plist_path})." >&2
-    exit 4
-  fi
-  if [[ "${embedded_token}" == *'$('* || "${embedded_token}" == *'${'* ]]; then
-    echo "Embedded GitHub token is still an unresolved placeholder in ${label} (${plist_path})." >&2
-    exit 5
-  fi
-  if [[ "${embedded_token}" != "${token}" ]]; then
-    echo "Embedded GitHub token in ${label} does not match the injected token (embedded length=${#embedded_token}, expected length=${#token})." >&2
-    exit 6
-  fi
-
-  echo "Verified GitHub token in ${label} (length=${#embedded_token})."
+  local forbidden_key
+  for forbidden_key in YouSpeedGitHubReleaseToken YOUSPEED_RELEASE_READ_TOKEN GITHUB_RELEASE_TOKEN; do
+    if /usr/libexec/PlistBuddy -c "Print :${forbidden_key}" "${plist_path}" >/dev/null 2>&1; then
+      echo "Forbidden release credential key ${forbidden_key} found in ${label} (${plist_path})." >&2
+      exit 4
+    fi
+  done
+  echo "Verified that ${label} contains no release credential keys."
 }
 
 verify_bundle_id() {
@@ -253,12 +192,12 @@ if [[ "${keep_existing}" != "1" ]]; then
   fi
 fi
 
-echo "Archiving ${scheme} for App Store Connect with embedded GitHub token (length=${#token})."
-YOUSPEED_RELEASE_READ_TOKEN="${token}" GITHUB_RELEASE_TOKEN="${token}" "${archive_cmd[@]}"
+echo "Archiving ${scheme} for App Store Connect."
+"${archive_cmd[@]}"
 
 archive_plist="${archive_path}/Products/Applications/${scheme}.app/Info.plist"
 verify_bundle_id "${archive_plist}" ".xcarchive"
-verify_token_plist "${archive_plist}" ".xcarchive"
+verify_no_release_credentials "${archive_plist}" ".xcarchive"
 
 short_version="$(plist_value "${archive_plist}" "CFBundleShortVersionString")"
 build_version="$(plist_value "${archive_plist}" "CFBundleVersion")"
@@ -274,9 +213,6 @@ if [[ -z "${export_options_to_use}" ]]; then
   export_options_to_use="$(mktemp "${TMPDIR:-/tmp}/speedconsumer-export-options.XXXXXX.plist")"
   temp_files+=("${export_options_to_use}")
   team_id="${DEVELOPMENT_TEAM:-}"
-  if [[ -z "${team_id}" ]]; then
-    team_id="$(awk '/^[[:space:]]*DEVELOPMENT_TEAM:[[:space:]]*/ { sub(/^[[:space:]]*DEVELOPMENT_TEAM:[[:space:]]*/, "", $0); print $0; exit }' "${repo_root}/iphone/project.yml")"
-  fi
   {
     printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>'
     printf '%s\n' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">'
@@ -330,6 +266,6 @@ temp_dirs+=("${payload_dir}")
 unzip -q "${ipa_path}" "Payload/${scheme}.app/Info.plist" -d "${payload_dir}"
 ipa_plist="${payload_dir}/Payload/${scheme}.app/Info.plist"
 verify_bundle_id "${ipa_plist}" ".ipa"
-verify_token_plist "${ipa_plist}" ".ipa"
+verify_no_release_credentials "${ipa_plist}" ".ipa"
 
 echo "Export verified: ${ipa_path}"

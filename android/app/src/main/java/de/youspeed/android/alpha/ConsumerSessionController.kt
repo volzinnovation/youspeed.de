@@ -170,7 +170,6 @@ data class ConsumerUiState(
     val downloadedBundleLatestVersionByRegion: Map<String, String> = emptyMap(),
     val configuredManifestEndpointCount: Int = 0,
     val configuredManifestCountryCodes: String = "n/a",
-    val hasGitHubReleaseToken: Boolean = false,
     val activePenaltyRules: ActivePenaltyRules = ActivePenaltyRules.fallback(),
     val localObservations: List<LocalObservation> = emptyList(),
     val localObservationStatus: String = "",
@@ -285,10 +284,9 @@ class ConsumerSessionController(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val isDisposed = AtomicBoolean(false)
     private val assetReader = AndroidAssetReader(appContext)
-    private val githubReleaseToken = BuildConfig.YOUSPEED_RELEASE_READ_TOKEN.trim()
     private val bootstrapper = BundleBootstrapper(
         rootDir = rootDir,
-        httpFetcher = HttpUrlFetcher(githubReleaseToken),
+        httpFetcher = HttpUrlFetcher(),
         clock = clock,
         assetReader = assetReader,
     )
@@ -384,7 +382,6 @@ class ConsumerSessionController(
             bundleDownloadSections = buildBundleDownloadSections(),
             configuredManifestEndpointCount = manifestEndpoints.size,
             configuredManifestCountryCodes = manifestCountryCodes(),
-            hasGitHubReleaseToken = githubReleaseToken.isNotBlank(),
             activePenaltyRules = loadPenaltyRules("DEU"),
             appScreenshotState = launchScreenshotState,
             matcherDebugProfile = initialMatcherDebugProfile,
@@ -1168,7 +1165,6 @@ class ConsumerSessionController(
             "Lookup" to state.syncStatus,
             "Manifest-Endpunkte" to state.configuredManifestEndpointCount.toString(),
             "Manifest-Laender" to state.configuredManifestCountryCodes,
-            "GitHub Token" to if (state.hasGitHubReleaseToken) "vorhanden" else "fehlt",
         )
     }
 

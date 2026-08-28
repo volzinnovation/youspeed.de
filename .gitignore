@@ -56,17 +56,6 @@ mapdata/reports/*.json
 !mapdata/reports/deltas/
 !mapdata/reports/deltas/daily-diff-analysis.csv
 
-SIGSPATIAL2026/*.aux
-SIGSPATIAL2026/*.bbl
-SIGSPATIAL2026/*.blg
-SIGSPATIAL2026/*.fdb_latexmk
-SIGSPATIAL2026/*.fls
-SIGSPATIAL2026/*.log
-SIGSPATIAL2026/*.out
-SIGSPATIAL2026/*.synctex.gz
-SIGSPATIAL2026/scripts/__pycache__/
-SIGSPATIAL2026/results/**/*.log
-
 # iPhone generated/embedded benchmark DB artifacts
 iphone/SpeedDBBenchSketch/*.sqlite
 iphone/SpeedDBBenchSketch/BenchmarkAssets/*.sqlite
@@ -87,3 +76,18 @@ android/.idea/
 android/.gradle/
 android/local.properties
 android/**/build/
+
+# Credentials and machine-local signing configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
+*.ipa
+*.xcarchive/

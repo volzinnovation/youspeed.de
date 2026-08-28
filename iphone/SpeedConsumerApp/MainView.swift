@@ -1041,13 +1041,6 @@ private struct SettingsView: View {
             Section("Kartendaten-Download") {
                 LabeledContent("Status", value: syncStatusLabel)
                 LabeledContent("Bundle", value: viewModel.activeBundleVersion)
-                LabeledContent("GH Token", value: viewModel.hasGitHubReleaseToken ? "vorhanden" : "fehlt")
-
-                if viewModel.hasGitHubReleaseToken {
-                    Text("Debug-Token aktiv")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
 
                 if let syncMessage = syncMessageLine {
                     Text(syncMessage.text)

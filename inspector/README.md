@@ -18,7 +18,7 @@ Eigenständiges Browser-Tool zum visuellen Prüfen von Ways auf OSM-Karte gegen 
 
 `scripts/iphone/collect_current_matcher_metrics.swift` schreibt standardmäßig annotierte NDJSON-Kopien nach:
 
-`/Users/raphaelvolz/Github/youspeed.de/inspector/logs/replay_debug/`
+`inspector/logs/replay_debug/`
 
 Diese Dateien behalten die ursprünglichen Logzeilen und ergänzen pro Fix ein `replayDebug`-Objekt mit Replay-Ergebnis, Hindsight-Label und Fehlerklassifikation. Im Inspector können sie direkt per Dateiauswahl geladen werden.
 
@@ -27,7 +27,7 @@ Diese Dateien behalten die ursprünglichen Logzeilen und ergänzen pro Fix ein `
 Vom Repo-Root starten (wichtig, damit der Default-Pfad auf die Seed-DB erreichbar ist):
 
 ```bash
-cd /Users/raphaelvolz/Github/youspeed.de
+cd /path/to/youspeed.de
 python3 -m http.server 8080
 ```
 
