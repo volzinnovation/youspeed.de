@@ -13,9 +13,9 @@ Scan to download the app or open its source code:
 
 <table>
   <tr>
-    <th>Android (Google Play)</th>
-    <th>Apple iPhone (TestFlight)</th>
-    <th>this.repo</th>
+    <th width="33%">Android (Google Play)</th>
+    <th width="34%">Apple iPhone (TestFlight)</th>
+    <th width="33%">this.repo</th>
   </tr>
   <tr>
     <td align="center"><a href="https://play.google.com/store/apps/details?id=de.youspeed.android"><img src="docs/qr/google-play.png" alt="QR code for YouSpeed on Google Play"></a></td>
