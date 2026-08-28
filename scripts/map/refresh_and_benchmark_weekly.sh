@@ -9,11 +9,12 @@ set -euo pipefail
 
 run_date="${1:-$(date -u +%F)}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+paper_repo_root="${YOUSPEED_PAPER_REPO_ROOT:-${repo_root}/../youspeed.de-paper}"
 
 pbf_url="${PBF_URL:-https://download.geofabrik.de/europe/germany-latest.osm.pbf}"
 raw_dir="${repo_root}/mapdata/raw"
 report_dir="${repo_root}/mapdata/reports"
-techreport_data_dir="${repo_root}/paper/techreport/data"
+techreport_data_dir="${paper_repo_root}/techreport/data"
 
 mkdir -p "${raw_dir}" "${report_dir}" "${techreport_data_dir}"
 

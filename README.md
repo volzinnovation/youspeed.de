@@ -1,6 +1,6 @@
 # youspeed.de
 
-`youspeed.de` contains the consumer apps, shared v3 map-bundle pipeline, replay/benchmark tooling, and the paper artifacts that justify the current matcher/runtime design.
+`youspeed.de` contains the consumer apps, shared v3 map-bundle pipeline, and replay/benchmark tooling. Publication artifacts live in the sister repository `youspeed.de-paper`.
 
 ## Current status (March 13, 2026)
 
@@ -8,7 +8,7 @@
 - Android now lives on `main` as the parallel port, using the same v3 bundle contract, shared seed bundle strategy, matcher/replay harness, and offline local speed-capture workflow.
 - Android voice capture no longer depends on Google on-device speech packages. It uses bundled offline Vosk assets plus a DIN-like bundled font for the sign UI.
 - The shared map pipeline still builds and publishes v3 SQLite bundles plus delta manifests from this repo.
-- Paper and benchmark work stay in-tree, but are separate from app-release work.
+- Paper sources and publication artifacts live in the sister repository `youspeed.de-paper`; benchmark tooling remains here.
 
 ## Repository layout
 
@@ -17,7 +17,7 @@
 - [scripts/map](/Users/raphaelvolz/Github/youspeed.de/scripts/map): bundle builders, query tools, publishing helpers
 - [docs/launch_threads](/Users/raphaelvolz/Github/youspeed.de/docs/launch_threads): active launch-track notes
 - [inspector](/Users/raphaelvolz/Github/youspeed.de/inspector): matcher/log inspection tooling
-- [paper](/Users/raphaelvolz/Github/youspeed.de/paper): ITSC and technical-report sources
+- [youspeed.de-paper](/Users/raphaelvolz/Github/youspeed.de-paper): paper sources and publication artifacts
 - [sites](/Users/raphaelvolz/Github/youspeed.de/sites): web landing page assets
 
 ## Shared prerequisites
@@ -94,10 +94,10 @@ Core tooling lives under [scripts/map](/Users/raphaelvolz/Github/youspeed.de/scr
 
 ## Paper and scientific track
 
-The architecture evaluation, benchmark replication, and publication artifacts stay in-tree:
+The architecture evaluation and publication artifacts live in the sister repository:
 
-- [paper/itsc2026](/Users/raphaelvolz/Github/youspeed.de/paper/itsc2026)
-- [paper/techreport](/Users/raphaelvolz/Github/youspeed.de/paper/techreport)
+- [itsc2026](/Users/raphaelvolz/Github/youspeed.de-paper/itsc2026)
+- [techreport](/Users/raphaelvolz/Github/youspeed.de-paper/techreport)
 - [iphone/SpeedDBBenchSketch](/Users/raphaelvolz/Github/youspeed.de/iphone/SpeedDBBenchSketch)
 
 This track should stay reproducible, but it is no longer the main day-to-day release surface.

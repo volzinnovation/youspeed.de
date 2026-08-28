@@ -5,10 +5,10 @@ Working title:
 > Offline Speed-Limit Inference on Smartphones: A Geospatial Systems Benchmark and Deployment Experience [Experiment]
 
 This folder contains a fresh ACM SIGSPATIAL 2026 draft derived from:
-- `paper/itsc2026/main.tex`
-- `paper/techreport/main.tex`
-- `paper/techreport/data/matcher_ladder_rows.tex`
-- ITSC 2026 reviews in `paper/itsc2026/reviews/`
+- `../../youspeed.de-paper/itsc2026/main.tex`
+- `../../youspeed.de-paper/techreport/main.tex`
+- `../../youspeed.de-paper/techreport/data/matcher_ladder_rows.tex`
+- ITSC 2026 reviews in `../../youspeed.de-paper/itsc2026/reviews/`
 
 Build:
 

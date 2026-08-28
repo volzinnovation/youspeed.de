@@ -10,7 +10,8 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT_DIR = REPO_ROOT / "paper" / "techreport" / "data"
+PAPER_REPO_ROOT = REPO_ROOT.parent / "youspeed.de-paper"
+DEFAULT_OUTPUT_DIR = PAPER_REPO_ROOT / "techreport" / "data"
 
 MODEL_ORDER = [
     "M1",

@@ -3,16 +3,16 @@
 Date: 2026-03-06 (updated 2026-03-12)
 
 Reviewed materials:
-- `paper/share/VISION.md`
-- `paper/share/TECHNICAL_ARCHITECTURE.md`
-- `paper/techreport/main.tex`
+- `youspeed.de-paper/share/VISION.md`
+- `youspeed.de-paper/share/TECHNICAL_ARCHITECTURE.md`
+- `youspeed.de-paper/techreport/main.tex`
 - `iphone/SpeedConsumerApp/V3SpeedLimitService.swift`
 - `iphone/SpeedConsumerApp/V3BundleManager.swift`
 - `iphone/SpeedConsumerApp/DriveSessionViewModel.swift`
 - `scripts/map/query_speed_limit_v3.py`
 - `scripts/map/query_speed_limit_v4.py`
 - `iphone/SpeedConsumerApp/SpeedConsumerTests.swift`
-- `paper/share/references.bib`
+- `youspeed.de-paper/share/references.bib`
 
 External retrieval covered:
 - foundational map-matching surveys and HMM papers,
@@ -21,7 +21,7 @@ External retrieval covered:
 - current single-file tile/archive formats as deployment comparators.
 
 PDF verification status:
-- `paper/techreport/main.pdf` was rendered with `pdftoppm` and cross-checked with `pypdf` text extraction.
+- `youspeed.de-paper/techreport/main.pdf` was rendered with `pdftoppm` and cross-checked with `pypdf` text extraction.
 - Rendered pages 1, 8, 12, and 17 were visually inspected. No obvious clipping, broken figures, unreadable tables, reference corruption, or layout defects were observed on those pages.
 - The rendered PDF does not materially change the scientific review relative to the TeX source. In particular, the overclaim in the abstract is present in the rendered document as well.
 
@@ -31,9 +31,9 @@ Residual limitation:
 ## Track A refresh (2026-03-12)
 
 This report now also covers the `2026-03-12` Track A evidence refresh for the current manuscript pair:
-- `paper/itsc2026/main.tex`
-- `paper/personalized_matching_arxiv/main.tex`
-- `paper/personalized_matching_arxiv/data/*.tex`
+- `youspeed.de-paper/itsc2026/main.tex`
+- `youspeed.de-paper/personalized_matching_arxiv/main.tex`
+- `youspeed.de-paper/personalized_matching_arxiv/data/*.tex`
 - `tmp/hindsight_match_summary.json`
 - `tmp/hindsight_training_summary.json`
 - `tmp/hindsight_model_benchmark.json`
@@ -82,7 +82,7 @@ This report now also covers the `2026-03-12` Track A evidence refresh for the cu
 
 ### Track A decision
 
-Decision: defer the external submission package for `paper/itsc2026/` in its current cycle.
+Decision: defer the external submission package for `youspeed.de-paper/itsc2026/` in its current cycle.
 
 Reasoning:
 1. The architecture paper remains a benchmark-scoped microstudy over one fixed probe and heterogeneous update proxies, not an end-to-end ISA validation.
@@ -90,8 +90,8 @@ Reasoning:
 3. The updated profile comparison replaces the earlier simple corridor-wins narrative with a baseline-versus-corridor tradeoff, which needs more careful framing before submission.
 
 Priority if only one manuscript receives further effort:
-1. Prioritize `paper/personalized_matching_arxiv/` as the living evidence vehicle, because it now reflects the refreshed offline and replay data.
-2. Keep `paper/itsc2026/` deferred until route-level accuracy, benchmark scope, and claim support are aligned in one package.
+1. Prioritize `youspeed.de-paper/personalized_matching_arxiv/` as the living evidence vehicle, because it now reflects the refreshed offline and replay data.
+2. Keep `youspeed.de-paper/itsc2026/` deferred until route-level accuracy, benchmark scope, and claim support are aligned in one package.
 
 ## Executive verdict
 
@@ -105,12 +105,12 @@ The paper is not yet strong enough to support its broader scientific claims abou
 
 1. The vision and the implementation are aligned on the high-level operating model.
    - The vision explicitly separates current scope from the north-star architecture and keeps the critical path offline-first, local-first, and editor-mediated for OSM publication.
-   - The paper reflects that separation in the technical vision section (`paper/techreport/main.tex:64-155`).
+   - The paper reflects that separation in the technical vision section (`youspeed.de-paper/techreport/main.tex:64-155`).
 
 2. The bundle architecture is the strongest part of the system.
    - The app implements coverage-aware regional bundle routing with bbox prefiltering and optional polygon checks (`iphone/SpeedConsumerApp/V3BundleManager.swift:305-350`, `iphone/SpeedConsumerApp/V3BundleManager.swift:1442-1466`).
    - The app also implements actual delta-chain selection and SQL-patch application instead of treating updates as a purely conceptual future feature (`iphone/SpeedConsumerApp/V3BundleManager.swift:696-819`).
-   - This is consistent with the paper's argument that the main contribution is a runtime-data architecture rather than a novel map-matching algorithm (`paper/techreport/main.tex:58-62`, `paper/techreport/main.tex:377-407`).
+   - This is consistent with the paper's argument that the main contribution is a runtime-data architecture rather than a novel map-matching algorithm (`youspeed.de-paper/techreport/main.tex:58-62`, `youspeed.de-paper/techreport/main.tex:377-407`).
 
 3. The current matcher is materially more mature than a naive nearest-way lookup.
    - The runtime uses heading-aware geometric scoring, continuity preservation, tunnel gating, and a small beam over recent hypotheses (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:260-349`, `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:411-495`, `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:860-1040`).
@@ -122,50 +122,50 @@ The paper is not yet strong enough to support its broader scientific claims abou
 ### 2. High-priority scientific weaknesses
 
 1. The paper overclaims what the evaluation demonstrates.
-   - The abstract moves from runtime microbenchmarking to "strongly support the EU traffic safety vision of reduced crash severity" (`paper/techreport/main.tex:32-34`).
+   - The abstract moves from runtime microbenchmarking to "strongly support the EU traffic safety vision of reduced crash severity" (`youspeed.de-paper/techreport/main.tex:32-34`).
    - Nothing in the current evaluation measures speed-limit correctness, warning quality, driver behavior, or crash-related outcomes. The present evidence supports an architecture-selection claim, not a safety-effect claim.
 
 2. The evaluation protocol is too narrow for the strength of the conclusion.
-   - The benchmark uses one fixed Berlin probe point with a fixed heading and top-k setting (`paper/techreport/main.tex:422-445`).
-   - The reported on-device execution note describes only one executed country-scale run (`paper/techreport/main.tex:424`).
-   - The final scenario ranking is then generalized into a preferred operating point (`paper/techreport/main.tex:525`, `paper/techreport/main.tex:561-575`).
+   - The benchmark uses one fixed Berlin probe point with a fixed heading and top-k setting (`youspeed.de-paper/techreport/main.tex:422-445`).
+   - The reported on-device execution note describes only one executed country-scale run (`youspeed.de-paper/techreport/main.tex:424`).
+   - The final scenario ranking is then generalized into a preferred operating point (`youspeed.de-paper/techreport/main.tex:525`, `youspeed.de-paper/techreport/main.tex:561-575`).
    - This is acceptable as a microbenchmark but not as a general deployment conclusion.
 
 3. The benchmark harness is not the same as the current app runtime.
-   - The paper documents the current iPhone runtime as continuity-aware and sequence-aware (`paper/techreport/main.tex:121-145`).
+   - The paper documents the current iPhone runtime as continuity-aware and sequence-aware (`youspeed.de-paper/techreport/main.tex:121-145`).
    - The benchmark scripts are simpler: they score candidate rows, optionally do polyline refinement, and then choose explicit speed or urban/rural default without local overrides, tunnel gating, or mini-HMM selection (`scripts/map/query_speed_limit_v3.py:649-725`).
    - That does not invalidate the storage benchmark, but it does mean the paper should clearly separate "architecture microbenchmark harness" from "production app inference path."
 
 4. The paper misstates what the built-up-area benchmark is actually measuring.
-   - The paper says the Berlin probe resolves inside-city "via explicit administrative polygon containment" (`paper/techreport/main.tex:527`).
+   - The paper says the Berlin probe resolves inside-city "via explicit administrative polygon containment" (`youspeed.de-paper/techreport/main.tex:527`).
    - The current app derives `insideCity` from highway-class precedence first, then residential polygon containment, while administrative polygons are used for city labels and traceability (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:421-439`, `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:1287-1525`).
    - The benchmark scripts likewise compute the built-up guess from residential polygons (`scripts/map/query_speed_limit_v3.py:677-720`; same structure in `query_speed_limit_v4.py`).
    - Administrative polygons matter in the app, but not in the way the evaluation sentence currently claims.
 
 5. The final ranking mixes incomparable update proxies.
-   - S1/S2 use invalidated cell/tile counts, while S3/S4 use simulated patch runtime (`paper/techreport/main.tex:543-550`).
-   - Those heterogeneous proxies are then normalized into one 50/50 decision rule (`paper/techreport/main.tex:561-562`).
+   - S1/S2 use invalidated cell/tile counts, while S3/S4 use simulated patch runtime (`youspeed.de-paper/techreport/main.tex:543-550`).
+   - Those heterogeneous proxies are then normalized into one 50/50 decision rule (`youspeed.de-paper/techreport/main.tex:561-562`).
    - This ranking may still be directionally useful, but it is not a clean apples-to-apples optimization result.
 
 6. The "speed envelope" table is not operationally meaningful in its current form.
-   - The paper derives theoretical maxima up to `1449.3 km/h` and `808.8 km/h` for S3 (`paper/techreport/main.tex:463-468`).
-   - The footnote correctly notes that location cadence, not query runtime, is the dominant real-world bound (`paper/techreport/main.tex:455`).
+   - The paper derives theoretical maxima up to `1449.3 km/h` and `808.8 km/h` for S3 (`youspeed.de-paper/techreport/main.tex:463-468`).
+   - The footnote correctly notes that location cadence, not query runtime, is the dominant real-world bound (`youspeed.de-paper/techreport/main.tex:455`).
    - The table should be reframed as a query-throughput microbenchmark, not as an operational vehicle-speed envelope.
 
 ### 3. Local contradictions between vision, paper, and code
 
 1. The paper understates the current matcher sophistication.
-   - The related-work section says the implementation uses "lightweight continuity heuristics" rather than a multi-step probabilistic model (`paper/techreport/main.tex:60`).
+   - The related-work section says the implementation uses "lightweight continuity heuristics" rather than a multi-step probabilistic model (`youspeed.de-paper/techreport/main.tex:60`).
    - The actual runtime already contains a beam-limited hypothesis tracker with transition penalties and decayed history (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:344-419`, `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:860-1040`).
    - The accurate description is not "full HMM," but also not just static heuristics.
 
 2. The current service-road policy conflicts with the vision text.
-   - The vision says generic service-road contexts should receive reduced confidence and explicit caution (`paper/share/VISION.md:73-79`).
+   - The vision says generic service-road contexts should receive reduced confidence and explicit caution (`youspeed.de-paper/share/VISION.md:73-79`).
    - The current runtime hard-codes `service` into the in-city class set and assigns a `50 km/h` highway-class fallback (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:123-129`, `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:609-618`).
    - That is an overconfident fallback in exactly the area where the vision argues for caution.
 
 3. The Germany motorway fallback is legally inconsistent.
-   - The methodology correctly states that Autobahn for passenger cars has a recommended `130 km/h` speed, not a universal mandatory maximum (`paper/techreport/main.tex:243-247`).
+   - The methodology correctly states that Autobahn for passenger cars has a recommended `130 km/h` speed, not a universal mandatory maximum (`youspeed.de-paper/techreport/main.tex:243-247`).
    - The current lookup code derives `130` from `motorway` or inherited `motorway` tags (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:598-612`).
    - If `insideCity` is known, the runtime then overrides any highway-class fallback to `100`, including motorway (`iphone/SpeedConsumerApp/V3SpeedLimitService.swift:444-455`).
    - So the current logic can yield either an implied legal `130` or an implied legal `100`, both of which are inconsistent with German law for unsigned Autobahn segments.
@@ -214,7 +214,7 @@ The paper is not yet strong enough to support its broader scientific claims abou
    - PMTiles packages tiled data into a single read-only archive designed for low-request remote access.
 
 2. This matters for the S2/S3 comparison.
-   - The current S2 design is many-file and content-addressed (`paper/techreport/main.tex:386-389`, `paper/techreport/main.tex:424`).
+   - The current S2 design is many-file and content-addressed (`youspeed.de-paper/techreport/main.tex:386-389`, `youspeed.de-paper/techreport/main.tex:424`).
    - Modern deployment formats suggest that "tiled" and "many small files" are no longer synonymous.
    - That does not weaken S3. If anything, it strengthens the paper's conclusion that single-file delivery deserves serious weight. It also suggests that a future S2 variant should be benchmarked as a single-archive tiled format, not only as a high-file-count directory layout.
 

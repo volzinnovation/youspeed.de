@@ -8,7 +8,7 @@ This board turns the aggressive Germany launch plan into active parallel workstr
 
 | Track | Window | Status | Current thread | Primary outputs |
 |---|---|---|---|---|
-| [Track A](./TRACK_A_PAPER.md) | `2026-03-12` to `2026-04-05` | active | refresh evidence and decide submit or defer | `paper/itsc2026/`, `paper/personalized_matching_arxiv/` |
+| [Track A](./TRACK_A_PAPER.md) | `2026-03-12` to `2026-04-05` | active | refresh evidence and decide submit or defer | `youspeed.de-paper/itsc2026/`, `youspeed.de-paper/personalized_matching_arxiv/` |
 | [Track B](./TRACK_B_SEED_AND_MATCHER.md) | `2026-03-12` to `2026-03-23` | active | freeze Karlsruhe seed baseline and close launch-critical matcher defects | `iphone/SpeedConsumerApp/`, bundle artifacts |
 | [Track C](./TRACK_C_GERMANY_PIPELINE.md) | `2026-03-12` to `2026-04-20` | active | build and validate Germany shard full-bundle release set | `scripts/map/`, release manifests |
 | [Track D](./TRACK_D_IPHONE_LAUNCH.md) | `2026-03-20` to `2026-05-01` | active | switch iPhone launch behavior to Germany-first discovery | `iphone/SpeedConsumerApp/` |

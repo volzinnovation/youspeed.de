@@ -19,7 +19,7 @@ Execution threads:
 
 This plan is grounded in:
 - `RESEARCH_IMPLEMENTATION_PLAN.md`
-- `paper/share/VISION.md`
+- `youspeed.de-paper/share/VISION.md`
 - `docs/KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`
 - `iphone/SpeedConsumerApp/README.md`
 - `iphone/SpeedConsumerApp/BundleTargets.top10.json`

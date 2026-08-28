@@ -56,32 +56,6 @@ mapdata/reports/*.json
 !mapdata/reports/deltas/
 !mapdata/reports/deltas/daily-diff-analysis.csv
 
-# Paper build artifacts
-paper/itsc2026/*.aux
-paper/itsc2026/*.bbl
-paper/itsc2026/*.blg
-paper/itsc2026/*.fdb_latexmk
-paper/itsc2026/*.fls
-paper/itsc2026/*.log
-paper/itsc2026/*.out
-paper/itsc2026/*.synctex.gz
-paper/itsc2026/reviews/
-paper/icitt2026/*.bbl
-paper/icitt2026/*.blg
-paper/icitt2026/*.out
-paper/icitt2026/template/
-paper/osmscience2026/reviews/
-paper/techreport/*.aux
-paper/techreport/*.bbl
-paper/techreport/*.blg
-paper/techreport/*.fdb_latexmk
-paper/techreport/*.fls
-paper/techreport/*.log
-paper/techreport/*.out
-paper/techreport/*.synctex.gz
-paper/techreport/rendered/
-paper/techreport/data/.device_benchmark_report*.swp
-paper/techreport/tmp/
 SIGSPATIAL2026/*.aux
 SIGSPATIAL2026/*.bbl
 SIGSPATIAL2026/*.blg
@@ -109,6 +83,7 @@ iphone/SpeedDBBench.xcodeproj/xcuserdata/
 DerivedData/
 
 # Android build outputs
+android/.idea/
 android/.gradle/
 android/local.properties
 android/**/build/

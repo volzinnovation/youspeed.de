@@ -20,7 +20,7 @@ The first production slice is Germany-first and speed-sign focused:
 
 ## Existing Fit
 
-Current architecture already reserves a computer-vision module feeding the observation-normalization path in `paper/share/TECHNICAL_ARCHITECTURE.md`. The local-corrections policy in `paper/share/LOCAL_CORRECTIONS_STRATEGY.md` requires candidate observations, mandatory review, and editor-mediated OSM export.
+Current architecture already reserves a computer-vision module feeding the observation-normalization path in `youspeed.de-paper/share/TECHNICAL_ARCHITECTURE.md`. The local-corrections policy in `youspeed.de-paper/share/LOCAL_CORRECTIONS_STRATEGY.md` requires candidate observations, mandatory review, and editor-mediated OSM export.
 
 Current implementation state:
 
