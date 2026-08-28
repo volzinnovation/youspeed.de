@@ -13,6 +13,21 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 - [Google Play](https://play.google.com/store/apps/details?id=de.youspeed.android)
 - [iPhone test on TestFlight](https://testflight.apple.com/join/k3a1pgce) (Apple App Store release pending review)
 
+Scan to download the app or open its source code:
+
+<table>
+  <tr>
+    <th>Google Play</th>
+    <th>TestFlight</th>
+    <th>Source on GitHub</th>
+  </tr>
+  <tr>
+    <td align="center"><a href="https://play.google.com/store/apps/details?id=de.youspeed.android"><img src="docs/qr/google-play.png" alt="QR code for YouSpeed on Google Play"></a></td>
+    <td align="center"><a href="https://testflight.apple.com/join/k3a1pgce"><img src="docs/qr/testflight.png" alt="QR code for the YouSpeed TestFlight"></a></td>
+    <td align="center"><a href="https://github.com/volzinnovation/youspeed.de"><img src="docs/qr/github.png" alt="QR code for the YouSpeed source repository on GitHub"></a></td>
+  </tr>
+</table>
+
 Contact: [Raphael Volz on GitHub](https://github.com/volzinnovation).
 
 The mobile apps perform matching and warning logic on the device. Map bundles are downloaded from public GitHub releases and checked against their published metadata. No account or client-side GitHub credential is required.
