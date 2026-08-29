@@ -52,7 +52,8 @@ The mobile apps perform matching and warning logic on the device. Map bundles ar
 - [`sites/`](sites/): generated static website published by GitHub Pages
 - [`docs/`](docs/): technical and release documentation
 
-Paper sources, submission material, and publication artifacts are maintained in the separate [youspeed.de-paper repository](https://github.com/volzinnovation/youspeed.de-paper).
+## Scientific paper 
+Read the [youspeed.de-paper](https://zenodo.org/records/21626565)) for a high-level technical description.
 
 ## Build and test
 
