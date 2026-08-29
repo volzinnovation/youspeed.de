@@ -53,7 +53,7 @@ The mobile apps perform matching and warning logic on the device. Map bundles ar
 - [`docs/`](docs/): technical and release documentation
 
 ## Scientific paper 
-Read the [youspeed.de-paper](https://zenodo.org/records/21626565)) for a high-level technical description.
+Read the [youspeed.de paper](https://zenodo.org/records/21626565) for a high-level technical description.
 
 ## Build and test
 
