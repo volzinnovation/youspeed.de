@@ -2,6 +2,8 @@
 
 This directory contains the public technical documentation for YouSpeed.
 
+- iPhone user guide for regional maps, voice corrections, OSC export, and reviewed OSM uploads:
+  [English](USER_GUIDE.md) · [Deutsch](USER_GUIDE_DE.md) · [Français](USER_GUIDE_FR.md) · [Nederlands](USER_GUIDE_NL.md)
 - [`TILE_SEGMENT_ASSET_SPEC.md`](TILE_SEGMENT_ASSET_SPEC.md): segmented map-asset contract
 - [`TILE_ASSET_MIGRATION_PLAN.md`](TILE_ASSET_MIGRATION_PLAN.md): migration notes for the tile format
 - [`KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`](KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md): incremental seed-bundle design

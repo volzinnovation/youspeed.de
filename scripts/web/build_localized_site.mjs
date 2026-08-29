@@ -129,6 +129,7 @@ const locales = {
       primary: "Kontakt aufnehmen",
       secondary: "Warnstufen ansehen",
     },
+    guide: "iPhone-Benutzerhandbuch",
     footer: {
       imprint: "Impressum",
       company: "Moonshots Studios GmbH",
@@ -259,6 +260,7 @@ const locales = {
       primary: "Contact us",
       secondary: "View warnings",
     },
+    guide: "iPhone user guide",
     footer: {
       imprint: "Legal notice",
       company: "Moonshots Studios GmbH",
@@ -389,6 +391,7 @@ const locales = {
       primary: "Nous contacter",
       secondary: "Voir les alertes",
     },
+    guide: "Guide utilisateur iPhone",
     footer: {
       imprint: "Mentions legales",
       company: "Moonshots Studios GmbH",
@@ -519,6 +522,7 @@ const locales = {
       primary: "Contact opnemen",
       secondary: "Waarschuwingen bekijken",
     },
+    guide: "iPhone-gebruikershandleiding",
     footer: {
       imprint: "Juridische informatie",
       company: "Moonshots Studios GmbH",
@@ -537,6 +541,12 @@ const mailto =
 const googlePlayUrl =
   "https://play.google.com/store/apps/details?id=de.youspeed.android";
 const testFlightUrl = "https://testflight.apple.com/join/k3a1pgce";
+const guideFiles = {
+  de: "USER_GUIDE_DE.md",
+  en: "USER_GUIDE.md",
+  fr: "USER_GUIDE_FR.md",
+  nl: "USER_GUIDE_NL.md",
+};
 
 function escapeHtml(value) {
   return String(value)
@@ -565,6 +575,10 @@ function localizedHref(fromLocale, toLocale) {
 
 function rootRelative(locale, assetPath) {
   return `${prefix(locale)}${assetPath}`;
+}
+
+function guideUrl(locale) {
+  return `https://github.com/volzinnovation/youspeed.de/blob/main/docs/${guideFiles[locale]}`;
 }
 
 function navLinks(content) {
@@ -821,6 +835,7 @@ ${renderLanguageSwitch(locale)}
             <p class="eyebrow">${escapeHtml(content.demo.eyebrow)}</p>
             <h2>${escapeHtml(content.demo.title)}</h2>
             <p>${escapeHtml(content.demo.body)}</p>
+            <a class="demo-guide-link" href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)} <span aria-hidden="true">→</span></a>
           </div>
           <figure class="demo-player reveal reveal-d2">
             <video controls playsinline preload="metadata" aria-label="${escapeHtml(content.demo.ariaLabel)}" width="590" height="1280">
@@ -874,6 +889,7 @@ ${renderLanguageSwitch(locale)}
           <p>${escapeHtml(content.footer.development)}</p>
           <p><a href="mailto:studios@moonshots.gmbh">studios@moonshots.gmbh</a></p>
           <p><a href="${assetPrefix}datenschutz.html">${escapeHtml(content.footer.privacy)}</a></p>
+          <p><a href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)}</a></p>
           <p><a href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">${escapeHtml(content.footer.github)}</a></p>
         </div>
       </div>
