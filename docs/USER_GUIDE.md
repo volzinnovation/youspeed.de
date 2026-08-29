@@ -1,8 +1,8 @@
 # YouSpeed iPhone user guide
 
-This guide shows how to download offline map data, record a speed-limit correction, export it as an OpenStreetMap change file, and review it before uploading to OpenStreetMap (OSM).
+This user guide shows how to download offline map data, record a speed-limit correction, export it as an OpenStreetMap change file, and review it before uploading to OpenStreetMap (OSM).
 
-The screenshots were made with YouSpeed in an iPhone 17 Simulator using the German interface. Microphone and speech-recognition permissions are assumed to be granted. Because no live speech was available, the correction example uses an assumed recognition result of **30**. The Durlacher Allee entry is demonstration data, not evidence that the real road should be changed.
+The app uses geographic location to work. Additionally Microphone and speech-recognition permissions can be granted to capture the speed limit
 
 > **Safety:** Set up the app before travelling. Only record a correction while stopped safely or as a passenger. YouSpeed is advisory; signs and traffic rules always take precedence.
 
