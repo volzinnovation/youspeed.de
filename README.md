@@ -7,6 +7,10 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 
 <img src="docs/IMG_4224.PNG" alt="YouSpeed showing a detected 50 km/h speed limit" width="320">
 
+## Demo
+
+<img src="docs/2026-youspeed.de-demo.webp" alt="Animated demo of YouSpeed showing speed-limit detection and warning levels" width="320">
+
 
 ## Get YouSpeed
 

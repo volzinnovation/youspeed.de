@@ -79,6 +79,15 @@ const locales = {
         ["autobahn-unlimited-over-130.png", "Autobahn frei", "Ohne Tempolimit über 130 km/h"],
       ],
     },
+    demo: {
+      eyebrow: "App-Demo",
+      title: "YouSpeed in Aktion",
+      body:
+        "Die kurze Demo zeigt die Fahrtansicht, erkannte Tempolimits und die Warnstufen direkt in der App.",
+      ariaLabel: "Video-Demo der YouSpeed App",
+      caption: "YouSpeed App-Demo",
+      fallback: "Demo-Video öffnen",
+    },
     features: {
       eyebrow: "Was die App kann",
       title: "Gebaut für Orientierung, nicht Ablenkung",
@@ -199,6 +208,15 @@ const locales = {
         ["warn-level-3-driving-ban.png", "Level 3", "Driving ban may apply"],
         ["autobahn-unlimited-over-130.png", "Autobahn clear", "No speed limit above 130 km/h"],
       ],
+    },
+    demo: {
+      eyebrow: "App demo",
+      title: "See YouSpeed in action",
+      body:
+        "This short demo shows the driving view, detected speed limits, and warning levels directly in the app.",
+      ariaLabel: "Video demo of the YouSpeed app",
+      caption: "YouSpeed app demo",
+      fallback: "Open the demo video",
     },
     features: {
       eyebrow: "What the app does",
@@ -321,6 +339,15 @@ const locales = {
         ["autobahn-unlimited-over-130.png", "Autobahn libre", "Sans limitation au-dessus de 130 km/h"],
       ],
     },
+    demo: {
+      eyebrow: "Démo de l’app",
+      title: "YouSpeed en action",
+      body:
+        "Cette courte démo présente la vue de conduite, les limitations détectées et les niveaux d’alerte directement dans l’app.",
+      ariaLabel: "Démo vidéo de l’app YouSpeed",
+      caption: "Démo de l’app YouSpeed",
+      fallback: "Ouvrir la vidéo de démonstration",
+    },
     features: {
       eyebrow: "Ce que fait l'app",
       title: "Conçue pour orienter, pas distraire",
@@ -441,6 +468,15 @@ const locales = {
         ["warn-level-3-driving-ban.png", "Niveau 3", "Rijverbod mogelijk"],
         ["autobahn-unlimited-over-130.png", "Autobahn vrij", "Geen limiet boven 130 km/u"],
       ],
+    },
+    demo: {
+      eyebrow: "App-demo",
+      title: "Bekijk YouSpeed in actie",
+      body:
+        "Deze korte demo toont de rijweergave, herkende snelheidslimieten en waarschuwingsniveaus rechtstreeks in de app.",
+      ariaLabel: "Videodemo van de YouSpeed-app",
+      caption: "YouSpeed-app-demo",
+      fallback: "De demovideo openen",
     },
     features: {
       eyebrow: "Wat de app doet",
@@ -776,6 +812,23 @@ ${renderLanguageSwitch(locale)}
             <p>${escapeHtml(content.warnings.body)}</p>
           </div>
           <div class="shots-grid">${renderShotItems(locale, content.warnings.shots)}</div>
+        </div>
+      </section>
+
+      <section class="section demo-showcase" id="demo">
+        <div class="container demo-layout">
+          <div class="demo-copy reveal">
+            <p class="eyebrow">${escapeHtml(content.demo.eyebrow)}</p>
+            <h2>${escapeHtml(content.demo.title)}</h2>
+            <p>${escapeHtml(content.demo.body)}</p>
+          </div>
+          <figure class="demo-player reveal reveal-d2">
+            <video controls playsinline preload="metadata" aria-label="${escapeHtml(content.demo.ariaLabel)}" width="590" height="1280">
+              <source src="${rootRelative(locale, "assets/video/youspeed-demo.mp4")}" type="video/mp4" />
+              <a href="${rootRelative(locale, "assets/video/youspeed-demo.mp4")}">${escapeHtml(content.demo.fallback)}</a>
+            </video>
+            <figcaption>${escapeHtml(content.demo.caption)}</figcaption>
+          </figure>
         </div>
       </section>
 

@@ -657,6 +657,49 @@ ul {
   text-underline-offset: 3px;
 }
 
+.demo-showcase {
+  overflow: hidden;
+  background: radial-gradient(circle at 78% 48%, rgba(230, 60, 47, 0.16), transparent 34%);
+}
+
+.demo-copy h2 {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  line-height: 0.98;
+}
+
+.demo-copy > p:not(.eyebrow) {
+  max-width: 600px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.demo-player {
+  width: min(100%, 360px);
+  margin: 0;
+  justify-self: center;
+}
+
+.demo-player video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 590 / 1280;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  background: #020303;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.demo-player figcaption {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-align: center;
+}
+
 .cta-band {
   display: grid;
   gap: 22px;
