@@ -129,7 +129,7 @@ const locales = {
       primary: "Kontakt aufnehmen",
       secondary: "Warnstufen ansehen",
     },
-    guide: "iPhone-Benutzerhandbuch",
+    guide: "Benutzerhandbuch",
     footer: {
       imprint: "Impressum",
       company: "Moonshots Studios GmbH",
@@ -260,7 +260,7 @@ const locales = {
       primary: "Contact us",
       secondary: "View warnings",
     },
-    guide: "iPhone user guide",
+    guide: "User guide",
     footer: {
       imprint: "Legal notice",
       company: "Moonshots Studios GmbH",
@@ -391,7 +391,7 @@ const locales = {
       primary: "Nous contacter",
       secondary: "Voir les alertes",
     },
-    guide: "Guide utilisateur iPhone",
+    guide: "Guide utilisateur",
     footer: {
       imprint: "Mentions legales",
       company: "Moonshots Studios GmbH",
@@ -522,7 +522,7 @@ const locales = {
       primary: "Contact opnemen",
       secondary: "Waarschuwingen bekijken",
     },
-    guide: "iPhone-gebruikershandleiding",
+    guide: "Gebruikershandleiding",
     footer: {
       imprint: "Juridische informatie",
       company: "Moonshots Studios GmbH",
@@ -835,7 +835,6 @@ ${renderLanguageSwitch(locale)}
             <p class="eyebrow">${escapeHtml(content.demo.eyebrow)}</p>
             <h2>${escapeHtml(content.demo.title)}</h2>
             <p>${escapeHtml(content.demo.body)}</p>
-            <a class="demo-guide-link" href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)} <span aria-hidden="true">→</span></a>
           </div>
           <figure class="demo-player reveal reveal-d2">
             <video controls playsinline preload="metadata" aria-label="${escapeHtml(content.demo.ariaLabel)}" width="590" height="1280">
@@ -871,6 +870,7 @@ ${renderLanguageSwitch(locale)}
           </div>
           <div class="cta-actions">
             <a class="btn btn-primary" href="${mailto}">${escapeHtml(content.cta.primary)}</a>
+            <a class="btn btn-secondary" href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)}</a>
             <a class="btn btn-secondary" href="#warnstufen">${escapeHtml(content.cta.secondary)}</a>
           </div>
         </div>

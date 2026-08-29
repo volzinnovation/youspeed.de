@@ -676,23 +676,6 @@ ul {
   font-size: 1.05rem;
 }
 
-.demo-guide-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 24px;
-  color: #fff2bf;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 180ms ease, gap 180ms ease;
-}
-
-.demo-guide-link:hover {
-  gap: 12px;
-  color: #ffffff;
-}
-
 .demo-player {
   width: min(100%, 360px);
   margin: 0;
