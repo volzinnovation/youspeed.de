@@ -2,9 +2,9 @@
 
 Dieses Handbuch zeigt, wie Offline-Kartendaten heruntergeladen, Tempolimit-Korrekturen erfasst, als OpenStreetMap-Änderungsdatei exportiert und vor dem Hochladen zu OpenStreetMap (OSM) geprüft werden.
 
-Die Screenshots wurden mit YouSpeed im iPhone-17-Simulator und der deutschen Benutzeroberfläche erstellt. Die Berechtigungen für Mikrofon und Spracherkennung gelten als erteilt. Da keine Live-Spracheingabe verfügbar war, verwendet das Beispiel das angenommene Erkennungsergebnis **30**. Der Eintrag zur Durlacher Allee ist eine Demonstration und kein Beleg dafür, dass die reale Straße geändert werden sollte.
+Die Berechtigungen für Mikrofon und Spracherkennung sind notwendig, um Korrekturen durch Sprache zu erfassen, ebenso generell der Zugriff auf den detaillierten Standort.
 
-> **Sicherheit:** Richte die App vor der Fahrt ein. Erfasse eine Korrektur nur im sicher abgestellten Fahrzeug oder als Beifahrer. YouSpeed ist ein Assistenzsystem; Verkehrszeichen und Verkehrsregeln haben immer Vorrang.
+> **Sicherheit:** Richte die App vor der Fahrt ein. Erfasse eine Korrektur nur im sicher abgestellten Fahrzeug oder als Beifahrer. YouSpeed ist lediglich ein Assistenzsystem; Verkehrszeichen und Verkehrsregeln haben immer Vorrang.
 
 ## 1. Fahrtansicht
 
