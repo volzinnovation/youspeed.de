@@ -155,21 +155,18 @@ The max-speed provenance tables from the paper shown below are a snapshot from 2
 
 ## Citation
 
-If you use YouSpeed in scientific work, please cite the [Zenodo record](https://zenodo.org/records/21626565).
-
-APA:
-
-> Volz, R. (2026, July 27). *youspeed.de - A system for Intelligent Speed Assistance (ISA) based on OpenStreetMap data.* [https://doi.org/10.5281/zenodo.21626565](https://doi.org/10.5281/zenodo.21626565)
-
 BibTeX:
 
 ```bibtex
-@paper{volz_2026_21626565,
+@Conference{volz_2026_21626565,
   author    = {Raphael Volz},
   title     = {youspeed.de - A system for Intelligent Speed Assistance (ISA) based on OpenStreetMap data},
-  month     = jul,
+  month     = aug,
   year      = {2026},
+  booktitle = {Proceedings of OSM Science 2026},
+  pages = {26-29},
   publisher = {Zenodo},
+  organization = "OpenStreetMap",
   doi       = {10.5281/zenodo.21626565},
   url       = {https://doi.org/10.5281/zenodo.21626565}
 }
