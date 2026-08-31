@@ -1725,7 +1725,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func startDriving() {
-        if speedLimitService == nil {
+        if speedLimitService == nil && startupDataState != .ready {
             ensureSeedBootstrapIfNeeded()
         }
         isDriving = true

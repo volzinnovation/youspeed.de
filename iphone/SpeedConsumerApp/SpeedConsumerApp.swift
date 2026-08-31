@@ -22,7 +22,7 @@ struct SpeedConsumerApp: App {
                         dismissedWelcomeThisSession = true
                         shouldOpenSettingsOnMainAppear = openSettings
                     }
-                } else if viewModel.isDatabaseReadyForQueries {
+                } else if viewModel.startupDataState == .ready {
                     MainView(
                         viewModel: viewModel,
                         openSettingsOnAppear: shouldOpenSettingsOnMainAppear,
