@@ -29,6 +29,7 @@ struct MainView: View {
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
     @State private var showingLocalRecordings = false
+    @State private var showingPanoramaxGallery = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -138,6 +139,11 @@ struct MainView: View {
         .sheet(isPresented: $showingLocalRecordings) {
             NavigationStack {
                 LocalRecordingsView(viewModel: viewModel)
+            }
+        }
+        .sheet(isPresented: $showingPanoramaxGallery) {
+            NavigationStack {
+                PanoramaxGalleryView(viewModel: viewModel)
             }
         }
         .onAppear {
@@ -284,6 +290,20 @@ struct MainView: View {
 
             .background(Color.red, in: viewModel.isPanoramaxRecordingActive ? AnyShape(RoundedRectangle(cornerRadius: 9, style: .continuous)) : AnyShape(Circle()))
             .accessibilityLabel(viewModel.isPanoramaxRecordingActive ? "Aufnahme stoppen" : "Aufnahme starten")
+
+            Spacer()
+
+            Button {
+                showingPanoramaxGallery = true
+            } label: {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .background(actionButtonBackgroundColor, in: Circle())
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+            .accessibilityLabel("Panoramax-Galerie öffnen")
 
             Spacer()
 
