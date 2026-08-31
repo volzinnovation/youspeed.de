@@ -731,7 +731,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return []
         }
         var sections: [BundleDownloadCountrySection] = []
-        let locale = Locale(identifier: "de_DE")
+        let locale = Locale.current
         for country in config.countries {
             let countryCode = country.countryCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             let countryName = localizedCountryName(for: country, locale: locale)
@@ -830,6 +830,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let normalizedRegionID = endpoint.regionID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if normalizedCountryID == normalizedRegionID {
             return countryName
+        }
+        let localizationKey = "map.region.\(normalizedRegionID)"
+        let localizedRegion = NSLocalizedString(localizationKey, comment: "")
+        if localizedRegion != localizationKey {
+            return localizedRegion
         }
         if let configured = endpoint.regionName?.trimmingCharacters(in: .whitespacesAndNewlines),
            !configured.isEmpty {
@@ -1286,11 +1291,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case .idle:
             return nil
         case .speakingPrompt, .listening:
-            return "Jetzt"
+            return NSLocalizedString("speed_capture.prompt.primary", comment: "")
         case .evaluating:
-            return "Pruefe"
+            return NSLocalizedString("speed_capture.evaluating.primary", comment: "")
         case .saving:
-            return "Speichere"
+            return NSLocalizedString("speed_capture.saving.primary", comment: "")
         }
     }
 
@@ -1299,11 +1304,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         case .idle:
             return nil
         case .speakingPrompt, .listening:
-            return "sprechen"
+            return NSLocalizedString("speed_capture.prompt.secondary", comment: "")
         case .evaluating:
-            return "Eingabe"
+            return NSLocalizedString("speed_capture.evaluating.secondary", comment: "")
         case .saving:
-            return "Wert"
+            return NSLocalizedString("speed_capture.saving.secondary", comment: "")
         }
     }
 
@@ -1602,7 +1607,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertsEnabled = false
         hideWelcomeScreen = true
         speedLimitService = nil
-        bundleDownloadSections = []
+        bundleDownloadSections = buildBundleDownloadSections()
         downloadedBundleCountByRegion = [:]
         downloadedBundleLatestVersionByRegion = [:]
         expectedBundleBytesByRegion = [:]
@@ -2186,6 +2191,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         localObservationStatus = "Jetzt sprechen."
         speedCaptureLatestTranscript = ""
         speedCaptureDidResolve = false
+#if DEBUG
+        if ProcessInfo.processInfo.environment["YOUSPEED_GUIDE_ASSUME_SPEECH"] == "1" {
+            speedCaptureMode = .listening
+            return
+        }
+#endif
         Task { @MainActor [weak self] in
             guard let self else {
                 return

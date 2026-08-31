@@ -866,7 +866,7 @@ private struct LocalRecordingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Zur Erfassung von Korrekturen Schild doppelklicken anschliessend die korrekte Geschwindigkeit als Zahl einsprechen")
+            Text(NSLocalizedString("recordings.instructions", comment: ""))
                 .font(.footnote)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -876,7 +876,7 @@ private struct LocalRecordingsView: View {
 
             List {
                 if viewModel.localObservations.isEmpty {
-                    Text("Keine lokalen Erfassungen vorhanden.")
+                    Text(NSLocalizedString("recordings.empty", comment: ""))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(viewModel.localObservations) { observation in
@@ -887,12 +887,21 @@ private struct LocalRecordingsView: View {
                                     .foregroundStyle(.secondary)
                                 Text(streetName(for: observation))
                                     .font(.subheadline.weight(.semibold))
-                                Text("way id \(observation.roadCandidateIDs.first ?? "n/a")")
+                                Text(String(
+                                    format: NSLocalizedString("recordings.way_id", comment: ""),
+                                    observation.roadCandidateIDs.first ?? "n/a"
+                                ))
                                     .font(.caption.monospacedDigit())
                                     .foregroundStyle(.secondary)
                                 HStack(spacing: 10) {
-                                    Text("alt \(observation.oldSpeedKmh.map(String.init) ?? "n/a")")
-                                    Text("neu \(observation.newSpeedKmh.map(String.init) ?? observation.value ?? "n/a")")
+                                    Text(String(
+                                        format: NSLocalizedString("recordings.old_value", comment: ""),
+                                        observation.oldSpeedKmh.map(String.init) ?? "n/a"
+                                    ))
+                                    Text(String(
+                                        format: NSLocalizedString("recordings.new_value", comment: ""),
+                                        observation.newSpeedKmh.map(String.init) ?? observation.value ?? "n/a"
+                                    ))
                                 }
                                 .font(.subheadline.monospacedDigit())
                             }
@@ -905,7 +914,7 @@ private struct LocalRecordingsView: View {
                                     .frame(width: 32, height: 32)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Eintrag löschen")
+                            .accessibilityLabel(NSLocalizedString("recordings.delete_entry", comment: ""))
                         }
                         .padding(.vertical, 2)
                     }
@@ -922,7 +931,7 @@ private struct LocalRecordingsView: View {
                 Button {
                     viewModel.exportAllLocalObservations()
                 } label: {
-                    Text("changes.osc exportieren")
+                    Text(NSLocalizedString("recordings.export_osc", comment: ""))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -930,7 +939,7 @@ private struct LocalRecordingsView: View {
                 Button(role: .destructive) {
                     viewModel.deleteAllLocalObservations()
                 } label: {
-                    Label("Alle lokalen Erfassungen löschen", systemImage: "trash")
+                    Label(NSLocalizedString("recordings.delete_all", comment: ""), systemImage: "trash")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -939,11 +948,11 @@ private struct LocalRecordingsView: View {
             .padding(.top, 8)
             .padding(.bottom, 12)
         }
-        .navigationTitle("Lokale Erfassungen")
+        .navigationTitle(NSLocalizedString("recordings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Fertig") {
+                Button(NSLocalizedString("common.done", comment: "")) {
                     dismiss()
                 }
             }
@@ -1006,11 +1015,11 @@ private struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Akustische Hinweise") {
-                Toggle("Sprachausgabe", isOn: $viewModel.audioAlertsEnabled)
+            Section(NSLocalizedString("settings.audio.section", comment: "")) {
+                Toggle(NSLocalizedString("settings.audio.voice_output", comment: ""), isOn: $viewModel.audioAlertsEnabled)
 
                 HStack {
-                    Text("Warnung ab")
+                    Text(NSLocalizedString("settings.audio.warning_from", comment: ""))
                     Spacer()
                     TextField("km/h", value: $viewModel.audioAlertThresholdKmh, format: .number)
                         .keyboardType(.numberPad)
@@ -1022,25 +1031,21 @@ private struct SettingsView: View {
                 .disabled(!viewModel.audioAlertsEnabled)
 
                 HStack {
-                    Text("Warnschwelle anpassen")
+                    Text(NSLocalizedString("settings.audio.adjust_threshold", comment: ""))
                     Spacer()
                     Stepper("", value: $viewModel.audioAlertThresholdKmh, in: 0...80, step: 1)
                         .labelsHidden()
                 }
                 .disabled(!viewModel.audioAlertsEnabled)
 
-                Text(!viewModel.audioAlertsEnabled
-                     ? "Sprachausgabe ist deaktiviert."
-                     : viewModel.audioAlertThresholdKmh == 0
-                     ? "Akustische Hinweise sind deaktiviert."
-                     : "Sprachwarnung startet bei \(viewModel.audioAlertThresholdKmh) km/h ueber dem erkannten Tempolimit.")
+                Text(audioHintText)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Kartendaten-Download") {
-                LabeledContent("Status", value: syncStatusLabel)
-                LabeledContent("Bundle", value: viewModel.activeBundleVersion)
+            Section(NSLocalizedString("settings.maps.section", comment: "")) {
+                LabeledContent(NSLocalizedString("settings.maps.status", comment: ""), value: syncStatusLabel)
+                LabeledContent(NSLocalizedString("settings.maps.bundle", comment: ""), value: viewModel.activeBundleVersion)
 
                 if let syncMessage = syncMessageLine {
                     Text(syncMessage.text)
@@ -1048,12 +1053,12 @@ private struct SettingsView: View {
                         .foregroundStyle(syncMessage.color)
                 }
 
-                Text("Top-10 Laender (A-Z). Bundles koennen einzeln geladen oder geloescht werden.")
+                Text(NSLocalizedString("settings.maps.description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
                 if viewModel.bundleDownloadSections.isEmpty {
-                    Text("Keine Downloadliste verfuegbar.")
+                    Text(NSLocalizedString("settings.maps.no_downloads", comment: ""))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -1078,7 +1083,7 @@ private struct SettingsView: View {
                 Button(role: .destructive) {
                     showingDeleteDownloadedBundlesConfirm = true
                 } label: {
-                    Text("Heruntergeladene Datenbanken loeschen (Seed behalten)")
+                    Text(NSLocalizedString("settings.maps.delete_downloads", comment: ""))
                 }
                 .disabled(viewModel.isSyncingNow)
 
@@ -1160,7 +1165,7 @@ private struct SettingsView: View {
                 }
             }
         }
-        .navigationTitle("Einstellungen")
+        .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .alert("Heruntergeladene Datenbanken loeschen?", isPresented: $showingDeleteDownloadedBundlesConfirm) {
             Button("Abbrechen", role: .cancel) {}
@@ -1170,6 +1175,19 @@ private struct SettingsView: View {
         } message: {
             Text("Alle heruntergeladenen Bundle-Daten werden entfernt. Der Seed-Datensatz bleibt erhalten.")
         }
+    }
+
+    private var audioHintText: String {
+        if !viewModel.audioAlertsEnabled {
+            return NSLocalizedString("settings.audio.voice_disabled", comment: "")
+        }
+        if viewModel.audioAlertThresholdKmh == 0 {
+            return NSLocalizedString("settings.audio.alerts_disabled", comment: "")
+        }
+        return String(
+            format: NSLocalizedString("settings.audio.threshold_description", comment: ""),
+            viewModel.audioAlertThresholdKmh
+        )
     }
 
     private var syncStatusLabel: String {
