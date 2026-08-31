@@ -2,6 +2,29 @@
 
 The Android app uses the same bundled target configuration and v3 map-bundle contract as the iPhone app. It is part of the public YouSpeed release on 29 August 2026.
 
+## Release ABIs and version codes
+
+Release builds intentionally support only `armeabi-v7a`, `arm64-v8a`, `x86`,
+and `x86_64`, because those are the ABIs for which the Vosk dependency contains
+its native speech-recognition library. A normal release uses the source version
+code. Passing `-PyouspeedAbi=<abi>` creates one F-Droid-compatible APK and maps
+the source version code to `sourceVersionCode * 10 + ABI number`, in this order:
+
+1. `armeabi-v7a`
+2. `arm64-v8a`
+3. `x86`
+4. `x86_64`
+
+For a signed release, export the four `YOUSPEED_ANDROID_RELEASE_*` variables
+described by `app/build.gradle.kts`, then run:
+
+```shell
+./scripts/build-signed-abi-apks.sh
+```
+
+The script writes stable, versioned APK filenames to `android/dist/`. The
+keystore and its passwords must remain outside the source repository.
+
 ## Current scope
 
 - load bundled `BundleTargets.top10.json`
