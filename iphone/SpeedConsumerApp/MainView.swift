@@ -122,7 +122,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
-                SettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
             }
         }
         .sheet(isPresented: $showingLegalInfo) {
@@ -953,6 +953,29 @@ private struct LocalRecordingsView: View {
                 .padding(.top, 8)
                 .padding(.bottom, 6)
 
+            NavigationLink {
+                PanoramaxReviewView(viewModel: viewModel)
+            } label: {
+                HStack {
+                    Image(systemName: "camera.aperture")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Panoramax-Bilder")
+                            .font(.subheadline.weight(.semibold))
+                        Text("\(viewModel.panoramaxBatches.reduce(0) { $0 + $1.items.count }) lokale Bilder pruefen")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+
             List {
                 if viewModel.localObservations.isEmpty {
                     Text(NSLocalizedString("recordings.empty", comment: ""))
@@ -1078,6 +1101,150 @@ private struct LocalRecordingsView: View {
     }
 }
 
+private struct PanoramaxReviewView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var uploadConfirmationBatchID: String?
+
+    var body: some View {
+        List {
+            if viewModel.panoramaxBatches.isEmpty {
+                ContentUnavailableView(
+                    "Keine Panoramax-Bilder",
+                    systemImage: "camera.aperture",
+                    description: Text("Aktiviere den Drive Recorder waehrend einer Fahrt.")
+                )
+            } else {
+                ForEach(viewModel.panoramaxBatches, id: \.batchID) { batch in
+                    Section {
+                        ForEach(batch.items, id: \.itemID) { item in
+                            PanoramaxReviewItemRow(batch: batch, item: item, viewModel: viewModel)
+                        }
+                    } header: {
+                        HStack {
+                            Text(batch.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            Spacer()
+                            Text(batch.state.rawValue.replacingOccurrences(of: "_", with: " "))
+                        }
+                    } footer: {
+                        let included = batch.items.filter { $0.state != .excluded }.count
+                        if batch.state == .awaitingReview, included > 0 {
+                            Button("Batch fuer Upload freigeben") {
+                                viewModel.approvePanoramaxBatch(batchID: batch.batchID)
+                            }
+                        } else if (batch.state == .approved || batch.state == .partial), included > 0 {
+                            Button("Jetzt zu Panoramax hochladen") {
+                                uploadConfirmationBatchID = batch.batchID
+                            }
+                            if let status = viewModel.panoramaxUploadStatus(for: batch.batchID) {
+                                Text(status)
+                            } else {
+                                Text("Bereit fuer den ausdruecklichen Upload")
+                            }
+                        } else {
+                            Text("\(included) Bilder ausgewaehlt")
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Panoramax-Bilder")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { viewModel.refreshPanoramaxBatches() }
+        .alert("Bilder zu Panoramax hochladen?", isPresented: Binding(
+            get: { uploadConfirmationBatchID != nil },
+            set: { if !$0 { uploadConfirmationBatchID = nil } }
+        )) {
+            Button("Upload starten") {
+                if let batchID = uploadConfirmationBatchID {
+                    viewModel.uploadPanoramaxBatch(batchID: batchID)
+                }
+                uploadConfirmationBatchID = nil
+            }
+            Button("Abbrechen", role: .cancel) { uploadConfirmationBatchID = nil }
+        } message: {
+            Text("Die ausgewaehlten Originalbilder und ihre GPS-Metadaten werden an die konfigurierte Panoramax-Instanz uebertragen.")
+        }
+    }
+}
+
+private struct PanoramaxReviewItemRow: View {
+    let batch: PanoramaxBatchRecord
+    let item: PanoramaxItemRecord
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var showingOriginal = false
+
+    private var included: Bool { item.state != .excluded }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button { showingOriginal = true } label: {
+                thumbnail
+                    .frame(width: 112, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.metadata.capturedAt.formatted(date: .omitted, time: .standard))
+                    .font(.caption.weight(.semibold))
+                Text(String(format: "%.5f, %.5f", item.metadata.location.latitude, item.metadata.location.longitude))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                if let heading = item.metadata.location.headingDegrees {
+                    Text(String(format: "Blickrichtung %.0f°", heading))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Text(included ? "Eingeschlossen" : "Ausgeschlossen")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(included ? .green : .secondary)
+            }
+            Spacer(minLength: 0)
+            Button {
+                viewModel.setPanoramaxItemIncluded(batchID: batch.batchID, itemID: item.itemID, included: !included)
+            } label: {
+                Image(systemName: included ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(included ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+            Button(role: .destructive) {
+                viewModel.deletePanoramaxItem(batchID: batch.batchID, itemID: item.itemID)
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showingOriginal) {
+            NavigationStack {
+                if let url = viewModel.panoramaxOriginalURL(for: item),
+                   let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .padding()
+                        .navigationTitle("Panoramax-Bild")
+                        .navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView("Bild nicht verfuegbar", systemImage: "photo")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let url = viewModel.panoramaxThumbnailURL(for: item),
+           let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Color.secondary.opacity(0.2)
+                .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
+        }
+    }
+}
+
 private struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
 
@@ -1090,6 +1257,7 @@ private struct ShareSheet: UIViewControllerRepresentable {
 
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @ObservedObject var account: PanoramaxAccountModel
     @State private var showingDeleteDownloadedBundlesConfirm = false
 
     var body: some View {
@@ -1140,6 +1308,32 @@ private struct SettingsView: View {
                     Text("Neue Bilder werden nur bei ausreichender GPS-Genauigkeit und mindestens 2 × GPS-Genauigkeit Bewegung aufgenommen.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Panoramax-Konto") {
+                TextField("Instanz (https://...)", text: $account.instanceOrigin)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+
+                Text("Es gibt keinen YouSpeed-API-Key. Die Anmeldung ist pro Panoramax-Instanz und wird als geschuetztes JWT im iOS-Schluesselbund gespeichert.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent("Status", value: account.status)
+
+                if account.isConnected {
+                    Button("Konto trennen", role: .destructive) {
+                        account.disconnect()
+                    }
+                } else {
+                    Button("Instanz verbinden") {
+                        account.connect()
+                    }
+                    Button("Verbindung pruefen") {
+                        account.validateConnection()
+                    }
                 }
             }
 

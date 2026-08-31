@@ -1,6 +1,7 @@
 import AVFoundation
 import CoreLocation
 import Foundation
+import ImageIO
 import SwiftUI
 import UIKit
 
@@ -183,7 +184,8 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
             lastCaptureDetail = error == nil ? "Aufnahme verworfen" : "Aufnahme fehlgeschlagen"
             return
         }
-        guard let thumbnail = Self.makeThumbnail(from: data) else {
+        let panoramaxJPEG = Self.addLocationMetadata(to: data, sample: sample) ?? data
+        guard let thumbnail = Self.makeThumbnail(from: panoramaxJPEG) else {
             lastCaptureDetail = "Vorschaubild konnte nicht erstellt werden"
             return
         }
@@ -192,12 +194,12 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
             captureSessionID: batch.captureSessionID,
             capturedAt: sample.capturedAt,
             location: sample,
-            sha256: PanoramaxQueueStore.sha256(data),
-            byteSize: Int64(data.count),
+            sha256: PanoramaxQueueStore.sha256(panoramaxJPEG),
+            byteSize: Int64(panoramaxJPEG.count),
             software: "YouSpeed/1.0.1"
         )
         do {
-            _ = try queueStore.addJPEG(batchID: batch.batchID, jpeg: data, thumbnail: thumbnail, metadata: metadata)
+            _ = try queueStore.addJPEG(batchID: batch.batchID, jpeg: panoramaxJPEG, thumbnail: thumbnail, metadata: metadata)
             lastCaptureSample = sample
             capturedImageCount += 1
             lastCaptureAt = sample.capturedAt
@@ -213,6 +215,46 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
             return nil
         }
         return thumbnail.jpegData(compressionQuality: 0.72)
+    }
+
+    /// Panoramax extracts position and capture time from standard JPEG metadata.
+    /// Keep the original camera bytes when ImageIO cannot rewrite the image.
+    private static func addLocationMetadata(to data: Data, sample: PanoramaxLocationSample) -> Data? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let type = CGImageSourceGetType(source) else { return nil }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(output, type, 1, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any] else { return nil }
+        var merged = properties
+        var gps = (merged[kCGImagePropertyGPSDictionary as String] as? [String: Any]) ?? [:]
+        let latitude = abs(sample.latitude)
+        let longitude = abs(sample.longitude)
+        gps[kCGImagePropertyGPSLatitude as String] = latitude
+        gps[kCGImagePropertyGPSLatitudeRef as String] = sample.latitude >= 0 ? "N" : "S"
+        gps[kCGImagePropertyGPSLongitude as String] = longitude
+        gps[kCGImagePropertyGPSLongitudeRef as String] = sample.longitude >= 0 ? "E" : "W"
+        if let altitude = sample.altitudeMeters, altitude.isFinite {
+            gps[kCGImagePropertyGPSAltitude as String] = abs(altitude)
+            gps[kCGImagePropertyGPSAltitudeRef as String] = altitude >= 0 ? 0 : 1
+        }
+        let timeFormatter = DateFormatter()
+        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
+        timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        timeFormatter.dateFormat = "HH:mm:ss"
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy:MM:dd"
+        gps[kCGImagePropertyGPSTimeStamp as String] = timeFormatter.string(from: sample.capturedAt)
+        gps[kCGImagePropertyGPSDateStamp as String] = dateFormatter.string(from: sample.capturedAt)
+        if let heading = sample.headingDegrees, heading.isFinite, (0...360).contains(heading) {
+            gps[kCGImagePropertyGPSImgDirection as String] = heading
+            gps[kCGImagePropertyGPSImgDirectionRef as String] = "T"
+        }
+        merged[kCGImagePropertyGPSDictionary as String] = gps
+        CGImageDestinationAddImageFromSource(destination, source, 0, merged as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
     }
 
     private func notifyChange() {

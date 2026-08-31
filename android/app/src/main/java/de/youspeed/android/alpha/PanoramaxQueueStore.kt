@@ -133,6 +133,8 @@ class PanoramaxQueueStore(private val appRoot: File) {
         put("capture_session_id", batch.captureSessionId)
         put("created_at", batch.createdAt.toString())
         put("state", batch.state.name)
+        batch.remoteUploadSetId?.let { put("remote_upload_set_id", it) }
+        batch.instanceOrigin?.let { put("instance_origin", it) }
         put("items", buildJsonArray { batch.items.forEach { add(encode(it)) } })
     }
 
@@ -169,6 +171,8 @@ class PanoramaxQueueStore(private val appRoot: File) {
             createdAt = Instant.parse(root.requiredString("created_at")),
             state = PanoramaxBatchState.valueOf(root.requiredString("state")),
             items = items,
+            remoteUploadSetId = root["remote_upload_set_id"]?.jsonPrimitive?.content,
+            instanceOrigin = root["instance_origin"]?.jsonPrimitive?.content,
         )
     }
 
@@ -233,6 +237,8 @@ data class PanoramaxBatchRecord(
     val createdAt: Instant,
     val state: PanoramaxBatchState,
     val items: List<PanoramaxItemRecord>,
+    val remoteUploadSetId: String? = null,
+    val instanceOrigin: String? = null,
 )
 
 data class PanoramaxItemRecord(

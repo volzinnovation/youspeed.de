@@ -7,6 +7,8 @@ struct PanoramaxBatchRecord: Codable, Equatable {
     let createdAt: Date
     var state: PanoramaxBatchState
     var items: [PanoramaxItemRecord]
+    var remoteUploadSetID: String? = nil
+    var instanceOrigin: String? = nil
 }
 
 struct PanoramaxItemRecord: Codable, Equatable {
@@ -67,6 +69,18 @@ final class PanoramaxQueueStore {
         try lock.withLock { try read(batchID) }
     }
 
+    func fileURL(forRelativePath path: String) -> URL {
+        root.appendingPathComponent(path)
+    }
+
+    func thumbnailURL(for item: PanoramaxItemRecord) -> URL {
+        fileURL(forRelativePath: item.thumbnailPath)
+    }
+
+    func originalURL(for item: PanoramaxItemRecord) -> URL {
+        fileURL(forRelativePath: item.originalPath)
+    }
+
     @discardableResult
     func addJPEG(batchID: String, jpeg: Data, thumbnail: Data, metadata: PanoramaxCaptureMetadata) throws -> PanoramaxItemRecord {
         guard Self.isJPEG(jpeg), !thumbnail.isEmpty else { throw QueueError.invalidImage }
@@ -107,6 +121,7 @@ final class PanoramaxQueueStore {
         try lock.withLock {
             guard var batch = try read(batchID), let item = batch.items.first(where: { $0.itemID == itemID }) else { throw QueueError.unknownItem }
             try? FileManager.default.removeItem(at: root.appendingPathComponent(item.originalPath))
+            try? FileManager.default.removeItem(at: root.appendingPathComponent(item.thumbnailPath))
             batch.items.removeAll { $0.itemID == itemID }
             try commit(batch)
         }

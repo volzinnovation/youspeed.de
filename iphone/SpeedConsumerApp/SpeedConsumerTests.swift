@@ -69,6 +69,13 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].thumbnailPath).path))
     }
 
+    func testPanoramaxUploadStatusAcceptsNumericIDsAndReadyStates() throws {
+        let data = Data(#"{"id":42,"status":"ready"}"#.utf8)
+        let status = try JSONDecoder().decode(PanoramaxUploadSetStatus.self, from: data)
+        XCTAssertEqual(status.id, "42")
+        XCTAssertTrue(status.isReady)
+    }
+
     func testParseExplicitSpeed() {
         XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed("30"), 30)
         XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed("80 km/h"), 80)

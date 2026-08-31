@@ -426,6 +426,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var panoramaxLastCaptureAt: Date?
     @Published private(set) var panoramaxLastCaptureDetail = "Noch keine Aufnahme"
     @Published private(set) var panoramaxLastAccuracyMeters: Double?
+    @Published private(set) var panoramaxBatches: [PanoramaxBatchRecord] = []
+    @Published private(set) var panoramaxUploadStatusByBatch: [String: String] = [:]
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
     @Published private(set) var isUnlimitedSpeedLimitActive: Bool = false
@@ -485,6 +487,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let captureConfirmationTonePlayer = ConfirmationTonePlayer()
     private let bundledTargetsConfig: V3BundleTargetsConfig?
     private let manifestEndpoints: [V3ManifestEndpoint]
+    let panoramaxAccount: PanoramaxAccountModel
+    private var panoramaxQueueStore: PanoramaxQueueStore?
     private var speedLimitService: V3SpeedLimitService?
     private var panoramaxRecorder: PanoramaxRecorder?
     private var isDriving = false
@@ -988,14 +992,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         matcherDebugProfile = initialMatcherProfile
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
+        panoramaxAccount = PanoramaxAccountModel()
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
-        panoramaxRecorder = PanoramaxRecorder(queueStore: try? PanoramaxQueueStore())
+        panoramaxQueueStore = try? PanoramaxQueueStore()
+        panoramaxRecorder = PanoramaxRecorder(queueStore: panoramaxQueueStore)
         panoramaxRecorder?.onChange = { [weak self] in
             self?.syncPanoramaxRecorderState()
         }
         syncPanoramaxRecorderState()
+        refreshPanoramaxBatches()
         if storedMatcherForcedVersion < MatcherDebugProfile.forcedProfileVersion
             || storedMatcherProfile != initialMatcherProfile.rawValue
         {
@@ -1039,6 +1046,146 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         panoramaxLastCaptureAt = panoramaxRecorder?.lastCaptureAt
         panoramaxLastCaptureDetail = panoramaxRecorder?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
         panoramaxLastAccuracyMeters = panoramaxRecorder?.lastAccuracyMeters
+    }
+
+    func refreshPanoramaxBatches() {
+        panoramaxBatches = (try? panoramaxQueueStore?.listBatches()) ?? []
+    }
+
+    func panoramaxThumbnailURL(for item: PanoramaxItemRecord) -> URL? {
+        panoramaxQueueStore?.thumbnailURL(for: item)
+    }
+
+    func panoramaxOriginalURL(for item: PanoramaxItemRecord) -> URL? {
+        panoramaxQueueStore?.originalURL(for: item)
+    }
+
+    func setPanoramaxItemIncluded(batchID: String, itemID: String, included: Bool) {
+        do {
+            _ = try panoramaxQueueStore?.updateItem(
+                batchID: batchID,
+                itemID: itemID,
+                state: included ? .included : .excluded
+            )
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Bildstatus konnte nicht gespeichert werden"
+        }
+    }
+
+    func deletePanoramaxItem(batchID: String, itemID: String) {
+        do {
+            try panoramaxQueueStore?.deleteItem(batchID: batchID, itemID: itemID)
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Bild konnte nicht geloescht werden"
+        }
+    }
+
+    func approvePanoramaxBatch(batchID: String) {
+        do {
+            guard var batch = try panoramaxQueueStore?.getBatch(batchID) else { return }
+            batch.state = .approved
+            try panoramaxQueueStore?.updateBatch(batch)
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Batch konnte nicht freigegeben werden"
+        }
+    }
+
+    func panoramaxUploadStatus(for batchID: String) -> String? {
+        panoramaxUploadStatusByBatch[batchID]
+    }
+
+    func uploadPanoramaxBatch(batchID: String) {
+        guard let origin = panoramaxAccount.normalizedOrigin,
+              let token = panoramaxAccount.tokenForUpload() else {
+            panoramaxUploadStatusByBatch[batchID] = "Panoramax-Konto verbinden und bestaetigen"
+            return
+        }
+        guard let store = panoramaxQueueStore else {
+            panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
+            return
+        }
+        let loadedBatch: PanoramaxBatchRecord?
+        do {
+            loadedBatch = try store.getBatch(batchID)
+        } catch {
+            panoramaxUploadStatusByBatch[batchID] = "Batch konnte nicht gelesen werden"
+            return
+        }
+        guard var batch = loadedBatch,
+              batch.state == .approved || batch.state == .partial else {
+            panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
+            return
+        }
+        let selected = batch.items.filter { $0.state != .excluded && $0.state != .uploaded && $0.state != .accepted }
+        guard !selected.isEmpty else {
+            panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt"
+            return
+        }
+        batch.state = .creatingUploadSet
+        batch.instanceOrigin = origin.absoluteString
+        try? store.updateBatch(batch)
+        refreshPanoramaxBatches()
+        panoramaxUploadStatusByBatch[batchID] = "Upload wird vorbereitet"
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let client = PanoramaxUploadClient(origin: origin, token: token)
+            do {
+                let title = "YouSpeed \(batch.createdAt.formatted(date: .abbreviated, time: .shortened))"
+                let uploadSet = try await client.createUploadSet(title: title, estimatedFileCount: selected.count)
+                guard var current = try store.getBatch(batchID) else { return }
+                current.remoteUploadSetID = uploadSet.id
+                current.state = .uploading
+                try store.updateBatch(current)
+                refreshPanoramaxBatches()
+                panoramaxUploadStatusByBatch[batchID] = "0/\(selected.count) Bilder werden uebertragen"
+
+                var uploaded = 0
+                for item in selected {
+                    guard let fileURL = panoramaxOriginalURL(for: item) else { continue }
+                    _ = try? store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploading)
+                    do {
+                        try await client.upload(file: fileURL, uploadSetID: uploadSet.id, fileName: "\(item.itemID).jpg")
+                        _ = try? store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
+                        uploaded += 1
+                        panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(selected.count) Bilder uebertragen"
+                    } catch {
+                        _ = try? store.updateItem(batchID: batchID, itemID: item.itemID, state: .retryableError)
+                    }
+                }
+
+                guard var completed = try store.getBatch(batchID) else { return }
+                completed.state = uploaded == selected.count ? .processing : .partial
+                try store.updateBatch(completed)
+                refreshPanoramaxBatches()
+                guard uploaded == selected.count else {
+                    panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(selected.count) uebertragen – erneut versuchen"
+                    return
+                }
+                _ = try await client.complete(uploadSetID: uploadSet.id)
+                panoramaxUploadStatusByBatch[batchID] = "Panoramax verarbeitet den Batch"
+                do {
+                    _ = try await client.pollUntilReady(uploadSetID: uploadSet.id)
+                    guard var ready = try store.getBatch(batchID) else { return }
+                    ready.state = .complete
+                    try store.updateBatch(ready)
+                    panoramaxUploadStatusByBatch[batchID] = "Upload abgeschlossen"
+                    refreshPanoramaxBatches()
+                } catch {
+                    panoramaxUploadStatusByBatch[batchID] = "Upload uebertragen – Verarbeitung laeuft weiter"
+                }
+            } catch {
+                if var failed = try? store.getBatch(batchID) {
+                    failed.state = .approved
+                    try? store.updateBatch(failed)
+                    refreshPanoramaxBatches()
+                }
+                panoramaxUploadStatusByBatch[batchID] = "Upload fehlgeschlagen: \(error.localizedDescription)"
+            }
+        }
     }
 
     var isScreenshotMode: Bool {
