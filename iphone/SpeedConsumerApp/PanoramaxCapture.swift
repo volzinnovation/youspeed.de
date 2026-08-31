@@ -78,8 +78,8 @@ enum PanoramaxCaptureTriggerMode: String, CaseIterable, Codable {
 
     var label: String {
         switch self {
-        case .distance: return "Entfernung"
-        case .time: return "Zeit"
+        case .distance: return NSLocalizedString("panoramax.settings.trigger_distance", comment: "")
+        case .time: return NSLocalizedString("panoramax.settings.trigger_time", comment: "")
         }
     }
 }

@@ -1179,6 +1179,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    func deletePanoramaxSelections(_ selections: [(batchID: String, itemID: String)]) {
+        guard let store = panoramaxQueueStore else { return }
+        for selection in selections {
+            try? store.deleteItem(batchID: selection.batchID, itemID: selection.itemID)
+        }
+        refreshPanoramaxBatches()
+    }
+
     func approvePanoramaxBatch(batchID: String) {
         do {
             guard var batch = try panoramaxQueueStore?.getBatch(batchID) else { return }
@@ -1192,6 +1200,33 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func panoramaxUploadStatus(for batchID: String) -> String? {
         panoramaxUploadStatusByBatch[batchID]
+    }
+
+    var panoramaxUploadIsReady: Bool {
+        panoramaxAccount.isConnected && panoramaxAccount.normalizedOrigin != nil && panoramaxAccount.tokenForUpload() != nil
+    }
+
+    /// Applies the gallery selection to each affected batch, then starts the existing
+    /// upload-set workflow. Unselected, non-terminal items are explicitly excluded.
+    func uploadPanoramaxSelections(_ selections: [(batchID: String, itemID: String)]) {
+        guard panoramaxUploadIsReady, let store = panoramaxQueueStore else { return }
+        let selectedByBatch = Dictionary(grouping: selections, by: { $0.batchID })
+        for (batchID, selected) in selectedByBatch {
+            guard let loadedBatch = try? store.getBatch(batchID) else { continue }
+            var batch = loadedBatch
+            let selectedIDs = Set(selected.map(\.itemID))
+            batch.items = batch.items.map { item in
+                guard item.state != .uploaded, item.state != .accepted else { return item }
+                var updated = item
+                updated.state = selectedIDs.contains(item.itemID) ? .included : .excluded
+                return updated
+            }
+            guard batch.items.contains(where: { selectedIDs.contains($0.itemID) && $0.state == .included }) else { continue }
+            batch.state = .approved
+            try? store.updateBatch(batch)
+            uploadPanoramaxBatch(batchID: batchID)
+        }
+        refreshPanoramaxBatches()
     }
 
     func uploadPanoramaxBatch(batchID: String) {

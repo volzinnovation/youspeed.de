@@ -233,7 +233,7 @@ struct MainView: View {
         case .denied:
             return "Kamerazugriff erlauben"
         case .unavailable, .failed:
-            return "Kamera nicht verfuegbar"
+            return NSLocalizedString("panoramax.recorder.camera_unavailable", comment: "")
         case .preparing:
             return "Kamera wird vorbereitet"
         case .recording:
@@ -289,7 +289,7 @@ struct MainView: View {
             .buttonStyle(.plain)
 
             .background(Color.red, in: viewModel.isPanoramaxRecordingActive ? AnyShape(RoundedRectangle(cornerRadius: 9, style: .continuous)) : AnyShape(Circle()))
-            .accessibilityLabel(viewModel.isPanoramaxRecordingActive ? "Aufnahme stoppen" : "Aufnahme starten")
+            .accessibilityLabel(NSLocalizedString(viewModel.isPanoramaxRecordingActive ? "panoramax.recorder.stop" : "panoramax.recorder.start", comment: ""))
 
             Spacer()
 
@@ -303,7 +303,7 @@ struct MainView: View {
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
             .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
-            .accessibilityLabel("Panoramax-Galerie öffnen")
+            .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
 
             Spacer()
 
@@ -984,9 +984,9 @@ private struct LocalRecordingsView: View {
                 HStack {
                     Image(systemName: "camera.aperture")
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Panoramax-Bilder")
+                        Text(NSLocalizedString("panoramax.review.title", comment: ""))
                             .font(.subheadline.weight(.semibold))
-                        Text("\(viewModel.panoramaxBatches.reduce(0) { $0 + $1.items.count }) lokale Bilder pruefen")
+                        Text(String(format: NSLocalizedString("panoramax.review.local_count", comment: ""), viewModel.panoramaxBatches.reduce(0) { $0 + $1.items.count }))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1004,7 +1004,7 @@ private struct LocalRecordingsView: View {
             NavigationLink {
                 PanoramaxGalleryView(viewModel: viewModel)
             } label: {
-                Label("Galerie", systemImage: "square.grid.2x2")
+                    Label(NSLocalizedString("panoramax.gallery.title", comment: ""), systemImage: "square.grid.2x2")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -1138,15 +1138,14 @@ private struct LocalRecordingsView: View {
 
 private struct PanoramaxReviewView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
-    @State private var uploadConfirmationBatchID: String?
 
     var body: some View {
         List {
             if viewModel.panoramaxBatches.isEmpty {
                 ContentUnavailableView(
-                    "Keine Panoramax-Bilder",
+                    NSLocalizedString("panoramax.review.empty_title", comment: ""),
                     systemImage: "camera.aperture",
-                    description: Text("Aktiviere den Drive Recorder waehrend einer Fahrt.")
+                    description: Text(NSLocalizedString("panoramax.review.empty_description", comment: ""))
                 )
             } else {
                 ForEach(viewModel.panoramaxBatches, id: \.batchID) { batch in
@@ -1163,42 +1162,22 @@ private struct PanoramaxReviewView: View {
                     } footer: {
                         let included = batch.items.filter { $0.state != .excluded }.count
                         if batch.state == .awaitingReview, included > 0 {
-                            Button("Batch fuer Upload freigeben") {
+                            Button(NSLocalizedString("panoramax.review.approve", comment: "")) {
                                 viewModel.approvePanoramaxBatch(batchID: batch.batchID)
                             }
                         } else if (batch.state == .approved || batch.state == .partial), included > 0 {
-                            Button("Jetzt zu Panoramax hochladen") {
-                                uploadConfirmationBatchID = batch.batchID
-                            }
-                            if let status = viewModel.panoramaxUploadStatus(for: batch.batchID) {
-                                Text(status)
-                            } else {
-                                Text("Bereit fuer den ausdruecklichen Upload")
-                            }
+                            Text(NSLocalizedString("panoramax.review.upload_via_gallery", comment: ""))
+                            if let status = viewModel.panoramaxUploadStatus(for: batch.batchID) { Text(status) }
                         } else {
-                            Text("\(included) Bilder ausgewaehlt")
+                            Text(String(format: NSLocalizedString("panoramax.review.selected_count", comment: ""), included))
                         }
                     }
                 }
             }
         }
-        .navigationTitle("Panoramax-Bilder")
+        .navigationTitle(NSLocalizedString("panoramax.review.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .task { viewModel.refreshPanoramaxBatches() }
-        .alert("Bilder zu Panoramax hochladen?", isPresented: Binding(
-            get: { uploadConfirmationBatchID != nil },
-            set: { if !$0 { uploadConfirmationBatchID = nil } }
-        )) {
-            Button("Upload starten") {
-                if let batchID = uploadConfirmationBatchID {
-                    viewModel.uploadPanoramaxBatch(batchID: batchID)
-                }
-                uploadConfirmationBatchID = nil
-            }
-            Button("Abbrechen", role: .cancel) { uploadConfirmationBatchID = nil }
-        } message: {
-            Text("Die ausgewaehlten Originalbilder und ihre GPS-Metadaten werden an die konfigurierte Panoramax-Instanz uebertragen.")
-        }
     }
 }
 
@@ -1227,7 +1206,9 @@ private struct PanoramaxReviewItemRow: View {
                         .background(.black.opacity(0.55), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(item.isFavorite ? "Favorit entfernen" : "Als Favorit markieren")
+                .accessibilityLabel(item.isFavorite
+                    ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
+                    : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
                 .padding(4)
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -1269,10 +1250,10 @@ private struct PanoramaxReviewItemRow: View {
                         .resizable()
                         .scaledToFit()
                         .padding()
-                        .navigationTitle("Panoramax-Bild")
+                        .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
                         .navigationBarTitleDisplayMode(.inline)
                 } else {
-                    ContentUnavailableView("Bild nicht verfuegbar", systemImage: "photo")
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
                 }
             }
         }
@@ -1295,6 +1276,8 @@ private struct PanoramaxReviewItemRow: View {
 private struct PanoramaxGalleryView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @State private var selectedItem: GalleryItem?
+    @State private var selectedItemIDs: Set<String> = []
+    @State private var showingDeleteConfirmation = false
 
     private struct GalleryItem: Identifiable {
         let id: String
@@ -1302,14 +1285,23 @@ private struct PanoramaxGalleryView: View {
         let item: PanoramaxItemRecord
     }
 
+    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var selectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        entries.filter { $0.item.state != .uploaded && $0.item.state != .accepted }
+    }
+    private var selectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        entries.filter { selectedItemIDs.contains($0.item.itemID) }
+    }
+
     var body: some View {
-        Group {
-            if viewModel.panoramaxGalleryItems.isEmpty {
-                ContentUnavailableView("Keine Panoramax-Bilder", systemImage: "photo.on.rectangle")
-            } else {
-                ScrollView {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
-                        ForEach(viewModel.panoramaxGalleryItems, id: \.item.itemID) { entry in
+        VStack(spacing: 0) {
+            Group {
+                if entries.isEmpty {
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.empty", comment: ""), systemImage: "photo.on.rectangle")
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                            ForEach(entries, id: \.item.itemID) { entry in
                             let galleryItem = GalleryItem(id: entry.item.itemID, batchID: entry.batch.batchID, item: entry.item)
                             ZStack(alignment: .topTrailing) {
                                 Button { selectedItem = galleryItem } label: {
@@ -1319,6 +1311,28 @@ private struct PanoramaxGalleryView: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
+                                ZStack(alignment: .topLeading) {
+                                    Button {
+                                        if selectedItemIDs.contains(entry.item.itemID) {
+                                            selectedItemIDs.remove(entry.item.itemID)
+                                        } else if entry.item.state != .uploaded && entry.item.state != .accepted {
+                                            selectedItemIDs.insert(entry.item.itemID)
+                                        }
+                                    } label: {
+                                        Image(systemName: selectedItemIDs.contains(entry.item.itemID) ? "checkmark.square.fill" : "square")
+                                            .font(.title2.weight(.semibold))
+                                            .foregroundStyle(selectedItemIDs.contains(entry.item.itemID) ? Color.accentColor : .white)
+                                            .padding(6)
+                                            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(entry.item.state == .uploaded || entry.item.state == .accepted)
+                                    .accessibilityLabel(selectedItemIDs.contains(entry.item.itemID)
+                                        ? NSLocalizedString("panoramax.gallery.deselect", comment: "")
+                                        : NSLocalizedString("panoramax.gallery.select", comment: ""))
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .padding(6)
                                 Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.white)
@@ -1335,26 +1349,78 @@ private struct PanoramaxGalleryView: View {
                                         .background(.black.opacity(0.55), in: Circle())
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(entry.item.isFavorite ? "Favorit entfernen" : "Als Favorit markieren")
+                                .accessibilityLabel(entry.item.isFavorite
+                                    ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
+                                    : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
                                 .padding(6)
                             }
+                            .accessibilityElement(children: .contain)
                         }
+                        }
+                        .padding(12)
                     }
-                    .padding(12)
                 }
             }
+            .frame(maxHeight: .infinity)
+
+            if !entries.isEmpty {
+                VStack(spacing: 6) {
+                    if !viewModel.panoramaxUploadIsReady {
+                        Text(NSLocalizedString("panoramax.gallery.upload_requires_account", comment: ""))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    HStack(spacing: 8) {
+                        Button(NSLocalizedString("panoramax.gallery.select_all", comment: "")) {
+                            selectedItemIDs = Set(selectableEntries.map { $0.item.itemID })
+                        }
+                        .buttonStyle(.bordered)
+                        Button(NSLocalizedString("panoramax.gallery.select_none", comment: "")) {
+                            selectedItemIDs.removeAll()
+                        }
+                        .buttonStyle(.bordered)
+                        Button(role: .destructive) { showingDeleteConfirmation = true } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityLabel(NSLocalizedString("panoramax.gallery.delete", comment: ""))
+                        .disabled(selectedItemIDs.isEmpty)
+                        Spacer(minLength: 0)
+                        Button {
+                            viewModel.uploadPanoramaxSelections(selectedEntries.map { (batchID: $0.batch.batchID, itemID: $0.item.itemID) })
+                        } label: {
+                            Label(NSLocalizedString("panoramax.gallery.upload", comment: ""), systemImage: "arrow.up.circle.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selectedItemIDs.isEmpty || !viewModel.panoramaxUploadIsReady)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                }
+                .background(.bar)
+            }
         }
-        .navigationTitle("Galerie")
+        .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .task { viewModel.refreshPanoramaxBatches() }
         .sheet(item: $selectedItem) { selection in
             NavigationStack {
                 if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: image).resizable().scaledToFit().padding().navigationTitle("Panoramax-Bild").navigationBarTitleDisplayMode(.inline)
+                    Image(uiImage: image).resizable().scaledToFit().padding().navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: "")).navigationBarTitleDisplayMode(.inline)
                 } else {
-                    ContentUnavailableView("Bild nicht verfuegbar", systemImage: "photo")
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
                 }
             }
+        }
+        .alert(NSLocalizedString("panoramax.gallery.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+                viewModel.deletePanoramaxSelections(selectedEntries.map { (batchID: $0.batch.batchID, itemID: $0.item.itemID) })
+                selectedItemIDs.removeAll()
+            }
+        } message: {
+            Text(String(format: NSLocalizedString("panoramax.gallery.delete_message", comment: ""), selectedItemIDs.count))
         }
     }
 
@@ -1413,15 +1479,15 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Drive Recorder") {
-                Text("Aufnahmen startest du mit dem roten Knopf unten links. Bilder bleiben zuerst auf diesem iPhone und koennen spaeter geprueft und hochgeladen werden.")
+            Section(NSLocalizedString("panoramax.settings.section", comment: "")) {
+                Text(NSLocalizedString("panoramax.settings.description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                LabeledContent("Status", value: panoramaxStatusText)
-                LabeledContent("Gespeicherte Bilder", value: "\(viewModel.panoramaxCaptureCount)")
+                LabeledContent(NSLocalizedString("panoramax.settings.status", comment: ""), value: panoramaxStatusText)
+                LabeledContent(NSLocalizedString("panoramax.settings.saved_images", comment: ""), value: "\(viewModel.panoramaxCaptureCount)")
 
-                Picker("Ausloeser", selection: $viewModel.panoramaxTriggerMode) {
+                Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
                     ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
                         Text(mode.label).tag(mode)
                     }
@@ -1430,7 +1496,7 @@ private struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Mindestentfernung")
+                        Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
                         Spacer()
                         Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
                             .monospacedDigit()
@@ -1441,7 +1507,7 @@ private struct SettingsView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Mindestzeit")
+                        Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
                         Spacer()
                         Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
                             .monospacedDigit()
@@ -1451,20 +1517,20 @@ private struct SettingsView: View {
                 }
 
                 if let accuracy = viewModel.panoramaxLastAccuracyMeters {
-                    Text("Neue Bilder werden erst nach mindestens 2 × GPS-Genauigkeit (aktuell ±\(Int(accuracy.rounded())) m) aufgenommen.")
+                    Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Neue Bilder werden nur bei ausreichender GPS-Genauigkeit und mindestens 2 × GPS-Genauigkeit Bewegung aufgenommen.")
+                    Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
-                Toggle("Speicher unbegrenzt", isOn: $viewModel.panoramaxUnlimitedStorage)
+                Toggle(NSLocalizedString("panoramax.settings.unlimited_storage", comment: ""), isOn: $viewModel.panoramaxUnlimitedStorage)
                 if !viewModel.panoramaxUnlimitedStorage {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("Speicherlimit")
+                            Text(NSLocalizedString("panoramax.settings.storage_limit", comment: ""))
                             Spacer()
                             Text("\(Int(viewModel.panoramaxStorageLimitMB.rounded())) MB")
                                 .monospacedDigit()
@@ -1472,14 +1538,14 @@ private struct SettingsView: View {
                         }
                         Slider(value: $viewModel.panoramaxStorageLimitMB, in: 100...10_000, step: 100)
                     }
-                    Text("Bei voller Kapazitaet werden die aeltesten nicht favorisierten Bilder automatisch entfernt. Favoriten bleiben erhalten.")
+                    Text(NSLocalizedString("panoramax.settings.retention_description", comment: ""))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Section("Panoramax-Konto") {
-                Picker("Instanz", selection: Binding(
+            Section(NSLocalizedString("panoramax.account.section", comment: "")) {
+                Picker(NSLocalizedString("panoramax.account.instance", comment: ""), selection: Binding(
                     get: { PanoramaxServerCatalog.presets.first(where: { $0.origin == account.instanceOrigin })?.id ?? "custom" },
                     set: { id in
                         if let preset = PanoramaxServerCatalog.presets.first(where: { $0.id == id }) { account.instanceOrigin = preset.origin }
@@ -1488,30 +1554,30 @@ private struct SettingsView: View {
                     ForEach(PanoramaxServerCatalog.presets) { preset in
                         Text(preset.name).tag(preset.id)
                     }
-                    Text("Andere Instanz").tag("custom")
+                    Text(NSLocalizedString("panoramax.account.other_instance", comment: "")).tag("custom")
                 }
                 .pickerStyle(.menu)
 
-                TextField("Instanz (https://...)", text: $account.instanceOrigin)
+                TextField(NSLocalizedString("panoramax.account.instance_placeholder", comment: ""), text: $account.instanceOrigin)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
 
-                Text("Es gibt keinen YouSpeed-API-Key. Die Anmeldung ist pro Panoramax-Instanz und wird als geschuetztes JWT im iOS-Schluesselbund gespeichert.")
+                Text(NSLocalizedString("panoramax.account.security_description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                LabeledContent("Status", value: account.status)
+                LabeledContent(NSLocalizedString("panoramax.account.status", comment: ""), value: account.status)
 
                 if account.isConnected {
-                    Button("Konto trennen", role: .destructive) {
+                    Button(NSLocalizedString("panoramax.account.disconnect", comment: ""), role: .destructive) {
                         account.disconnect()
                     }
                 } else {
-                    Button("Instanz verbinden") {
+                    Button(NSLocalizedString("panoramax.account.connect", comment: "")) {
                         account.connect()
                     }
-                    Button("Verbindung pruefen") {
+                    Button(NSLocalizedString("panoramax.account.validate", comment: "")) {
                         account.validateConnection()
                     }
                 }
@@ -1680,7 +1746,7 @@ private struct SettingsView: View {
     private var panoramaxStatusText: String {
         switch viewModel.panoramaxCaptureState {
         case .disabled:
-            return "Bereit fuer die naechste Aufnahme"
+            return NSLocalizedString("panoramax.recorder.ready", comment: "")
         case .preparing:
             return "Kamera wird vorbereitet"
         case .recording:
@@ -1688,7 +1754,7 @@ private struct SettingsView: View {
         case .denied:
             return "Kamerazugriff verweigert"
         case .unavailable:
-            return "Kamera nicht verfuegbar"
+            return NSLocalizedString("panoramax.recorder.camera_unavailable", comment: "")
         case .failed:
             return "Fehler"
         }
