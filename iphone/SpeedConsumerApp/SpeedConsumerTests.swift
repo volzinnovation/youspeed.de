@@ -11,6 +11,53 @@ import UIKit
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 final class SpeedConsumerTests: XCTestCase {
+    func testPanoramaxCadenceRejectsStationaryAndAcceptsMovingFallback() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let first = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: start, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil)
+        let stationary = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: start.addingTimeInterval(5), accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil)
+        let moving = PanoramaxLocationSample(latitude: 49, longitude: 8.0004, capturedAt: start.addingTimeInterval(5), accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil)
+        XCTAssertFalse(PanoramaxCapturePolicy.shouldCapture(lastCapture: first, current: stationary))
+        XCTAssertTrue(PanoramaxCapturePolicy.shouldCapture(lastCapture: first, current: moving))
+    }
+
+    func testPanoramaxMetadataRejectsInvalidCoordinatesAndHash() {
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "capture-1",
+            captureSessionID: "session-1",
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(latitude: 91, longitude: 8, capturedAt: timestamp, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil),
+            sha256: "invalid",
+            byteSize: 0,
+            software: "YouSpeed/test"
+        )
+        XCTAssertFalse(metadata.validate().isEmpty)
+    }
+
+    func testPanoramaxQueueCommitsOriginalAndThumbnailSeparately() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let jpeg = Data([0xff, 0xd8, 0xff, 0xd9])
+        let thumbnail = Data([0xff, 0xd8, 0xff, 0xd9])
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "capture-1",
+            captureSessionID: "session-1",
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: timestamp, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+        let batch = try store.createBatch(captureSessionID: "session-1", createdAt: timestamp)
+        _ = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: thumbnail, metadata: metadata)
+        let restored = try XCTUnwrap(store.getBatch(batch.batchID))
+        XCTAssertEqual(restored.items.count, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].originalPath).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].thumbnailPath).path))
+    }
+
     func testParseExplicitSpeed() {
         XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed("30"), 30)
         XCTAssertEqual(V3SpeedLimitService.parseExplicitSpeed("80 km/h"), 80)
