@@ -10,7 +10,9 @@
     <string name="startup_retry">Opnieuw proberen</string>
     <string name="welcome_title">Welkom bij YouSpeed</string>
     <string name="welcome_copy">Kom veilig aan. YouSpeed toont live de herkende snelheidslimiet en geeft aan wanneer waarschuwingen voor boetes, punten of rijverboden relevant kunnen worden. YouSpeed kan fouten maken - houd je ogen op de weg.</string>
-    <string name="welcome_scope_seed">Zonder Duitsland-download is alleen het Regierungsbezirk Karlsruhe beschikbaar. Start de download in de instellingen.</string>
+    <string name="welcome_scope_seed">Er zijn geen offline weggegevens beschikbaar totdat je in de instellingen een kaartbundel downloadt.</string>
+    <string name="welcome_coverage_active">Gedownloade kaartgegevens zijn gereed</string>
+    <string name="welcome_coverage_none">Download vereist</string>
     <string name="welcome_scope_active">Duitsland-dataset actief: %1$s</string>
     <string name="welcome_legal_heading">Juridische opmerking</string>
     <string name="welcome_osm_credit">Kaartgegevens: copyright OpenStreetMap-bijdragers, ODbL 1.0. https://www.openstreetmap.org/copyright</string>

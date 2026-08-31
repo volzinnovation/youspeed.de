@@ -10,7 +10,9 @@
     <string name="startup_retry">Try again</string>
     <string name="welcome_title">Welcome to YouSpeed</string>
     <string name="welcome_copy">Arrive safely. YouSpeed shows the detected speed limit live and indicates when fines, points, or driving-ban warnings may become relevant. YouSpeed can be wrong - keep your eyes on the road.</string>
-    <string name="welcome_scope_seed">Without the Germany download, only the Karlsruhe government district is available. Start the download in Settings.</string>
+    <string name="welcome_scope_seed">No offline road data is available until you download a map bundle in Settings.</string>
+    <string name="welcome_coverage_active">Downloaded map data is ready</string>
+    <string name="welcome_coverage_none">Download required</string>
     <string name="welcome_scope_active">Germany data set active: %1$s</string>
     <string name="welcome_legal_heading">Legal notice</string>
     <string name="welcome_osm_credit">Map data: Copyright OpenStreetMap contributors, ODbL 1.0. https://www.openstreetmap.org/copyright</string>

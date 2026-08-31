@@ -4,7 +4,9 @@
 "startup.retry" = "Reessayer";
 "welcome.title" = "Bienvenue dans YouSpeed";
 "welcome.copy" = "Arrivez en securite. YouSpeed affiche en direct la limitation detectee et indique quand les alertes d'amende, de points ou d'interdiction de conduire peuvent devenir pertinentes. YouSpeed peut se tromper : gardez les yeux sur la route.";
-"welcome.scope.seed" = "Sans telechargement Allemagne, seul le district administratif de Karlsruhe est disponible. Lancez le telechargement dans les reglages.";
+"welcome.scope.seed" = "Aucune donnee routiere hors ligne n'est disponible avant le telechargement d'un paquet de cartes dans les reglages.";
+"welcome.coverage.active" = "Les donnees cartographiques telechargees sont pretes";
+"welcome.coverage.none" = "Telechargement requis";
 "welcome.scope.active" = "Jeu de donnees Allemagne actif : %@";
 "welcome.legal_heading" = "Mention legale";
 "welcome.osm_credit" = "Donnees cartographiques : copyright contributeurs OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright";

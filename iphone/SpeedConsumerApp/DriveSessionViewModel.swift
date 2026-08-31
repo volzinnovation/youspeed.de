@@ -1543,16 +1543,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         "startup recovered_local mode=\(recovered.mode.rawValue, privacy: .public) version=\(recovered.bundleVersion, privacy: .public)"
                     )
                 } else {
-                    startupDetail = "Aktiviere Seed-Datenbank"
+                    startupDetail = "Pruefe lokale Kartendaten"
                     startupProgress = max(startupProgress, Self.startupSeedActivationFloorProgress)
-                    Self.logger.notice("startup no_local_data_fallback=seed")
+                    Self.logger.notice("startup no_local_data_fallback=none")
                     startupResult = try await bundleManager.bootstrapSeedIfNeeded()
                 }
 
                 activeBundleVersion = startupResult.bundleVersion
                 activeDBPath = startupResult.dbPath
                 if startupResult.dbPath.isEmpty {
-                    throw ConsumerAppError.io("No local database available after startup recovery")
+                    speedLimitService = nil
+                    syncStatus = "not_synced"
+                    await refreshDownloadedBundleInventory()
+                    startupProgress = 1
+                    startupDetail = "Daten-Download erforderlich"
+                    startupDataState = .ready
+                    Self.logger.notice("startup ready no_local_database download_required=true")
+                    return
                 }
                 await applyPenaltyRulesForActiveBundle()
                 speedLimitService = makeSpeedLimitService(dbPath: startupResult.dbPath)

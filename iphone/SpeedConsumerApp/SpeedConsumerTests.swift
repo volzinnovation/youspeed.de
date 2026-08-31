@@ -2485,7 +2485,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertFalse(fm.fileExists(atPath: downloadedCacheDB.path), "Recovered cache DB should be moved out of multipart-cache")
     }
 
-    func testBootstrapSeedUsesBundledDatabasePathWithoutCopy() async throws {
+    func testBootstrapWithoutBundledSeedRequiresDownload() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
         if fm.fileExists(atPath: supportDir.path) {
@@ -2497,68 +2497,16 @@ final class SpeedConsumerTests: XCTestCase {
 
         let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
         let bundledSeed = appBundle.url(forResource: "karlsruhe-regbez_speeds", withExtension: "sqlite")
-        guard bundledSeed != nil else {
-            throw XCTSkip("Bundled seed DB not found")
-        }
+        XCTAssertNil(bundledSeed)
 
         let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
         let result = try await manager.bootstrapSeedIfNeeded(bundle: appBundle)
 
-        XCTAssertEqual(result.bundleVersion, "seed")
-        let copiedSeedDB = supportDir
-            .appendingPathComponent("bundles", isDirectory: true)
-            .appendingPathComponent("seed", isDirectory: true)
-            .appendingPathComponent("karlsruhe-regbez_speeds.sqlite")
+        XCTAssertEqual(result.bundleVersion, "none")
+        XCTAssertEqual(result.dbPath, "")
+        XCTAssertEqual(result.details, "no bundled seed resource")
         let state = try await manager.activeState()
-        XCTAssertEqual(state?.bundleVersion, "seed")
-
-        assertPathEqual(result.dbPath, bundledSeed?.path)
-        XCTAssertEqual(result.details, "seed bundle referenced")
-        assertPathEqual(state?.dbPath, bundledSeed?.path)
-        XCTAssertFalse(fm.fileExists(atPath: copiedSeedDB.path), "Seed should not be copied into app support on clean bootstrap")
-    }
-
-    func testBootstrapSeedMigratesOldCopiedSeedToBundledPath() async throws {
-        let fm = FileManager.default
-        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
-        if fm.fileExists(atPath: supportDir.path) {
-            try fm.removeItem(at: supportDir)
-        }
-        defer {
-            try? fm.removeItem(at: supportDir)
-        }
-
-        let bundlesDir = supportDir.appendingPathComponent("bundles", isDirectory: true)
-        let seedDir = bundlesDir.appendingPathComponent("seed", isDirectory: true)
-        try fm.createDirectory(at: seedDir, withIntermediateDirectories: true)
-        let copiedSeedDB = seedDir.appendingPathComponent("karlsruhe-regbez_speeds.sqlite")
-        try createFixtureV3DB(at: copiedSeedDB)
-
-        let legacySeedState = ActiveBundleState(
-            region: "unknown",
-            bundleVersion: "seed",
-            dbFileName: "karlsruhe-regbez_speeds.sqlite",
-            activatedAtUTC: "2026-02-25T00:00:00Z"
-        )
-        try JSONEncoder().encode(legacySeedState).write(
-            to: supportDir.appendingPathComponent("active_bundle.json"),
-            options: .atomic
-        )
-
-        let appBundle = Bundle(for: SpeedConsumerAppDelegate.self)
-        let bundledSeed = appBundle.url(forResource: "karlsruhe-regbez_speeds", withExtension: "sqlite")
-        guard bundledSeed != nil else {
-            throw XCTSkip("Bundled seed DB not found")
-        }
-
-        let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
-        let result = try await manager.bootstrapSeedIfNeeded(bundle: appBundle)
-
-        XCTAssertEqual(result.bundleVersion, "seed")
-        let state = try await manager.activeState()
-        assertPathEqual(result.dbPath, bundledSeed?.path)
-        XCTAssertFalse(fm.fileExists(atPath: copiedSeedDB.path), "Legacy copied seed should be removed after migration")
-        assertPathEqual(state?.dbPath, bundledSeed?.path)
+        XCTAssertNil(state)
     }
 
     @MainActor

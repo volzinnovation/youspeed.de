@@ -414,22 +414,19 @@ private fun CoverageCard(activeBundleVersion: String) {
                     size = Size(size.width * 0.44f, size.height * 0.78f),
                     cornerRadius = CornerRadius(26f, 26f),
                 )
-                val badgePath = Path().apply {
-                    addRoundRect(
-                        androidx.compose.ui.geometry.RoundRect(
-                            left = size.width * 0.36f,
-                            top = size.height * 0.34f,
-                            right = size.width * 0.48f,
-                            bottom = size.height * 0.48f,
-                            cornerRadius = CornerRadius(16f, 16f),
-                        ),
-                    )
-                }
                 if (hasGermanyDataset) {
+                    val badgePath = Path().apply {
+                        addRoundRect(
+                            androidx.compose.ui.geometry.RoundRect(
+                                left = size.width * 0.36f,
+                                top = size.height * 0.34f,
+                                right = size.width * 0.48f,
+                                bottom = size.height * 0.48f,
+                                cornerRadius = CornerRadius(16f, 16f),
+                            ),
+                        )
+                    }
                     drawPath(badgePath, color = Color.White, style = Stroke(width = 6f))
-                } else {
-                    drawPath(badgePath, color = Color(0xFF2F66CC))
-                    drawPath(badgePath, color = Color.White, style = Stroke(width = 4f))
                 }
                 drawRoundRect(
                     color = outline,
@@ -445,7 +442,9 @@ private fun CoverageCard(activeBundleVersion: String) {
                 style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
             )
             Text(
-                if (hasGermanyDataset) "Daten fuer Deutschland" else "Nur Karlsruhe Regierungsbezirk",
+                stringResource(
+                    if (hasGermanyDataset) R.string.welcome_coverage_active else R.string.welcome_coverage_none,
+                ),
                 color = if (hasGermanyDataset) Color(0xFF6FB0FF) else Color.White.copy(alpha = 0.72f),
                 style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
             )

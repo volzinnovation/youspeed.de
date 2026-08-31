@@ -10,7 +10,9 @@
     <string name="startup_retry">Forsok igen</string>
     <string name="welcome_title">Valkommen till YouSpeed</string>
     <string name="welcome_copy">Kom fram sakert. YouSpeed visar den upptackta hastighetsgransen live och anger nar varningar om boter, punkter eller korforbud kan bli relevanta. YouSpeed kan ha fel - hall ogonen pa vagen.</string>
-    <string name="welcome_scope_seed">Utan Tyskland-nedladdningen ar endast forvaltningsdistriktet Karlsruhe tillgangligt. Starta nedladdningen i Installningar.</string>
+    <string name="welcome_scope_seed">Inga vagdata ar tillgangliga offline innan du laddar ner ett kartpaket i Installningar.</string>
+    <string name="welcome_coverage_active">Nedladdade kartdata ar klara</string>
+    <string name="welcome_coverage_none">Nedladdning kravs</string>
     <string name="welcome_scope_active">Tyskland-dataset aktivt: %1$s</string>
     <string name="welcome_legal_heading">Juridiskt meddelande</string>
     <string name="welcome_osm_credit">Kartdata: copyright OpenStreetMap-bidragsgivare, ODbL 1.0. https://www.openstreetmap.org/copyright</string>

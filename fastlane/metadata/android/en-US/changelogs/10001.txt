@@ -1,0 +1,1 @@
+Clarifies that a map bundle must be downloaded before offline road lookup is available and removes an unsupported download target.

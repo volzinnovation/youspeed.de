@@ -4,7 +4,9 @@
 "startup.retry" = "Opnieuw proberen";
 "welcome.title" = "Welkom bij YouSpeed";
 "welcome.copy" = "Kom veilig aan. YouSpeed toont live de herkende snelheidslimiet en geeft aan wanneer waarschuwingen voor boetes, punten of rijverboden relevant kunnen worden. YouSpeed kan fouten maken - houd je ogen op de weg.";
-"welcome.scope.seed" = "Zonder Duitsland-download is alleen het Regierungsbezirk Karlsruhe beschikbaar. Start de download in de instellingen.";
+"welcome.scope.seed" = "Er zijn geen offline weggegevens beschikbaar totdat je in de instellingen een kaartbundel downloadt.";
+"welcome.coverage.active" = "Gedownloade kaartgegevens zijn gereed";
+"welcome.coverage.none" = "Download vereist";
 "welcome.scope.active" = "Duitsland-dataset actief: %@";
 "welcome.legal_heading" = "Juridische opmerking";
 "welcome.osm_credit" = "Kaartgegevens: copyright OpenStreetMap-bijdragers, ODbL 1.0. https://www.openstreetmap.org/copyright";

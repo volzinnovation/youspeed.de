@@ -10,7 +10,9 @@
     <string name="startup_retry">Riprova</string>
     <string name="welcome_title">Benvenuto in YouSpeed</string>
     <string name="welcome_copy">Arriva in sicurezza. YouSpeed mostra in diretta il limite rilevato e indica quando possono diventare rilevanti avvisi su multe, punti o divieti di guida. YouSpeed puo sbagliare: tieni gli occhi sulla strada.</string>
-    <string name="welcome_scope_seed">Senza il download della Germania e disponibile solo il distretto amministrativo di Karlsruhe. Avvia il download nelle Impostazioni.</string>
+    <string name="welcome_scope_seed">I dati stradali offline non sono disponibili finche non scarichi un pacchetto mappe nelle Impostazioni.</string>
+    <string name="welcome_coverage_active">I dati mappa scaricati sono pronti</string>
+    <string name="welcome_coverage_none">Download richiesto</string>
     <string name="welcome_scope_active">Set di dati Germania attivo: %1$s</string>
     <string name="welcome_legal_heading">Avviso legale</string>
     <string name="welcome_osm_credit">Dati mappa: copyright collaboratori OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>

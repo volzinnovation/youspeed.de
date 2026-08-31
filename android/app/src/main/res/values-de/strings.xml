@@ -10,7 +10,9 @@
     <string name="startup_retry">Erneut versuchen</string>
     <string name="welcome_title">Willkommen bei YouSpeed</string>
     <string name="welcome_copy">Sicher ankommen. YouSpeed zeigt dir live, welches Tempolimit erkannt wurde und wann Hinweise zu Bussgeld, Punkten oder Fahrverbot relevant werden. Achtung: Auch YouSpeed kann Fehler machen - Augen auf die Strasse!</string>
-    <string name="welcome_scope_seed">Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfuegbar. Den Download startest Du in den Einstellungen.</string>
+    <string name="welcome_scope_seed">Ohne Daten-Download sind keine Offline-Strassendaten verfuegbar. Starte den Download in den Einstellungen.</string>
+    <string name="welcome_coverage_active">Heruntergeladene Kartendaten sind bereit</string>
+    <string name="welcome_coverage_none">Download erforderlich</string>
     <string name="welcome_scope_active">Deutschland-Datensatz aktiv: %1$s</string>
     <string name="welcome_legal_heading">Rechtlicher Hinweis</string>
     <string name="welcome_osm_credit">Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright</string>

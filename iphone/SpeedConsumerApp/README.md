@@ -5,18 +5,18 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 ## Design goals
 - Keep the benchmark app (`SpeedDBBenchSketch`) stable for reproducibility.
 - Use only v3 runtime data (`speeds_v3.sqlite`) for production consumer flow.
-- Require a data preflight (`seed -> sync`) before driving mode.
+- Require a downloaded data bundle before driving mode.
 - Support independent map updates via GitHub-hosted bundle manifest and optional SQL delta patches.
 
 ## Update flow
-1. Bootstrap bundled seed `karlsruhe-regbez_speeds.sqlite`.
-2. Discover manifests from bundled `BundleTargets.top10.json`, preferring Germany shard endpoints.
+1. Discover manifests from bundled `BundleTargets.top10.json`, preferring Germany shard endpoints.
    - `YouSpeedV3ManifestURL` remains available as a build-time dev override.
-3. If delta path exists from active version to target: download + verify + apply SQL patch.
-4. Otherwise download full `speeds_v3.sqlite` bundle.
+2. Download and verify the selected map bundle; no map database is embedded in the app.
+3. If delta path exists from the active version to a later target: download + verify + apply SQL patch.
+4. Otherwise download the full `speeds_v3.sqlite` bundle.
    - If manifest provides `db_parts`, download parts and assemble local DB before activation.
 5. Activate atomically and persist active bundle metadata.
-6. If active bundle is older than 30 days relative to target version, skip deltas and force full bundle reload.
+6. If the active bundle is older than 30 days relative to the target version, skip deltas and force a full bundle reload.
 
 ## Notes
 - The app uses standard `SQLite3` and does not depend on runtime `mod_spatialite` loading.

@@ -183,7 +183,7 @@ private struct DataCoverageMapView: View {
                 Text("Deutschland")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.84))
-                Text(hasGermanyDataset ? "Daten für Deutschland" : "Nur Karlsruhe Regierungsbezirk")
+                Text(LocalizedStringKey(hasGermanyDataset ? "welcome.coverage.active" : "welcome.coverage.none"))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(hasGermanyDataset ? .blue.opacity(0.96) : .white.opacity(0.72))
             }
@@ -210,21 +210,6 @@ private struct CoverageMercatorMap: View {
                 lineWidth: hasGermanyDataset ? 0.8 : 1.0
             )
 
-            let karlsruhePath = mercatorPath(polygons: [CoveragePolygons.karlsruheRegbez], projector: projector)
-            if hasGermanyDataset {
-                context.stroke(
-                    karlsruhePath,
-                    with: .color(Color.white.opacity(0.98)),
-                    style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round, dash: [6, 4])
-                )
-            } else {
-                context.fill(karlsruhePath, with: .color(Color.blue.opacity(0.78)))
-                context.stroke(
-                    karlsruhePath,
-                    with: .color(Color.white.opacity(0.95)),
-                    lineWidth: 1.2
-                )
-            }
         }
     }
 }

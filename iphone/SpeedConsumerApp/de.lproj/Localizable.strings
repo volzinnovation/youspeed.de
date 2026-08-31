@@ -4,7 +4,9 @@
 "startup.retry" = "Erneut versuchen";
 "welcome.title" = "Willkommen bei YouSpeed";
 "welcome.copy" = "Sicher ankommen. YouSpeed zeigt dir live, welches Tempolimit erkannt wurde und wann Hinweise zu Bussgeld, Punkten oder Fahrverbot relevant werden. Achtung: Auch YouSpeed kann Fehler machen - Augen auf die Strasse!";
-"welcome.scope.seed" = "Ohne Deutschland-Download ist nur der Regierungsbezirk Karlsruhe verfuegbar. Den Download startest Du in den Einstellungen.";
+"welcome.scope.seed" = "Ohne Daten-Download sind keine Offline-Strassendaten verfuegbar. Starte den Download in den Einstellungen.";
+"welcome.coverage.active" = "Heruntergeladene Kartendaten sind bereit";
+"welcome.coverage.none" = "Download erforderlich";
 "welcome.scope.active" = "Deutschland-Datensatz aktiv: %@";
 "welcome.legal_heading" = "Rechtlicher Hinweis";
 "welcome.osm_credit" = "Kartendaten: Copyright OpenStreetMap-Mitwirkende, ODbL 1.0. https://www.openstreetmap.org/copyright";
