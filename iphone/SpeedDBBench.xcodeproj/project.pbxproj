@@ -61,9 +61,11 @@
 		AFD42A12AE2E643AE69406D0 /* BEL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B039211EBB57486701EE3554 /* BEL-rules.json */; };
 		B0F7FB9AB928E5D1815E50A5 /* thueringen.poly in Resources */ = {isa = PBXBuildFile; fileRef = DD9CC95F2104420AF1B222D3 /* thueringen.poly */; };
 		B24C32C4A3053C7B544A978E /* nl.lproj in Resources */ = {isa = PBXBuildFile; fileRef = E1EF5534FE6EF8015DB05730 /* nl.lproj */; };
+		B356EC9DDDED929FEADBD394 /* PanoramaxQueueStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */; };
 		B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */; };
 		B8B46021B8A3539C77EE884E /* monaco.poly in Resources */ = {isa = PBXBuildFile; fileRef = C581EF7B8F3025A2F6113FAB /* monaco.poly */; };
 		B9EC55825741DB7817CAE5CE /* rheinland-pfalz.poly in Resources */ = {isa = PBXBuildFile; fileRef = 93E309A6D9FCEB5490D68E8B /* rheinland-pfalz.poly */; };
+		BEF5831BB315456116060F66 /* PanoramaxCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA835A23622AB4C9B27490D /* PanoramaxCapture.swift */; };
 		C3883B48011E83773BC9DE9C /* BenchmarkModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */; };
 		C3B74CEE6BBBB1DC70671679 /* sachsen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 99EFDB87BFD240828F9F259E /* sachsen.poly */; };
 		C50F2EC0DB9D91313144E96C /* NLD-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = BAE57B2D550576F7CF0C64CB /* NLD-rules.json */; };
@@ -132,6 +134,7 @@
 		5460B7376654275955039717 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteScenarioBenchmarkRunner.swift; sourceTree = "<group>"; };
+		5CA835A23622AB4C9B27490D /* PanoramaxCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxCapture.swift; sourceTree = "<group>"; };
 		5DC9B412B9EC756FC6B1F6F4 /* liechtenstein.poly */ = {isa = PBXFileReference; lastKnownFileType = text; path = liechtenstein.poly; sourceTree = "<group>"; };
 		68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */ = {isa = PBXFileReference; lastKnownFileType = text; path = "baden-wuerttemberg.poly"; sourceTree = "<group>"; };
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; lastKnownFileType = text; path = hessen.poly; sourceTree = "<group>"; };
@@ -152,6 +155,7 @@
 		9555D2DA081CCC7879470683 /* replay_track.kml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = replay_track.kml; sourceTree = "<group>"; };
 		99EFDB87BFD240828F9F259E /* sachsen.poly */ = {isa = PBXFileReference; lastKnownFileType = text; path = sachsen.poly; sourceTree = "<group>"; };
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
+		A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxQueueStore.swift; sourceTree = "<group>"; };
 		A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchUITests.swift; sourceTree = "<group>"; };
 		A4F8CBDC0E618FFC06F261B6 /* brandenburg.poly */ = {isa = PBXFileReference; lastKnownFileType = text; path = brandenburg.poly; sourceTree = "<group>"; };
 		A5208F27A82E4F9044943104 /* FRA-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "FRA-rules.json"; sourceTree = "<group>"; };
@@ -199,6 +203,8 @@
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
 				5460B7376654275955039717 /* MainView.swift */,
 				E1EF5534FE6EF8015DB05730 /* nl.lproj */,
+				5CA835A23622AB4C9B27490D /* PanoramaxCapture.swift */,
+				A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */,
 				0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
@@ -567,6 +573,8 @@
 				8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */,
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
 				3189ACFB74E79AE546103ABB /* MainView.swift in Sources */,
+				BEF5831BB315456116060F66 /* PanoramaxCapture.swift in Sources */,
+				B356EC9DDDED929FEADBD394 /* PanoramaxQueueStore.swift in Sources */,
 				F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */,
 				260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */,
 				D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */,
