@@ -34,7 +34,7 @@ class BundleContractTests {
         val france = requireNotNull(config.countryById("france"))
         assertEquals("FRA", france.countryCode)
         assertEquals("regional_shards", france.mode)
-        assertEquals(27, france.regions.size)
+        assertEquals(26, france.regions.size)
         assertTrue(france.regions.any { it.regionId == "ile-de-france" })
         assertTrue(france.regions.any { it.regionId == "rhone-alpes" })
 
@@ -52,7 +52,7 @@ class BundleContractTests {
                 it.manifestUrl == "https://github.com/volzinnovation/youspeed.de/releases/download/netherlands/netherlands_manifest.json"
             }
         )
-        assertEquals(27, endpoints.count { it.countryCode.uppercase() == "FRA" })
+        assertEquals(26, endpoints.count { it.countryCode.uppercase() == "FRA" })
         assertTrue(endpoints.any { it.regionId == "france/ile-de-france" })
         assertTrue(
             endpoints.any {

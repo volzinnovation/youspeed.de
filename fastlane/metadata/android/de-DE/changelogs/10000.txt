@@ -1,0 +1,1 @@
+Erste oeffentliche Version mit Offline-Kartendaten, Live-Tempolimit-Anzeige und lokalisierten App-Texten.

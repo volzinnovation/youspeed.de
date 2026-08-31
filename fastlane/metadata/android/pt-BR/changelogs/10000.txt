@@ -1,0 +1,1 @@
+Primeira versao publica com mapas offline, exibicao ao vivo de limites de velocidade e textos localizados.

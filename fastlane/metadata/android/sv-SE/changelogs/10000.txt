@@ -1,0 +1,1 @@
+Forsta offentliga versionen med offlinekartor, livevisning av hastighetsgranser och lokaliserade apptexter.

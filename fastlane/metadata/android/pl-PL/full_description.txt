@@ -1,0 +1,10 @@
+YouSpeed pokazuje podczas jazdy wykryty limit predkosci i aktualna predkosc. Aplikacja korzysta z lokalnych danych map offline i podaje orientacyjne ostrzezenia, gdy przekroczenie predkosci moze miec konsekwencje.
+
+Funkcje:
+- Podglad limitu predkosci i predkosci na zywo
+- Mapy offline dla obslugiwanych krajow i regionow
+- Orientacyjne ostrzezenia o mandatach, punktach i zakazach prowadzenia
+- Lokalna glosowa rejestracja limitow predkosci
+- Brak reklam i brak sledzenia
+
+YouSpeed jest aplikacja wspomagajaca. Znaki drogowe, przepisy ruchu i urzedowe decyzje zawsze pozostaja decydujace.

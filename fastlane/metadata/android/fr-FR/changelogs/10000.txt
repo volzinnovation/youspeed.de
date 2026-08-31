@@ -1,0 +1,1 @@
+Premiere version publique avec cartes hors ligne, affichage en direct des limitations et textes localises.

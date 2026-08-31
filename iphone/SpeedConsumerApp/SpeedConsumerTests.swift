@@ -284,7 +284,7 @@ final class SpeedConsumerTests: XCTestCase {
         let france = try XCTUnwrap(config.country(countryID: "france"))
         XCTAssertEqual(france.countryCode, "FRA")
         XCTAssertEqual(france.mode, "regional_shards")
-        XCTAssertEqual(france.regions.count, 27)
+        XCTAssertEqual(france.regions.count, 26)
         XCTAssertTrue(france.regions.contains(where: { $0.regionID == "ile-de-france" }))
         XCTAssertTrue(france.regions.contains(where: { $0.regionID == "rhone-alpes" }))
 
@@ -325,7 +325,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(netherlandsEndpoints.first?.regionID, "netherlands")
 
         let franceEndpoints = endpoints.filter { $0.countryCode.uppercased() == "FRA" }
-        XCTAssertEqual(franceEndpoints.count, 27)
+        XCTAssertEqual(franceEndpoints.count, 26)
         XCTAssertTrue(franceEndpoints.contains(where: { $0.regionID == "france/ile-de-france" }))
         XCTAssertTrue(
             franceEndpoints.contains {

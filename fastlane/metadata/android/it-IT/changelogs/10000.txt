@@ -1,0 +1,1 @@
+Prima versione pubblica con mappe offline, visualizzazione live dei limiti di velocita e testi localizzati.

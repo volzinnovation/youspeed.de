@@ -1,0 +1,10 @@
+YouSpeed zeigt waehrend der Fahrt das erkannte Tempolimit und die aktuelle Geschwindigkeit. Die App arbeitet mit lokalen Offline-Kartendaten und gibt unverbindliche Hinweise, wenn Tempoverstoesse teuer werden koennen.
+
+Funktionen:
+- Live-Anzeige fuer Tempolimit und Geschwindigkeit
+- Offline-Kartendaten fuer unterstuetzte Laender und Regionen
+- Hinweise zu Bussgeld, Punkten und Fahrverbot
+- Lokale Spracherfassung fuer Tempolimits
+- Keine Werbung und kein Tracking
+
+YouSpeed ist ein Assistenzsystem. Verkehrszeichen, Verkehrsregeln und amtliche Bescheide bleiben immer massgeblich.
