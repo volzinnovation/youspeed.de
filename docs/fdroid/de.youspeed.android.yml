@@ -1,0 +1,39 @@
+AntiFeatures:
+  NonFreeNet:
+    en-US: Map bundles are downloaded from GitHub release assets.
+  TetheredNet:
+    en-US: The map catalog is tied to one GitHub repository and is not configurable.
+Categories:
+  - Navigation
+License: AGPL-3.0-only
+AuthorName: Raphael Volz
+AuthorWebSite: https://youspeed.de/
+WebSite: https://youspeed.de/
+SourceCode: https://github.com/volzinnovation/youspeed.de
+IssueTracker: https://github.com/volzinnovation/youspeed.de/issues
+
+RepoType: git
+Repo: https://github.com/volzinnovation/youspeed.de.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 10000
+    commit: e4cf0b7017e1b8161fa58ebe2e47ccef9e8e39ff
+    subdir: android/app
+    gradle:
+      - yes
+
+MaintainerNotes: |-
+  The source repository also contains iOS, website, and map-data tooling.
+  Android is built from the android/app subdirectory and consumes shared assets
+  through the app source-set configuration.
+
+  The app contains the Apache-2.0 Vosk German speech model and the OFL-1.1
+  u_DIN font. Runtime map bundles contain ODbL-1.0 OpenStreetMap-derived data.
+  Downloads use hard-coded GitHub release URLs, hence NonFreeNet and
+  TetheredNet.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^android-v[0-9].*$
+CurrentVersion: 1.0.0
+CurrentVersionCode: 10000
