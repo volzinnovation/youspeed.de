@@ -23,6 +23,13 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.0.1
+    versionCode: 10001
+    commit: 69bf9a8a5951578cc37c9f090ada2c0f50b980e3
+    subdir: android/app
+    gradle:
+      - yes
+
 MaintainerNotes: |-
   The source repository also contains iOS, website, and map-data tooling.
   Android is built from the android/app subdirectory and consumes shared assets
@@ -30,10 +37,11 @@ MaintainerNotes: |-
 
   The app contains the Apache-2.0 Vosk German speech model and the OFL-1.1
   u_DIN font. Runtime map bundles contain ODbL-1.0 OpenStreetMap-derived data.
+  No map database is embedded in the APK; users download a selected bundle.
   Downloads use hard-coded GitHub release URLs, hence NonFreeNet and
   TetheredNet.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^android-v[0-9].*$
-CurrentVersion: 1.0.0
-CurrentVersionCode: 10000
+CurrentVersion: 1.0.1
+CurrentVersionCode: 10001
