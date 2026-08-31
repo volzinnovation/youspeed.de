@@ -69,6 +69,32 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].thumbnailPath).path))
     }
 
+    func testPanoramaxStorageLimitRetainsFavorites() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let start = Date(timeIntervalSince1970: 1_000)
+        let batch = try store.createBatch(captureSessionID: "session-1", createdAt: start)
+        let jpeg = Data([0xff, 0xd8, 0xff, 0xd9])
+        for (index, id) in ["old", "favorite"].enumerated() {
+            let timestamp = start.addingTimeInterval(TimeInterval(index))
+            let metadata = PanoramaxCaptureMetadata(
+                captureID: id,
+                captureSessionID: "session-1",
+                capturedAt: timestamp,
+                location: PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: timestamp, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil),
+                sha256: PanoramaxQueueStore.sha256(jpeg), byteSize: Int64(jpeg.count), software: "YouSpeed/test"
+            )
+            _ = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
+        }
+        _ = try store.updateItemFavorite(batchID: batch.batchID, itemID: "favorite", isFavorite: true)
+        let removed = try store.enforceStorageLimit(maxBytes: 8)
+        XCTAssertEqual(removed, ["old"])
+        let remaining = try XCTUnwrap(store.getBatch(batch.batchID)).items
+        XCTAssertEqual(remaining.map(\.itemID), ["favorite"])
+        XCTAssertTrue(remaining[0].isFavorite)
+    }
+
     func testPanoramaxUploadStatusAcceptsNumericIDsAndReadyStates() throws {
         let data = Data(#"{"id":42,"status":"ready"}"#.utf8)
         let status = try JSONDecoder().decode(PanoramaxUploadSetStatus.self, from: data)

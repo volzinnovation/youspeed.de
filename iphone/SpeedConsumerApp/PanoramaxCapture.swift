@@ -69,6 +69,19 @@ struct PanoramaxCadenceConfiguration: Equatable {
     var fallbackInterval: TimeInterval = 5
     var maxLocationAge: TimeInterval = 10
     var maxAccuracyMeters: Double = 50
+    var triggerMode: PanoramaxCaptureTriggerMode = .distance
+}
+
+enum PanoramaxCaptureTriggerMode: String, CaseIterable, Codable {
+    case distance
+    case time
+
+    var label: String {
+        switch self {
+        case .distance: return "Entfernung"
+        case .time: return "Zeit"
+        }
+    }
 }
 
 enum PanoramaxCapturePolicy {
@@ -86,14 +99,15 @@ enum PanoramaxCapturePolicy {
               current.accuracyMeters <= configuration.maxAccuracyMeters else { return false }
         guard let previous = lastCapture else { return true }
         guard current.capturedAt > previous.capturedAt else { return false }
-        let requiredMovement = max(
-            configuration.distanceMeters,
-            2 * max(current.accuracyMeters, previous.accuracyMeters)
-        )
+        let precisionMovement = 2 * max(current.accuracyMeters, previous.accuracyMeters)
         let distance = distanceMeters(from: previous, to: current)
-        return distance >= requiredMovement ||
-            (current.capturedAt.timeIntervalSince(previous.capturedAt) >= configuration.fallbackInterval &&
-             distance >= requiredMovement)
+        guard distance >= precisionMovement else { return false }
+        switch configuration.triggerMode {
+        case .distance:
+            return distance >= max(configuration.distanceMeters, precisionMovement)
+        case .time:
+            return current.capturedAt.timeIntervalSince(previous.capturedAt) >= configuration.fallbackInterval
+        }
     }
 
     static func distanceMeters(from first: PanoramaxLocationSample, to second: PanoramaxLocationSample) -> Double {

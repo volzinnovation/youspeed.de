@@ -428,6 +428,44 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var panoramaxLastAccuracyMeters: Double?
     @Published private(set) var panoramaxBatches: [PanoramaxBatchRecord] = []
     @Published private(set) var panoramaxUploadStatusByBatch: [String: String] = [:]
+    @Published var panoramaxTriggerMode: PanoramaxCaptureTriggerMode {
+        didSet {
+            UserDefaults.standard.set(panoramaxTriggerMode.rawValue, forKey: Self.panoramaxTriggerModeDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxMinimumDistanceMeters: Double {
+        didSet {
+            let clamped = min(max(panoramaxMinimumDistanceMeters, 3), 100)
+            if clamped != panoramaxMinimumDistanceMeters { panoramaxMinimumDistanceMeters = clamped; return }
+            UserDefaults.standard.set(panoramaxMinimumDistanceMeters, forKey: Self.panoramaxMinimumDistanceDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxMinimumIntervalSeconds: Double {
+        didSet {
+            let clamped = min(max(panoramaxMinimumIntervalSeconds, 1), 60)
+            if clamped != panoramaxMinimumIntervalSeconds { panoramaxMinimumIntervalSeconds = clamped; return }
+            UserDefaults.standard.set(panoramaxMinimumIntervalSeconds, forKey: Self.panoramaxMinimumIntervalDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxUnlimitedStorage: Bool {
+        didSet {
+            UserDefaults.standard.set(panoramaxUnlimitedStorage, forKey: Self.panoramaxUnlimitedStorageDefaultsKey)
+            applyPanoramaxConfiguration()
+            enforcePanoramaxStorageLimit()
+        }
+    }
+    @Published var panoramaxStorageLimitMB: Double {
+        didSet {
+            let clamped = min(max(panoramaxStorageLimitMB, 100), 10_000)
+            if clamped != panoramaxStorageLimitMB { panoramaxStorageLimitMB = clamped; return }
+            UserDefaults.standard.set(panoramaxStorageLimitMB, forKey: Self.panoramaxStorageLimitDefaultsKey)
+            applyPanoramaxConfiguration()
+            enforcePanoramaxStorageLimit()
+        }
+    }
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
     @Published private(set) var isUnlimitedSpeedLimitActive: Bool = false
@@ -553,6 +591,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
     private static let panoramaxCaptureEnabledDefaultsKey = "youspeed.panoramax_capture_enabled"
+    private static let panoramaxTriggerModeDefaultsKey = "youspeed.panoramax_trigger_mode"
+    private static let panoramaxMinimumDistanceDefaultsKey = "youspeed.panoramax_minimum_distance_m"
+    private static let panoramaxMinimumIntervalDefaultsKey = "youspeed.panoramax_minimum_interval_s"
+    private static let panoramaxUnlimitedStorageDefaultsKey = "youspeed.panoramax_unlimited_storage"
+    private static let panoramaxStorageLimitDefaultsKey = "youspeed.panoramax_storage_limit_mb"
     private static let matcherDebugProfileDefaultsKey = "youspeed.matcher_debug_profile"
     private static let matcherDebugProfileForcedVersionDefaultsKey = "youspeed.matcher_debug_profile_forced_version"
     private static let defaultAudioAlertThresholdKmh = 8
@@ -975,7 +1018,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
-        let storedPanoramaxCaptureEnabled = UserDefaults.standard.object(forKey: Self.panoramaxCaptureEnabledDefaultsKey) as? Bool
+        let storedTriggerMode = UserDefaults.standard.string(forKey: Self.panoramaxTriggerModeDefaultsKey).flatMap(PanoramaxCaptureTriggerMode.init(rawValue:)) ?? .distance
+        let storedMinimumDistance = UserDefaults.standard.object(forKey: Self.panoramaxMinimumDistanceDefaultsKey) as? Double
+        let storedMinimumInterval = UserDefaults.standard.object(forKey: Self.panoramaxMinimumIntervalDefaultsKey) as? Double
+        let storedUnlimitedStorage = UserDefaults.standard.object(forKey: Self.panoramaxUnlimitedStorageDefaultsKey) as? Bool
+        let storedStorageLimit = UserDefaults.standard.object(forKey: Self.panoramaxStorageLimitDefaultsKey) as? Double
         let storedMatcherProfile = UserDefaults.standard.string(forKey: Self.matcherDebugProfileDefaultsKey)
         let storedMatcherForcedVersion = UserDefaults.standard.integer(forKey: Self.matcherDebugProfileForcedVersionDefaultsKey)
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
@@ -988,7 +1035,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
-        panoramaxCaptureEnabled = storedPanoramaxCaptureEnabled ?? false
+        // Recording is now explicitly controlled by the bottom-left start/stop button.
+        // Do not auto-start from the legacy settings toggle on upgrade.
+        panoramaxCaptureEnabled = false
+        panoramaxTriggerMode = storedTriggerMode
+        panoramaxMinimumDistanceMeters = min(max(storedMinimumDistance ?? 25, 3), 100)
+        panoramaxMinimumIntervalSeconds = min(max(storedMinimumInterval ?? 5, 1), 60)
+        panoramaxUnlimitedStorage = storedUnlimitedStorage ?? false
+        panoramaxStorageLimitMB = min(max(storedStorageLimit ?? 1000, 100), 10_000)
         matcherDebugProfile = initialMatcherProfile
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
@@ -998,6 +1052,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         super.init()
         panoramaxQueueStore = try? PanoramaxQueueStore()
         panoramaxRecorder = PanoramaxRecorder(queueStore: panoramaxQueueStore)
+        applyPanoramaxConfiguration()
         panoramaxRecorder?.onChange = { [weak self] in
             self?.syncPanoramaxRecorderState()
         }
@@ -1040,6 +1095,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         panoramaxRecorder?.session
     }
 
+    var isPanoramaxRecordingActive: Bool {
+        panoramaxCaptureState == .preparing || panoramaxCaptureState == .recording
+    }
+
+    func togglePanoramaxRecording() {
+        panoramaxCaptureEnabled = !isPanoramaxRecordingActive
+        if panoramaxCaptureEnabled, isDriving { panoramaxRecorder?.startRecording() }
+    }
+
+    private func applyPanoramaxConfiguration() {
+        let cadence = PanoramaxCadenceConfiguration(
+            distanceMeters: panoramaxMinimumDistanceMeters,
+            fallbackInterval: panoramaxMinimumIntervalSeconds,
+            maxLocationAge: 10,
+            maxAccuracyMeters: 50,
+            triggerMode: panoramaxTriggerMode
+        )
+        panoramaxRecorder?.updateConfiguration(cadence, storageLimitBytes: panoramaxUnlimitedStorage ? nil : Int64(panoramaxStorageLimitMB * 1_000_000))
+    }
+
     private func syncPanoramaxRecorderState() {
         panoramaxCaptureState = panoramaxRecorder?.state ?? .failed
         panoramaxCaptureCount = panoramaxRecorder?.capturedImageCount ?? 0
@@ -1050,6 +1125,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func refreshPanoramaxBatches() {
         panoramaxBatches = (try? panoramaxQueueStore?.listBatches()) ?? []
+    }
+
+    var panoramaxGalleryItems: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        panoramaxBatches.flatMap { batch in batch.items.map { (batch: batch, item: $0) } }
+            .sorted { $0.item.metadata.capturedAt > $1.item.metadata.capturedAt }
     }
 
     func panoramaxThumbnailURL(for item: PanoramaxItemRecord) -> URL? {
@@ -1071,6 +1151,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } catch {
             panoramaxLastCaptureDetail = "Bildstatus konnte nicht gespeichert werden"
         }
+    }
+
+    func togglePanoramaxFavorite(batchID: String, itemID: String) {
+        guard let batch = panoramaxBatches.first(where: { $0.batchID == batchID }),
+              let item = batch.items.first(where: { $0.itemID == itemID }) else { return }
+        do {
+            _ = try panoramaxQueueStore?.updateItemFavorite(batchID: batchID, itemID: itemID, isFavorite: !item.isFavorite)
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Favorit konnte nicht gespeichert werden"
+        }
+    }
+
+    private func enforcePanoramaxStorageLimit() {
+        guard !panoramaxUnlimitedStorage, let store = panoramaxQueueStore else { return }
+        _ = try? store.enforceStorageLimit(maxBytes: Int64(panoramaxStorageLimitMB * 1_000_000))
+        refreshPanoramaxBatches()
     }
 
     func deletePanoramaxItem(batchID: String, itemID: String) {

@@ -46,7 +46,7 @@ final class PanoramaxAccountModel: ObservableObject {
     private let credentials = PanoramaxCredentialStore()
 
     init() {
-        instanceOrigin = UserDefaults.standard.string(forKey: Self.originDefaultsKey) ?? ""
+        instanceOrigin = UserDefaults.standard.string(forKey: Self.originDefaultsKey) ?? "https://panoramax.openstreetmap.fr"
         updateConnectionState()
     }
 
@@ -190,6 +190,38 @@ final class PanoramaxAccountModel: ObservableObject {
             }
         }
     }
+}
+
+struct PanoramaxServerPreset: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let origin: String
+}
+
+enum PanoramaxServerCatalog {
+    static let presets: [PanoramaxServerPreset] = [
+        PanoramaxServerPreset(id: "OSM-FR", name: "OpenStreetMap France", origin: "https://panoramax.openstreetmap.fr"),
+        PanoramaxServerPreset(id: "MapComplete", name: "MapComplete", origin: "https://panoramax.mapcomplete.org"),
+        PanoramaxServerPreset(id: "IGN", name: "IGN", origin: "https://panoramax.ign.fr"),
+        PanoramaxServerPreset(id: "Multimob", name: "Multimob", origin: "https://panoramax.multimob.be"),
+        PanoramaxServerPreset(id: "Wales", name: "Panoramax Wales", origin: "https://www.panoramax.wales"),
+        PanoramaxServerPreset(id: "NL", name: "Netherlands", origin: "https://nl.panoramax.xyz"),
+        PanoramaxServerPreset(id: "Basi", name: "Basi.re", origin: "https://panoramax.basi.re"),
+        PanoramaxServerPreset(id: "Bustikiller", name: "Bustikiller", origin: "https://panoramax.bustikiller.com"),
+        PanoramaxServerPreset(id: "OSM-HR", name: "OSM Croatia", origin: "https://panoramax.osm-hr.org"),
+        PanoramaxServerPreset(id: "OSM-TW", name: "OSM Taiwan", origin: "https://panoramax.osm.tw"),
+        PanoramaxServerPreset(id: "KoenHabets", name: "Koen Habets", origin: "https://panoramax.koenhabets.nl"),
+        PanoramaxServerPreset(id: "Libre", name: "Libre Argentina", origin: "https://panoramax.libre.net.ar"),
+        PanoramaxServerPreset(id: "Mahdi", name: "Mahdi", origin: "https://pano.mahdi.cz"),
+        PanoramaxServerPreset(id: "Locus", name: "Locus", origin: "https://pano.locus.sbs"),
+        PanoramaxServerPreset(id: "Kasik", name: "Kasik GIS", origin: "https://pano.kasik-gis.eu"),
+        PanoramaxServerPreset(id: "Fulda", name: "OSM Fulda", origin: "https://panorama.osm-fulda.de"),
+        PanoramaxServerPreset(id: "Burakonder", name: "Burak Onder", origin: "https://panoramax.burakonder.net"),
+        PanoramaxServerPreset(id: "OSM-BE", name: "OSM Belgium", origin: "https://panoramax.osm.be"),
+        PanoramaxServerPreset(id: "SereneDeluge", name: "Serene Deluge", origin: "https://panoramax.serenedeluge.se"),
+        PanoramaxServerPreset(id: "Ulm", name: "Ulm", origin: "https://panoramax-ulm.jjbaur.de"),
+        PanoramaxServerPreset(id: "BikeSpace", name: "Bike Space Project", origin: "https://panoramax.bikespaceproject.ca")
+    ]
 }
 
 private final class PanoramaxCredentialStore {

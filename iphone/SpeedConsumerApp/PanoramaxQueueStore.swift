@@ -18,6 +18,30 @@ struct PanoramaxItemRecord: Codable, Equatable {
     let metadata: PanoramaxCaptureMetadata
     var state: PanoramaxItemState
     var remoteID: String?
+    var isFavorite: Bool = false
+
+    private enum CodingKeys: String, CodingKey { case itemID, originalPath, thumbnailPath, metadata, state, remoteID, isFavorite }
+
+    init(itemID: String, originalPath: String, thumbnailPath: String, metadata: PanoramaxCaptureMetadata, state: PanoramaxItemState, remoteID: String?, isFavorite: Bool = false) {
+        self.itemID = itemID
+        self.originalPath = originalPath
+        self.thumbnailPath = thumbnailPath
+        self.metadata = metadata
+        self.state = state
+        self.remoteID = remoteID
+        self.isFavorite = isFavorite
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        itemID = try container.decode(String.self, forKey: .itemID)
+        originalPath = try container.decode(String.self, forKey: .originalPath)
+        thumbnailPath = try container.decode(String.self, forKey: .thumbnailPath)
+        metadata = try container.decode(PanoramaxCaptureMetadata.self, forKey: .metadata)
+        state = try container.decode(PanoramaxItemState.self, forKey: .state)
+        remoteID = try container.decodeIfPresent(String.self, forKey: .remoteID)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+    }
 }
 
 /// Transactional, app-private queue. The root is excluded from iCloud/device backup.
@@ -97,7 +121,7 @@ final class PanoramaxQueueStore {
             protect(itemDirectory)
             protect(original)
             protect(thumb)
-            let item = PanoramaxItemRecord(itemID: metadata.captureID, originalPath: relativePath(original), thumbnailPath: relativePath(thumb), metadata: metadata, state: .captured, remoteID: nil)
+            let item = PanoramaxItemRecord(itemID: metadata.captureID, originalPath: relativePath(original), thumbnailPath: relativePath(thumb), metadata: metadata, state: .captured, remoteID: nil, isFavorite: false)
             batch.items.append(item)
             try commit(batch)
             return item
@@ -114,6 +138,54 @@ final class PanoramaxQueueStore {
             if let remoteID { batch.items[index].remoteID = remoteID }
             try commit(batch)
             return batch
+        }
+    }
+
+    @discardableResult
+    func updateItemFavorite(batchID: String, itemID: String, isFavorite: Bool) throws -> PanoramaxBatchRecord {
+        try lock.withLock {
+            guard var batch = try read(batchID), let index = batch.items.firstIndex(where: { $0.itemID == itemID }) else { throw QueueError.unknownItem }
+            batch.items[index].isFavorite = isFavorite
+            try commit(batch)
+            return batch
+        }
+    }
+
+    /// Removes the oldest non-favorite originals and thumbnails until the configured byte budget fits.
+    @discardableResult
+    func enforceStorageLimit(maxBytes: Int64) throws -> [String] {
+        guard maxBytes > 0 else { return [] }
+        return try lock.withLock {
+            let files = try FileManager.default.contentsOfDirectory(at: batchesDirectory, includingPropertiesForKeys: nil)
+                .filter { $0.pathExtension == "json" }
+            var batches = files.compactMap { try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: $0)) }
+            struct Candidate { let batchIndex: Int; let itemIndex: Int; let id: String; let bytes: Int64; let capturedAt: Date }
+            var candidates: [Candidate] = []
+            var total: Int64 = 0
+            for (batchIndex, batch) in batches.enumerated() {
+                for (itemIndex, item) in batch.items.enumerated() {
+                    let originalURL = root.appendingPathComponent(item.originalPath)
+                    let thumbnailURL = root.appendingPathComponent(item.thumbnailPath)
+                    let originalBytes = (try? originalURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).flatMap(Int64.init) ?? 0
+                    let thumbnailBytes = (try? thumbnailURL.resourceValues(forKeys: [.fileSizeKey]).fileSize).flatMap(Int64.init) ?? 0
+                    let bytes = originalBytes + thumbnailBytes
+                    total += bytes
+                    if !item.isFavorite { candidates.append(Candidate(batchIndex: batchIndex, itemIndex: itemIndex, id: item.itemID, bytes: bytes, capturedAt: item.metadata.capturedAt)) }
+                }
+            }
+            guard total > maxBytes else { return [] }
+            candidates.sort { $0.capturedAt < $1.capturedAt }
+            var removed: [String] = []
+            for candidate in candidates where total > maxBytes {
+                guard let item = batches[candidate.batchIndex].items.first(where: { $0.itemID == candidate.id }) else { continue }
+                try? FileManager.default.removeItem(at: root.appendingPathComponent(item.originalPath))
+                try? FileManager.default.removeItem(at: root.appendingPathComponent(item.thumbnailPath))
+                total -= candidate.bytes
+                removed.append(candidate.id)
+                batches[candidate.batchIndex].items.removeAll { $0.itemID == candidate.id }
+            }
+            for batch in batches { try commit(batch) }
+            return removed
         }
     }
 

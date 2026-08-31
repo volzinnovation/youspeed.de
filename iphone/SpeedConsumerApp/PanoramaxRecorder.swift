@@ -30,7 +30,8 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
 
     private let queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.panoramax.camera")
-    private let cadenceConfiguration = PanoramaxCadenceConfiguration()
+    private var cadenceConfiguration = PanoramaxCadenceConfiguration()
+    private var storageLimitBytes: Int64?
     private var batch: PanoramaxBatchRecord?
     private var lastCaptureSample: PanoramaxLocationSample?
     private var pendingSample: PanoramaxLocationSample?
@@ -40,6 +41,11 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
     init(queueStore: PanoramaxQueueStore?) {
         self.queueStore = queueStore
         super.init()
+    }
+
+    func updateConfiguration(_ configuration: PanoramaxCadenceConfiguration, storageLimitBytes: Int64?) {
+        cadenceConfiguration = configuration
+        self.storageLimitBytes = storageLimitBytes
     }
 
     func startRecording() {
@@ -200,6 +206,9 @@ final class PanoramaxRecorder: NSObject, ObservableObject {
         )
         do {
             _ = try queueStore.addJPEG(batchID: batch.batchID, jpeg: panoramaxJPEG, thumbnail: thumbnail, metadata: metadata)
+            if let storageLimitBytes {
+                _ = try? queueStore.enforceStorageLimit(maxBytes: storageLimitBytes)
+            }
             lastCaptureSample = sample
             capturedImageCount += 1
             lastCaptureAt = sample.capturedAt

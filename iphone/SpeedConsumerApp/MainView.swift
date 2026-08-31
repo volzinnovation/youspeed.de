@@ -87,7 +87,7 @@ struct MainView: View {
                         }
                     )
 
-                    if viewModel.panoramaxCaptureEnabled {
+                    if viewModel.isPanoramaxRecordingActive {
                         panoramaxDriveRecorderBlock
                             .padding(.horizontal, horizontalPadding)
                     } else {
@@ -273,34 +273,39 @@ struct MainView: View {
     private func bottomCornerButtons(horizontalPadding: CGFloat) -> some View {
         HStack {
             Button {
-                showingLegalInfo = true
+                viewModel.togglePanoramaxRecording()
             } label: {
+                Image(systemName: viewModel.isPanoramaxRecordingActive ? "stop.fill" : "circle.fill")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+
+            .background(Color.red, in: viewModel.isPanoramaxRecordingActive ? AnyShape(RoundedRectangle(cornerRadius: 9, style: .continuous)) : AnyShape(Circle()))
+            .accessibilityLabel(viewModel.isPanoramaxRecordingActive ? "Aufnahme stoppen" : "Aufnahme starten")
+
+            Spacer()
+
+            Button { showingLegalInfo = true } label: {
                 Image(systemName: "info.circle.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-            }
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
 
             Spacer()
 
-            Button {
-                showingSettings = true
-            } label: {
+            Button { showingSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-            }
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
         }
         .padding(.horizontal, horizontalPadding)
         .foregroundStyle(primaryForegroundColor)
@@ -976,6 +981,16 @@ private struct LocalRecordingsView: View {
             }
             .buttonStyle(.plain)
 
+            NavigationLink {
+                PanoramaxGalleryView(viewModel: viewModel)
+            } label: {
+                Label("Galerie", systemImage: "square.grid.2x2")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
             List {
                 if viewModel.localObservations.isEmpty {
                     Text(NSLocalizedString("recordings.empty", comment: ""))
@@ -1178,11 +1193,23 @@ private struct PanoramaxReviewItemRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Button { showingOriginal = true } label: {
-                thumbnail
-                    .frame(width: 112, height: 64)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                thumbnail.frame(width: 112, height: 64)
             }
             .buttonStyle(.plain)
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    viewModel.togglePanoramaxFavorite(batchID: batch.batchID, itemID: item.itemID)
+                } label: {
+                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(item.isFavorite ? .yellow : .white)
+                        .padding(6)
+                        .background(.black.opacity(0.55), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(item.isFavorite ? "Favorit entfernen" : "Als Favorit markieren")
+                .padding(4)
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.metadata.capturedAt.formatted(date: .omitted, time: .standard))
                     .font(.caption.weight(.semibold))
@@ -1245,6 +1272,82 @@ private struct PanoramaxReviewItemRow: View {
     }
 }
 
+private struct PanoramaxGalleryView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var selectedItem: GalleryItem?
+
+    private struct GalleryItem: Identifiable {
+        let id: String
+        let batchID: String
+        let item: PanoramaxItemRecord
+    }
+
+    var body: some View {
+        Group {
+            if viewModel.panoramaxGalleryItems.isEmpty {
+                ContentUnavailableView("Keine Panoramax-Bilder", systemImage: "photo.on.rectangle")
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                        ForEach(viewModel.panoramaxGalleryItems, id: \.item.itemID) { entry in
+                            let galleryItem = GalleryItem(id: entry.item.itemID, batchID: entry.batch.batchID, item: entry.item)
+                            ZStack(alignment: .topTrailing) {
+                                Button { selectedItem = galleryItem } label: {
+                                    thumbnail(for: entry.item)
+                                        .frame(height: 110)
+                                        .frame(maxWidth: .infinity)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.white)
+                                    .padding(5)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                                    .background(Color.black.opacity(0.5), alignment: .bottom)
+                                    .allowsHitTesting(false)
+                                Button {
+                                    viewModel.togglePanoramaxFavorite(batchID: galleryItem.batchID, itemID: galleryItem.item.itemID)
+                                } label: {
+                                    Image(systemName: entry.item.isFavorite ? "star.fill" : "star")
+                                        .foregroundStyle(entry.item.isFavorite ? .yellow : .white)
+                                        .padding(7)
+                                        .background(.black.opacity(0.55), in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(entry.item.isFavorite ? "Favorit entfernen" : "Als Favorit markieren")
+                                .padding(6)
+                            }
+                        }
+                    }
+                    .padding(12)
+                }
+            }
+        }
+        .navigationTitle("Galerie")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { viewModel.refreshPanoramaxBatches() }
+        .sheet(item: $selectedItem) { selection in
+            NavigationStack {
+                if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image).resizable().scaledToFit().padding().navigationTitle("Panoramax-Bild").navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView("Bild nicht verfuegbar", systemImage: "photo")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func thumbnail(for item: PanoramaxItemRecord) -> some View {
+        if let url = viewModel.panoramaxThumbnailURL(for: item), let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image).resizable().scaledToFill()
+        } else {
+            Color.secondary.opacity(0.2).overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
+        }
+    }
+}
+
 private struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
 
@@ -1290,15 +1393,42 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Panoramax Drive Recorder") {
-                Toggle("Strassenbilder beitragen", isOn: $viewModel.panoramaxCaptureEnabled)
-
-                Text("Nimmt waehrend der Fahrt vollstaendige Bilder der Rueckkamera auf und speichert sie zuerst nur auf diesem iPhone.")
+            Section("Drive Recorder") {
+                Text("Aufnahmen startest du mit dem roten Knopf unten links. Bilder bleiben zuerst auf diesem iPhone und koennen spaeter geprueft und hochgeladen werden.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
                 LabeledContent("Status", value: panoramaxStatusText)
                 LabeledContent("Gespeicherte Bilder", value: "\(viewModel.panoramaxCaptureCount)")
+
+                Picker("Ausloeser", selection: $viewModel.panoramaxTriggerMode) {
+                    ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Mindestentfernung")
+                        Spacer()
+                        Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 3...100, step: 1)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Mindestzeit")
+                        Spacer()
+                        Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 1...60, step: 1)
+                }
 
                 if let accuracy = viewModel.panoramaxLastAccuracyMeters {
                     Text("Neue Bilder werden erst nach mindestens 2 × GPS-Genauigkeit (aktuell ±\(Int(accuracy.rounded())) m) aufgenommen.")
@@ -1309,9 +1439,39 @@ private struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+
+                Toggle("Speicher unbegrenzt", isOn: $viewModel.panoramaxUnlimitedStorage)
+                if !viewModel.panoramaxUnlimitedStorage {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Speicherlimit")
+                            Spacer()
+                            Text("\(Int(viewModel.panoramaxStorageLimitMB.rounded())) MB")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $viewModel.panoramaxStorageLimitMB, in: 100...10_000, step: 100)
+                    }
+                    Text("Bei voller Kapazitaet werden die aeltesten nicht favorisierten Bilder automatisch entfernt. Favoriten bleiben erhalten.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Panoramax-Konto") {
+                Picker("Instanz", selection: Binding(
+                    get: { PanoramaxServerCatalog.presets.first(where: { $0.origin == account.instanceOrigin })?.id ?? "custom" },
+                    set: { id in
+                        if let preset = PanoramaxServerCatalog.presets.first(where: { $0.id == id }) { account.instanceOrigin = preset.origin }
+                    }
+                )) {
+                    ForEach(PanoramaxServerCatalog.presets) { preset in
+                        Text(preset.name).tag(preset.id)
+                    }
+                    Text("Andere Instanz").tag("custom")
+                }
+                .pickerStyle(.menu)
+
                 TextField("Instanz (https://...)", text: $account.instanceOrigin)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -1500,7 +1660,7 @@ private struct SettingsView: View {
     private var panoramaxStatusText: String {
         switch viewModel.panoramaxCaptureState {
         case .disabled:
-            return viewModel.panoramaxCaptureEnabled ? "Bereit fuer die naechste Fahrt" : "Aus"
+            return "Bereit fuer die naechste Aufnahme"
         case .preparing:
             return "Kamera wird vorbereitet"
         case .recording:
