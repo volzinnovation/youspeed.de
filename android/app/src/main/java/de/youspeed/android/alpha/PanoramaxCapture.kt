@@ -93,9 +93,13 @@ object PanoramaxCapturePolicy {
         val previous = lastCapture ?: return true
         if (!current.capturedAt.isAfter(previous.capturedAt)) return false
         val distance = haversineMeters(previous.latitude, previous.longitude, current.latitude, current.longitude)
+        val requiredMovement = max(
+            config.distanceMeters,
+            2.0 * max(current.accuracyMeters, previous.accuracyMeters),
+        )
         // A time fallback is only useful while moving; it must not produce stationary duplicates.
-        return distance >= config.distanceMeters ||
-            (Duration.between(previous.capturedAt, current.capturedAt) >= config.fallbackInterval && distance >= max(3.0, config.distanceMeters / 5.0))
+        return distance >= requiredMovement ||
+            (Duration.between(previous.capturedAt, current.capturedAt) >= config.fallbackInterval && distance >= requiredMovement)
     }
 
     private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

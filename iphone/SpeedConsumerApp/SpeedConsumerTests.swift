@@ -20,6 +20,17 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(PanoramaxCapturePolicy.shouldCapture(lastCapture: first, current: moving))
     }
 
+    func testPanoramaxCadenceRequiresTwiceTheGPSPrecision() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let first = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: start, accuracyMeters: 12, altitudeMeters: nil, headingDegrees: nil)
+        let tooClose = PanoramaxLocationSample(latitude: 49, longitude: 8.00025, capturedAt: start.addingTimeInterval(5), accuracyMeters: 12, altitudeMeters: nil, headingDegrees: nil)
+        let farEnough = PanoramaxLocationSample(latitude: 49, longitude: 8.0005, capturedAt: start.addingTimeInterval(5), accuracyMeters: 12, altitudeMeters: nil, headingDegrees: nil)
+
+        let configuration = PanoramaxCadenceConfiguration(distanceMeters: 5, fallbackInterval: 5, maxLocationAge: 10, maxAccuracyMeters: 50)
+        XCTAssertFalse(PanoramaxCapturePolicy.shouldCapture(lastCapture: first, current: tooClose, configuration: configuration))
+        XCTAssertTrue(PanoramaxCapturePolicy.shouldCapture(lastCapture: first, current: farEnough, configuration: configuration))
+    }
+
     func testPanoramaxMetadataRejectsInvalidCoordinatesAndHash() {
         let timestamp = Date(timeIntervalSince1970: 1_000)
         let metadata = PanoramaxCaptureMetadata(

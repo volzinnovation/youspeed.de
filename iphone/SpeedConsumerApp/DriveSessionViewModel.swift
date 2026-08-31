@@ -410,6 +410,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var downloadedBundleLatestVersionByRegion: [String: String] = [:]
     @Published private(set) var expectedBundleBytesByRegion: [String: Int64] = [:]
     @Published private(set) var activeDownloadOptionID: String?
+    @Published var panoramaxCaptureEnabled: Bool {
+        didSet {
+            guard panoramaxCaptureEnabled != oldValue else { return }
+            UserDefaults.standard.set(panoramaxCaptureEnabled, forKey: Self.panoramaxCaptureEnabledDefaultsKey)
+            if panoramaxCaptureEnabled, isDriving {
+                panoramaxRecorder?.startRecording()
+            } else if !panoramaxCaptureEnabled {
+                panoramaxRecorder?.stopRecording()
+            }
+        }
+    }
+    @Published private(set) var panoramaxCaptureState: PanoramaxRecorderState = .disabled
+    @Published private(set) var panoramaxCaptureCount = 0
+    @Published private(set) var panoramaxLastCaptureAt: Date?
+    @Published private(set) var panoramaxLastCaptureDetail = "Noch keine Aufnahme"
+    @Published private(set) var panoramaxLastAccuracyMeters: Double?
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
     @Published private(set) var isUnlimitedSpeedLimitActive: Bool = false
@@ -470,6 +486,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let bundledTargetsConfig: V3BundleTargetsConfig?
     private let manifestEndpoints: [V3ManifestEndpoint]
     private var speedLimitService: V3SpeedLimitService?
+    private var panoramaxRecorder: PanoramaxRecorder?
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
     private var preparedMatchLogURL: URL?
@@ -531,6 +548,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
+    private static let panoramaxCaptureEnabledDefaultsKey = "youspeed.panoramax_capture_enabled"
     private static let matcherDebugProfileDefaultsKey = "youspeed.matcher_debug_profile"
     private static let matcherDebugProfileForcedVersionDefaultsKey = "youspeed.matcher_debug_profile_forced_version"
     private static let defaultAudioAlertThresholdKmh = 8
@@ -953,6 +971,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
+        let storedPanoramaxCaptureEnabled = UserDefaults.standard.object(forKey: Self.panoramaxCaptureEnabledDefaultsKey) as? Bool
         let storedMatcherProfile = UserDefaults.standard.string(forKey: Self.matcherDebugProfileDefaultsKey)
         let storedMatcherForcedVersion = UserDefaults.standard.integer(forKey: Self.matcherDebugProfileForcedVersionDefaultsKey)
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
@@ -965,12 +984,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
+        panoramaxCaptureEnabled = storedPanoramaxCaptureEnabled ?? false
         matcherDebugProfile = initialMatcherProfile
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        panoramaxRecorder = PanoramaxRecorder(queueStore: try? PanoramaxQueueStore())
+        panoramaxRecorder?.onChange = { [weak self] in
+            self?.syncPanoramaxRecorderState()
+        }
+        syncPanoramaxRecorderState()
         if storedMatcherForcedVersion < MatcherDebugProfile.forcedProfileVersion
             || storedMatcherProfile != initialMatcherProfile.rawValue
         {
@@ -1002,6 +1027,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var isDatabaseReadyForQueries: Bool {
         startupDataState == .ready && speedLimitService != nil && !activeDBPath.isEmpty
+    }
+
+    var panoramaxPreviewSession: AVCaptureSession? {
+        panoramaxRecorder?.session
+    }
+
+    private func syncPanoramaxRecorderState() {
+        panoramaxCaptureState = panoramaxRecorder?.state ?? .failed
+        panoramaxCaptureCount = panoramaxRecorder?.capturedImageCount ?? 0
+        panoramaxLastCaptureAt = panoramaxRecorder?.lastCaptureAt
+        panoramaxLastCaptureDetail = panoramaxRecorder?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
+        panoramaxLastAccuracyMeters = panoramaxRecorder?.lastAccuracyMeters
     }
 
     var isScreenshotMode: Bool {
@@ -1729,6 +1766,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             ensureSeedBootstrapIfNeeded()
         }
         isDriving = true
+        if panoramaxCaptureEnabled {
+            panoramaxRecorder?.startRecording()
+        }
         isUnlimitedSpeedLimitActive = false
         resetDerivedSpeedTracking()
         resetTunnelModeTracking()
@@ -1747,6 +1787,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func stopDriving() {
         isDriving = false
+        panoramaxRecorder?.stopRecording()
         locationManager.stopUpdatingLocation()
         resetDerivedSpeedTracking()
         driveStatus = "stopped"
@@ -3708,6 +3749,9 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             let displaySpeedKmh = updateCurrentSpeed(from: location)
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
+            if panoramaxCaptureEnabled {
+                panoramaxRecorder?.ingest(location: location)
+            }
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()
             let fixID = gpsFixCount

@@ -86,10 +86,14 @@ enum PanoramaxCapturePolicy {
               current.accuracyMeters <= configuration.maxAccuracyMeters else { return false }
         guard let previous = lastCapture else { return true }
         guard current.capturedAt > previous.capturedAt else { return false }
+        let requiredMovement = max(
+            configuration.distanceMeters,
+            2 * max(current.accuracyMeters, previous.accuracyMeters)
+        )
         let distance = distanceMeters(from: previous, to: current)
-        return distance >= configuration.distanceMeters ||
+        return distance >= requiredMovement ||
             (current.capturedAt.timeIntervalSince(previous.capturedAt) >= configuration.fallbackInterval &&
-             distance >= max(3, configuration.distanceMeters / 5))
+             distance >= requiredMovement)
     }
 
     static func distanceMeters(from first: PanoramaxLocationSample, to second: PanoramaxLocationSample) -> Double {

@@ -24,6 +24,13 @@ class PanoramaxCaptureTests {
     }
 
     @Test
+    fun cadenceRequiresTwiceTheGpsPrecision() {
+        val config = PanoramaxCadenceConfig(distanceMeters = 5.0)
+        assertFalse(PanoramaxCapturePolicy.shouldCapture(fix(0, accuracy = 12.0), fix(5, longitude = 8.00025, accuracy = 12.0), config = config))
+        assertTrue(PanoramaxCapturePolicy.shouldCapture(fix(0, accuracy = 12.0), fix(5, longitude = 8.0005, accuracy = 12.0), config = config))
+    }
+
+    @Test
     fun staleAndInaccurateLocationsPauseCapture() {
         val config = PanoramaxCadenceConfig(maxLocationAge = Duration.ofSeconds(10), maxAccuracyMeters = 30.0)
         assertFalse(PanoramaxCapturePolicy.shouldCapture(fix(0), fix(20, longitude = 8.001), now = t0.plusSeconds(40), config = config))

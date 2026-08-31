@@ -87,19 +87,24 @@ struct MainView: View {
                         }
                     )
 
-                    metricStatusBlock(
-                        primaryFont: primaryMetricFontSize,
-                        secondaryFont: secondaryFont
-                    )
-                    .padding(.horizontal, horizontalPadding)
+                    if viewModel.panoramaxCaptureEnabled {
+                        panoramaxDriveRecorderBlock
+                            .padding(.horizontal, horizontalPadding)
+                    } else {
+                        metricStatusBlock(
+                            primaryFont: primaryMetricFontSize,
+                            secondaryFont: secondaryFont
+                        )
+                        .padding(.horizontal, horizontalPadding)
 
-                    locationStatusBlock(
-                        badgeWidth: bottomButtonGapWidth,
-                        debugFont: debugFont,
-                        debugSpacing: debugSpacing,
-                        reservedHeight: locationReserve
-                    )
-                    .padding(.horizontal, horizontalPadding)
+                        locationStatusBlock(
+                            badgeWidth: bottomButtonGapWidth,
+                            debugFont: debugFont,
+                            debugSpacing: debugSpacing,
+                            reservedHeight: locationReserve
+                        )
+                        .padding(.horizontal, horizontalPadding)
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .padding(.top, contentTopInset)
@@ -154,6 +159,80 @@ struct MainView: View {
 
     private var showsPedestrianZoneSign: Bool {
         !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
+    }
+
+    private var panoramaxDriveRecorderBlock: some View {
+        VStack(spacing: 8) {
+            ZStack(alignment: .topLeading) {
+                if let session = viewModel.panoramaxPreviewSession,
+                   viewModel.panoramaxCaptureState == .recording || viewModel.panoramaxCaptureState == .preparing {
+                    PanoramaxCameraPreview(session: session)
+                } else {
+                    Color.white.opacity(0.08)
+                    VStack(spacing: 6) {
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 30, weight: .semibold))
+                        Text(panoramaxRecorderStateText)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white.opacity(0.78))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(viewModel.panoramaxCaptureState == .recording ? .red : .orange)
+                        .frame(width: 9, height: 9)
+                    Text(viewModel.panoramaxCaptureState == .recording ? "REC" : "VORBEREITUNG")
+                        .font(.caption.weight(.bold))
+                    Spacer()
+                    Text("\(viewModel.panoramaxCaptureCount) Bilder")
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(10)
+                .background(.black.opacity(0.46), in: Capsule())
+                .padding(10)
+            }
+            .aspectRatio(16.0 / 9.0, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "location.fill")
+                    .font(.caption.weight(.bold))
+                Text(viewModel.panoramaxLastCaptureDetail)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                Spacer()
+                if let accuracy = viewModel.panoramaxLastAccuracyMeters {
+                    Text("GPS ±\(Int(accuracy.rounded())) m")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.72))
+                }
+            }
+            .foregroundStyle(.white.opacity(0.86))
+        }
+        .padding(10)
+        .background(.black.opacity(0.24), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var panoramaxRecorderStateText: String {
+        switch viewModel.panoramaxCaptureState {
+        case .disabled:
+            return "Drive Recorder pausiert"
+        case .denied:
+            return "Kamerazugriff erlauben"
+        case .unavailable, .failed:
+            return "Kamera nicht verfuegbar"
+        case .preparing:
+            return "Kamera wird vorbereitet"
+        case .recording:
+            return "Drive Recorder aktiv"
+        }
     }
 
     private var topCornerButtons: some View {
@@ -1043,6 +1122,27 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Panoramax Drive Recorder") {
+                Toggle("Strassenbilder beitragen", isOn: $viewModel.panoramaxCaptureEnabled)
+
+                Text("Nimmt waehrend der Fahrt vollstaendige Bilder der Rueckkamera auf und speichert sie zuerst nur auf diesem iPhone.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent("Status", value: panoramaxStatusText)
+                LabeledContent("Gespeicherte Bilder", value: "\(viewModel.panoramaxCaptureCount)")
+
+                if let accuracy = viewModel.panoramaxLastAccuracyMeters {
+                    Text("Neue Bilder werden erst nach mindestens 2 × GPS-Genauigkeit (aktuell ±\(Int(accuracy.rounded())) m) aufgenommen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Neue Bilder werden nur bei ausreichender GPS-Genauigkeit und mindestens 2 × GPS-Genauigkeit Bewegung aufgenommen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             Section(NSLocalizedString("settings.maps.section", comment: "")) {
                 LabeledContent(NSLocalizedString("settings.maps.status", comment: ""), value: syncStatusLabel)
                 LabeledContent(NSLocalizedString("settings.maps.bundle", comment: ""), value: viewModel.activeBundleVersion)
@@ -1200,6 +1300,23 @@ private struct SettingsView: View {
             return "Synchronisierung fehlgeschlagen"
         default:
             return viewModel.syncStatus.replacingOccurrences(of: "_", with: " ")
+        }
+    }
+
+    private var panoramaxStatusText: String {
+        switch viewModel.panoramaxCaptureState {
+        case .disabled:
+            return viewModel.panoramaxCaptureEnabled ? "Bereit fuer die naechste Fahrt" : "Aus"
+        case .preparing:
+            return "Kamera wird vorbereitet"
+        case .recording:
+            return "Aufnahme aktiv"
+        case .denied:
+            return "Kamerazugriff verweigert"
+        case .unavailable:
+            return "Kamera nicht verfuegbar"
+        case .failed:
+            return "Fehler"
         }
     }
 
