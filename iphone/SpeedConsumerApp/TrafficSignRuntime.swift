@@ -190,12 +190,20 @@ enum TrafficSignModelPackDirectoryLoader {
         var candidateURL = rootURL
         for (index, component) in components.enumerated() {
             candidateURL.appendPathComponent(component, isDirectory: false)
-            guard let values = try? candidateURL.resourceValues(forKeys: [
-                .isSymbolicLinkKey,
-                .isRegularFileKey,
-                .isDirectoryKey,
-            ]),
-                  values.isSymbolicLink != true else {
+            let values: URLResourceValues
+            do {
+                values = try candidateURL.resourceValues(forKeys: [
+                    .isSymbolicLinkKey,
+                    .isRegularFileKey,
+                    .isDirectoryKey,
+                ])
+            } catch {
+                throw TrafficSignRuntimeUnavailability(
+                    code: .artifactMissing,
+                    detail: "The selected TSR model artifact is missing."
+                )
+            }
+            guard values.isSymbolicLink != true else {
                 throw TrafficSignRuntimeUnavailability(
                     code: .unsafeArtifactPath,
                     detail: "The TSR artifact path contains a symbolic link."
@@ -682,8 +690,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     }
 
     /// Still inference uses the same backend and fusion contract as live video,
-    /// but bypasses the live-frame cadence. At most one newest item waits behind
-    /// an in-flight inference, so no image queue can grow without bound.
+    /// but bypasses the live-frame cadence. At most one newest live frame and
+    /// one newest still wait behind an in-flight inference, so neither source
+    /// can build an unbounded image queue.
     func analyzeStill(
         pixelBuffer: CVPixelBuffer,
         orientation: CGImagePropertyOrientation,
