@@ -1,0 +1,174 @@
+{
+  "schema_version": 2,
+  "manifest_id": "panoramax-m0-full-scene-fixture-v2",
+  "taxonomy_version": "tsr-semantic-v2",
+  "frozen": true,
+  "coordinate_system": "pixel_xywh_top_left_after_orientation_normalization",
+  "frames": [
+    {
+      "frame_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "drive_id": "panoramax-sequence-f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+      "source": {
+        "source_id": "panoramax-m0-public-fixture",
+        "kind": "panoramax_public_fixture",
+        "source_asset_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+        "sequence_id": "f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+        "source_page_uri": "https://panoramax.openstreetmap.fr/?s=fp;s2;p49e25e66-1614-44c0-96bb-d7fb6faa74b1;c184.00/0.00/30;m17/48.780303/8.402511;vd;bs;udefault",
+        "source_asset_uri": "https://panoramax.openstreetmap.fr/api/pictures/49e25e66-1614-44c0-96bb-d7fb6faa74b1/hd.jpg",
+        "source_split_id": null,
+        "published_split_reuse": false,
+        "license": {
+          "spdx": "CC-BY-SA-4.0",
+          "status": "verified",
+          "evidence_uri": "https://panoramax.openstreetmap.fr/api/search?ids=49e25e66-1614-44c0-96bb-d7fb6faa74b1"
+        }
+      },
+      "image": {
+        "sha256": "1d2c8a66c8eedf68c3028d8749c5916c597ba2b7feeb4e1ddb71a4bf219b3f76",
+        "width": 2376,
+        "height": 4224
+      },
+      "review": {
+        "status": "accepted",
+        "method": "human",
+        "geometry_quality": "approximate_manual",
+        "reviewed_at": "2026-09-01T20:41:05Z",
+        "revision": "panoramax-m0-review-v2"
+      },
+      "objects": [
+        {
+          "object_id": "primary-hard-preceding-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "assembly_id": "assembly-hard-preceding-frame",
+          "role": "primary_sign",
+          "bounding_box": { "x": 1166, "y": 1805, "width": 55, "height": 56 },
+          "visibility": {
+            "occluded": false,
+            "truncated": false,
+            "difficult": true
+          },
+          "readability": "readable",
+          "semantic": {
+            "class_id": "speed_limit_70",
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          },
+          "restriction_evidence": null
+        },
+        {
+          "object_id": "plate-hard-preceding-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "assembly_id": "assembly-hard-preceding-frame",
+          "role": "supplementary_plate",
+          "bounding_box": { "x": 1170, "y": 1859, "width": 44, "height": 25 },
+          "visibility": {
+            "occluded": false,
+            "truncated": false,
+            "difficult": true
+          },
+          "readability": "unreadable",
+          "semantic": null,
+          "restriction_evidence": {
+            "state": "unreadable",
+            "restriction": null
+          }
+        }
+      ],
+      "assemblies": [
+        {
+          "assembly_id": "assembly-hard-preceding-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "primary_object_id": "primary-hard-preceding-frame",
+          "supplementary_object_ids": ["plate-hard-preceding-frame"]
+        }
+      ]
+    },
+    {
+      "frame_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+      "drive_id": "panoramax-sequence-f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+      "source": {
+        "source_id": "panoramax-m0-public-fixture",
+        "kind": "panoramax_public_fixture",
+        "source_asset_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+        "sequence_id": "f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+        "source_page_uri": "https://panoramax.openstreetmap.fr/?background=streets&focus=pic&map=17/48.779997/8.402469&pic=0906fc23-7175-430e-acc0-106e7d45eca7&seq=f2266cf8-eb84-4ff8-990e-133edb8b9e4c&speed=250&theme=default&users=default&xyz=183.00/0.00/30",
+        "source_asset_uri": "https://panoramax.openstreetmap.fr/api/pictures/0906fc23-7175-430e-acc0-106e7d45eca7/hd.jpg",
+        "source_split_id": null,
+        "published_split_reuse": false,
+        "license": {
+          "spdx": "CC-BY-SA-4.0",
+          "status": "verified",
+          "evidence_uri": "https://panoramax.openstreetmap.fr/api/search?ids=0906fc23-7175-430e-acc0-106e7d45eca7"
+        }
+      },
+      "image": {
+        "sha256": "3ad4c4349a121ab9695a8febaeb0bff4feadef4739672f434c63e98c8f0d3d0b",
+        "width": 2376,
+        "height": 4224
+      },
+      "review": {
+        "status": "accepted",
+        "method": "human",
+        "geometry_quality": "approximate_manual",
+        "reviewed_at": "2026-09-01T20:41:05Z",
+        "revision": "panoramax-m0-review-v2"
+      },
+      "objects": [
+        {
+          "object_id": "primary-later-readable-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "assembly_id": "assembly-later-readable-frame",
+          "role": "primary_sign",
+          "bounding_box": { "x": 1668, "y": 1654, "width": 149, "height": 146 },
+          "visibility": {
+            "occluded": false,
+            "truncated": false,
+            "difficult": false
+          },
+          "readability": "readable",
+          "semantic": {
+            "class_id": "speed_limit_70",
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          },
+          "restriction_evidence": null
+        },
+        {
+          "object_id": "plate-later-readable-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "assembly_id": "assembly-later-readable-frame",
+          "role": "supplementary_plate",
+          "bounding_box": { "x": 1674, "y": 1797, "width": 111, "height": 67 },
+          "visibility": {
+            "occluded": false,
+            "truncated": false,
+            "difficult": false
+          },
+          "readability": "readable",
+          "semantic": null,
+          "restriction_evidence": {
+            "state": "readable",
+            "restriction": {
+              "kind": "extent",
+              "normalized_value": "2000 m",
+              "distance_m": null,
+              "extent_m": 2000,
+              "raw_text": "↕ 2 km",
+              "country_sign_code": null
+            }
+          }
+        }
+      ],
+      "assemblies": [
+        {
+          "assembly_id": "assembly-later-readable-frame",
+          "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+          "primary_object_id": "primary-later-readable-frame",
+          "supplementary_object_ids": ["plate-later-readable-frame"]
+        }
+      ]
+    }
+  ]
+}

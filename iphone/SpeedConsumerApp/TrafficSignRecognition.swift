@@ -951,6 +951,21 @@ struct TrafficSignRuntimeSourceSignature: Codable, Equatable, Hashable, Sendable
                 !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             } ?? true)
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case osmRevision
+        case localCorrectionRevision
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(osmRevision, forKey: .osmRevision)
+        if let localCorrectionRevision {
+            try container.encode(localCorrectionRevision, forKey: .localCorrectionRevision)
+        } else {
+            try container.encodeNil(forKey: .localCorrectionRevision)
+        }
+    }
 }
 
 enum TrafficSignTravelDirection: String, Codable, Sendable {
@@ -994,6 +1009,19 @@ struct TrafficSignTransientSpeedOverride: Codable, Equatable, Sendable {
 /// revision invalidates the camera value immediately.
 struct TrafficSignTransientOverridePolicy: Sendable {
     private(set) var activeOverride: TrafficSignTransientSpeedOverride?
+
+    /// Pack/event v2 is shadow-only in M0. Even a confirmed numeric event is
+    /// QA evidence and cannot create, replace, or clear the effective speed.
+    /// Gate metadata in a pack is never interpreted as runtime authorization.
+    @discardableResult
+    mutating func ingestConfirmedDetection(
+        _ event: TrafficSignRecognitionEventV2,
+        currentSourceSignature: TrafficSignRuntimeSourceSignature
+    ) -> Bool {
+        _ = event
+        _ = currentSourceSignature
+        return false
+    }
 
     @discardableResult
     mutating func ingestConfirmedDetection(

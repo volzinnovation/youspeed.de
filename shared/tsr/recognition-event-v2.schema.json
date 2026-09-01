@@ -1,0 +1,589 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/recognition-event-v2.json",
+  "title": "YouSpeed two-stage traffic-sign shadow event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "pack_id",
+    "taxonomy_version",
+    "evidence_origin",
+    "execution_mode",
+    "override_eligible",
+    "override_disposition",
+    "qa_disposition",
+    "source",
+    "frame",
+    "stage_runs",
+    "state",
+    "assemblies",
+    "road_context",
+    "diagnostic_capture"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "event_id": { "type": "string", "minLength": 1 },
+    "pack_id": { "type": "string", "minLength": 1 },
+    "taxonomy_version": { "const": "tsr-semantic-v2" },
+    "evidence_origin": { "enum": ["runtime_inference", "reviewed_expectation"] },
+    "execution_mode": { "const": "shadow" },
+    "override_eligible": { "const": false },
+    "override_disposition": { "const": "shadow_evidence_only" },
+    "qa_disposition": { "const": "emit" },
+    "source": {
+      "enum": ["live_frame", "camera_still", "diagnostic_import", "panoramax_replay"]
+    },
+    "frame": { "$ref": "#/$defs/frame" },
+    "stage_runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["detector", "classifier"],
+      "properties": {
+        "detector": { "$ref": "#/$defs/stageRun" },
+        "classifier": { "$ref": "#/$defs/stageRun" }
+      }
+    },
+    "state": {
+      "enum": ["no_recognition", "provisional", "confirmed", "unknown", "unavailable"]
+    },
+    "assemblies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/assembly" }
+    },
+    "road_context": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/roadContext" }]
+    },
+    "diagnostic_capture": { "$ref": "#/$defs/diagnosticCapture" },
+    "thermal_state": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["state"],
+        "properties": {
+          "state": { "enum": ["provisional", "confirmed", "unknown"] }
+        }
+      },
+      "then": {
+        "properties": { "assemblies": { "minItems": 1 } }
+      }
+    },
+    {
+      "if": {
+        "required": ["state"],
+        "properties": {
+          "state": { "enum": ["no_recognition", "unavailable"] }
+        }
+      },
+      "then": {
+        "properties": { "assemblies": { "maxItems": 0 } }
+      }
+    },
+    {
+      "if": {
+        "required": ["source", "state"],
+        "properties": {
+          "source": { "const": "live_frame" },
+          "state": { "enum": ["provisional", "confirmed", "unknown"] }
+        }
+      },
+      "then": {
+        "properties": { "road_context": { "$ref": "#/$defs/roadContext" } }
+      }
+    },
+    {
+      "if": {
+        "required": ["evidence_origin"],
+        "properties": { "evidence_origin": { "const": "reviewed_expectation" } }
+      },
+      "then": {
+        "properties": {
+          "stage_runs": {
+            "properties": {
+              "detector": {
+                "properties": {
+                  "invoked": { "const": false },
+                  "latency_ms": { "const": 0 }
+                }
+              },
+              "classifier": {
+                "properties": {
+                  "invoked": { "const": false },
+                  "latency_ms": { "const": 0 }
+                }
+              }
+            }
+          },
+          "assemblies": {
+            "items": { "$ref": "#/$defs/reviewedExpectationAssemblyEvidence" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["evidence_origin"],
+        "properties": { "evidence_origin": { "const": "runtime_inference" } }
+      },
+      "then": {
+        "properties": {
+          "stage_runs": {
+            "properties": {
+              "detector": {
+                "properties": { "invoked": { "const": true } }
+              }
+            }
+          },
+          "assemblies": {
+            "items": { "$ref": "#/$defs/runtimeAssemblyEvidence" }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["evidence_origin", "state"],
+        "properties": {
+          "evidence_origin": { "const": "runtime_inference" },
+          "state": { "enum": ["provisional", "confirmed", "unknown"] }
+        }
+      },
+      "then": {
+        "properties": {
+          "stage_runs": {
+            "properties": {
+              "classifier": {
+                "properties": { "invoked": { "const": true } }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "normalizedRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame_id", "timestamp_utc", "width", "height"],
+      "properties": {
+        "frame_id": { "type": "string", "minLength": 1 },
+        "timestamp_utc": { "type": "string", "format": "date-time" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "stageRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id",
+        "artifact_id",
+        "artifact_sha256",
+        "artifact_format",
+        "preprocessing_version",
+        "calibration_id",
+        "invoked",
+        "latency_ms"
+      ],
+      "properties": {
+        "component_id": { "type": "string", "minLength": 1 },
+        "artifact_id": { "type": "string", "minLength": 1 },
+        "artifact_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_format": { "enum": ["onnx", "coreml", "litert"] },
+        "preprocessing_version": { "type": "string", "minLength": 1 },
+        "calibration_id": { "type": "string", "minLength": 1 },
+        "invoked": { "type": "boolean" },
+        "latency_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "stageScore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_score", "calibrated_confidence"],
+      "properties": {
+        "raw_score": { "type": ["number", "null"] },
+        "calibrated_confidence": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "primarySemantic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value", "unit"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "maximum_speed",
+            "maximum_speed_end",
+            "zone_start",
+            "zone_end",
+            "restriction_end",
+            "unknown"
+          ]
+        },
+        "value": { "type": ["integer", "null"], "minimum": 1 },
+        "unit": { "enum": ["km/h", "mph", null] }
+      }
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "normalized_value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather",
+            "time_window",
+            "days_of_week",
+            "vehicle",
+            "max_weight",
+            "school",
+            "resident",
+            "exception",
+            "distance",
+            "direction",
+            "extent",
+            "text",
+            "other",
+            "unknown"
+          ]
+        },
+        "normalized_value": { "type": "string", "minLength": 1 },
+        "distance_m": { "type": ["integer", "null"], "minimum": 1 },
+        "extent_m": { "type": ["integer", "null"], "minimum": 1 },
+        "raw_text": { "type": ["string", "null"] },
+        "country_sign_code": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "distance" } }
+          },
+          "then": {
+            "required": ["distance_m"],
+            "properties": { "distance_m": { "type": "integer", "minimum": 1 } }
+          }
+        },
+        {
+          "if": {
+            "required": ["kind"],
+            "properties": { "kind": { "const": "extent" } }
+          },
+          "then": {
+            "required": ["extent_m"],
+            "properties": { "extent_m": { "type": "integer", "minimum": 1 } }
+          }
+        }
+      ]
+    },
+    "primary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "bounding_box",
+        "detector_score",
+        "classifier_score",
+        "class_id",
+        "semantic"
+      ],
+      "properties": {
+        "object_id": { "type": "string", "minLength": 1 },
+        "bounding_box": { "$ref": "#/$defs/normalizedRect" },
+        "detector_score": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stageScore" }]
+        },
+        "classifier_score": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stageScore" }]
+        },
+        "class_id": { "type": "string", "minLength": 1 },
+        "semantic": { "$ref": "#/$defs/primarySemantic" }
+      }
+    },
+    "supplementaryPlate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_id",
+        "bounding_box",
+        "detector_score",
+        "classifier_score",
+        "class_id",
+        "readability",
+        "restriction"
+      ],
+      "properties": {
+        "object_id": { "type": "string", "minLength": 1 },
+        "bounding_box": { "$ref": "#/$defs/normalizedRect" },
+        "detector_score": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stageScore" }]
+        },
+        "classifier_score": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stageScore" }]
+        },
+        "class_id": { "type": ["string", "null"], "minLength": 1 },
+        "readability": { "enum": ["readable", "unreadable"] },
+        "restriction": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/restriction" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["readability"],
+            "properties": { "readability": { "const": "unreadable" } }
+          },
+          "then": {
+            "properties": {
+              "class_id": { "type": "null" },
+              "restriction": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["readability"],
+            "properties": { "readability": { "const": "readable" } }
+          },
+          "then": {
+            "properties": {
+              "class_id": { "type": "string", "minLength": 1 },
+              "restriction": { "$ref": "#/$defs/restriction" }
+            }
+          }
+        }
+      ]
+    },
+    "runtimeStageScore": {
+      "allOf": [
+        { "$ref": "#/$defs/stageScore" },
+        {
+          "properties": {
+            "raw_score": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "runtimeSupplementaryPlateEvidence": {
+      "type": "object",
+      "properties": {
+        "detector_score": { "$ref": "#/$defs/runtimeStageScore" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["readability"],
+            "properties": { "readability": { "const": "readable" } }
+          },
+          "then": {
+            "properties": {
+              "classifier_score": { "$ref": "#/$defs/runtimeStageScore" }
+            }
+          },
+          "else": {
+            "properties": {
+              "classifier_score": {
+                "oneOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/runtimeStageScore" }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "runtimeAssemblyEvidence": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "object",
+          "properties": {
+            "detector_score": { "$ref": "#/$defs/runtimeStageScore" },
+            "classifier_score": { "$ref": "#/$defs/runtimeStageScore" }
+          }
+        },
+        "supplementary_plates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/runtimeSupplementaryPlateEvidence" }
+        }
+      }
+    },
+    "reviewedExpectationAssemblyEvidence": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "object",
+          "properties": {
+            "detector_score": { "type": "null" },
+            "classifier_score": { "type": "null" }
+          }
+        },
+        "supplementary_plates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "detector_score": { "type": "null" },
+              "classifier_score": { "type": "null" }
+            }
+          }
+        }
+      }
+    },
+    "temporalEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidence_frame_count",
+        "prior_event_id",
+        "restriction_transition"
+      ],
+      "properties": {
+        "evidence_frame_count": { "type": "integer", "minimum": 1 },
+        "prior_event_id": { "type": ["string", "null"], "minLength": 1 },
+        "restriction_transition": {
+          "enum": [
+            "none",
+            "preserved_unreadable",
+            "upgraded_from_later_readable_evidence"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["restriction_transition"],
+            "properties": {
+              "restriction_transition": {
+                "enum": [
+                  "preserved_unreadable",
+                  "upgraded_from_later_readable_evidence"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "prior_event_id": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly_id",
+        "physical_sign_track_id",
+        "primary",
+        "supplementary_plates",
+        "condition_state",
+        "temporal_evidence"
+      ],
+      "properties": {
+        "assembly_id": { "type": "string", "minLength": 1 },
+        "physical_sign_track_id": { "type": "string", "minLength": 1 },
+        "primary": { "$ref": "#/$defs/primary" },
+        "supplementary_plates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/supplementaryPlate" }
+        },
+        "condition_state": { "enum": ["none", "resolving", "resolved", "unresolved"] },
+        "temporal_evidence": { "$ref": "#/$defs/temporalEvidence" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "temporal_evidence": {
+                "required": ["restriction_transition"],
+                "properties": {
+                  "restriction_transition": {
+                    "const": "upgraded_from_later_readable_evidence"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "condition_state": { "const": "resolved" },
+              "supplementary_plates": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "roadContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "way_id",
+        "latitude",
+        "longitude",
+        "heading_degrees",
+        "travel_direction",
+        "source_signature"
+      ],
+      "properties": {
+        "way_id": { "type": "string", "minLength": 1 },
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+        "heading_degrees": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "travel_direction": { "enum": ["forward", "reverse", "unknown"] },
+        "source_signature": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["osm_revision", "local_correction_revision"],
+          "properties": {
+            "osm_revision": { "type": "string", "minLength": 1 },
+            "local_correction_revision": { "type": ["string", "null"], "minLength": 1 }
+          }
+        }
+      }
+    },
+    "diagnosticCapture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reasons", "capture_id"],
+      "properties": {
+        "status": { "enum": ["not_requested", "requested", "persisted", "failed"] },
+        "reasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "shadow_candidate",
+              "uncertain_primary",
+              "unreadable_supplementary_plate",
+              "temporal_upgrade",
+              "manual_qa"
+            ]
+          }
+        },
+        "capture_id": { "type": ["string", "null"], "minLength": 1 }
+      }
+    }
+  }
+}

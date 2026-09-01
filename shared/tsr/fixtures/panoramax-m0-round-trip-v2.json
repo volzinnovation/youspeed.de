@@ -1,0 +1,193 @@
+{
+  "fixture_schema_version": 2,
+  "fixture_id": "panoramax-m0-shadow-round-trip-70-extent-2km",
+  "taxonomy_version": "tsr-semantic-v2",
+  "purpose": "Reviewed full-resolution temporal acceptance fixture; reviewed labels are ground truth, not model inference.",
+  "provider": {
+    "name": "Panoramax",
+    "base_uri": "https://panoramax.openstreetmap.fr/"
+  },
+  "sequence": {
+    "sequence_id": "f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+    "license": {
+      "spdx": "CC-BY-SA-4.0",
+      "evidence_uri": "https://panoramax.openstreetmap.fr/api/search?ids=49e25e66-1614-44c0-96bb-d7fb6faa74b1,0906fc23-7175-430e-acc0-106e7d45eca7"
+    },
+    "metadata_uri": "https://panoramax.openstreetmap.fr/api/search?ids=49e25e66-1614-44c0-96bb-d7fb6faa74b1,0906fc23-7175-430e-acc0-106e7d45eca7"
+  },
+  "drive_id": "panoramax-sequence-f2266cf8-eb84-4ff8-990e-133edb8b9e4c",
+  "physical_sign_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+  "image_coordinate_system": "pixel_xywh_top_left_after_orientation_normalization",
+  "map_context_reference": {
+    "bundle_sha256": "3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89",
+    "way_id": "52869774",
+    "way_heading_degrees": 357.559,
+    "bundled_maxspeed_kmh": 70
+  },
+  "observations": [
+    {
+      "observation_id": "hard-preceding-frame",
+      "picture_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "sequence_rank": 10,
+      "timestamp_utc": "2026-09-01T16:14:33.731Z",
+      "heading_degrees": 184.0,
+      "coordinate": {
+        "latitude": 48.780302778,
+        "longitude": 8.402511111
+      },
+      "source_page_uri": "https://panoramax.openstreetmap.fr/?s=fp;s2;p49e25e66-1614-44c0-96bb-d7fb6faa74b1;c184.00/0.00/30;m17/48.780303/8.402511;vd;bs;udefault",
+      "metadata_uri": "https://panoramax.openstreetmap.fr/api/search?ids=49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "hd_asset": {
+        "uri": "https://panoramax.openstreetmap.fr/api/pictures/49e25e66-1614-44c0-96bb-d7fb6faa74b1/hd.jpg",
+        "width": 2376,
+        "height": 4224,
+        "sha256": "1d2c8a66c8eedf68c3028d8749c5916c597ba2b7feeb4e1ddb71a4bf219b3f76"
+      },
+      "neighbors": {
+        "previous_picture_id": null,
+        "previous_status": "not_recorded",
+        "next_picture_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+        "next_status": "verified"
+      },
+      "review": {
+        "status": "human_reviewed",
+        "geometry_quality": "approximate_manual",
+        "primary": {
+          "bounding_box": { "x": 1166, "y": 1805, "width": 55, "height": 56 },
+          "readability": "readable",
+          "semantic": {
+            "class_id": "speed_limit_70",
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          }
+        },
+        "supplementary_plate": {
+          "present": true,
+          "bounding_box": { "x": 1170, "y": 1859, "width": 44, "height": 25 },
+          "readability": "unreadable",
+          "restriction": null
+        },
+        "expected_shadow": {
+          "recognition_state": "provisional",
+          "speed_required": { "value": 70, "unit": "km/h" },
+          "restriction_state": "present_unreadable",
+          "restriction": null,
+          "condition_state": "unresolved",
+          "override_eligible": false,
+          "diagnostic_capture_reason": "unreadable_supplementary_plate",
+          "road_context": {
+            "way_id": "52869774",
+            "latitude": 48.780302778,
+            "longitude": 8.402511111,
+            "heading_degrees": 184.0,
+            "travel_direction": "reverse",
+            "source_signature": {
+              "osm_revision": "bundle:3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89|way:52869774|maxspeed:70",
+              "local_correction_revision": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "observation_id": "later-readable-frame",
+      "picture_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+      "sequence_rank": 11,
+      "timestamp_utc": "2026-09-01T16:14:35.468Z",
+      "heading_degrees": 183.0,
+      "coordinate": {
+        "latitude": 48.779997222,
+        "longitude": 8.402469444
+      },
+      "source_page_uri": "https://panoramax.openstreetmap.fr/?background=streets&focus=pic&map=17/48.779997/8.402469&pic=0906fc23-7175-430e-acc0-106e7d45eca7&seq=f2266cf8-eb84-4ff8-990e-133edb8b9e4c&speed=250&theme=default&users=default&xyz=183.00/0.00/30",
+      "metadata_uri": "https://panoramax.openstreetmap.fr/api/search?ids=0906fc23-7175-430e-acc0-106e7d45eca7",
+      "hd_asset": {
+        "uri": "https://panoramax.openstreetmap.fr/api/pictures/0906fc23-7175-430e-acc0-106e7d45eca7/hd.jpg",
+        "width": 2376,
+        "height": 4224,
+        "sha256": "3ad4c4349a121ab9695a8febaeb0bff4feadef4739672f434c63e98c8f0d3d0b"
+      },
+      "neighbors": {
+        "previous_picture_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+        "previous_status": "verified",
+        "next_picture_id": null,
+        "next_status": "not_recorded"
+      },
+      "review": {
+        "status": "human_reviewed",
+        "geometry_quality": "approximate_manual",
+        "primary": {
+          "bounding_box": { "x": 1668, "y": 1654, "width": 149, "height": 146 },
+          "readability": "readable",
+          "semantic": {
+            "class_id": "speed_limit_70",
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          }
+        },
+        "supplementary_plate": {
+          "present": true,
+          "bounding_box": { "x": 1674, "y": 1797, "width": 111, "height": 67 },
+          "readability": "readable",
+          "restriction": {
+            "kind": "extent",
+            "normalized_value": "2000 m",
+            "distance_m": null,
+            "extent_m": 2000,
+            "raw_text": "↕ 2 km",
+            "country_sign_code": null
+          }
+        },
+        "expected_shadow": {
+          "recognition_state": "confirmed",
+          "speed_required": { "value": 70, "unit": "km/h" },
+          "restriction_state": "present_readable",
+          "restriction": {
+            "kind": "extent",
+            "normalized_value": "2000 m",
+            "extent_m": 2000
+          },
+          "condition_state": "resolved",
+          "override_eligible": false,
+          "diagnostic_capture_reason": "temporal_upgrade",
+          "road_context": {
+            "way_id": "52869774",
+            "latitude": 48.779997222,
+            "longitude": 8.402469444,
+            "heading_degrees": 183.0,
+            "travel_direction": "reverse",
+            "source_signature": {
+              "osm_revision": "bundle:3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89|way:52869774|maxspeed:70",
+              "local_correction_revision": null
+            }
+          }
+        }
+      }
+    }
+  ],
+  "temporal_contract": {
+    "processing_order": ["hard-preceding-frame", "later-readable-frame"],
+    "same_physical_sign_required": true,
+    "hard_frame_rule": "Emit speed 70 and plate-present/unreadable with no restriction value; never infer 2 km from this frame.",
+    "later_frame_rule": "A calibrated readable observation may emit extent=2000 m for the same physical-sign track.",
+    "allowed_transition": "unreadable_to_extent_2000m_from_later_calibrated_evidence",
+    "forbidden_inferences": [
+      "copy_later_restriction_into_earlier_event",
+      "interpret_unreadable_plate_as_unconditional",
+      "treat_extent_as_distance_to_sign",
+      "set_override_eligible_in_shadow_mode"
+    ],
+    "expected_final_track": {
+      "speed": { "value": 70, "unit": "km/h" },
+      "restriction": {
+        "kind": "extent",
+        "normalized_value": "2000 m",
+        "extent_m": 2000
+      },
+      "transition": "upgraded_from_later_readable_evidence",
+      "override_eligible": false
+    }
+  }
+}

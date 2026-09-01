@@ -23,6 +23,8 @@ function clone(value) {
 const diagnosticBundle = readFixture("diagnostic-bundle-v1/manifest.json");
 const recognitionEvents = readFixture("recognition-events-v1.json");
 const modelPack = readFixture("de-direct-pack-v1.json");
+const recognitionEventsV2 = readFixture("recognition-events-v2.json");
+const modelPackV2 = readFixture("de-yolox-mnv3-shadow-pack-v2.json");
 
 test("parseJSONOrNDJSON accepts arrays, event envelopes, single objects, and NDJSON", () => {
   const array = [{ id: 1 }, { id: 2 }];
@@ -38,6 +40,80 @@ test("parseJSONOrNDJSON accepts arrays, event envelopes, single objects, and NDJ
     () => core.parseJSONOrNDJSON('{"id":1}\nnot-json'),
     /Invalid JSON on line 2/
   );
+});
+
+test("v2 Panoramax reviewed expectations pass preflight without claiming inference", () => {
+  const eventGate = core.eventGateAssessment(recognitionEventsV2);
+  assert.deepEqual(eventGate, { passed: true, issues: [] });
+  const packGate = core.modelPackGateAssessment(modelPackV2);
+  assert.deepEqual(packGate, { passed: true, issues: [] });
+  assert.equal(core.eventTimestampUtc(recognitionEventsV2[0]), "2026-09-01T16:14:33.731Z");
+  assert.equal(recognitionEventsV2[0].evidence_origin, "reviewed_expectation");
+  assert.equal(recognitionEventsV2[0].stage_runs.detector.invoked, false);
+  assert.equal(recognitionEventsV2[0].assemblies[0].primary.detector_score, null);
+  assert.equal(core.eventOverrideAssessment(recognitionEventsV2[1]).effect, "none");
+  assert.match(core.eventOverrideAssessment(recognitionEventsV2[1]).reason, /shadow-only/);
+  assert.deepEqual(core.provenanceAssessment(null, recognitionEventsV2, modelPackV2), {
+    passed: true,
+    issues: []
+  });
+});
+
+test("v2 event preflight preserves unreadable history and blocks all overrides", () => {
+  const inherited = clone(recognitionEventsV2);
+  inherited[0].assemblies[0].supplementary_plates[0].restriction = {
+    kind: "extent",
+    normalized_value: "2000 m",
+    extent_m: 2000
+  };
+  assert.ok(core.eventGateAssessment(inherited).issues.includes(
+    "events[0].assemblies[0].supplementary_plates[0].restriction must be null when unreadable"
+  ));
+
+  const override = clone(recognitionEventsV2);
+  override[1].override_eligible = true;
+  assert.ok(core.eventGateAssessment(override).issues.includes(
+    "events[1].override_eligible must be false"
+  ));
+  assert.deepEqual(
+    { eligible: core.eventOverrideAssessment(override[1]).eligible, effect: core.eventOverrideAssessment(override[1]).effect },
+    { eligible: false, effect: "none" }
+  );
+
+  const fakeInference = clone(recognitionEventsV2);
+  fakeInference[0].evidence_origin = "runtime_inference";
+  assert.ok(core.eventGateAssessment(fakeInference).issues.includes(
+    "events[0].stage_runs.detector must be invoked for runtime inference"
+  ));
+  assert.ok(core.eventGateAssessment(fakeInference).issues.includes(
+    "events[0].assemblies[0].primary.detector_score must be an object"
+  ));
+});
+
+test("v2 model-pack preflight enforces independent crops, identities, and offline-only references", () => {
+  const linkedCrops = clone(modelPackV2);
+  linkedCrops.stages.classifier.preprocessing.crop_policy.include_linked_objects = true;
+  assert.ok(core.modelPackGateAssessment(linkedCrops).issues.includes(
+    "model_pack.stages.classifier.preprocessing.crop_policy must require independent role-hinted crops"
+  ));
+
+  const aliased = clone(modelPackV2);
+  aliased.stages.classifier.artifacts.coreml.sha256 = aliased.stages.detector.artifacts.coreml.sha256;
+  assert.ok(core.modelPackGateAssessment(aliased).issues.includes(
+    "model_pack.stages.classifier.artifacts.coreml reuses a global artifact hash"
+  ));
+
+  const promotedTeacher = clone(modelPackV2);
+  promotedTeacher.offline_references[0].runtime_included = true;
+  assert.ok(core.modelPackGateAssessment(promotedTeacher).issues.includes(
+    "model_pack.offline_references[0] cannot be a runtime or acceptance model"
+  ));
+
+  const wrongClassifier = clone(recognitionEventsV2);
+  wrongClassifier[1].stage_runs.classifier.artifact_sha256 = "a".repeat(64);
+  assert.ok(core.provenanceAssessment(null, wrongClassifier, modelPackV2).issues.includes(
+    "events[1] classifier provenance does not match the loaded manifest"
+  ));
 });
 
 test("intersectionOverUnion handles identical, partial, disjoint, and invalid boxes", () => {

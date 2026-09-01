@@ -53,6 +53,18 @@ data class TrafficSignSpeedOverride(
 
 /** Pure transition rules; controller wiring deliberately remains outside this slice. */
 object TrafficSignSpeedOverridePolicy {
+    /**
+     * Pack/event v2 enters the app only through this fail-closed overload in
+     * M0. Even a confirmed numeric shadow event leaves the current source
+     * untouched. Gate reports in a pack are evidence, not runtime authority.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun applyRecognition(
+        current: TrafficSignSpeedOverride?,
+        event: TrafficSignRecognitionEventV2,
+        currentSourceSignature: TrafficSignRuntimeSourceSignature,
+    ): TrafficSignSpeedOverride? = current
+
     fun applyRecognition(
         current: TrafficSignSpeedOverride?,
         event: TrafficSignRecognitionEvent,

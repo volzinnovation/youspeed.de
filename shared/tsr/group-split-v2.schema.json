@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/group-split-v2.json",
+  "title": "YouSpeed leakage-safe connected-component split",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "manifest_id",
+    "taxonomy_version",
+    "seed",
+    "strategy",
+    "prohibited_source_splits",
+    "components",
+    "samples",
+    "leakage_audit"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "manifest_id": { "type": "string", "minLength": 1 },
+    "taxonomy_version": { "const": "tsr-semantic-v2" },
+    "seed": { "type": "string", "minLength": 1 },
+    "strategy": { "$ref": "#/$defs/strategy" },
+    "prohibited_source_splits": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/prohibitedSourceSplit" }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sample" }
+    },
+    "leakage_audit": { "$ref": "#/$defs/leakageAudit" }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "partition": { "enum": ["train", "calibration", "holdout"] },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "group_keys", "partitions"],
+      "properties": {
+        "algorithm": { "const": "connected_components_seeded_sha256_v1" },
+        "group_keys": {
+          "const": ["drive_id", "physical_sign_id", "near_duplicate_cluster_id"]
+        },
+        "partitions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["train", "calibration", "holdout"],
+          "properties": {
+            "train": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+            "calibration": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 },
+            "holdout": { "type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1 }
+          }
+        }
+      }
+    },
+    "prohibitedSourceSplit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_split_id",
+        "aliases",
+        "reason",
+        "permitted_usage",
+        "assigned_sample_count"
+      ],
+      "properties": {
+        "source_split_id": { "type": "string", "minLength": 1 },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "permitted_usage": { "const": "bootstrap_or_leakage_audit_only" },
+        "assigned_sample_count": { "const": 0 }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id",
+        "drive_ids",
+        "physical_sign_ids",
+        "near_duplicate_cluster_ids",
+        "sample_ids",
+        "partition",
+        "assignment_digest"
+      ],
+      "properties": {
+        "component_id": { "type": "string", "minLength": 1 },
+        "drive_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "physical_sign_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "near_duplicate_cluster_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sample_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "partition": { "$ref": "#/$defs/partition" },
+        "assignment_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "drive_id",
+        "physical_sign_ids",
+        "near_duplicate_cluster_ids",
+        "source_split_id",
+        "component_id",
+        "partition"
+      ],
+      "properties": {
+        "sample_id": { "type": "string", "minLength": 1 },
+        "drive_id": { "type": "string", "minLength": 1 },
+        "physical_sign_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "near_duplicate_cluster_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "source_split_id": { "type": ["string", "null"], "minLength": 1 },
+        "component_id": { "type": "string", "minLength": 1 },
+        "partition": { "$ref": "#/$defs/partition" }
+      }
+    },
+    "leakageAudit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "drive_overlap_count",
+        "physical_sign_overlap_count",
+        "near_duplicate_analysis_status",
+        "near_duplicate_overlap_count",
+        "prohibited_source_split_count",
+        "passed"
+      ],
+      "properties": {
+        "drive_overlap_count": { "const": 0 },
+        "physical_sign_overlap_count": { "const": 0 },
+        "near_duplicate_analysis_status": { "enum": ["pending", "passed"] },
+        "near_duplicate_overlap_count": {
+          "oneOf": [{ "type": "null" }, { "const": 0 }]
+        },
+        "prohibited_source_split_count": { "const": 0 },
+        "passed": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["near_duplicate_analysis_status"],
+            "properties": { "near_duplicate_analysis_status": { "const": "pending" } }
+          },
+          "then": {
+            "properties": {
+              "near_duplicate_overlap_count": { "type": "null" },
+              "passed": { "const": false }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["near_duplicate_analysis_status"],
+            "properties": { "near_duplicate_analysis_status": { "const": "passed" } }
+          },
+          "then": {
+            "properties": {
+              "near_duplicate_overlap_count": { "const": 0 },
+              "passed": { "const": true }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

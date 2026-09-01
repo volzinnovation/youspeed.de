@@ -15,8 +15,9 @@ The runtime rules are deliberately strict:
 - The committed `recognition-event-v1` contract covers the direct
   single-component shadow lane. Live frames, rear-camera stills, and imported
   diagnostic fixtures must normalize to the same semantic evidence contract,
-  but the two-component proposal/classification target requires a v2 event
-  that binds detector and classifier lineage independently.
+  while `recognition-event-v2.schema.json` covers the two-component
+  proposal/classification shadow target and binds detector and classifier
+  artifact, preprocessing, and calibration identities independently.
 - Every live provisional/confirmed event carries the way ID, coordinate,
   heading, travel direction, and OSM/local source signature captured with the
   frame. An asynchronous result is rejected for runtime override if that
@@ -47,6 +48,50 @@ The runtime rules are deliberately strict:
 `fixtures/de-direct-pack-v1.json` and `fixtures/recognition-events-v1.json` are
 contract fixtures, not release manifests or benchmark ground truth. Their hash
 values are intentionally synthetic and no model artifact is implied.
+
+## M0 two-stage shadow contracts
+
+The additive v2 contracts preserve every v1 consumer:
+
+- `model-pack-v2.schema.json` requires a YOLOX-style proposal stage and a
+  role-aware classifier stage with independent preprocessing and calibration.
+  Each stage carries distinct checkpoint, ONNX, Core ML, and LiteRT sibling
+  identities. The v2 M0 policy is hard-coded to shadow mode and is not eligible
+  for a speed override.
+- `recognition-event-v2.schema.json` emits QA evidence without pixels. An
+  unreadable supplementary plate may retain raw classifier scores for mining,
+  but it cannot carry a class or restriction. A later calibrated readable
+  observation may upgrade the same physical-sign track without rewriting the
+  earlier event. `evidence_origin` separates real runtime inference from
+  reviewed expectations; expectation fixtures have uninvoked stages and null
+  scores, so ground truth cannot masquerade as a successful model run.
+- `taxonomy-v2.json` freezes the two proposal roles, numeric speed semantics,
+  typed white-plate restrictions, per-frame unreadable semantics, and the
+  offline-only GTSIGN teacher and Panoramax crop-benchmark roles.
+- `full-scene-annotation-v2.schema.json` requires separate primary and
+  supplementary pixel boxes, assembly links, drive identity, and physical-sign
+  identity. `group-split-v2.schema.json` assigns connected components over
+  drive, physical sign, and supplied near-duplicate clusters to exactly one of
+  train, calibration, or holdout.
+
+The published Panoramax classifier validation split is explicitly prohibited
+from all three partitions. `zod-supplementary-plate-audit-v1.json` records that
+the pinned ZOD devkit has no auditable supplementary-plate class or assembly
+link; ZOD is therefore usable only for reviewed primary scenes and complete-task
+hard negatives. Proposal training remains blocked until reviewed YouSpeed or
+reviewed synthetic full-scene plate boxes are frozen.
+
+`fixtures/panoramax-m0-round-trip-v2.json` binds the two public full-resolution
+field-test frames, their hashes, reviewed boxes, road context, and temporal
+acceptance rule. The earlier frame contains a readable 70 sign and a visible but
+unreadable white plate, so its restriction is null. Only the later readable
+frame establishes an `extent` of 2,000 metres for the same physical sign. The
+reviewed labels are fixture truth, not a claim that a trained model produced
+those outputs. `fixtures/panoramax-m0-full-scene-annotations-v2.json` is the
+schema-valid frozen annotation view, while `fixtures/recognition-events-v2.json`
+is the corresponding reviewed expectation view for replay and inspector QA.
+`fixtures/de-yolox-mnv3-shadow-pack-v2.json` likewise contains synthetic hashes
+and one-byte sizes solely to exercise the pack contract.
 
 `diagnostic-bundle.schema.json` defines the separate, consented image round
 trip. Ordinary inference never writes frames into that storage root. The
@@ -122,10 +167,11 @@ proposals plus MobileNetV3-Large crop semantics—alongside the direct iPhone
 shadow lane, MobileNetV3-Small latency challenger, unpinned detector
 challengers, and the Panoramax plus GTSIGN-220 ViT external crop benchmarks.
 It intentionally contains no selected candidate while required evidence and
-runtimes are blocked. The target's detector data is also blocked until the ZOD
-taxonomy is audited for separate supplementary-plate boxes or an alternative
-reviewed full-scene plate-box inventory is frozen; crop datasets cannot satisfy
-that proposal-coverage requirement.
+runtimes are blocked. The pinned ZOD audit found no auditable separate
+supplementary-plate boxes, so ZOD cannot satisfy that detector-label
+requirement. The target and controlled MobileNetV3-Small challenger remain
+blocked until a reviewed YouSpeed or reviewed synthetic full-scene plate-box
+inventory is frozen; crop datasets cannot satisfy proposal coverage.
 
 ```sh
 python3 scripts/tsr/model_selection.py status

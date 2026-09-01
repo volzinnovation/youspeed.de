@@ -56,6 +56,56 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    func testMainRecorderControlStartsDashcamWithoutChangingOtherConsumers() {
+        for trafficSignRecognitionEnabled in [false, true] {
+            for panoramaxEnabled in [false, true] {
+                let configuration = DriveRecorderPolicy.mainControlStartConfiguration(
+                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+                    panoramaxEnabled: panoramaxEnabled
+                )
+
+                XCTAssertTrue(configuration.dashcamEnabled)
+                XCTAssertEqual(
+                    configuration.trafficSignRecognitionEnabled,
+                    trafficSignRecognitionEnabled
+                )
+                XCTAssertEqual(configuration.panoramaxEnabled, panoramaxEnabled)
+            }
+        }
+    }
+
+    func testMainRecorderControlPresentationTracksRecorderTransitions() {
+        for state in [
+            DriveRecorderState.disabled,
+            .denied,
+            .unavailable,
+            .failed,
+        ] {
+            let presentation = DriveRecorderMainControlPresentation.resolve(for: state)
+            XCTAssertEqual(presentation.action, .start)
+            XCTAssertEqual(presentation.systemImageName, "circle.fill")
+            XCTAssertFalse(presentation.usesRedIcon)
+            XCTAssertEqual(presentation.accessibilityLocalizationKey, "drive_recorder.start")
+            XCTAssertTrue(presentation.isEnabled)
+        }
+
+        for state in [DriveRecorderState.preparing, .recording] {
+            let presentation = DriveRecorderMainControlPresentation.resolve(for: state)
+            XCTAssertEqual(presentation.action, .stop)
+            XCTAssertEqual(presentation.systemImageName, "stop.fill")
+            XCTAssertTrue(presentation.usesRedIcon)
+            XCTAssertEqual(presentation.accessibilityLocalizationKey, "drive_recorder.stop")
+            XCTAssertTrue(presentation.isEnabled)
+        }
+
+        let stopping = DriveRecorderMainControlPresentation.resolve(for: .stopping)
+        XCTAssertEqual(stopping.action, .stop)
+        XCTAssertEqual(stopping.systemImageName, "stop.fill")
+        XCTAssertTrue(stopping.usesRedIcon)
+        XCTAssertEqual(stopping.accessibilityLocalizationKey, "drive_recorder.stop")
+        XCTAssertFalse(stopping.isEnabled)
+    }
+
     func testPanoramaxUploadProcessingWaitsForRecorderFinalization() {
         XCTAssertTrue(DriveRecorderPolicy.shouldEnablePanoramaxFallback(
             dashcamEnabled: false,
@@ -94,10 +144,68 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertFalse(DriveRecorderPolicy.canStartPanoramaxUpload(for: .uploading))
         XCTAssertTrue(DriveRecorderPolicy.canStartPanoramaxUpload(for: .approved))
         XCTAssertTrue(DriveRecorderPolicy.canStartPanoramaxUpload(for: .processing))
+        XCTAssertTrue(DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: .partial,
+            remoteUploadSetID: "remote-set",
+            itemStates: [.uploaded, .uploaded]
+        ))
+        XCTAssertTrue(DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: .processing,
+            remoteUploadSetID: "remote-set",
+            itemStates: []
+        ))
+        XCTAssertTrue(DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: .partial,
+            remoteUploadSetID: "remote-set",
+            itemStates: []
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: .complete,
+            remoteUploadSetID: "remote-set",
+            itemStates: [.uploaded]
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: .partial,
+            remoteUploadSetID: nil,
+            itemStates: [.uploaded]
+        ))
         XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: .captured))
+        XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: .queued))
         XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: .retryableError))
         XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: .uploading))
         XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: .uploaded))
+        XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: .abandoned))
+        XCTAssertFalse(DriveRecorderPolicy.canDeletePanoramaxItem(
+            batchState: .partial,
+            itemState: .uploaded
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canDeletePanoramaxItem(
+            batchState: .processing,
+            itemState: .accepted
+        ))
+        XCTAssertTrue(DriveRecorderPolicy.canDeletePanoramaxItem(
+            batchState: .complete,
+            itemState: .uploaded
+        ))
+        XCTAssertTrue(DriveRecorderPolicy.canDeletePanoramaxItem(
+            batchState: .partial,
+            itemState: .abandoned
+        ))
+        for activeState in [
+            PanoramaxBatchState.capturing,
+            .creatingUploadSet,
+            .uploading,
+            .processing,
+        ] {
+            XCTAssertFalse(DriveRecorderPolicy.canEvictPanoramaxItem(
+                batchState: activeState,
+                itemState: .captured
+            ))
+        }
+        XCTAssertTrue(DriveRecorderPolicy.canEvictPanoramaxItem(
+            batchState: .awaitingReview,
+            itemState: .captured
+        ))
     }
 
     func testDriveRecorderModuleControlsOnlyToggleWhileRecording() {
@@ -1758,6 +1866,7 @@ final class SpeedConsumerTests: XCTestCase {
             _ = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
         }
         _ = try store.updateItemFavorite(batchID: batch.batchID, itemID: "favorite", isFavorite: true)
+        _ = try store.transitionBatch(batch.batchID, to: .awaitingReview)
         let removed = try store.enforceStorageLimit(maxBytes: 8)
         XCTAssertEqual(removed, ["old"])
         let remaining = try XCTUnwrap(store.getBatch(batch.batchID)).items
@@ -1765,11 +1874,779 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(remaining[0].isFavorite)
     }
 
+    func testPanoramaxStorageLimitNeverEvictsActiveLifecycleItems() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        var originals: [URL] = []
+
+        for (index, state) in [
+            PanoramaxBatchState.capturing,
+            .creatingUploadSet,
+            .uploading,
+            .processing,
+        ].enumerated() {
+            let batch = try store.createBatch(captureSessionID: "active-\(index)")
+            let item = try addPanoramaxTestItem(
+                store: store,
+                batch: batch,
+                itemID: "active-\(index)"
+            )
+            originals.append(try XCTUnwrap(store.originalURL(for: item)))
+            if state != .capturing {
+                var updated = try XCTUnwrap(store.getBatch(batch.batchID))
+                updated.state = state
+                updated.remoteUploadSetID = state == .creatingUploadSet ? nil : "remote-\(index)"
+                try store.updateBatch(updated)
+            }
+        }
+
+        XCTAssertEqual(try store.enforceStorageLimit(maxBytes: 1), [])
+        for original in originals {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        }
+    }
+
+    func testPanoramaxStartupRecoversStaleCaptureAndRemovesLegacyOrphans() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        let batch = try XCTUnwrap(store).createBatch(captureSessionID: "stale-session")
+        let captured = try addPanoramaxTestItem(
+            store: try XCTUnwrap(store),
+            batch: batch,
+            itemID: "still-referenced"
+        )
+        let batchDirectory = root.appendingPathComponent("Panoramax/batches/\(batch.batchID)", isDirectory: true)
+        let orphanDirectory = batchDirectory.appendingPathComponent("legacy-orphan", isDirectory: true)
+        try FileManager.default.createDirectory(at: orphanDirectory, withIntermediateDirectories: true)
+        let orphanOriginal = orphanDirectory.appendingPathComponent("legacy-orphan.jpg")
+        let orphanThumbnail = orphanDirectory.appendingPathComponent("legacy-orphan.thumb.jpg")
+        let futureBatchAsset = batchDirectory.appendingPathComponent("future-root.jpg")
+        let futureSidecar = orphanDirectory.appendingPathComponent("future-sidecar.json")
+        let orphanBytes = Data([0xff, 0xd8, 0x01, 0xff, 0xd9])
+        try orphanBytes.write(to: orphanOriginal)
+        try orphanBytes.write(to: orphanThumbnail)
+        try orphanBytes.write(to: futureBatchAsset)
+        try Data("future metadata".utf8).write(to: futureSidecar)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+        let repaired = try XCTUnwrap(reopened.getBatch(batch.batchID))
+        XCTAssertEqual(repaired.state, .awaitingReview)
+        XCTAssertEqual(repaired.items.map(\.itemID), [captured.itemID])
+        XCTAssertEqual(reopened.startupCleanupReport.recoveredBatchIDs, [batch.batchID])
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanFileCount, 2)
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanByteCount, Int64(orphanBytes.count * 2))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphanOriginal.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphanThumbnail.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: futureBatchAsset.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: futureSidecar.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(reopened.originalURL(for: repaired.items[0])).path))
+    }
+
+    func testPanoramaxMaintenanceExecutorRunsStartupRecoveryOffTheCaller() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "actor-recovery")
+        _ = try addPanoramaxTestItem(store: store, batch: batch, itemID: "referenced")
+        let orphanDirectory = root.appendingPathComponent(
+            "Panoramax/batches/\(batch.batchID)/orphan",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: orphanDirectory, withIntermediateDirectories: true)
+        let orphan = orphanDirectory.appendingPathComponent("orphan.jpg")
+        try Data([0xff, 0xd8, 0xff, 0xd9]).write(to: orphan)
+
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
+            store: store,
+            deleteCompletedUploads: false
+        )
+
+        XCTAssertEqual(result.startupCleanup?.recoveredBatchIDs, [batch.batchID])
+        XCTAssertEqual(result.startupCleanup?.removedOrphanFileCount, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: orphan.path))
+        XCTAssertEqual(result.batches.first?.state, .awaitingReview)
+    }
+
+    func testPanoramaxMaintenanceExecutorDeletesAndReloadsGallerySnapshot() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "actor-gallery-delete")
+        let item = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "delete-on-actor"
+        )
+        _ = try store.transitionBatch(batch.batchID, to: .awaitingReview)
+
+        let result = await PanoramaxQueueMaintenanceExecutor.shared.deleteItems(
+            store: store,
+            itemIDsByBatch: [batch.batchID: [item.itemID]]
+        )
+
+        XCTAssertTrue(result.batchLoadSucceeded)
+        XCTAssertEqual(result.deletion.deletedItemIDs, [item.itemID])
+        XCTAssertFalse(result.deletion.hasFailures)
+        XCTAssertFalse(result.batches.contains(where: { $0.batchID == batch.batchID }))
+        XCTAssertNil(try store.getBatch(batch.batchID))
+    }
+
+    func testPanoramaxStartupAbandonsOnlyUnknownInFlightItem() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        let batch = try XCTUnwrap(store).createBatch(captureSessionID: "upload-session")
+        for (index, state) in [PanoramaxItemState.uploaded, .uploading, .queued].enumerated() {
+            _ = try addPanoramaxTestItem(
+                store: try XCTUnwrap(store),
+                batch: batch,
+                itemID: "item-\(index)",
+                state: state
+            )
+        }
+        var uploading = try XCTUnwrap(try XCTUnwrap(store).getBatch(batch.batchID))
+        uploading.state = .uploading
+        uploading.remoteUploadSetID = "remote-set"
+        try XCTUnwrap(store).updateBatch(uploading)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+        let recovered = try XCTUnwrap(reopened.getBatch(batch.batchID))
+        XCTAssertEqual(recovered.state, .partial)
+        XCTAssertEqual(recovered.remoteUploadSetID, "remote-set")
+        XCTAssertEqual(recovered.items.map(\.state), [.uploaded, .abandoned, .queued])
+    }
+
+    func testPanoramaxDeleteUploadedWaitsForRemoteSetCompletion() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "retention-session")
+        let uploaded = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "uploaded",
+            state: .uploaded
+        )
+        let original = try XCTUnwrap(store.originalURL(for: uploaded))
+        var processing = try XCTUnwrap(store.getBatch(batch.batchID))
+        processing.state = .processing
+        processing.remoteUploadSetID = "remote-set"
+        try store.updateBatch(processing)
+
+        XCTAssertThrowsError(try store.deleteUploadedItems(batchID: batch.batchID)) { error in
+            guard case PanoramaxQueueStore.QueueError.invalidBatchState = error else {
+                return XCTFail("Expected invalidBatchState, got \(error)")
+            }
+        }
+        XCTAssertThrowsError(try store.deleteItem(batchID: batch.batchID, itemID: uploaded.itemID)) { error in
+            guard case PanoramaxQueueStore.QueueError.invalidBatchState = error else {
+                return XCTFail("Expected invalidBatchState, got \(error)")
+            }
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertEqual(try store.getBatch(batch.batchID)?.items.map(\.state), [.uploaded])
+
+        var complete = try XCTUnwrap(store.getBatch(batch.batchID))
+        complete.state = .complete
+        try store.updateBatch(complete)
+        let report = try store.deleteUploadedItems(batchID: batch.batchID)
+        XCTAssertEqual(report.deletedItemIDs, [uploaded.itemID])
+        XCTAssertFalse(report.hasFailures)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+        XCTAssertNil(try store.getBatch(batch.batchID))
+    }
+
+    func testPanoramaxCompletedRetentionSweepDeletesOnlyRemoteCompleteItems() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+
+        let completedBatch = try store.createBatch(captureSessionID: "completed-retention")
+        let completedItem = try addPanoramaxTestItem(
+            store: store,
+            batch: completedBatch,
+            itemID: "completed-upload",
+            state: .uploaded
+        )
+        var completed = try XCTUnwrap(store.getBatch(completedBatch.batchID))
+        completed.state = .complete
+        completed.remoteUploadSetID = "completed-set"
+        try store.updateBatch(completed)
+
+        let partialBatch = try store.createBatch(captureSessionID: "partial-retention")
+        let partialItem = try addPanoramaxTestItem(
+            store: store,
+            batch: partialBatch,
+            itemID: "partial-upload",
+            state: .uploaded
+        )
+        var partial = try XCTUnwrap(store.getBatch(partialBatch.batchID))
+        partial.state = .partial
+        partial.remoteUploadSetID = "partial-set"
+        try store.updateBatch(partial)
+
+        let report = try store.deleteUploadedItemsInCompletedBatches()
+
+        XCTAssertEqual(report.deletedItemIDs, [completedItem.itemID])
+        XCTAssertFalse(report.hasFailures)
+        XCTAssertNil(try store.getBatch(completedBatch.batchID))
+        XCTAssertNotNil(try store.getBatch(partialBatch.batchID))
+        XCTAssertNotNil(store.originalURL(for: partialItem))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.originalURL(for: partialItem)).path))
+    }
+
+    func testPanoramaxStartupPrunesOnlySafeEmptyBatches() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        let awaiting = try XCTUnwrap(store).createBatch(captureSessionID: "empty-awaiting")
+        _ = try XCTUnwrap(store).transitionBatch(awaiting.batchID, to: .awaitingReview)
+        let orphanDirectory = root
+            .appendingPathComponent("Panoramax/batches/\(awaiting.batchID)/old-item", isDirectory: true)
+        try FileManager.default.createDirectory(at: orphanDirectory, withIntermediateDirectories: true)
+        try Data([0xff, 0xd8, 0xff, 0xd9]).write(to: orphanDirectory.appendingPathComponent("old-item.jpg"))
+
+        let pending = try XCTUnwrap(store).createBatch(captureSessionID: "empty-pending")
+        var pendingRecord = try XCTUnwrap(try XCTUnwrap(store).getBatch(pending.batchID))
+        pendingRecord.state = .partial
+        pendingRecord.remoteUploadSetID = "remote-set"
+        try XCTUnwrap(store).updateBatch(pendingRecord)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+        XCTAssertNil(try reopened.getBatch(awaiting.batchID))
+        XCTAssertNotNil(try reopened.getBatch(pending.batchID))
+        XCTAssertEqual(reopened.startupCleanupReport.removedOrphanFileCount, 1)
+        XCTAssertEqual(reopened.startupCleanupReport.removedEmptyBatchCount, 1)
+    }
+
+    func testPanoramaxStartupRejectsTraversalBatchIdentifier() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        let original = try XCTUnwrap(store).createBatch(captureSessionID: "invalid-id")
+        let poisoned = PanoramaxBatchRecord(
+            batchID: "../../escaped",
+            captureSessionID: original.captureSessionID,
+            createdAt: original.createdAt,
+            state: .capturing,
+            items: []
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let record = root.appendingPathComponent("Panoramax/batches/\(original.batchID).json")
+        try encoder.encode(poisoned).write(to: record, options: .atomic)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+        XCTAssertTrue(try reopened.listBatches().isEmpty)
+        XCTAssertTrue(reopened.startupCleanupReport.failedRelativePaths.contains("batches/\(original.batchID).json"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax/escaped.json").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("escaped.json").path))
+        XCTAssertThrowsError(try reopened.getBatch("../../escaped")) { error in
+            guard case PanoramaxQueueStore.QueueError.invalidBatchID = error else {
+                return XCTFail("Expected invalidBatchID, got \(error)")
+            }
+        }
+    }
+
+    func testPanoramaxStartupRejectsMismatchedBatchIdentifierWithoutTouchingAssets() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var store: PanoramaxQueueStore? = try PanoramaxQueueStore(root: root)
+        let original = try XCTUnwrap(store).createBatch(captureSessionID: "mismatched-id")
+        let assetDirectory = root.appendingPathComponent(
+            "Panoramax/batches/\(original.batchID)/preserved",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: assetDirectory, withIntermediateDirectories: true)
+        let asset = assetDirectory.appendingPathComponent("preserved.jpg")
+        try Data([0xff, 0xd8, 0xff, 0xd9]).write(to: asset)
+        let mismatchedID = UUID().uuidString
+        let poisoned = PanoramaxBatchRecord(
+            batchID: mismatchedID,
+            captureSessionID: original.captureSessionID,
+            createdAt: original.createdAt,
+            state: .capturing,
+            items: []
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let record = root.appendingPathComponent("Panoramax/batches/\(original.batchID).json")
+        try encoder.encode(poisoned).write(to: record, options: .atomic)
+        store = nil
+
+        let reopened = try PanoramaxQueueStore(root: root)
+        XCTAssertTrue(try reopened.listBatches().isEmpty)
+        XCTAssertTrue(reopened.startupCleanupReport.failedRelativePaths.contains("batches/\(original.batchID).json"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: asset.path))
+        XCTAssertFalse(FileManager.default.fileExists(
+            atPath: root.appendingPathComponent("Panoramax/batches/\(mismatchedID).json").path
+        ))
+    }
+
+    func testPanoramaxStopSnapshotPreservesQueuedAndAcceptedItems() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "stop-session")
+        for (index, state) in [PanoramaxItemState.uploaded, .uploading, .queued].enumerated() {
+            _ = try addPanoramaxTestItem(
+                store: store,
+                batch: batch,
+                itemID: "stop-\(index)",
+                state: state
+            )
+        }
+        var uploading = try XCTUnwrap(store.getBatch(batch.batchID))
+        uploading.state = .uploading
+        uploading.remoteUploadSetID = "remote-set"
+        try store.updateBatch(uploading)
+
+        let stopped = try store.abandonInFlightItems(batchID: batch.batchID)
+
+        XCTAssertEqual(stopped.state, .partial)
+        XCTAssertEqual(stopped.remoteUploadSetID, "remote-set")
+        XCTAssertEqual(stopped.items.map(\.state), [.uploaded, .abandoned, .queued])
+        XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: stopped.items[0].state))
+        XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: stopped.items[1].state))
+        XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: stopped.items[2].state))
+    }
+
+    func testPanoramaxDeleteToleratesAlreadyMissingAssets() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "delete-session")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "delete-me")
+        let original = try XCTUnwrap(store.originalURL(for: item))
+        let thumbnail = try XCTUnwrap(store.thumbnailURL(for: item))
+        try FileManager.default.removeItem(at: original)
+        try FileManager.default.removeItem(at: thumbnail)
+
+        let report = try store.deleteItem(batchID: batch.batchID, itemID: item.itemID)
+
+        XCTAssertEqual(report.deletedItemIDs, [item.itemID])
+        XCTAssertFalse(report.hasFailures)
+        XCTAssertTrue(try XCTUnwrap(store.getBatch(batch.batchID)).items.isEmpty)
+    }
+
+    func testPanoramaxDeletionReportsUnsafePersistedPaths() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "unsafe-path-session")
+        let item = try addPanoramaxTestItem(store: store, batch: batch, itemID: "unsafe")
+        var persisted = try XCTUnwrap(store.getBatch(batch.batchID))
+        persisted.items[0] = PanoramaxItemRecord(
+            itemID: item.itemID,
+            originalPath: "../outside.jpg",
+            thumbnailPath: "../outside.thumb.jpg",
+            metadata: item.metadata,
+            state: item.state,
+            remoteID: nil
+        )
+        try store.updateBatch(persisted)
+
+        let report = try store.deleteItem(batchID: batch.batchID, itemID: item.itemID)
+
+        XCTAssertEqual(report.deletedItemIDs, [item.itemID])
+        XCTAssertEqual(Set(report.failedRelativePaths), ["../outside.jpg", "../outside.thumb.jpg"])
+        XCTAssertTrue(report.hasFailures)
+    }
+
+    func testPanoramaxUploadProgressUsesItemCounts() {
+        XCTAssertEqual(
+            PanoramaxUploadProgress(completedItems: 2, totalItems: 5, phase: .uploading).fractionCompleted,
+            0.4,
+            accuracy: 0.0001
+        )
+        XCTAssertEqual(
+            PanoramaxUploadProgress(completedItems: 5, totalItems: 0, phase: .processing).fractionCompleted,
+            0
+        )
+    }
+
+    func testPanoramaxUnknownTransportOutcomeIsNeverAutomaticallyRetried() {
+        XCTAssertEqual(
+            PanoramaxUploadClient.durableItemStateAfterUploadFailure(
+                URLError(.networkConnectionLost),
+                taskIsCancelled: false
+            ),
+            .abandoned
+        )
+        XCTAssertEqual(
+            PanoramaxUploadClient.durableItemStateAfterUploadFailure(
+                CancellationError(),
+                taskIsCancelled: true
+            ),
+            .abandoned
+        )
+        XCTAssertEqual(
+            PanoramaxUploadClient.durableItemStateAfterUploadFailure(
+                PanoramaxUploadClient.UploadError.httpStatus(503),
+                taskIsCancelled: false
+            ),
+            .retryableError
+        )
+    }
+
+    func testPanoramaxMultipartTempFileIsRemovedAfterCancellation() async throws {
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID().uuidString).jpg")
+        let jpeg = Data([0xff, 0xd8, 0x01, 0x02, 0xff, 0xd9])
+        try jpeg.write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        var bodyFile: URL?
+
+        do {
+            let _: Void = try await PanoramaxUploadClient.withMultipartBodyFile(
+                file: source,
+                fileName: "capture.jpg",
+                boundary: "test-boundary"
+            ) { temporary in
+                bodyFile = temporary
+                XCTAssertTrue(FileManager.default.fileExists(atPath: temporary.path))
+                XCTAssertNotNil(try Data(contentsOf: temporary).range(of: jpeg))
+                throw CancellationError()
+            }
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {
+            // Expected: the operation simulates cancellation at the transport boundary.
+        }
+
+        XCTAssertNotNil(bodyFile)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(bodyFile).path))
+    }
+
+    func testPanoramaxCancelledPermitWaitNeverMarksItemInFlight() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "permit-cancellation")
+        let first = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "first",
+            state: .queued
+        )
+        let second = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "second",
+            state: .queued
+        )
+        var uploading = try XCTUnwrap(store.getBatch(batch.batchID))
+        uploading.state = .uploading
+        uploading.remoteUploadSetID = "remote-set"
+        try store.updateBatch(uploading)
+
+        let transport = ControlledPanoramaxUploadTransport()
+        let limiter = PanoramaxUploadLimiter(limit: 1)
+        let client = PanoramaxUploadClient(
+            origin: try XCTUnwrap(URL(string: "https://panoramax.test")),
+            token: "test-token",
+            transport: transport,
+            uploadLimiter: limiter
+        )
+        let firstFile = try XCTUnwrap(store.originalURL(for: first))
+        let secondFile = try XCTUnwrap(store.originalURL(for: second))
+
+        let firstTask = Task<Void, Error> {
+            try await client.upload(
+                file: firstFile,
+                uploadSetID: "remote-set",
+                fileName: "first.jpg",
+                beforeRequest: {
+                    _ = try store.updateItem(
+                        batchID: batch.batchID,
+                        itemID: first.itemID,
+                        state: .uploading
+                    )
+                }
+            )
+            _ = try store.updateItem(
+                batchID: batch.batchID,
+                itemID: first.itemID,
+                state: .uploaded
+            )
+        }
+        try await waitForPanoramaxUploadCount(1, transport: transport)
+
+        let secondTask = Task<Void, Error> {
+            try await client.upload(
+                file: secondFile,
+                uploadSetID: "remote-set",
+                fileName: "second.jpg",
+                beforeRequest: {
+                    _ = try store.updateItem(
+                        batchID: batch.batchID,
+                        itemID: second.itemID,
+                        state: .uploading
+                    )
+                }
+            )
+        }
+        try await waitForPanoramaxPermitWaiterCount(1, limiter: limiter)
+        secondTask.cancel()
+        do {
+            try await secondTask.value
+            XCTFail("Expected the permit waiter to be cancelled")
+        } catch is CancellationError {
+            // Expected.
+        }
+
+        let startedUploadCount = await transport.startedUploadCount()
+        XCTAssertEqual(startedUploadCount, 1)
+        XCTAssertEqual(
+            try store.getBatch(batch.batchID)?.items.first(where: { $0.itemID == second.itemID })?.state,
+            .queued
+        )
+
+        let resumedFirstUpload = await transport.resumeNextUpload()
+        XCTAssertTrue(resumedFirstUpload)
+        try await firstTask.value
+        XCTAssertEqual(
+            try store.getBatch(batch.batchID)?.items.first(where: { $0.itemID == first.itemID })?.state,
+            .uploaded
+        )
+    }
+
+    func testPanoramaxAcceptedTransportResponseWinsOverStopSnapshot() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "accepted-after-stop")
+        let item = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "accepted",
+            state: .queued
+        )
+        var uploading = try XCTUnwrap(store.getBatch(batch.batchID))
+        uploading.state = .uploading
+        uploading.remoteUploadSetID = "remote-set"
+        try store.updateBatch(uploading)
+
+        let transport = ControlledPanoramaxUploadTransport()
+        let client = PanoramaxUploadClient(
+            origin: try XCTUnwrap(URL(string: "https://panoramax.test")),
+            token: "test-token",
+            transport: transport,
+            uploadLimiter: PanoramaxUploadLimiter(limit: 1)
+        )
+        let file = try XCTUnwrap(store.originalURL(for: item))
+        let task = Task<Void, Error> {
+            try await client.upload(
+                file: file,
+                uploadSetID: "remote-set",
+                fileName: "accepted.jpg",
+                beforeRequest: {
+                    _ = try store.updateItem(
+                        batchID: batch.batchID,
+                        itemID: item.itemID,
+                        state: .uploading
+                    )
+                }
+            )
+            // A validated 2xx response is durable acceptance evidence even if
+            // Stop changed the in-flight snapshot while the request awaited it.
+            _ = try store.updateItem(
+                batchID: batch.batchID,
+                itemID: item.itemID,
+                state: .uploaded
+            )
+        }
+        try await waitForPanoramaxUploadCount(1, transport: transport)
+        XCTAssertEqual(
+            try store.getBatch(batch.batchID)?.items.first(where: { $0.itemID == item.itemID })?.state,
+            .uploading
+        )
+
+        let stopped = try store.abandonInFlightItems(batchID: batch.batchID)
+        XCTAssertEqual(stopped.items.first?.state, .abandoned)
+        let resumedAcceptedUpload = await transport.resumeNextUpload()
+        XCTAssertTrue(resumedAcceptedUpload)
+        try await task.value
+        XCTAssertEqual(
+            try store.getBatch(batch.batchID)?.items.first(where: { $0.itemID == item.itemID })?.state,
+            .uploaded
+        )
+    }
+
+    func testPanoramaxAcceptedPersistenceFailureRemainsQuarantinable() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let batch = try store.createBatch(captureSessionID: "accepted-persistence-failure")
+        let item = try addPanoramaxTestItem(
+            store: store,
+            batch: batch,
+            itemID: "persistence-failure",
+            state: .queued
+        )
+        var uploading = try XCTUnwrap(store.getBatch(batch.batchID))
+        uploading.state = .uploading
+        uploading.remoteUploadSetID = "remote-set"
+        try store.updateBatch(uploading)
+
+        let transport = ControlledPanoramaxUploadTransport()
+        let client = PanoramaxUploadClient(
+            origin: try XCTUnwrap(URL(string: "https://panoramax.test")),
+            token: "test-token",
+            transport: transport,
+            uploadLimiter: PanoramaxUploadLimiter(limit: 1)
+        )
+        let file = try XCTUnwrap(store.originalURL(for: item))
+        let task = Task<Void, Error> {
+            try await client.upload(
+                file: file,
+                uploadSetID: "remote-set",
+                fileName: "persistence-failure.jpg",
+                beforeRequest: {
+                    _ = try store.updateItem(
+                        batchID: batch.batchID,
+                        itemID: item.itemID,
+                        state: .uploading
+                    )
+                }
+            )
+            throw PanoramaxTransportTestError.acceptedPersistenceFailed
+        }
+        try await waitForPanoramaxUploadCount(1, transport: transport)
+        let resumedAcceptedUpload = await transport.resumeNextUpload()
+        XCTAssertTrue(resumedAcceptedUpload)
+        do {
+            try await task.value
+            XCTFail("Expected accepted-state persistence to fail")
+        } catch PanoramaxTransportTestError.acceptedPersistenceFailed {
+            // Expected: transport succeeded but the durable accepted commit did not.
+        }
+
+        XCTAssertEqual(
+            try store.getBatch(batch.batchID)?.items.first(where: { $0.itemID == item.itemID })?.state,
+            .uploading
+        )
+        let quarantined = try store.abandonInFlightItems(batchID: batch.batchID)
+        XCTAssertEqual(quarantined.items.first?.state, .abandoned)
+    }
+
     func testPanoramaxUploadStatusAcceptsNumericIDsAndReadyStates() throws {
         let data = Data(#"{"id":42,"status":"ready"}"#.utf8)
         let status = try JSONDecoder().decode(PanoramaxUploadSetStatus.self, from: data)
         XCTAssertEqual(status.id, "42")
         XCTAssertTrue(status.isReady)
+    }
+
+    private enum PanoramaxTransportTestError: Error {
+        case timedOut
+        case acceptedPersistenceFailed
+    }
+
+    private actor ControlledPanoramaxUploadTransport: PanoramaxUploadTransport {
+        private struct PendingUpload {
+            let request: URLRequest
+            let continuation: CheckedContinuation<(Data, URLResponse), Error>
+        }
+
+        private var started = 0
+        private var pending: [PendingUpload] = []
+
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            let response = HTTPURLResponse(
+                url: request.url ?? URL(string: "https://panoramax.test")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (Data(#"{"id":"remote-set","status":"ready"}"#.utf8), response)
+        }
+
+        func upload(for request: URLRequest, fromFile fileURL: URL) async throws -> (Data, URLResponse) {
+            started += 1
+            return try await withCheckedThrowingContinuation { continuation in
+                pending.append(PendingUpload(request: request, continuation: continuation))
+            }
+        }
+
+        func startedUploadCount() -> Int {
+            started
+        }
+
+        func resumeNextUpload(statusCode: Int = 204) -> Bool {
+            guard !pending.isEmpty else { return false }
+            let next = pending.removeFirst()
+            let response = HTTPURLResponse(
+                url: next.request.url ?? URL(string: "https://panoramax.test")!,
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            next.continuation.resume(returning: (Data(), response))
+            return true
+        }
+    }
+
+    private func waitForPanoramaxUploadCount(
+        _ expectedCount: Int,
+        transport: ControlledPanoramaxUploadTransport
+    ) async throws {
+        for _ in 0..<200 {
+            if await transport.startedUploadCount() >= expectedCount { return }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        throw PanoramaxTransportTestError.timedOut
+    }
+
+    private func waitForPanoramaxPermitWaiterCount(
+        _ expectedCount: Int,
+        limiter: PanoramaxUploadLimiter
+    ) async throws {
+        for _ in 0..<200 {
+            if await limiter.waitingRequestCount >= expectedCount { return }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        throw PanoramaxTransportTestError.timedOut
+    }
+
+    @discardableResult
+    private func addPanoramaxTestItem(
+        store: PanoramaxQueueStore,
+        batch: PanoramaxBatchRecord,
+        itemID: String,
+        state: PanoramaxItemState = .captured
+    ) throws -> PanoramaxItemRecord {
+        let timestamp = batch.createdAt.addingTimeInterval(TimeInterval(batch.items.count + 1))
+        let marker = itemID.utf8.first ?? 1
+        let jpeg = Data([0xff, 0xd8, marker, 0xff, 0xd9])
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: itemID,
+            captureSessionID: batch.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(
+                latitude: 49,
+                longitude: 8,
+                capturedAt: timestamp,
+                accuracyMeters: 5,
+                altitudeMeters: nil,
+                headingDegrees: nil
+            ),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+        let added = try store.addJPEG(
+            batchID: batch.batchID,
+            jpeg: jpeg,
+            thumbnail: jpeg,
+            metadata: metadata
+        )
+        guard state != .captured else { return added }
+        let updated = try store.updateItem(batchID: batch.batchID, itemID: itemID, state: state)
+        return try XCTUnwrap(updated.items.first(where: { $0.itemID == itemID }))
     }
 
     func testParseExplicitSpeed() {
@@ -12182,5 +13059,949 @@ private final class KMLTrackParserDelegate: NSObject, XMLParserDelegate {
             }
             points.append(TrackPoint(lat: lat, lon: lon))
         }
+    }
+}
+
+/// Test-only binding to `shared/tsr/fixtures/de-yolox-mnv3-shadow-pack-v2.json`
+/// and `shared/tsr/fixtures/panoramax-m0-round-trip-v2.json`. Those repository
+/// fixtures are intentionally not added to the application bundle; these exact
+/// identifiers and digests make drift visible in focused native tests and in
+/// retained device evidence.
+private enum TrafficSignM0ReviewedDeviceContractFixture {
+    static let packId = "de-yolox-nano-mnv3-large-shadow-fixture-v2"
+    static let taxonomyVersion = "tsr-semantic-v2"
+    static let detectorComponentId = "de-yolox-nano-proposals-fixture-v2"
+    static let detectorArtifactId = "detector-coreml-fixture-v2"
+    static let detectorArtifactSha256 = String(repeating: "16", count: 32)
+    static let detectorPreprocessingVersion = "yolox-letterbox-rgb-640-v2"
+    static let detectorCalibrationId = "detector-temperature-fixture-v2"
+    static let classifierComponentId = "de-mnv3-large-union-fixture-v2"
+    static let classifierArtifactId = "classifier-coreml-fixture-v2"
+    static let classifierArtifactSha256 = String(repeating: "26", count: 32)
+    static let classifierPreprocessingVersion = "mnv3-proposal-rgb-224-v2"
+    static let classifierCalibrationId = "classifier-temperature-fixture-v2"
+    static let supplementaryExtentClassId = "supplementary_extent"
+
+    static let sequenceId = "f2266cf8-eb84-4ff8-990e-133edb8b9e4c"
+    static let hardPictureId = "49e25e66-1614-44c0-96bb-d7fb6faa74b1"
+    static let hardSequenceRank = 10
+    static let hardAssetSha256 = "1d2c8a66c8eedf68c3028d8749c5916c597ba2b7feeb4e1ddb71a4bf219b3f76"
+    static let laterPictureId = "0906fc23-7175-430e-acc0-106e7d45eca7"
+    static let laterSequenceRank = 11
+    static let laterAssetSha256 = "3ad4c4349a121ab9695a8febaeb0bff4feadef4739672f434c63e98c8f0d3d0b"
+}
+
+final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
+    func testHardPanoramaxFrameKeepsPlateUnreadableAndEmitsDiagnosticCapture() throws {
+        let captureSink = TrafficSignShadowCaptureRecorder()
+        let qaSink = TrafficSignShadowQARecorder()
+        let runtime = try makeRuntime(captureSink: captureSink, qaSink: qaSink)
+
+        let event = try runtime.process(makeFrameInput(
+            eventID: "event-hard",
+            readablePlate: false
+        ))
+
+        XCTAssertEqual(event.schemaVersion, 2)
+        XCTAssertEqual(event.evidenceOrigin, .runtimeInference)
+        XCTAssertEqual(event.executionMode, .shadow)
+        XCTAssertFalse(event.overrideEligible)
+        XCTAssertEqual(event.overrideDisposition, .shadowEvidenceOnly)
+        XCTAssertEqual(event.qaDisposition, .emit)
+        XCTAssertEqual(event.state, .provisional)
+        let context = try XCTUnwrap(event.roadContext)
+        XCTAssertEqual(context.wayId, "52869774")
+        XCTAssertEqual(context.latitude, 48.780302778, accuracy: 0.000000001)
+        XCTAssertEqual(context.longitude, 8.402511111, accuracy: 0.000000001)
+        XCTAssertEqual(context.headingDegrees, 184, accuracy: 0.001)
+        XCTAssertEqual(context.travelDirection, .reverse)
+
+        let assembly = try XCTUnwrap(event.assemblies.first)
+        XCTAssertEqual(assembly.primary.semantic.value, 70)
+        XCTAssertEqual(assembly.conditionState, .unresolved)
+        let plate = try XCTUnwrap(assembly.supplementaryPlates.first)
+        XCTAssertEqual(plate.readability, .unreadable)
+        XCTAssertEqual(plate.classifierScore?.rawScore, 0.18)
+        XCTAssertEqual(plate.classifierScore?.calibratedConfidence, 0.16)
+        XCTAssertNil(plate.classId)
+        XCTAssertNil(plate.restriction)
+        XCTAssertEqual(assembly.temporalEvidence.evidenceFrameCount, 1)
+        XCTAssertNil(assembly.temporalEvidence.priorEventId)
+        XCTAssertEqual(
+            assembly.temporalEvidence.restrictionTransition,
+            .none
+        )
+
+        XCTAssertEqual(
+            event.stageRuns.detector.componentId,
+            TrafficSignM0ReviewedDeviceContractFixture.detectorComponentId
+        )
+        XCTAssertEqual(
+            event.stageRuns.classifier.componentId,
+            TrafficSignM0ReviewedDeviceContractFixture.classifierComponentId
+        )
+        XCTAssertNotEqual(
+            event.stageRuns.detector.artifactSha256,
+            event.stageRuns.classifier.artifactSha256
+        )
+        XCTAssertEqual(event.diagnosticCapture.status, .persisted)
+        XCTAssertEqual(event.diagnosticCapture.captureId, "capture-event-hard")
+        XCTAssertTrue(event.diagnosticCapture.reasons.contains(.unreadableSupplementaryPlate))
+        XCTAssertEqual(captureSink.requests.first?.roadContext.wayId, "52869774")
+        XCTAssertEqual(qaSink.events, [event])
+
+        let data = try TrafficSignPackJSON.encoder().encode(event)
+        let wire = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(wire["execution_mode"] as? String, "shadow")
+        XCTAssertEqual(wire["evidence_origin"] as? String, "runtime_inference")
+        XCTAssertEqual(wire["override_eligible"] as? Bool, false)
+        XCTAssertEqual(wire["qa_disposition"] as? String, "emit")
+        let assemblies = try XCTUnwrap(wire["assemblies"] as? [[String: Any]])
+        let plates = try XCTUnwrap(
+            assemblies.first?["supplementary_plates"] as? [[String: Any]]
+        )
+        let plateWire = try XCTUnwrap(plates.first)
+        XCTAssertNotNil(plateWire["classifier_score"] as? [String: Any])
+        XCTAssertTrue(plateWire["restriction"] is NSNull)
+        let roadContextWire = try XCTUnwrap(wire["road_context"] as? [String: Any])
+        let sourceSignatureWire = try XCTUnwrap(
+            roadContextWire["source_signature"] as? [String: Any]
+        )
+        XCTAssertTrue(sourceSignatureWire["local_correction_revision"] is NSNull)
+        XCTAssertNil(wire["image_path"])
+        XCTAssertEqual(
+            try TrafficSignPackJSON.decoder().decode(
+                TrafficSignRecognitionEventV2.self,
+                from: data
+            ),
+            event
+        )
+    }
+
+    func testLaterCalibratedReadableFrameUpgradesOnlyMatchingPhysicalSign() throws {
+        let runtime = try makeRuntime()
+        let hard = try runtime.process(makeFrameInput(
+            eventID: "event-hard",
+            readablePlate: false
+        ))
+        let readable = try runtime.process(makeFrameInput(
+            eventID: "event-readable",
+            readablePlate: true,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_275.468),
+            latitude: 48.779997222,
+            longitude: 8.402469444,
+            headingDegrees: 183,
+            primaryBox: TrafficSignNormalizedRect(
+                x: 0.702020202020,
+                y: 0.391571969697,
+                width: 0.062710437710,
+                height: 0.034564393939
+            ),
+            plateBox: TrafficSignNormalizedRect(
+                x: 0.704545454545,
+                y: 0.425426136364,
+                width: 0.046717171717,
+                height: 0.015861742424
+            )
+        ))
+
+        let first = try XCTUnwrap(hard.assemblies.first)
+        let upgraded = try XCTUnwrap(readable.assemblies.first)
+        XCTAssertEqual(first.physicalSignTrackId, upgraded.physicalSignTrackId)
+        XCTAssertEqual(readable.state, .confirmed)
+        XCTAssertEqual(upgraded.conditionState, .resolved)
+        let plate = try XCTUnwrap(upgraded.supplementaryPlates.first)
+        XCTAssertEqual(plate.readability, .readable)
+        XCTAssertEqual(plate.restriction?.kind, .extent)
+        XCTAssertEqual(plate.restriction?.normalizedValue, "2000 m")
+        XCTAssertEqual(plate.restriction?.extentM, 2_000)
+        XCTAssertEqual(plate.restriction?.rawText, "↕ 2 km")
+        XCTAssertEqual(upgraded.temporalEvidence.evidenceFrameCount, 2)
+        XCTAssertEqual(upgraded.temporalEvidence.priorEventId, "event-hard")
+        XCTAssertEqual(
+            upgraded.temporalEvidence.restrictionTransition,
+            .upgradedFromLaterReadableEvidence
+        )
+        XCTAssertTrue(readable.diagnosticCapture.reasons.contains(.temporalUpgrade))
+
+        let differentSign = try runtime.process(makeFrameInput(
+            eventID: "event-different-sign",
+            readablePlate: true,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_275.831),
+            stableObservationHint: "different-runtime-sign-track"
+        ))
+        let other = try XCTUnwrap(differentSign.assemblies.first)
+        XCTAssertNotEqual(other.physicalSignTrackId, upgraded.physicalSignTrackId)
+        XCTAssertEqual(other.temporalEvidence.evidenceFrameCount, 1)
+        XCTAssertNil(other.temporalEvidence.priorEventId)
+        XCTAssertEqual(other.temporalEvidence.restrictionTransition, .none)
+    }
+
+    func testReviewedInputContractSuppressesModelInferenceEvidence() throws {
+        let runtime = try makeRuntime(calibrationPassed: false)
+        let event = try runtime.process(makeFrameInput(
+            eventID: "reviewed-hard-frame",
+            frameID: TrafficSignM0ReviewedDeviceContractFixture.hardPictureId,
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: false,
+            detectorLatencyMs: 0,
+            classifierInvoked: false,
+            classifierLatencyMs: 0
+        ))
+
+        XCTAssertEqual(event.evidenceOrigin, .reviewedExpectation)
+        XCTAssertFalse(event.stageRuns.detector.invoked)
+        XCTAssertEqual(event.stageRuns.detector.latencyMs, 0)
+        XCTAssertFalse(event.stageRuns.classifier.invoked)
+        XCTAssertEqual(event.stageRuns.classifier.latencyMs, 0)
+        let assembly = try XCTUnwrap(event.assemblies.first)
+        let plate = try XCTUnwrap(assembly.supplementaryPlates.first)
+        XCTAssertNil(assembly.primary.detectorScore)
+        XCTAssertNil(assembly.primary.classifierScore)
+        XCTAssertNil(plate.detectorScore)
+        XCTAssertNil(plate.classifierScore)
+
+        let data = try TrafficSignPackJSON.encoder().encode(event)
+        let wire = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(wire["evidence_origin"] as? String, "reviewed_expectation")
+        let stageRuns = try XCTUnwrap(wire["stage_runs"] as? [String: Any])
+        let detector = try XCTUnwrap(stageRuns["detector"] as? [String: Any])
+        let classifier = try XCTUnwrap(stageRuns["classifier"] as? [String: Any])
+        XCTAssertEqual(detector["invoked"] as? Bool, false)
+        XCTAssertEqual(detector["latency_ms"] as? Double, 0)
+        XCTAssertEqual(classifier["invoked"] as? Bool, false)
+        XCTAssertEqual(classifier["latency_ms"] as? Double, 0)
+        let assemblies = try XCTUnwrap(wire["assemblies"] as? [[String: Any]])
+        let primary = try XCTUnwrap(assemblies.first?["primary"] as? [String: Any])
+        XCTAssertTrue(primary["detector_score"] is NSNull)
+        XCTAssertTrue(primary["classifier_score"] is NSNull)
+        let plates = try XCTUnwrap(
+            assemblies.first?["supplementary_plates"] as? [[String: Any]]
+        )
+        XCTAssertTrue(plates[0]["detector_score"] is NSNull)
+        XCTAssertTrue(plates[0]["classifier_score"] is NSNull)
+    }
+
+    func testReviewedInputContractDispatchesCaptureRequestsWithoutPersistingImageBytes() throws {
+        let captureSink = TrafficSignShadowCaptureRecorder(persistsImageBytes: false)
+        let runtime = try makeRuntime(
+            captureSink: captureSink,
+            calibrationPassed: false
+        )
+        let hard = try runtime.process(makeFrameInput(
+            eventID: "panoramax-hard-preceding-frame",
+            frameID: TrafficSignM0ReviewedDeviceContractFixture.hardPictureId,
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: false,
+            detectorLatencyMs: 0,
+            classifierInvoked: false,
+            classifierLatencyMs: 0
+        ))
+        let later = try runtime.process(makeFrameInput(
+            eventID: "panoramax-later-readable-frame",
+            frameID: TrafficSignM0ReviewedDeviceContractFixture.laterPictureId,
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: true,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_275.468),
+            latitude: 48.779997222,
+            longitude: 8.402469444,
+            headingDegrees: 183,
+            detectorLatencyMs: 0,
+            classifierInvoked: false,
+            classifierLatencyMs: 0
+        ))
+
+        try assertReviewedPanoramaxCaptureDispatch(
+            captureSink,
+            hardEvent: hard,
+            laterEvent: later
+        )
+    }
+
+    func testReviewedInputContractRejectsMixedRuntimeClaims() throws {
+        let runtime = try makeRuntime(calibrationPassed: false)
+
+        XCTAssertThrowsError(try runtime.process(makeFrameInput(
+            eventID: "reviewed-with-runtime-claims",
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: false
+        ))) { error in
+            guard case TrafficSignShadowRuntimeError.invalidInput = error else {
+                return XCTFail("Expected fail-closed provenance rejection, got \(error)")
+            }
+        }
+    }
+
+    func testPackFixtureIdentityBindingUsesFrozenCoreMLSiblings() throws {
+        let runtime = try makeRuntime(calibrationPassed: false)
+        assertPackFixtureBinding(runtime.configuration, calibrationPassed: false)
+    }
+
+    /// Physical-device contract for reviewed Panoramax labels. It intentionally
+    /// injects reviewed observations and never invokes or claims Core ML model
+    /// inference. Separate simulator-capable tests exercise the same runtime.
+    func testPhysicalIPhoneReviewedInputContractExactPanoramaxFramesWithoutCoreMLInference() throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("The reviewed-input acceptance contract must run on a physical iPhone.")
+#else
+        let captureSink = TrafficSignShadowCaptureRecorder(persistsImageBytes: false)
+        let qaSink = TrafficSignShadowQARecorder()
+        let runtime = try makeRuntime(
+            captureSink: captureSink,
+            qaSink: qaSink,
+            calibrationPassed: false
+        )
+        assertPackFixtureBinding(runtime.configuration, calibrationPassed: false)
+        var overridePolicy = TrafficSignTransientOverridePolicy()
+
+        let hard = try runtime.process(makeFrameInput(
+            eventID: "panoramax-hard-preceding-frame",
+            frameID: TrafficSignM0ReviewedDeviceContractFixture.hardPictureId,
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: false,
+            detectorLatencyMs: 0,
+            classifierInvoked: false,
+            classifierLatencyMs: 0
+        ))
+        let hardContext = try XCTUnwrap(hard.roadContext)
+        let hardAssembly = try XCTUnwrap(hard.assemblies.first)
+        let hardPlate = try XCTUnwrap(hardAssembly.supplementaryPlates.first)
+        XCTAssertEqual(hard.evidenceOrigin, .reviewedExpectation)
+        XCTAssertEqual(
+            hard.frame.frameId,
+            TrafficSignM0ReviewedDeviceContractFixture.hardPictureId
+        )
+        XCTAssertEqual(hard.source, .panoramaxReplay)
+        XCTAssertEqual(hard.frame.timestampUtc, Date(timeIntervalSince1970: 1_788_279_273.731))
+        XCTAssertEqual(hard.frame.width, 2_376)
+        XCTAssertEqual(hard.frame.height, 4_224)
+        XCTAssertEqual(hard.state, .provisional)
+        XCTAssertFalse(hard.overrideEligible)
+        XCTAssertFalse(hard.stageRuns.detector.invoked)
+        XCTAssertEqual(hard.stageRuns.detector.latencyMs, 0)
+        XCTAssertFalse(hard.stageRuns.classifier.invoked)
+        XCTAssertEqual(hard.stageRuns.classifier.latencyMs, 0)
+        XCTAssertEqual(hardContext.wayId, "52869774")
+        XCTAssertEqual(hardContext.latitude, 48.780302778, accuracy: 0.000000001)
+        XCTAssertEqual(hardContext.longitude, 8.402511111, accuracy: 0.000000001)
+        XCTAssertEqual(hardContext.headingDegrees, 184, accuracy: 0.001)
+        XCTAssertEqual(hardContext.travelDirection, .reverse)
+        XCTAssertEqual(hardAssembly.primary.semantic.value, 70)
+        XCTAssertEqual(hardAssembly.primary.boundingBox, TrafficSignNormalizedRect(
+            x: 0.490740740741,
+            y: 0.427320075758,
+            width: 0.023148148148,
+            height: 0.013257575758
+        ))
+        XCTAssertEqual(hardPlate.boundingBox, TrafficSignNormalizedRect(
+            x: 0.492424242424,
+            y: 0.440104166667,
+            width: 0.018518518519,
+            height: 0.005918560606
+        ))
+        XCTAssertNil(hardAssembly.primary.detectorScore)
+        XCTAssertNil(hardAssembly.primary.classifierScore)
+        XCTAssertNil(hardPlate.detectorScore)
+        XCTAssertNil(hardPlate.classifierScore)
+        XCTAssertEqual(hardPlate.readability, .unreadable)
+        XCTAssertNil(hardPlate.classId)
+        XCTAssertNil(hardPlate.restriction)
+        XCTAssertFalse(overridePolicy.ingestConfirmedDetection(
+            hard,
+            currentSourceSignature: hardContext.sourceSignature
+        ))
+        XCTAssertNil(overridePolicy.activeOverride)
+
+        let later = try runtime.process(makeFrameInput(
+            eventID: "panoramax-later-readable-frame",
+            frameID: TrafficSignM0ReviewedDeviceContractFixture.laterPictureId,
+            evidenceOrigin: .reviewedExpectation,
+            readablePlate: true,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_275.468),
+            latitude: 48.779997222,
+            longitude: 8.402469444,
+            headingDegrees: 183,
+            primaryBox: TrafficSignNormalizedRect(
+                x: 0.702020202020,
+                y: 0.391571969697,
+                width: 0.062710437710,
+                height: 0.034564393939
+            ),
+            plateBox: TrafficSignNormalizedRect(
+                x: 0.704545454545,
+                y: 0.425426136364,
+                width: 0.046717171717,
+                height: 0.015861742424
+            ),
+            detectorLatencyMs: 0,
+            classifierInvoked: false,
+            classifierLatencyMs: 0
+        ))
+        let laterContext = try XCTUnwrap(later.roadContext)
+        let laterAssembly = try XCTUnwrap(later.assemblies.first)
+        let laterPlate = try XCTUnwrap(laterAssembly.supplementaryPlates.first)
+        XCTAssertEqual(later.evidenceOrigin, .reviewedExpectation)
+        XCTAssertEqual(
+            later.frame.frameId,
+            TrafficSignM0ReviewedDeviceContractFixture.laterPictureId
+        )
+        XCTAssertEqual(later.source, .panoramaxReplay)
+        XCTAssertEqual(later.frame.timestampUtc.timeIntervalSince(hard.frame.timestampUtc), 1.737, accuracy: 0.0001)
+        XCTAssertEqual(later.state, .confirmed)
+        XCTAssertFalse(later.overrideEligible)
+        XCTAssertFalse(later.stageRuns.detector.invoked)
+        XCTAssertEqual(later.stageRuns.detector.latencyMs, 0)
+        XCTAssertFalse(later.stageRuns.classifier.invoked)
+        XCTAssertEqual(later.stageRuns.classifier.latencyMs, 0)
+        XCTAssertEqual(laterContext.wayId, "52869774")
+        XCTAssertEqual(laterContext.latitude, 48.779997222, accuracy: 0.000000001)
+        XCTAssertEqual(laterContext.longitude, 8.402469444, accuracy: 0.000000001)
+        XCTAssertEqual(laterContext.headingDegrees, 183, accuracy: 0.001)
+        XCTAssertEqual(laterContext.travelDirection, .reverse)
+        XCTAssertEqual(laterAssembly.primary.semantic.value, 70)
+        XCTAssertEqual(laterAssembly.primary.boundingBox, TrafficSignNormalizedRect(
+            x: 0.702020202020,
+            y: 0.391571969697,
+            width: 0.062710437710,
+            height: 0.034564393939
+        ))
+        XCTAssertEqual(laterAssembly.physicalSignTrackId, hardAssembly.physicalSignTrackId)
+        XCTAssertEqual(laterAssembly.temporalEvidence.evidenceFrameCount, 2)
+        XCTAssertEqual(laterAssembly.temporalEvidence.priorEventId, hard.eventId)
+        XCTAssertEqual(
+            laterAssembly.temporalEvidence.restrictionTransition,
+            .upgradedFromLaterReadableEvidence
+        )
+        XCTAssertNil(laterAssembly.primary.detectorScore)
+        XCTAssertNil(laterAssembly.primary.classifierScore)
+        XCTAssertNil(laterPlate.detectorScore)
+        XCTAssertNil(laterPlate.classifierScore)
+        XCTAssertEqual(
+            laterPlate.boundingBox,
+            TrafficSignNormalizedRect(
+                x: 0.704545454545,
+                y: 0.425426136364,
+                width: 0.046717171717,
+                height: 0.015861742424
+            )
+        )
+        XCTAssertEqual(laterPlate.readability, .readable)
+        XCTAssertEqual(
+            laterPlate.classId,
+            TrafficSignM0ReviewedDeviceContractFixture.supplementaryExtentClassId
+        )
+        XCTAssertEqual(laterPlate.restriction?.kind, .extent)
+        XCTAssertEqual(laterPlate.restriction?.extentM, 2_000)
+        XCTAssertEqual(laterPlate.restriction?.distanceM, nil)
+        XCTAssertFalse(overridePolicy.ingestConfirmedDetection(
+            later,
+            currentSourceSignature: laterContext.sourceSignature
+        ))
+        XCTAssertNil(overridePolicy.activeOverride)
+        XCTAssertEqual(qaSink.events, [hard, later])
+        try assertReviewedPanoramaxCaptureDispatch(
+            captureSink,
+            hardEvent: hard,
+            laterEvent: later
+        )
+
+        try attachReviewedInputDeviceContractEvidence(
+            events: [hard, later],
+            captureRequests: captureSink.requests,
+            captureOutcomes: captureSink.outcomes
+        )
+#endif
+    }
+
+    func testBelowThresholdReadableGuessRemainsUnreadableWithoutRestriction() throws {
+        let runtime = try makeRuntime()
+        _ = try runtime.process(makeFrameInput(eventID: "event-hard", readablePlate: false))
+
+        let lowConfidence = try runtime.process(makeFrameInput(
+            eventID: "event-low-confidence",
+            readablePlate: true,
+            plateCalibratedConfidence: 0.69,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_274.481)
+        ))
+
+        let assembly = try XCTUnwrap(lowConfidence.assemblies.first)
+        let plate = try XCTUnwrap(assembly.supplementaryPlates.first)
+        XCTAssertEqual(assembly.conditionState, .unresolved)
+        XCTAssertEqual(plate.readability, .unreadable)
+        XCTAssertEqual(plate.classifierScore?.calibratedConfidence, 0.69)
+        XCTAssertNil(plate.classId)
+        XCTAssertNil(plate.restriction)
+        XCTAssertEqual(
+            assembly.temporalEvidence.restrictionTransition,
+            .preservedUnreadable
+        )
+    }
+
+    func testV2ShadowEventCanNeitherCreateNorReplaceSpeedOverride() throws {
+        let runtime = try makeRuntime()
+        _ = try runtime.process(makeFrameInput(
+            eventID: "event-hard",
+            readablePlate: false
+        ))
+        let shadow = try runtime.process(makeFrameInput(
+            eventID: "event-readable",
+            readablePlate: true,
+            timestamp: Date(timeIntervalSince1970: 1_788_279_275.468),
+            latitude: 48.779997222,
+            longitude: 8.402469444,
+            headingDegrees: 183
+        ))
+        XCTAssertEqual(shadow.state, .confirmed)
+        let context = try XCTUnwrap(shadow.roadContext)
+        var policy = TrafficSignTransientOverridePolicy()
+
+        XCTAssertFalse(policy.ingestConfirmedDetection(
+            shadow,
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertNil(policy.activeOverride)
+
+        let liveV1 = TrafficSignRecognitionEvent(
+            schemaVersion: 1,
+            packId: "active-v1-pack",
+            artifactSha256: String(repeating: "c", count: 64),
+            preprocessingVersion: "vision-scale-fit-rgb-v1",
+            source: .liveFrame,
+            frameTimestampUtc: Date(timeIntervalSince1970: 1_788_279_272),
+            state: .confirmed,
+            candidate: TrafficSignRecognitionCandidate(
+                rawClassId: "speed_limit_50",
+                rawLabel: "Maximum speed 50",
+                semanticKind: TrafficSignSemanticKind.maximumSpeed.rawValue,
+                value: 50,
+                unit: "km/h",
+                rawScore: 0.9,
+                calibratedConfidence: 0.88,
+                boundingBox: TrafficSignNormalizedRect(
+                    x: 0.7,
+                    y: 0.15,
+                    width: 0.08,
+                    height: 0.12
+                ),
+                trackId: "active-v1-track",
+                evidenceFrames: 3
+            ),
+            roadContext: context,
+            latencyMs: 20,
+            thermalState: "nominal"
+        )
+        XCTAssertTrue(policy.ingestConfirmedDetection(
+            liveV1,
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertEqual(policy.activeOverride?.speedKmh, 50)
+
+        XCTAssertFalse(policy.ingestConfirmedDetection(
+            shadow,
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertEqual(policy.activeOverride?.speedKmh, 50)
+        XCTAssertEqual(policy.resolvedSpeedKmh(
+            osmSpeedKmh: 70,
+            localCorrectionSpeedKmh: 60,
+            currentContext: context
+        ), 50)
+    }
+
+    private func makeRuntime(
+        captureSink: (any TrafficSignDiagnosticCaptureSinkV2)? = nil,
+        qaSink: (any TrafficSignQAEventSinkV2)? = nil,
+        calibrationPassed: Bool = true
+    ) throws -> TrafficSignShadowRuntimeV2 {
+        try TrafficSignShadowRuntimeV2(
+            configuration: TrafficSignShadowRuntimeConfigurationV2(
+                packId: TrafficSignM0ReviewedDeviceContractFixture.packId,
+                taxonomyVersion: TrafficSignM0ReviewedDeviceContractFixture.taxonomyVersion,
+                initialMode: .shadow,
+                overrideEligible: false,
+                detector: TrafficSignShadowStageIdentityV2(
+                    componentId: TrafficSignM0ReviewedDeviceContractFixture.detectorComponentId,
+                    artifactId: TrafficSignM0ReviewedDeviceContractFixture.detectorArtifactId,
+                    artifactSha256: TrafficSignM0ReviewedDeviceContractFixture.detectorArtifactSha256,
+                    artifactFormat: .coreml,
+                    preprocessingVersion: TrafficSignM0ReviewedDeviceContractFixture.detectorPreprocessingVersion,
+                    calibrationId: TrafficSignM0ReviewedDeviceContractFixture.detectorCalibrationId,
+                    calibrationPassed: calibrationPassed
+                ),
+                classifier: TrafficSignShadowStageIdentityV2(
+                    componentId: TrafficSignM0ReviewedDeviceContractFixture.classifierComponentId,
+                    artifactId: TrafficSignM0ReviewedDeviceContractFixture.classifierArtifactId,
+                    artifactSha256: TrafficSignM0ReviewedDeviceContractFixture.classifierArtifactSha256,
+                    artifactFormat: .coreml,
+                    preprocessingVersion: TrafficSignM0ReviewedDeviceContractFixture.classifierPreprocessingVersion,
+                    calibrationId: TrafficSignM0ReviewedDeviceContractFixture.classifierCalibrationId,
+                    calibrationPassed: calibrationPassed
+                ),
+                classifierConfirmedThreshold: 0.8,
+                confirmationFrames: 2,
+                minimumTrackIou: 0.2,
+                temporalWindowMs: 2_500,
+                associationPolicy: .stableObservationHintThenUniqueSemanticRoadDirection,
+                stableObservationHintCanOverrideIou: true,
+                fallbackRequiresUniqueCandidate: true
+            ),
+            diagnosticCaptureSink: captureSink,
+            qaEventSink: qaSink
+        )
+    }
+
+    private func makeFrameInput(
+        eventID: String,
+        frameID: String? = nil,
+        evidenceOrigin: TrafficSignEvidenceOriginV2 = .runtimeInference,
+        readablePlate: Bool,
+        plateCalibratedConfidence: Double = 0.94,
+        timestamp: Date = Date(timeIntervalSince1970: 1_788_279_273.731),
+        latitude: Double = 48.780302778,
+        longitude: Double = 8.402511111,
+        headingDegrees: Double = 184,
+        wayID: String = "52869774",
+        stableObservationHint: String = "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+        primaryBox: TrafficSignNormalizedRect = TrafficSignNormalizedRect(
+            x: 0.490740740741,
+            y: 0.427320075758,
+            width: 0.023148148148,
+            height: 0.013257575758
+        ),
+        plateBox: TrafficSignNormalizedRect = TrafficSignNormalizedRect(
+            x: 0.492424242424,
+            y: 0.440104166667,
+            width: 0.018518518519,
+            height: 0.005918560606
+        ),
+        detectorLatencyMs: Double = 18,
+        classifierInvoked: Bool = true,
+        classifierLatencyMs: Double = 7
+    ) -> TrafficSignShadowFrameInputV2 {
+        let context = TrafficSignDetectionContext(
+            wayId: wayID,
+            latitude: latitude,
+            longitude: longitude,
+            headingDegrees: headingDegrees,
+            travelDirection: .reverse,
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "bundle:3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89|way:52869774|maxspeed:70",
+                localCorrectionRevision: nil
+            )
+        )
+        let restriction: TrafficSignRestrictionV2? = readablePlate
+            ? TrafficSignRestrictionV2(
+                kind: .extent,
+                normalizedValue: "2000 m",
+                extentM: 2_000,
+                rawText: "↕ 2 km"
+            )
+            : nil
+        return TrafficSignShadowFrameInputV2(
+            eventId: eventID,
+            evidenceOrigin: evidenceOrigin,
+            source: .panoramaxReplay,
+            frame: TrafficSignFrameV2(
+                frameId: frameID ?? "frame-\(eventID)",
+                timestampUtc: timestamp,
+                width: 2_376,
+                height: 4_224
+            ),
+            roadContext: context,
+            requestedState: .confirmed,
+            detectorLatencyMs: detectorLatencyMs,
+            classifierInvoked: classifierInvoked,
+            classifierLatencyMs: classifierLatencyMs,
+            assemblies: [
+                TrafficSignTwoStageAssemblyObservationV2(
+                    assemblyId: "assembly-\(eventID)",
+                    stableObservationHint: stableObservationHint,
+                    primary: TrafficSignTwoStagePrimaryObservationV2(
+                        objectId: "primary-\(eventID)",
+                        classId: "speed_limit_70",
+                        semantic: TrafficSignPrimarySemanticV2(
+                            kind: .maximumSpeed,
+                            value: 70,
+                            unit: "km/h"
+                        ),
+                        boundingBox: primaryBox,
+                        detectorScore: 0.92,
+                        detectorCalibratedConfidence: 0.91,
+                        classifierRawScore: 2.4,
+                        classifierCalibratedConfidence: 0.96,
+                        classifierThreshold: 0.8
+                    ),
+                    supplementaryPlates: [
+                        TrafficSignTwoStagePlateObservationV2(
+                            objectId: "plate-\(eventID)",
+                            classId: readablePlate
+                                ? TrafficSignM0ReviewedDeviceContractFixture.supplementaryExtentClassId
+                                : nil,
+                            boundingBox: plateBox,
+                            detectorScore: 0.81,
+                            detectorCalibratedConfidence: 0.79,
+                            classifierRawScore: readablePlate ? 1.9 : 0.18,
+                            classifierCalibratedConfidence: readablePlate
+                                ? plateCalibratedConfidence
+                                : 0.16,
+                            classifierThreshold: 0.85,
+                            readability: readablePlate ? .readable : .unreadable,
+                            restriction: restriction
+                        ),
+                    ]
+                ),
+            ]
+        )
+    }
+
+    private func assertReviewedPanoramaxCaptureDispatch(
+        _ captureSink: TrafficSignShadowCaptureRecorder,
+        hardEvent: TrafficSignRecognitionEventV2,
+        laterEvent: TrafficSignRecognitionEventV2,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        XCTAssertEqual(captureSink.requests.count, 2, file: file, line: line)
+        XCTAssertEqual(captureSink.outcomes.count, 2, file: file, line: line)
+        let hardRequest = try XCTUnwrap(captureSink.requests.first, file: file, line: line)
+        let laterRequest = try XCTUnwrap(captureSink.requests.last, file: file, line: line)
+
+        XCTAssertEqual(hardRequest.eventId, hardEvent.eventId, file: file, line: line)
+        XCTAssertEqual(
+            hardRequest.frame.frameId,
+            TrafficSignM0ReviewedDeviceContractFixture.hardPictureId,
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(hardRequest.frame, hardEvent.frame, file: file, line: line)
+        XCTAssertEqual(hardRequest.roadContext, hardEvent.roadContext, file: file, line: line)
+        XCTAssertEqual(
+            hardRequest.reasons,
+            [.unreadableSupplementaryPlate],
+            file: file,
+            line: line
+        )
+
+        XCTAssertEqual(laterRequest.eventId, laterEvent.eventId, file: file, line: line)
+        XCTAssertEqual(
+            laterRequest.frame.frameId,
+            TrafficSignM0ReviewedDeviceContractFixture.laterPictureId,
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(laterRequest.frame, laterEvent.frame, file: file, line: line)
+        XCTAssertEqual(laterRequest.roadContext, laterEvent.roadContext, file: file, line: line)
+        XCTAssertEqual(
+            laterRequest.reasons,
+            [.temporalUpgrade, .shadowCandidate],
+            file: file,
+            line: line
+        )
+
+        XCTAssertEqual(
+            captureSink.outcomes,
+            [
+                TrafficSignDiagnosticCaptureOutcomeV2(status: .requested),
+                TrafficSignDiagnosticCaptureOutcomeV2(status: .requested),
+            ],
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(hardEvent.diagnosticCapture.status, .requested, file: file, line: line)
+        XCTAssertEqual(
+            hardEvent.diagnosticCapture.reasons,
+            hardRequest.reasons,
+            file: file,
+            line: line
+        )
+        XCTAssertNil(hardEvent.diagnosticCapture.captureId, file: file, line: line)
+        XCTAssertEqual(laterEvent.diagnosticCapture.status, .requested, file: file, line: line)
+        XCTAssertEqual(
+            laterEvent.diagnosticCapture.reasons,
+            laterRequest.reasons,
+            file: file,
+            line: line
+        )
+        XCTAssertNil(laterEvent.diagnosticCapture.captureId, file: file, line: line)
+    }
+
+    private func assertPackFixtureBinding(
+        _ configuration: TrafficSignShadowRuntimeConfigurationV2,
+        calibrationPassed: Bool,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertEqual(
+            configuration.packId,
+            TrafficSignM0ReviewedDeviceContractFixture.packId,
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(
+            configuration.taxonomyVersion,
+            TrafficSignM0ReviewedDeviceContractFixture.taxonomyVersion,
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(
+            configuration.detector,
+            TrafficSignShadowStageIdentityV2(
+                componentId: TrafficSignM0ReviewedDeviceContractFixture.detectorComponentId,
+                artifactId: TrafficSignM0ReviewedDeviceContractFixture.detectorArtifactId,
+                artifactSha256: TrafficSignM0ReviewedDeviceContractFixture.detectorArtifactSha256,
+                artifactFormat: .coreml,
+                preprocessingVersion: TrafficSignM0ReviewedDeviceContractFixture.detectorPreprocessingVersion,
+                calibrationId: TrafficSignM0ReviewedDeviceContractFixture.detectorCalibrationId,
+                calibrationPassed: calibrationPassed
+            ),
+            file: file,
+            line: line
+        )
+        XCTAssertEqual(
+            configuration.classifier,
+            TrafficSignShadowStageIdentityV2(
+                componentId: TrafficSignM0ReviewedDeviceContractFixture.classifierComponentId,
+                artifactId: TrafficSignM0ReviewedDeviceContractFixture.classifierArtifactId,
+                artifactSha256: TrafficSignM0ReviewedDeviceContractFixture.classifierArtifactSha256,
+                artifactFormat: .coreml,
+                preprocessingVersion: TrafficSignM0ReviewedDeviceContractFixture.classifierPreprocessingVersion,
+                calibrationId: TrafficSignM0ReviewedDeviceContractFixture.classifierCalibrationId,
+                calibrationPassed: calibrationPassed
+            ),
+            file: file,
+            line: line
+        )
+    }
+
+    private func attachReviewedInputDeviceContractEvidence(
+        events: [TrafficSignRecognitionEventV2],
+        captureRequests: [TrafficSignDiagnosticCaptureRequestV2],
+        captureOutcomes: [TrafficSignDiagnosticCaptureOutcomeV2]
+    ) throws {
+        try XCTContext.runActivity(
+            named: "Panoramax M0 reviewed-input physical-device contract; no Core ML inference"
+        ) {
+            activity in
+#if targetEnvironment(simulator)
+            let executionEnvironment = "simulator"
+#else
+            let executionEnvironment = "physical_device"
+            XCTAssertNil(ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+#if canImport(UIKit)
+            XCTAssertEqual(UIDevice.current.userInterfaceIdiom, .phone)
+#endif
+#endif
+            let platformEvidence = [
+                "execution_environment=\(executionEnvironment)",
+                "contract_kind=reviewed_input_device_contract",
+                "input_fixture_origin=reviewed_expectation",
+                "event_evidence_origin=reviewed_expectation",
+                "runtime_contract_executed=true",
+                "model_inference_executed=false",
+                "diagnostic_capture_sink=contract_request_recorder",
+                "source_image_bytes_persisted=false",
+                "operating_system=\(ProcessInfo.processInfo.operatingSystemVersionString)",
+            ].joined(separator: "\n")
+            let platformAttachment = XCTAttachment(string: platformEvidence)
+            platformAttachment.name = "reviewed-input-device-contract-environment.txt"
+            platformAttachment.lifetime = .keepAlways
+            activity.add(platformAttachment)
+
+            let sourceEvidence = [
+                "canonical_fixture=shared/tsr/fixtures/panoramax-m0-round-trip-v2.json",
+                "sequence_id=\(TrafficSignM0ReviewedDeviceContractFixture.sequenceId)",
+                "hard_picture_id=\(TrafficSignM0ReviewedDeviceContractFixture.hardPictureId)",
+                "hard_sequence_rank=\(TrafficSignM0ReviewedDeviceContractFixture.hardSequenceRank)",
+                "hard_hd_asset_sha256=\(TrafficSignM0ReviewedDeviceContractFixture.hardAssetSha256)",
+                "later_picture_id=\(TrafficSignM0ReviewedDeviceContractFixture.laterPictureId)",
+                "later_sequence_rank=\(TrafficSignM0ReviewedDeviceContractFixture.laterSequenceRank)",
+                "later_hd_asset_sha256=\(TrafficSignM0ReviewedDeviceContractFixture.laterAssetSha256)",
+                "image_bytes_bundled=false",
+            ].joined(separator: "\n")
+            let sourceAttachment = XCTAttachment(string: sourceEvidence)
+            sourceAttachment.name = "reviewed-panoramax-source-binding.txt"
+            sourceAttachment.lifetime = .keepAlways
+            activity.add(sourceAttachment)
+
+            XCTAssertEqual(captureRequests.count, captureOutcomes.count)
+            let requestEvidence: [[String: Any]] = zip(captureRequests, captureOutcomes).map {
+                request, outcome in
+                [
+                    "event_id": request.eventId,
+                    "frame_id": request.frame.frameId,
+                    "timestamp_unix_seconds": request.frame.timestampUtc.timeIntervalSince1970,
+                    "frame_width": request.frame.width,
+                    "frame_height": request.frame.height,
+                    "way_id": request.roadContext.wayId,
+                    "latitude": request.roadContext.latitude,
+                    "longitude": request.roadContext.longitude,
+                    "heading_degrees": request.roadContext.headingDegrees,
+                    "travel_direction": request.roadContext.travelDirection.rawValue,
+                    "reasons": request.reasons.map(\.rawValue),
+                    "outcome_status": outcome.status.rawValue,
+                    "capture_id": outcome.captureId.map { $0 as Any } ?? NSNull(),
+                ]
+            }
+            let captureEvidence: [String: Any] = [
+                "contract_kind": "diagnostic_capture_request_dispatch_only",
+                "contract_sink_only": true,
+                "source_image_bytes_persisted": false,
+                "satisfies_real_diagnostic_image_gate": false,
+                "satisfies_core_ml_gate": false,
+                "requests": requestEvidence,
+            ]
+            let captureData = try JSONSerialization.data(
+                withJSONObject: captureEvidence,
+                options: [.prettyPrinted, .sortedKeys]
+            )
+            let captureAttachment = XCTAttachment(data: captureData, uniformTypeIdentifier: "public.json")
+            captureAttachment.name = "reviewed-input-diagnostic-capture-request-contract.json"
+            captureAttachment.lifetime = .keepAlways
+            activity.add(captureAttachment)
+
+            let eventData = try TrafficSignPackJSON.encoder().encode(events)
+            let eventJSON = try XCTUnwrap(String(data: eventData, encoding: .utf8))
+            let eventAttachment = XCTAttachment(string: eventJSON)
+            eventAttachment.name = "reviewed-input-shadow-contract-events-v2.json"
+            eventAttachment.lifetime = .keepAlways
+            activity.add(eventAttachment)
+        }
+    }
+}
+
+private final class TrafficSignShadowCaptureRecorder:
+    TrafficSignDiagnosticCaptureSinkV2,
+    @unchecked Sendable
+{
+    private(set) var requests: [TrafficSignDiagnosticCaptureRequestV2] = []
+    private(set) var outcomes: [TrafficSignDiagnosticCaptureOutcomeV2] = []
+    private let persistsImageBytes: Bool
+
+    init(persistsImageBytes: Bool = true) {
+        self.persistsImageBytes = persistsImageBytes
+    }
+
+    func requestCapture(
+        _ request: TrafficSignDiagnosticCaptureRequestV2
+    ) throws -> TrafficSignDiagnosticCaptureOutcomeV2 {
+        requests.append(request)
+        let outcome = TrafficSignDiagnosticCaptureOutcomeV2(
+            status: persistsImageBytes ? .persisted : .requested,
+            captureId: persistsImageBytes ? "capture-\(request.eventId)" : nil
+        )
+        outcomes.append(outcome)
+        return outcome
+    }
+}
+
+private final class TrafficSignShadowQARecorder: TrafficSignQAEventSinkV2, @unchecked Sendable {
+    private(set) var events: [TrafficSignRecognitionEventV2] = []
+
+    func emit(_ event: TrafficSignRecognitionEventV2) {
+        events.append(event)
     }
 }

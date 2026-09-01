@@ -46,6 +46,39 @@ enum DriveRecorderPreviewInteractionPolicy {
     }
 }
 
+struct DriveRecorderMainControlPresentation: Equatable {
+    enum Action: Equatable {
+        case start
+        case stop
+    }
+
+    let action: Action
+    let isEnabled: Bool
+
+    static func resolve(for state: DriveRecorderState) -> Self {
+        switch state {
+        case .disabled, .denied, .unavailable, .failed:
+            return Self(action: .start, isEnabled: true)
+        case .preparing, .recording:
+            return Self(action: .stop, isEnabled: true)
+        case .stopping:
+            return Self(action: .stop, isEnabled: false)
+        }
+    }
+
+    var systemImageName: String {
+        action == .start ? "circle.fill" : "stop.fill"
+    }
+
+    var usesRedIcon: Bool {
+        action == .stop
+    }
+
+    var accessibilityLocalizationKey: String {
+        action == .start ? "drive_recorder.start" : "drive_recorder.stop"
+    }
+}
+
 enum LegalDisclaimerText {
     static var short: String {
         NSLocalizedString("legal.disclaimer.short", comment: "")
@@ -257,19 +290,28 @@ struct MainView: View {
     }
 
     private func bottomCornerButtons(horizontalPadding: CGFloat) -> some View {
-        HStack {
+        let recorderControl = DriveRecorderMainControlPresentation.resolve(
+            for: viewModel.driveRecorderState
+        )
+
+        return HStack {
             Button {
                 viewModel.toggleDriveRecorder()
             } label: {
-                Image(systemName: viewModel.isDriveRecorderActive ? "stop.fill" : "circle.fill")
+                Image(systemName: recorderControl.systemImageName)
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .background(Color.red, in: viewModel.isDriveRecorderActive ? AnyShape(RoundedRectangle(cornerRadius: 9, style: .continuous)) : AnyShape(Circle()))
-            .accessibilityLabel(NSLocalizedString(viewModel.isDriveRecorderActive ? "drive_recorder.stop" : "drive_recorder.start", comment: ""))
-            .disabled(viewModel.driveRecorderState == .stopping)
+            .background(Color.black, in: Circle())
+            .overlay {
+                Circle()
+                    .strokeBorder(Color.white, lineWidth: 1.5)
+            }
+            .contentShape(Circle())
+            .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
+            .disabled(!recorderControl.isEnabled)
 
             Spacer()
 
@@ -1959,6 +2001,7 @@ private struct PanoramaxGalleryView: View {
     @State private var selectedItem: GalleryItem?
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
+    @State private var showingAccountRequired = false
 
     private struct GalleryItem: Identifiable {
         let id: String
@@ -1967,11 +2010,31 @@ private struct PanoramaxGalleryView: View {
     }
 
     private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
-    private var selectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
-        entries.filter { isSelectable(batch: $0.batch, item: $0.item) }
+    private var locallySelectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        entries.filter { canSelectLocally(batch: $0.batch) }
     }
     private var selectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
         entries.filter { selectedItemIDs.contains($0.item.itemID) }
+    }
+    private var uploadableSelectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        selectedEntries.filter { isUploadEligible(batch: $0.batch, item: $0.item) }
+    }
+    private var resumableBatchIDs: Set<String> {
+        Set(viewModel.panoramaxBatches.compactMap { batch in
+            DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+                batchState: batch.state,
+                remoteUploadSetID: batch.remoteUploadSetID,
+                itemStates: batch.items.map(\.state)
+            ) ? batch.batchID : nil
+        })
+    }
+    private var selectionContainsRemoteRetentionItem: Bool {
+        selectedEntries.contains { entry in
+            !DriveRecorderPolicy.canDeletePanoramaxItem(
+                batchState: entry.batch.state,
+                itemState: entry.item.state
+            )
+        }
     }
 
     var body: some View {
@@ -1996,7 +2059,7 @@ private struct PanoramaxGalleryView: View {
                                     Button {
                                         if selectedItemIDs.contains(entry.item.itemID) {
                                             selectedItemIDs.remove(entry.item.itemID)
-                                        } else if isSelectable(batch: entry.batch, item: entry.item) {
+                                        } else if canSelectLocally(batch: entry.batch) {
                                             selectedItemIDs.insert(entry.item.itemID)
                                         }
                                     } label: {
@@ -2007,7 +2070,7 @@ private struct PanoramaxGalleryView: View {
                                             .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                                     }
                                     .buttonStyle(.plain)
-                                    .disabled(!isSelectable(batch: entry.batch, item: entry.item))
+                                    .disabled(!canSelectLocally(batch: entry.batch))
                                     .accessibilityLabel(selectedItemIDs.contains(entry.item.itemID)
                                         ? NSLocalizedString("panoramax.gallery.deselect", comment: "")
                                         : NSLocalizedString("panoramax.gallery.select", comment: ""))
@@ -2038,6 +2101,17 @@ private struct PanoramaxGalleryView: View {
                                     ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
                                     : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
                                 .padding(6)
+                                if let status = statusPresentation(for: entry.item) {
+                                    Image(systemName: status.systemImage)
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(status.color)
+                                        .padding(6)
+                                        .background(.black.opacity(0.65), in: Circle())
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                                        .padding(6)
+                                        .allowsHitTesting(false)
+                                        .accessibilityLabel(status.accessibilityLabel)
+                                }
                             }
                             .accessibilityElement(children: .contain)
                         }
@@ -2048,51 +2122,118 @@ private struct PanoramaxGalleryView: View {
             }
             .frame(maxHeight: .infinity)
 
-            if !entries.isEmpty {
+            if !entries.isEmpty
+                || !resumableBatchIDs.isEmpty
+                || !viewModel.activePanoramaxUploadBatchIDs.isEmpty
+                || viewModel.panoramaxMaintenanceIssue != nil {
                 VStack(spacing: 6) {
                     if !viewModel.canProcessPanoramaxUploads {
                         Label(NSLocalizedString("panoramax.gallery.upload_capture_active", comment: ""), systemImage: "record.circle")
                             .font(.caption)
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.center)
-                    } else if !viewModel.panoramaxUploadIsReady {
-                        Text(NSLocalizedString("panoramax.gallery.upload_requires_account", comment: ""))
+                    }
+                    if let issue = viewModel.panoramaxMaintenanceIssue {
+                        Label(issue, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.orange)
                             .multilineTextAlignment(.center)
                     }
-                    HStack(spacing: 8) {
-                        Button(NSLocalizedString("panoramax.gallery.select_all", comment: "")) {
-                            selectedItemIDs = Set(selectableEntries.map { $0.item.itemID })
-                        }
-                        .buttonStyle(.bordered)
-                        Button(NSLocalizedString("panoramax.gallery.select_none", comment: "")) {
-                            selectedItemIDs.removeAll()
-                        }
-                        .buttonStyle(.bordered)
-                        Button(role: .destructive) { showingDeleteConfirmation = true } label: {
-                            Image(systemName: "trash")
-                        }
-                        .buttonStyle(.bordered)
-                        .accessibilityLabel(NSLocalizedString("panoramax.gallery.delete", comment: ""))
-                        .disabled(selectedItemIDs.isEmpty || !viewModel.canProcessPanoramaxUploads)
-                        Spacer(minLength: 0)
-                        Button {
-                            guard viewModel.canProcessPanoramaxUploads else { return }
-                            viewModel.uploadPanoramaxSelections(selectedEntries.map { (batchID: $0.batch.batchID, itemID: $0.item.itemID) })
-                        } label: {
-                            Label(NSLocalizedString("panoramax.gallery.upload", comment: ""), systemImage: "arrow.up.circle.fill")
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(
-                            selectedItemIDs.isEmpty
-                            || !viewModel.panoramaxUploadIsReady
-                            || !viewModel.canProcessPanoramaxUploads
-                            || selectedEntries.contains(where: {
-                                viewModel.isPanoramaxUploadActive(batchID: $0.batch.batchID)
-                                    || !isSelectable(batch: $0.batch, item: $0.item)
-                            })
+                    if selectionContainsRemoteRetentionItem {
+                        Label(
+                            NSLocalizedString("panoramax.gallery.delete_after_completion", comment: ""),
+                            systemImage: "lock.fill"
                         )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    }
+                    if let progress = viewModel.panoramaxAggregateUploadProgress {
+                        VStack(spacing: 3) {
+                            if progress.totalItems > 0 {
+                                ProgressView(value: progress.fractionCompleted)
+                            } else {
+                                ProgressView()
+                            }
+                            Text(progressText(progress))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 12)
+                    }
+                    HStack(spacing: 8) {
+                        if !entries.isEmpty {
+                            Button {
+                                selectedItemIDs = Set(locallySelectableEntries.map { $0.item.itemID })
+                            } label: {
+                                Image(systemName: "checkmark.square.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_all", comment: ""))
+                            .disabled(locallySelectableEntries.isEmpty)
+                            Button {
+                                selectedItemIDs.removeAll()
+                            } label: {
+                                Image(systemName: "square.dashed")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_none", comment: ""))
+                            .disabled(selectedItemIDs.isEmpty)
+                            Button(role: .destructive) { showingDeleteConfirmation = true } label: {
+                                Image(systemName: "trash")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.delete", comment: ""))
+                            .disabled(
+                                selectedItemIDs.isEmpty
+                                || selectionContainsRemoteRetentionItem
+                                || !viewModel.canProcessPanoramaxUploads
+                                || selectedEntries.contains(where: {
+                                    viewModel.isPanoramaxUploadActive(batchID: $0.batch.batchID)
+                                })
+                            )
+                        }
+                        Spacer(minLength: 0)
+                        if viewModel.activePanoramaxUploadBatchIDs.isEmpty {
+                            Button {
+                                guard viewModel.canProcessPanoramaxUploads else { return }
+                                guard viewModel.panoramaxUploadIsReady else {
+                                    showingAccountRequired = true
+                                    return
+                                }
+                                viewModel.uploadPanoramaxSelections(
+                                    uploadableSelectedEntries.map {
+                                        (batchID: $0.batch.batchID, itemID: $0.item.itemID)
+                                    }
+                                )
+                                let newlyStartedBatchIDs = Set(uploadableSelectedEntries.map { $0.batch.batchID })
+                                for batchID in resumableBatchIDs.subtracting(newlyStartedBatchIDs) {
+                                    viewModel.uploadPanoramaxBatch(batchID: batchID)
+                                }
+                            } label: {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.upload", comment: ""))
+                            .disabled(
+                                (uploadableSelectedEntries.isEmpty && resumableBatchIDs.isEmpty)
+                                || !viewModel.canProcessPanoramaxUploads
+                            )
+                        } else {
+                            Button(role: .destructive) {
+                                viewModel.stopPanoramaxUploads()
+                            } label: {
+                                Image(systemName: "stop.circle.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.stop_upload", comment: ""))
+                        }
                     }
                     .padding(.horizontal, 12)
                     .padding(.bottom, 10)
@@ -2103,6 +2244,9 @@ private struct PanoramaxGalleryView: View {
         .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .task { viewModel.refreshPanoramaxBatches() }
+        .onChange(of: Set(entries.map { $0.item.itemID })) { _, availableIDs in
+            selectedItemIDs.formIntersection(availableIDs)
+        }
         .sheet(item: $selectedItem) { selection in
             NavigationStack {
                 if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
@@ -2121,13 +2265,60 @@ private struct PanoramaxGalleryView: View {
         } message: {
             Text(String(format: NSLocalizedString("panoramax.gallery.delete_message", comment: ""), selectedItemIDs.count))
         }
+        .alert(NSLocalizedString("panoramax.gallery.account_required_title", comment: ""), isPresented: $showingAccountRequired) {
+            Button(NSLocalizedString("common.done", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("panoramax.gallery.upload_requires_account", comment: ""))
+        }
     }
 
-    private func isSelectable(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord) -> Bool {
+    private func canSelectLocally(batch: PanoramaxBatchRecord) -> Bool {
         viewModel.canProcessPanoramaxUploads
             && !viewModel.isPanoramaxUploadActive(batchID: batch.batchID)
+    }
+
+    private func isUploadEligible(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord) -> Bool {
+        canSelectLocally(batch: batch)
             && DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state)
             && DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state)
+    }
+
+    private func progressText(_ progress: PanoramaxUploadProgress) -> String {
+        let key: String
+        switch progress.phase {
+        case .preparing: key = "panoramax.gallery.progress_preparing"
+        case .uploading: key = "panoramax.gallery.progress_uploading"
+        case .processing: key = "panoramax.gallery.progress_processing"
+        case .stopping: key = "panoramax.gallery.progress_stopping"
+        }
+        return String(
+            format: NSLocalizedString(key, comment: ""),
+            progress.completedItems,
+            progress.totalItems
+        )
+    }
+
+    private func statusPresentation(for item: PanoramaxItemRecord) -> (
+        systemImage: String,
+        color: Color,
+        accessibilityLabel: String
+    )? {
+        switch item.state {
+        case .captured, .queued, .included:
+            return ("clock.fill", .orange, NSLocalizedString("panoramax.gallery.status_waiting", comment: ""))
+        case .uploading:
+            return ("arrow.up.circle.fill", .blue, NSLocalizedString("panoramax.gallery.status_uploading", comment: ""))
+        case .uploaded, .accepted, .duplicate:
+            return ("pano.fill", .green, NSLocalizedString("panoramax.gallery.status_uploaded", comment: ""))
+        case .retryableError:
+            return ("clock.fill", .orange, NSLocalizedString("panoramax.gallery.status_retry", comment: ""))
+        case .abandoned:
+            return ("exclamationmark.triangle.fill", .orange, NSLocalizedString("panoramax.gallery.status_abandoned", comment: ""))
+        case .rejected, .permanentError:
+            return ("exclamationmark.triangle.fill", .red, NSLocalizedString("panoramax.gallery.status_failed", comment: ""))
+        case .excluded:
+            return nil
+        }
     }
 
     @ViewBuilder
@@ -2191,12 +2382,6 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
 
                 LabeledContent(NSLocalizedString("drive_recorder.settings.status", comment: ""), value: driveRecorderStatusText)
-
-                Toggle(NSLocalizedString("drive_recorder.settings.dashcam", comment: ""), isOn: $viewModel.dashcamRecordingEnabled)
-                    .disabled(viewModel.isDriveRecorderActive)
-                Text(NSLocalizedString("drive_recorder.settings.dashcam_description", comment: ""))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
 
                 Toggle(NSLocalizedString("drive_recorder.settings.tsr", comment: ""), isOn: $viewModel.trafficSignRecognitionEnabled)
                     .disabled(viewModel.isDriveRecorderActive)
@@ -2276,7 +2461,16 @@ private struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+
                 }
+
+                Toggle(
+                    NSLocalizedString("panoramax.settings.delete_uploaded", comment: ""),
+                    isOn: $viewModel.panoramaxDeleteUploadedImages
+                )
+                Text(NSLocalizedString("panoramax.settings.delete_uploaded_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
             Section(NSLocalizedString("panoramax.account.section", comment: "")) {

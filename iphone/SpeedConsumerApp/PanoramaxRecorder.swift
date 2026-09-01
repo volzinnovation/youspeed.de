@@ -25,7 +25,27 @@ enum TrafficSignRecognitionState: Equatable {
     case unknown
 }
 
+struct DriveRecorderStartConfiguration: Equatable {
+    let dashcamEnabled: Bool
+    let trafficSignRecognitionEnabled: Bool
+    let panoramaxEnabled: Bool
+}
+
 enum DriveRecorderPolicy {
+    /// The main recorder control always starts a Dashcam movie. The other
+    /// consumers retain their independent selections and share the same fixed
+    /// capture graph, so enabling video must never switch TSR or Panoramax off.
+    static func mainControlStartConfiguration(
+        trafficSignRecognitionEnabled: Bool,
+        panoramaxEnabled: Bool
+    ) -> DriveRecorderStartConfiguration {
+        DriveRecorderStartConfiguration(
+            dashcamEnabled: true,
+            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+            panoramaxEnabled: panoramaxEnabled
+        )
+    }
+
     static func shouldEnablePanoramaxFallback(
         dashcamEnabled: Bool,
         trafficSignRecognitionReady: Bool,
@@ -78,11 +98,61 @@ enum DriveRecorderPolicy {
         state == .approved || state == .partial || state == .processing
     }
 
+    static func canResumePanoramaxRemoteSet(
+        batchState: PanoramaxBatchState,
+        remoteUploadSetID: String?,
+        itemStates: [PanoramaxItemState]
+    ) -> Bool {
+        guard let remoteUploadSetID,
+              !remoteUploadSetID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return false
+        }
+        if batchState == .processing {
+            return true
+        }
+        guard batchState == .partial else { return false }
+        // A legacy/manual cleanup may have removed every local item after the
+        // remote set was created. The remote set still needs an explicit
+        // completion/poll round trip even though there is no thumbnail to tap.
+        if itemStates.isEmpty {
+            return true
+        }
+        return itemStates.contains { state in
+            state == .uploaded || state == .accepted || state == .duplicate
+        }
+    }
+
+    /// Accepted originals are the durable ledger for an unfinished remote
+    /// upload set. They stay selectable for the Resume action, but must not be
+    /// deleted until Panoramax confirms completion.
+    static func canDeletePanoramaxItem(
+        batchState: PanoramaxBatchState,
+        itemState: PanoramaxItemState
+    ) -> Bool {
+        let isAccepted = itemState == .uploaded || itemState == .accepted || itemState == .duplicate
+        return !isAccepted || (batchState != .partial && batchState != .processing)
+    }
+
+    /// Automatic quota enforcement must never race a live capture or upload
+    /// lifecycle. For inactive batches it inherits the same remote-ledger
+    /// protection as explicit deletion.
+    static func canEvictPanoramaxItem(
+        batchState: PanoramaxBatchState,
+        itemState: PanoramaxItemState
+    ) -> Bool {
+        switch batchState {
+        case .capturing, .creatingUploadSet, .uploading, .processing:
+            return false
+        case .awaitingReview, .approved, .complete, .partial, .blocked:
+            return canDeletePanoramaxItem(batchState: batchState, itemState: itemState)
+        }
+    }
+
     static func canSelectPanoramaxItem(in state: PanoramaxItemState) -> Bool {
         switch state {
-        case .captured, .included, .excluded, .retryableError:
+        case .captured, .included, .excluded, .queued, .retryableError:
             return true
-        case .queued, .uploading, .uploaded, .accepted, .duplicate, .rejected, .permanentError:
+        case .uploading, .uploaded, .accepted, .duplicate, .rejected, .permanentError, .abandoned:
             return false
         }
     }

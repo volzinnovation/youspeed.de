@@ -914,16 +914,26 @@ def test_registry_is_unselected_scoped_and_cross_checks_pinned_references() -> N
     assert registry.payload["target_candidate_id"] == TARGET_ID
     assert registry.candidates_by_id[TARGET_ID]["pipeline"] == "proposal_classification"
     assert registry.candidates_by_id[TARGET_ID]["status"] == "blocked"
+    target_blockers = registry.candidates_by_id[TARGET_ID]["blocking_reasons"]
     assert any(
-        "full-scene supplementary_plate detector-label coverage" in reason
-        for reason in registry.candidates_by_id[TARGET_ID]["blocking_reasons"]
+        "reviewed YouSpeed or reviewed synthetic full-scene plate-box inventory"
+        in reason
+        for reason in target_blockers
+    )
+    assert all(
+        "reviewed ZOD taxonomy mapping" not in reason for reason in target_blockers
     )
     small = registry.candidates_by_id[
         "de-yolox-nano-mnv3-small-proposal-classification"
     ]
     assert small["status"] == "blocked"
     assert any(
-        "full-scene supplementary_plate detector-label coverage" in reason
+        "reviewed YouSpeed or reviewed synthetic full-scene plate-box inventory"
+        in reason
+        for reason in small["blocking_reasons"]
+    )
+    assert all(
+        "reviewed ZOD taxonomy mapping" not in reason
         for reason in small["blocking_reasons"]
     )
     assert (

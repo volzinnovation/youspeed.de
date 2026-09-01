@@ -118,7 +118,7 @@
         "apache_notice_review"
       ],
       "blocking_reasons": [
-        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed ZOD taxonomy mapping or reviewed/synthetic full-scene plate-box inventory before training"
+        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed YouSpeed or reviewed synthetic full-scene plate-box inventory before training"
       ]
     },
     {
@@ -227,7 +227,7 @@
         "apache_notice_review"
       ],
       "blocking_reasons": [
-        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed ZOD taxonomy mapping or reviewed/synthetic full-scene plate-box inventory before training"
+        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed YouSpeed or reviewed synthetic full-scene plate-box inventory before training"
       ]
     },
     {

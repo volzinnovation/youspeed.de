@@ -40,6 +40,7 @@
 		6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 91B1B7ECB133C4AB02844194 /* ISL-rules.json */; };
 		7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */; };
 		742D763EA2475FF202180A34 /* bremen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 817610973D395000FCEA8AF3 /* bremen.poly */; };
+		7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */; };
 		7759FCB46ECFFAF4384D9A57 /* FRA-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = A5208F27A82E4F9044943104 /* FRA-rules.json */; };
 		7A8782BF58A82747D013A8F3 /* saarland.poly in Resources */ = {isa = PBXBuildFile; fileRef = 47046B94A6EDE1D906F83F16 /* saarland.poly */; };
 		7B95EF995D7D187B2EF50727 /* hamburg.poly in Resources */ = {isa = PBXBuildFile; fileRef = FBE90CAE15446042E62B6F56 /* hamburg.poly */; };
@@ -152,6 +153,7 @@
 		80D535552D317D1536F88DCD /* MatcherCoreModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatcherCoreModels.swift; sourceTree = "<group>"; };
 		817610973D395000FCEA8AF3 /* bremen.poly */ = {isa = PBXFileReference; path = bremen.poly; sourceTree = "<group>"; };
 		842C85ABC573B8DFE3005109 /* SpeedDBBenchTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedDBBenchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignShadowRuntime.swift; sourceTree = "<group>"; };
 		851DCDB1BD9140D246609FF4 /* LUX-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LUX-rules.json"; sourceTree = "<group>"; };
 		881D085EDE2D348B7DF817C8 /* fr.lproj */ = {isa = PBXFileReference; path = fr.lproj; sourceTree = "<group>"; };
 		898DCF45AF918F33ECAF906A /* berlin.poly */ = {isa = PBXFileReference; path = berlin.poly; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 				B22B25E507BC34DEDF1FF173 /* StartupView.swift */,
 				32933858989CDE151BF55061 /* TrafficSignRecognition.swift */,
 				03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */,
+				8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */,
 				264903C5CD98D68477E8823C /* V3BundleManager.swift */,
 				103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */,
 				43951EAFBED46ABE359AF4C6 /* Rules */,
@@ -601,6 +604,7 @@
 				39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */,
 				401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */,
 				D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */,
+				7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */,
 				35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */,
 				48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */,
 			);

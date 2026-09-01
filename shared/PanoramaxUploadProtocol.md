@@ -39,6 +39,18 @@ GET  /api/upload_sets/{id}                     poll until ready/complete
 
 Only user-included Panoramax originals are sent. Dashcam video and transient TSR frames are never part of this protocol. The local queue records the remote upload-set ID and per-item state so a partial upload can be retried later without discarding captures or reopening the camera. Already accepted originals must not be uploaded again.
 
+## Progress, stopping, and local retention
+
+Uploading is an asynchronous post-drive job. The gallery remains interactive and exposes durable item progress rather than waiting synchronously for an entire upload set. An item waiting for transfer is visibly distinct from one whose successful Panoramax response has already been recorded.
+
+The user may stop an active upload. The client cancels the active transport task and persists the queue before returning control to the UI. Items with a completed server response remain uploaded and are skipped by later retries. An item whose request was in flight when cancellation occurred is recorded as `abandoned`, because the server may have accepted its bytes even though the client did not receive a response; it must not be retried automatically. Items whose requests had not started remain available for a later explicit upload.
+
+Clients may offer an opt-in **delete local images after upload** setting. It defaults to retaining the local gallery. When enabled, originals, thumbnails, and gallery records are removed only after the remote upload set has successfully completed. A transfer response alone is not enough to delete the local evidence needed to finish or recover the upload set.
+
+The same retention boundary applies to manual deletion: an accepted item in a partial or processing upload set remains selectable for an explicit Resume action, but cannot be deleted until that remote set completes. Captured, excluded, failed, or deliberately abandoned local items may still be removed while no upload task owns their batch.
+
+Queue recovery runs before a new capture session can start. Historical `capturing` batches with no live camera owner become reviewable, interrupted upload states become resumable, and unreferenced files inside a successfully decoded batch directory may be scavenged. Recovery must never delete a referenced original or thumbnail, treat an unreadable queue record as proof that its images are orphaned, or conceal cleanup failures.
+
 ## Image metadata and cadence
 
 Every Panoramax original must be a JPEG with EXIF GPS latitude/longitude, capture date, and, when available, `GPSImgDirection`. The still cadence is independent of traffic-sign detections and Dashcam segment boundaries. Distance mode requires movement of at least `max(configured distance, 2 × max(previous accuracy, current accuracy))`; time mode still requires enough movement to reject stationary or GPS-ambiguous duplicates.

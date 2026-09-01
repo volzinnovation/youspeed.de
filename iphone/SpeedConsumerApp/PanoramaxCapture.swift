@@ -25,6 +25,10 @@ enum PanoramaxItemState: String, Codable {
     case rejected
     case retryableError = "retryable_error"
     case permanentError = "permanent_error"
+    /// The request was cancelled while its server outcome was unknown. It is
+    /// intentionally not retried automatically because the server may already
+    /// have accepted the bytes.
+    case abandoned
 }
 
 struct PanoramaxLocationSample: Codable, Equatable {

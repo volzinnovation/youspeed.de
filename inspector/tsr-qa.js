@@ -19,6 +19,7 @@
     fixtureTruth: byID("tsr-fixture-truth"),
     intakeStatus: byID("tsr-intake-status"),
     loadFixture: byID("tsr-load-fixture-btn"),
+    loadM0Fixture: byID("tsr-load-m0-fixture-btn"),
     modelInput: byID("tsr-model-pack-input"),
     eventInput: byID("tsr-event-file-input"),
     bundleInput: byID("tsr-bundle-directory-input"),
@@ -63,6 +64,10 @@
     model: new URL("../shared/tsr/fixtures/de-direct-pack-v1.json", window.location.href),
     events: new URL("../shared/tsr/fixtures/recognition-events-v1.json", window.location.href),
     bundle: new URL("../shared/tsr/fixtures/diagnostic-bundle-v1/manifest.json", window.location.href)
+  };
+  const m0FixtureURLs = {
+    model: new URL("../shared/tsr/fixtures/de-yolox-mnv3-shadow-pack-v2.json", window.location.href),
+    events: new URL("../shared/tsr/fixtures/recognition-events-v2.json", window.location.href)
   };
   const maximumRasterPixels = 20_000_000;
   const maximumRasterDimension = 8_192;
@@ -281,6 +286,57 @@
     }
   }
 
+  async function loadM0FixtureSet() {
+    const loadGeneration = ++state.sourceLoadGeneration;
+    state.modelLoadGeneration += 1;
+    state.eventLoadGeneration += 1;
+    state.bundleLoadGeneration += 1;
+    setIntakeStatus("M0 Panoramax shadow fixture is loading…", "loading");
+    try {
+      const [modelResource, eventsResource] = await Promise.all([
+        fetchJSON(m0FixtureURLs.model),
+        fetchJSON(m0FixtureURLs.events)
+      ]);
+      if (loadGeneration !== state.sourceLoadGeneration) return;
+      const modelGate = core.modelPackGateAssessment(modelResource.value);
+      const eventGate = core.eventGateAssessment(eventsResource.value);
+      const provenance = core.provenanceAssessment(null, eventsResource.value, modelResource.value);
+      if (!modelGate.passed || !eventGate.passed || !provenance.passed) {
+        throw new Error("M0 v2 fixture failed contract or provenance preflight.");
+      }
+      state.assetVerificationToken += 1;
+      state.evidenceRenderToken += 1;
+      state.raster?.bitmap?.close?.();
+      state.raster = null;
+      state.bundle = null;
+      state.bundleLabel = null;
+      state.bundleManifestSha256 = null;
+      state.bundleBaseURL = null;
+      state.bundleFiles = new Map();
+      state.assetBytes = new Map();
+      state.assetGate = { state: "idle", issues: [] };
+      state.modelPack = modelResource.value;
+      state.modelLabel = "M0 two-stage contract fixture";
+      state.modelManifestSha256 = modelResource.sha256;
+      state.modelIsFixture = true;
+      state.fixtureSetActive = true;
+      state.events = eventsResource.value;
+      state.eventsLabel = "M0 reviewed Panoramax expectations";
+      state.eventsFileSha256 = eventsResource.sha256;
+      state.selectedKey = null;
+      state.selectedAssetPath = null;
+      state.decisions.clear();
+      renderAll();
+      setIntakeStatus(
+        "M0 loaded: reviewed expectations only, no model inference and no retained pixels.",
+        "fixture"
+      );
+    } catch (error) {
+      if (loadGeneration !== state.sourceLoadGeneration) return;
+      setIntakeStatus("M0 fixture could not be loaded: " + error.message, "error");
+    }
+  }
+
   async function loadModelPackFile(file) {
     state.sourceLoadGeneration += 1;
     const loadGeneration = ++state.modelLoadGeneration;
@@ -288,8 +344,8 @@
     if (loadGeneration !== state.modelLoadGeneration) return null;
     const rawText = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     const modelPack = JSON.parse(rawText);
-    if (modelPack?.schema_version !== 1 || !core.safeString(modelPack?.pack_id)) {
-      throw new Error("This is not a TSR model-pack v1 manifest.");
+    if (![1, 2].includes(modelPack?.schema_version) || !core.safeString(modelPack?.pack_id)) {
+      throw new Error("This is not a supported TSR model-pack manifest.");
     }
     const gate = core.modelPackGateAssessment(modelPack);
     if (!gate.passed) {
@@ -488,12 +544,37 @@
     renderReview();
   }
 
+  function v2EventView(event) {
+    if (event?.schema_version !== 2) return null;
+    const assembly = Array.isArray(event?.assemblies) ? event.assemblies[0] : null;
+    const primary = assembly?.primary ?? null;
+    const plate = Array.isArray(assembly?.supplementary_plates)
+      ? assembly.supplementary_plates[0]
+      : null;
+    const semantic = primary?.semantic ?? null;
+    const restriction = plate?.restriction ?? null;
+    const valueLabel = semantic?.value != null
+      ? semantic.value + " " + (semantic.unit ?? "")
+      : primary?.class_id ?? event?.state ?? "v2 event";
+    const plateLabel = plate?.readability === "unreadable"
+      ? "plate unreadable"
+      : restriction?.normalized_value
+        ? (restriction.kind ?? "restriction") + " " + restriction.normalized_value
+        : null;
+    const latency = [event?.stage_runs?.detector, event?.stage_runs?.classifier]
+      .reduce((sum, stage) => sum + (core.finiteNumber(stage?.latency_ms) ?? 0), 0);
+    return { assembly, primary, plate, semantic, restriction, valueLabel, plateLabel, latency };
+  }
+
   function eventItem(event, index) {
-    const timestamp = core.safeString(event?.frame_timestamp_utc) ?? "unknown-time";
+    const timestamp = core.eventTimestampUtc(event) ?? "unknown-time";
+    const v2 = v2EventView(event);
     return {
       kind: "event",
       key: "event:" + index + ":" + timestamp,
-      label: core.safeString(event?.candidate?.raw_label) ?? core.safeString(event?.state) ?? "Event",
+      label: v2
+        ? [v2.valueLabel, v2.plateLabel].filter(Boolean).join(" · ")
+        : core.safeString(event?.candidate?.raw_label) ?? core.safeString(event?.state) ?? "Event",
       timestamp,
       event,
       sourceIndex: index
@@ -1086,16 +1167,21 @@
     }
     elements.eventTimeline.innerHTML = events.map((event) => {
       const candidate = event?.candidate;
+      const v2 = v2EventView(event);
       const assessment = core.eventOverrideAssessment(event);
       const effectKind = assessment.effect === "set" ? "ok" : assessment.effect === "clear" ? "warn" : "neutral";
       return '<div class="tsr-event-step">'
-        + '<span class="tsr-event-time">' + escapeHTML(formatTimestamp(event?.frame_timestamp_utc)) + "</span>"
+        + '<span class="tsr-event-time">' + escapeHTML(formatTimestamp(core.eventTimestampUtc(event))) + "</span>"
         + '<span class="tsr-event-main"><strong>' + escapeHTML(event?.state ?? "unknown")
-        + (candidate?.value ? " · " + escapeHTML(candidate.value + " " + (candidate.unit ?? "")) : "")
+        + (v2 ? " · " + escapeHTML(v2.valueLabel) : candidate?.value ? " · " + escapeHTML(candidate.value + " " + (candidate.unit ?? "")) : "")
         + '</strong><span class="muted">'
-        + escapeHTML((candidate?.raw_class_id ?? "no candidate")
-          + (candidate?.evidence_frames ? " · " + candidate.evidence_frames + " frames" : "")
-          + (event?.latency_ms != null ? " · " + formatNumber(event.latency_ms) + " ms" : ""))
+        + escapeHTML(v2
+          ? [v2.primary?.class_id ?? "no primary", v2.plateLabel,
+            (v2.assembly?.temporal_evidence?.evidence_frame_count ?? 0) + " frames",
+            event.evidence_origin, formatNumber(v2.latency) + " ms"].filter(Boolean).join(" · ")
+          : (candidate?.raw_class_id ?? "no candidate")
+            + (candidate?.evidence_frames ? " · " + candidate.evidence_frames + " frames" : "")
+            + (event?.latency_ms != null ? " · " + formatNumber(event.latency_ms) + " ms" : ""))
         + "</span></span>"
         + statusPill(assessment.effect === "set" ? "override eligible" : assessment.effect, effectKind)
         + "</div>";
@@ -1103,6 +1189,18 @@
   }
 
   function modelArtifacts(pack) {
+    if (pack?.schema_version === 2) {
+      return Object.entries(pack?.stages ?? {}).flatMap(([stageName, component]) => (
+        Object.entries(component?.artifacts ?? {})
+          .filter(([, artifact]) => artifact && typeof artifact === "object" && !Array.isArray(artifact))
+          .map(([role, artifact]) => ({
+            ...artifact,
+            role,
+            stage_name: stageName,
+            component_id: component.component_id
+          }))
+      ));
+    }
     return [pack?.detector, pack?.classifier].flatMap((component) => (
       Array.isArray(component?.artifacts)
         ? component.artifacts
@@ -1123,19 +1221,52 @@
       return;
     }
     const artifacts = modelArtifacts(pack);
+    const isV2 = pack?.schema_version === 2 || evidenceModel?.schema_version === 2;
     const producerPlatform = state.bundle?.producer?.platform === "desktop"
       ? "reference"
       : state.bundle?.producer?.platform;
-    const evidenceArtifact = artifacts.find((artifact) => artifact.sha256 === evidenceModel?.artifact_sha256
-      && (!producerPlatform || artifact.platform === producerPlatform)) ?? null;
-    const artifactDescription = evidenceArtifact
+    const evidenceArtifact = !isV2
+      ? artifacts.find((artifact) => artifact.sha256 === evidenceModel?.artifact_sha256
+        && (!producerPlatform || artifact.platform === producerPlatform)) ?? null
+      : null;
+    const artifactDescription = isV2
+      ? ["detector", "classifier"].map((stage) => {
+        const identity = evidenceModel?.stages?.[stage];
+        return identity
+          ? stage + ": " + [identity.component_id, identity.artifact_format, shortHash(identity.artifact_sha256)].filter(Boolean).join(" · ")
+          : stage + ": manifest only";
+      }).join(" | ")
+      : evidenceArtifact
       ? [evidenceArtifact.component_id, evidenceArtifact.platform, evidenceArtifact.format, evidenceArtifact.precision].filter(Boolean).join(" · ")
       : artifacts.length
         ? artifacts.map((artifact) => [artifact.component_id, artifact.platform, artifact.format].filter(Boolean).join("/")).join(", ")
         : "not loaded";
-    const input = pack?.preprocessing
+    const input = pack?.schema_version === 2
+      ? ["detector", "classifier"].map((stage) => {
+        const preprocessing = pack?.stages?.[stage]?.preprocessing;
+        return preprocessing ? stage + " " + preprocessing.input_width + "×" + preprocessing.input_height + " " + preprocessing.source : null;
+      }).filter(Boolean).join(" | ")
+      : pack?.preprocessing
       ? pack.preprocessing.input_width + "×" + pack.preprocessing.input_height + " · " + pack.preprocessing.resize
       : null;
+    const evidenceHashes = isV2
+      ? ["detector", "classifier"].map((stage) => shortHash(evidenceModel?.stages?.[stage]?.artifact_sha256)).join(" / ")
+      : shortHash(evidenceModel?.artifact_sha256);
+    const preprocessingIdentity = isV2
+      ? ["detector", "classifier"].map((stage) => (
+        evidenceModel?.stages?.[stage]?.preprocessing_version
+          ?? pack?.stages?.[stage]?.preprocessing?.version
+          ?? "n/a"
+      )).join(" / ")
+      : evidenceModel?.preprocessing_version ?? pack?.preprocessing?.version;
+    const calibration = pack?.schema_version === 2
+      ? ["detector", "classifier"].map((stage) => {
+        const value = pack?.stages?.[stage]?.calibration;
+        return value ? stage + " " + value.method + " · " + (value.passed ? "pass" : "pending/fail") : null;
+      }).filter(Boolean).join(" | ")
+      : pack?.calibration?.calibrated === true
+        ? pack.calibration.kind + " · declared calibrated"
+        : "not calibrated / unknown";
     renderKeyValues(elements.detailModel, [
       ["Runtime state", "No installed model; inspector input only"],
       ["Manifest SHA", shortHash(state.modelManifestSha256)],
@@ -1146,9 +1277,10 @@
       ["Pipeline", pack?.pipeline],
       ["Taxonomy", pack?.taxonomy_version],
       ["Artifact", artifactDescription],
-      ["Evidence artifact SHA", shortHash(evidenceModel?.artifact_sha256)],
-      ["Preprocessing", evidenceModel?.preprocessing_version ?? pack?.preprocessing?.version],
-      ["Calibration", pack?.calibration?.calibrated === true ? pack.calibration.kind + " · declared calibrated" : "not calibrated / unknown"],
+      ["Evidence artifact SHA", evidenceHashes],
+      ["Preprocessing", preprocessingIdentity],
+      ["Calibration", calibration],
+      ["Evidence origin", evidenceModel?.evidence_origin],
       ["Confirmation", pack?.thresholds ? pack.thresholds.confirmation_frames + " frames / " + pack.thresholds.confirmation_window_ms + " ms" : null],
       ["Parity", evidenceArtifact?.parity ? (evidenceArtifact.parity.passed ? "declared pass" : "declared fail") + " · max Δ " + evidenceArtifact.parity.measured_max_abs_difference : null],
       ["Source checkpoint", pack?.detector?.source_checkpoint ? pack.detector.source_checkpoint.revision + " · " + shortHash(pack.detector.source_checkpoint.sha256) : null],
@@ -1168,7 +1300,29 @@
     const latest = events.at(-1);
     const predictions = item?.kind === "sample" && Array.isArray(item.sample?.predictions) ? item.sample.predictions : [];
     const candidate = latest?.candidate;
+    const v2 = v2EventView(latest);
     const restrictions = Array.isArray(candidate?.restrictions) ? candidate.restrictions : [];
+    if (v2) {
+      const primaryScore = v2.primary?.classifier_score;
+      const plateScore = v2.plate?.classifier_score;
+      renderKeyValues(elements.detailDetection, [
+        ["State", latest.state],
+        ["Evidence origin", latest.evidence_origin === "reviewed_expectation" ? "reviewed expectation · not inference" : latest.evidence_origin],
+        ["Primary", v2.primary?.class_id],
+        ["Semantic", v2.semantic?.kind],
+        ["Value", v2.semantic?.value != null ? v2.semantic.value + " " + (v2.semantic.unit ?? "") : null],
+        ["Primary classifier", primaryScore?.raw_score != null ? formatNumber(primaryScore.raw_score, 3) + " raw · " + formatPercent(primaryScore.calibrated_confidence) : "not invoked / no score"],
+        ["Supplementary plate", v2.plate ? v2.plate.readability + (v2.plate.class_id ? " · " + v2.plate.class_id : "") : "none"],
+        ["Plate classifier", plateScore?.raw_score != null ? formatNumber(plateScore.raw_score, 3) + " raw · " + formatPercent(plateScore.calibrated_confidence) : "not invoked / no score"],
+        ["Restriction", v2.restriction ? v2.restriction.kind + "=" + v2.restriction.normalized_value : "unresolved / none"],
+        ["Track / evidence", v2.assembly?.physical_sign_track_id + " · " + (v2.assembly?.temporal_evidence?.evidence_frame_count ?? 0) + " frames"],
+        ["Temporal transition", v2.assembly?.temporal_evidence?.restriction_transition],
+        ["Condition", v2.assembly?.condition_state],
+        ["Diagnostic capture", latest.diagnostic_capture?.status + " · " + (latest.diagnostic_capture?.reasons ?? []).join(", ")],
+        ["Latency / thermal", formatNumber(v2.latency) + " ms · " + (latest.thermal_state ?? "n/a")]
+      ]);
+      return;
+    }
     const rows = [
       ["State", latest?.state ?? (predictions.length ? "diagnostic predictions" : "n/a")],
       ["Class", candidate?.raw_class_id ?? (predictions.map((prediction) => prediction?.raw_class_id ?? "invalid").join(", ") || "n/a")],
@@ -1401,6 +1555,7 @@
   elements.matcherMode?.addEventListener("click", () => setMode("matcher"));
   elements.tsrMode?.addEventListener("click", () => setMode("tsr"));
   elements.loadFixture?.addEventListener("click", () => void loadFixtureSet());
+  elements.loadM0Fixture?.addEventListener("click", () => void loadM0FixtureSet());
   elements.modelInput?.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;

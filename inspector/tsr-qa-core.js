@@ -173,6 +173,16 @@
   }
 
   function eventOverrideAssessment(event) {
+    if (event?.schema_version === 2 || event?.execution_mode === "shadow") {
+      const gate = eventGateAssessment([event]);
+      return {
+        eligible: false,
+        effect: "none",
+        reason: gate.passed
+          ? "M0 v2 evidence is shadow-only and cannot create, clear, or replace a speed override."
+          : "Malformed shadow evidence cannot affect the speed source."
+      };
+    }
     if (safeString(event?.state) !== "confirmed") {
       return {
         eligible: false,
@@ -378,12 +388,214 @@
     if (!requireFields(restriction, ["kind", "normalized_value"], prefix, issues)) return;
     if (!restrictionKinds.has(restriction.kind)) issues.push(`${prefix}.kind is invalid`);
     if (!nonEmptyString(restriction.normalized_value)) issues.push(`${prefix}.normalized_value is missing`);
+    if (restriction?.kind === "distance"
+        && (!Number.isInteger(restriction?.distance_m) || restriction.distance_m < 1)) {
+      issues.push(`${prefix}.distance_m is required for distance`);
+    }
+    if (restriction?.kind === "extent"
+        && (!Number.isInteger(restriction?.extent_m) || restriction.extent_m < 1)) {
+      issues.push(`${prefix}.extent_m is required for extent`);
+    }
+  }
+
+  function validateV2Score(score, prefix, issues, options = {}) {
+    if (score === null && options.allowNull) return;
+    if (!requireFields(score, ["raw_score", "calibrated_confidence"], prefix, issues)) return;
+    if (score.raw_score == null) {
+      if (!options.allowNullRaw) issues.push(`${prefix}.raw_score is required`);
+    } else if (jsonNumber(score.raw_score) == null) {
+      issues.push(`${prefix}.raw_score is invalid`);
+    }
+    if (score.calibrated_confidence != null
+        && !numberInRange(score.calibrated_confidence, 0, 1)) {
+      issues.push(`${prefix}.calibrated_confidence is invalid`);
+    }
+  }
+
+  function validateV2StageRun(run, prefix, issues) {
+    const fields = [
+      "component_id", "artifact_id", "artifact_sha256", "artifact_format",
+      "preprocessing_version", "calibration_id", "invoked", "latency_ms"
+    ];
+    if (!requireFields(run, fields, prefix, issues)) return;
+    for (const field of ["component_id", "artifact_id", "preprocessing_version", "calibration_id"]) {
+      if (!nonEmptyString(run[field])) issues.push(`${prefix}.${field} is missing`);
+    }
+    if (!sha256IsValid(run.artifact_sha256)) issues.push(`${prefix}.artifact_sha256 is invalid`);
+    if (!["onnx", "coreml", "litert"].includes(run.artifact_format)) issues.push(`${prefix}.artifact_format is invalid`);
+    if (typeof run.invoked !== "boolean") issues.push(`${prefix}.invoked must be boolean`);
+    if (jsonNumber(run.latency_ms) == null || run.latency_ms < 0) issues.push(`${prefix}.latency_ms is invalid`);
+  }
+
+  function validateV2Assembly(assembly, prefix, issues, evidenceOrigin) {
+    const fields = [
+      "assembly_id", "physical_sign_track_id", "primary", "supplementary_plates",
+      "condition_state", "temporal_evidence"
+    ];
+    if (!requireFields(assembly, fields, prefix, issues)) return;
+    if (!nonEmptyString(assembly.assembly_id)) issues.push(`${prefix}.assembly_id is missing`);
+    if (!nonEmptyString(assembly.physical_sign_track_id)) issues.push(`${prefix}.physical_sign_track_id is missing`);
+    if (!conditionStates.has(assembly.condition_state)) issues.push(`${prefix}.condition_state is invalid`);
+
+    const primaryPrefix = `${prefix}.primary`;
+    const primaryFields = [
+      "object_id", "bounding_box", "detector_score", "classifier_score", "class_id", "semantic"
+    ];
+    if (requireFields(assembly.primary, primaryFields, primaryPrefix, issues)) {
+      if (!nonEmptyString(assembly.primary.object_id)) issues.push(`${primaryPrefix}.object_id is missing`);
+      if (!normalizedBox(assembly.primary.bounding_box)) issues.push(`${primaryPrefix}.bounding_box is invalid`);
+      if (!nonEmptyString(assembly.primary.class_id)) issues.push(`${primaryPrefix}.class_id is missing`);
+      const semantic = assembly.primary.semantic;
+      if (!requireFields(semantic, ["kind", "value", "unit"], `${primaryPrefix}.semantic`, issues)) {
+        // requireFields records the issue.
+      } else if (!["maximum_speed", "maximum_speed_end", "zone_start", "zone_end", "restriction_end", "unknown"].includes(semantic.kind)) {
+        issues.push(`${primaryPrefix}.semantic.kind is invalid`);
+      } else if (semantic.kind === "maximum_speed"
+          && (!Number.isInteger(semantic.value) || semantic.value < 1
+            || !["km/h", "mph"].includes(semantic.unit))) {
+        issues.push(`${primaryPrefix}.semantic speed value or unit is invalid`);
+      }
+      validateV2Score(assembly.primary.detector_score, `${primaryPrefix}.detector_score`, issues, {
+        allowNull: evidenceOrigin === "reviewed_expectation"
+      });
+      validateV2Score(assembly.primary.classifier_score, `${primaryPrefix}.classifier_score`, issues, {
+        allowNull: evidenceOrigin === "reviewed_expectation"
+      });
+    }
+
+    if (!Array.isArray(assembly.supplementary_plates)) {
+      issues.push(`${prefix}.supplementary_plates must be an array`);
+    } else {
+      assembly.supplementary_plates.forEach((plate, index) => {
+        const platePrefix = `${prefix}.supplementary_plates[${index}]`;
+        const plateFields = [
+          "object_id", "bounding_box", "detector_score", "classifier_score",
+          "class_id", "readability", "restriction"
+        ];
+        if (!requireFields(plate, plateFields, platePrefix, issues)) return;
+        if (!nonEmptyString(plate.object_id)) issues.push(`${platePrefix}.object_id is missing`);
+        if (!normalizedBox(plate.bounding_box)) issues.push(`${platePrefix}.bounding_box is invalid`);
+        if (!["readable", "unreadable"].includes(plate.readability)) issues.push(`${platePrefix}.readability is invalid`);
+        validateV2Score(plate.detector_score, `${platePrefix}.detector_score`, issues, {
+          allowNull: evidenceOrigin === "reviewed_expectation"
+        });
+        validateV2Score(plate.classifier_score, `${platePrefix}.classifier_score`, issues, {
+          allowNull: evidenceOrigin === "reviewed_expectation" || plate.readability === "unreadable"
+        });
+        if (plate.readability === "unreadable") {
+          if (plate.class_id !== null) issues.push(`${platePrefix}.class_id must be null when unreadable`);
+          if (plate.restriction !== null) issues.push(`${platePrefix}.restriction must be null when unreadable`);
+        } else {
+          if (!nonEmptyString(plate.class_id)) issues.push(`${platePrefix}.class_id is required when readable`);
+          validateRestriction(plate.restriction, `${platePrefix}.restriction`, issues);
+        }
+      });
+    }
+
+    const temporalPrefix = `${prefix}.temporal_evidence`;
+    if (requireFields(assembly.temporal_evidence, ["evidence_frame_count", "prior_event_id", "restriction_transition"], temporalPrefix, issues)) {
+      const temporal = assembly.temporal_evidence;
+      if (!Number.isInteger(temporal.evidence_frame_count) || temporal.evidence_frame_count < 1) {
+        issues.push(`${temporalPrefix}.evidence_frame_count is invalid`);
+      }
+      if (temporal.prior_event_id !== null && !nonEmptyString(temporal.prior_event_id)) {
+        issues.push(`${temporalPrefix}.prior_event_id is invalid`);
+      }
+      if (!["none", "preserved_unreadable", "upgraded_from_later_readable_evidence"].includes(temporal.restriction_transition)) {
+        issues.push(`${temporalPrefix}.restriction_transition is invalid`);
+      }
+      if (["preserved_unreadable", "upgraded_from_later_readable_evidence"].includes(temporal.restriction_transition)
+          && !nonEmptyString(temporal.prior_event_id)) {
+        issues.push(`${temporalPrefix}.prior_event_id is required for a transition`);
+      }
+      if (temporal.restriction_transition === "upgraded_from_later_readable_evidence"
+          && assembly.condition_state !== "resolved") {
+        issues.push(`${prefix}.condition_state must be resolved after a temporal upgrade`);
+      }
+    }
+  }
+
+  function eventV2GateAssessment(events) {
+    const issues = [];
+    events.forEach((event, index) => {
+      const prefix = `events[${index}]`;
+      const required = [
+        "schema_version", "event_id", "pack_id", "taxonomy_version", "evidence_origin",
+        "execution_mode", "override_eligible", "override_disposition", "qa_disposition",
+        "source", "frame", "stage_runs", "state", "assemblies", "road_context",
+        "diagnostic_capture"
+      ];
+      if (!requireFields(event, required, prefix, issues)) return;
+      if (event.schema_version !== 2) issues.push(`${prefix}.schema_version must be 2`);
+      if (!nonEmptyString(event.event_id)) issues.push(`${prefix}.event_id is missing`);
+      if (!nonEmptyString(event.pack_id)) issues.push(`${prefix}.pack_id is missing`);
+      if (event.taxonomy_version !== "tsr-semantic-v2") issues.push(`${prefix}.taxonomy_version is invalid`);
+      if (!["runtime_inference", "reviewed_expectation"].includes(event.evidence_origin)) issues.push(`${prefix}.evidence_origin is invalid`);
+      if (event.execution_mode !== "shadow") issues.push(`${prefix}.execution_mode must be shadow`);
+      if (event.override_eligible !== false) issues.push(`${prefix}.override_eligible must be false`);
+      if (event.override_disposition !== "shadow_evidence_only") issues.push(`${prefix}.override_disposition is invalid`);
+      if (event.qa_disposition !== "emit") issues.push(`${prefix}.qa_disposition must be emit`);
+      if (!["live_frame", "camera_still", "diagnostic_import", "panoramax_replay"].includes(event.source)) issues.push(`${prefix}.source is invalid`);
+      if (!["no_recognition", "provisional", "confirmed", "unknown", "unavailable"].includes(event.state)) issues.push(`${prefix}.state is invalid`);
+
+      if (requireFields(event.frame, ["frame_id", "timestamp_utc", "width", "height"], `${prefix}.frame`, issues)) {
+        if (!nonEmptyString(event.frame.frame_id)) issues.push(`${prefix}.frame.frame_id is missing`);
+        if (!dateIsValid(event.frame.timestamp_utc)) issues.push(`${prefix}.frame.timestamp_utc is invalid`);
+        if (!Number.isInteger(event.frame.width) || event.frame.width < 1) issues.push(`${prefix}.frame.width is invalid`);
+        if (!Number.isInteger(event.frame.height) || event.frame.height < 1) issues.push(`${prefix}.frame.height is invalid`);
+      }
+      if (requireFields(event.stage_runs, ["detector", "classifier"], `${prefix}.stage_runs`, issues)) {
+        validateV2StageRun(event.stage_runs.detector, `${prefix}.stage_runs.detector`, issues);
+        validateV2StageRun(event.stage_runs.classifier, `${prefix}.stage_runs.classifier`, issues);
+        if (event.evidence_origin === "reviewed_expectation") {
+          for (const stage of ["detector", "classifier"]) {
+            if (event.stage_runs[stage]?.invoked !== false || event.stage_runs[stage]?.latency_ms !== 0) {
+              issues.push(`${prefix}.stage_runs.${stage} must be uninvoked with zero latency for reviewed expectations`);
+            }
+          }
+        } else if (event.stage_runs.detector?.invoked !== true) {
+          issues.push(`${prefix}.stage_runs.detector must be invoked for runtime inference`);
+        } else if (["provisional", "confirmed", "unknown"].includes(event.state)
+            && event.stage_runs.classifier?.invoked !== true) {
+          issues.push(`${prefix}.stage_runs.classifier must be invoked for runtime recognition`);
+        }
+      }
+      if (!Array.isArray(event.assemblies)) {
+        issues.push(`${prefix}.assemblies must be an array`);
+      } else {
+        const needsAssemblies = ["provisional", "confirmed", "unknown"].includes(event.state);
+        if (needsAssemblies && event.assemblies.length === 0) issues.push(`${prefix}.assemblies must not be empty for ${event.state}`);
+        if (!needsAssemblies && event.assemblies.length !== 0) issues.push(`${prefix}.assemblies must be empty for ${event.state}`);
+        event.assemblies.forEach((assembly, assemblyIndex) => {
+          validateV2Assembly(assembly, `${prefix}.assemblies[${assemblyIndex}]`, issues, event.evidence_origin);
+        });
+      }
+      if (event.road_context !== null && !eventContextIsComplete(event.road_context)) {
+        issues.push(`${prefix}.road_context is structurally invalid`);
+      }
+      if (event.source === "live_frame" && ["provisional", "confirmed", "unknown"].includes(event.state)
+          && !eventContextIsComplete(event.road_context)) {
+        issues.push(`${prefix}.road_context is incomplete for live shadow evidence`);
+      }
+      if (requireFields(event.diagnostic_capture, ["status", "reasons", "capture_id"], `${prefix}.diagnostic_capture`, issues)) {
+        if (!["not_requested", "requested", "persisted", "failed"].includes(event.diagnostic_capture.status)) issues.push(`${prefix}.diagnostic_capture.status is invalid`);
+        if (!Array.isArray(event.diagnostic_capture.reasons)) issues.push(`${prefix}.diagnostic_capture.reasons must be an array`);
+        if (event.diagnostic_capture.capture_id !== null && !nonEmptyString(event.diagnostic_capture.capture_id)) issues.push(`${prefix}.diagnostic_capture.capture_id is invalid`);
+      }
+    });
+    return { passed: issues.length === 0, issues };
   }
 
   function eventGateAssessment(events) {
     const issues = [];
     if (!Array.isArray(events)) {
       return { passed: false, issues: ["events must be an array"] };
+    }
+    if (events.length && events.every((event) => event?.schema_version === 2)) {
+      return eventV2GateAssessment(events);
+    }
+    if (events.some((event) => event?.schema_version === 2)) {
+      return { passed: false, issues: ["recognition event files cannot mix schema versions"] };
     }
     events.forEach((event, index) => {
       const prefix = `events[${index}]`;
@@ -546,7 +758,165 @@
     });
   }
 
+  function validateV2Preprocessing(preprocessing, prefix, expectedSource, issues) {
+    const fields = [
+      "version", "source", "input_width", "input_height", "color_space", "layout",
+      "input_dtype", "resize", "interpolation", "interpolation_coordinate_transform",
+      "letterbox_alignment", "geometry_rounding", "orientation", "scale", "mean", "std",
+      "normalization_formula", "letterbox_value", "crop_policy"
+    ];
+    if (!requireFields(preprocessing, fields, prefix, issues)) return;
+    if (!nonEmptyString(preprocessing.version)) issues.push(`${prefix}.version is missing`);
+    if (preprocessing.source !== expectedSource) issues.push(`${prefix}.source must be ${expectedSource}`);
+    for (const field of ["input_width", "input_height"]) {
+      if (!Number.isInteger(preprocessing[field]) || preprocessing[field] < 1) issues.push(`${prefix}.${field} is invalid`);
+    }
+    if (!["rgb", "bgr"].includes(preprocessing.color_space)) issues.push(`${prefix}.color_space is invalid`);
+    if (!["nchw", "nhwc"].includes(preprocessing.layout)) issues.push(`${prefix}.layout is invalid`);
+    if (!["float32", "float16", "uint8", "int8"].includes(preprocessing.input_dtype)) issues.push(`${prefix}.input_dtype is invalid`);
+    if (!["bilinear", "bicubic", "nearest"].includes(preprocessing.interpolation)) issues.push(`${prefix}.interpolation is invalid`);
+    if (!["half_pixel_centers", "align_corners", "asymmetric"].includes(preprocessing.interpolation_coordinate_transform)) issues.push(`${prefix}.interpolation_coordinate_transform is invalid`);
+    if (preprocessing.orientation !== "normalize_exif_and_mirroring") issues.push(`${prefix}.orientation is invalid`);
+    if (preprocessing.normalization_formula !== "((channel*scale)-mean)/std") issues.push(`${prefix}.normalization_formula is invalid`);
+    if (!Array.isArray(preprocessing.mean) || preprocessing.mean.length !== 3) issues.push(`${prefix}.mean is invalid`);
+    if (!Array.isArray(preprocessing.std) || preprocessing.std.length !== 3
+        || preprocessing.std.some((entry) => jsonNumber(entry) == null || entry <= 0)) issues.push(`${prefix}.std is invalid`);
+    if (expectedSource === "full_frame") {
+      if (preprocessing.resize !== "scale_fit_letterbox") issues.push(`${prefix}.resize must preserve the full frame`);
+      if (preprocessing.crop_policy !== null) issues.push(`${prefix}.crop_policy must be null`);
+    } else {
+      if (preprocessing.resize !== "scale_fill_center_crop") issues.push(`${prefix}.resize is invalid`);
+      if (!isRecord(preprocessing.crop_policy)
+          || preprocessing.crop_policy.include_linked_objects !== false
+          || preprocessing.crop_policy.role_hint_required !== true) {
+        issues.push(`${prefix}.crop_policy must require independent role-hinted crops`);
+      }
+    }
+  }
+
+  function validateV2Stage(stage, prefix, expectedRole, expectedSource, issues, identities) {
+    if (!requireFields(stage, ["role", "component_id", "architecture", "preprocessing", "calibration", "artifacts"], prefix, issues)) return;
+    if (stage.role !== expectedRole) issues.push(`${prefix}.role is invalid`);
+    if (!nonEmptyString(stage.component_id)) issues.push(`${prefix}.component_id is missing`);
+    if (!nonEmptyString(stage.architecture)) issues.push(`${prefix}.architecture is missing`);
+    validateV2Preprocessing(stage.preprocessing, `${prefix}.preprocessing`, expectedSource, issues);
+    const calibrationPrefix = `${prefix}.calibration`;
+    if (requireFields(stage.calibration, [
+      "calibration_id", "method", "dataset_id", "dataset_sha256", "parameters_sha256",
+      "runtime_output", "expected_calibration_error", "passed"
+    ], calibrationPrefix, issues)) {
+      if (!nonEmptyString(stage.calibration.calibration_id)) issues.push(`${calibrationPrefix}.calibration_id is missing`);
+      if (!sha256IsValid(stage.calibration.dataset_sha256)) issues.push(`${calibrationPrefix}.dataset_sha256 is invalid`);
+      if (!sha256IsValid(stage.calibration.parameters_sha256)) issues.push(`${calibrationPrefix}.parameters_sha256 is invalid`);
+      if (typeof stage.calibration.passed !== "boolean") issues.push(`${calibrationPrefix}.passed must be boolean`);
+    }
+    const artifacts = stage.artifacts;
+    if (!isRecord(artifacts) || !["checkpoint", "onnx", "coreml", "litert"].every((role) => isRecord(artifacts[role]))) {
+      issues.push(`${prefix}.artifacts must contain checkpoint, onnx, coreml, and litert siblings`);
+      return;
+    }
+    const familyIDs = new Set();
+    for (const role of ["checkpoint", "onnx", "coreml", "litert"]) {
+      const artifact = artifacts[role];
+      const artifactPrefix = `${prefix}.artifacts.${role}`;
+      if (!requireFields(artifact, [
+        "artifact_id", "artifact_family_id", "role", "format", "platform", "path",
+        "sha256", "byte_length", "derived_from_artifact_id", "input_shape",
+        "output_schema", "precision", "minimum_runtime", "exporter", "parity"
+      ], artifactPrefix, issues)) continue;
+      if (artifact.role !== role || artifact.format !== role) issues.push(`${artifactPrefix} role and format must match its sibling key`);
+      if (!nonEmptyString(artifact.artifact_id)) issues.push(`${artifactPrefix}.artifact_id is missing`);
+      if (!nonEmptyString(artifact.artifact_family_id)) issues.push(`${artifactPrefix}.artifact_family_id is missing`);
+      if (!assetPathIsSafe(artifact.path)) issues.push(`${artifactPrefix}.path must be a safe relative path`);
+      if (!sha256IsValid(artifact.sha256)) issues.push(`${artifactPrefix}.sha256 is invalid`);
+      familyIDs.add(artifact.artifact_family_id);
+      for (const [kind, value] of [
+        ["artifact ID", artifact.artifact_id], ["artifact path", artifact.path], ["artifact hash", artifact.sha256]
+      ]) {
+        if (identities[kind].has(value)) issues.push(`${artifactPrefix} reuses a global ${kind.toLowerCase()}`);
+        identities[kind].add(value);
+      }
+      if (role === "checkpoint" && artifact.derived_from_artifact_id !== null) issues.push(`${artifactPrefix}.derived_from_artifact_id must be null`);
+      if (role === "onnx" && artifact.derived_from_artifact_id !== artifacts.checkpoint.artifact_id) issues.push(`${artifactPrefix} must derive from checkpoint`);
+      if (["coreml", "litert"].includes(role) && artifact.derived_from_artifact_id !== artifacts.onnx.artifact_id) issues.push(`${artifactPrefix} must derive from ONNX`);
+    }
+    if (familyIDs.size !== 1) issues.push(`${prefix}.artifacts must share one artifact family`);
+  }
+
+  function modelPackV2GateAssessment(pack) {
+    const issues = [];
+    const required = [
+      "schema_version", "pack_id", "countries", "pipeline", "taxonomy_version",
+      "execution_policy", "thresholds", "stages", "class_mapping", "lineage",
+      "offline_references", "licenses", "minimum_app_version"
+    ];
+    if (!requireFields(pack, required, "model_pack", issues)) return { passed: false, issues };
+    if (pack.schema_version !== 2) issues.push("model_pack.schema_version must be 2");
+    if (!nonEmptyString(pack.pack_id)) issues.push("model_pack.pack_id is missing");
+    if (pack.pipeline !== "proposal_classification") issues.push("model_pack.pipeline must be proposal_classification");
+    if (pack.taxonomy_version !== "tsr-semantic-v2") issues.push("model_pack.taxonomy_version is invalid");
+    const policy = pack.execution_policy;
+    if (!isRecord(policy) || policy.initial_mode !== "shadow" || policy.override_eligible !== false) {
+      issues.push("model_pack.execution_policy must be shadow-only and override-ineligible");
+    }
+    const requiredGates = ["holdout", "parity", "device", "temporal", "license"];
+    if (!Array.isArray(policy?.required_gates)
+        || requiredGates.some((gate) => !policy.required_gates.includes(gate))) {
+      issues.push("model_pack.execution_policy.required_gates is incomplete");
+    }
+    for (const gate of requiredGates) {
+      const status = policy?.gate_status?.[gate];
+      if (!isRecord(status) || !["pending", "failed", "passed"].includes(status.status)
+          || (status.status === "passed" && !sha256IsValid(status.evidence_sha256))) {
+        issues.push(`model_pack.execution_policy.gate_status.${gate} is invalid`);
+      }
+    }
+    const thresholds = pack.thresholds;
+    for (const field of ["detector_proposal", "classifier_confirmed", "restriction_readable", "minimum_track_iou"]) {
+      if (!numberInRange(thresholds?.[field], 0, 1)) issues.push(`model_pack.thresholds.${field} is invalid`);
+    }
+    if (!Number.isInteger(thresholds?.confirmation_frames) || thresholds.confirmation_frames < 2) issues.push("model_pack.thresholds.confirmation_frames is invalid");
+    if (!Number.isInteger(thresholds?.confirmation_window_ms) || thresholds.confirmation_window_ms < 1) issues.push("model_pack.thresholds.confirmation_window_ms is invalid");
+    if (thresholds?.association_policy !== "stable_observation_hint_then_unique_semantic_road_direction"
+        || thresholds?.stable_observation_hint_can_override_iou !== true
+        || thresholds?.fallback_requires_unique_candidate !== true) {
+      issues.push("model_pack.thresholds association policy is unsafe or incomplete");
+    }
+
+    const identities = {
+      "artifact ID": new Set(),
+      "artifact path": new Set(),
+      "artifact hash": new Set()
+    };
+    if (!requireFields(pack.stages, ["detector", "classifier"], "model_pack.stages", issues)) {
+      return { passed: false, issues };
+    }
+    validateV2Stage(pack.stages.detector, "model_pack.stages.detector", "proposal_detector", "full_frame", issues, identities);
+    validateV2Stage(pack.stages.classifier, "model_pack.stages.classifier", "semantic_classifier", "proposal_crop", issues, identities);
+    if (pack.stages?.detector?.preprocessing?.version === pack.stages?.classifier?.preprocessing?.version) {
+      issues.push("model_pack stages must have independent preprocessing identities");
+    }
+    if (pack.stages?.detector?.calibration?.calibration_id === pack.stages?.classifier?.calibration?.calibration_id) {
+      issues.push("model_pack stages must have independent calibration identities");
+    }
+    if (!Array.isArray(pack.offline_references)) {
+      issues.push("model_pack.offline_references must be an array");
+    } else {
+      pack.offline_references.forEach((reference, index) => {
+        if (!["offline_teacher", "offline_crop_benchmark"].includes(reference?.role)
+            || reference?.runtime_included !== false
+            || reference?.acceptance_gate_eligible !== false) {
+          issues.push(`model_pack.offline_references[${index}] cannot be a runtime or acceptance model`);
+        }
+      });
+    }
+    return { passed: issues.length === 0, issues };
+  }
+
   function modelPackGateAssessment(pack) {
+    if (pack?.schema_version === 2) {
+      return modelPackV2GateAssessment(pack);
+    }
     const issues = [];
     const required = [
       "schema_version", "pack_id", "countries", "pipeline", "taxonomy_version",
@@ -1052,7 +1422,27 @@
   }
 
   function identityFromEvent(event) {
+    if (event?.schema_version === 2) {
+      const stageIdentity = (stage) => ({
+        component_id: nonEmptyString(stage?.component_id) ? stage.component_id : null,
+        artifact_id: nonEmptyString(stage?.artifact_id) ? stage.artifact_id : null,
+        artifact_sha256: sha256IsValid(stage?.artifact_sha256) ? stage.artifact_sha256 : null,
+        artifact_format: nonEmptyString(stage?.artifact_format) ? stage.artifact_format : null,
+        preprocessing_version: nonEmptyString(stage?.preprocessing_version) ? stage.preprocessing_version : null,
+        calibration_id: nonEmptyString(stage?.calibration_id) ? stage.calibration_id : null
+      });
+      return {
+        schema_version: 2,
+        pack_id: nonEmptyString(event?.pack_id) ? event.pack_id : null,
+        evidence_origin: safeString(event?.evidence_origin),
+        stages: {
+          detector: stageIdentity(event?.stage_runs?.detector),
+          classifier: stageIdentity(event?.stage_runs?.classifier)
+        }
+      };
+    }
     return {
+      schema_version: 1,
       pack_id: nonEmptyString(event?.pack_id) ? event.pack_id : null,
       artifact_sha256: sha256IsValid(event?.artifact_sha256) ? event.artifact_sha256 : null,
       preprocessing_version: nonEmptyString(event?.preprocessing_version) ? event.preprocessing_version : null
@@ -1061,11 +1451,30 @@
 
   function modelIdentityMatches(left, right) {
     if (!left || !right) return false;
+    if (left.schema_version === 2 || right.schema_version === 2) {
+      if (left.schema_version !== 2 || right.schema_version !== 2
+          || left.pack_id !== right.pack_id) return false;
+      return ["detector", "classifier"].every((stage) => (
+        ["component_id", "artifact_id", "artifact_sha256", "artifact_format", "preprocessing_version", "calibration_id"]
+          .every((field) => nonEmptyString(left?.stages?.[stage]?.[field])
+            && left.stages[stage][field] === right?.stages?.[stage]?.[field])
+      ));
+    }
     return ["pack_id", "artifact_sha256", "preprocessing_version"]
       .every((field) => typeof left[field] === "string" && left[field].length > 0 && left[field] === right[field]);
   }
 
   function modelArtifactHashes(pack, platform = null) {
+    if (pack?.schema_version === 2) {
+      const platformForRole = { checkpoint: "training", onnx: "reference", coreml: "ios", litert: "android" };
+      return [pack?.stages?.detector, pack?.stages?.classifier]
+        .flatMap((component) => Object.entries(component?.artifacts ?? {}))
+        .filter(([role, artifact]) => !platform
+          || safeString(artifact?.platform) === platform
+          || platformForRole[role] === platform)
+        .map(([, artifact]) => safeString(artifact?.sha256))
+        .filter(Boolean);
+    }
     return [pack?.detector, pack?.classifier]
       .flatMap((component) => Array.isArray(component?.artifacts) ? component.artifacts : [])
       .filter((artifact) => !platform || safeString(artifact?.platform) === platform)
@@ -1089,6 +1498,38 @@
     }
     (Array.isArray(events) ? events : []).forEach((event, index) => {
       const identity = identityFromEvent(event);
+      if (event?.schema_version === 2) {
+        const stagesComplete = ["detector", "classifier"].every((stage) => (
+          ["component_id", "artifact_id", "artifact_sha256", "artifact_format", "preprocessing_version", "calibration_id"]
+            .every((field) => nonEmptyString(identity?.stages?.[stage]?.[field]))
+        ));
+        if (!identity.pack_id || !stagesComplete) {
+          issues.push(`events[${index}] has incomplete two-stage model provenance`);
+          return;
+        }
+        if (bundleModel) {
+          issues.push(`events[${index}] v2 provenance cannot be reconciled with a v1 diagnostic bundle identity`);
+        }
+        if (pack) {
+          if (pack.schema_version !== 2 || identity.pack_id !== safeString(pack.pack_id)) {
+            issues.push(`events[${index}] two-stage provenance does not match the loaded manifest`);
+            return;
+          }
+          for (const stageName of ["detector", "classifier"]) {
+            const eventStage = identity.stages[stageName];
+            const packStage = pack?.stages?.[stageName];
+            const artifact = packStage?.artifacts?.[eventStage.artifact_format];
+            if (eventStage.component_id !== safeString(packStage?.component_id)
+                || eventStage.artifact_id !== safeString(artifact?.artifact_id)
+                || eventStage.artifact_sha256 !== safeString(artifact?.sha256)
+                || eventStage.preprocessing_version !== safeString(packStage?.preprocessing?.version)
+                || eventStage.calibration_id !== safeString(packStage?.calibration?.calibration_id)) {
+              issues.push(`events[${index}] ${stageName} provenance does not match the loaded manifest`);
+            }
+          }
+        }
+        return;
+      }
       if (!identity.pack_id || !sha256IsValid(identity.artifact_sha256) || !identity.preprocessing_version) {
         issues.push(`events[${index}] has incomplete model provenance`);
         return;
@@ -1127,7 +1568,7 @@
     const wayID = safeString(context?.way_id);
     return (Array.isArray(events) ? events : [])
       .filter((event) => {
-        const eventTimestamp = new Date(event?.frame_timestamp_utc).getTime();
+        const eventTimestamp = new Date(eventTimestampUtc(event)).getTime();
         if (!Number.isFinite(timestamp) || !Number.isFinite(eventTimestamp)) return false;
         const ageMilliseconds = timestamp - eventTimestamp;
         if (ageMilliseconds < 0 || ageMilliseconds > toleranceSeconds * 1000) return false;
@@ -1141,7 +1582,13 @@
         if (sampleHeading == null || eventHeading == null || headingDifference(sampleHeading, eventHeading) > 35) return false;
         return !expectedModel || modelIdentityMatches(identityFromEvent(event), expectedModel);
       })
-      .sort((left, right) => new Date(left.frame_timestamp_utc) - new Date(right.frame_timestamp_utc));
+      .sort((left, right) => new Date(eventTimestampUtc(left)) - new Date(eventTimestampUtc(right)));
+  }
+
+  function eventTimestampUtc(event) {
+    return safeString(event?.schema_version === 2
+      ? event?.frame?.timestamp_utc
+      : event?.frame_timestamp_utc);
   }
 
   function summarize(bundle, events) {
@@ -1149,7 +1596,9 @@
     const assessments = samples.map(sampleAssessment);
     const eventList = Array.isArray(events) ? events : [];
     const confidences = eventList
-      .map((event) => finiteNumber(event?.candidate?.calibrated_confidence))
+      .map((event) => finiteNumber(event?.schema_version === 2
+        ? event?.assemblies?.[0]?.primary?.classifier_score?.calibrated_confidence
+        : event?.candidate?.calibrated_confidence))
       .filter((value) => value != null);
     return {
       samples: samples.length,
@@ -1171,6 +1620,7 @@
     eventContextIsComplete,
     eventGateAssessment,
     eventOverrideAssessment,
+    eventTimestampUtc,
     finiteNumber,
     identityFromEvent,
     intersectionOverUnion,

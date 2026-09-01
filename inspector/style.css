@@ -625,6 +625,12 @@ a:focus-visible,
 }
 
 /* TSR QA workspace */
+.button-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
 
 .tsr-workspace {
   display: grid;
