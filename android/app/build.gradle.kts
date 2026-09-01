@@ -8,8 +8,8 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
-val releaseBaseVersionCode = 10002
-val releaseVersionName = "1.0.2"
+val releaseBaseVersionCode = 10003
+val releaseVersionName = "1.0.3"
 val releaseAbiCodes = linkedMapOf(
     "armeabi-v7a" to 1,
     "arm64-v8a" to 2,
@@ -24,6 +24,12 @@ require(releaseAbi == null || releaseAbi in releaseAbiCodes) {
 android {
     namespace = "de.youspeed.android.alpha"
     compileSdk = 35
+
+    dependenciesInfo {
+        // F-Droid rejects AGP's Google-encrypted dependency metadata block.
+        includeInApk = false
+        includeInBundle = false
+    }
 
     defaultConfig {
         applicationId = "de.youspeed.android"
