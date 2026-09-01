@@ -1,4 +1,5 @@
 "CFBundleDisplayName" = "YouSpeed";
 "NSLocationWhenInUseUsageDescription" = "YouSpeed gebruikt je locatie om je actuele snelheid met lokale snelheidslimieten te vergelijken.";
+"NSCameraUsageDescription" = "YouSpeed gebruikt een camerasessie achteraan voor lokale dashcamvideo, verkeersbordherkenning op het apparaat en Panoramax-foto's die je later beoordeelt en uploadt.";
 "NSMicrophoneUsageDescription" = "YouSpeed gebruikt de microfoon alleen lokaal op je apparaat om uitgesproken snelheidslimieten vast te leggen.";
 "NSSpeechRecognitionUsageDescription" = "YouSpeed gebruikt spraakherkenning alleen lokaal op je apparaat om limieten zoals 30 of voetgangerszone vast te leggen.";

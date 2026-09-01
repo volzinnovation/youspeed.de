@@ -45,7 +45,7 @@ struct PanoramaxItemRecord: Codable, Equatable {
 }
 
 /// Transactional, app-private queue. The root is excluded from iCloud/device backup.
-final class PanoramaxQueueStore {
+final class PanoramaxQueueStore: @unchecked Sendable {
     private let root: URL
     private let batchesDirectory: URL
     private let encoder: JSONEncoder
@@ -111,6 +111,7 @@ final class PanoramaxQueueStore {
         guard metadata.validate(now: Date()).isEmpty, metadata.byteSize == Int64(jpeg.count), metadata.sha256.lowercased() == Self.sha256(jpeg) else { throw QueueError.invalidMetadata }
         return try lock.withLock {
             guard var batch = try read(batchID), batch.captureSessionID == metadata.captureSessionID else { throw QueueError.unknownBatch }
+            guard batch.state == .capturing else { throw QueueError.invalidBatchState }
             guard !batch.items.contains(where: { $0.itemID == metadata.captureID }) else { throw QueueError.duplicateItem }
             let itemDirectory = batchesDirectory.appendingPathComponent(batchID, isDirectory: true).appendingPathComponent(metadata.captureID, isDirectory: true)
             try FileManager.default.createDirectory(at: itemDirectory, withIntermediateDirectories: true)
@@ -129,6 +130,19 @@ final class PanoramaxQueueStore {
     }
 
     func updateBatch(_ batch: PanoramaxBatchRecord) throws { try commit(batch) }
+
+    /// Changes only lifecycle state on the latest durable batch snapshot.
+    /// Capture callbacks append items directly in the store, so sealing with an
+    /// older in-memory snapshot would otherwise discard those item records.
+    @discardableResult
+    func transitionBatch(_ batchID: String, to state: PanoramaxBatchState) throws -> PanoramaxBatchRecord {
+        try lock.withLock {
+            guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
+            batch.state = state
+            try commit(batch)
+            return batch
+        }
+    }
 
     @discardableResult
     func updateItem(batchID: String, itemID: String, state: PanoramaxItemState, remoteID: String? = nil) throws -> PanoramaxBatchRecord {
@@ -205,7 +219,7 @@ final class PanoramaxQueueStore {
         data.count >= 4 && data.prefix(2) == Data([0xff, 0xd8]) && data.suffix(2) == Data([0xff, 0xd9])
     }
 
-    enum QueueError: Error { case unknownBatch, unknownItem, duplicateItem, invalidImage, invalidMetadata }
+    enum QueueError: Error { case unknownBatch, unknownItem, duplicateItem, invalidImage, invalidMetadata, invalidBatchState }
 
     private func read(_ batchID: String) throws -> PanoramaxBatchRecord? {
         let file = batchesDirectory.appendingPathComponent("\(batchID).json")

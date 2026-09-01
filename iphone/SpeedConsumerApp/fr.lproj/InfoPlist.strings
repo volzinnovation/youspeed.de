@@ -1,4 +1,5 @@
 "CFBundleDisplayName" = "YouSpeed";
 "NSLocationWhenInUseUsageDescription" = "YouSpeed utilise votre position pour comparer votre vitesse actuelle aux limitations locales.";
+"NSCameraUsageDescription" = "YouSpeed utilise une seule session de camera arriere pour la video dashcam locale, la reconnaissance des panneaux sur l'appareil et les photos Panoramax que vous verifiez et envoyez plus tard.";
 "NSMicrophoneUsageDescription" = "YouSpeed utilise le microphone uniquement sur votre appareil pour saisir les limitations annoncees vocalement.";
 "NSSpeechRecognitionUsageDescription" = "YouSpeed utilise la reconnaissance vocale uniquement sur votre appareil pour saisir des limitations comme 30 ou zone pietonne.";

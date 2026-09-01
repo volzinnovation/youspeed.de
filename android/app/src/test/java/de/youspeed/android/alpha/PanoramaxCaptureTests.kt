@@ -6,6 +6,7 @@ import java.time.Instant
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -75,6 +76,69 @@ class PanoramaxCaptureTests {
             val queueRoot = File(root, "no-backup/panoramax")
             assertTrue(File(queueRoot, restored.items.single().originalPath).exists())
             assertTrue(File(queueRoot, restored.items.single().thumbnailPath).exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun queueRejectsLatePhotoAfterDriveIsClosed() {
+        val root = createTempDirectory("panoramax-closed-batch").toFile()
+        try {
+            val store = PanoramaxQueueStore(File(root, "no-backup"))
+            val batch = store.createBatch("session-closed", t0)
+            store.updateBatch(batch.copy(state = PanoramaxBatchState.AWAITING_REVIEW))
+            val jpeg = File(root, "late-scene.jpg").apply {
+                writeBytes(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 1, 0xFF.toByte(), 0xD9.toByte()))
+            }
+            val thumbnail = File(root, "late-thumb.jpg").apply {
+                writeBytes(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 2, 0xFF.toByte(), 0xD9.toByte()))
+            }
+            val metadata = PanoramaxCaptureMetadata(
+                captureId = "late-photo",
+                captureSessionId = batch.captureSessionId,
+                capturedAt = t0,
+                location = PanoramaxLocationSample(49.0, 8.0, t0, 5.0),
+                sha256 = PanoramaxQueueStore.sha256(jpeg),
+                byteSize = jpeg.length(),
+                software = "YouSpeed/test",
+            )
+
+            assertThrows(IllegalArgumentException::class.java) {
+                store.addJpeg(batch.batchId, jpeg, thumbnail, metadata)
+            }
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun sealingBatchPreservesItemsAddedAfterCreationSnapshot() {
+        val root = createTempDirectory("panoramax-seal").toFile()
+        try {
+            val store = PanoramaxQueueStore(File(root, "no-backup"))
+            val creationSnapshot = store.createBatch("session-seal", t0)
+            val jpeg = File(root, "scene-seal.jpg").apply {
+                writeBytes(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 3, 0xFF.toByte(), 0xD9.toByte()))
+            }
+            val thumbnail = File(root, "thumb-seal.jpg").apply {
+                writeBytes(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 4, 0xFF.toByte(), 0xD9.toByte()))
+            }
+            val metadata = PanoramaxCaptureMetadata(
+                captureId = "captured-before-seal",
+                captureSessionId = creationSnapshot.captureSessionId,
+                capturedAt = t0,
+                location = PanoramaxLocationSample(49.0, 8.0, t0, 5.0),
+                sha256 = PanoramaxQueueStore.sha256(jpeg),
+                byteSize = jpeg.length(),
+                software = "YouSpeed/test",
+            )
+            store.addJpeg(creationSnapshot.batchId, jpeg, thumbnail, metadata)
+
+            val sealed = store.transitionBatch(creationSnapshot.batchId, PanoramaxBatchState.AWAITING_REVIEW)
+
+            assertEquals(PanoramaxBatchState.AWAITING_REVIEW, sealed.state)
+            assertEquals(listOf(metadata.captureId), sealed.items.map { it.itemId })
         } finally {
             root.deleteRecursively()
         }

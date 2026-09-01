@@ -11,6 +11,157 @@ import UIKit
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 final class SpeedConsumerTests: XCTestCase {
+    func testPanoramaxUploadProcessingWaitsForRecorderFinalization() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldEnablePanoramaxFallback(
+            dashcamEnabled: false,
+            trafficSignRecognitionReady: false,
+            panoramaxEnabled: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldEnablePanoramaxFallback(
+            dashcamEnabled: true,
+            trafficSignRecognitionReady: false,
+            panoramaxEnabled: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldEnablePanoramaxFallback(
+            dashcamEnabled: false,
+            trafficSignRecognitionReady: true,
+            panoramaxEnabled: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldEnablePanoramaxFallback(
+            dashcamEnabled: false,
+            trafficSignRecognitionReady: false,
+            panoramaxEnabled: true
+        ))
+
+        XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .disabled))
+        XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .denied))
+        XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .unavailable))
+        XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .failed))
+        XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .preparing))
+        XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .recording))
+        XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .stopping))
+
+        XCTAssertTrue(DriveRecorderPolicy.canEditPanoramaxSelection(in: .awaitingReview))
+        XCTAssertTrue(DriveRecorderPolicy.canEditPanoramaxSelection(in: .partial))
+        XCTAssertFalse(DriveRecorderPolicy.canEditPanoramaxSelection(in: .capturing))
+        XCTAssertFalse(DriveRecorderPolicy.canEditPanoramaxSelection(in: .uploading))
+        XCTAssertFalse(DriveRecorderPolicy.canStartPanoramaxUpload(for: .capturing))
+        XCTAssertFalse(DriveRecorderPolicy.canStartPanoramaxUpload(for: .uploading))
+        XCTAssertTrue(DriveRecorderPolicy.canStartPanoramaxUpload(for: .approved))
+        XCTAssertTrue(DriveRecorderPolicy.canStartPanoramaxUpload(for: .processing))
+        XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: .captured))
+        XCTAssertTrue(DriveRecorderPolicy.canSelectPanoramaxItem(in: .retryableError))
+        XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: .uploading))
+        XCTAssertFalse(DriveRecorderPolicy.canSelectPanoramaxItem(in: .uploaded))
+    }
+
+    func testDriveRecorderModuleControlsOnlyToggleWhileRecording() {
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .disabled))
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .preparing))
+        XCTAssertTrue(DriveRecorderPolicy.canToggleModules(for: .recording))
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .stopping))
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .denied))
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .unavailable))
+        XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .failed))
+    }
+
+    func testDashcamPreviewRequiresRecordingActiveDashcamAndNoSpeedCapture() {
+        XCTAssertTrue(DriveRecorderPolicy.canShowDashcamPreview(
+            for: .recording,
+            dashcamActive: true,
+            speedCaptureActive: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canShowDashcamPreview(
+            for: .recording,
+            dashcamActive: false,
+            speedCaptureActive: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canShowDashcamPreview(
+            for: .recording,
+            dashcamActive: true,
+            speedCaptureActive: true
+        ))
+        for state in [
+            DriveRecorderState.disabled,
+            .preparing,
+            .stopping,
+            .denied,
+            .unavailable,
+            .failed,
+        ] {
+            XCTAssertFalse(DriveRecorderPolicy.canShowDashcamPreview(
+                for: state,
+                dashcamActive: true,
+                speedCaptureActive: false
+            ))
+        }
+    }
+
+    func testDashcamPreviewSelectionSurvivesTransientUnavailability() {
+        let selection = DriveRecorderWorkspaceSelection.preview
+
+        XCTAssertTrue(selection.showsPreview(whenAvailable: true))
+        XCTAssertFalse(selection.showsPreview(whenAvailable: false))
+        XCTAssertTrue(selection.showsPreview(whenAvailable: true))
+        XCTAssertFalse(
+            DriveRecorderWorkspaceSelection.telemetry.showsPreview(whenAvailable: true)
+        )
+    }
+
+    func testDashcamPreviewStaysAttachedWhileHidden() {
+        let unavailable = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable: true,
+            selection: .preview,
+            previewAvailable: false
+        )
+        XCTAssertTrue(unavailable.isAttached)
+        XCTAssertFalse(unavailable.isVisible)
+
+        let telemetry = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable: true,
+            selection: .telemetry,
+            previewAvailable: true
+        )
+        XCTAssertTrue(telemetry.isAttached)
+        XCTAssertFalse(telemetry.isVisible)
+
+        let live = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable: true,
+            selection: .preview,
+            previewAvailable: true
+        )
+        XCTAssertTrue(live.isAttached)
+        XCTAssertTrue(live.isVisible)
+
+        let noSession = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable: false,
+            selection: .preview,
+            previewAvailable: true
+        )
+        XCTAssertFalse(noSession.isAttached)
+        XCTAssertFalse(noSession.isVisible)
+    }
+
+    func testDashcamActivationTapCannotImmediatelyDismissPreview() {
+        let activation = Date(timeIntervalSince1970: 1_000)
+        let notBefore = activation.addingTimeInterval(
+            DriveRecorderPreviewInteractionPolicy.activationTapGuardInterval
+        )
+
+        XCTAssertFalse(DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+            at: activation,
+            notBefore: notBefore
+        ))
+        XCTAssertFalse(DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+            at: notBefore.addingTimeInterval(-0.001),
+            notBefore: notBefore
+        ))
+        XCTAssertTrue(DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+            at: notBefore,
+            notBefore: notBefore
+        ))
+    }
+
     func testPanoramaxCadenceRejectsStationaryAndAcceptsMovingFallback() {
         let start = Date(timeIntervalSince1970: 1_000)
         let first = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: start, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: nil)
@@ -67,6 +218,78 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(restored.items.count, 1)
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].originalPath).path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].thumbnailPath).path))
+    }
+
+    func testPanoramaxQueueRejectsLatePhotoAfterDriveIsClosed() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let jpeg = Data([0xff, 0xd8, 0xff, 0xd9])
+        var batch = try store.createBatch(captureSessionID: "session-closed", createdAt: timestamp)
+        batch.state = .awaitingReview
+        try store.updateBatch(batch)
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "late-photo",
+            captureSessionID: batch.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(
+                latitude: 49,
+                longitude: 8,
+                capturedAt: timestamp,
+                accuracyMeters: 5,
+                altitudeMeters: nil,
+                headingDegrees: nil
+            ),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+
+        XCTAssertThrowsError(
+            try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
+        ) { error in
+            guard case PanoramaxQueueStore.QueueError.invalidBatchState = error else {
+                return XCTFail("Expected invalidBatchState, got \(error)")
+            }
+        }
+    }
+
+    func testPanoramaxBatchSealPreservesItemsAddedAfterCreationSnapshot() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let creationSnapshot = try store.createBatch(captureSessionID: "session-seal", createdAt: timestamp)
+        let jpeg = Data([0xff, 0xd8, 0x01, 0xff, 0xd9])
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "captured-before-seal",
+            captureSessionID: creationSnapshot.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(
+                latitude: 49,
+                longitude: 8,
+                capturedAt: timestamp,
+                accuracyMeters: 5,
+                altitudeMeters: nil,
+                headingDegrees: nil
+            ),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+        _ = try store.addJPEG(
+            batchID: creationSnapshot.batchID,
+            jpeg: jpeg,
+            thumbnail: jpeg,
+            metadata: metadata
+        )
+
+        let sealed = try store.transitionBatch(creationSnapshot.batchID, to: .awaitingReview)
+
+        XCTAssertEqual(sealed.state, .awaitingReview)
+        XCTAssertEqual(sealed.items.map(\.itemID), [metadata.captureID])
+        XCTAssertEqual(try store.getBatch(creationSnapshot.batchID)?.items.count, 1)
     }
 
     func testPanoramaxStorageLimitRetainsFavorites() throws {

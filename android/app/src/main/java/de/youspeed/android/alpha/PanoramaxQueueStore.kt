@@ -75,6 +75,7 @@ class PanoramaxQueueStore(private val appRoot: File) {
         require(metadata.byteSize == jpeg.length()) { "metadata byteSize does not match JPEG" }
         val batch = requireNotNull(getBatch(batchId)) { "Unknown Panoramax batch" }
         require(batch.captureSessionId == metadata.captureSessionId) { "capture session mismatch" }
+        require(batch.state == PanoramaxBatchState.CAPTURING) { "Panoramax batch is no longer capturing" }
         val itemId = metadata.captureId
         require(batch.items.none { it.itemId == itemId }) { "duplicate captureId" }
         val itemDir = File(File(batchesDir, batchId), itemId).apply { mkdirs() }
@@ -91,6 +92,16 @@ class PanoramaxQueueStore(private val appRoot: File) {
     fun updateBatch(batch: PanoramaxBatchRecord) {
         require(batch.batchId.isNotBlank())
         write(batch)
+    }
+
+    /** Updates lifecycle state on the latest stored snapshot so concurrently
+     * appended capture items cannot be lost by sealing a stale batch value. */
+    @Synchronized
+    fun transitionBatch(batchId: String, state: PanoramaxBatchState): PanoramaxBatchRecord {
+        val current = requireNotNull(getBatch(batchId)) { "Unknown Panoramax batch" }
+        val updated = current.copy(state = state)
+        write(updated)
+        return updated
     }
 
     @Synchronized

@@ -8,7 +8,7 @@ Owner surface: iPhone `SpeedConsumerApp`, Android alpha, shared local-observatio
 
 ## Summary
 
-YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. The feature complements the current database lookup and voice-based capture flow. It must produce candidate local observations through the same review/export pipeline instead of introducing a separate camera-specific truth source.
+YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. Traffic-sign recognition (TSR) is one consumer of the feature-neutral Drive Recorder camera session, alongside optional local Dashcam encoding and Panoramax still capture. It complements the current database lookup and voice-based capture flow and must produce candidate local observations through the same review/export pipeline instead of introducing a separate camera-specific truth source.
 
 The first production slice is Germany-first and speed-sign focused:
 
@@ -16,7 +16,9 @@ The first production slice is Germany-first and speed-sign focused:
 - run inference locally on Android and iPhone,
 - merge detections over time before creating an observation,
 - map detections into the existing local-observation state machine,
-- never upload raw video and never auto-publish map edits.
+- never upload TSR frames or Dashcam video and never auto-publish map edits,
+- retain encoded video only when the independent Dashcam consumer is explicitly enabled, and
+- keep Panoramax review, approval, and upload as an explicit post-drive “process later” workflow.
 
 ## Existing Fit
 
@@ -27,7 +29,8 @@ Current implementation state:
 - iPhone already has `LocalObservationModality.computer_vision` and `temporary_restriction` in `iphone/SpeedConsumerApp/ConsumerModels.swift`.
 - Android currently has `voice_command` and `lock_current_speed` modalities in `android/app/src/main/java/de/youspeed/android/alpha/LocalObservationStore.kt`; Android needs a parity extension for `computer_vision` and `temporary_restriction`.
 - Both apps persist local observations with lat/lon, road candidates, confidence, source version, state, old speed, and new speed.
-- Both apps currently request location and microphone permissions only. Camera permissions, model runtime, and camera pipelines are not wired yet.
+- iPhone has an initial Panoramax-specific camera path; the unified design replaces feature-owned camera sessions with one neutral Drive Recorder camera owner.
+- Android still needs camera permission, the shared CameraX lifecycle, and its camera consumers. Neither platform has the production TSR model/fusion path yet.
 
 ## Decision Answers
 
@@ -70,7 +73,7 @@ Recommended sequence:
 
 1. `android` debug-only spike: camera permission, CameraX analyzer, bundled sample model, local overlay/log output. This can be a hidden debug screen or isolated package inside the Android app tree.
 2. Integrated fake-detector path: feed deterministic detections into `LocalObservationStore` without opening the camera.
-3. Integrated real-detector path: enable CameraX + LiteRT only while driving mode is active and the internal CV flag is on.
+3. Integrated real-detector path: attach CameraX + LiteRT as a consumer of the shared Drive Recorder camera session only while driving mode is active and the internal CV flag is on.
 4. iPhone parity: port the same labels, evidence JSON, fusion thresholds, and fixtures to Vision/Core ML once Android has proven the path.
 
 A fully separate app is only useful if camera/model experimentation becomes blocked by current app build configuration. Otherwise it creates throwaway lifecycle, permission, location, and map-match code that must be rebuilt in the real app.
@@ -104,15 +107,17 @@ Practical expectations:
 4. Keep database lookup as the primary runtime source. CV is additional evidence, not immediate shared ground truth.
 5. Preserve battery, thermal, and latency budgets so speed-limit display and warning logic remain responsive.
 6. Establish a shared model artifact contract so Android and iPhone can ship equivalent class labels and calibration thresholds even with different mobile inference backends.
+7. Use one camera owner and one explicit drive start/stop lifecycle while keeping Dashcam, TSR, and Panoramax policies independently configurable and failure-isolated.
 
 ## Non-Goals
 
 - No direct app upload to OSM.
 - No automatic shared backend correction from a single device.
-- No raw video retention by default.
+- No retention of the shared raw frame stream. Optional Dashcam retention stores encoded local video only under its own explicit enablement, consent, and storage policy.
+- No Panoramax upload during an active or finalizing drive, and no automatic upload after stop.
 - No reliance on cloud OCR or cloud object detection.
 - No global sign inventory in the first slice.
-- No driver-facing camera preview during normal driving mode.
+- No second camera session or persisted raw frames for the driver-facing confidence preview. While Dashcam is active, the user may temporarily replace the speed/location workspace with the shared session's live preview; the speed-limit sign remains visible.
 
 ## Target Classes
 
@@ -135,33 +140,67 @@ The class ontology must be versioned independently from the model binary. Adding
 
 ```mermaid
 flowchart LR
-  CAM["Camera frames"] --> THROTTLE["Frame throttle and ROI crop"]
+  START["Explicit drive start"] --> CAM["Neutral shared camera session"]
+  CAM --> STOP["Explicit drive stop and local finalization"]
+  CAM --> ROUTER["Timestamped frame router"]
+  ROUTER --> DASH["Dashcam encoder (optional)"]
+  ROUTER --> THROTTLE["TSR latest-frame throttle and ROI"]
+  ROUTER --> CADENCE["Panoramax distance/time sampler"]
+  CAM --> PREVIEW["Display-only confidence preview"]
+  DASH --> VIDEO["Protected local encoded video"]
   THROTTLE --> DETECTOR["YOLO detector"]
   DETECTOR --> NORMALIZE["Sign-class normalization"]
   NORMALIZE --> FUSION["Temporal and spatial fusion"]
-  GPS["Location, heading, speed"] --> FUSION
+  GPS["Location, heading, speed"] --> ROUTER
+  GPS --> FUSION
   MATCH["Current way match"] --> FUSION
   FUSION --> OBS["Local observation candidate"]
   OBS --> STORE["Local observation store"]
-  STORE --> REVIEW["Post-drive review"]
+  CADENCE --> PQUEUE["Local Panoramax still queue"]
+  STOP --> REVIEW["Post-drive review"]
+  STORE --> REVIEW
+  PQUEUE --> REVIEW
   REVIEW --> EXPORT["Editor-mediated OSC export"]
+  REVIEW --> APPROVE["Explicit Panoramax selection and approval"]
+  APPROVE --> UPLOAD["Process-later Panoramax upload"]
 ```
 
 ### Runtime Responsibilities
 
-`TrafficSignCameraSession`
+`DriveCameraSession`
 
-- Owns camera permission state and active camera lifecycle.
-- Starts only in driving mode after explicit user opt-in.
-- Uses the rear camera and no visible preview by default.
-- Pauses when the app is backgrounded, thermal state is high, battery saver is active, or location is unavailable.
+- Is the only owner of camera permission, rear-camera configuration, interruption handling, and the active camera lifecycle.
+- Starts once for an explicit drive session and stops once when that drive ends; individual consumers may be toggled during recording but never open competing sessions or rebuild the live capture graph.
+- Produces frames with a shared drive-session ID, timestamp, orientation, camera intrinsics when available, and synchronized location snapshot.
+- Has no Panoramax account, upload, detection, or retention policy.
+
+`DriveFrameRouter`
+
+- Fans each shared frame out to the independently enabled Dashcam, TSR, and Panoramax consumers.
+- Isolates backpressure: a slow consumer drops or skips its own work and cannot stall another consumer.
+- Keeps common frame time/location association without making one consumer's output trigger another.
+
+`DashcamEncoder`
+
+- Is separately enabled and consented; enabling TSR or Panoramax does not enable video retention.
+- Encodes local video segments without retaining the raw shared frame stream.
+- Owns its protected storage, capacity, segment finalization, and retention policy.
+- Never supplies files to Panoramax upload and never sends video to TSR or a server.
 
 `TrafficSignFrameAnalyzer`
 
-- Receives frames with timestamp, orientation, camera intrinsics when available, and current location snapshot.
+- Receives shared frames and their synchronized metadata from `DriveFrameRouter`; it does not own the camera.
 - Applies backpressure: always analyze the latest frame and drop stale frames.
 - Crops a configurable road-facing region of interest before inference.
 - Default throttle: 2 analyzed frames per second; allow 5 FPS only on devices that pass thermal and latency checks.
+- Does not persist the input frame stream or trigger Dashcam/Panoramax capture.
+
+`PanoramaxStillCaptureConsumer`
+
+- Receives shared frames and location samples without owning the camera.
+- Selects full-scene stills using its distance or time policy; TSR detections and Dashcam segment boundaries never trigger it.
+- Writes only cadence-selected JPEGs, thumbnails, and metadata to the protected local Panoramax queue.
+- Has no upload transport. During an active or finalizing drive it can only append local captures to the current `capturing` batch.
 
 `TrafficSignDetector`
 
@@ -181,6 +220,14 @@ flowchart LR
 - Requires repeated evidence before creating a candidate observation.
 - Combines detector confidence, temporal consistency, GPS speed, heading, map-match confidence, and current way stability.
 - Produces one observation per sign event, not one observation per frame.
+
+### Shared lifecycle and module independence
+
+Drive start creates one drive-session identity, opens the shared camera, and activates only the consumers the user has enabled. Drive stop first stops new frame delivery, then gives each active consumer a bounded finalization step: Dashcam closes its local segment, TSR drops or finishes its last allowed inference, and Panoramax closes its batch as `awaiting_review`. The camera is released after local finalization.
+
+Feature state remains independent inside that shared lifecycle. A denied Panoramax queue write must not stop TSR or corrupt Dashcam output; a TSR thermal downshift must not change Panoramax cadence; Dashcam storage exhaustion must not start an upload or disable map lookup. Consumer errors are surfaced separately, while a fatal shared-camera error is reported once to all enabled consumers.
+
+Panoramax processing begins only after the shared drive is fully inactive. The user must later review, select, and approve stills before an uploader may create an upload set. Stop, account connection, network restoration, and app relaunch never start Panoramax upload automatically.
 
 ## Data Contract
 
@@ -278,13 +325,13 @@ Shared files:
 iPhone artifact:
 
 - Core ML export compiled into the app bundle or downloaded as a signed app-managed asset later.
-- Runtime path: `AVCaptureSession` -> `Vision` / `Core ML` request -> normalized detector output.
+- Runtime path: shared `DriveCameraSession` frame -> TSR consumer -> `Vision` / `Core ML` request -> normalized detector output.
 - Prefer Neural Engine capable execution where available; fall back to CPU/GPU without blocking the main actor.
 
 Android artifact:
 
 - LiteRT / TensorFlow Lite export bundled under app assets for the first slice.
-- Runtime path: CameraX `ImageAnalysis` -> frame conversion/ROI -> LiteRT interpreter -> YOLO post-processing.
+- Runtime path: shared CameraX lifecycle -> TSR `ImageAnalysis` consumer -> frame conversion/ROI -> LiteRT interpreter -> YOLO post-processing.
 - Use one analyzer executor and one in-flight inference at a time.
 
 ONNX can remain useful for desktop evaluation and reproducible test tooling, but mobile runtime should use platform-native Core ML and LiteRT artifacts first.
@@ -297,14 +344,16 @@ Add:
 
 - `NSCameraUsageDescription` in `Info.plist` plus localized strings.
 - Privacy manifest update for camera use.
-- `TrafficSignCameraSession.swift` wrapping `AVCaptureSession`.
+- A feature-neutral `DriveCameraSession.swift` wrapping the single `AVCaptureSession` and routing frames to enabled consumers.
+- A Dashcam encoder, `TrafficSignFrameAnalyzer`, and Panoramax still-capture adapter that consume the shared session without owning it.
 - `TrafficSignDetector.swift` wrapping Vision/Core ML inference.
 - `TrafficSignFusionEngine.swift` for platform-independent fusion logic.
 - `LocalObservationStore.recordComputerVisionDetection(...)`.
-- Unit tests for class mapping, fusion thresholds, schema migration, and evidence JSON decoding.
+- Unit tests for shared lifecycle, consumer independence, post-drive upload gating, class mapping, fusion thresholds, schema migration, and evidence JSON decoding.
 
 Reuse:
 
+- the explicit Drive Recorder start/stop state machine,
 - existing `LocalObservationModality.computer_vision`,
 - existing local-observation store and review/export flow,
 - existing active way and confidence context from `DriveSessionViewModel`.
@@ -315,27 +364,31 @@ Add:
 
 - `android.permission.CAMERA` in `AndroidManifest.xml`.
 - Camera permission handling in `ConsumerHost` and `MainActivity`.
-- CameraX dependencies and a `TrafficSignCameraAnalyzer`.
+- CameraX dependencies and one feature-neutral camera lifecycle binding the enabled Dashcam, TSR `ImageAnalysis`, and Panoramax still-capture use cases together.
+- A `TrafficSignCameraAnalyzer` that consumes the shared `ImageAnalysis` output and never binds a second camera lifecycle.
 - LiteRT dependency and detector wrapper.
 - Android enum parity for `computer_vision` and `temporary_restriction`.
 - `LocalObservationStore.recordComputerVisionDetection(...)`.
-- Unit tests for mapping, fusion, schema migration, and JSON evidence.
+- Unit tests for shared lifecycle, consumer independence, post-drive upload gating, mapping, fusion, schema migration, and JSON evidence.
 - Instrumented tests with a fake detector and replayed image frames.
 
 Reuse:
 
-- existing driving-mode lifecycle,
+- the explicit Drive Recorder start/stop state machine,
 - existing current way context in `ConsumerSessionController`,
 - existing local observation review/export UI.
 
 ## Privacy and Safety
 
-- Default mode stores no video, no full frames, and no sign thumbnails.
+- The shared raw frame stream is never persisted. With Dashcam disabled, no encoded video is retained.
+- TSR does not persist its analysis frames. Panoramax does not retain the general frame stream; it stores only cadence-selected full-scene JPEGs and thumbnails in its protected local review queue.
+- The separately enabled Dashcam consumer may retain encoded local video under its own explicit consent, capacity, and retention controls. Dashcam video is never a Panoramax upload input.
 - Diagnostic image capture is a separate explicit opt-in and should expire automatically.
 - Evidence JSON may store normalized bounding boxes and frame hashes, but not personally identifiable image content.
 - The detector must run locally and must not send frames to a server.
-- No camera preview should be shown while driving unless a debug build explicitly enables it.
+- The optional confidence preview is display-only, is available only while Dashcam is active, and replaces the current speed/location workspace on explicit user interaction. It never hides the speed-limit sign and never creates another output, session, or retained artifact.
 - CV observations require post-drive review before export.
+- Panoramax review, selection, approval, and upload occur only after drive finalization. Upload never starts automatically.
 - Temporary restrictions should not be exported as permanent `maxspeed` edits until a dedicated policy exists.
 
 ## Runtime Budgets
@@ -345,9 +398,11 @@ Initial gates:
 - Speed lookup and warning UI must not wait on CV inference.
 - Analyze at most 2 FPS by default.
 - Keep one inference in flight and drop stale frames.
+- Keep TSR backpressure isolated so it cannot stall Dashcam encoding or Panoramax still selection.
 - Target detector p95 under 250 ms on supported devices.
 - Target local-observation creation within 2 seconds of the first qualifying detection cluster.
 - Disable or downshift CV when thermal or battery conditions degrade.
+- Finalize all enabled local consumers and release the shared camera within a measured, bounded stop interval.
 - Model plus labels should fit comfortably in the app bundle; target under 25 MB for the first quantized mobile artifact.
 
 These are release gates, not claims. They must be measured on actual Android and iPhone devices before enabling the feature by default.
@@ -370,6 +425,8 @@ Evaluation metrics:
 - duplicate observation rate,
 - wrong-way association rate,
 - detector latency p50/p95,
+- dropped-frame and backpressure impact per camera consumer,
+- shared-camera start/stop and local-finalization latency,
 - battery and thermal impact over a 30 minute drive,
 - post-drive review acceptance rate.
 
@@ -393,26 +450,31 @@ Exit criteria:
 ### Phase 1: App Integration With Fake Detector
 
 - Add camera permission copy but keep camera disabled by default.
+- Add the shared Drive Recorder state machine and pure consumer-routing contracts without opening a real camera.
 - Add fake detector injection on both platforms.
 - Persist computer-vision observations through existing stores.
 - Show CV observations in the same local review list.
+- Prove with a fake Panoramax upload transport that preparing, recording, interrupted, and finalizing states make zero upload calls.
 
 Exit criteria:
 
 - Android and iPhone parity tests pass with identical fixture detections,
-- no raw image persistence,
+- TSR input frames are not persisted,
+- shared start/stop and post-drive upload-gate tests pass,
 - existing voice capture behavior unchanged.
 
 ### Phase 2: On-Device Prototype
 
-- Wire CameraX + LiteRT on Android.
-- Wire AVCapture + Vision/Core ML on iPhone.
+- Wire one CameraX lifecycle to Dashcam, Panoramax, and LiteRT TSR consumers on Android.
+- Wire one AVFoundation session to Dashcam, Panoramax, and Vision/Core ML TSR consumers on iPhone.
 - Run model behind an internal debug flag.
 - Record only aggregate local metrics and evidence JSON.
 
 Exit criteria:
 
 - detector runs on actual devices,
+- all enabled consumers run from one camera owner without resource contention,
+- stopping finalizes local outputs without starting Panoramax upload,
 - p95 inference stays within budget,
 - driving UI remains responsive,
 - field route logs can be replayed offline.
@@ -454,7 +516,13 @@ The feature is ready for public opt-in when:
 - both apps use the same label/manifest versions,
 - Android and iPhone normalize the same fixture detections into equivalent observations,
 - camera permissions and privacy copy are localized,
-- no raw video leaves the device,
+- each platform has one neutral camera owner and one tested drive start/stop lifecycle,
+- Dashcam, TSR, and Panoramax can be enabled, throttled, and failed independently without one consumer triggering another,
+- the shared raw frame stream is never persisted; optional Dashcam retention is encoded, local, explicit, and governed by its own storage policy,
+- no TSR frame or Dashcam video leaves the device,
+- Panoramax retains only cadence-selected local stills during a drive,
+- Panoramax upload is impossible while a drive is preparing, active, interrupted, stopping, or finalizing,
+- drive stop performs no network upload; only later explicit review, selection, and approval can start Panoramax processing,
 - detector runtime stays within measured latency and thermal budgets,
 - CV observations never bypass post-drive review for export,
 - voice capture and database lookup remain unchanged under regression tests,
