@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/diagnostic-bundle-v1.json",
+  "title": "YouSpeed consented traffic-sign diagnostic bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "capture_group_id",
+    "purpose",
+    "created_at",
+    "producer",
+    "consent",
+    "privacy",
+    "samples"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "bundle_id": { "type": "string", "minLength": 1 },
+    "capture_group_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "All samples from one drive or import session share this leakage-safe split key."
+    },
+    "purpose": { "enum": ["training", "evaluation", "replay"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "producer": { "$ref": "#/$defs/producer" },
+    "consent": { "$ref": "#/$defs/consent" },
+    "privacy": { "$ref": "#/$defs/privacy" },
+    "active_model": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/activeModel" }
+      ]
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sample" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "normalizedRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "app_version", "build", "device_tier"],
+      "properties": {
+        "platform": { "enum": ["ios", "android", "desktop"] },
+        "app_version": { "type": "string", "minLength": 1 },
+        "build": { "type": "string", "minLength": 1 },
+        "device_tier": { "type": "string", "minLength": 1 }
+      }
+    },
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "policy_version",
+        "granted_at",
+        "export_approved",
+        "retention_expires_at"
+      ],
+      "properties": {
+        "scope": { "const": "tsr_diagnostic_dataset" },
+        "policy_version": { "type": "string", "minLength": 1 },
+        "granted_at": { "type": "string", "format": "date-time" },
+        "export_approved": { "type": "boolean" },
+        "retention_expires_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "full_frame_retention",
+        "location_mode",
+        "redaction_state",
+        "raw_dashcam_video_included",
+        "direct_device_identifier_included"
+      ],
+      "properties": {
+        "full_frame_retention": { "type": "boolean" },
+        "location_mode": { "enum": ["none", "coarse", "exact_local_encrypted"] },
+        "redaction_state": { "enum": ["not_required", "pending", "applied", "verified"] },
+        "raw_dashcam_video_included": { "const": false },
+        "direct_device_identifier_included": { "const": false }
+      }
+    },
+    "activeModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_id", "artifact_sha256", "preprocessing_version"],
+      "properties": {
+        "pack_id": { "type": "string", "minLength": 1 },
+        "artifact_sha256": { "$ref": "#/$defs/sha256" },
+        "preprocessing_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "captureContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "road_context_complete",
+        "way_id",
+        "latitude",
+        "longitude",
+        "heading_degrees",
+        "travel_direction",
+        "speed_kmh",
+        "map_context_revision",
+        "map_source_signature"
+      ],
+      "properties": {
+        "road_context_complete": { "type": "boolean" },
+        "way_id": { "type": ["string", "null"] },
+        "latitude": { "type": ["number", "null"], "minimum": -90, "maximum": 90 },
+        "longitude": { "type": ["number", "null"], "minimum": -180, "maximum": 180 },
+        "heading_degrees": { "type": ["number", "null"], "minimum": 0, "exclusiveMaximum": 360 },
+        "travel_direction": { "enum": ["forward", "reverse", "unknown"] },
+        "speed_kmh": { "type": ["number", "null"], "minimum": 0 },
+        "map_context_revision": { "type": ["integer", "null"], "minimum": 0 },
+        "map_source_signature": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "road_context_complete": { "const": true } } },
+          "then": {
+            "properties": {
+              "way_id": { "type": "string", "minLength": 1 },
+              "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+              "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+              "heading_degrees": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+              "map_context_revision": { "type": "integer", "minimum": 0 },
+              "map_source_signature": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "media_type", "width", "height"],
+      "properties": {
+        "role": {
+          "enum": ["full_frame", "assembly_crop", "primary_crop", "supplementary_crop"]
+        },
+        "assembly_id": { "type": ["string", "null"] },
+        "object_id": { "type": ["string", "null"] },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "media_type": {
+          "enum": ["image/jpeg", "image/png", "image/heic", "image/x-portable-pixmap"]
+        },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "source_bounding_box": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/normalizedRect" }
+          ]
+        }
+      }
+    },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_id", "role", "raw_class_id", "raw_score", "bounding_box"],
+      "properties": {
+        "object_id": { "type": "string", "minLength": 1 },
+        "assembly_id": { "type": ["string", "null"] },
+        "parent_object_id": { "type": ["string", "null"] },
+        "role": { "enum": ["primary_sign", "supplementary_plate"] },
+        "raw_class_id": { "type": "string", "minLength": 1 },
+        "raw_score": { "type": "number" },
+        "calibrated_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "bounding_box": { "$ref": "#/$defs/normalizedRect" }
+      }
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "normalized_value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather",
+            "time_window",
+            "vehicle",
+            "school",
+            "resident",
+            "exception",
+            "distance",
+            "direction",
+            "extent",
+            "text",
+            "other",
+            "unknown"
+          ]
+        },
+        "normalized_value": { "type": "string", "minLength": 1 },
+        "raw_text": { "type": ["string", "null"] },
+        "country_sign_code": { "type": ["string", "null"] }
+      }
+    },
+    "annotationObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_id", "assembly_id", "role", "class_id", "bounding_box"],
+      "properties": {
+        "object_id": { "type": "string", "minLength": 1 },
+        "assembly_id": { "type": "string", "minLength": 1 },
+        "parent_object_id": { "type": ["string", "null"] },
+        "role": { "enum": ["primary_sign", "supplementary_plate"] },
+        "class_id": { "type": "string", "minLength": 1 },
+        "bounding_box": { "$ref": "#/$defs/normalizedRect" },
+        "primary_semantic": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "model-pack.schema.json#/$defs/semantic" }
+          ]
+        },
+        "restriction": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/restriction" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "role": { "const": "primary_sign" } } },
+          "then": { "required": ["primary_semantic"] }
+        },
+        {
+          "if": { "properties": { "role": { "const": "supplementary_plate" } } },
+          "then": { "required": ["parent_object_id", "restriction"] }
+        }
+      ]
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assembly_id",
+        "bounding_box",
+        "primary_object_id",
+        "supplementary_object_ids",
+        "condition_state"
+      ],
+      "properties": {
+        "assembly_id": { "type": "string", "minLength": 1 },
+        "bounding_box": { "$ref": "#/$defs/normalizedRect" },
+        "primary_object_id": { "type": "string", "minLength": 1 },
+        "supplementary_object_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "condition_state": { "enum": ["none", "resolved", "unresolved"] }
+      }
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewed_at", "objects", "assemblies"],
+      "properties": {
+        "status": { "enum": ["unreviewed", "accepted", "corrected", "rejected", "negative"] },
+        "reviewed_at": { "type": ["string", "null"], "format": "date-time" },
+        "objects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/annotationObject" }
+        },
+        "assemblies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assembly" }
+        }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "source",
+        "frame_timestamp_utc",
+        "monotonic_timestamp_ns",
+        "trigger",
+        "capture_context",
+        "assets",
+        "predictions",
+        "annotation"
+      ],
+      "properties": {
+        "sample_id": { "type": "string", "minLength": 1 },
+        "source": { "enum": ["live_shared_frame", "dashcam_replay", "imported_still"] },
+        "frame_timestamp_utc": { "type": "string", "format": "date-time" },
+        "monotonic_timestamp_ns": { "type": ["integer", "null"], "minimum": 0 },
+        "trigger": {
+          "enum": ["candidate", "uncertainty", "hard_negative", "manual", "periodic_negative"]
+        },
+        "capture_context": { "$ref": "#/$defs/captureContext" },
+        "assets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/asset" }
+        },
+        "predictions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/prediction" }
+        },
+        "annotation": { "$ref": "#/$defs/annotation" }
+      }
+    }
+  }
+}

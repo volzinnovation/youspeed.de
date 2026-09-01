@@ -28,6 +28,11 @@ main.fls
 inspector/*.ndjson
 inspector/logs/
 
+# Opt-in TSR diagnostic captures and generated training artifacts
+tsr-data/
+shared/tsr/local-data/
+shared/tsr/generated/
+
 # Map data generated artifacts (very large)
 mapdata/raw/*.osm.pbf
 mapdata/raw/archive/

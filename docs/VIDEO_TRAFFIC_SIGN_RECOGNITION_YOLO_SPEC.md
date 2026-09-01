@@ -1,6 +1,6 @@
 # Video Traffic Sign Recognition With YOLO
 
-Date: `2026-07-06`
+Date: `2026-09-01`
 
 Status: draft implementation spec
 
@@ -8,7 +8,7 @@ Owner surface: iPhone `SpeedConsumerApp`, Android alpha, shared local-observatio
 
 ## Summary
 
-YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. Traffic-sign recognition (TSR) is one consumer of the feature-neutral Drive Recorder camera session, alongside optional local Dashcam encoding and Panoramax still capture. It complements the current database lookup and voice-based capture flow and must produce candidate local observations through the same review/export pipeline instead of introducing a separate camera-specific truth source.
+YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. Traffic-sign recognition (TSR) is one consumer of the feature-neutral Drive Recorder camera session, alongside optional local Dashcam encoding and Panoramax still capture. A confirmed numeric detection becomes an explicit, session-only camera source above local correction and bundled OSM for the current display and warnings. It never mutates either durable source. The camera value remains active across repeated fixes with the same map/local source signature, and is replaced by a newer confirmed detection or cleared when genuinely new OSM/local information arrives.
 
 The first production slice is Germany-first and speed-sign focused:
 
@@ -16,7 +16,7 @@ The first production slice is Germany-first and speed-sign focused:
 - run inference locally on Android and iPhone,
 - merge detections over time before creating an observation,
 - map detections into the existing local-observation state machine,
-- never upload TSR frames or Dashcam video and never auto-publish map edits,
+- never upload ordinary TSR frames or Dashcam video and never auto-publish map edits; a separate consented diagnostic mode may retain selected, inspectable training/evaluation frames,
 - retain encoded video only when the independent Dashcam consumer is explicitly enabled, and
 - keep Panoramax review, approval, and upload as an explicit post-drive “process later” workflow.
 
@@ -36,21 +36,17 @@ Current implementation state:
 
 ### Is there already a usable model?
 
-Short answer: usable for a proof of concept, not usable as production evidence without YouSpeed validation and likely fine-tuning.
+Short answer: no ready-made public checkpoint cleanly covers real German road scenes, numeric speed limits, and the white supplementary plates that qualify them on both mobile runtimes.
 
-There are public YOLO traffic-sign checkpoints and datasets that can accelerate the first spike:
+The first owned model should therefore be compositional:
 
-- Hugging Face has YOLOv8 traffic-sign models such as `nezahatkorkmaz/traffic-sign-detection`, which reports YOLOv8, MIT license, and 30,000+ labeled images.
-- Other public YOLOv8 traffic-sign repositories exist, but many are academic/demo checkpoints, have incomplete label coverage for speed limits, or do not publish enough evaluation detail for safety-critical app behavior.
-- German-oriented detection data exists through GTSDB conversions such as `keremberke/german-traffic-sign-detection`, but the dataset is small enough that it should be treated as a bootstrap/evaluation source, not sufficient production coverage.
-- Larger real-world datasets such as TT100K are useful for technique and robustness lessons, but they are country-specific and may have non-commercial licensing constraints.
-- Some deployment-focused checkpoints, such as Vietnamese VTSR, show useful artifact packaging patterns, but their classes, signs, and licenses are not a fit for Germany-first YouSpeed rollout.
+1. Bootstrap full-scene proposal detection from Zenseact Open Dataset (ZOD) plus consented YouSpeed scenes and hard negatives.
+2. Bootstrap German crop semantics from GTSIGN-220, use its pinned ViT only as a teacher/reference, and add Synset Signset Germany for rare primary/plate combinations and robustness augmentation.
+3. Detect `primary_sign` and `supplementary_plate` separately, link them into a sign assembly, and classify/parse the white plate as a typed restriction. Do not create a flat class for every speed/restriction combination.
+4. Compare a current YOLO nano technical challenger (subject to its explicit AGPL/enterprise release gate) with a permissively licensed mobile baseline such as YOLOX-Nano. Export both mobile artifacts from the same pinned YouSpeed checkpoint used for ONNX reference inference.
+5. Treat every public or transferred model output as untrusted until it passes leakage-safe real-route validation, calibration, export-parity, and physical-device gates.
 
-Recommendation:
-
-1. Use an existing public YOLO checkpoint only to prove camera, inference, post-processing, and observation plumbing.
-2. Train or fine-tune a YouSpeed-owned compact model for the first real field trial, starting from a YOLO nano/small base and a Germany-first speed-sign ontology.
-3. Treat any public model output as untrusted candidate evidence until it passes YouSpeed route validation and post-drive review metrics.
+The exact source revisions, checksums, licenses, and training stages live in `TSR_TRAINING_ROUND_TRIP.md` and `shared/tsr/training-sources-v1.json`.
 
 ### Android first or iPhone first?
 
@@ -104,7 +100,7 @@ Practical expectations:
 1. Detect traffic signs during active driving sessions on Android and iPhone.
 2. Run all inference on device; no live video upload or cloud inference.
 3. Generate auditable candidate observations that use the same local review/export flow as voice capture.
-4. Keep database lookup as the primary runtime source. CV is additional evidence, not immediate shared ground truth.
+4. Resolve the active runtime value as `confirmed TSR > local correction > bundled OSM`, while keeping the camera source visibly identified, transient, and completely separate from durable map edits.
 5. Preserve battery, thermal, and latency budgets so speed-limit display and warning logic remain responsive.
 6. Establish a shared model artifact contract so Android and iPhone can ship equivalent class labels and calibration thresholds even with different mobile inference backends.
 7. Use one camera owner and one explicit drive start/stop lifecycle while keeping Dashcam, TSR, and Panoramax policies independently configurable and failure-isolated.
@@ -113,7 +109,7 @@ Practical expectations:
 
 - No direct app upload to OSM.
 - No automatic shared backend correction from a single device.
-- No retention of the shared raw frame stream. Optional Dashcam retention stores encoded local video only under its own explicit enablement, consent, and storage policy.
+- No retention of the shared raw frame stream during ordinary recognition. Optional Dashcam retention stores encoded local video only under its own explicit enablement and storage policy; diagnostic TSR capture stores only selected frames/crops under separate consent, retention, review, and export controls.
 - No Panoramax upload during an active or finalizing drive, and no automatic upload after stop.
 - No reliance on cloud OCR or cloud object detection.
 - No global sign inventory in the first slice.
@@ -144,7 +140,7 @@ flowchart LR
   CAM --> STOP["Explicit drive stop and local finalization"]
   CAM --> ROUTER["Timestamped frame router"]
   ROUTER --> DASH["Dashcam encoder (optional)"]
-  ROUTER --> THROTTLE["TSR latest-frame throttle and ROI"]
+  ROUTER --> THROTTLE["TSR latest-frame throttle and useful full frame"]
   ROUTER --> CADENCE["Panoramax distance/time sampler"]
   CAM --> PREVIEW["Display-only confidence preview"]
   DASH --> VIDEO["Protected local encoded video"]
@@ -154,7 +150,10 @@ flowchart LR
   GPS["Location, heading, speed"] --> ROUTER
   GPS --> FUSION
   MATCH["Current way match"] --> FUSION
-  FUSION --> OBS["Local observation candidate"]
+  FUSION --> LIVE["Transient camera-source override"]
+  FUSION --> OBS["Reviewable local observation candidate"]
+  OSM["Bundled OSM result"] --> LIVE
+  LOCAL["Local correction"] --> LIVE
   OBS --> STORE["Local observation store"]
   CADENCE --> PQUEUE["Local Panoramax still queue"]
   STOP --> REVIEW["Post-drive review"]
@@ -191,8 +190,9 @@ flowchart LR
 
 - Receives shared frames and their synchronized metadata from `DriveFrameRouter`; it does not own the camera.
 - Applies backpressure: always analyze the latest frame and drop stale frames.
-- Crops a configurable road-facing region of interest before inference.
-- Default throttle: 2 analyzed frames per second; allow 5 FPS only on devices that pass thermal and latency checks.
+- Downscales the useful full frame for proposal/detection inference; it must not permanently discard roadside regions with a narrow center crop.
+- Uses a measured adaptive 2–10 FPS envelope based on vehicle speed, active tracks, latency, power, and thermal pressure.
+- Keeps one inference in flight, replaces the single pending frame with the newest frame, and retains only a bounded in-memory set of sharp/exposed full-resolution frames long enough to select primary-sign and supplementary-plate crops.
 - Does not persist the input frame stream or trigger Dashcam/Panoramax capture.
 
 `PanoramaxStillCaptureConsumer`
@@ -220,6 +220,14 @@ flowchart LR
 - Requires repeated evidence before creating a candidate observation.
 - Combines detector confidence, temporal consistency, GPS speed, heading, map-match confidence, and current way stability.
 - Produces one observation per sign event, not one observation per frame.
+- Carries the way ID, coordinate, heading, travel direction, and stable OSM/local source signature captured with the analyzed frame through asynchronous inference.
+
+`TrafficSignRuntimeSourceResolver`
+
+- Resolves `confirmed numeric TSR > local correction > bundled OSM` without writing back to either durable source.
+- Keeps a TSR value through repeated GPS fixes when the effective way/OSM/local source signature is unchanged.
+- Rejects a delayed detection whose frame-time signature no longer matches the current source, replaces the value on a newer confirmed detection, and clears it as soon as the way, bundled OSM value/revision, or local correction revision changes.
+- Exposes source and evidence context so UI, warnings, logs, replay, and review never mistake a camera estimate for a legally verified or persisted map value.
 
 ### Shared lifecycle and module independence
 
@@ -291,7 +299,14 @@ Schema extension:
 
 ### Observation Creation Rules
 
-Create `local_only` observations when:
+Apply a transient live override when:
+
+- temporal fusion confirms a numeric maximum-speed sign,
+- the frame carries a complete way ID, coordinate, heading/direction, and source signature,
+- that source signature is still current when inference completes, and
+- any supplementary plate is explicitly represented; an unresolved condition must never silently become an unconditional durable correction.
+
+Create `local_only` observations for later review when:
 
 - a numeric or `walk` sign is detected with repeated evidence,
 - the current way match is stable enough to assign a road candidate,
@@ -482,6 +497,7 @@ Exit criteria:
 ### Phase 3: Fusion and Local Overlay
 
 - Enable temporal/spatial fusion.
+- Resolve the session display/warning source as `confirmed TSR > local correction > bundled OSM`, with explicit camera-source labeling and source-signature invalidation.
 - Create `local_only` observations only for high-confidence numeric/walk signs.
 - Keep end signs, city signs, temporary restrictions, and weak way matches as `needs_review`.
 
@@ -519,19 +535,19 @@ The feature is ready for public opt-in when:
 - each platform has one neutral camera owner and one tested drive start/stop lifecycle,
 - Dashcam, TSR, and Panoramax can be enabled, throttled, and failed independently without one consumer triggering another,
 - the shared raw frame stream is never persisted; optional Dashcam retention is encoded, local, explicit, and governed by its own storage policy,
-- no TSR frame or Dashcam video leaves the device,
+- ordinary TSR frames and Dashcam video never leave the device; consented diagnostic bundles require an explicit, separate export action,
 - Panoramax retains only cadence-selected local stills during a drive,
 - Panoramax upload is impossible while a drive is preparing, active, interrupted, stopping, or finalizing,
 - drive stop performs no network upload; only later explicit review, selection, and approval can start Panoramax processing,
 - detector runtime stays within measured latency and thermal budgets,
 - CV observations never bypass post-drive review for export,
+- a confirmed numeric TSR value can transiently override the display/warning value without changing OSM or local corrections, survives repeated fixes with an unchanged source signature, and is rejected/cleared when its frame-time source is stale,
 - voice capture and database lookup remain unchanged under regression tests,
 - temporary restrictions and end signs are not exported as permanent maxspeed edits without explicit policy.
 
 ## Open Decisions
 
-- Whether first-slice local overlay should apply immediately for high-confidence CV numeric signs, or always wait for review.
-- Whether to persist opt-in cropped sign thumbnails for post-drive review, and how long they may live on device.
+- Exact retention duration and storage budget for separately consented diagnostic crops/full frames.
 - How to model dynamic/electronic speed signs separately from permanent signs.
 - Whether country-specific sign packs should ship in the app bundle or be downloaded with region assets.
 - Minimum supported Android/iPhone hardware tier for default CV enablement.
