@@ -34,6 +34,9 @@ targets:
         buildPhase: resources
       - path: SpeedConsumerApp/Rules
         buildPhase: resources
+      - path: SpeedConsumerApp/TSRModelPacks
+        type: folder
+        buildPhase: resources
       - path: SpeedConsumerApp/legal.txt
         buildPhase: resources
       - path: SpeedConsumerApp/BundleTargets.top10.json

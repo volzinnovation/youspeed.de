@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "scope": "published PyTorch checkpoints compared with their float16 Core ML exports on two supplied Panoramax field-test frames",
+  "recorded_precision": "rounded_to_3_decimals",
+  "components": [
+    {
+      "component": "detector",
+      "metric": "maximum absolute top-score difference",
+      "tolerance": 0.050,
+      "measured": 0.028,
+      "passed": true
+    },
+    {
+      "component": "classifier",
+      "metric": "maximum absolute expected-class score difference",
+      "tolerance": 0.020,
+      "measured": 0.005,
+      "passed": true
+    }
+  ]
+}

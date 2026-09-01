@@ -320,6 +320,67 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
     }
 }
 
+final class PanoramaxLocalDeletionIntentRegistry: @unchecked Sendable {
+    private let lock = NSLock()
+    private var itemIDsByBatch: [String: Set<String>] = [:]
+
+    func mark(batchID: String, itemIDs: Set<String>) {
+        guard !itemIDs.isEmpty else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        itemIDsByBatch[batchID, default: []].formUnion(itemIDs)
+    }
+
+    func contains(batchID: String, itemID: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return itemIDsByBatch[batchID]?.contains(itemID) == true
+    }
+
+    func clear(batchID: String, itemIDs: Set<String>) {
+        lock.lock()
+        defer { lock.unlock() }
+        itemIDsByBatch[batchID]?.subtract(itemIDs)
+        if itemIDsByBatch[batchID]?.isEmpty == true {
+            itemIDsByBatch[batchID] = nil
+        }
+    }
+
+    /// Clears only deletion requests that are no longer present in the
+    /// durable queue. A failed queue mutation keeps its intent, preventing a
+    /// pending upload from starting after the maintenance task returns.
+    func reconcile(
+        batchID: String,
+        requestedItemIDs: Set<String>,
+        remainingItemIDs: Set<String>
+    ) {
+        clear(
+            batchID: batchID,
+            itemIDs: requestedItemIDs.subtracting(remainingItemIDs)
+        )
+    }
+}
+
+enum PanoramaxGalleryDeletionPolicy {
+    /// Pending items are blocked by `PanoramaxLocalDeletionIntentRegistry` at
+    /// the pre-transport boundary. Cancellation is reserved for the deleted
+    /// current item or a batch-level create/poll request with no item boundary.
+    @discardableResult
+    static func cancelUploadTaskIfNeeded(
+        _ task: Task<Void, Never>?,
+        deleting itemIDs: Set<String>,
+        inFlightItemID: String?,
+        batchState: PanoramaxBatchState?
+    ) -> Bool {
+        guard let task, !itemIDs.isEmpty else { return false }
+        let deletesCurrentItem = inFlightItemID.map(itemIDs.contains) ?? false
+        let deletesDuringBatchRequest = batchState == .creatingUploadSet || batchState == .processing
+        guard deletesCurrentItem || deletesDuringBatchRequest else { return false }
+        task.cancel()
+        return true
+    }
+}
+
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
@@ -443,7 +504,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var trafficSignRecognitionLastEvent: TrafficSignRecognitionEvent?
     @Published private(set) var trafficSignRecognitionActiveOverride: TrafficSignTransientSpeedOverride?
     @Published private(set) var trafficSignRecognitionModelPackID: String?
-    @Published private(set) var trafficSignRecognitionUnavailableDetail = "No verified traffic-sign model pack is installed."
+    @Published private(set) var trafficSignRecognitionUnavailableDetail = "Traffic-sign recognition is unavailable."
     @Published private(set) var panoramaxCaptureState: PanoramaxRecorderState = .disabled
     @Published private(set) var panoramaxCaptureCount = 0
     @Published private(set) var panoramaxLastCaptureAt: Date?
@@ -577,6 +638,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignFrameContextIsCurrent = false
     private var latestTrafficSignLookupFixID = 0
     private var panoramaxUploadTasks: [String: Task<Void, Never>] = [:]
+    private var panoramaxInFlightItemIDByBatch: [String: String] = [:]
+    private let panoramaxLocalDeletionIntents = PanoramaxLocalDeletionIntentRegistry()
     private var panoramaxQueueMaintenanceTask: Task<Void, Never>?
     private var panoramaxQueueMaintenanceGeneration: UInt64 = 0
     private var panoramaxBatchPublicationGeneration: UInt64 = 0
@@ -1113,8 +1176,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
         dashcamRecordingEnabled = storedDashcamEnabled ?? false
-        // Keep the model-backed consumer opt-in until a validated country
-        // model is installed; the shared camera hook is already available.
+        // Keep on-device TSR opt-in; its German bootstrap model ships with the
+        // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
         panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
         panoramaxTriggerMode = storedTriggerMode
@@ -1238,7 +1301,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     static func trafficSignModelPackDirectoryURL(
-        countryCode: String = "DE"
+        countryCode: String = "DE",
+        bundle: Bundle = .main
     ) throws -> URL {
         #if DEBUG
         if let configuredPath = ProcessInfo.processInfo.environment["YOUSPEED_TSR_MODEL_PACK_DIR"]?
@@ -1247,9 +1311,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return URL(fileURLWithPath: configuredPath, isDirectory: true)
         }
         #endif
+        let normalizedCountry = countryCode
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        if let bundledPackURL = bundle.url(
+            forResource: "\(normalizedCountry).panoramax-bootstrap",
+            withExtension: "tsrmodelpack",
+            subdirectory: "TSRModelPacks"
+        ) {
+            return bundledPackURL
+        }
         throw TrafficSignRuntimeUnavailability(
-            code: .modelPackAuthenticationRequired,
-            detail: "Downloaded TSR model packs remain disabled until signature verification and approved-pack activation are implemented. In DEBUG builds, set YOUSPEED_TSR_MODEL_PACK_DIR explicitly for an integrity-checked developer pack (country \(countryCode.uppercased()))."
+            code: .modelPackDirectoryMissing,
+            detail: "Traffic-sign recognition is unavailable because its bundled model is missing."
         )
     }
 
@@ -1297,7 +1371,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
 
-        trafficSignRecognitionUnavailableDetail = "Loading and verifying the local traffic-sign model pack."
+        trafficSignRecognitionUnavailableDetail = "Preparing traffic-sign recognition."
         trafficSignRuntimeLoadTask = Task { @MainActor [weak self] in
             let result = await Task.detached(priority: .utility) {
                 TrafficSignRuntimeBootstrap.make(
@@ -1388,7 +1462,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 appIsActive: trafficSignApplicationIsActive
             ),
             sessionGeneration: trafficSignRecorderGeneration,
-            contextGeneration: trafficSignContextGeneration
+            contextGeneration: trafficSignContextGeneration,
+            captureSessionId: driveCaptureCoordinator?.activeCaptureSessionID,
+            // Selecting both local Dashcam recording and on-device TSR is the
+            // explicit existing action that enables bounded local QA frames.
+            // These files never enter the Panoramax queue.
+            diagnosticCaptureEnabled: driveRecorderState == .recording
+                && driveRecorderDashcamActive
+                && driveRecorderTrafficSignRecognitionActive
         ))
     }
 
@@ -1485,6 +1566,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               currentContext.travelDirection == eventContext.travelDirection,
               currentContext.sourceSignature == eventContext.sourceSignature,
               let currentTrafficSignSourceSignature else { return }
+
+        if TrafficSignRuntimeDeploymentPolicy.isShadowOnly(packId: event.packId) {
+            publishTrafficSignRecognitionState(for: event)
+            refreshTrafficSignFrameSnapshot()
+            let latitudeText = String(format: "%.5f", eventContext.latitude)
+            let longitudeText = String(format: "%.5f", eventContext.longitude)
+            let headingText = String(format: "%.1f", eventContext.headingDegrees)
+            appendLookupEvent(
+                "tsr-shadow state=\(event.state.rawValue) way=\(eventContext.wayId) lat=\(latitudeText) lon=\(longitudeText) heading=\(headingText) direction=\(eventContext.travelDirection.rawValue)"
+            )
+            return
+        }
 
         let previousOverride = trafficSignOverridePolicy.activeOverride
         let acceptedConfirmedDetection = trafficSignOverridePolicy.ingestConfirmedDetection(
@@ -1588,9 +1681,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return true
     }
 
-    /// Changes only the model-backed TSR consumer. Until a real recognizer is
-    /// attached this returns false, allowing the UI to explain availability
-    /// instead of presenting a fake active state.
+    /// Changes only the model-backed TSR consumer. If its bundled runtime is
+    /// still loading, the selection is retained and attached when ready.
     @discardableResult
     func toggleDriveRecorderTrafficSignRecognition() -> Bool {
         guard canToggleDriveRecorderModules,
@@ -1679,6 +1771,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
             || (previousState == .recording) != (driveRecorderState == .recording) {
             trafficSignRecorderGeneration &+= 1
+            refreshTrafficSignFrameSnapshot()
+        }
+        if previousDashcamActive != driveRecorderDashcamActive {
             refreshTrafficSignFrameSnapshot()
         }
         if !trafficSignRecognitionEnabled {
@@ -1857,14 +1952,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func deletePanoramaxItem(batchID: String, itemID: String) {
         guard canProcessPanoramaxUploads,
-              !activePanoramaxUploadBatchIDs.contains(batchID),
               let store = panoramaxQueueStore else { return }
+        let itemIDs: Set<String> = [itemID]
+        panoramaxLocalDeletionIntents.mark(batchID: batchID, itemIDs: itemIDs)
+        cancelPanoramaxUploadForLocalDeletion(
+            batchID: batchID,
+            itemIDs: itemIDs,
+            store: store
+        )
         Task { @MainActor [weak self] in
             guard let self else { return }
             let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
             let result = await PanoramaxQueueMaintenanceExecutor.shared.deleteItems(
                 store: store,
                 itemIDsByBatch: [batchID: [itemID]]
+            )
+            reconcilePanoramaxLocalDeletionIntents(
+                [batchID: itemIDs],
+                store: store
             )
             applyPanoramaxMaintenanceResult(
                 result,
@@ -1877,10 +1982,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard canProcessPanoramaxUploads, let store = panoramaxQueueStore else { return }
         let selectionsByBatch = Dictionary(grouping: selections, by: { $0.batchID })
         let deletable = selectionsByBatch.reduce(into: [String: Set<String>]()) { result, entry in
-            guard !activePanoramaxUploadBatchIDs.contains(entry.key) else { return }
             result[entry.key] = Set(entry.value.map(\.itemID))
         }
         guard !deletable.isEmpty else { return }
+        for (batchID, itemIDs) in deletable {
+            panoramaxLocalDeletionIntents.mark(batchID: batchID, itemIDs: itemIDs)
+            cancelPanoramaxUploadForLocalDeletion(
+                batchID: batchID,
+                itemIDs: itemIDs,
+                store: store
+            )
+        }
         Task { @MainActor [weak self] in
             guard let self else { return }
             let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
@@ -1888,11 +2000,58 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 store: store,
                 itemIDsByBatch: deletable
             )
+            reconcilePanoramaxLocalDeletionIntents(deletable, store: store)
             applyPanoramaxMaintenanceResult(
                 result,
                 publicationGeneration: publicationGeneration
             )
         }
+    }
+
+    private func reconcilePanoramaxLocalDeletionIntents(
+        _ requestedItemIDsByBatch: [String: Set<String>],
+        store: PanoramaxQueueStore
+    ) {
+        for (batchID, requestedItemIDs) in requestedItemIDsByBatch {
+            do {
+                let remainingItemIDs = Set(
+                    try store.getBatch(batchID)?.items.map(\.itemID) ?? []
+                )
+                panoramaxLocalDeletionIntents.reconcile(
+                    batchID: batchID,
+                    requestedItemIDs: requestedItemIDs,
+                    remainingItemIDs: remainingItemIDs
+                )
+            } catch {
+                // Keep every intent when the durable queue cannot be read. A
+                // later explicit delete can retry, but upload must stay blocked.
+            }
+        }
+    }
+
+    private func cancelPanoramaxUploadForLocalDeletion(
+        batchID: String,
+        itemIDs: Set<String>,
+        store: PanoramaxQueueStore
+    ) {
+        let batchState = (try? store.getBatch(batchID))?.state
+        guard PanoramaxGalleryDeletionPolicy.cancelUploadTaskIfNeeded(
+            panoramaxUploadTasks[batchID],
+            deleting: itemIDs,
+            inFlightItemID: panoramaxInFlightItemIDByBatch[batchID],
+            batchState: batchState
+        ) else { return }
+        if let progress = panoramaxUploadProgressByBatch[batchID] {
+            panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                completedItems: progress.completedItems,
+                totalItems: progress.totalItems,
+                phase: .stopping
+            )
+        }
+        panoramaxUploadStatusByBatch[batchID] = NSLocalizedString(
+            "panoramax.gallery.status_deleting_active_upload",
+            comment: ""
+        )
     }
 
     private func notePanoramaxCleanupFailures(_ failedPaths: [String]) {
@@ -2132,6 +2291,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             guard let self else { return }
             defer {
                 panoramaxUploadTasks[batchID] = nil
+                panoramaxInFlightItemIDByBatch[batchID] = nil
                 activePanoramaxUploadBatchIDs.remove(batchID)
                 panoramaxUploadProgressByBatch[batchID] = nil
             }
@@ -2166,6 +2326,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         store: PanoramaxQueueStore
     ) async throws {
         let client = PanoramaxUploadClient(origin: origin, token: token)
+        let localDeletionIntents = panoramaxLocalDeletionIntents
         var uploadSetID = initialBatch.remoteUploadSetID
 
         if initialBatch.state == .processing {
@@ -2205,7 +2366,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
 
         guard let uploadSetID else { throw PanoramaxProcessingError.missingRemoteUploadSet }
-        let total = previouslyUploadedCount + selected.count
+        var total = previouslyUploadedCount + selected.count
         panoramaxUploadStatusByBatch[batchID] = "\(previouslyUploadedCount)/\(total) Bilder werden uebertragen"
         var uploaded = previouslyUploadedCount
         panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
@@ -2215,57 +2376,107 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
         for item in selected {
             try requirePanoramaxProcessingAllowed()
-            guard let fileURL = panoramaxOriginalURL(for: item) else { continue }
+            guard let durableItem = try store.getBatch(batchID)?
+                .items.first(where: { $0.itemID == item.itemID }),
+                  !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID),
+                  durableItem.state == .queued
+                    || durableItem.state == .included
+                    || durableItem.state == .retryableError,
+                  let fileURL = panoramaxOriginalURL(for: durableItem) else {
+                total = max(uploaded, total - 1)
+                panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                    completedItems: uploaded,
+                    totalItems: total,
+                    phase: .uploading
+                )
+                continue
+            }
+
+            panoramaxInFlightItemIDByBatch[batchID] = item.itemID
             do {
-                try await client.upload(
-                    file: fileURL,
-                    uploadSetID: uploadSetID,
-                    fileName: "\(item.itemID).jpg",
-                    beforeRequest: {
-                        try Task.checkCancellation()
-                        // Persist the in-flight marker only after multipart
-                        // preparation and limiter waiting, immediately before
-                        // the transport can put bytes on the wire.
-                        try store.updateItem(
+                defer {
+                    if panoramaxInFlightItemIDByBatch[batchID] == item.itemID {
+                        panoramaxInFlightItemIDByBatch[batchID] = nil
+                    }
+                }
+                do {
+                    try await client.upload(
+                        file: fileURL,
+                        uploadSetID: uploadSetID,
+                        fileName: "\(item.itemID).jpg",
+                        beforeRequest: {
+                            try Task.checkCancellation()
+                            guard !localDeletionIntents.contains(
+                                batchID: batchID,
+                                itemID: item.itemID
+                            ) else {
+                                throw PanoramaxProcessingError.locallyDeletedItem
+                            }
+                            // Persist the in-flight marker only after multipart
+                            // preparation and limiter waiting, immediately before
+                            // the transport can put bytes on the wire. A local
+                            // deletion makes this atomic update fail, so a queued
+                            // stale snapshot never reaches the transport.
+                            try store.updateItem(
+                                batchID: batchID,
+                                itemID: item.itemID,
+                                state: .uploading
+                            )
+                        }
+                    )
+                } catch {
+                    if localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) {
+                        total = max(uploaded, total - 1)
+                        refreshPanoramaxBatches()
+                        continue
+                    }
+                    let durableItemAfterFailure: PanoramaxItemRecord?
+                    do {
+                        durableItemAfterFailure = try store.getBatch(batchID)?
+                            .items.first(where: { $0.itemID == item.itemID })
+                    } catch {
+                        throw error
+                    }
+                    // Local deletion wins over any stale queued snapshot or
+                    // transport failure. The record is gone, so there is no
+                    // retry state to write and no reason to stop other items.
+                    guard let durableItemAfterFailure else {
+                        total = max(uploaded, total - 1)
+                        refreshPanoramaxBatches()
+                        continue
+                    }
+                    // A preparation/permit cancellation never reached the
+                    // before-request hook, so its queued item must stay retryable.
+                    if durableItemAfterFailure.state == .uploading {
+                        _ = try? store.updateItem(
                             batchID: batchID,
                             itemID: item.itemID,
-                            state: .uploading
+                            state: PanoramaxUploadClient.durableItemStateAfterUploadFailure(
+                                error,
+                                taskIsCancelled: Task.isCancelled
+                            )
                         )
                     }
-                )
-            } catch {
-                let durableState: PanoramaxItemState? = {
-                    do {
-                        return try store.getBatch(batchID)?
-                            .items.first(where: { $0.itemID == item.itemID })?
-                            .state
-                    } catch {
-                        return nil
-                    }
-                }()
-                // A preparation/permit cancellation never reached the
-                // before-request hook, so its queued item must stay retryable.
-                // Only an item durably marked in flight has an outcome to
-                // classify or quarantine.
-                if durableState == .uploading {
-                    _ = try? store.updateItem(
-                        batchID: batchID,
-                        itemID: item.itemID,
-                        state: PanoramaxUploadClient.durableItemStateAfterUploadFailure(
-                            error,
-                            taskIsCancelled: Task.isCancelled
-                        )
-                    )
+                    refreshPanoramaxBatches()
+                    throw error
                 }
-                refreshPanoramaxBatches()
-                throw error
+                // A successful response is durable evidence that this original
+                // was accepted, unless authoritative local deletion removed it
+                // while the response was in flight. `updateItem` never recreates
+                // a missing item.
+                guard !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) else {
+                    total = max(uploaded, total - 1)
+                    refreshPanoramaxBatches()
+                    continue
+                }
+                do {
+                    try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
+                } catch PanoramaxQueueStore.QueueError.unknownItem {
+                    total = max(uploaded, total - 1)
+                    refreshPanoramaxBatches()
+                    continue
+                }
             }
-            // A successful response is durable evidence that this original was
-            // accepted. Record it before observing cancellation so a later retry
-            // cannot duplicate a file that Panoramax already received.
-            // A failed commit deliberately leaves `.uploading`; startup repair
-            // quarantines that unknown remote outcome as `.abandoned`.
-            try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
             uploaded += 1
             panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(total) Bilder uebertragen"
             panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
@@ -2353,6 +2564,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // regardless of the error that brought us here.
             _ = try store.abandonInFlightItems(batchID: batchID)
             refreshPanoramaxBatches()
+        } catch PanoramaxQueueStore.QueueError.unknownBatch {
+            // Authoritative deletion of the final local item may remove the
+            // batch while a cancelled request is unwinding. Nothing remains to
+            // quarantine or resurrect.
+            panoramaxUploadStatusByBatch[batchID] = nil
+            refreshPanoramaxBatches()
+            return
         } catch {
             panoramaxUploadStatusByBatch[batchID] =
                 "Upload beendet; sicherer Status konnte nicht gespeichert werden"
@@ -2391,9 +2609,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private enum PanoramaxProcessingError: LocalizedError {
         case missingRemoteUploadSet
+        case locallyDeletedItem
 
         var errorDescription: String? {
-            "Panoramax-Upload-ID fehlt"
+            switch self {
+            case .missingRemoteUploadSet: return "Panoramax-Upload-ID fehlt"
+            case .locallyDeletedItem: return "Lokales Bild wurde gelöscht"
+            }
         }
     }
 

@@ -68,6 +68,11 @@ final class PanoramaxQueueStore: @unchecked Sendable {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
     private let lock = NSRecursiveLock()
+    /// Process-local tombstones prevent an upload task holding an older batch
+    /// snapshot from re-inserting an item after the user deleted it. Upload
+    /// tasks cannot survive process restart, so durable item removal is enough
+    /// once a new store instance is created.
+    private var locallyDeletedItemIDsByBatch: [String: Set<String>] = [:]
     private(set) var startupCleanupReport = PanoramaxQueueCleanupReport()
 
     init(root: URL? = nil, performStartupMaintenance: Bool = true) throws {
@@ -173,7 +178,19 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         }
     }
 
-    func updateBatch(_ batch: PanoramaxBatchRecord) throws { try commit(batch) }
+    func updateBatch(_ batch: PanoramaxBatchRecord) throws {
+        try lock.withLock {
+            // `updateBatch` accepts caller-owned snapshots. Never let a stale
+            // completion recreate a batch that authoritative local deletion
+            // already removed.
+            guard try read(batch.batchID) != nil else { throw QueueError.unknownBatch }
+            var filtered = batch
+            if let deletedItemIDs = locallyDeletedItemIDsByBatch[batch.batchID] {
+                filtered.items.removeAll { deletedItemIDs.contains($0.itemID) }
+            }
+            try commit(filtered)
+        }
+    }
 
     /// Changes only lifecycle state on the latest durable batch snapshot.
     /// Capture callbacks append items directly in the store, so sealing with an
@@ -290,6 +307,8 @@ final class PanoramaxQueueStore: @unchecked Sendable {
     /// Removes the durable gallery records first, then their local assets. A
     /// missing asset is already a successful deletion; other cleanup failures
     /// are returned to the caller and retried by the startup orphan scavenger.
+    /// This operation is local-only and accepts every item lifecycle state;
+    /// it never attempts to mutate the associated remote Panoramax upload set.
     @discardableResult
     func deleteItems(batchID: String, itemIDs: Set<String>) throws -> PanoramaxDeletionReport {
         guard !itemIDs.isEmpty else { return PanoramaxDeletionReport() }
@@ -297,15 +316,10 @@ final class PanoramaxQueueStore: @unchecked Sendable {
             guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
             let removedItems = batch.items.filter { itemIDs.contains($0.itemID) }
             guard !removedItems.isEmpty else { return PanoramaxDeletionReport() }
-            guard removedItems.allSatisfy({ item in
-                DriveRecorderPolicy.canDeletePanoramaxItem(
-                    batchState: batch.state,
-                    itemState: item.state
-                )
-            }) else { throw QueueError.invalidBatchState }
-
             batch.items.removeAll { itemIDs.contains($0.itemID) }
             try commit(batch)
+            locallyDeletedItemIDsByBatch[batchID, default: []]
+                .formUnion(removedItems.map(\.itemID))
 
             var report = PanoramaxDeletionReport(deletedItemIDs: removedItems.map(\.itemID))
             for item in removedItems {
@@ -313,7 +327,11 @@ final class PanoramaxQueueStore: @unchecked Sendable {
                 removeLocalAsset(relativePath: item.thumbnailPath, failures: &report.failedRelativePaths)
                 removeEmptyItemDirectory(for: item)
             }
-            _ = pruneEmptyBatchIfSafe(batch, failures: &report.failedRelativePaths)
+            _ = pruneEmptyBatchIfSafe(
+                batch,
+                allowUploadLifecycle: true,
+                failures: &report.failedRelativePaths
+            )
             return report
         }
     }
@@ -533,14 +551,17 @@ final class PanoramaxQueueStore: @unchecked Sendable {
     @discardableResult
     private func pruneEmptyBatchIfSafe(
         _ batch: PanoramaxBatchRecord,
+        allowUploadLifecycle: Bool = false,
         failures: inout [String]
     ) -> Bool {
         guard Self.isValidBatchID(batch.batchID) else {
             failures.append(batch.batchID)
             return false
         }
-        guard batch.items.isEmpty,
-              batch.state == .awaitingReview || batch.state == .complete else {
+        let stateCanBePruned = batch.state == .awaitingReview
+            || batch.state == .complete
+            || (allowUploadLifecycle && batch.state != .capturing)
+        guard batch.items.isEmpty, stateCanBePruned else {
             return false
         }
         let directory = batchesDirectory.appendingPathComponent(batch.batchID, isDirectory: true)

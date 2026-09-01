@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "pack_id": "de-panoramax-bootstrap-shadow-v1",
+  "countries": [
+    "DE"
+  ],
+  "pipeline": "proposal_classification",
+  "taxonomy_version": "tsr-semantic-v1",
+  "preprocessing": {
+    "version": "vision-scale-fit-rgb-v1",
+    "input_width": 1280,
+    "input_height": 1280,
+    "color_space": "rgb",
+    "resize": "scale_fit_letterbox",
+    "orientation": "normalize_exif_and_mirroring"
+  },
+  "thresholds": {
+    "provisional": 0.45,
+    "confirmed": 0.70,
+    "unknown": 0.25,
+    "confirmation_frames": 2,
+    "confirmation_window_ms": 1500,
+    "minimum_track_iou": 0.20
+  },
+  "calibration": {
+    "kind": "none",
+    "revision": "uncalibrated-published-panoramax-bootstrap-v1",
+    "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+    "calibrated": false,
+    "runtime_output": "raw_score"
+  },
+  "class_mapping": [
+    {
+      "class_id": "maxspeed:5",
+      "label": "Maximum speed 5 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 5,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:10",
+      "label": "Maximum speed 10 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 10,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:20",
+      "label": "Maximum speed 20 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 20,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:25",
+      "label": "Maximum speed 25 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 25,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:30",
+      "label": "Maximum speed 30 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 30,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:40",
+      "label": "Maximum speed 40 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 40,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:50",
+      "label": "Maximum speed 50 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 50,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:60",
+      "label": "Maximum speed 60 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 60,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:70",
+      "label": "Maximum speed 70 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 70,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:80",
+      "label": "Maximum speed 80 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 80,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:100",
+      "label": "Maximum speed 100 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 100,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:120",
+      "label": "Maximum speed 120 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 120,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:130",
+      "label": "Maximum speed 130 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 130,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "maxspeed:end",
+      "label": "End of maximum-speed restriction",
+      "semantic": {
+        "kind": "restriction_end"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "zone:20",
+      "label": "Start of 20 km/h zone",
+      "semantic": {
+        "kind": "zone_start",
+        "value": 20,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "zone:30",
+      "label": "Start of 30 km/h zone",
+      "semantic": {
+        "kind": "zone_start",
+        "value": 30,
+        "unit": "km/h"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "zone:30:end",
+      "label": "End of 30 km/h zone",
+      "semantic": {
+        "kind": "zone_end"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "zone:end",
+      "label": "End of speed zone",
+      "semantic": {
+        "kind": "zone_end"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "zone:pedestrian",
+      "label": "Start of pedestrian zone",
+      "semantic": {
+        "kind": "pedestrian_zone_start"
+      },
+      "threshold": 0.70
+    }
+  ],
+  "detector": {
+    "component_id": "sgblur-yolo11n-panoramax-169451970702aca0",
+    "source_checkpoint": {
+      "uri": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+      "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+      "sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a"
+    },
+    "artifacts": [
+      {
+        "platform": "ios",
+        "minimum_runtime": "17.0",
+        "format": "coreml",
+        "precision": "float16",
+        "input_shape": [
+          1,
+          3,
+          1280,
+          1280
+        ],
+        "output_schema": "vision_recognized_objects_v1",
+        "path": "yolo11n_panoramax.mlmodelc",
+        "sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+        "source_checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+        "exporter": {
+          "name": "ultralytics+coremltools",
+          "version": "8.4.56+9.0",
+          "configuration": "imgsz=1280,batch=1,half=true,nms=true"
+        },
+        "calibration_dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+        "parity": {
+          "tolerance": 0.050,
+          "measured_max_abs_difference": 0.028,
+          "passed": true
+        }
+      }
+    ]
+  },
+  "classifier": {
+    "component_id": "panoramax-classify-de-road-signs-5360aa6f4ef6c7b1",
+    "source_checkpoint": {
+      "uri": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
+      "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+      "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7"
+    },
+    "artifacts": [
+      {
+        "platform": "ios",
+        "minimum_runtime": "17.0",
+        "format": "coreml",
+        "precision": "float16",
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ],
+        "output_schema": "vision_classifications_v1",
+        "path": "classify_de_road_signs.mlmodelc",
+        "sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
+        "source_checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+        "exporter": {
+          "name": "ultralytics+coremltools",
+          "version": "8.4.56+9.0",
+          "configuration": "imgsz=224,batch=1,half=true,nms=false"
+        },
+        "calibration_dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+        "parity": {
+          "tolerance": 0.020,
+          "measured_max_abs_difference": 0.005,
+          "passed": true
+        }
+      }
+    ]
+  },
+  "lineage": {
+    "source_manifest_sha256": "87fb31ee173b86543d825c55f1370e1be65d737b6d54fcecb569337238f91cbe",
+    "dataset_inventory_sha256s": [
+      "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853"
+    ],
+    "training_run_id": "panoramax-bootstrap-coreml-export-2026-09-02",
+    "training_run_sha256": "3b78b9ba65d4d4c9317f57ae62ec0321d06aa79153307f6beac840806e56f29d",
+    "evaluation_report_sha256": "ec4f07768d9effc7c3eb159ca6302fead3fbb7f2678c9b5d621ad6014fc0c0d5",
+    "parity_report_sha256": "78c646d7b9b6234a37ccd3f84576b24df6e3d8326c243fa521d633c34225549e"
+  },
+  "licenses": [
+    {
+      "name": "sgblur yolo11n_panoramax detector",
+      "spdx": "MIT",
+      "source": "https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8"
+    },
+    {
+      "name": "Panoramax German road-sign classifier",
+      "spdx": "etalab-2.0",
+      "source": "https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790"
+    },
+    {
+      "name": "Panoramax classified German road-sign dataset",
+      "spdx": "CC-BY-SA-4.0",
+      "source": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13"
+    },
+    {
+      "name": "Core ML Tools 9.0 conversion tooling",
+      "spdx": "BSD-3-Clause",
+      "source": "https://github.com/apple/coremltools/tree/9.0"
+    },
+    {
+      "name": "PyTorch 2.13.0 conversion dependency",
+      "spdx": "BSD-3-Clause",
+      "source": "https://github.com/pytorch/pytorch/tree/v2.13.0"
+    },
+    {
+      "name": "Ultralytics YOLO architecture and export tooling",
+      "spdx": "AGPL-3.0-only",
+      "source": "https://github.com/ultralytics/ultralytics/tree/v8.4.56"
+    }
+  ],
+  "minimum_app_version": "1.0.1",
+  "signature": null
+}

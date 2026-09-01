@@ -122,20 +122,18 @@ enum DriveRecorderPolicy {
         }
     }
 
-    /// Accepted originals are the durable ledger for an unfinished remote
-    /// upload set. They stay selectable for the Resume action, but must not be
-    /// deleted until Panoramax confirms completion.
+    /// Explicit gallery deletion is authoritative for local data regardless of
+    /// upload state. It never implies a remote Panoramax delete or sync.
     static func canDeletePanoramaxItem(
         batchState: PanoramaxBatchState,
         itemState: PanoramaxItemState
     ) -> Bool {
-        let isAccepted = itemState == .uploaded || itemState == .accepted || itemState == .duplicate
-        return !isAccepted || (batchState != .partial && batchState != .processing)
+        true
     }
 
     /// Automatic quota enforcement must never race a live capture or upload
-    /// lifecycle. For inactive batches it inherits the same remote-ledger
-    /// protection as explicit deletion.
+    /// lifecycle. Unlike an explicit user deletion, automatic quota eviction
+    /// still preserves accepted items in an unfinished remote upload set.
     static func canEvictPanoramaxItem(
         batchState: PanoramaxBatchState,
         itemState: PanoramaxItemState
@@ -143,8 +141,10 @@ enum DriveRecorderPolicy {
         switch batchState {
         case .capturing, .creatingUploadSet, .uploading, .processing:
             return false
-        case .awaitingReview, .approved, .complete, .partial, .blocked:
-            return canDeletePanoramaxItem(batchState: batchState, itemState: itemState)
+        case .awaitingReview, .approved, .complete, .blocked:
+            return true
+        case .partial:
+            return itemState != .uploaded && itemState != .accepted && itemState != .duplicate
         }
     }
 
@@ -279,6 +279,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
     var isTrafficSignRecognitionModuleActive: Bool { activeTSREnabled }
+    var activeCaptureSessionID: String? { captureSessionID }
     var hasTrafficSignRecognitionConsumer: Bool { frameDispatcher.hasConsumer }
     var isDashcamOutputAvailable: Bool { movieOutputAvailable }
     var isTrafficSignRecognitionOutputAvailable: Bool {

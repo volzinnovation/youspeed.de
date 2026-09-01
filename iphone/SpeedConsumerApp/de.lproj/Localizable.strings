@@ -90,6 +90,16 @@
 "tsr.direction.forward" = "Entlang der OSM-Wegrichtung";
 "tsr.direction.reverse" = "Entgegen der OSM-Wegrichtung";
 "tsr.direction.unknown" = "Unbekannt";
+"about.tsr_attribution.title" = "Modellnachweise zur Verkehrszeichenerkennung";
+"about.tsr_attribution.intro" = "Ausgewähltes Modellpaar für den TSR-Prototyp:";
+"about.tsr_attribution.detector" = "Detektor: Panoramax sgblur · yolo11n_panoramax.pt @ 1694519 (MIT-Lizenz)";
+"about.tsr_attribution.classifier" = "Klassifikator: Panoramax/classify_de_road_signs @ 5360aa6 (Etalab Open License 2.0)";
+"about.tsr_attribution.training_data" = "Klassifikator-Trainingsdaten: Panoramax/classified_de_road_signs (CC BY-SA 4.0)";
+"about.tsr_attribution.exporter" = "YOLO-Architektur und Export: Ultralytics 8.4.56 (AGPL-3.0)";
+"about.tsr_attribution.coremltools" = "Core-ML-Konvertierung: Core ML Tools 9.0 (BSD-3-Clause)";
+"about.tsr_attribution.pytorch" = "Konvertierungsabhängigkeit: PyTorch 2.13.0 (BSD-3-Clause)";
+"about.tsr_attribution.licenses" = "Vollständige Offline-Lizenzhinweise";
+"about.tsr_attribution.licenses_unavailable" = "Die Offline-Lizenzhinweise konnten nicht geladen werden.";
 "panoramax.post_drive.title" = "Panoramax · Später bearbeiten";
 "panoramax.post_drive.description" = "Prüfe gespeicherte Szenen nach der Fahrt, wähle Bilder aus und gib den Upload ausdrücklich frei.";
 "panoramax.post_drive.capture_active" = "Beende die aktive Aufnahme, bevor du Panoramax-Bilder hochlädst.";
@@ -120,6 +130,7 @@
 "panoramax.gallery.status_waiting" = "Wartet auf Upload";
 "panoramax.gallery.status_uploading" = "Wird hochgeladen";
 "panoramax.gallery.status_uploaded" = "Zu Panoramax hochgeladen";
+"panoramax.gallery.status_deleting_active_upload" = "Lokales Bild wird gelöscht; Upload wird gestoppt";
 "panoramax.gallery.status_retry" = "Wartet auf erneuten Uploadversuch";
 "panoramax.gallery.status_abandoned" = "Upload abgebrochen; Serverstatus unbekannt";
 "panoramax.gallery.status_failed" = "Upload fehlgeschlagen";

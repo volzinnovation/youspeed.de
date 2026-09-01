@@ -452,7 +452,62 @@ enum TrafficSignModelPackValidator {
             ]
         }
 
-        let compatible = manifest.detector.artifacts
+        return try compatibleArtifact(
+            in: manifest.detector,
+            platform: platform,
+            expectedFormat: expectedFormat,
+            supportedOutputSchemas: supportedOutputSchemas,
+            runtimeVersion: runtimeVersion,
+            componentName: "detector"
+        )
+    }
+
+    static func compatibleClassifierArtifact(
+        in manifest: TrafficSignModelPackManifest,
+        platform: TrafficSignModelPackManifest.Platform,
+        runtimeVersion: String
+    ) throws -> TrafficSignModelPackManifest.Artifact {
+        guard manifest.pipeline == .proposalClassification,
+              let classifier = manifest.classifier else {
+            throw TrafficSignPackValidationError.noCompatibleArtifact(
+                "This TSR pack does not contain a classifier"
+            )
+        }
+        let expectedFormat: TrafficSignModelPackManifest.ArtifactFormat
+        let supportedOutputSchemas: Set<String>
+        switch platform {
+        case .ios:
+            expectedFormat = .coreml
+            supportedOutputSchemas = ["vision_classifications_v1"]
+        case .android:
+            expectedFormat = .tflite
+            supportedOutputSchemas = ["classification_scores_v1"]
+        case .reference:
+            expectedFormat = .onnx
+            supportedOutputSchemas = [
+                "classification_scores_v1",
+                "vision_classifications_v1",
+            ]
+        }
+        return try compatibleArtifact(
+            in: classifier,
+            platform: platform,
+            expectedFormat: expectedFormat,
+            supportedOutputSchemas: supportedOutputSchemas,
+            runtimeVersion: runtimeVersion,
+            componentName: "classifier"
+        )
+    }
+
+    private static func compatibleArtifact(
+        in component: TrafficSignModelPackManifest.Component,
+        platform: TrafficSignModelPackManifest.Platform,
+        expectedFormat: TrafficSignModelPackManifest.ArtifactFormat,
+        supportedOutputSchemas: Set<String>,
+        runtimeVersion: String,
+        componentName: String
+    ) throws -> TrafficSignModelPackManifest.Artifact {
+        let compatible = component.artifacts
             .filter {
                 $0.platform == platform
                     && $0.format == expectedFormat
@@ -462,7 +517,7 @@ enum TrafficSignModelPackValidator {
             .sorted { $0.path < $1.path }
         guard let artifact = compatible.first else {
             throw TrafficSignPackValidationError.noCompatibleArtifact(
-                "No compatible TSR detector artifact for this runtime"
+                "No compatible TSR \(componentName) artifact for this runtime"
             )
         }
         return artifact
@@ -749,6 +804,37 @@ enum TrafficSignSpatialAssembly {
         let detection: TrafficSignDetection
         let signRole: TrafficSignModelPackManifest.SignRole
         let restriction: TrafficSignRestriction?
+        let detectorRawScore: Double?
+        let detectorCalibratedConfidence: Double?
+        let classifierRawScore: Double?
+        let classifierCalibratedConfidence: Double?
+        let auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2]
+
+        init(
+            detection: TrafficSignDetection,
+            signRole: TrafficSignModelPackManifest.SignRole,
+            restriction: TrafficSignRestriction?,
+            detectorRawScore: Double? = nil,
+            detectorCalibratedConfidence: Double? = nil,
+            classifierRawScore: Double? = nil,
+            classifierCalibratedConfidence: Double? = nil,
+            auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2] = []
+        ) {
+            self.detection = detection
+            self.signRole = signRole
+            self.restriction = restriction
+            self.detectorRawScore = detectorRawScore
+            self.detectorCalibratedConfidence = detectorCalibratedConfidence
+            self.classifierRawScore = classifierRawScore
+            self.classifierCalibratedConfidence = classifierCalibratedConfidence
+            self.auxiliaryEvidence = auxiliaryEvidence
+        }
+    }
+
+    struct GroupedAssembly: Equatable, Sendable {
+        let detection: TrafficSignDetection
+        let primary: ClassifiedDetection
+        let supplementaryPlates: [ClassifiedDetection]
     }
 
     struct Geometry: Equatable, Sendable {
@@ -772,6 +858,21 @@ enum TrafficSignSpatialAssembly {
         assemblyIDPrefix: String = UUID().uuidString.lowercased(),
         geometry: Geometry = Geometry()
     ) -> [TrafficSignDetection] {
+        assembleWithMembers(
+            classified,
+            assemblyIDPrefix: assemblyIDPrefix,
+            geometry: geometry
+        ).map(\.detection)
+    }
+
+    /// Preserves the exact primary/plate members used by the existing spatial
+    /// assembly so a second consumer can emit per-stage QA without repeating or
+    /// approximating the association algorithm.
+    static func assembleWithMembers(
+        _ classified: [ClassifiedDetection],
+        assemblyIDPrefix: String = UUID().uuidString.lowercased(),
+        geometry: Geometry = Geometry()
+    ) -> [GroupedAssembly] {
         let primaries = classified.filter { $0.signRole == .primarySign }
         let plates = classified.filter { $0.signRole == .supplementaryPlate }
         var assignments: [Int: [ClassifiedDetection]] = [:]
@@ -812,7 +913,7 @@ enum TrafficSignSpatialAssembly {
                 conditionState = .resolved
             }
             let source = primary.detection
-            return TrafficSignDetection(
+            let detection = TrafficSignDetection(
                 rawClassId: source.rawClassId,
                 rawLabel: source.rawLabel,
                 semantic: source.semantic,
@@ -823,6 +924,11 @@ enum TrafficSignSpatialAssembly {
                 assemblyId: "\(assemblyIDPrefix)-assembly-\(index + 1)",
                 conditionState: conditionState,
                 restrictions: restrictions
+            )
+            return GroupedAssembly(
+                detection: detection,
+                primary: primary,
+                supplementaryPlates: assigned
             )
         }
     }
@@ -1001,6 +1107,17 @@ struct TrafficSignTransientSpeedOverride: Codable, Equatable, Sendable {
     let packId: String
     let trackId: String?
     let context: TrafficSignDetectionContext
+}
+
+enum TrafficSignRuntimeDeploymentPolicy {
+    static let bundledBootstrapShadowPackId = "de-panoramax-bootstrap-shadow-v1"
+    /// Live override activation is an explicit code-owned allowlist. Shipping
+    /// or renaming a model pack can never enable speed overrides by accident.
+    private static let speedOverrideEnabledPackIDs: Set<String> = []
+
+    static func isShadowOnly(packId: String) -> Bool {
+        !speedOverrideEnabledPackIDs.contains(packId)
+    }
 }
 
 /// Keeps a confirmed camera value above the local-correction and OSM display
@@ -1237,7 +1354,11 @@ struct TrafficSignFusionEngine: Sendable {
                 return lhs.boundingBox.area > rhs.boundingBox.area
             }
 
-        guard let detection = eligible.first else {
+        // Supplementary plates and unsupported classifier labels are retained
+        // as QA evidence, but must not hide a supported speed sign from the
+        // same frame merely because their raw score is higher.
+        guard let detection = eligible.first(where: { $0.semantic.kind != .unknown })
+                ?? eligible.first else {
             return event(
                 source: source,
                 timestamp: timestamp,

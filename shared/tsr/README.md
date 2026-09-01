@@ -60,7 +60,10 @@ The additive v2 contracts preserve every v1 consumer:
   for a speed override.
 - `recognition-event-v2.schema.json` emits QA evidence without pixels. An
   unreadable supplementary plate may retain raw classifier scores for mining,
-  but it cannot carry a class or restriction. A later calibrated readable
+  while Apple Vision OCR/rectangle helpers are identified separately as
+  auxiliary evidence and never attributed to either model stage. Candidate OCR
+  text/restrictions stay auxiliary until calibrated model evidence establishes
+  readability; the modeled plate cannot carry a class or restriction. A later calibrated readable
   observation may upgrade the same physical-sign track without rewriting the
   earlier event. `evidence_origin` separates real runtime inference from
   reviewed expectations; expectation fixtures have uninvoked stages and null

@@ -90,6 +90,16 @@
 "tsr.direction.forward" = "Met de OSM-wegrichting mee";
 "tsr.direction.reverse" = "Tegen de OSM-wegrichting in";
 "tsr.direction.unknown" = "Onbekend";
+"about.tsr_attribution.title" = "Modelvermelding voor verkeersbordherkenning";
+"about.tsr_attribution.intro" = "Geselecteerd modelpaar voor het TSR-prototype:";
+"about.tsr_attribution.detector" = "Detector: Panoramax sgblur · yolo11n_panoramax.pt @ 1694519 (MIT-licentie)";
+"about.tsr_attribution.classifier" = "Classifier: Panoramax/classify_de_road_signs @ 5360aa6 (Etalab Open License 2.0)";
+"about.tsr_attribution.training_data" = "Trainingsgegevens voor de classifier: Panoramax/classified_de_road_signs (CC BY-SA 4.0)";
+"about.tsr_attribution.exporter" = "YOLO-architectuur en export: Ultralytics 8.4.56 (AGPL-3.0)";
+"about.tsr_attribution.coremltools" = "Core ML-conversie: Core ML Tools 9.0 (BSD-3-Clause)";
+"about.tsr_attribution.pytorch" = "Conversieafhankelijkheid: PyTorch 2.13.0 (BSD-3-Clause)";
+"about.tsr_attribution.licenses" = "Volledige offline licentieteksten";
+"about.tsr_attribution.licenses_unavailable" = "De offline licentieteksten konden niet worden geladen.";
 "panoramax.post_drive.title" = "Panoramax · Later verwerken";
 "panoramax.post_drive.description" = "Beoordeel opgeslagen beelden na de rit, kies wat je wilt opnemen en keur de upload daarna uitdrukkelijk goed.";
 "panoramax.post_drive.capture_active" = "Beëindig de actieve opname voordat je Panoramax-beelden uploadt.";
@@ -120,6 +130,7 @@
 "panoramax.gallery.status_waiting" = "Wacht op upload";
 "panoramax.gallery.status_uploading" = "Wordt geüpload";
 "panoramax.gallery.status_uploaded" = "Geüpload naar Panoramax";
+"panoramax.gallery.status_deleting_active_upload" = "Lokale foto wordt verwijderd; de upload wordt gestopt";
 "panoramax.gallery.status_retry" = "Wacht op een nieuwe uploadpoging";
 "panoramax.gallery.status_abandoned" = "Upload gestopt; serverstatus onbekend";
 "panoramax.gallery.status_failed" = "Upload mislukt";

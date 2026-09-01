@@ -340,6 +340,16 @@
         "classifier_score": {
           "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/stageScore" }]
         },
+        "auxiliary_evidence": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/auxiliaryEvidence" }
+            }
+          ]
+        },
         "class_id": { "type": ["string", "null"], "minLength": 1 },
         "readability": { "enum": ["readable", "unreadable"] },
         "restriction": {
@@ -383,12 +393,91 @@
         }
       ]
     },
+    "auxiliaryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "raw_score"],
+      "properties": {
+        "source": {
+          "enum": [
+            "apple_vision_text_recognition",
+            "apple_vision_rectangle_detection"
+          ]
+        },
+        "raw_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "raw_text": { "type": ["string", "null"], "minLength": 1 },
+        "candidate_restriction": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/restriction" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["source"],
+            "properties": { "source": { "const": "apple_vision_text_recognition" } }
+          },
+          "then": {
+            "required": ["raw_text", "candidate_restriction"],
+            "properties": {
+              "raw_text": { "type": "string", "minLength": 1 },
+              "candidate_restriction": { "$ref": "#/$defs/restriction" }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["source"],
+            "properties": { "source": { "const": "apple_vision_rectangle_detection" } }
+          },
+          "then": {
+            "properties": {
+              "raw_text": { "type": "null" },
+              "candidate_restriction": { "type": "null" }
+            }
+          }
+        }
+      ]
+    },
     "runtimeSupplementaryPlateEvidence": {
       "type": "object",
       "properties": {
-        "detector_score": { "$ref": "#/$defs/runtimeStageScore" }
+        "detector_score": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/runtimeStageScore" }
+          ]
+        },
+        "auxiliary_evidence": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/auxiliaryEvidence" }
+            }
+          ]
+        }
       },
       "allOf": [
+        {
+          "anyOf": [
+            {
+              "properties": {
+                "detector_score": { "$ref": "#/$defs/runtimeStageScore" }
+              }
+            },
+            {
+              "required": ["auxiliary_evidence"],
+              "properties": {
+                "auxiliary_evidence": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "$ref": "#/$defs/auxiliaryEvidence" }
+                }
+              }
+            }
+          ]
+        },
         {
           "if": {
             "required": ["readability"],
@@ -444,7 +533,8 @@
             "type": "object",
             "properties": {
               "detector_score": { "type": "null" },
-              "classifier_score": { "type": "null" }
+              "classifier_score": { "type": "null" },
+              "auxiliary_evidence": { "type": "null" }
             }
           }
         }

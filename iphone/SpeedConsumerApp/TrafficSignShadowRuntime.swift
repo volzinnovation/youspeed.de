@@ -78,11 +78,15 @@ struct TrafficSignPrimarySemanticV2: Codable, Equatable, Hashable, Sendable {
     let unit: String?
 
     var isValid: Bool {
-        guard value.map({ $0 > 0 }) ?? true,
-              unit.map({ $0 == "km/h" || $0 == "mph" }) ?? true else {
-            return false
+        switch kind {
+        case .maximumSpeed, .zoneStart:
+            return value.map({ $0 > 0 }) == true
+                && (unit == "km/h" || unit == "mph")
+        case .maximumSpeedEnd, .zoneEnd, .restrictionEnd:
+            return value == nil && unit == nil
+        case .unknown:
+            return value == nil && unit == nil
         }
-        return kind == .unknown || (value != nil && unit != nil)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -160,6 +164,163 @@ struct TrafficSignShadowStageIdentityV2: Codable, Equatable, Sendable {
     }
 }
 
+/// A deliberately small, runtime-only v2 projection for a verified v1 model
+/// pack. It does not pretend that an off-the-shelf bootstrap pack satisfies the
+/// full training/release pack-v2 schema. Instead it binds the exact mobile
+/// artifacts and the two preprocessing/calibration contracts needed to emit
+/// honest event-v2 shadow evidence.
+struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
+    struct ExecutionPolicy: Codable, Equatable, Sendable {
+        let mode: TrafficSignExecutionModeV2
+        let overrideEligible: Bool
+    }
+
+    struct Preprocessing: Codable, Equatable, Sendable {
+        let version: String
+        let inputWidth: Int
+        let inputHeight: Int
+        let colorSpace: String
+        let resize: String
+        let orientation: String
+    }
+
+    struct Calibration: Codable, Equatable, Sendable {
+        let id: String
+        let datasetSha256: String
+        let passed: Bool
+        let runtimeOutput: String
+    }
+
+    struct Stage: Codable, Equatable, Sendable {
+        let componentId: String
+        let artifactId: String
+        let artifactPath: String
+        let artifactSha256: String
+        let artifactFormat: TrafficSignRuntimeArtifactFormatV2
+        let preprocessing: Preprocessing
+        let calibration: Calibration
+    }
+
+    struct Thresholds: Codable, Equatable, Sendable {
+        let classifierConfirmed: Double
+        let confirmationFrames: Int
+        let temporalWindowMs: Int
+        let minimumTrackIou: Double
+    }
+
+    struct Association: Codable, Equatable, Sendable {
+        let policy: TrafficSignAssociationPolicyV2
+        let stableObservationHintCanOverrideIou: Bool
+        let fallbackRequiresUniqueCandidate: Bool
+    }
+
+    let schemaVersion: Int
+    let sourcePackId: String
+    let packId: String
+    let taxonomyVersion: String
+    let executionPolicy: ExecutionPolicy
+    let detector: Stage
+    let classifier: Stage
+    let thresholds: Thresholds
+    let association: Association
+
+    func configuration(
+        sourceManifest: TrafficSignModelPackManifest,
+        detectorArtifact: TrafficSignModelPackManifest.Artifact,
+        classifierArtifact: TrafficSignModelPackManifest.Artifact
+    ) throws -> TrafficSignShadowRuntimeConfigurationV2 {
+        guard schemaVersion == 2,
+              sourcePackId == sourceManifest.packId,
+              sourceManifest.pipeline == .proposalClassification,
+              taxonomyVersion == "tsr-semantic-v2",
+              executionPolicy.mode == .shadow,
+              !executionPolicy.overrideEligible,
+              stage(
+                  detector,
+                  binds: sourceManifest.detector,
+                  artifact: detectorArtifact,
+                  expectedResize: "scale_fit_letterbox"
+              ),
+              let sourceClassifier = sourceManifest.classifier,
+              stage(
+                  classifier,
+                  binds: sourceClassifier,
+                  artifact: classifierArtifact,
+                  expectedResize: "scale_fill"
+              ),
+              detector.artifactId != classifier.artifactId,
+              detector.artifactSha256 != classifier.artifactSha256,
+              detector.preprocessing.version != classifier.preprocessing.version,
+              detector.calibration.id != classifier.calibration.id else {
+            throw TrafficSignShadowRuntimeError.invalidConfiguration(
+                "The TSR v2 shadow projection does not bind the verified two-stage pack."
+            )
+        }
+
+        let configuration = TrafficSignShadowRuntimeConfigurationV2(
+            packId: packId,
+            taxonomyVersion: taxonomyVersion,
+            initialMode: executionPolicy.mode,
+            overrideEligible: executionPolicy.overrideEligible,
+            detector: identity(for: detector),
+            classifier: identity(for: classifier),
+            classifierConfirmedThreshold: thresholds.classifierConfirmed,
+            confirmationFrames: thresholds.confirmationFrames,
+            minimumTrackIou: thresholds.minimumTrackIou,
+            temporalWindowMs: thresholds.temporalWindowMs,
+            associationPolicy: association.policy,
+            stableObservationHintCanOverrideIou:
+                association.stableObservationHintCanOverrideIou,
+            fallbackRequiresUniqueCandidate: association.fallbackRequiresUniqueCandidate
+        )
+        guard configuration.isValid else {
+            throw TrafficSignShadowRuntimeError.invalidConfiguration(
+                "The TSR v2 shadow projection contains an invalid runtime contract."
+            )
+        }
+        return configuration
+    }
+
+    private func stage(
+        _ stage: Stage,
+        binds component: TrafficSignModelPackManifest.Component,
+        artifact: TrafficSignModelPackManifest.Artifact,
+        expectedResize: String
+    ) -> Bool {
+        let shape = artifact.inputShape
+        guard shape.count >= 3 else { return false }
+        let expectedHeight = shape[shape.count - 2]
+        let expectedWidth = shape[shape.count - 1]
+        return stage.componentId == component.componentId
+            && stage.artifactPath == artifact.path
+            && stage.artifactSha256 == artifact.sha256
+            && stage.artifactFormat == .coreml
+            && artifact.format == .coreml
+            && stage.preprocessing.inputWidth == expectedWidth
+            && stage.preprocessing.inputHeight == expectedHeight
+            && stage.preprocessing.colorSpace == "rgb"
+            && stage.preprocessing.resize == expectedResize
+            && stage.preprocessing.orientation == "normalize_exif_and_mirroring"
+            && !stage.preprocessing.version.isEmpty
+            && stage.calibration.datasetSha256 == artifact.calibrationDatasetSha256
+            && !stage.calibration.id.isEmpty
+            && stage.calibration.runtimeOutput == "raw_score"
+            && !stage.calibration.passed
+    }
+
+    private func identity(for stage: Stage) -> TrafficSignShadowStageIdentityV2 {
+        TrafficSignShadowStageIdentityV2(
+            componentId: stage.componentId,
+            artifactId: stage.artifactId,
+            artifactSha256: stage.artifactSha256,
+            artifactFormat: stage.artifactFormat,
+            preprocessingVersion: stage.preprocessing.version,
+            calibrationId: stage.calibration.id,
+            calibrationPassed: stage.calibration.passed
+        )
+    }
+}
+
 struct TrafficSignShadowRuntimeConfigurationV2: Equatable, Sendable {
     let packId: String
     let taxonomyVersion: String
@@ -187,6 +348,8 @@ struct TrafficSignShadowRuntimeConfigurationV2: Equatable, Sendable {
             && detector.artifactSha256 != classifier.artifactSha256
             && detector.artifactFormat == classifier.artifactFormat
             && detector.artifactFormat != .onnx
+            && detector.preprocessingVersion != classifier.preprocessingVersion
+            && detector.calibrationId != classifier.calibrationId
             && classifierConfirmedThreshold.isFinite
             && (0...1).contains(classifierConfirmedThreshold)
             && confirmationFrames >= 2
@@ -233,6 +396,44 @@ struct TrafficSignStageScoreV2: Codable, Equatable, Sendable {
             try container.encode(calibratedConfidence, forKey: .calibratedConfidence)
         } else {
             try container.encodeNil(forKey: .calibratedConfidence)
+        }
+    }
+}
+
+/// Evidence from an on-device Vision helper that is not one of the two model
+/// stages declared in `stage_runs`.
+enum TrafficSignAuxiliaryEvidenceSourceV2: String, Codable, Sendable {
+    case appleVisionTextRecognition = "apple_vision_text_recognition"
+    case appleVisionRectangleDetection = "apple_vision_rectangle_detection"
+}
+
+struct TrafficSignAuxiliaryEvidenceV2: Codable, Equatable, Sendable {
+    let source: TrafficSignAuxiliaryEvidenceSourceV2
+    let rawScore: Double
+    let rawText: String?
+    let candidateRestriction: TrafficSignRestrictionV2?
+
+    init(
+        source: TrafficSignAuxiliaryEvidenceSourceV2,
+        rawScore: Double,
+        rawText: String? = nil,
+        candidateRestriction: TrafficSignRestrictionV2? = nil
+    ) {
+        self.source = source
+        self.rawScore = rawScore
+        self.rawText = rawText
+        self.candidateRestriction = candidateRestriction
+    }
+
+    var isValid: Bool {
+        guard rawScore.isFinite, (0...1).contains(rawScore) else { return false }
+        switch source {
+        case .appleVisionTextRecognition:
+            return rawText.map {
+                !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            } == true && candidateRestriction?.isValid == true
+        case .appleVisionRectangleDetection:
+            return rawText == nil && candidateRestriction == nil
         }
     }
 }
@@ -288,6 +489,7 @@ struct TrafficSignSupplementaryPlateEvidenceV2: Codable, Equatable, Sendable {
     let boundingBox: TrafficSignNormalizedRect
     let detectorScore: TrafficSignStageScoreV2?
     let classifierScore: TrafficSignStageScoreV2?
+    let auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2]?
     let classId: String?
     let readability: TrafficSignPlateReadabilityV2
     let restriction: TrafficSignRestrictionV2?
@@ -295,7 +497,8 @@ struct TrafficSignSupplementaryPlateEvidenceV2: Codable, Equatable, Sendable {
     var isValid: Bool {
         guard !objectId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               boundingBox.isValid,
-              detectorScore?.isValid ?? true else {
+              detectorScore?.isValid ?? true,
+              auxiliaryEvidence?.allSatisfy(\.isValid) ?? true else {
             return false
         }
         switch readability {
@@ -313,6 +516,7 @@ struct TrafficSignSupplementaryPlateEvidenceV2: Codable, Equatable, Sendable {
         case boundingBox
         case detectorScore
         case classifierScore
+        case auxiliaryEvidence
         case classId
         case readability
         case restriction
@@ -326,6 +530,11 @@ struct TrafficSignSupplementaryPlateEvidenceV2: Codable, Equatable, Sendable {
         else { try container.encodeNil(forKey: .detectorScore) }
         if let classifierScore { try container.encode(classifierScore, forKey: .classifierScore) }
         else { try container.encodeNil(forKey: .classifierScore) }
+        if let auxiliaryEvidence {
+            try container.encode(auxiliaryEvidence, forKey: .auxiliaryEvidence)
+        } else {
+            try container.encodeNil(forKey: .auxiliaryEvidence)
+        }
         if let classId { try container.encode(classId, forKey: .classId) }
         else { try container.encodeNil(forKey: .classId) }
         try container.encode(readability, forKey: .readability)
@@ -421,13 +630,40 @@ struct TrafficSignTwoStagePlateObservationV2: Equatable, Sendable {
     let objectId: String
     let classId: String?
     let boundingBox: TrafficSignNormalizedRect
-    let detectorScore: Double
+    let detectorScore: Double?
     let detectorCalibratedConfidence: Double?
     let classifierRawScore: Double?
     let classifierCalibratedConfidence: Double?
+    let auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2]
     let classifierThreshold: Double
     let readability: TrafficSignPlateReadabilityV2
     let restriction: TrafficSignRestrictionV2?
+
+    init(
+        objectId: String,
+        classId: String?,
+        boundingBox: TrafficSignNormalizedRect,
+        detectorScore: Double?,
+        detectorCalibratedConfidence: Double?,
+        classifierRawScore: Double?,
+        classifierCalibratedConfidence: Double?,
+        auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2] = [],
+        classifierThreshold: Double,
+        readability: TrafficSignPlateReadabilityV2,
+        restriction: TrafficSignRestrictionV2?
+    ) {
+        self.objectId = objectId
+        self.classId = classId
+        self.boundingBox = boundingBox
+        self.detectorScore = detectorScore
+        self.detectorCalibratedConfidence = detectorCalibratedConfidence
+        self.classifierRawScore = classifierRawScore
+        self.classifierCalibratedConfidence = classifierCalibratedConfidence
+        self.auxiliaryEvidence = auxiliaryEvidence
+        self.classifierThreshold = classifierThreshold
+        self.readability = readability
+        self.restriction = restriction
+    }
 }
 
 struct TrafficSignTwoStageAssemblyObservationV2: Equatable, Sendable {
@@ -517,6 +753,332 @@ protocol TrafficSignDiagnosticCaptureSinkV2: AnyObject, Sendable {
 
 protocol TrafficSignQAEventSinkV2: AnyObject, Sendable {
     func emit(_ event: TrafficSignRecognitionEventV2)
+}
+
+/// App-private persistence for shadow QA. Events and optional diagnostic JPEGs
+/// are grouped by the recorder's immutable capture-session UUID. This store is
+/// intentionally unrelated to Panoramax upload state: nothing written here is
+/// remotely uploadable without a separate, future review/export flow.
+final class TrafficSignShadowEvidenceStoreV2: TrafficSignDiagnosticCaptureSinkV2,
+        TrafficSignQAEventSinkV2, @unchecked Sendable {
+    typealias JPEGProvider = @Sendable () throws -> Data
+
+    private struct PendingFrame {
+        let captureGroupId: String
+        let diagnosticCaptureEnabled: Bool
+        let jpegProvider: JPEGProvider
+    }
+
+    private struct SessionMetadata: Codable {
+        let schemaVersion: Int
+        let captureGroupId: String
+        let createdAtUtc: Date
+        let storageScope: String
+        let diagnosticImagesEnabled: Bool
+        let exportApproved: Bool
+        let redactionStatus: String
+    }
+
+    private let rootURL: URL
+    private let fileManager: FileManager
+    private let minimumCaptureInterval: TimeInterval
+    private let maximumCapturesPerSession: Int
+    private let lock = NSLock()
+    private var pendingByEventId: [String: PendingFrame] = [:]
+    private var captureCountByGroup: [String: Int] = [:]
+    private var lastCaptureAtByGroup: [String: Date] = [:]
+    private var deletedGroups = Set<String>()
+    private(set) var lastPersistenceError: String?
+
+    init(
+        rootURL: URL? = nil,
+        fileManager: FileManager = .default,
+        minimumCaptureInterval: TimeInterval = 2,
+        maximumCapturesPerSession: Int = 120
+    ) throws {
+        self.fileManager = fileManager
+        self.minimumCaptureInterval = max(0, minimumCaptureInterval)
+        self.maximumCapturesPerSession = max(1, maximumCapturesPerSession)
+        if let rootURL {
+            self.rootURL = rootURL.standardizedFileURL
+        } else {
+            let applicationSupport = try fileManager.url(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: true
+            )
+            self.rootURL = applicationSupport
+                .appendingPathComponent("YouSpeed", isDirectory: true)
+                .appendingPathComponent("TrafficSignQA", isDirectory: true)
+                .appendingPathComponent("v2", isDirectory: true)
+        }
+        try prepareDirectory(self.rootURL)
+    }
+
+    func stageFrame(
+        eventId: String,
+        captureGroupId: String,
+        diagnosticCaptureEnabled: Bool,
+        jpegProvider: @escaping JPEGProvider
+    ) {
+        guard Self.isSafeIdentifier(eventId), Self.isSafeIdentifier(captureGroupId) else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        guard !deletedGroups.contains(captureGroupId) else { return }
+        pendingByEventId[eventId] = PendingFrame(
+            captureGroupId: captureGroupId,
+            diagnosticCaptureEnabled: diagnosticCaptureEnabled,
+            jpegProvider: jpegProvider
+        )
+        do {
+            try prepareSessionIfNeeded(
+                captureGroupId: captureGroupId,
+                diagnosticCaptureEnabled: diagnosticCaptureEnabled
+            )
+        } catch {
+            lastPersistenceError = error.localizedDescription
+        }
+    }
+
+    func unstageFrame(eventId: String) {
+        lock.lock()
+        pendingByEventId.removeValue(forKey: eventId)
+        lock.unlock()
+    }
+
+    func requestCapture(
+        _ request: TrafficSignDiagnosticCaptureRequestV2
+    ) throws -> TrafficSignDiagnosticCaptureOutcomeV2 {
+        lock.lock()
+        guard let pending = pendingByEventId[request.eventId],
+              !deletedGroups.contains(pending.captureGroupId) else {
+            lock.unlock()
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .notRequested)
+        }
+        guard pending.diagnosticCaptureEnabled else {
+            lock.unlock()
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .notRequested)
+        }
+        let count = captureCount(for: pending.captureGroupId)
+        let tooSoon = lastCaptureAtByGroup[pending.captureGroupId].map {
+            request.frame.timestampUtc.timeIntervalSince($0) < minimumCaptureInterval
+        } ?? false
+        guard count < maximumCapturesPerSession, !tooSoon else {
+            lock.unlock()
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .requested)
+        }
+        lock.unlock()
+
+        let jpeg = try pending.jpegProvider()
+        guard !jpeg.isEmpty else {
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .failed)
+        }
+
+        lock.lock()
+        defer { lock.unlock() }
+        guard !deletedGroups.contains(pending.captureGroupId),
+              pendingByEventId[request.eventId] != nil else {
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .notRequested)
+        }
+        let captureId = UUID().uuidString.lowercased()
+        do {
+            let capturesURL = sessionURL(pending.captureGroupId)
+                .appendingPathComponent("captures", isDirectory: true)
+            try prepareDirectory(capturesURL)
+            let destination = capturesURL.appendingPathComponent(
+                "\(captureId).jpg",
+                isDirectory: false
+            )
+            try jpeg.write(to: destination, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            var mutableDestination = destination
+            try? mutableDestination.setResourceValues(values)
+            captureCountByGroup[pending.captureGroupId] = count + 1
+            lastCaptureAtByGroup[pending.captureGroupId] = request.frame.timestampUtc
+            return TrafficSignDiagnosticCaptureOutcomeV2(
+                status: .persisted,
+                captureId: captureId
+            )
+        } catch {
+            lastPersistenceError = error.localizedDescription
+            return TrafficSignDiagnosticCaptureOutcomeV2(status: .failed)
+        }
+    }
+
+    func emit(_ event: TrafficSignRecognitionEventV2) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let pending = pendingByEventId[event.eventId],
+              !deletedGroups.contains(pending.captureGroupId) else { return }
+        do {
+            let session = sessionURL(pending.captureGroupId)
+            try prepareSessionIfNeeded(
+                captureGroupId: pending.captureGroupId,
+                diagnosticCaptureEnabled: pending.diagnosticCaptureEnabled
+            )
+            let eventURL = session.appendingPathComponent("events.ndjson", isDirectory: false)
+            var data = try Self.eventEncoder().encode(event)
+            data.append(0x0A)
+            if !fileManager.fileExists(atPath: eventURL.path) {
+                try Data().write(
+                    to: eventURL,
+                    options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+                )
+            }
+            let handle = try FileHandle(forWritingTo: eventURL)
+            defer { try? handle.close() }
+            try handle.seekToEnd()
+            try handle.write(contentsOf: data)
+            try handle.synchronize()
+            lastPersistenceError = nil
+        } catch {
+            if let captureId = event.diagnosticCapture.captureId,
+               Self.isSafeIdentifier(captureId) {
+                let captureURL = sessionURL(pending.captureGroupId)
+                    .appendingPathComponent("captures", isDirectory: true)
+                    .appendingPathComponent("\(captureId).jpg", isDirectory: false)
+                try? fileManager.removeItem(at: captureURL)
+            }
+            lastPersistenceError = error.localizedDescription
+        }
+    }
+
+    /// Deleting a local QA group also creates a process-local tombstone so a
+    /// late inference from the just-deleted recorder session cannot recreate it.
+    @discardableResult
+    func deleteCaptureGroup(_ captureGroupId: String) -> Bool {
+        guard Self.isSafeIdentifier(captureGroupId) else { return false }
+        lock.lock()
+        defer { lock.unlock() }
+        deletedGroups.insert(captureGroupId)
+        pendingByEventId = pendingByEventId.filter { $0.value.captureGroupId != captureGroupId }
+        captureCountByGroup.removeValue(forKey: captureGroupId)
+        lastCaptureAtByGroup.removeValue(forKey: captureGroupId)
+        let url = sessionURL(captureGroupId)
+        guard fileManager.fileExists(atPath: url.path) else { return true }
+        do {
+            try fileManager.removeItem(at: url)
+            return true
+        } catch {
+            lastPersistenceError = error.localizedDescription
+            return false
+        }
+    }
+
+    func eventsURL(captureGroupId: String) -> URL? {
+        guard Self.isSafeIdentifier(captureGroupId) else { return nil }
+        return sessionURL(captureGroupId).appendingPathComponent("events.ndjson")
+    }
+
+    func captureURL(captureGroupId: String, captureId: String) -> URL? {
+        guard Self.isSafeIdentifier(captureGroupId), Self.isSafeIdentifier(captureId) else {
+            return nil
+        }
+        return sessionURL(captureGroupId)
+            .appendingPathComponent("captures", isDirectory: true)
+            .appendingPathComponent("\(captureId).jpg", isDirectory: false)
+    }
+
+    private func prepareSessionIfNeeded(
+        captureGroupId: String,
+        diagnosticCaptureEnabled: Bool
+    ) throws {
+        let session = sessionURL(captureGroupId)
+        try prepareDirectory(session)
+        let metadataURL = session.appendingPathComponent("session.json", isDirectory: false)
+        if fileManager.fileExists(atPath: metadataURL.path) {
+            // A recorder session can start before the user enables both the
+            // Dashcam and TSR chips. Record that image capture became enabled
+            // later instead of leaving stale `false` metadata behind.
+            guard diagnosticCaptureEnabled else { return }
+            let existing = try Self.eventDecoder().decode(
+                SessionMetadata.self,
+                from: Data(contentsOf: metadataURL)
+            )
+            guard !existing.diagnosticImagesEnabled else { return }
+            let updated = SessionMetadata(
+                schemaVersion: existing.schemaVersion,
+                captureGroupId: existing.captureGroupId,
+                createdAtUtc: existing.createdAtUtc,
+                storageScope: existing.storageScope,
+                diagnosticImagesEnabled: true,
+                exportApproved: existing.exportApproved,
+                redactionStatus: existing.redactionStatus
+            )
+            try Self.eventEncoder().encode(updated).write(
+                to: metadataURL,
+                options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+            )
+            return
+        }
+        let metadata = SessionMetadata(
+            schemaVersion: 1,
+            captureGroupId: captureGroupId,
+            createdAtUtc: Date(),
+            storageScope: "local_tsr_qa_only",
+            diagnosticImagesEnabled: diagnosticCaptureEnabled,
+            exportApproved: false,
+            redactionStatus: "pending_review"
+        )
+        let data = try Self.eventEncoder().encode(metadata)
+        try data.write(
+            to: metadataURL,
+            options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
+        )
+    }
+
+    private func captureCount(for captureGroupId: String) -> Int {
+        if let cached = captureCountByGroup[captureGroupId] { return cached }
+        let captures = sessionURL(captureGroupId)
+            .appendingPathComponent("captures", isDirectory: true)
+        let count = (try? fileManager.contentsOfDirectory(
+            at: captures,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ).filter { $0.pathExtension.lowercased() == "jpg" }.count) ?? 0
+        captureCountByGroup[captureGroupId] = count
+        return count
+    }
+
+    private func sessionURL(_ captureGroupId: String) -> URL {
+        rootURL.appendingPathComponent(captureGroupId, isDirectory: true)
+    }
+
+    private func prepareDirectory(_ url: URL) throws {
+        try fileManager.createDirectory(
+            at: url,
+            withIntermediateDirectories: true,
+            attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication]
+        )
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        var mutableURL = url
+        try? mutableURL.setResourceValues(values)
+    }
+
+    private static func eventEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return encoder
+    }
+
+    private static func eventDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+
+    private static func isSafeIdentifier(_ value: String) -> Bool {
+        value.range(
+            of: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$",
+            options: .regularExpression
+        ) != nil
+    }
 }
 
 enum TrafficSignShadowRuntimeError: Error, Equatable, LocalizedError {
@@ -721,6 +1283,7 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
                       scoreIsValid(plate.detectorCalibratedConfidence),
                       plate.classifierRawScore.map(\.isFinite) ?? true,
                       scoreIsValid(plate.classifierCalibratedConfidence),
+                      plate.auxiliaryEvidence.allSatisfy(\.isValid),
                       (0...1).contains(plate.classifierThreshold) else {
                     throw TrafficSignShadowRuntimeError.invalidInput("The TSR v2 plate observation is invalid.")
                 }
@@ -889,10 +1452,12 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
             objectId: observation.objectId,
             boundingBox: observation.boundingBox,
             detectorScore: includeScores
-                ? TrafficSignStageScoreV2(
-                    rawScore: observation.detectorScore,
-                    calibratedConfidence: observation.detectorCalibratedConfidence
-                )
+                ? observation.detectorScore.map {
+                    TrafficSignStageScoreV2(
+                        rawScore: $0,
+                        calibratedConfidence: observation.detectorCalibratedConfidence
+                    )
+                }
                 : nil,
             classifierScore: includeScores
                 ? observation.classifierRawScore.map {
@@ -901,6 +1466,9 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
                         calibratedConfidence: confidence
                     )
                 }
+                : nil,
+            auxiliaryEvidence: includeScores && !observation.auxiliaryEvidence.isEmpty
+                ? observation.auxiliaryEvidence
                 : nil,
             classId: readable ? observation.classId : nil,
             readability: readable ? .readable : .unreadable,

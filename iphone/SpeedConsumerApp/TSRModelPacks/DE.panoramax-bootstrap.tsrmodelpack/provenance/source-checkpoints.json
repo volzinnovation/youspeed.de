@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "detector": {
+    "name": "sgblur yolo11n_panoramax",
+    "uri": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt",
+    "revision": "169451970702aca0dde9ff3106dba0f67e0b88a8",
+    "sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+    "license": "MIT"
+  },
+  "classifier": {
+    "name": "Panoramax/classify_de_road_signs",
+    "uri": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
+    "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+    "license": "etalab-2.0"
+  },
+  "dataset": {
+    "name": "Panoramax/classified_de_road_signs",
+    "uri": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "inventory_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+    "license": "CC-BY-SA-4.0"
+  }
+}

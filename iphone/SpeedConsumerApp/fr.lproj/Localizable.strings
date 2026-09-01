@@ -90,6 +90,16 @@
 "tsr.direction.forward" = "Dans le sens du chemin OSM";
 "tsr.direction.reverse" = "En sens inverse du chemin OSM";
 "tsr.direction.unknown" = "Inconnu";
+"about.tsr_attribution.title" = "Crédits des modèles de reconnaissance des panneaux";
+"about.tsr_attribution.intro" = "Paire de modèles sélectionnée pour le prototype TSR :";
+"about.tsr_attribution.detector" = "Détecteur : Panoramax sgblur · yolo11n_panoramax.pt @ 1694519 (licence MIT)";
+"about.tsr_attribution.classifier" = "Classificateur : Panoramax/classify_de_road_signs @ 5360aa6 (Licence Ouverte Etalab 2.0)";
+"about.tsr_attribution.training_data" = "Données d’entraînement du classificateur : Panoramax/classified_de_road_signs (CC BY-SA 4.0)";
+"about.tsr_attribution.exporter" = "Architecture YOLO et export : Ultralytics 8.4.56 (AGPL-3.0)";
+"about.tsr_attribution.coremltools" = "Conversion Core ML : Core ML Tools 9.0 (BSD-3-Clause)";
+"about.tsr_attribution.pytorch" = "Dépendance de conversion : PyTorch 2.13.0 (BSD-3-Clause)";
+"about.tsr_attribution.licenses" = "Mentions de licence complètes hors ligne";
+"about.tsr_attribution.licenses_unavailable" = "Les mentions de licence hors ligne n’ont pas pu être chargées.";
 "panoramax.post_drive.title" = "Panoramax · À traiter plus tard";
 "panoramax.post_drive.description" = "Examinez les scènes après le trajet, choisissez celles à inclure, puis approuvez explicitement leur envoi.";
 "panoramax.post_drive.capture_active" = "Terminez l’enregistrement actif avant d’envoyer des images à Panoramax.";
@@ -120,6 +130,7 @@
 "panoramax.gallery.status_waiting" = "En attente de téléversement";
 "panoramax.gallery.status_uploading" = "Téléversement en cours";
 "panoramax.gallery.status_uploaded" = "Téléversée vers Panoramax";
+"panoramax.gallery.status_deleting_active_upload" = "Suppression de l’image locale ; arrêt de son téléversement";
 "panoramax.gallery.status_retry" = "En attente d’une nouvelle tentative";
 "panoramax.gallery.status_abandoned" = "Téléversement arrêté ; état du serveur inconnu";
 "panoramax.gallery.status_failed" = "Échec du téléversement";

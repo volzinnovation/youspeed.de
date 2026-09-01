@@ -90,6 +90,16 @@
 "tsr.direction.forward" = "Along OSM way";
 "tsr.direction.reverse" = "Against OSM way";
 "tsr.direction.unknown" = "Unknown";
+"about.tsr_attribution.title" = "Traffic-sign recognition model credits";
+"about.tsr_attribution.intro" = "Selected model pair for the TSR prototype:";
+"about.tsr_attribution.detector" = "Detector: Panoramax sgblur · yolo11n_panoramax.pt @ 1694519 (MIT License)";
+"about.tsr_attribution.classifier" = "Classifier: Panoramax/classify_de_road_signs @ 5360aa6 (Etalab Open License 2.0)";
+"about.tsr_attribution.training_data" = "Classifier training data: Panoramax/classified_de_road_signs (CC BY-SA 4.0)";
+"about.tsr_attribution.exporter" = "YOLO architecture and export: Ultralytics 8.4.56 (AGPL-3.0)";
+"about.tsr_attribution.coremltools" = "Core ML conversion: Core ML Tools 9.0 (BSD-3-Clause)";
+"about.tsr_attribution.pytorch" = "Conversion dependency: PyTorch 2.13.0 (BSD-3-Clause)";
+"about.tsr_attribution.licenses" = "Complete offline license notices";
+"about.tsr_attribution.licenses_unavailable" = "The offline license notices could not be loaded.";
 "panoramax.post_drive.title" = "Panoramax · Process later";
 "panoramax.post_drive.description" = "Review saved scenes after the drive, choose what to include, then approve and upload explicitly.";
 "panoramax.post_drive.capture_active" = "Finish the active recording before uploading Panoramax pictures.";
@@ -120,6 +130,7 @@
 "panoramax.gallery.status_waiting" = "Waiting to upload";
 "panoramax.gallery.status_uploading" = "Uploading";
 "panoramax.gallery.status_uploaded" = "Uploaded to Panoramax";
+"panoramax.gallery.status_deleting_active_upload" = "Deleting the local picture; stopping its upload";
 "panoramax.gallery.status_retry" = "Waiting to retry upload";
 "panoramax.gallery.status_abandoned" = "Upload stopped; server status unknown";
 "panoramax.gallery.status_failed" = "Upload failed";

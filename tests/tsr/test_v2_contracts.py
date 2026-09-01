@@ -542,6 +542,37 @@ def test_shadow_events_bind_both_stage_identities_and_never_override():
         validate("recognition-event-v2.schema.json", invalid)
 
 
+def test_runtime_auxiliary_ocr_evidence_is_not_a_model_stage_score():
+    fixture = load_json(FIXTURES / "panoramax-m0-round-trip-v2.json")
+    event = shadow_event(fixture, fixture["observations"][0])
+    plate = event["assemblies"][0]["supplementary_plates"][0]
+    plate["detector_score"] = None
+    plate["classifier_score"] = None
+    plate["auxiliary_evidence"] = [
+        {
+            "source": "apple_vision_text_recognition",
+            "raw_score": 0.78,
+            "raw_text": "T 2km T",
+            "candidate_restriction": {
+                "kind": "extent",
+                "normalized_value": "2 km",
+                "distance_m": None,
+                "extent_m": 2000,
+                "raw_text": "T 2km T",
+                "country_sign_code": None,
+            },
+        }
+    ]
+    validate("recognition-event-v2.schema.json", event)
+    assert plate["readability"] == "unreadable"
+    assert plate["class_id"] is None
+    assert plate["restriction"] is None
+
+    plate["auxiliary_evidence"] = None
+    with pytest.raises(jsonschema.ValidationError):
+        validate("recognition-event-v2.schema.json", event)
+
+
 def test_committed_reviewed_expected_events_are_not_model_inference():
     events = load_json(FIXTURES / "recognition-events-v2.json")
     fixture = load_json(FIXTURES / "panoramax-m0-round-trip-v2.json")

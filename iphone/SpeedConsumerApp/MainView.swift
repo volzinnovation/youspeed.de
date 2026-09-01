@@ -79,6 +79,23 @@ struct DriveRecorderMainControlPresentation: Equatable {
     }
 }
 
+struct DriveRecorderGalleryControlPresentation: Equatable {
+    let isEnabled: Bool
+
+    static func resolve(for state: DriveRecorderState) -> Self {
+        switch state {
+        case .preparing, .recording, .stopping:
+            return Self(isEnabled: false)
+        case .disabled, .denied, .unavailable, .failed:
+            return Self(isEnabled: true)
+        }
+    }
+
+    var opacity: Double {
+        isEnabled ? 1 : 0.38
+    }
+}
+
 enum LegalDisclaimerText {
     static var short: String {
         NSLocalizedString("legal.disclaimer.short", comment: "")
@@ -293,6 +310,9 @@ struct MainView: View {
         let recorderControl = DriveRecorderMainControlPresentation.resolve(
             for: viewModel.driveRecorderState
         )
+        let galleryControl = DriveRecorderGalleryControlPresentation.resolve(
+            for: viewModel.driveRecorderState
+        )
 
         return HStack {
             Button {
@@ -316,16 +336,29 @@ struct MainView: View {
             Spacer()
 
             Button {
+                guard galleryControl.isEnabled else { return }
                 showingPanoramaxGallery = true
             } label: {
                 Image(systemName: "photo.on.rectangle")
                     .font(.title3.weight(.semibold))
+                    .foregroundStyle(galleryControl.isEnabled ? primaryForegroundColor : Color.gray)
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
-            .background(actionButtonBackgroundColor, in: Circle())
-            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
+            .background(
+                galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
+                in: Circle()
+            )
+            .overlay {
+                Circle().strokeBorder(
+                    galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
+                    lineWidth: 1.5
+                )
+            }
+            .contentShape(Circle())
+            .opacity(galleryControl.opacity)
             .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
+            .disabled(!galleryControl.isEnabled)
 
             Spacer()
 
@@ -1479,6 +1512,7 @@ private func trafficSignNumberFont(size: CGFloat) -> Font {
 private struct LegalInformationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var legalText: String = LegalTextLoader.load()
+    @State private var trafficSignNoticesText: String = TrafficSignThirdPartyNoticesLoader.load()
 
     var body: some View {
         ScrollView {
@@ -1493,6 +1527,50 @@ private struct LegalInformationView: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.yellow.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(NSLocalizedString("about.tsr_attribution.title", comment: ""))
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    Text(NSLocalizedString("about.tsr_attribution.intro", comment: ""))
+                        .font(.system(size: 14, weight: .regular, design: .default))
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.detector", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.detector
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.classifier", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.classifier
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.training_data", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.trainingData
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.exporter", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.exporter
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.coremltools", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.coreMLTools
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.pytorch", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.pyTorch
+                    )
+                    Divider()
+                    NavigationLink {
+                        TrafficSignThirdPartyNoticesView(text: trafficSignNoticesText)
+                    } label: {
+                        Label(
+                            NSLocalizedString("about.tsr_attribution.licenses", comment: ""),
+                            systemImage: "doc.text"
+                        )
+                    }
+                }
+                .font(.system(size: 14, weight: .regular, design: .default))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Text(legalText)
                     .font(.system(size: 15, weight: .regular, design: .default))
@@ -1514,6 +1592,43 @@ private struct LegalInformationView: View {
     }
 }
 
+private struct TrafficSignThirdPartyNoticesView: View {
+    let text: String
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .padding(16)
+        }
+        .navigationTitle(NSLocalizedString("about.tsr_attribution.licenses", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private enum TrafficSignModelAttributionLinks {
+    static let detector = URL(
+        string: "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt"
+    )!
+    static let classifier = URL(
+        string: "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md"
+    )!
+    static let trainingData = URL(
+        string: "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13"
+    )!
+    static let exporter = URL(
+        string: "https://github.com/ultralytics/ultralytics/tree/v8.4.56"
+    )!
+    static let coreMLTools = URL(
+        string: "https://github.com/apple/coremltools/tree/9.0"
+    )!
+    static let pyTorch = URL(
+        string: "https://github.com/pytorch/pytorch/tree/v2.13.0"
+    )!
+}
+
 private enum LegalTextLoader {
     static func load(bundle: Bundle = .main) -> String {
         let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
@@ -1525,6 +1640,26 @@ private enum LegalTextLoader {
             return text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return "Rechtliche Hinweise konnten nicht geladen werden."
+    }
+}
+
+enum TrafficSignThirdPartyNoticesLoader {
+    private static let packSubdirectory =
+        "TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack"
+
+    static func load(bundle: Bundle = .main) -> String {
+        let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
+        for candidateBundle in bundles {
+            guard let url = candidateBundle.url(
+                forResource: "THIRD_PARTY_NOTICES",
+                withExtension: "txt",
+                subdirectory: packSubdirectory
+            ), let text = try? String(contentsOf: url, encoding: .utf8) else {
+                continue
+            }
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return NSLocalizedString("about.tsr_attribution.licenses_unavailable", comment: "")
     }
 }
 
@@ -1909,6 +2044,14 @@ private struct PanoramaxReviewItemRow: View {
             && DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state)
     }
 
+    private var canDeleteLocally: Bool {
+        viewModel.canProcessPanoramaxUploads
+            && DriveRecorderPolicy.canDeletePanoramaxItem(
+                batchState: batch.state,
+                itemState: item.state
+            )
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             Button { showingOriginal = true } label: {
@@ -1963,7 +2106,7 @@ private struct PanoramaxReviewItemRow: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.plain)
-            .disabled(!canEdit)
+            .disabled(!canDeleteLocally)
         }
         .sheet(isPresented: $showingOriginal) {
             NavigationStack {
@@ -2028,15 +2171,6 @@ private struct PanoramaxGalleryView: View {
             ) ? batch.batchID : nil
         })
     }
-    private var selectionContainsRemoteRetentionItem: Bool {
-        selectedEntries.contains { entry in
-            !DriveRecorderPolicy.canDeletePanoramaxItem(
-                batchState: entry.batch.state,
-                itemState: entry.item.state
-            )
-        }
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             Group {
@@ -2139,15 +2273,6 @@ private struct PanoramaxGalleryView: View {
                             .foregroundStyle(.orange)
                             .multilineTextAlignment(.center)
                     }
-                    if selectionContainsRemoteRetentionItem {
-                        Label(
-                            NSLocalizedString("panoramax.gallery.delete_after_completion", comment: ""),
-                            systemImage: "lock.fill"
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    }
                     if let progress = viewModel.panoramaxAggregateUploadProgress {
                         VStack(spacing: 3) {
                             if progress.totalItems > 0 {
@@ -2189,11 +2314,7 @@ private struct PanoramaxGalleryView: View {
                             .accessibilityLabel(NSLocalizedString("panoramax.gallery.delete", comment: ""))
                             .disabled(
                                 selectedItemIDs.isEmpty
-                                || selectionContainsRemoteRetentionItem
                                 || !viewModel.canProcessPanoramaxUploads
-                                || selectedEntries.contains(where: {
-                                    viewModel.isPanoramaxUploadActive(batchID: $0.batch.batchID)
-                                })
                             )
                         }
                         Spacer(minLength: 0)
@@ -2272,9 +2393,8 @@ private struct PanoramaxGalleryView: View {
         }
     }
 
-    private func canSelectLocally(batch: PanoramaxBatchRecord) -> Bool {
+    private func canSelectLocally(batch _: PanoramaxBatchRecord) -> Bool {
         viewModel.canProcessPanoramaxUploads
-            && !viewModel.isPanoramaxUploadActive(batchID: batch.batchID)
     }
 
     private func isUploadEligible(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord) -> Bool {
