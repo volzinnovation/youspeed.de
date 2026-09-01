@@ -1,0 +1,456 @@
+{
+  "schema_version": 1,
+  "registry_id": "youspeed-tsr-model-selection-v1",
+  "as_of_date": "2026-09-01",
+  "target_candidate_id": "de-yolox-nano-mnv3-large-proposal-classification",
+  "selected_candidate_id": null,
+  "selection_status": "not_evaluated",
+  "evaluation_schema": "model-evaluation.schema.json",
+  "source_manifest_id": "youspeed-tsr-training-sources-v1",
+  "source_manifest_sha256": "4985ebb8a146918c113700d312e6becb893acfed1d07f2bfa16263fadf0c1cbc",
+  "scorecard_policy": {
+    "scope": "internal_candidate_comparison",
+    "authority": "engineering_evidence_only",
+    "disclaimer": "Thresholds are internal candidate-comparison floors, not production release, legal, or regulatory approval."
+  },
+  "scorecard_gates": {
+    "approved_holdout_dataset_id": null,
+    "approved_holdout_case_inventory_sha256": null,
+    "approved_holdout_group_split_sha256": null,
+    "approved_parity_case_inventory_sha256": null,
+    "approved_parity_reference_outputs_sha256": null,
+    "approved_device_tier_profiles": null,
+    "wilson_confidence_level": 0.95,
+    "minimum_confirmed_numeric_precision_lower_bound": 0.99,
+    "minimum_confirmed_numeric_recall_lower_bound": 0.9,
+    "maximum_dangerous_substitution_rate": 0.001,
+    "minimum_resolved_restriction_precision_lower_bound": 0.98,
+    "minimum_resolved_restriction_recall_lower_bound": 0.8,
+    "maximum_expected_calibration_error": 0.03,
+    "maximum_semantic_mismatch_count": 0,
+    "maximum_assembly_mismatch_count": 0,
+    "minimum_matched_box_iou": 0.995,
+    "maximum_calibrated_confidence_delta": 0.02,
+    "maximum_pack_bytes": 25000000,
+    "maximum_artifact_total_bytes": 25000000,
+    "maximum_detector_p95_ms": 250,
+    "maximum_end_to_end_p95_ms": 250,
+    "minimum_device_inference_count": 3600,
+    "minimum_device_drive_duration_seconds": 1800,
+    "minimum_detector_inference_rate_hz": 2,
+    "maximum_detector_inference_rate_hz": 10,
+    "minimum_camera_frame_rate_hz": 15,
+    "minimum_parity_case_count": 1000,
+    "minimum_parity_reference_output_count": 1000,
+    "maximum_device_peak_memory_bytes": 256000000,
+    "maximum_dropped_frame_rate": 0.01,
+    "maximum_backpressure_event_rate": 0.001,
+    "required_real_route_strata": [
+      "adjacent_road",
+      "construction",
+      "day",
+      "night",
+      "weather"
+    ],
+    "maximum_duplicate_confirmation_rate": null,
+    "maximum_wrong_way_confirmation_rate": null
+  },
+  "candidates": [
+    {
+      "candidate_id": "de-yolox-nano-mnv3-large-proposal-classification",
+      "display_name": "YOLOX-Nano proposals + MobileNetV3-Large semantics",
+      "lane": "target",
+      "status": "blocked",
+      "eligible_for_selection": true,
+      "pipeline": "proposal_classification",
+      "supported_platforms": [
+        "android",
+        "ios"
+      ],
+      "runtime_status": {
+        "android": {
+          "status": "blocked",
+          "blockers": [
+            "the Android CameraX and LiteRT TSR backend is missing",
+            "a trained proposal-classification pack and event-contract revision are missing"
+          ]
+        },
+        "ios": {
+          "status": "blocked",
+          "blockers": [
+            "the current iOS runtime rejects proposal_classification packs",
+            "a trained proposal-classification pack and event-contract revision are missing"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "proposal_detector",
+          "family": "YOLOX-Nano",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "yolox-0.1.1rc0",
+              "artifact_id": "yolox-nano-coco-0.1.1rc0"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        },
+        {
+          "role": "classifier",
+          "family": "MobileNetV3-Large",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+              "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "apache_notice_review"
+      ],
+      "blocking_reasons": [
+        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed ZOD taxonomy mapping or reviewed/synthetic full-scene plate-box inventory before training"
+      ]
+    },
+    {
+      "candidate_id": "de-yolox-nano-direct-ios-shadow",
+      "display_name": "YOLOX-Nano direct iOS shadow lane",
+      "lane": "immediate_ios_shadow",
+      "status": "blocked",
+      "eligible_for_selection": false,
+      "pipeline": "direct_detection",
+      "supported_platforms": [
+        "ios"
+      ],
+      "runtime_status": {
+        "ios": {
+          "status": "blocked",
+          "blockers": [
+            "the iOS direct-detection runtime contract exists but no trained and exported German speed-sign artifact exists"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "direct_detector",
+          "family": "YOLOX-Nano",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "yolox-0.1.1rc0",
+              "artifact_id": "yolox-nano-coco-0.1.1rc0"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "apache_notice_review"
+      ],
+      "blocking_reasons": [
+        "the pinned COCO checkpoint is not a German speed-sign model",
+        "an owned fine-tuned Core ML artifact and parity report are missing",
+        "the checkpoint weight and lineage license gate is unapproved"
+      ]
+    },
+    {
+      "candidate_id": "de-yolox-nano-mnv3-small-proposal-classification",
+      "display_name": "YOLOX-Nano proposals + MobileNetV3-Small semantics",
+      "lane": "challenger",
+      "status": "blocked",
+      "eligible_for_selection": true,
+      "pipeline": "proposal_classification",
+      "supported_platforms": [
+        "android",
+        "ios"
+      ],
+      "runtime_status": {
+        "android": {
+          "status": "blocked",
+          "blockers": [
+            "the Android CameraX and LiteRT TSR backend is missing",
+            "a trained proposal-classification pack and event-contract revision are missing"
+          ]
+        },
+        "ios": {
+          "status": "blocked",
+          "blockers": [
+            "the current iOS runtime rejects proposal_classification packs",
+            "a trained proposal-classification pack and event-contract revision are missing"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "proposal_detector",
+          "family": "YOLOX-Nano",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "yolox-0.1.1rc0",
+              "artifact_id": "yolox-nano-coco-0.1.1rc0"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        },
+        {
+          "role": "classifier",
+          "family": "MobileNetV3-Small",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "timm-mobilenetv3-small-lamb-in1k-1824797",
+              "artifact_id": "mobilenetv3-small-lamb-in1k-1824797"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "apache_notice_review"
+      ],
+      "blocking_reasons": [
+        "full-scene supplementary_plate detector-label coverage is not proven; freeze a reviewed ZOD taxonomy mapping or reviewed/synthetic full-scene plate-box inventory before training"
+      ]
+    },
+    {
+      "candidate_id": "de-rf-detr-nano-mnv3-large-proposal-classification",
+      "display_name": "RF-DETR Nano proposals + MobileNetV3-Large semantics",
+      "lane": "challenger",
+      "status": "blocked",
+      "eligible_for_selection": true,
+      "pipeline": "proposal_classification",
+      "supported_platforms": [
+        "android",
+        "ios"
+      ],
+      "runtime_status": {
+        "android": {
+          "status": "blocked",
+          "blockers": [
+            "the proposal detector is unpinned",
+            "the Android CameraX and LiteRT TSR backend is missing"
+          ]
+        },
+        "ios": {
+          "status": "blocked",
+          "blockers": [
+            "the proposal detector is unpinned",
+            "the current iOS runtime rejects proposal_classification packs"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "proposal_detector",
+          "family": "RF-DETR-Nano",
+          "pin_status": "unpinned",
+          "source_refs": [],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        },
+        {
+          "role": "classifier",
+          "family": "MobileNetV3-Large",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+              "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "apache_notice_review"
+      ],
+      "blocking_reasons": [
+        "RF-DETR-Nano source and checkpoint are not pinned in the training-source manifest",
+        "Core ML and LiteRT export parity is not established"
+      ]
+    },
+    {
+      "candidate_id": "de-d-fine-n-mnv3-large-proposal-classification",
+      "display_name": "D-FINE-N proposals + MobileNetV3-Large semantics",
+      "lane": "challenger",
+      "status": "blocked",
+      "eligible_for_selection": true,
+      "pipeline": "proposal_classification",
+      "supported_platforms": [
+        "android",
+        "ios"
+      ],
+      "runtime_status": {
+        "android": {
+          "status": "blocked",
+          "blockers": [
+            "the proposal detector is unpinned",
+            "the Android CameraX and LiteRT TSR backend is missing"
+          ]
+        },
+        "ios": {
+          "status": "blocked",
+          "blockers": [
+            "the proposal detector is unpinned",
+            "the current iOS runtime rejects proposal_classification packs"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "proposal_detector",
+          "family": "D-FINE-N",
+          "pin_status": "unpinned",
+          "source_refs": [],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        },
+        {
+          "role": "classifier",
+          "family": "MobileNetV3-Large",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+              "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1"
+            }
+          ],
+          "license_gate_ids": [
+            "apache_notice_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "apache_notice_review"
+      ],
+      "blocking_reasons": [
+        "D-FINE-N COCO-only source and checkpoint are not pinned in the training-source manifest",
+        "Core ML and LiteRT conversion and parity are not established"
+      ]
+    },
+    {
+      "candidate_id": "gtsign-220-vit-all-classes-external",
+      "display_name": "GTSIGN-220 pretrained ViT all-classes external benchmark",
+      "lane": "external_benchmark",
+      "status": "blocked",
+      "eligible_for_selection": false,
+      "pipeline": "crop_classification_external",
+      "supported_platforms": [
+        "offline"
+      ],
+      "runtime_status": {
+        "offline": {
+          "status": "blocked",
+          "blockers": [
+            "this third-party ViT is an offline crop-classification teacher, not a mobile full-scene runtime"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "classifier",
+          "family": "GTSIGN-220 ViT all classes",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "gtsign-220-e235536",
+              "artifact_id": "gtsign-220-vit-all-classes"
+            }
+          ],
+          "license_gate_ids": [
+            "attribution_share_alike_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [],
+      "required_license_gate_ids": [
+        "attribution_share_alike_review"
+      ],
+      "blocking_reasons": [
+        "the 220-class taxonomy has not been mapped to tsr-semantic-v1",
+        "domain adaptation and owned held-out evaluation are missing",
+        "the checkpoint is an offline teacher and is not eligible for mobile selection",
+        "the CC-BY-SA attribution and share-alike gate is unapproved"
+      ]
+    },
+    {
+      "candidate_id": "panoramax-de-yolo26-classifier-external",
+      "display_name": "Panoramax German YOLO26 classifier external benchmark",
+      "lane": "external_benchmark",
+      "status": "blocked",
+      "eligible_for_selection": false,
+      "pipeline": "crop_classification_external",
+      "supported_platforms": [
+        "offline"
+      ],
+      "runtime_status": {
+        "offline": {
+          "status": "blocked",
+          "blockers": [
+            "this is an external crop-classification benchmark, not a mobile full-scene runtime"
+          ]
+        }
+      },
+      "components": [
+        {
+          "role": "classifier",
+          "family": "Panoramax German YOLO26 classifier",
+          "pin_status": "pinned",
+          "source_refs": [
+            {
+              "source_id": "panoramax-de-classifier-5360aa6",
+              "artifact_id": "panoramax-de-yolo26-classifier-5360aa6"
+            }
+          ],
+          "license_gate_ids": [
+            "panoramax_cc_by_sa_and_ultralytics_review"
+          ]
+        }
+      ],
+      "benchmark_dataset_refs": [
+        {
+          "source_id": "panoramax-de-crops-b485694",
+          "artifact_id": "panoramax-de-train-b485694"
+        },
+        {
+          "source_id": "panoramax-de-crops-b485694",
+          "artifact_id": "panoramax-de-validation-b485694"
+        }
+      ],
+      "required_license_gate_ids": [
+        "attribution_share_alike_review",
+        "panoramax_cc_by_sa_and_ultralytics_review",
+        "ultralytics_agpl_or_enterprise"
+      ],
+      "blocking_reasons": [
+        "external crop-classification evidence cannot establish full-scene assembly performance",
+        "the combined dataset and Ultralytics license gate is unapproved",
+        "this benchmark is not eligible for mobile selection"
+      ]
+    }
+  ]
+}

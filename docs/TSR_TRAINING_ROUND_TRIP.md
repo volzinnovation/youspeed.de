@@ -32,14 +32,83 @@ uses inputs selected from it.
 | --- | --- | --- | --- |
 | [ZOD Frames](https://zod.zenseact.com/) | requested dataset `2.0.0` (confirm after provider access); devkit `0.8.0@601a3ef5cfccad9cc545230362077d299acbf898` | Real European full-frame proposals, hard negatives, and scene robustness; use only frames whose Traffic Signs annotation task is present and complete | CC BY-SA 4.0; attribution/share-alike review is mandatory. The publisher exposes no stable aggregate archive hash, so a sorted local SHA-256 file inventory is mandatory. |
 | [GTSIGN-220](https://huggingface.co/datasets/miriamcarnot/GTSIGN-220) | commit `e235536c26486a42858602b146df40520a75be59` | Real German primary and supplementary crops; semantic teacher | CC BY-SA 4.0; attribution/share-alike review is mandatory. Snapshot only the pinned commit and record a selected-file SHA-256 inventory. |
+| [Panoramax classified German road signs](https://huggingface.co/datasets/Panoramax/classified_de_road_signs) | commit `b4856947ed7cb6312587258acc90e8cf88a4aa13`; pinned `train.zip` and `val.zip` hashes in the manifest | Crop-classification bootstrap data and reproduction of the published comparison | CC BY-SA 4.0. The published split is not an acceptance set: the legacy filename audit reports 1,297 overlapping source IDs and byte hashing finds 522 validation images in training. Rebuild grouped splits. |
 | [Synset Signset Germany](https://synset.de/datasets/synset-signset-ger/) | DOI `10.35097/dcc1znjxu7apx8rn`; RADAR version-1 TAR size `17,149,598,208` bytes; published archive MD5 `373656812a1d57a899f8289c340544b8` | Synthetic primary/plate variation, metadata-driven assemblies, robustness tests | CC BY 4.0; attribution review is mandatory. MD5 identifies the publisher archive but is not collision-resistant, so add an archive SHA-256 and extracted-file inventory locally. |
 | GTSIGN-220 ViT teacher | repository commit above; SHA-256 `e84304a7bbb2a1677c9f4ff9e330262969f1d598da456c8dbe290489bb301bad` | Offline teacher, label audit, and distillation reference | CC BY-SA 4.0 lineage review. Its repository-reported evaluation is not a YouSpeed field-validation result and cannot approve a mobile release. |
+| [Panoramax German classifier](https://huggingface.co/Panoramax/classify_de_road_signs) | commit `5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790`; SHA-256 `f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7` | Required third-party crop-classifier baseline | The model card says Etalab-2.0 and declares YOLO26 plus the Panoramax crop dataset. Release is blocked until both dataset CC BY-SA treatment and Ultralytics AGPL/Enterprise obligations are approved. Its self-reported 98.6% is unverified and comes from the leaky split, so it is not acceptance evidence. |
+| [timm MobileNetV3 Large](https://huggingface.co/timm/mobilenetv3_large_100.ra_in1k) / [Small](https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k) | commits `96f46a1c52932f27492dff66c72378eb99b443a7` / `1824797e7887cbec1990e4adbd6675960a36c589`; exact safetensors hashes in the manifest | Preferred classifier-student initializations for owned training | Official cards declare Apache-2.0 and ImageNet-1k. They remain initialization-only pending pretrained-weight, ImageNet lineage, and NOTICE review. |
 | [YOLOX Nano](https://github.com/Megvii-BaseDetection/YOLOX) | `0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce`; SHA-256 `cd28f55fbbc1829f99d9ac9b38a16d259a22889739c8728ea877610201feff7b` | Proposal-detector control before traffic-sign transfer learning | The repository code is Apache-2.0, but release of the COCO-pretrained weight remains blocked until the weight license, COCO lineage, license/NOTICE obligations, and fine-tuning inputs are explicitly reviewed. |
 | [YOLO26n](https://docs.ultralytics.com/models/yolo26/) and YOLO26n-cls | Ultralytics/assets `v8.4.0@dcececebff9fe00420c144baa5cd25a641d10aa6`; SHA-256 `9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef` and `0dd6f8dbc448870ac98a3cbb7156f923f7ce21fed3755d4019169ffffd279e81` | Detection/classification challengers for technical comparison | Release-blocked by default. Use in a shipped derivative only after an explicit AGPL-3.0 compliance decision or confirmation of an applicable [Ultralytics Enterprise license](https://www.ultralytics.com/license). |
 
 ZOD supplies real scene context; Synset and GTSIGN supply German semantic
 coverage. None is sufficient by itself. Public checkpoint metrics are triage
 signals, not production evidence.
+
+## Model-selection decision
+
+[`model-selection-v1.json`](../shared/tsr/model-selection-v1.json) records the
+architecture decision without pretending that a trained model has passed. The
+target candidate architecture is a YOLOX-Nano-derived `640x640` two-role
+proposal detector (`primary_sign`, `supplementary_plate`) followed by a MobileNetV3-Large
+`224x224` union-label classifier and deterministic geometry/temporal assembly.
+MobileNetV3-Small is the latency challenger. A direct semantic YOLOX-Nano
+detector is the immediate iPhone shadow baseline because the current iPhone
+runtime rejects two-stage packs.
+
+This is an architecture target, not a claim that the detector training corpus
+is ready. ZOD's traffic-sign taxonomy still needs an audited mapping proving
+separate full-scene supplementary-plate boxes. If it does not provide them,
+reviewed YouSpeed annotations or reviewed synthetic full-scene assemblies must
+be frozen before proposal training. Crop datasets alone cannot establish plate
+proposal coverage or recall.
+
+RF-DETR Nano and D-FINE-N remain conversion challengers, not selected models;
+their exact checkpoints and Core ML/LiteRT parity are not pinned. The pinned
+Panoramax YOLO26 classifier is an external ground-truth-crop benchmark only.
+It cannot establish proposal recall, assembly quality, full-scene precision,
+or mobile runtime readiness. The pinned GTSIGN-220 ViT is the second actual
+third-party crop-classification benchmark and optional teacher required by
+issue #2; it remains offline-only until its taxonomy adapter and leakage-safe
+comparison report exist.
+
+```sh
+python3 scripts/tsr/model_selection.py status
+python3 scripts/tsr/model_selection.py evaluate EVALUATION.json
+```
+
+`EVALUATION.json` is the root of a local evidence bundle. Every scored JSON
+section, training/holdout manifest, model/runtime artifact, and device
+attestation uses a safe bundle-relative path and declared SHA-256. The evaluator
+rejects traversal and symlinks, recomputes hashes without deserializing model
+bytes, and requires scored JSON fields to equal their referenced payloads.
+Those bundle-declared hashes establish integrity, not trust. Holdout and parity
+corpora must also match independently approved hashes in the model-selection
+registry. Those pins are currently unset, so their gates remain blocked even
+when a self-consistent evidence bundle is supplied.
+
+Training and calibration dataset bundles also bind their source IDs and any
+applicable source-manifest artifact references. The evaluator derives the
+license posture from the union of the candidate's model lineage and the
+datasets actually used by that run; approving only the model initialization
+cannot hide a CC-BY or CC-BY-SA training-data obligation.
+
+Every trained component also attests its checkpoint, ONNX, Core ML, and LiteRT
+formats. Those canonical artifact roles must use globally distinct evidence
+paths and SHA-256 values, so one opaque file cannot impersonate every runtime
+format. Device evidence remains pending until a registry revision pins exact
+tier/platform/hardware-model/OS-build/app-build-SHA profiles; device
+attestations additionally bind the benchmark run and device instance.
+
+The evaluator then computes an internal engineering scorecard from those bound
+counts and measurements, never from a self-reported summary metric. It is
+read-only and never
+changes `selected_candidate_id`; the registry intentionally keeps that field
+null until a separate human product process selects an eligible artifact. Even
+a fully passing model scorecard would not approve a
+production release: privacy verification, legal approval, signed distribution,
+app-level override lifecycle, and product safety acceptance remain separate.
+Duplicate-confirmation and wrong-way-confirmation thresholds are intentionally
+pending; field data, not an invented number, must establish them.
 
 ### Bootstrap commands
 
@@ -55,6 +124,41 @@ python3 scripts/tsr/bootstrap_sources.py download \
 python3 scripts/tsr/bootstrap_sources.py verify \
   --root tsr-data/bootstrap \
   yolox-nano-coco-0.1.1rc0
+
+# Pinned Panoramax comparison data/model and MobileNetV3 student initializations.
+python3 scripts/tsr/bootstrap_sources.py show \
+  panoramax-de-train-b485694 \
+  panoramax-de-validation-b485694 \
+  panoramax-de-yolo26-classifier-5360aa6 \
+  mobilenetv3-large-ra-in1k-96f46a1 \
+  mobilenetv3-small-lamb-in1k-1824797
+python3 scripts/tsr/bootstrap_sources.py download \
+  --root tsr-data/bootstrap \
+  panoramax-de-train-b485694 \
+  panoramax-de-validation-b485694 \
+  panoramax-de-yolo26-classifier-5360aa6 \
+  mobilenetv3-large-ra-in1k-96f46a1 \
+  mobilenetv3-small-lamb-in1k-1824797
+python3 scripts/tsr/bootstrap_sources.py verify \
+  --root tsr-data/bootstrap \
+  panoramax-de-train-b485694 \
+  panoramax-de-validation-b485694 \
+  panoramax-de-yolo26-classifier-5360aa6 \
+  mobilenetv3-large-ra-in1k-96f46a1 \
+  mobilenetv3-small-lamb-in1k-1824797
+
+# Reproduce the known published-split leakage against the exact pinned bytes.
+python3 scripts/tsr/audit_panoramax_split.py \
+  --train tsr-data/bootstrap/datasets/panoramax/classified-de-road-signs/b485694/train.zip \
+  --val tsr-data/bootstrap/datasets/panoramax/classified-de-road-signs/b485694/val.zip \
+  --expect-train-bytes 59887779 \
+  --expect-val-bytes 29740678 \
+  --expect-train-sha256 0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853 \
+  --expect-val-sha256 13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea \
+  --expect-train-images 13287 \
+  --expect-val-images 6944 \
+  --expect-source-overlap 1297 \
+  --expect-exact-val-in-train 522
 ```
 
 `show`, `download`, and `verify` require exact artifact IDs. There is no
@@ -63,6 +167,14 @@ restricted to declared HTTPS hosts, byte counts are bounded by the manifest,
 and a download is atomically installed only after its hash passes. The
 pickle-capable `.pt` and `.pth` files still require an isolated conversion
 environment later; verification does not make deserialization safe.
+
+The `1,297` check deliberately reproduces the historical audit convention:
+remove a leading `DE_` from each filename stem and remove the final character
+as the crop discriminator. It is retained so issue #2 remains reproducible;
+it is not a general UUID parser. The `522` check independently streams and
+SHA-256-hashes every image member without extracting or decoding the archive.
+Both results demonstrate that the published validation split is unsuitable
+for selection or acceptance.
 
 ## Capture and review loop
 
@@ -144,27 +256,39 @@ regression set.
 2. **Train the two-role proposal detector.** Initialize the license-gated
    control from YOLOX Nano, replace COCO classes with `primary_sign` and
    `supplementary_plate`, and train on ZOD plus reviewed YouSpeed full frames.
+   First audit and freeze the ZOD label mapping; do not assume its generic
+   traffic-sign annotations contain separate supplementary-plate boxes. If
+   that coverage is absent, add reviewed full-scene YouSpeed plate boxes or
+   reviewed synthetic assemblies and bind their inventories to the run.
    Preserve background-only frames only from ZOD frames for which the Traffic
    Signs annotation task is present and complete; an unannotated frame is not a
    negative. Benchmark a YOLO26n branch only as the license-gated challenger.
-3. **Train the primary classifier.** Transfer from the pinned GTSIGN teacher or
-   distill it into a license-approved mobile student. Combine real GTSIGN crops,
-   Synset speed classes, and reviewed high-resolution YouSpeed crops. Keep
-   numeric speed, zone, and end semantics distinct.
-4. **Train the supplementary classifier.** Use the Synset upper/lower metadata,
-   GTSIGN restriction crops, and reviewed device crops. Predict typed semantics
-   such as weather, time, vehicle, resident, school, exception, distance,
-   direction, extent, text, other, and unknown—not every primary/plate
-   combination as a new class.
-5. **Link the assembly.** Start with deterministic geometry: compatible plate
+3. **Train one role-aware union-label classifier.** Initialize the owned
+   MobileNetV3 Large or Small student from its pinned safetensors checkpoint,
+   optionally distill from the pinned GTSIGN teacher, and compare primary-crop
+   results against the pinned Panoramax classifier. Jointly train one
+   union-label head across two label subsets, then constrain its permitted
+   outputs by proposal role: primary semantics from
+   leakage-regrouped Panoramax/GTSIGN crops, Synset speed classes, and reviewed
+   YouSpeed crops; supplementary semantics from Synset upper/lower metadata,
+   GTSIGN restriction crops, and reviewed device crops. Keep numeric speed,
+   zone, and end semantics distinct and calibrate each role separately. Predict
+   typed restrictions such as weather, time, vehicle, resident, school,
+   exception, distance, direction, extent, text, other, and unknown—not every
+   primary/plate combination as a new class. Common closed-set plates can
+   bootstrap v1, but arbitrary exact time, weight, distance, and free-text
+   conditions need a later structured decoder/OCR lane. Until that lane is
+   validated, an unsupported or unreadable visible plate remains `unresolved`
+   and can never create an unconditional camera limit.
+4. **Link the assembly.** Start with deterministic geometry: compatible plate
    below/near a primary, same temporal track, and one-parent ownership. Train a
    lightweight linker only if reviewed data demonstrates that geometry is not
    sufficient. Keep unresolved plates observable.
-6. **Mine failures.** Run the candidate in shadow mode over new consented
+5. **Mine failures.** Run the candidate in shadow mode over new consented
    drives. Prioritize uncertain predictions, model disagreement, false temporal
    confirmations, rare speed values/restrictions, and route-held-out errors.
    Review them before they can re-enter training.
-7. **Fine-tune and distill.** Unfreeze progressively, use class-balanced
+6. **Fine-tune and distill.** Unfreeze progressively, use class-balanced
    sampling and realistic small-object/blur/exposure augmentation, and stop on
    the untouched validation groups. Record seeds, framework/container digests,
    optimizer schedule, all input inventories, and the exact parent checkpoint.
@@ -176,11 +300,18 @@ partition. Calibrate primary semantics, plate presence, typed restrictions, and
 the temporal confirmation score separately. Thresholds are part of the model
 pack, not hard-coded in either app.
 
-Export one frozen training result through a pinned conversion environment:
+Export each frozen component checkpoint through a pinned conversion
+environment. The mobile formats are siblings of the reference export, not
+descendants that must pass through ONNX:
 
 ```text
-frozen student -> canonical ONNX -> Core ML
-                              \-> LiteRT/TFLite
+frozen detector checkpoint   -> reference ONNX
+                            \ -> Core ML detector
+                             \-> LiteRT detector
+
+frozen classifier checkpoint -> reference ONNX
+                            \ -> Core ML classifier
+                             \-> LiteRT classifier
 ```
 
 The training run records ONNX opset, converter versions, preprocessing,
@@ -192,29 +323,36 @@ hash, dataset-inventory hashes, training run ID, calibration parameters,
 evaluation report hash, parity report, exporter identity, and mobile artifact
 hashes.
 
-## Release gates
+## Internal model-scorecard gates
 
-These are initial safety gates for an internal model-pack candidate. Changing a
-numeric threshold requires a versioned evaluation decision, not an informal
-field-test adjustment.
+These are engineering comparison gates for an internal model-pack candidate.
+Changing a numeric threshold requires a versioned evaluation decision, not an
+informal field-test adjustment. The evaluator can check evidence bindings and
+declared gate status; it cannot grant legal approval or approve a production
+release.
 
 | Gate | Pass condition |
 | --- | --- |
 | Provenance | Source manifest validates; every selected artifact and dataset inventory matches; the complete lineage is recorded. |
-| Licensing | Every lineage gate is approved. The YOLOX control remains blocked until its pretrained-weight license and COCO lineage are documented; any YOLO26 derivative remains blocked absent an explicit AGPL-compliance or Enterprise-license decision. |
-| Privacy | Every YouSpeed sample has valid consent/retention metadata; exported full frames have verified redaction; no raw Dashcam video or direct device ID is present. |
+| License posture | Every required model and actual training/calibration dataset lineage gate is explicitly asserted to the evaluator by the review process. This is an engineering blocker only, not a legal determination or proof embedded in the model evidence bundle. The YOLOX and MobileNetV3 initializations remain blocked until their pretrained-weight/data lineage and NOTICE obligations are documented; the Panoramax classifier additionally requires both CC BY-SA dataset treatment and an explicit Ultralytics AGPL-compliance or Enterprise-license decision. |
 | Leakage | The materializer's capture-group split passes, and a separate pre-split audit demonstrates zero physical-sign-cluster or near-duplicate overlap between train, calibration, validation, and test partitions. |
-| Primary semantics | On the real route holdout, the lower 95% confidence bound for confirmed numeric-limit precision is at least 99%; dangerous speed substitutions are at most 0.1%. |
-| Restrictions | The lower 95% confidence bound for resolved restriction precision is at least 98%; a detected but unresolved plate never becomes an unconditional limit. |
-| Temporal behavior | At most one confirmed event per physical assembly; newer detections replace older detections; a stable map/local signature does not clear an override; genuinely new OSM/local source information does. |
-| Calibration | Expected calibration error is at most 0.03 on the calibration audit set, with per-class reliability plots and no threshold fitted on the release test set. |
-| Cross-runtime parity | Every release-case normalized semantic and assembly state agrees across ONNX/Core ML/LiteRT; matched boxes have IoU at least 0.995 and calibrated confidence differs by at most 0.02. |
-| Device performance | On each supported device tier, p95 inference fits its declared adaptive 2–10 FPS interval, only one inference is in flight, memory remains bounded, and serious thermal/low-power state downshifts without affecting recording. |
+| Primary semantics | On the real route holdout, the lower 95% confidence bound is at least 99% for confirmed numeric-limit precision and 90% for recall; dangerous speed substitutions are at most 0.1%. |
+| Restrictions | The lower 95% confidence bound is at least 98% for resolved-restriction precision and 80% for recall; a detected but unresolved plate never becomes an unconditional limit. |
+| Temporal evidence | Replay produces at most one confirmed event per physical assembly and satisfies versioned duplicate-confirmation and wrong-way-confirmation thresholds. Those thresholds are currently pending, so this gate remains blocked. |
+| Calibration | Expected calibration error is at most 0.03 on the calibration audit set, with per-class reliability plots and no threshold fitted on the held-out test set. |
+| Cross-runtime parity | Every scorecard-case normalized semantic and assembly state agrees across ONNX/Core ML/LiteRT; matched boxes have IoU at least 0.995 and calibrated confidence differs by at most 0.02. |
+| Device performance | Exact approved tier profiles must be registry-pinned; they are currently unset, so this gate is pending. Each pinned tier records at least 3,600 coherent detector/end-to-end inferences over at least 30 minutes: the shared camera continues delivering at least 15 frames/s while TSR samples it at a sustained adaptive 2–10 Hz. Detector/end-to-end p95 stay under 250 ms, peak TSR memory under 256 MB, dropped frames at most 1%, backpressure events at most 0.1%, exactly one inference is in flight, and thermal downshift does not affect recording. |
 | Field regression | Required day/night/weather/construction/adjacent-road suites pass, and every previously accepted dangerous failure remains a named regression case. |
 
 Precision gates apply to the full confirmed assembly, not just a cropped sign
 classifier. If the available holdout is too small for the confidence bound, the
 gate is not met; collecting more independent routes is the remedy.
+
+Separate production approvals remain mandatory and are deliberately outside
+this scorecard: consent/retention and image-redaction verification; legal review
+of all lineage; signed pack distribution; app-level precedence and override
+invalidation; Dashcam/TSR/Panoramax failure isolation; and final product-safety
+acceptance on supported devices.
 
 ## Versioned improvement cycle
 

@@ -1,0 +1,407 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/model-evaluation-v1.json",
+  "title": "YouSpeed traffic-sign candidate evaluation",
+  "description": "Raw internal candidate-comparison evidence consumed by the fail-closed TSR model scorecard.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "report_id", "candidate_id", "evaluated_at",
+    "lineage", "holdout", "leakage_audit", "primary_semantics",
+    "restrictions", "calibration", "parity", "temporal_behavior", "mobile"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "report_id": { "$ref": "#/$defs/id" },
+    "candidate_id": { "$ref": "#/$defs/id" },
+    "evaluated_at": { "type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$" },
+    "lineage": { "$ref": "#/$defs/lineage" },
+    "holdout": { "$ref": "#/$defs/holdout" },
+    "leakage_audit": { "$ref": "#/$defs/leakageAudit" },
+    "primary_semantics": { "$ref": "#/$defs/primarySemantics" },
+    "restrictions": { "$ref": "#/$defs/restrictions" },
+    "calibration": { "$ref": "#/$defs/calibration" },
+    "parity": { "$ref": "#/$defs/parity" },
+    "temporal_behavior": { "$ref": "#/$defs/temporalBehavior" },
+    "mobile": { "$ref": "#/$defs/mobile" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "profileToken": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.,_+:/-]{0,127}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "count": { "type": "integer", "minimum": 0 },
+    "caseGroundTruthCount": { "type": "integer", "minimum": 0, "maximum": 1000 },
+    "positiveCount": { "type": "integer", "minimum": 1 },
+    "probability": { "type": "number", "minimum": 0, "maximum": 1 },
+    "evidenceFile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)[A-Za-z0-9](?:[A-Za-z0-9._/-]*[A-Za-z0-9._-])?$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "sourceRef": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "artifact_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/id" },
+        "artifact_id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "datasetBundle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["bundle_id", "source_ids", "artifact_refs", "inventory_file", "group_split_file"],
+      "properties": {
+        "bundle_id": { "$ref": "#/$defs/id" },
+        "source_ids": { "type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "artifact_refs": { "type": "array", "maxItems": 64, "uniqueItems": true, "items": { "$ref": "#/$defs/sourceRef" } },
+        "inventory_file": { "$ref": "#/$defs/evidenceFile" },
+        "group_split_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "componentIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "trained_checkpoint_sha256", "reference_onnx_sha256", "coreml_sha256", "litert_sha256"],
+      "properties": {
+        "role": { "$ref": "#/$defs/id" },
+        "trained_checkpoint_sha256": { "$ref": "#/$defs/sha256" },
+        "reference_onnx_sha256": { "$ref": "#/$defs/sha256" },
+        "coreml_sha256": { "$ref": "#/$defs/sha256" },
+        "litert_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "trainedComponent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "family", "source_refs", "artifact_formats", "trained_checkpoint", "reference_onnx", "coreml", "litert"],
+      "properties": {
+        "role": { "$ref": "#/$defs/id" },
+        "family": { "type": "string", "minLength": 1 },
+        "source_refs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/sourceRef" } },
+        "artifact_formats": {
+          "type": "object", "additionalProperties": false,
+          "required": ["trained_checkpoint", "reference_onnx", "coreml", "litert"],
+          "properties": {
+            "trained_checkpoint": { "const": "safetensors" },
+            "reference_onnx": { "const": "onnx" },
+            "coreml": { "const": "coreml-compiled-model" },
+            "litert": { "const": "litert-flatbuffer" }
+          }
+        },
+        "trained_checkpoint": { "$ref": "#/$defs/evidenceFile" },
+        "reference_onnx": { "$ref": "#/$defs/evidenceFile" },
+        "coreml": { "$ref": "#/$defs/evidenceFile" },
+        "litert": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "trainingManifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "training_run_id", "candidate_id", "source_manifest_id", "source_manifest_sha256", "training_dataset_bundle", "calibration_dataset_bundle", "components"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "training_run_id": { "$ref": "#/$defs/id" },
+        "candidate_id": { "$ref": "#/$defs/id" },
+        "source_manifest_id": { "const": "youspeed-tsr-training-sources-v1" },
+        "source_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "training_dataset_bundle": { "$ref": "#/$defs/datasetBundle" },
+        "calibration_dataset_bundle": { "$ref": "#/$defs/datasetBundle" },
+        "components": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/trainedComponent" } }
+      }
+    },
+    "trainingRun": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifest_file", "manifest"],
+      "properties": {
+        "manifest_file": { "$ref": "#/$defs/evidenceFile" },
+        "manifest": { "$ref": "#/$defs/trainingManifest" }
+      }
+    },
+    "lineage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_manifest_id", "source_manifest_sha256", "selection_registry_sha256", "bootstrap_artifact_ids", "training_run"],
+      "properties": {
+        "source_manifest_id": { "const": "youspeed-tsr-training-sources-v1" },
+        "source_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "selection_registry_sha256": { "$ref": "#/$defs/sha256" },
+        "bootstrap_artifact_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "training_run": { "$ref": "#/$defs/trainingRun" }
+      }
+    },
+    "stratum": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "case_count", "failure_count"],
+      "properties": {
+        "name": { "$ref": "#/$defs/id" },
+        "case_count": { "$ref": "#/$defs/positiveCount" },
+        "failure_count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "caseInventoryStratum": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "case_count", "primary_ground_truth_count", "restriction_ground_truth_count"],
+      "properties": {
+        "name": { "$ref": "#/$defs/id" },
+        "case_count": { "$ref": "#/$defs/positiveCount" },
+        "primary_ground_truth_count": { "$ref": "#/$defs/count" },
+        "restriction_ground_truth_count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "caseInventoryCase": {
+      "type": "object", "additionalProperties": false,
+      "required": ["case_id", "annotation_sha256", "strata", "primary_ground_truth_count", "restriction_ground_truth_count"],
+      "properties": {
+        "case_id": { "$ref": "#/$defs/id" },
+        "annotation_sha256": { "$ref": "#/$defs/sha256" },
+        "strata": { "type": "array", "minItems": 1, "maxItems": 1000, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "primary_ground_truth_count": { "$ref": "#/$defs/caseGroundTruthCount" },
+        "restriction_ground_truth_count": { "$ref": "#/$defs/caseGroundTruthCount" }
+      }
+    },
+    "caseInventory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "dataset_id", "sample_count", "primary_ground_truth_count", "restriction_ground_truth_count", "cases", "strata"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "dataset_id": { "$ref": "#/$defs/id" },
+        "sample_count": { "$ref": "#/$defs/positiveCount" },
+        "primary_ground_truth_count": { "$ref": "#/$defs/positiveCount" },
+        "restriction_ground_truth_count": { "$ref": "#/$defs/positiveCount" },
+        "cases": { "type": "array", "minItems": 1, "maxItems": 100000, "items": { "$ref": "#/$defs/caseInventoryCase" } },
+        "strata": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "$ref": "#/$defs/caseInventoryStratum" } }
+      }
+    },
+    "holdout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dataset_id", "case_inventory_file", "case_inventory", "group_split_file", "kind", "frozen", "threshold_fitted_on_holdout", "sample_count", "real_case_count", "synthetic_case_count", "independent_route_count", "strata", "report_file"],
+      "properties": {
+        "dataset_id": { "$ref": "#/$defs/id" },
+        "case_inventory_file": { "$ref": "#/$defs/evidenceFile" },
+        "case_inventory": { "$ref": "#/$defs/caseInventory" },
+        "group_split_file": { "$ref": "#/$defs/evidenceFile" },
+        "kind": { "enum": ["real_route_held_out", "mixed", "synthetic"] },
+        "frozen": { "type": "boolean" },
+        "threshold_fitted_on_holdout": { "type": "boolean" },
+        "sample_count": { "$ref": "#/$defs/positiveCount" },
+        "real_case_count": { "$ref": "#/$defs/count" },
+        "synthetic_case_count": { "$ref": "#/$defs/count" },
+        "independent_route_count": { "$ref": "#/$defs/positiveCount" },
+        "strata": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/stratum" } },
+        "report_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "leakageAudit": {
+      "type": "object", "additionalProperties": false,
+      "required": ["audit_file", "training_run_manifest_sha256", "training_dataset_inventory_sha256", "training_group_split_sha256", "calibration_dataset_inventory_sha256", "calibration_group_split_sha256", "holdout_case_inventory_sha256", "holdout_group_split_sha256", "capture_group_overlap_count", "physical_sign_cluster_overlap_count", "near_duplicate_overlap_count"],
+      "properties": {
+        "audit_file": { "$ref": "#/$defs/evidenceFile" },
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "training_dataset_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "training_group_split_sha256": { "$ref": "#/$defs/sha256" },
+        "calibration_dataset_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "calibration_group_split_sha256": { "$ref": "#/$defs/sha256" },
+        "holdout_case_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "holdout_group_split_sha256": { "$ref": "#/$defs/sha256" },
+        "capture_group_overlap_count": { "$ref": "#/$defs/count" },
+        "physical_sign_cluster_overlap_count": { "$ref": "#/$defs/count" },
+        "near_duplicate_overlap_count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "recallStratum": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "case_count", "ground_truth_count", "true_positive_count", "false_negative_count"],
+      "properties": {
+        "name": { "$ref": "#/$defs/id" },
+        "case_count": { "$ref": "#/$defs/positiveCount" },
+        "ground_truth_count": { "$ref": "#/$defs/count" },
+        "true_positive_count": { "$ref": "#/$defs/count" },
+        "false_negative_count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "primarySemantics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "components", "holdout_case_inventory_sha256", "evaluated_case_count", "ground_truth_count", "true_positive_count", "false_positive_count", "false_negative_count", "confirmed_numeric_prediction_count", "dangerous_substitution_count", "strata", "metrics_file"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "components": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/componentIdentity" } },
+        "holdout_case_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "evaluated_case_count": { "$ref": "#/$defs/positiveCount" },
+        "ground_truth_count": { "$ref": "#/$defs/positiveCount" },
+        "true_positive_count": { "$ref": "#/$defs/count" },
+        "false_positive_count": { "$ref": "#/$defs/count" },
+        "false_negative_count": { "$ref": "#/$defs/count" },
+        "confirmed_numeric_prediction_count": { "$ref": "#/$defs/count" },
+        "dangerous_substitution_count": { "$ref": "#/$defs/count" },
+        "strata": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/recallStratum" } },
+        "metrics_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "restrictions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "components", "holdout_case_inventory_sha256", "evaluated_case_count", "ground_truth_count", "true_positive_count", "false_positive_count", "false_negative_count", "resolved_prediction_count", "unresolved_promoted_unconditional_count", "strata", "metrics_file"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "components": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/componentIdentity" } },
+        "holdout_case_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "evaluated_case_count": { "$ref": "#/$defs/positiveCount" },
+        "ground_truth_count": { "$ref": "#/$defs/positiveCount" },
+        "true_positive_count": { "$ref": "#/$defs/count" },
+        "false_positive_count": { "$ref": "#/$defs/count" },
+        "false_negative_count": { "$ref": "#/$defs/count" },
+        "resolved_prediction_count": { "$ref": "#/$defs/count" },
+        "unresolved_promoted_unconditional_count": { "$ref": "#/$defs/count" },
+        "strata": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/recallStratum" } },
+        "metrics_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "calibrationBin": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "sample_count", "confidence_sum", "correct_count"],
+      "properties": {
+        "index": { "$ref": "#/$defs/count" },
+        "sample_count": { "$ref": "#/$defs/positiveCount" },
+        "confidence_sum": { "type": "number", "minimum": 0 },
+        "correct_count": { "$ref": "#/$defs/count" }
+      }
+    },
+    "calibration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "dataset_inventory_sha256", "group_split_sha256", "sample_count", "bins", "reliability_report_file"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "dataset_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "group_split_sha256": { "$ref": "#/$defs/sha256" },
+        "sample_count": { "$ref": "#/$defs/positiveCount" },
+        "bins": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/calibrationBin" } },
+        "reliability_report_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "parityCase": {
+      "type": "object", "additionalProperties": false,
+      "required": ["case_id", "input_sha256"],
+      "properties": {
+        "case_id": { "$ref": "#/$defs/id" },
+        "input_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "parityCaseInventory": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "inventory_id", "cases"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "inventory_id": { "$ref": "#/$defs/id" },
+        "cases": { "type": "array", "minItems": 1, "maxItems": 100000, "items": { "$ref": "#/$defs/parityCase" } }
+      }
+    },
+    "normalizedParityOutput": {
+      "type": "object", "additionalProperties": false,
+      "required": ["output_id", "case_id", "semantic_label", "assembly_label", "box_xyxy", "calibrated_confidence"],
+      "properties": {
+        "output_id": { "$ref": "#/$defs/id" },
+        "case_id": { "$ref": "#/$defs/id" },
+        "semantic_label": { "$ref": "#/$defs/id" },
+        "assembly_label": { "$ref": "#/$defs/id" },
+        "box_xyxy": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "$ref": "#/$defs/probability" } },
+        "calibrated_confidence": { "$ref": "#/$defs/probability" }
+      }
+    },
+    "normalizedParityOutputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "output_kind", "runtime", "training_run_manifest_sha256", "case_inventory_sha256", "artifact_sha256s", "evaluated_case_ids", "outputs"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "output_kind": { "enum": ["reference", "measured"] },
+        "runtime": { "enum": ["coreml", "litert", "onnx"] },
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "case_inventory_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_sha256s": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "$ref": "#/$defs/sha256" } },
+        "evaluated_case_ids": { "type": "array", "maxItems": 100000, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "outputs": { "type": "array", "maxItems": 1000000, "items": { "$ref": "#/$defs/normalizedParityOutput" } }
+      }
+    },
+    "parityRuntimeOutputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["runtime", "output_file"],
+      "properties": {
+        "runtime": { "enum": ["coreml", "litert", "onnx"] },
+        "output_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "parity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "components", "case_inventory_file", "reference_outputs_file", "runtime_outputs", "report_file"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "components": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/componentIdentity" } },
+        "case_inventory_file": { "$ref": "#/$defs/evidenceFile" },
+        "reference_outputs_file": { "$ref": "#/$defs/evidenceFile" },
+        "runtime_outputs": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "$ref": "#/$defs/parityRuntimeOutputs" } },
+        "report_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "temporalBehavior": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "components", "physical_assembly_count", "duplicate_confirmation_count", "direction_evaluable_confirmation_count", "wrong_way_confirmation_count", "report_file"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "components": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/componentIdentity" } },
+        "physical_assembly_count": { "$ref": "#/$defs/positiveCount" },
+        "duplicate_confirmation_count": { "$ref": "#/$defs/count" },
+        "direction_evaluable_confirmation_count": { "$ref": "#/$defs/positiveCount" },
+        "wrong_way_confirmation_count": { "$ref": "#/$defs/count" },
+        "report_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "mobileArtifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["role", "platform", "artifact_id", "file", "size_bytes"],
+      "properties": {
+        "role": { "$ref": "#/$defs/id" },
+        "platform": { "enum": ["android", "ios"] },
+        "artifact_id": { "$ref": "#/$defs/id" },
+        "file": { "$ref": "#/$defs/evidenceFile" },
+        "size_bytes": { "$ref": "#/$defs/positiveCount" }
+      }
+    },
+    "deviceTier": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier_id", "benchmark_run_id", "device_instance_id", "platform", "hardware_model_id", "os_build_id", "app_build_sha256", "training_run_manifest_sha256", "artifact_sha256s", "drive_duration_seconds", "camera_frame_count", "dropped_frame_count", "backpressure_event_count", "peak_memory_bytes", "detector_inference_count", "detector_p95_ms", "end_to_end_inference_count", "end_to_end_p95_ms", "maximum_in_flight", "thermal_downshift_verified", "thermal_evidence_file", "recording_unaffected", "recording_evidence_file"],
+      "properties": {
+        "tier_id": { "$ref": "#/$defs/id" },
+        "benchmark_run_id": { "$ref": "#/$defs/id" },
+        "device_instance_id": { "$ref": "#/$defs/profileToken" },
+        "platform": { "enum": ["android", "ios"] },
+        "hardware_model_id": { "$ref": "#/$defs/profileToken" },
+        "os_build_id": { "$ref": "#/$defs/profileToken" },
+        "app_build_sha256": { "$ref": "#/$defs/sha256" },
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_sha256s": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/sha256" } },
+        "drive_duration_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "camera_frame_count": { "$ref": "#/$defs/positiveCount" },
+        "dropped_frame_count": { "$ref": "#/$defs/count" },
+        "backpressure_event_count": { "$ref": "#/$defs/count" },
+        "peak_memory_bytes": { "$ref": "#/$defs/positiveCount" },
+        "detector_inference_count": { "$ref": "#/$defs/positiveCount" },
+        "detector_p95_ms": { "type": "number", "minimum": 0 },
+        "end_to_end_inference_count": { "$ref": "#/$defs/positiveCount" },
+        "end_to_end_p95_ms": { "type": "number", "minimum": 0 },
+        "maximum_in_flight": { "$ref": "#/$defs/positiveCount" },
+        "thermal_downshift_verified": { "type": "boolean" },
+        "thermal_evidence_file": { "$ref": "#/$defs/evidenceFile" },
+        "recording_unaffected": { "type": "boolean" },
+        "recording_evidence_file": { "$ref": "#/$defs/evidenceFile" }
+      }
+    },
+    "mobile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["training_run_manifest_sha256", "pack_manifest_file", "pack_size_bytes", "artifacts", "supported_device_tier_ids", "device_tiers"],
+      "properties": {
+        "training_run_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "pack_manifest_file": { "$ref": "#/$defs/evidenceFile" },
+        "pack_size_bytes": { "$ref": "#/$defs/positiveCount" },
+        "artifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/mobileArtifact" } },
+        "supported_device_tier_ids": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "device_tiers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/deviceTier" } }
+      }
+    }
+  }
+}

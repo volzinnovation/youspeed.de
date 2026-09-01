@@ -31,6 +31,18 @@ HASH_PATTERNS = {
     "sha256": re.compile(r"^[a-f0-9]{64}$"),
 }
 SERIALIZATION_RISKS = {"data_archive", "data_only", "pickle_capable_untrusted"}
+LICENSE_GATE_DEFAULT_DECISIONS = {
+    "allow_after_attribution_review",
+    "blocked",
+    "blocked_pending_legal_review",
+    "blocked_pending_weight_and_lineage_review",
+}
+FORMAT_SERIALIZATION_RISKS = {
+    "archive": "data_archive",
+    "pytorch_checkpoint": "pickle_capable_untrusted",
+    "safetensors": "data_only",
+}
+PICKLE_CAPABLE_SUFFIXES = {".pt", ".pth"}
 
 
 class SourceManifestError(ValueError):
@@ -108,10 +120,60 @@ def validate_manifest(path: Path | str = DEFAULT_MANIFEST) -> ValidatedSourceMan
     _require(
         isinstance(license_gates, dict) and license_gates, "license gates are required"
     )
+    for gate_id, gate in license_gates.items():
+        _require(
+            isinstance(gate_id, str) and SAFE_ID.fullmatch(gate_id) is not None,
+            f"invalid license gate id {gate_id}",
+        )
+        _require(isinstance(gate, dict), f"license gate {gate_id} must be an object")
+        _require(
+            gate.get("default_decision") in LICENSE_GATE_DEFAULT_DECISIONS,
+            f"license gate {gate_id} has an unrecognized default decision",
+        )
+        _require(
+            isinstance(gate.get("reason"), str) and gate["reason"],
+            f"license gate {gate_id} needs a reason",
+        )
+        required_gates = gate.get("requires", [])
+        _require(
+            isinstance(required_gates, list)
+            and all(isinstance(item, str) and item for item in required_gates),
+            f"license gate {gate_id}.requires must be an array of gate ids",
+        )
+        _require(
+            gate_id not in required_gates,
+            f"license gate {gate_id} cannot require itself",
+        )
+        _require(
+            all(item in license_gates for item in required_gates),
+            f"license gate {gate_id} requires an unknown gate",
+        )
     _require(
         license_gates.get("ultralytics_agpl_or_enterprise", {}).get("default_decision")
         == "blocked",
         "the Ultralytics gate must be blocked by default",
+    )
+    panoramax_gate = license_gates.get("panoramax_cc_by_sa_and_ultralytics_review", {})
+    _require(
+        panoramax_gate.get("default_decision") == "blocked",
+        "the combined Panoramax lineage gate must be blocked by default",
+    )
+    _require(
+        panoramax_gate.get("requires")
+        == [
+            "attribution_share_alike_review",
+            "ultralytics_agpl_or_enterprise",
+        ],
+        "the combined Panoramax lineage gate must require the dataset share-alike and Ultralytics gates",
+    )
+    panoramax_gate_reason = panoramax_gate.get("reason")
+    _require(
+        isinstance(panoramax_gate_reason, str)
+        and "CC-BY-SA-4.0" in panoramax_gate_reason
+        and "Ultralytics" in panoramax_gate_reason
+        and "AGPL-3.0" in panoramax_gate_reason
+        and "Enterprise" in panoramax_gate_reason,
+        "the combined Panoramax lineage gate must cover dataset share-alike and Ultralytics AGPL/Enterprise review",
     )
 
     sources = payload.get("sources")
@@ -177,7 +239,21 @@ def validate_manifest(path: Path | str = DEFAULT_MANIFEST) -> ValidatedSourceMan
             isinstance(acquisition.get("mode"), str) and acquisition["mode"],
             f"{field}.acquisition.mode is required",
         )
-        _https_host(acquisition.get("locator"), f"{field}.acquisition.locator")
+        acquisition_locator = acquisition.get("locator")
+        acquisition_host = _https_host(
+            acquisition_locator, f"{field}.acquisition.locator"
+        )
+        if acquisition["mode"] == "huggingface_revision":
+            _require(
+                revision["kind"] == "huggingface_commit"
+                and re.fullmatch(r"[a-f0-9]{40}", revision["value"]) is not None,
+                f"{field} needs an exact Hugging Face commit",
+            )
+            _require(
+                acquisition_host == "huggingface.co"
+                and revision["value"] in urlparse(acquisition_locator).path.split("/"),
+                f"{field}.acquisition.locator must contain its pinned commit",
+            )
 
         integrity = source.get("integrity")
         _require(isinstance(integrity, dict), f"{field}.integrity is required")
@@ -233,20 +309,42 @@ def validate_manifest(path: Path | str = DEFAULT_MANIFEST) -> ValidatedSourceMan
             isinstance(artifact.get("revision"), str) and artifact["revision"],
             f"{field}.revision is required",
         )
-        _safe_relative_path(artifact.get("relative_path"), f"{field}.relative_path")
+        relative_path = _safe_relative_path(
+            artifact.get("relative_path"), f"{field}.relative_path"
+        )
         size_bytes = artifact.get("size_bytes")
         _require(
             size_bytes is None or (type(size_bytes) is int and size_bytes > 0),
             f"{field}.size_bytes is invalid",
         )
+        artifact_format = artifact.get("format")
         _require(
-            isinstance(artifact.get("format"), str) and artifact["format"],
+            isinstance(artifact_format, str) and artifact_format,
             f"{field}.format is required",
         )
+        serialization_risk = artifact.get("serialization_risk")
         _require(
-            artifact.get("serialization_risk") in SERIALIZATION_RISKS,
+            serialization_risk in SERIALIZATION_RISKS,
             f"{field}.serialization_risk is invalid",
         )
+        expected_risk = FORMAT_SERIALIZATION_RISKS.get(artifact_format)
+        if expected_risk is not None:
+            _require(
+                serialization_risk == expected_risk,
+                f"{field}.{artifact_format} must use serialization risk {expected_risk}",
+            )
+        if relative_path.suffix.lower() in PICKLE_CAPABLE_SUFFIXES:
+            _require(
+                serialization_risk == "pickle_capable_untrusted",
+                f"{field} pickle-capable checkpoint must remain untrusted",
+            )
+
+        source = sources_by_id[source_id]
+        if source["acquisition"]["mode"] == "huggingface_revision":
+            _require(
+                artifact["revision"] == source["revision"]["value"],
+                f"{field}.revision must match its Hugging Face source commit",
+            )
 
         hashes = artifact.get("hashes")
         _require(
@@ -289,11 +387,19 @@ def validate_manifest(path: Path | str = DEFAULT_MANIFEST) -> ValidatedSourceMan
             f"{field}.download.allowed_hosts is invalid",
         )
         if allowed:
-            initial_host = _https_host(download.get("url"), f"{field}.download.url")
+            download_url = download.get("url")
+            initial_host = _https_host(download_url, f"{field}.download.url")
             _require(
                 initial_host in allowed_hosts,
                 f"{field}.download.allowed_hosts must include the source host",
             )
+            if source["acquisition"]["mode"] == "huggingface_revision":
+                expected_commit = source["revision"]["value"]
+                _require(
+                    initial_host == "huggingface.co"
+                    and f"/resolve/{expected_commit}/" in urlparse(download_url).path,
+                    f"{field}.download.url must resolve its pinned Hugging Face commit",
+                )
             _require(
                 type(size_bytes) is int and size_bytes > 0,
                 f"{field} needs an exact size before download",

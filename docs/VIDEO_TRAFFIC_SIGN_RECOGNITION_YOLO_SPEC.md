@@ -1,4 +1,4 @@
-# Video Traffic Sign Recognition With YOLO
+# Video Traffic Sign Recognition
 
 Date: `2026-09-01`
 
@@ -8,11 +8,12 @@ Owner surface: iPhone `SpeedConsumerApp`, Android alpha, shared local-observatio
 
 ## Summary
 
-YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. Traffic-sign recognition (TSR) is one consumer of the feature-neutral Drive Recorder camera session, alongside optional local Dashcam encoding and Panoramax still capture. A confirmed numeric detection becomes an explicit, session-only camera source above local correction and bundled OSM for the current display and warnings. It never mutates either durable source. The camera value remains active across repeated fixes with the same map/local source signature, and is replaced by a newer confirmed detection or cleared when genuinely new OSM/local information arrives.
+YouSpeed should add an on-device video recognition lane that detects traffic signs while the driving app is running. Traffic-sign recognition (TSR) is one consumer of the feature-neutral Drive Recorder camera session, alongside optional local Dashcam encoding, Panoramax still capture, and a fourth display-only preview consumer. A confirmed numeric detection becomes an explicit, session-only camera source above local correction and bundled OSM for the current display and warnings. It never mutates either durable source. The camera value remains active across repeated fixes with the same map/local source signature, and is replaced by a newer confirmed detection or cleared when genuinely new OSM/local information arrives.
 
 The first production slice is Germany-first and speed-sign focused:
 
-- detect speed limit signs and speed-related special cases with a compact YOLO model,
+- detect primary speed signs and qualifying white supplementary plates with a
+  compact proposal detector plus a mobile semantic classifier,
 - run inference locally on Android and iPhone,
 - merge detections over time before creating an observation,
 - map detections into the existing local-observation state machine,
@@ -29,8 +30,14 @@ Current implementation state:
 - iPhone already has `LocalObservationModality.computer_vision` and `temporary_restriction` in `iphone/SpeedConsumerApp/ConsumerModels.swift`.
 - Android local-observation enum/database parity for `computer_vision` and `temporary_restriction` remains a separate integration step.
 - Both apps persist local observations with lat/lon, road candidates, confidence, source version, state, old speed, and new speed.
-- iPhone has an initial Panoramax-specific camera path; the unified design replaces feature-owned camera sessions with one neutral Drive Recorder camera owner.
-- Shared contracts, pure fusion/precedence policy, and platform runtime adapters are being built on this branch. Android still needs camera permission and the shared CameraX lifecycle. Neither platform has a release-approved TSR model pack yet, so absence of a verified pack must remain visibly `unavailable`.
+- iPhone now uses `DriveCaptureCoordinator` as the neutral Drive Recorder camera
+  owner for Dashcam, TSR, Panoramax still capture, and the display-only preview;
+  the earlier feature-owned Panoramax camera path has been folded into it.
+- Shared v1 contracts, pure fusion/precedence policy, and the iPhone direct
+  runtime adapter exist on this branch. The two-component pack/event v2 and
+  trained artifacts are still missing. Android still needs camera permission
+  and the shared CameraX/LiteRT lifecycle. Absence of a verified pack must
+  remain visibly `unavailable` on either platform.
 
 ## Decision Answers
 
@@ -38,15 +45,34 @@ Current implementation state:
 
 Short answer: no ready-made public checkpoint cleanly covers real German road scenes, numeric speed limits, and the white supplementary plates that qualify them on both mobile runtimes.
 
-The first owned model should therefore be compositional:
+The first owned candidate architecture is therefore compositional:
 
-1. Bootstrap full-scene proposal detection from Zenseact Open Dataset (ZOD) plus consented YouSpeed scenes and hard negatives.
+1. Bootstrap full-scene proposal detection from Zenseact Open Dataset (ZOD) plus consented YouSpeed scenes and hard negatives. Before training, audit and freeze the ZOD label mapping to determine whether it supplies separate supplementary-plate boxes; otherwise add reviewed YouSpeed or synthetic full-scene plate annotations. Crop-only sources cannot prove proposal coverage.
 2. Bootstrap German crop semantics from GTSIGN-220, use its pinned ViT only as a teacher/reference, and add Synset Signset Germany for rare primary/plate combinations and robustness augmentation.
 3. Detect `primary_sign` and `supplementary_plate` separately, link them into a sign assembly, and classify/parse the white plate as a typed restriction. Do not create a flat class for every speed/restriction combination.
-4. Compare a current YOLO nano technical challenger (subject to its explicit AGPL/enterprise release gate) with a YOLOX-Nano control. YOLOX repository code is Apache-2.0, but the COCO-pretrained release weight is not release-approved until its weight license and training lineage are documented. Export both mobile artifacts from the same pinned YouSpeed checkpoint used for ONNX reference inference.
-5. Treat every public or transferred model output as untrusted until it passes leakage-safe real-route validation, calibration, export-parity, and physical-device gates.
+4. Use a two-role YOLOX-Nano-derived proposal detector at `640x640` and a
+   MobileNetV3-Large `224x224` union-label crop classifier as the target.
+   Compare MobileNetV3-Small as the latency challenger. A direct
+   YOLOX-Nano semantic detector remains an iPhone-only shadow baseline while
+   the current runtime supports direct detection only.
+5. Keep RF-DETR Nano and D-FINE-N as detector conversion challengers until
+   their exact checkpoints and Core ML/LiteRT parity are pinned. Use the
+   Panoramax German classifier and the separately pinned GTSIGN-220 ViT only as
+   external crop benchmarks/teachers; neither is a full-frame detector or the
+   YouSpeed mobile model. GTSIGN taxonomy adaptation and leakage-safe
+   evaluation are still required before quoting it as comparison evidence.
+6. YOLOX repository code is Apache-2.0, but the COCO-pretrained release weight
+   is not release-approved until its weight license and training lineage are
+   documented. The MobileNetV3 initializations have the same fail-closed
+   weight/data-lineage and NOTICE review.
+7. Treat every public or transferred model output as untrusted until it passes
+   leakage-safe real-route validation, calibration, export parity, and
+   physical-device gates.
 
-The exact source revisions, checksums, licenses, and training stages live in `TSR_TRAINING_ROUND_TRIP.md` and `shared/tsr/training-sources-v1.json`.
+The exact source revisions, checksums, licenses, and training stages live in
+`TSR_TRAINING_ROUND_TRIP.md` and `shared/tsr/training-sources-v1.json`. The
+machine-readable decision and its still-blocked runtime state live in
+`shared/tsr/model-selection-v1.json`; no candidate is selected yet.
 
 ### Android first or iPhone first?
 
@@ -63,16 +89,28 @@ Neither platform is the authority for labels, thresholds, or precedence. The sha
 
 ### Separate app first or integrated into the current app?
 
-Do not build a long-lived separate app. Build a short-lived Android camera/model spike first, then integrate it into the current app behind a development-only flag.
+Do not build a separate camera app. Continue inside the existing iPhone app and
+its neutral Drive Recorder session, behind development-only model-pack loading.
+That is the shortest path to evidence from the attached field-test phone and
+also proves that Dashcam recording remains unaffected.
 
 Recommended sequence:
 
-1. `android` debug-only spike: camera permission, CameraX analyzer, bundled sample model, local overlay/log output. This can be a hidden debug screen or isolated package inside the Android app tree.
-2. Integrated fake-detector path: feed deterministic detections into `LocalObservationStore` without opening the camera.
-3. Integrated real-detector path: attach CameraX + LiteRT as a consumer of the shared Drive Recorder camera session only while driving mode is active and the internal CV flag is on.
-4. iPhone parity: port the same labels, evidence JSON, fusion thresholds, and fixtures to Vision/Core ML once Android has proven the path.
+1. Train and export the direct YOLOX-Nano iPhone shadow baseline, then measure
+   it through the existing Vision/Core ML consumer without activating camera
+   overrides.
+2. Evolve the shared pack/event contract so detector and classifier each carry
+   their own preprocessing, calibration, and artifact identity; add the
+   proposal-classification runtime to iPhone.
+3. Train and compare the MobileNetV3 Large/Small two-stage candidates through
+   the same consented replay and field fixtures.
+4. Add the Android CameraX/LiteRT consumer after a verified sibling artifact
+   exists, reusing the same normalized events, fusion policy, and golden
+   fixtures.
 
-A fully separate app is only useful if camera/model experimentation becomes blocked by current app build configuration. Otherwise it creates throwaway lifecycle, permission, location, and map-match code that must be rebuilt in the real app.
+A throwaway app would duplicate lifecycle, permission, location, map matching,
+recording coexistence, and the diagnostic data flywheel that actually need to
+be proven.
 
 ### Estimate
 
@@ -81,18 +119,16 @@ Assuming one senior mobile engineer, one validated candidate YOLO checkpoint, an
 | Milestone | Scope | Estimate |
 | --- | --- | --- |
 | Model triage and fixture contract | Pick candidate model, define labels, run desktop inference on sample/route images, write fixture JSON. | 2-4 days |
-| Android camera spike | Camera permission, CameraX latest-frame analyzer, local debug detections, no observation writes. | 2-4 days |
-| Android integrated fake detector | Schema migration, Android enum parity, evidence JSON, fake detector tests, review-list display. | 3-5 days |
-| Android real YOLO prototype | LiteRT export/load, preprocessing, YOLO post-processing, throttling, latency metrics. | 5-8 days |
-| Android fusion and local observations | Duplicate suppression, repeated-frame clustering, way-match gating, `local_only` / `needs_review` rules. | 5-8 days |
-| iPhone parity prototype | Core ML export, AVCapture/Vision wrapper, same fixtures/evidence/fusion behavior. | 7-12 days |
+| iPhone direct-detector shadow | Fine-tuned Core ML export, replay fixtures, shared-camera shadow inference, no active override. | 3-6 days after a usable checkpoint exists |
+| Two-stage contract + iPhone runtime | Component-specific preprocessing/artifact identity, proposal/classifier runtime, assembly fixtures. | 5-10 days |
+| Android parity prototype | CameraX/LiteRT consumer, same fixtures/evidence/fusion behavior, recording coexistence. | 7-12 days |
 | Controlled field validation | Route tests, threshold tuning, false-observation analysis, battery/thermal checks. | 2-4 weeks |
 
 Practical expectations:
 
-- First visible Android demo: 1-2 weeks.
-- Integrated Android internal prototype that writes reviewable CV observations: 3-4 weeks.
-- Cross-platform internal prototype: 5-7 weeks.
+- First visible iPhone shadow result: within the initial model spike.
+- Cross-platform internal prototype: after both mobile exports pass parity and
+  the shared contract supports the two-stage result.
 - Public opt-in quality: 8-12+ weeks, dominated by model quality, route validation, privacy review, and threshold tuning rather than camera plumbing.
 
 ## Goals
@@ -103,7 +139,7 @@ Practical expectations:
 4. Resolve the active runtime value as `confirmed TSR > local correction > bundled OSM`, while keeping the camera source visibly identified, transient, and completely separate from durable map edits.
 5. Preserve battery, thermal, and latency budgets so speed-limit display and warning logic remain responsive.
 6. Establish a shared model artifact contract so Android and iPhone can ship equivalent class labels and calibration thresholds even with different mobile inference backends.
-7. Use one camera owner and one explicit drive start/stop lifecycle while keeping Dashcam, TSR, and Panoramax policies independently configurable and failure-isolated.
+7. Use one camera owner and one explicit drive start/stop lifecycle while keeping Dashcam, TSR, Panoramax capture, and the display-only preview separately failure-isolated. Preview display may depend on Dashcam being active, but it must not control recording or another consumer.
 
 ## Non-Goals
 
@@ -119,7 +155,7 @@ Practical expectations:
 
 The first model should recognize sign classes that can be normalized into existing maxspeed behavior.
 
-| Detection class | Normalized value | Observation intent | Notes |
+| Semantic/classifier label | Normalized value | Observation intent | Notes |
 | --- | --- | --- | --- |
 | `speed_limit_10` through `speed_limit_130` | numeric km/h | `set_maxspeed` | Germany-first class set; keep class names country-neutral where possible. |
 | `speed_limit_zone_start_*` | numeric km/h | `set_maxspeed` | Store zone evidence in metadata; maxspeed value remains numeric. |
@@ -144,8 +180,13 @@ flowchart LR
   ROUTER --> CADENCE["Panoramax distance/time sampler"]
   CAM --> PREVIEW["Display-only confidence preview"]
   DASH --> VIDEO["Protected local encoded video"]
-  THROTTLE --> DETECTOR["YOLO detector"]
-  DETECTOR --> NORMALIZE["Sign-class normalization"]
+  THROTTLE --> PROPOSALS["Two-role proposal detector"]
+  PROPOSALS --> CROPS["Primary-sign and plate crops"]
+  CROPS --> CLASSIFIER["Union-label crop classifier"]
+  CLASSIFIER --> ASSEMBLY["Geometry and sign assembly"]
+  ASSEMBLY --> NORMALIZE["Semantic normalization"]
+  THROTTLE -. "current iPhone shadow lane" .-> SHADOW["Direct semantic detector"]
+  SHADOW -.-> NORMALIZE
   NORMALIZE --> FUSION["Temporal and spatial fusion"]
   GPS["Location, heading, speed"] --> ROUTER
   GPS --> FUSION
@@ -166,11 +207,14 @@ flowchart LR
 
 ### Runtime Responsibilities
 
-`DriveCameraSession`
+`DriveCameraSession` (the conceptual owner; implemented on iPhone by
+`DriveCaptureCoordinator`)
 
 - Is the only owner of camera permission, rear-camera configuration, interruption handling, and the active camera lifecycle.
 - Starts once for an explicit drive session and stops once when that drive ends; individual consumers may be toggled during recording but never open competing sessions or rebuild the live capture graph.
 - Produces frames with a shared drive-session ID, timestamp, orientation, camera intrinsics when available, and synchronized location snapshot.
+- For scored device runs, sustains at least 15 camera frames/s while TSR
+  independently samples those frames at its adaptive inference cadence.
 - Has no Panoramax account, upload, detection, or retention policy.
 
 `DriveFrameRouter`
@@ -186,12 +230,25 @@ flowchart LR
 - Owns its protected storage, capacity, segment finalization, and retention policy.
 - Never supplies files to Panoramax upload and never sends video to TSR or a server.
 
+`DisplayOnlyPreviewConsumer`
+
+- Is the fourth shared-camera consumer and presents the existing session through
+  the platform preview layer; it does not pass sample buffers through the TSR
+  frame router.
+- While Dashcam is active, replaces the speed/location workspace only after an
+  explicit user toggle; tapping the preview toggles back, and the speed-limit
+  sign remains visible.
+- Creates no retained media, second camera session, or inference input, and a
+  preview failure cannot stop Dashcam, TSR, or Panoramax capture.
+
 `TrafficSignFrameAnalyzer`
 
 - Receives shared frames and their synchronized metadata from `DriveFrameRouter`; it does not own the camera.
 - Applies backpressure: always analyze the latest frame and drop stale frames.
 - Downscales the useful full frame for proposal/detection inference; it must not permanently discard roadside regions with a narrow center crop.
-- Uses a measured adaptive 2–10 FPS envelope based on vehicle speed, active tracks, latency, power, and thermal pressure.
+- Uses a measured adaptive 2–10 Hz inference envelope based on vehicle speed,
+  active tracks, latency, power, and thermal pressure; this is independent of
+  the higher shared-camera capture rate.
 - Keeps one inference in flight, replaces the single pending frame with the newest frame, and retains only a bounded in-memory set of sharp/exposed full-resolution frames long enough to select primary-sign and supplementary-plate crops.
 - Does not persist the input frame stream or trigger Dashcam/Panoramax capture.
 
@@ -202,17 +259,30 @@ flowchart LR
 - Writes only cadence-selected JPEGs, thumbnails, and metadata to the protected local Panoramax queue.
 - Has no upload transport. During an active or finalizing drive it can only append local captures to the current `capturing` batch.
 
-`TrafficSignDetector`
+`TrafficSignProposalDetector`
 
-- Loads the platform-native YOLO export.
-- Emits normalized detections with class id, class label, confidence, normalized bounding box, frame timestamp, and model id.
+- Loads the platform-native YOLOX-Nano-derived proposal export.
+- Emits only `primary_sign` and `supplementary_plate` boxes with scores, frame
+  timestamps, and detector lineage; it does not assign final road-sign meaning.
 - Does not know about map matching or local observations.
 
-`TrafficSignObservationNormalizer`
+`TrafficSignCropClassifier`
 
-- Maps raw detections into sign candidates with semantic values such as `30`, `walk`, `none`, or `city_entry`.
-- Rejects detections below per-class thresholds.
-- Applies country and speed-value allowlists from the active region when available.
+- Classifies the best retained primary and supplementary crops with the single
+  MobileNetV3 union-label component, using the proposal role to constrain the
+  permitted label subset.
+- Applies independently calibrated primary and supplementary thresholds and
+  preserves unsupported or unreadable white plates as `unresolved`.
+
+`TrafficSignAssemblyNormalizer`
+
+- Links compatible plates below/near a primary using deterministic geometry
+  and temporal tracks, with one-parent ownership.
+- Maps the assembled result into semantic values such as `30`, `walk`, `none`,
+  or `city_entry`, plus typed restrictions and explicit condition state.
+- Applies country and speed-value allowlists from the active region when
+  available. The direct-detector iPhone shadow lane enters here through a
+  legacy single-component adapter and is never treated as two-stage evidence.
 
 `TrafficSignFusionEngine`
 
@@ -235,7 +305,7 @@ Drive start creates one drive-session identity, opens the shared camera, and act
 
 Feature state remains independent inside that shared lifecycle. A denied Panoramax queue write must not stop TSR or corrupt Dashcam output; a TSR thermal downshift must not change Panoramax cadence; Dashcam storage exhaustion must not start an upload or disable map lookup. Consumer errors are surfaced separately, while a fatal shared-camera error is reported once to all enabled consumers.
 
-Panoramax processing begins only after the shared drive is fully inactive. The user must later review, select, and approve stills before an uploader may create an upload set. Stop, account connection, network restoration, and app relaunch never start Panoramax upload automatically.
+Panoramax upload preparation begins only after the shared drive is fully inactive. The user must later review, select, and approve stills before an uploader may create an upload set. Stop, account connection, network restoration, and app relaunch never start Panoramax upload automatically.
 
 ## Data Contract
 
@@ -255,33 +325,51 @@ Schema extension:
 - Add nullable `evidence_summary TEXT` if review UI needs a compact indexed string.
 - Do not store raw image bytes in `observations`.
 
-`evidence_json` shape:
+Target `evidence_json` v2 sketch for the proposal-classification path (the
+committed recognition-event v1 schema remains valid only for the direct
+single-component shadow lane until this revision is implemented and tested):
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "modality": "computer_vision",
   "model": {
-    "id": "youspeed-sign-yolo-de-v1",
-    "family": "yolo",
-    "artifact_sha256": "...",
+    "id": "youspeed-sign-de-v2",
+    "pipeline": "proposal_classification",
+    "components": [
+      {
+        "role": "proposal_detector",
+        "family": "YOLOX-Nano",
+        "artifact_sha256": "...",
+        "preprocessing_version": "detector-pre-v1",
+        "calibration_version": "detector-cal-v1"
+      },
+      {
+        "role": "classifier",
+        "family": "MobileNetV3-Large",
+        "artifact_sha256": "...",
+        "preprocessing_version": "classifier-pre-v1",
+        "calibration_version": "classifier-cal-v1"
+      }
+    ],
     "labels_sha256": "...",
     "runtime": "coreml|litert"
   },
-  "detection": {
-    "class_id": 12,
-    "class_label": "speed_limit_30",
-    "raw_score": 0.87,
-    "calibrated_confidence": 0.82,
-    "bbox_normalized": {
-      "x": 0.52,
-      "y": 0.18,
-      "width": 0.09,
-      "height": 0.13
-    },
+  "assembly": {
     "assembly_id": "uuid",
+    "primary": {
+      "class_id": "speed_limit_30",
+      "raw_score": 0.87,
+      "calibrated_confidence": 0.82,
+      "bbox_normalized": {
+        "x": 0.52,
+        "y": 0.18,
+        "width": 0.09,
+        "height": 0.13
+      }
+    },
     "condition_state": "none",
-    "restrictions": [],
+    "supplementary_plates": [],
     "frame_timestamp_utc": "2026-07-06T12:34:56.789Z"
   },
   "fusion": {
@@ -350,42 +438,89 @@ Discard silently when:
 
 ## Model Artifact Contract
 
-Model artifacts should be generated from the same YOLO training run, then exported per platform.
+Detector and classifier mobile artifacts must be sibling exports of the same
+pinned, evaluated component checkpoints. ONNX is the reference artifact, not a
+mandatory conversion parent:
+
+```text
+frozen detector checkpoint   -> reference ONNX
+                            \ -> Core ML detector
+                             \-> LiteRT detector
+
+frozen classifier checkpoint -> reference ONNX
+                            \ -> Core ML classifier
+                             \-> LiteRT classifier
+```
+
+All three runtimes replay the same normalized fixtures and must pass the
+declared semantic, assembly, box, and calibrated-confidence tolerances.
 
 Shared files:
 
 - `TrafficSignLabels.json`: ordered class labels, semantic mapping, per-class thresholds.
-- `TrafficSignModelManifest.json`: model id, training data id, export hashes, input size, quantization, calibration metrics, minimum app versions.
+- `TrafficSignModelManifest.json`: model id, training data id, per-component
+  export hashes, input/preprocessing contract, quantization, calibration,
+  output schema, and minimum app/runtime versions.
 - `TrafficSignEvaluationReport.json`: validation metrics by class, country, lighting, weather, sign size, and route split.
 
 iPhone artifact:
 
-- Core ML export compiled into the app bundle or downloaded as a signed app-managed asset later.
-- Runtime path: shared `DriveCameraSession` frame -> TSR consumer -> `Vision` / `Core ML` request -> normalized detector output.
+- Sibling Core ML detector and classifier exports compiled into the app bundle
+  or downloaded as signed app-managed assets later.
+- Target runtime path: `DriveCaptureCoordinator` frame -> TSR latest-frame
+  consumer -> Core ML proposals -> retained primary/plate crops -> Core ML crop
+  semantics -> assembly normalization.
+- Until pack/event v2 exists, a trained direct semantic Core ML artifact may be
+  attached to the existing direct-detection runtime only as a clearly identified
+  shadow baseline through the legacy v1 adapter.
 - Prefer Neural Engine capable execution where available; fall back to CPU/GPU without blocking the main actor.
 
 Android artifact:
 
-- LiteRT / TensorFlow Lite export bundled under app assets for the first slice.
-- Runtime path: shared CameraX lifecycle -> TSR `ImageAnalysis` consumer -> frame conversion/ROI -> LiteRT interpreter -> YOLO post-processing.
+- Sibling LiteRT detector and classifier exports bundled under app assets for
+  the first slice.
+- Target runtime path: shared CameraX lifecycle -> TSR `ImageAnalysis`
+  consumer -> frame conversion -> proposal interpreter -> retained crops ->
+  classifier interpreter -> assembly normalization.
 - Use one analyzer executor and one in-flight inference at a time.
 
 ONNX can remain useful for desktop evaluation and reproducible test tooling, but mobile runtime should use platform-native Core ML and LiteRT artifacts first.
+
+The current pack/event v1 contracts are insufficient for the selected
+two-stage target: they expose one global preprocessing/calibration record and
+one event artifact hash. A v2 revision must identify detector and classifier
+preprocessing, calibration, and artifact lineage independently before the
+proposal-classification candidate can become runtime-ready.
 
 ## Platform Work
 
 ### iPhone
 
-Add:
+Already implemented on this branch:
 
-- `NSCameraUsageDescription` in `Info.plist` plus localized strings.
-- Privacy manifest update for camera use.
-- A feature-neutral `DriveCameraSession.swift` wrapping the single `AVCaptureSession` and routing frames to enabled consumers.
-- A Dashcam encoder, `TrafficSignFrameAnalyzer`, and Panoramax still-capture adapter that consume the shared session without owning it.
-- `TrafficSignDetector.swift` wrapping Vision/Core ML inference.
-- `TrafficSignFusionEngine.swift` for platform-independent fusion logic.
-- `LocalObservationStore.recordComputerVisionDetection(...)`.
-- Unit tests for shared lifecycle, consumer independence, post-drive upload gating, class mapping, fusion thresholds, schema migration, and evidence JSON decoding.
+- `DriveCaptureCoordinator` is the single rear-camera owner and fans one
+  configured `AVCaptureSession` out to four independent consumers: Dashcam
+  encoding, latest-frame TSR analysis, cadence-driven Panoramax still capture,
+  and the display-only confidence preview.
+- Panoramax review/upload remains outside the coordinator and cannot run while
+  its capture session is active.
+- The Drive Recorder UI and explicit start/stop state already select consumers
+  without opening competing feature-owned camera sessions.
+
+Remaining iPhone TSR work:
+
+- Implement the versioned two-component pack/event v2 contract with separate
+  detector/classifier preprocessing, calibration, and artifact hashes.
+- Attach the proposal, crop-classification, and assembly pipeline through the
+  existing `DriveVideoFrameConsumer` hook, preserving latest-frame backpressure
+  and the measured adaptive cadence.
+- Export and parity-test the sibling Core ML artifacts; keep the direct semantic
+  detector explicitly shadow-only while the v1 adapter is in use.
+- Connect confirmed assemblies to fusion, the transient runtime source, and
+  `LocalObservationStore.recordComputerVisionDetection(...)`.
+- Extend tests for component lineage, consumer independence, post-drive upload
+  gating, class/assembly mapping, fusion thresholds, schema migration, and
+  evidence decoding.
 
 Reuse:
 
@@ -402,7 +537,7 @@ Add:
 - Camera permission handling in `ConsumerHost` and `MainActivity`.
 - CameraX dependencies and one feature-neutral camera lifecycle binding the enabled Dashcam, TSR `ImageAnalysis`, and Panoramax still-capture use cases together.
 - A `TrafficSignCameraAnalyzer` that consumes the shared `ImageAnalysis` output and never binds a second camera lifecycle.
-- LiteRT dependency and detector wrapper.
+- LiteRT dependency, proposal/classifier wrappers, and assembly normalizer.
 - Android enum parity for `computer_vision` and `temporary_restriction`.
 - `LocalObservationStore.recordComputerVisionDetection(...)`.
 - Unit tests for shared lifecycle, consumer independence, post-drive upload gating, mapping, fusion, schema migration, and JSON evidence.
@@ -422,26 +557,36 @@ Reuse:
 - Diagnostic image capture is a separate explicit opt-in and should expire automatically.
 - Evidence JSON may store normalized bounding boxes and frame hashes, but not personally identifiable image content.
 - The detector must run locally and must not send frames to a server.
-- The optional confidence preview is display-only, is available only while Dashcam is active, and replaces the current speed/location workspace on explicit user interaction. It never hides the speed-limit sign and never creates another output, session, or retained artifact.
+- The optional confidence preview is the fourth display-only camera consumer,
+  is available only while Dashcam is active, and replaces the current
+  speed/location workspace on explicit user interaction. It never hides the
+  speed-limit sign and never creates retained media, a second session, or an
+  inference artifact.
 - CV observations require post-drive review before export.
 - Panoramax review, selection, approval, and upload occur only after drive finalization. Upload never starts automatically.
 - Temporary restrictions should not be exported as permanent `maxspeed` edits until a dedicated policy exists.
 
 ## Runtime Budgets
 
-Initial gates:
+Initial budgets:
 
 - Speed lookup and warning UI must not wait on CV inference.
-- Analyze at most 2 FPS by default.
+- Keep the shared camera feed at or above 15 FPS during scored device runs.
+- Start TSR inference at the low end of a measured adaptive 2-10 Hz envelope, increase only
+  while a plausible sign track needs sharper crops, and downshift again after
+  the encounter.
 - Keep one inference in flight and drop stale frames.
 - Keep TSR backpressure isolated so it cannot stall Dashcam encoding or Panoramax still selection.
-- Target detector p95 under 250 ms on supported devices.
+- Target detector and end-to-end pipeline p95 under 250 ms on supported devices.
 - Target local-observation creation within 2 seconds of the first qualifying detection cluster.
 - Disable or downshift CV when thermal or battery conditions degrade.
 - Finalize all enabled local consumers and release the shared camera within a measured, bounded stop interval.
-- Model plus labels should fit comfortably in the app bundle; target under 25 MB for the first quantized mobile artifact.
+- The combined two-component pack plus labels should fit comfortably in the app
+  bundle; target under 25 MB for the first quantized mobile pack.
 
-These are release gates, not claims. They must be measured on actual Android and iPhone devices before enabling the feature by default.
+These are engineering targets and later product-release prerequisites, not
+claims and not a release decision. They must be measured on actual Android and
+iPhone devices before enabling the feature by default.
 
 ## Training and Evaluation
 
@@ -472,21 +617,28 @@ Do not advance from capture-only testing to local overlay activation until false
 
 ### Phase 0: Offline Model and Contract
 
-- Define labels and model manifest.
-- Train/export YOLO artifacts.
-- Build desktop evaluation and golden-image tests.
-- Add shared evidence JSON fixtures.
+- Freeze the union-label ontology, source manifest, and two-component pack/event
+  v2 contract.
+- Train the two-role YOLOX-Nano-derived proposal detector and the single
+  MobileNetV3 union-label crop classifier.
+- Export sibling reference ONNX, Core ML, and LiteRT artifacts for each frozen
+  component and bind every hash to one training run.
+- Build leakage-safe desktop evaluation, cross-runtime parity, and golden-image
+  assembly tests; keep the direct YOLOX iPhone path as a shadow baseline only.
+- Add shared proposal-classification evidence fixtures.
 
 Exit criteria:
 
-- model manifest and labels are versioned,
-- validation report exists,
-- app code can parse fixture detections into local observations.
+- pack/event v2 and labels are versioned with per-component lineage,
+- an internal model-scorecard report exists and remains distinct from product
+  release approval,
+- app code can parse fixture assemblies into local observations.
 
 ### Phase 1: App Integration With Fake Detector
 
 - Add camera permission copy but keep camera disabled by default.
-- Add the shared Drive Recorder state machine and pure consumer-routing contracts without opening a real camera.
+- Reuse and test the existing iPhone Drive Recorder coordinator; define the
+  equivalent Android owner and shared pure consumer-routing contracts.
 - Add fake detector injection on both platforms.
 - Persist computer-vision observations through existing stores.
 - Show CV observations in the same local review list.
@@ -502,13 +654,15 @@ Exit criteria:
 ### Phase 2: On-Device Prototype
 
 - Wire one CameraX lifecycle to Dashcam, Panoramax, and LiteRT TSR consumers on Android.
-- Wire one AVFoundation session to Dashcam, Panoramax, and Vision/Core ML TSR consumers on iPhone.
+- Attach the Core ML TSR consumer to the existing iPhone
+  `DriveCaptureCoordinator`; do not create another AVFoundation session.
 - Run model behind an internal debug flag.
 - Record only aggregate local metrics and evidence JSON.
 
 Exit criteria:
 
-- detector runs on actual devices,
+- the direct shadow or proposal-classification pipeline runs with explicit model
+  identity on actual devices,
 - all enabled consumers run from one camera owner without resource contention,
 - stopping finalizes local outputs without starting Panoramax upload,
 - p95 inference stays within budget,
@@ -554,12 +708,15 @@ The feature is ready for public opt-in when:
 - Android and iPhone normalize the same fixture detections into equivalent observations,
 - camera permissions and privacy copy are localized,
 - each platform has one neutral camera owner and one tested drive start/stop lifecycle,
-- Dashcam, TSR, and Panoramax can be enabled, throttled, and failed independently without one consumer triggering another,
+- Dashcam, TSR, Panoramax capture, and the display-only preview are separately
+  failure-isolated without one consumer triggering another; the preview's UI
+  availability may depend on Dashcam being active but never controls recording,
 - the shared raw frame stream is never persisted; optional Dashcam retention is encoded, local, explicit, and governed by its own storage policy,
 - ordinary TSR frames and Dashcam video never leave the device; consented diagnostic bundles require an explicit, separate export action,
 - Panoramax retains only cadence-selected local stills during a drive,
 - Panoramax upload is impossible while a drive is preparing, active, interrupted, stopping, or finalizing,
-- drive stop performs no network upload; only later explicit review, selection, and approval can start Panoramax processing,
+- drive stop performs no network upload; only later explicit review, selection,
+  and approval can start Panoramax upload preparation and upload,
 - detector runtime stays within measured latency and thermal budgets,
 - CV observations never bypass post-drive review for export,
 - a confirmed numeric TSR value can transiently override the display/warning value without changing OSM or local corrections, survives repeated fixes with an unchanged source signature, and is rejected/cleared when its frame-time source is stale,
