@@ -28,16 +28,27 @@ const portalTraceEl = document.getElementById("portal-trace");
 const adminBoundaryLegendEl = document.getElementById("admin-boundary-legend");
 
 const defaultDriveLogURL = "./drive_match_log.ndjson";
+const sqlRuntimeURL = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js";
+const sqlRuntimeIntegrity = "sha384-upXEZ8BUrRTJ5jBg9rLYXxwca56l9U3ymkbtFghF69ivmL1U7I9t07Hd1v7g/Pim";
+const sqlWasmURL = "https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm";
+const sqlWasmSha256 = "d7e61b828523001f26ce0b3f88dabcf6c12e5e6edf80eb4f08b26ac7b946ff88";
 
 const map = L.map("map", {
   zoomControl: true,
   preferCanvas: true
 }).setView([49.0069, 8.4037], 11);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(map);
+let baseTileLayer = null;
+
+function ensureMapTiles() {
+  if (!baseTileLayer) {
+    baseTileLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+  }
+  return baseTileLayer;
+}
 
 map.createPane("adminBoundaryPane");
 map.getPane("adminBoundaryPane").style.zIndex = "340";
@@ -58,14 +69,17 @@ let wayLayers = [];
 let portalOverlayLayers = [];
 let drivePathLayer = null;
 let selectedFixMarker = null;
+let tsrContextLayers = [];
 let adminBoundaryLayers = [];
 let adminBoundaryLabelLayers = [];
 let sqlModulePromise = null;
+let sqlRuntimeScriptPromise = null;
 let sqlDatabase = null;
 let loadedDriveLogEntries = [];
 let selectedDriveLogIndex = -1;
 let availableTables = new Set();
 let selectedAdminBoundaryLevelFilter = "all";
+let matcherDataLoadPromise = null;
 
 const replayWayColors = {
   logged: "#00e4ff",
@@ -412,16 +426,50 @@ function normalizeDriveLogEntries(entries) {
     .sort(compareDriveLogEntries);
 }
 
-async function ensureSQLModule() {
-  if (!sqlModulePromise) {
-    if (typeof initSqlJs !== "function") {
-      throw new Error("sql.js konnte nicht geladen werden");
-    }
-    sqlModulePromise = initSqlJs({
-      locateFile: (file) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
+function ensureSQLRuntimeScript() {
+  if (typeof initSqlJs === "function") return Promise.resolve();
+  if (!sqlRuntimeScriptPromise) {
+    sqlRuntimeScriptPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = sqlRuntimeURL;
+      script.integrity = sqlRuntimeIntegrity;
+      script.crossOrigin = "anonymous";
+      script.referrerPolicy = "no-referrer";
+      script.addEventListener("load", () => {
+        if (typeof initSqlJs === "function") resolve();
+        else reject(new Error("sql.js konnte nicht initialisiert werden"));
+      }, { once: true });
+      script.addEventListener("error", () => reject(new Error("sql.js konnte nicht geladen werden")), { once: true });
+      document.head.append(script);
     });
   }
-  return sqlModulePromise;
+  return sqlRuntimeScriptPromise;
+}
+
+async function fetchVerifiedSQLWasm() {
+  const response = await fetch(sqlWasmURL, { cache: "force-cache", referrerPolicy: "no-referrer" });
+  if (!response.ok) throw new Error(`sql.js WASM konnte nicht geladen werden (HTTP ${response.status})`);
+  const bytes = await response.arrayBuffer();
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const actualSha256 = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  if (actualSha256 !== sqlWasmSha256) throw new Error("sql.js WASM Integritätsprüfung fehlgeschlagen");
+  return bytes;
+}
+
+async function ensureSQLModule() {
+  if (!sqlModulePromise) {
+    sqlModulePromise = (async () => {
+      await ensureSQLRuntimeScript();
+      const wasmBinary = await fetchVerifiedSQLWasm();
+      return initSqlJs({ wasmBinary });
+    })();
+  }
+  try {
+    return await sqlModulePromise;
+  } catch (error) {
+    sqlModulePromise = null;
+    throw error;
+  }
 }
 
 function closeCurrentDatabase() {
@@ -2598,6 +2646,78 @@ function drawWayHighlights(specs) {
   }
 }
 
+function clearTSRContextLayers() {
+  for (const layer of tsrContextLayers) {
+    layer.remove();
+  }
+  tsrContextLayers = [];
+}
+
+function focusTSRContext(context) {
+  const lat = finiteNumber(context?.latitude ?? context?.lat);
+  const lon = finiteNumber(context?.longitude ?? context?.lon);
+  if (lat == null || lon == null) {
+    return false;
+  }
+
+  clearTSRContextLayers();
+  const marker = L.circleMarker([lat, lon], {
+    radius: 8,
+    color: "#dff7ff",
+    weight: 2,
+    fillColor: "#5da9ff",
+    fillOpacity: 0.95
+  })
+    .bindTooltip(`TSR frame · ${lat.toFixed(6)}, ${lon.toFixed(6)}`)
+    .addTo(map);
+  tsrContextLayers.push(marker);
+
+  const heading = finiteNumber(context?.heading_degrees ?? context?.headingDegrees);
+  if (heading != null) {
+    const distanceMeters = 55;
+    const angularDistance = distanceMeters / 6_371_000;
+    const bearing = heading * Math.PI / 180;
+    const latitudeRadians = lat * Math.PI / 180;
+    const longitudeRadians = lon * Math.PI / 180;
+    const endpointLatitude = Math.asin(
+      Math.sin(latitudeRadians) * Math.cos(angularDistance)
+        + Math.cos(latitudeRadians) * Math.sin(angularDistance) * Math.cos(bearing)
+    );
+    const endpointLongitude = longitudeRadians + Math.atan2(
+      Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latitudeRadians),
+      Math.cos(angularDistance) - Math.sin(latitudeRadians) * Math.sin(endpointLatitude)
+    );
+    const headingLayer = L.polyline([
+      [lat, lon],
+      [endpointLatitude * 180 / Math.PI, endpointLongitude * 180 / Math.PI]
+    ], {
+      color: "#5da9ff",
+      weight: 4,
+      opacity: 0.95
+    }).addTo(map);
+    tsrContextLayers.push(headingLayer);
+  }
+
+  const wayID = normalizeWayID(context?.way_id ?? context?.wayId);
+  if (sqlDatabase && wayID != null) {
+    const row = queryWayByID(wayID);
+    const points = row ? parseWayPoints(row.points_json) : [];
+    if (points.length >= 2) {
+      const wayLayer = L.polyline(points, {
+        color: "#5da9ff",
+        weight: 7,
+        opacity: 0.42
+      })
+        .bindTooltip(`TSR way ${wayID}`)
+        .addTo(map);
+      tsrContextLayers.push(wayLayer);
+    }
+  }
+
+  map.setView([lat, lon], Math.max(map.getZoom(), 16), { animate: true });
+  return true;
+}
+
 function drawDriveLogPath() {
   if (drivePathLayer) {
     drivePathLayer.remove();
@@ -2871,6 +2991,32 @@ adminBoundaryLegendEl?.addEventListener("click", (event) => {
   refreshCrosshairAdminContainment();
 });
 
+async function ensureMatcherData() {
+  if (matcherDataLoadPromise) {
+    return matcherDataLoadPromise;
+  }
+  const loads = [];
+  if (!sqlDatabase) loads.push(loadDatabaseFromURL());
+  if (!loadedDriveLogEntries.length) {
+    loads.push(loadDriveLogFromURL(defaultDriveLogURL, { silent: true }));
+  }
+  matcherDataLoadPromise = Promise.allSettled(loads);
+  try {
+    await matcherDataLoadPromise;
+  } finally {
+    matcherDataLoadPromise = null;
+  }
+}
+
+window.YouSpeedInspectorBridge = Object.freeze({
+  focusTSRContext,
+  clearTSRContext: clearTSRContextLayers,
+  ensureMapTiles,
+  invalidateMap: () => map.invalidateSize(),
+  hasDatabase: () => sqlDatabase != null,
+  ensureMatcherData
+});
+
 renderAdminBoundaryLegend();
 
 map.whenReady(() => {
@@ -2883,9 +3029,13 @@ map.whenReady(() => {
     portalTraceEl.innerHTML = "";
   }
   setBundleValue("nicht geladen");
-  setStatus("Bereit. SQLite-Bundle laden.");
-  void loadDatabaseFromURL();
-  void loadDriveLogFromURL(defaultDriveLogURL, { silent: true });
+  if (window.location.hash === "#tsr") {
+    setStatus("TSR QA aktiv. Matcher-Daten werden erst beim Kartenwechsel geladen.");
+  } else {
+    setStatus("Bereit. SQLite-Bundle laden.");
+    ensureMapTiles();
+    void window.YouSpeedInspectorBridge.ensureMatcherData();
+  }
 });
 
 map.on("moveend", () => {

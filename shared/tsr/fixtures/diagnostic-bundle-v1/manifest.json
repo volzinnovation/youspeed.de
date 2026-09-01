@@ -19,7 +19,7 @@
   },
   "privacy": {
     "full_frame_retention": true,
-    "location_mode": "coarse",
+    "location_mode": "exact_local_encrypted",
     "redaction_state": "verified",
     "raw_dashcam_video_included": false,
     "direct_device_identifier_included": false
