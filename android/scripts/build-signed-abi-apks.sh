@@ -18,8 +18,8 @@ done
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 android_dir="$(cd "$script_dir/.." && pwd)"
 output_dir="${1:-$android_dir/dist}"
-version_name="1.0.3"
-base_version_code=10003
+version_name="1.0.4"
+base_version_code=10004
 abis=(armeabi-v7a arm64-v8a x86 x86_64)
 
 mkdir -p "$output_dir"
