@@ -9,13 +9,14 @@
       "Record a SHA-256 inventory for every acquired dataset snapshot before training.",
       "Preserve attribution, notices, and share-alike obligations for every training input.",
       "Record the complete training lineage in the signed mobile model pack.",
+      "Confirm the requested ZOD dataset snapshot with the provider after access, and treat only frames with a present and complete Traffic Signs annotation task as eligible hard negatives.",
       "Do not release a model pack containing an Ultralytics YOLO26 derivative unless the ultralytics_agpl_or_enterprise gate is explicitly approved.",
       "Do not release until route-held-out evaluation, calibration, mobile export parity, and signing gates pass."
     ],
     "license_gates": {
       "apache_notice_review": {
-        "default_decision": "allow_after_notice_review",
-        "reason": "Preserve the Apache-2.0 license and NOTICE obligations for source and derivative use."
+        "default_decision": "blocked_pending_weight_and_lineage_review",
+        "reason": "The repository code is Apache-2.0, but release of the COCO-pretrained checkpoint remains blocked until the weight license, upstream training-data lineage, and applicable license/NOTICE obligations are explicitly documented."
       },
       "attribution_review": {
         "default_decision": "allow_after_attribution_review",
@@ -44,7 +45,8 @@
       "revision": {
         "kind": "dataset_version",
         "value": "2.0.0",
-        "supporting_code": "zenseact/zod@601a3ef5cfccad9cc545230362077d299acbf898"
+        "supporting_code": "zenseact/zod@601a3ef5cfccad9cc545230362077d299acbf898",
+        "verification_status": "pending_provider_access"
       },
       "license": {
         "expression": "CC-BY-SA-4.0",
@@ -62,7 +64,7 @@
         "immutable_reference": false,
         "published_aggregate_checksum": null,
         "post_acquisition_sha256_inventory_required": true,
-        "note": "ZOD is delivered through access-specific downloads and does not publish one stable aggregate archive checksum. Freeze the exact 2.0.0 file set and commit its sorted path/size/SHA-256 inventory before training."
+        "note": "The public pages confirm the Frames scale, Traffic Signs annotation task, and CC BY-SA 4.0 license, but do not independently expose the requested 2.0.0 snapshot identity. Confirm that version after provider access, then freeze its exact file set and commit a sorted path/size/SHA-256 inventory before training."
       }
     },
     {
@@ -135,7 +137,7 @@
       "source_id": "yolox-0.1.1rc0",
       "kind": "model_framework",
       "roles": [
-        "permissive_detector_control"
+        "license_gated_detector_control"
       ],
       "name": "YOLOX",
       "homepage": "https://github.com/Megvii-BaseDetection/YOLOX",
@@ -153,13 +155,13 @@
       "acquisition": {
         "mode": "public_release",
         "locator": "https://github.com/Megvii-BaseDetection/YOLOX/releases/tag/0.1.1rc0",
-        "subset": "YOLOX-Nano COCO checkpoint used only as the permissive proposal-detector control"
+        "subset": "YOLOX-Nano COCO checkpoint used only as a license-gated proposal-detector control"
       },
       "integrity": {
         "immutable_reference": true,
         "published_aggregate_checksum": null,
         "post_acquisition_sha256_inventory_required": false,
-        "note": "The selected checkpoint has an exact SHA-256 entry below."
+        "note": "The selected checkpoint has an exact SHA-256 entry below. The repository code license alone does not approve release of the pretrained weight; its weight license and COCO training lineage remain gated."
       }
     },
     {
@@ -202,8 +204,8 @@
       "source_id": "synset-signset-germany-dcc1znjxu7apx8rn",
       "role": "dataset_archive",
       "revision": "10.35097/dcc1znjxu7apx8rn",
-      "relative_path": "datasets/synset-signset-germany/synset-signset-germany.zip",
-      "size_bytes": null,
+      "relative_path": "datasets/synset-signset-germany/synset-signset-germany.tar",
+      "size_bytes": 17149598208,
       "format": "archive",
       "serialization_risk": "data_archive",
       "hashes": {
@@ -215,7 +217,7 @@
         "allowed_hosts": []
       },
       "release_gate": "attribution_review",
-      "note": "Acquire from the DOI landing page. MD5 is the publisher identity only; add SHA-256 to the immutable local snapshot before training."
+      "note": "Acquire the version-1 application/x-tar archive from the DOI landing page. MD5 is the publisher identity only; add SHA-256 and an extracted-file inventory to the immutable local snapshot before training."
     },
     {
       "artifact_id": "gtsign-220-vit-all-classes",
@@ -246,7 +248,7 @@
     {
       "artifact_id": "yolox-nano-coco-0.1.1rc0",
       "source_id": "yolox-0.1.1rc0",
-      "role": "permissive_detector_control",
+      "role": "license_gated_detector_control",
       "revision": "0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce",
       "relative_path": "models/yolox/0.1.1rc0/yolox_nano.pth",
       "size_bytes": 7694953,
@@ -264,7 +266,7 @@
         ]
       },
       "release_gate": "apache_notice_review",
-      "note": "The bootstrap tool only downloads and hashes this pickle-capable file; it never deserializes it. Isolate any later framework conversion."
+      "note": "The bootstrap tool only downloads and hashes this pickle-capable file; it never deserializes it. Isolate any later framework conversion. Release remains blocked until the checkpoint's weight license and COCO training lineage are documented."
     },
     {
       "artifact_id": "yolo26n-coco-v8.4.0",

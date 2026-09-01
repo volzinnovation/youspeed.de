@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Validate consented TSR captures and materialize leakage-safe datasets.
+"""Validate consented TSR captures and materialize capture-group-isolated datasets.
 
 The mobile apps write a diagnostic bundle only after the separate diagnostic
 capture consent is enabled. This tool is deliberately independent of the model
 framework: it verifies hashes and relational sign annotations, keeps every
 drive/import group in one split, and emits proposal-detector plus crop-
-classifier layouts that a training runner can consume.
+classifier layouts that a training runner can consume. Physical-sign and
+near-duplicate grouping remain separate release-gate checks.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import math
 import re
 import shutil
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
@@ -65,6 +67,19 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _parse_utc_datetime(value: Any, field: str) -> datetime:
+    _require(isinstance(value, str) and value, f"{field} must be a date-time")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise DiagnosticBundleError(f"{field} must be a valid date-time") from error
+    _require(
+        parsed.tzinfo is not None and parsed.utcoffset() is not None,
+        f"{field} must include a timezone",
+    )
+    return parsed.astimezone(timezone.utc)
 
 
 def _safe_relative_path(root: Path, value: Any, field: str) -> Path:
@@ -186,7 +201,13 @@ def _validate_annotation(annotation: Any, field: str) -> None:
         _require(condition_state in expected_states, f"{assembly_field}.condition_state does not match its plates")
 
 
-def validate_bundle(path: Path | str, *, verify_assets: bool = True, require_export_approval: bool = False) -> ValidatedBundle:
+def validate_bundle(
+    path: Path | str,
+    *,
+    verify_assets: bool = True,
+    require_export_approval: bool = False,
+    now: datetime | None = None,
+) -> ValidatedBundle:
     root = Path(path).expanduser().resolve()
     manifest_path = root / "manifest.json" if root.is_dir() else root
     root = manifest_path.parent.resolve()
@@ -199,10 +220,30 @@ def validate_bundle(path: Path | str, *, verify_assets: bool = True, require_exp
     _require(payload.get("schema_version") == 1, "unsupported diagnostic schema")
     for key in ("bundle_id", "capture_group_id"):
         _require(isinstance(payload.get(key), str) and payload[key], f"{key} is required")
+    created_at = _parse_utc_datetime(payload.get("created_at"), "created_at")
 
     consent = payload.get("consent")
     _require(isinstance(consent, dict), "consent is required")
     _require(consent.get("scope") == "tsr_diagnostic_dataset", "diagnostic consent scope is invalid")
+    granted_at = _parse_utc_datetime(consent.get("granted_at"), "consent.granted_at")
+    retention_expires_at = _parse_utc_datetime(
+        consent.get("retention_expires_at"),
+        "consent.retention_expires_at",
+    )
+    _require(granted_at <= created_at, "diagnostic consent was granted after capture")
+    _require(
+        retention_expires_at > created_at,
+        "diagnostic retention must extend beyond capture",
+    )
+    reference_time = now or datetime.now(timezone.utc)
+    _require(
+        reference_time.tzinfo is not None and reference_time.utcoffset() is not None,
+        "retention reference time must include a timezone",
+    )
+    _require(
+        retention_expires_at > reference_time.astimezone(timezone.utc),
+        "diagnostic retention has expired",
+    )
     if require_export_approval:
         _require(consent.get("export_approved") is True, "diagnostic export is not approved")
 

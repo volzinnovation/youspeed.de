@@ -27,10 +27,10 @@ Current architecture already reserves a computer-vision module feeding the obser
 Current implementation state:
 
 - iPhone already has `LocalObservationModality.computer_vision` and `temporary_restriction` in `iphone/SpeedConsumerApp/ConsumerModels.swift`.
-- Android currently has `voice_command` and `lock_current_speed` modalities in `android/app/src/main/java/de/youspeed/android/alpha/LocalObservationStore.kt`; Android needs a parity extension for `computer_vision` and `temporary_restriction`.
+- Android local-observation enum/database parity for `computer_vision` and `temporary_restriction` remains a separate integration step.
 - Both apps persist local observations with lat/lon, road candidates, confidence, source version, state, old speed, and new speed.
 - iPhone has an initial Panoramax-specific camera path; the unified design replaces feature-owned camera sessions with one neutral Drive Recorder camera owner.
-- Android still needs camera permission, the shared CameraX lifecycle, and its camera consumers. Neither platform has the production TSR model/fusion path yet.
+- Shared contracts, pure fusion/precedence policy, and platform runtime adapters are being built on this branch. Android still needs camera permission and the shared CameraX lifecycle. Neither platform has a release-approved TSR model pack yet, so absence of a verified pack must remain visibly `unavailable`.
 
 ## Decision Answers
 
@@ -43,23 +43,23 @@ The first owned model should therefore be compositional:
 1. Bootstrap full-scene proposal detection from Zenseact Open Dataset (ZOD) plus consented YouSpeed scenes and hard negatives.
 2. Bootstrap German crop semantics from GTSIGN-220, use its pinned ViT only as a teacher/reference, and add Synset Signset Germany for rare primary/plate combinations and robustness augmentation.
 3. Detect `primary_sign` and `supplementary_plate` separately, link them into a sign assembly, and classify/parse the white plate as a typed restriction. Do not create a flat class for every speed/restriction combination.
-4. Compare a current YOLO nano technical challenger (subject to its explicit AGPL/enterprise release gate) with a permissively licensed mobile baseline such as YOLOX-Nano. Export both mobile artifacts from the same pinned YouSpeed checkpoint used for ONNX reference inference.
+4. Compare a current YOLO nano technical challenger (subject to its explicit AGPL/enterprise release gate) with a YOLOX-Nano control. YOLOX repository code is Apache-2.0, but the COCO-pretrained release weight is not release-approved until its weight license and training lineage are documented. Export both mobile artifacts from the same pinned YouSpeed checkpoint used for ONNX reference inference.
 5. Treat every public or transferred model output as untrusted until it passes leakage-safe real-route validation, calibration, export-parity, and physical-device gates.
 
 The exact source revisions, checksums, licenses, and training stages live in `TSR_TRAINING_ROUND_TRIP.md` and `shared/tsr/training-sources-v1.json`.
 
 ### Android first or iPhone first?
 
-Implement Android first for the prototype, then port the stabilized contract to iPhone.
+Stabilize the shared contract first. Connect it to the existing iPhone Drive Recorder camera path for the current attached-device field work, while building the backend-neutral Android orchestration and parity tests in parallel. Add the Android CameraX/LiteRT backend only after a verified mobile artifact exists.
 
-Android is the better first integration target in this repo because:
+This order follows the implementation that now exists in this branch:
 
-- Android offers a contained first integration surface, so CV work is less likely to disturb the iPhone reference path.
-- CameraX `ImageAnalysis` maps cleanly to the desired latest-frame analyzer loop and stale-frame dropping strategy.
-- LiteRT / TensorFlow Lite is a natural target for YOLO mobile inference and keeps the pipeline easy to inspect with Kotlin tests and instrumentation.
-- Android already needs enum/schema parity work, so the CV contract can be introduced there before touching the iPhone reference app.
+- the iPhone already owns the unified Dashcam/TSR/Panoramax camera session used by the attached test device,
+- both platforms can share event, model-pack, context, fusion, and precedence fixtures before either receives a release model,
+- CameraX `ImageAnalysis` still maps cleanly to the same latest-frame analyzer loop and stale-frame dropping strategy, and
+- Core ML and LiteRT exports must both come from one frozen, evaluated training result.
 
-iPhone may be cleaner for final end-user performance once a Core ML export is stable, because Vision/Core ML is a strong native stack. The risk is product and release coupling: camera privacy copy, project configuration, and model integration should happen after labels, thresholds, and fusion behavior are less volatile.
+Neither platform is the authority for labels, thresholds, or precedence. The shared signed pack and fixtures are. A runtime without a verified artifact must remain explicitly unavailable rather than substituting a demo model.
 
 ### Separate app first or integrated into the current app?
 
@@ -271,8 +271,17 @@ Schema extension:
   "detection": {
     "class_id": 12,
     "class_label": "speed_limit_30",
-    "confidence": 0.87,
-    "bbox_normalized": [0.52, 0.18, 0.61, 0.31],
+    "raw_score": 0.87,
+    "calibrated_confidence": 0.82,
+    "bbox_normalized": {
+      "x": 0.52,
+      "y": 0.18,
+      "width": 0.09,
+      "height": 0.13
+    },
+    "assembly_id": "uuid",
+    "condition_state": "none",
+    "restrictions": [],
     "frame_timestamp_utc": "2026-07-06T12:34:56.789Z"
   },
   "fusion": {
@@ -286,8 +295,13 @@ Schema extension:
     "lat": 49.0069,
     "lon": 8.4037,
     "heading_deg": 82.0,
+    "travel_direction": "forward",
     "speed_kmh": 42.0,
-    "way_id": "123456"
+    "way_id": "123456",
+    "source_signature": {
+      "osm_revision": "bundle-2026-07-06|way:123456|maxspeed:50",
+      "local_correction_revision": null
+    }
   },
   "privacy": {
     "raw_video_persisted": false,
@@ -304,7 +318,14 @@ Apply a transient live override when:
 - temporal fusion confirms a numeric maximum-speed sign,
 - the frame carries a complete way ID, coordinate, heading/direction, and source signature,
 - that source signature is still current when inference completes, and
-- any supplementary plate is explicitly represented; an unresolved condition must never silently become an unconditional durable correction.
+- the current first-slice assembly is explicitly unconditional (`condition_state = none`, with no supplementary restriction).
+
+A newer confirmed conditional or unresolved assembly clears any older camera
+override and falls back to the current local/OSM source. It remains visible as
+review/training evidence, but cannot drive the active limit until a separately
+tested applicability evaluator can resolve weather, time, vehicle, direction,
+distance, and other restrictions. No camera result becomes a durable
+correction automatically.
 
 Create `local_only` observations for later review when:
 
@@ -554,14 +575,12 @@ The feature is ready for public opt-in when:
 
 ## References
 
-- Ultralytics YOLO export formats: https://docs.ultralytics.com/modes/export/
-- Ultralytics Core ML integration: https://docs.ultralytics.com/integrations/coreml/
-- Ultralytics TT100K dataset notes: https://docs.ultralytics.com/datasets/detect/tt100k/
-- Hugging Face model `nezahatkorkmaz/traffic-sign-detection`: https://huggingface.co/nezahatkorkmaz/traffic-sign-detection
-- Hugging Face model `Phearith/Traffic_Sign_Detection_Using_YOLOv8`: https://huggingface.co/Phearith/Traffic_Sign_Detection_Using_YOLOv8
-- Hugging Face model `yahyagul/traffic-sign-yolov8`: https://huggingface.co/yahyagul/traffic-sign-yolov8
-- Hugging Face dataset `keremberke/german-traffic-sign-detection`: https://huggingface.co/datasets/keremberke/german-traffic-sign-detection
-- Hugging Face model `liamxdev/vtsr`: https://huggingface.co/liamxdev/vtsr
+- Zenseact Open Dataset Frames and traffic-sign annotations: https://zod.zenseact.com/frames/ and https://zod.zenseact.com/annotations/
+- Zenseact Open Dataset license: https://zod.zenseact.com/license/
+- Pinned GTSIGN-220 snapshot: https://huggingface.co/datasets/miriamcarnot/GTSIGN-220/tree/e235536c26486a42858602b146df40520a75be59
+- Synset Signset Germany: https://synset.de/datasets/synset-signset-ger/
+- YOLOX source and release: https://github.com/Megvii-BaseDetection/YOLOX and https://github.com/Megvii-BaseDetection/YOLOX/releases/tag/0.1.1rc0
+- Ultralytics YOLO26 and licensing: https://docs.ultralytics.com/models/yolo26/ and https://www.ultralytics.com/license
 - Google LiteRT overview: https://developers.google.com/edge/litert/overview
 - Android CameraX ImageAnalysis: https://developer.android.com/media/camera/camerax/analyze
 - Apple Vision framework: https://developer.apple.com/documentation/vision

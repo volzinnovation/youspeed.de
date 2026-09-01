@@ -1184,6 +1184,56 @@ private struct TrafficSignRecognitionDetailsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+
+            if let event = viewModel.trafficSignRecognitionLastEvent,
+               let context = event.roadContext {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    LabeledContent(NSLocalizedString("tsr.details.model_pack", comment: ""), value: event.packId)
+                    LabeledContent(NSLocalizedString("tsr.details.way_id", comment: ""), value: context.wayId)
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.coordinate", comment: ""),
+                        value: String(format: "%.5f, %.5f", context.latitude, context.longitude)
+                    )
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.direction", comment: ""),
+                        value: String(
+                            format: "%@ · %.0f°",
+                            localizedDirection(context.travelDirection),
+                            context.headingDegrees
+                        )
+                    )
+                    if let candidate = event.candidate {
+                        LabeledContent(
+                            NSLocalizedString("tsr.details.confidence", comment: ""),
+                            value: confidenceText(candidate)
+                        )
+                        if !candidate.restrictions.isEmpty {
+                            LabeledContent(
+                                NSLocalizedString("tsr.details.restrictions", comment: ""),
+                                value: candidate.restrictions
+                                    .map { "\($0.kind.rawValue)=\($0.normalizedValue)" }
+                                    .joined(separator: ", ")
+                            )
+                        }
+                    }
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.precedence", comment: ""),
+                        value: viewModel.trafficSignRecognitionActiveOverride == nil
+                            ? NSLocalizedString("tsr.details.precedence_base", comment: "")
+                            : NSLocalizedString("tsr.details.precedence_camera", comment: "")
+                    )
+                }
+            } else if let packID = viewModel.trafficSignRecognitionModelPackID {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    LabeledContent(NSLocalizedString("tsr.details.model_pack", comment: ""), value: packID)
+                }
+            } else if !viewModel.trafficSignRecognitionUnavailableDetail.isEmpty {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    Text(viewModel.trafficSignRecognitionUnavailableDetail)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .navigationTitle(NSLocalizedString("tsr.details.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
@@ -1240,6 +1290,24 @@ private struct TrafficSignRecognitionDetailsView: View {
             return NSLocalizedString("tsr.details.confirmed", comment: "")
         case .unknown:
             return NSLocalizedString("tsr.details.unknown", comment: "")
+        }
+    }
+
+    private func confidenceText(_ candidate: TrafficSignRecognitionCandidate) -> String {
+        if let confidence = candidate.calibratedConfidence {
+            return String(format: "%.1f%%", confidence * 100)
+        }
+        return String(format: "raw %.3f", candidate.rawScore)
+    }
+
+    private func localizedDirection(_ direction: TrafficSignTravelDirection) -> String {
+        switch direction {
+        case .forward:
+            return NSLocalizedString("tsr.direction.forward", comment: "")
+        case .reverse:
+            return NSLocalizedString("tsr.direction.reverse", comment: "")
+        case .unknown:
+            return NSLocalizedString("tsr.direction.unknown", comment: "")
         }
     }
 }

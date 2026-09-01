@@ -19,6 +19,7 @@ protocol DriveVideoFrameConsumer: AnyObject {
 
 enum TrafficSignRuntimeUnavailableCode: String, Codable, Sendable {
     case modelPackDirectoryMissing = "model_pack_directory_missing"
+    case modelPackAuthenticationRequired = "model_pack_authentication_required"
     case manifestMissing = "manifest_missing"
     case manifestInvalid = "manifest_invalid"
     case noCompatibleArtifact = "no_compatible_artifact"
@@ -408,6 +409,12 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
         verifiedPack: TrafficSignVerifiedModelPack,
         computeUnits: MLComputeUnits = .all
     ) throws {
+        guard verifiedPack.manifest.pipeline == .directDetection else {
+            throw TrafficSignRuntimeUnavailability(
+                code: .noCompatibleArtifact,
+                detail: "Two-stage TSR packs require a classifier runtime that is not installed."
+            )
+        }
         guard verifiedPack.detectorArtifact.outputSchema == "vision_recognized_objects_v1" else {
             throw TrafficSignRuntimeUnavailability(
                 code: .noCompatibleArtifact,
@@ -502,19 +509,21 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
         guard results.allSatisfy({ $0 is VNRecognizedObjectObservation }) else {
             throw TrafficSignInferenceBackendError.incompatibleOutput
         }
-        return results.compactMap { observation in
+        let classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = results.compactMap {
+            observation -> TrafficSignSpatialAssembly.ClassifiedDetection? in
             guard let recognizedObject = observation as? VNRecognizedObjectObservation,
                   let rawLabel = recognizedObject.labels.first else {
                 return nil
             }
-            return detection(from: recognizedObject, label: rawLabel)
+            return classifiedDetection(from: recognizedObject, label: rawLabel)
         }
+        return TrafficSignSpatialAssembly.assemble(classified)
     }
 
-    private func detection(
+    private func classifiedDetection(
         from observation: VNRecognizedObjectObservation,
         label: VNClassificationObservation
-    ) -> TrafficSignDetection? {
+    ) -> TrafficSignSpatialAssembly.ClassifiedDetection? {
         let visionBox = observation.boundingBox
         let contractBox = TrafficSignNormalizedRect(
             x: min(1, max(0, Double(visionBox.minX))),
@@ -526,18 +535,22 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
 
         let mapping = mappingsByClassID[label.identifier]
         let score = Double(label.confidence)
-        return TrafficSignDetection(
-            rawClassId: label.identifier,
-            rawLabel: mapping?.label ?? label.identifier,
-            semantic: mapping?.semantic ?? TrafficSignSemantic(
-                kind: .unknown,
-                value: nil,
-                unit: nil
+        return TrafficSignSpatialAssembly.ClassifiedDetection(
+            detection: TrafficSignDetection(
+                rawClassId: label.identifier,
+                rawLabel: mapping?.label ?? label.identifier,
+                semantic: mapping?.semantic ?? TrafficSignSemantic(
+                    kind: .unknown,
+                    value: nil,
+                    unit: nil
+                ),
+                rawScore: score,
+                calibratedConfidence: runtimeOutput == .calibratedConfidence ? score : nil,
+                boundingBox: contractBox,
+                classThreshold: mapping?.threshold ?? unknownThreshold
             ),
-            rawScore: score,
-            calibratedConfidence: runtimeOutput == .calibratedConfidence ? score : nil,
-            boundingBox: contractBox,
-            classThreshold: mapping?.threshold ?? unknownThreshold
+            signRole: mapping?.signRole ?? .primarySign,
+            restriction: mapping?.restriction
         )
     }
 }
@@ -547,6 +560,20 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
 struct TrafficSignFrameSnapshot: Equatable, Sendable {
     let context: TrafficSignDetectionContext
     let conditions: TrafficSignAnalysisConditions
+    let sessionGeneration: UInt64
+    let contextGeneration: UInt64
+
+    init(
+        context: TrafficSignDetectionContext,
+        conditions: TrafficSignAnalysisConditions,
+        sessionGeneration: UInt64 = 0,
+        contextGeneration: UInt64 = 0
+    ) {
+        self.context = context
+        self.conditions = conditions
+        self.sessionGeneration = sessionGeneration
+        self.contextGeneration = contextGeneration
+    }
 }
 
 /// The camera callback reads context and analysis conditions in one locked
@@ -576,14 +603,23 @@ final class TrafficSignAtomicFrameState: @unchecked Sendable {
 struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let event: TrafficSignRecognitionEvent
     let frameContext: TrafficSignDetectionContext
+    let sessionGeneration: UInt64
+    let contextGeneration: UInt64
 
-    init(event: TrafficSignRecognitionEvent, frameContext: TrafficSignDetectionContext) {
+    init(
+        event: TrafficSignRecognitionEvent,
+        frameContext: TrafficSignDetectionContext,
+        sessionGeneration: UInt64 = 0,
+        contextGeneration: UInt64 = 0
+    ) {
         precondition(
             event.roadContext == frameContext,
             "A TSR event must retain the context captured with its source frame."
         )
         self.event = event
         self.frameContext = frameContext
+        self.sessionGeneration = sessionGeneration
+        self.contextGeneration = contextGeneration
     }
 }
 
@@ -639,6 +675,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private let lock = NSLock()
     private var schedulingState = SchedulingState()
     private var fusion: TrafficSignFusionEngine
+    private var fusionSessionGeneration: UInt64?
+    private var fusionContextGeneration: UInt64?
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
@@ -832,6 +870,12 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     0,
                     (ProcessInfo.processInfo.systemUptime - startedAt) * 1_000
                 )
+                if self.fusionSessionGeneration != item.snapshot.sessionGeneration
+                    || self.fusionContextGeneration != item.snapshot.contextGeneration {
+                    self.fusion.reset()
+                    self.fusionSessionGeneration = item.snapshot.sessionGeneration
+                    self.fusionContextGeneration = item.snapshot.contextGeneration
+                }
                 let event = self.fusion.ingest(
                     detections: detections,
                     source: item.source,
@@ -880,9 +924,14 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         if shouldDeliver {
             let emission = TrafficSignRuntimeEmission(
                 event: event,
-                frameContext: item.snapshot.context
+                frameContext: item.snapshot.context,
+                sessionGeneration: item.snapshot.sessionGeneration,
+                contextGeneration: item.snapshot.contextGeneration
             )
-            callbackQueue.async { [eventHandler] in eventHandler(emission) }
+            callbackQueue.async { [weak self, eventHandler] in
+                guard self?.canDeliverCallback == true else { return }
+                eventHandler(emission)
+            }
         }
         if let next { perform(next) }
     }
@@ -900,6 +949,12 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         lock.unlock()
         guard shouldNotify, let unavailabilityHandler else { return }
         callbackQueue.async { unavailabilityHandler(reason) }
+    }
+
+    private var canDeliverCallback: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return !schedulingState.stopped && schedulingState.unavailable == nil
     }
 }
 

@@ -22,6 +22,95 @@ class TrafficSignSpeedOverridePolicyTests {
     }
 
     @Test
+    fun unknownTravelDirectionCannotCreateOrReplaceAnOverride() {
+        val source = signature("map-v1/local-v3")
+        val knownContext = context("map-v1/local-v3")
+        val existing = requireNotNull(
+            TrafficSignSpeedOverridePolicy.applyRecognition(
+                current = null,
+                event = event(speedKmh = 30, at = t0, context = knownContext),
+                currentSourceSignature = source,
+            ),
+        )
+        val unknownContext = context(
+            sourceID = "map-v1/local-v3",
+            travelDirection = TrafficSignTravelDirection.UNKNOWN,
+        )
+        val unknownDirectionEvent = event(
+            speedKmh = 50,
+            at = t0.plusSeconds(1),
+            context = unknownContext,
+        )
+
+        val notCreated = TrafficSignSpeedOverridePolicy.applyRecognition(
+            current = null,
+            event = unknownDirectionEvent,
+            currentSourceSignature = source,
+        )
+        val notReplaced = TrafficSignSpeedOverridePolicy.applyRecognition(
+            current = existing,
+            event = unknownDirectionEvent,
+            currentSourceSignature = source,
+        )
+
+        assertNull(notCreated)
+        assertSame(existing, notReplaced)
+    }
+
+    @Test
+    fun numericZoneStartAndTemporarySignsAreActionableLiveOverrides() {
+        val source = signature("map-v1/local-v3")
+        val detectionContext = context("map-v1/local-v3")
+        val actionableSemantics = listOf(
+            TrafficSignSemanticKind.ZONE_START to 30,
+            TrafficSignSemanticKind.TEMPORARY to 50,
+        )
+
+        actionableSemantics.forEachIndexed { index, (kind, speedKmh) ->
+            val override = TrafficSignSpeedOverridePolicy.applyRecognition(
+                current = null,
+                event = event(
+                    speedKmh = speedKmh,
+                    at = t0.plusSeconds(index.toLong()),
+                    context = detectionContext,
+                    semanticKind = kind,
+                ),
+                currentSourceSignature = source,
+            )
+
+            assertEquals(speedKmh, override?.speedKmh)
+        }
+    }
+
+    @Test
+    fun diagnosticImportCannotCreateOrReplaceALiveOverride() {
+        val detectionContext = context("map-v1/local-v3")
+        val existing = requireNotNull(
+            TrafficSignSpeedOverridePolicy.applyRecognition(
+                current = null,
+                event = event(speedKmh = 30, at = t0, context = detectionContext),
+                currentSourceSignature = detectionContext.sourceSignature,
+            ),
+        )
+        val imported = event(
+            speedKmh = 50,
+            at = t0.plusSeconds(1),
+            context = detectionContext,
+        ).copy(source = TrafficSignInputSource.DIAGNOSTIC_IMPORT)
+
+        assertNull(TrafficSignSpeedOverridePolicy.applyRecognition(
+            current = null,
+            event = imported,
+            currentSourceSignature = detectionContext.sourceSignature,
+        ))
+        assertSame(existing, TrafficSignSpeedOverridePolicy.applyRecognition(
+            current = existing,
+            event = imported,
+            currentSourceSignature = detectionContext.sourceSignature,
+        ))
+    }
+
+    @Test
     fun repeatedGpsFixWithSameSourceSignatureDoesNotClearOverride() {
         val override = requireNotNull(
             TrafficSignSpeedOverridePolicy.applyRecognition(
@@ -103,12 +192,16 @@ class TrafficSignSpeedOverridePolicyTests {
         assertNull(override)
     }
 
-    private fun context(sourceID: String, wayId: String = "123") = TrafficSignDetectionContext(
+    private fun context(
+        sourceID: String,
+        wayId: String = "123",
+        travelDirection: TrafficSignTravelDirection = TrafficSignTravelDirection.FORWARD,
+    ) = TrafficSignDetectionContext(
         wayId = wayId,
         latitude = 49.0069,
         longitude = 8.4037,
         headingDegrees = 87.0,
-        travelDirection = TrafficSignTravelDirection.FORWARD,
+        travelDirection = travelDirection,
         sourceSignature = signature(sourceID),
     )
 
@@ -117,7 +210,12 @@ class TrafficSignSpeedOverridePolicyTests {
         localCorrectionRevision = value.substringAfter('/', missingDelimiterValue = "").ifBlank { null },
     )
 
-    private fun event(speedKmh: Int, at: Instant, context: TrafficSignDetectionContext) = TrafficSignRecognitionEvent(
+    private fun event(
+        speedKmh: Int,
+        at: Instant,
+        context: TrafficSignDetectionContext,
+        semanticKind: TrafficSignSemanticKind = TrafficSignSemanticKind.MAXIMUM_SPEED,
+    ) = TrafficSignRecognitionEvent(
         schemaVersion = 1,
         packId = "de-fixture",
         artifactSha256 = "a".repeat(64),
@@ -128,7 +226,7 @@ class TrafficSignSpeedOverridePolicyTests {
         candidate = TrafficSignCandidate(
             rawClassId = "speed_limit_$speedKmh",
             rawLabel = "Maximum speed $speedKmh",
-            semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, speedKmh, "km/h"),
+            semantic = TrafficSignSemantic(semanticKind, speedKmh, "km/h"),
             rawScore = 0.9,
             calibratedConfidence = 0.85,
             boundingBox = NormalizedTrafficSignBoundingBox(0.7, 0.15, 0.08, 0.12),

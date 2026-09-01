@@ -88,6 +88,33 @@
           "road_context": { "$ref": "#/$defs/roadContext" }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": { "enum": ["provisional", "confirmed", "unknown"] }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "required": ["candidate"],
+        "properties": {
+          "candidate": { "type": "object" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": { "enum": ["no_recognition", "unavailable"] }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "candidate": { "type": "null" }
+        }
+      }
     }
   ],
   "$defs": {

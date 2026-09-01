@@ -1,6 +1,9 @@
 import XCTest
 @testable import SpeedConsumer
+import AVFoundation
+import CoreGraphics
 import CryptoKit
+import ImageIO
 import SQLite3
 import CoreLocation
 import zlib
@@ -9,6 +12,48 @@ import UIKit
 #endif
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
+private final class DeterministicTrafficSignInferenceBackend:
+    TrafficSignInferenceBackend,
+    @unchecked Sendable
+{
+    private let output: [TrafficSignDetection]
+
+    init(detections: [TrafficSignDetection]) {
+        output = detections
+    }
+
+    func detections(
+        in pixelBuffer: CVPixelBuffer,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        output
+    }
+
+    func detections(
+        in cgImage: CGImage,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        output
+    }
+}
+
+private final class TrafficSignTestEmissionStore: @unchecked Sendable {
+    private let lock = NSLock()
+    private var emissions: [TrafficSignRuntimeEmission] = []
+
+    func append(_ emission: TrafficSignRuntimeEmission) {
+        lock.lock()
+        emissions.append(emission)
+        lock.unlock()
+    }
+
+    func snapshot() -> [TrafficSignRuntimeEmission] {
+        lock.lock()
+        defer { lock.unlock() }
+        return emissions
+    }
+}
 
 final class SpeedConsumerTests: XCTestCase {
     func testPanoramaxUploadProcessingWaitsForRecorderFinalization() {
@@ -63,6 +108,29 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .denied))
         XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .unavailable))
         XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .failed))
+    }
+
+    func testTrafficSignRuntimeLossStopsOnlyAnOtherwiseEmptyRecording() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
+            for: .recording,
+            dashcamActive: false,
+            panoramaxActive: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
+            for: .recording,
+            dashcamActive: true,
+            panoramaxActive: false
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
+            for: .recording,
+            dashcamActive: false,
+            panoramaxActive: true
+        ))
+        XCTAssertTrue(DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
+            for: .preparing,
+            dashcamActive: false,
+            panoramaxActive: false
+        ))
     }
 
     func testDashcamPreviewRequiresRecordingActiveDashcamAndNoSpeedCapture() {
@@ -220,6 +288,153 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
+    func testTrafficSignModelPackRoundTripsTypedPlateAndRequiredLineage() throws {
+        let wet = TrafficSignRestriction(
+            kind: .weather,
+            normalizedValue: "wet",
+            rawText: "Bei Nässe",
+            countrySignCode: "DE:1053-35"
+        )
+        let manifest = makeTrafficSignModelPackManifest(
+            additionalClassMappings: [
+                TrafficSignModelPackManifest.ClassMapping(
+                    classId: "supplementary_wet",
+                    label: "Supplementary plate: when wet",
+                    semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+                    threshold: 0.65,
+                    signRole: .supplementaryPlate,
+                    restriction: wet
+                ),
+            ]
+        )
+
+        let encoded = try TrafficSignPackJSON.encoder().encode(manifest)
+        let encodedJSON = try XCTUnwrap(String(data: encoded, encoding: .utf8))
+        XCTAssertTrue(encodedJSON.contains("\"sign_role\""))
+        XCTAssertTrue(encodedJSON.contains("\"supplementary_plate\""))
+        XCTAssertTrue(encodedJSON.contains("\"source_manifest_sha256\""))
+        XCTAssertTrue(encodedJSON.contains("\"dataset_inventory_sha256s\""))
+        XCTAssertTrue(encodedJSON.contains("\"training_run_sha256\""))
+        XCTAssertTrue(encodedJSON.contains("\"evaluation_report_sha256\""))
+        XCTAssertTrue(encodedJSON.contains("\"parity_report_sha256\""))
+
+        let decoded = try TrafficSignPackJSON.decoder().decode(
+            TrafficSignModelPackManifest.self,
+            from: encoded
+        )
+        let decodedPlate = try XCTUnwrap(
+            decoded.classMapping.first { $0.classId == "supplementary_wet" }
+        )
+        XCTAssertEqual(decodedPlate.signRole, .supplementaryPlate)
+        XCTAssertEqual(decodedPlate.restriction, wet)
+        XCTAssertEqual(decoded.lineage, manifest.lineage)
+        XCTAssertNoThrow(try TrafficSignModelPackValidator.validate(
+            decoded,
+            platform: .ios,
+            runtimeVersion: "18.6",
+            appVersion: "1.0.1",
+            countryCode: "DE"
+        ))
+    }
+
+    func testTrafficSignModelPackRejectsIncompleteOrAmbiguousLineage() {
+        let valid = makeTrafficSignLineage()
+        let invalidLineages = [
+            TrafficSignModelPackManifest.Lineage(
+                sourceManifestSha256: String(repeating: "A", count: 64),
+                datasetInventorySha256s: valid.datasetInventorySha256s,
+                trainingRunId: valid.trainingRunId,
+                trainingRunSha256: valid.trainingRunSha256,
+                evaluationReportSha256: valid.evaluationReportSha256,
+                parityReportSha256: valid.parityReportSha256
+            ),
+            TrafficSignModelPackManifest.Lineage(
+                sourceManifestSha256: valid.sourceManifestSha256,
+                datasetInventorySha256s: [
+                    valid.datasetInventorySha256s[0],
+                    valid.datasetInventorySha256s[0],
+                ],
+                trainingRunId: valid.trainingRunId,
+                trainingRunSha256: valid.trainingRunSha256,
+                evaluationReportSha256: valid.evaluationReportSha256,
+                parityReportSha256: valid.parityReportSha256
+            ),
+            TrafficSignModelPackManifest.Lineage(
+                sourceManifestSha256: valid.sourceManifestSha256,
+                datasetInventorySha256s: valid.datasetInventorySha256s,
+                trainingRunId: "  ",
+                trainingRunSha256: valid.trainingRunSha256,
+                evaluationReportSha256: valid.evaluationReportSha256,
+                parityReportSha256: valid.parityReportSha256
+            ),
+        ]
+
+        for lineage in invalidLineages {
+            XCTAssertThrowsError(try TrafficSignModelPackValidator.validate(
+                makeTrafficSignModelPackManifest(lineage: lineage),
+                platform: .ios,
+                runtimeVersion: "18.6",
+                appVersion: "1.0.1",
+                countryCode: "DE"
+            )) { error in
+                XCTAssertEqual(
+                    error as? TrafficSignPackValidationError,
+                    .invalid("Invalid TSR training lineage")
+                )
+            }
+        }
+    }
+
+    func testTrafficSignModelPackRejectsInvalidClassRoles() {
+        let wet = TrafficSignRestriction(
+            kind: .weather,
+            normalizedValue: "wet",
+            rawText: "Bei Nässe",
+            countrySignCode: "DE:1053-35"
+        )
+        let invalidMappings = [
+            TrafficSignModelPackManifest.ClassMapping(
+                classId: "primary_with_plate_metadata",
+                label: "Invalid primary",
+                semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+                threshold: 0.5,
+                signRole: .primarySign,
+                restriction: wet
+            ),
+            TrafficSignModelPackManifest.ClassMapping(
+                classId: "plate_with_primary_semantic",
+                label: "Invalid plate semantic",
+                semantic: TrafficSignSemantic(kind: .maximumSpeed, value: 30, unit: "km/h"),
+                threshold: 0.5,
+                signRole: .supplementaryPlate,
+                restriction: wet
+            ),
+            TrafficSignModelPackManifest.ClassMapping(
+                classId: "plate_without_restriction",
+                label: "Invalid untyped plate",
+                semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+                threshold: 0.5,
+                signRole: .supplementaryPlate,
+                restriction: nil
+            ),
+        ]
+
+        for mapping in invalidMappings {
+            XCTAssertThrowsError(try TrafficSignModelPackValidator.validate(
+                makeTrafficSignModelPackManifest(additionalClassMappings: [mapping]),
+                platform: .ios,
+                runtimeVersion: "18.6",
+                appVersion: "1.0.1",
+                countryCode: "DE"
+            )) { error in
+                guard let validationError = error as? TrafficSignPackValidationError,
+                      case .invalid = validationError else {
+                    return XCTFail("Expected invalid class-role metadata, got \(error)")
+                }
+            }
+        }
+    }
+
     func testTrafficSignAnalysisPolicyKeepsActiveRatesWithinTwoToTenFPS() throws {
         let activeConditions: [(TrafficSignAnalysisConditions, Double)] = [
             (
@@ -353,6 +568,70 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(first.intersectionOverUnion(with: invalid), 0)
     }
 
+    func testTrafficSignSpatialAssemblyLinksTypedPlateBelowPrimary() throws {
+        let wet = TrafficSignRestriction(
+            kind: .weather,
+            normalizedValue: "wet",
+            rawText: "Bei Nässe",
+            countrySignCode: "DE:1053-35"
+        )
+        let primary = makeTrafficSignDetection(
+            score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.68, y: 0.12, width: 0.12, height: 0.16)
+        )
+        let plate = TrafficSignDetection(
+            rawClassId: "supplementary_wet",
+            rawLabel: "Supplementary plate: when wet",
+            semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+            rawScore: 0.88,
+            calibratedConfidence: 0.84,
+            boundingBox: TrafficSignNormalizedRect(x: 0.69, y: 0.30, width: 0.10, height: 0.06),
+            classThreshold: 0.7
+        )
+
+        let assembled = TrafficSignSpatialAssembly.assemble(
+            [
+                .init(detection: primary, signRole: .primarySign, restriction: nil),
+                .init(detection: plate, signRole: .supplementaryPlate, restriction: wet),
+            ],
+            assemblyIDPrefix: "frame-1"
+        )
+
+        XCTAssertEqual(assembled.count, 1)
+        let result = try XCTUnwrap(assembled.first)
+        XCTAssertEqual(result.assemblyId, "frame-1-assembly-1")
+        XCTAssertEqual(result.conditionState, .resolved)
+        XCTAssertEqual(result.restrictions, [wet])
+    }
+
+    func testTrafficSignSpatialAssemblyMarksPrimaryUnresolvedWhenPlateCannotBeAssigned() throws {
+        let primary = makeTrafficSignDetection(
+            score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.68, y: 0.12, width: 0.12, height: 0.16)
+        )
+        let unassignedPlate = TrafficSignDetection(
+            rawClassId: "supplementary_unknown",
+            rawLabel: "Supplementary plate",
+            semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+            rawScore: 0.88,
+            calibratedConfidence: 0.84,
+            boundingBox: TrafficSignNormalizedRect(x: 0.10, y: 0.75, width: 0.10, height: 0.06),
+            classThreshold: 0.7
+        )
+
+        let assembled = TrafficSignSpatialAssembly.assemble(
+            [
+                .init(detection: primary, signRole: .primarySign, restriction: nil),
+                .init(detection: unassignedPlate, signRole: .supplementaryPlate, restriction: nil),
+            ],
+            assemblyIDPrefix: "frame-unresolved"
+        )
+
+        let result = try XCTUnwrap(assembled.first)
+        XCTAssertEqual(result.conditionState, .unresolved)
+        XCTAssertTrue(result.restrictions.isEmpty)
+    }
+
     func testTrafficSignFusionTransitionsFromProvisionalToConfirmed() throws {
         let thresholds = TrafficSignModelPackManifest.Thresholds(
             provisional: 0.45,
@@ -424,6 +703,344 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(third.candidate?.unit, "km/h")
     }
 
+    func testTrafficSignFusionRetainsConditionalPlateEvidenceAcrossFrames() throws {
+        let thresholds = TrafficSignModelPackManifest.Thresholds(
+            provisional: 0.45,
+            confirmed: 0.7,
+            unknown: 0.25,
+            confirmationFrames: 3,
+            confirmationWindowMs: 1_500,
+            minimumTrackIou: 0.2
+        )
+        var engine = TrafficSignFusionEngine(
+            packId: "de-speed-signs-fixture-v1",
+            artifactSha256: String(repeating: "2", count: 64),
+            preprocessingVersion: "vision-scale-fit-rgb-v1",
+            thresholds: thresholds
+        )
+        let wet = TrafficSignRestriction(
+            kind: .weather,
+            normalizedValue: "wet",
+            rawText: "Bei Nässe",
+            countrySignCode: "DE:1053-35"
+        )
+        let start = Date(timeIntervalSince1970: 1_500)
+        let context = makeTrafficSignDetectionContext()
+        func detection(
+            frame: Int,
+            conditionState: TrafficSignConditionState,
+            restrictions: [TrafficSignRestriction]
+        ) -> TrafficSignDetection {
+            TrafficSignDetection(
+                rawClassId: "speed_limit_30",
+                rawLabel: "Maximum speed 30",
+                semantic: TrafficSignSemantic(kind: .maximumSpeed, value: 30, unit: "km/h"),
+                rawScore: 0.9,
+                calibratedConfidence: 0.86,
+                boundingBox: TrafficSignNormalizedRect(
+                    x: 0.70 + Double(frame) * 0.002,
+                    y: 0.15,
+                    width: 0.08,
+                    height: 0.12
+                ),
+                classThreshold: 0.7,
+                assemblyId: "frame-\(frame)-assembly-1",
+                conditionState: conditionState,
+                restrictions: restrictions
+            )
+        }
+
+        _ = engine.ingest(
+            detections: [detection(frame: 1, conditionState: .resolved, restrictions: [wet])],
+            source: .liveFrame,
+            timestamp: start,
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        _ = engine.ingest(
+            detections: [detection(frame: 2, conditionState: .none, restrictions: [])],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(0.3),
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        let confirmed = engine.ingest(
+            detections: [detection(frame: 3, conditionState: .none, restrictions: [])],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(0.6),
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+
+        XCTAssertEqual(confirmed.state, .confirmed)
+        XCTAssertEqual(confirmed.candidate?.assemblyId, "frame-3-assembly-1")
+        XCTAssertEqual(confirmed.candidate?.conditionState, .resolved)
+        XCTAssertEqual(confirmed.candidate?.restrictions, [wet])
+    }
+
+    func testTrafficSignFusionStartsFreshWhenWayDirectionOrSourceChanges() throws {
+        let thresholds = TrafficSignModelPackManifest.Thresholds(
+            provisional: 0.45,
+            confirmed: 0.7,
+            unknown: 0.25,
+            confirmationFrames: 3,
+            confirmationWindowMs: 1_500,
+            minimumTrackIou: 0.2
+        )
+        var engine = TrafficSignFusionEngine(
+            packId: "de-speed-signs-fixture-v1",
+            artifactSha256: String(repeating: "2", count: 64),
+            preprocessingVersion: "vision-scale-fit-rgb-v1",
+            thresholds: thresholds
+        )
+        let start = Date(timeIntervalSince1970: 2_000)
+        let forward = makeTrafficSignDetectionContext()
+        let reverse = TrafficSignDetectionContext(
+            wayId: forward.wayId,
+            latitude: forward.latitude,
+            longitude: forward.longitude,
+            headingDegrees: 262,
+            travelDirection: .reverse,
+            sourceSignature: forward.sourceSignature
+        )
+        let nextWaySource = TrafficSignRuntimeSourceSignature(
+            osmRevision: "bundle-de-v42:way-456:70",
+            localCorrectionRevision: nil
+        )
+        let nextWay = TrafficSignDetectionContext(
+            wayId: "456",
+            latitude: 49.0075,
+            longitude: 8.4051,
+            headingDegrees: 84,
+            travelDirection: .forward,
+            sourceSignature: nextWaySource
+        )
+        let revisedSource = TrafficSignRuntimeSourceSignature(
+            osmRevision: nextWaySource.osmRevision,
+            localCorrectionRevision: "local-observation-v8:50"
+        )
+        let revisedContext = TrafficSignDetectionContext(
+            wayId: nextWay.wayId,
+            latitude: 49.0078,
+            longitude: 8.4056,
+            headingDegrees: 86,
+            travelDirection: nextWay.travelDirection,
+            sourceSignature: revisedSource
+        )
+        let detection = makeTrafficSignDetection(
+            score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.7, y: 0.15, width: 0.08, height: 0.12)
+        )
+
+        let first = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start,
+            roadContext: forward,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        let second = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(0.3),
+            roadContext: forward,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        let afterUTurn = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(0.6),
+            roadContext: reverse,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        let afterWayChange = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(0.9),
+            roadContext: nextWay,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        let afterSourceChange = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(1.2),
+            roadContext: revisedContext,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+
+        XCTAssertEqual(first.candidate?.evidenceFrames, 1)
+        XCTAssertEqual(second.candidate?.evidenceFrames, 2)
+        XCTAssertEqual(afterUTurn.state, .provisional)
+        XCTAssertEqual(afterUTurn.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(afterUTurn.candidate?.trackId, second.candidate?.trackId)
+        XCTAssertEqual(afterUTurn.roadContext, reverse)
+        XCTAssertEqual(afterWayChange.state, .provisional)
+        XCTAssertEqual(afterWayChange.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(afterWayChange.candidate?.trackId, afterUTurn.candidate?.trackId)
+        XCTAssertEqual(afterWayChange.roadContext, nextWay)
+        XCTAssertEqual(afterSourceChange.state, .provisional)
+        XCTAssertEqual(afterSourceChange.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(afterSourceChange.candidate?.trackId, afterWayChange.candidate?.trackId)
+        XCTAssertEqual(afterSourceChange.roadContext, revisedContext)
+    }
+
+    func testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verifiedPack = TrafficSignVerifiedModelPack(
+            directoryURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true),
+            manifest: manifest,
+            detectorArtifact: artifact,
+            detectorArtifactURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                .appendingPathComponent("detector.mlmodel", isDirectory: false)
+        )
+        let backend = DeterministicTrafficSignInferenceBackend(
+            detections: [
+                makeTrafficSignDetection(
+                    score: 0.9,
+                    box: TrafficSignNormalizedRect(
+                        x: 0.7,
+                        y: 0.15,
+                        width: 0.08,
+                        height: 0.12
+                    )
+                ),
+            ]
+        )
+        let firstContext = makeTrafficSignDetectionContext()
+        let movedContext = TrafficSignDetectionContext(
+            wayId: firstContext.wayId,
+            latitude: 49.0074,
+            longitude: 8.4046,
+            headingDegrees: 88,
+            travelDirection: firstContext.travelDirection,
+            sourceSignature: firstContext.sourceSignature
+        )
+        let activeConditions = TrafficSignAnalysisConditions(
+            speedKmh: 50,
+            candidateRecentlySeen: false,
+            lowPowerMode: false,
+            thermalState: .nominal,
+            appIsActive: true
+        )
+        let firstSnapshot = TrafficSignFrameSnapshot(
+            context: firstContext,
+            conditions: activeConditions,
+            sessionGeneration: 41,
+            contextGeneration: 7
+        )
+        let nextContextSnapshot = TrafficSignFrameSnapshot(
+            context: movedContext,
+            conditions: activeConditions,
+            sessionGeneration: 41,
+            contextGeneration: 8
+        )
+        let nextSessionSnapshot = TrafficSignFrameSnapshot(
+            context: movedContext,
+            conditions: activeConditions,
+            sessionGeneration: 42,
+            contextGeneration: 8
+        )
+        let frameState = TrafficSignAtomicFrameState(value: firstSnapshot)
+        let emissions = TrafficSignTestEmissionStore()
+        let emissionSignal = DispatchSemaphore(value: 0)
+        let callbackQueue = DispatchQueue(label: "de.youspeed.tests.tsr-runtime-callback")
+        let runtime = TrafficSignRuntime(
+            verifiedPack: verifiedPack,
+            backend: backend,
+            snapshotProvider: { frameState.snapshot() },
+            callbackQueue: callbackQueue,
+            eventHandler: { emission in
+                emissions.append(emission)
+                emissionSignal.signal()
+            }
+        )
+        defer { runtime.stop() }
+        let image = try makeTrafficSignTestImage()
+        let start = Date(timeIntervalSince1970: 3_000)
+
+        for index in 0..<3 {
+            runtime.analyzeStill(
+                cgImage: image,
+                orientation: .up,
+                timestampUTC: start.addingTimeInterval(Double(index) * 0.3),
+                snapshot: firstSnapshot
+            )
+            XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+        }
+
+        frameState.update(nextContextSnapshot)
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: start.addingTimeInterval(0.9),
+            snapshot: nextContextSnapshot
+        )
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: start.addingTimeInterval(1.2),
+            snapshot: nextContextSnapshot
+        )
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+
+        frameState.update(nextSessionSnapshot)
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: start.addingTimeInterval(1.5),
+            snapshot: nextSessionSnapshot
+        )
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+
+        let captured = emissions.snapshot()
+        XCTAssertEqual(captured.count, 6)
+        XCTAssertEqual(captured.map(\.event.state), [
+            .provisional,
+            .provisional,
+            .confirmed,
+            .provisional,
+            .provisional,
+            .provisional,
+        ])
+        XCTAssertEqual(captured.map { $0.event.candidate?.evidenceFrames }, [1, 2, 3, 1, 2, 1])
+        XCTAssertEqual(captured.prefix(3).map(\.sessionGeneration), [41, 41, 41])
+        XCTAssertEqual(captured.prefix(3).map(\.contextGeneration), [7, 7, 7])
+        XCTAssertTrue(captured.prefix(3).allSatisfy { $0.frameContext == firstContext })
+        XCTAssertTrue(captured.prefix(3).allSatisfy { $0.event.roadContext == firstContext })
+        XCTAssertEqual(captured[3].sessionGeneration, 41)
+        XCTAssertEqual(captured[3].contextGeneration, 8)
+        XCTAssertEqual(captured[3].event.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(
+            captured[2].event.candidate?.trackId,
+            captured[3].event.candidate?.trackId
+        )
+        let final = try XCTUnwrap(captured.last)
+        XCTAssertEqual(final.sessionGeneration, 42)
+        XCTAssertEqual(final.contextGeneration, 8)
+        XCTAssertEqual(final.frameContext, movedContext)
+        XCTAssertEqual(final.event.roadContext, movedContext)
+        XCTAssertEqual(final.event.roadContext?.wayId, "123")
+        XCTAssertEqual(final.event.roadContext?.latitude, 49.0074)
+        XCTAssertEqual(final.event.roadContext?.longitude, 8.4046)
+        XCTAssertEqual(final.event.roadContext?.headingDegrees, 88)
+        XCTAssertEqual(final.event.roadContext?.travelDirection, .forward)
+        XCTAssertNotEqual(
+            captured[2].event.candidate?.trackId,
+            final.event.candidate?.trackId
+        )
+        XCTAssertEqual(runtime.metrics.completedInferences, 6)
+    }
+
     func testTrafficSignTransientOverrideOutranksLocalAndOSMUntilSourceChanges() throws {
         let signature = TrafficSignRuntimeSourceSignature(
             osmRevision: "bundle-de-v42:way-123:50",
@@ -454,25 +1071,18 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(policy.resolvedSpeedKmh(
             osmSpeedKmh: 50,
             localCorrectionSpeedKmh: 40,
-            currentSourceSignature: signature
+            currentContext: context
         ), 30)
         XCTAssertEqual(policy.resolvedSpeedKmh(
             osmSpeedKmh: 50,
             localCorrectionSpeedKmh: 40,
-            currentSourceSignature: signature
+            currentContext: context
         ), 30)
 
         let revisedSource = TrafficSignRuntimeSourceSignature(
             osmRevision: "bundle-de-v43:way-123:50",
             localCorrectionRevision: "local-observation-v7:40"
         )
-        XCTAssertEqual(policy.resolvedSpeedKmh(
-            osmSpeedKmh: 50,
-            localCorrectionSpeedKmh: 40,
-            currentSourceSignature: revisedSource
-        ), 40)
-        XCTAssertNil(policy.activeOverride)
-
         let revisedContext = TrafficSignDetectionContext(
             wayId: context.wayId,
             latitude: context.latitude,
@@ -481,6 +1091,13 @@ final class SpeedConsumerTests: XCTestCase {
             travelDirection: context.travelDirection,
             sourceSignature: revisedSource
         )
+        XCTAssertEqual(policy.resolvedSpeedKmh(
+            osmSpeedKmh: 50,
+            localCorrectionSpeedKmh: 40,
+            currentContext: revisedContext
+        ), 40)
+        XCTAssertNil(policy.activeOverride)
+
         XCTAssertTrue(policy.ingestConfirmedDetection(
             makeConfirmedTrafficSignEvent(
                 value: 30,
@@ -496,9 +1113,130 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(policy.resolvedSpeedKmh(
             osmSpeedKmh: 50,
             localCorrectionSpeedKmh: 45,
-            currentSourceSignature: revisedLocalSource
+            currentContext: TrafficSignDetectionContext(
+                wayId: revisedContext.wayId,
+                latitude: revisedContext.latitude,
+                longitude: revisedContext.longitude,
+                headingDegrees: revisedContext.headingDegrees,
+                travelDirection: revisedContext.travelDirection,
+                sourceSignature: revisedLocalSource
+            )
         ), 45)
         XCTAssertNil(policy.activeOverride)
+    }
+
+    func testTrafficSignEventJSONPreservesSubsecondFrameOrdering() throws {
+        let context = makeTrafficSignDetectionContext()
+        let timestamp = Date(timeIntervalSince1970: 2_000.375)
+        let event = makeConfirmedTrafficSignEvent(
+            value: 30,
+            timestamp: timestamp,
+            context: context
+        )
+
+        let encoded = try TrafficSignPackJSON.encoder().encode(event)
+        let json = try XCTUnwrap(String(data: encoded, encoding: .utf8))
+        XCTAssertTrue(json.contains(".375Z"))
+        let decoded = try TrafficSignPackJSON.decoder().decode(
+            TrafficSignRecognitionEvent.self,
+            from: encoded
+        )
+        XCTAssertEqual(
+            decoded.frameTimestampUtc.timeIntervalSince1970,
+            timestamp.timeIntervalSince1970,
+            accuracy: 0.001
+        )
+    }
+
+    func testTrafficSignTransientOverrideEndsOnWayOrDirectionChangeEvenWithSameSourceSignature() {
+        let context = makeTrafficSignDetectionContext()
+        var policy = TrafficSignTransientOverridePolicy()
+        XCTAssertTrue(policy.ingestConfirmedDetection(
+            makeConfirmedTrafficSignEvent(
+                value: 30,
+                timestamp: Date(timeIntervalSince1970: 2_000),
+                context: context
+            ),
+            currentSourceSignature: context.sourceSignature
+        ))
+
+        let reverse = TrafficSignDetectionContext(
+            wayId: context.wayId,
+            latitude: context.latitude,
+            longitude: context.longitude,
+            headingDegrees: 262,
+            travelDirection: .reverse,
+            sourceSignature: context.sourceSignature
+        )
+        XCTAssertEqual(policy.resolvedSpeedKmh(
+            osmSpeedKmh: 50,
+            localCorrectionSpeedKmh: 40,
+            currentContext: reverse
+        ), 40)
+        XCTAssertNil(policy.activeOverride)
+
+        XCTAssertTrue(policy.ingestConfirmedDetection(
+            makeConfirmedTrafficSignEvent(
+                value: 30,
+                timestamp: Date(timeIntervalSince1970: 2_001),
+                context: context
+            ),
+            currentSourceSignature: context.sourceSignature
+        ))
+        let nextWay = TrafficSignDetectionContext(
+            wayId: "456",
+            latitude: 49.0075,
+            longitude: 8.4051,
+            headingDegrees: 84,
+            travelDirection: .forward,
+            sourceSignature: context.sourceSignature
+        )
+        XCTAssertEqual(policy.resolvedSpeedKmh(
+            osmSpeedKmh: 70,
+            localCorrectionSpeedKmh: nil,
+            currentContext: nextWay
+        ), 70)
+        XCTAssertNil(policy.activeOverride)
+    }
+
+    func testTrafficSignTransientOverrideRequiresKnownDirection() {
+        let context = makeTrafficSignDetectionContext()
+        let unknownDirection = TrafficSignDetectionContext(
+            wayId: context.wayId,
+            latitude: context.latitude,
+            longitude: context.longitude,
+            headingDegrees: context.headingDegrees,
+            travelDirection: .unknown,
+            sourceSignature: context.sourceSignature
+        )
+        var policy = TrafficSignTransientOverridePolicy()
+
+        XCTAssertFalse(policy.ingestConfirmedDetection(
+            makeConfirmedTrafficSignEvent(
+                value: 30,
+                timestamp: Date(timeIntervalSince1970: 2_000),
+                context: unknownDirection
+            ),
+            currentSourceSignature: context.sourceSignature
+        ))
+        XCTAssertNil(policy.activeOverride)
+    }
+
+    func testTrafficSignZoneStartAndTemporaryNumericDetectionsCanOverride() {
+        let context = makeTrafficSignDetectionContext()
+        for semanticKind in [TrafficSignSemanticKind.zoneStart, .temporary] {
+            var policy = TrafficSignTransientOverridePolicy()
+            XCTAssertTrue(policy.ingestConfirmedDetection(
+                makeConfirmedTrafficSignEvent(
+                    value: 30,
+                    semanticKind: semanticKind,
+                    timestamp: Date(timeIntervalSince1970: 2_000),
+                    context: context
+                ),
+                currentSourceSignature: context.sourceSignature
+            ))
+            XCTAssertEqual(policy.activeOverride?.speedKmh, 30)
+        }
     }
 
     func testTrafficSignTransientOverrideAcceptsOnlyNewerConfirmedNumericDetection() throws {
@@ -653,7 +1391,7 @@ final class SpeedConsumerTests: XCTestCase {
                     kind: .weather,
                     normalizedValue: "wet",
                     rawText: "bei Naesse",
-                    countrySignCode: "DE:1052-36"
+                    countrySignCode: "DE:1053-35"
                 ),
             ]
         )
@@ -680,7 +1418,9 @@ final class SpeedConsumerTests: XCTestCase {
 
     private func makeTrafficSignModelPackManifest(
         pipeline: TrafficSignModelPackManifest.Pipeline = .directDetection,
-        classifier: TrafficSignModelPackManifest.Component? = nil
+        classifier: TrafficSignModelPackManifest.Component? = nil,
+        additionalClassMappings: [TrafficSignModelPackManifest.ClassMapping] = [],
+        lineage: TrafficSignModelPackManifest.Lineage? = nil
     ) -> TrafficSignModelPackManifest {
         let checkpointSHA = String(repeating: "1", count: 64)
         let artifactSHA = String(repeating: "2", count: 64)
@@ -762,9 +1502,10 @@ final class SpeedConsumerTests: XCTestCase {
                     semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
                     threshold: 0.5
                 ),
-            ],
+            ] + additionalClassMappings,
             detector: detector,
             classifier: classifier,
+            lineage: lineage ?? makeTrafficSignLineage(),
             licenses: [
                 TrafficSignModelPackManifest.License(
                     name: "Test fixture",
@@ -775,6 +1516,31 @@ final class SpeedConsumerTests: XCTestCase {
             minimumAppVersion: "1.0.1",
             signature: nil
         )
+    }
+
+    private func makeTrafficSignLineage() -> TrafficSignModelPackManifest.Lineage {
+        TrafficSignModelPackManifest.Lineage(
+            sourceManifestSha256: String(repeating: "5", count: 64),
+            datasetInventorySha256s: [String(repeating: "6", count: 64)],
+            trainingRunId: "test-training-run-v1",
+            trainingRunSha256: String(repeating: "7", count: 64),
+            evaluationReportSha256: String(repeating: "8", count: 64),
+            parityReportSha256: String(repeating: "9", count: 64)
+        )
+    }
+
+    private func makeTrafficSignTestImage() throws -> CGImage {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = try XCTUnwrap(CGContext(
+            data: nil,
+            width: 2,
+            height: 2,
+            bitsPerComponent: 8,
+            bytesPerRow: 8,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        return try XCTUnwrap(context.makeImage())
     }
 
     private func makeTrafficSignDetection(
@@ -794,6 +1560,7 @@ final class SpeedConsumerTests: XCTestCase {
 
     private func makeConfirmedTrafficSignEvent(
         value: Int,
+        semanticKind: TrafficSignSemanticKind = .maximumSpeed,
         timestamp: Date,
         context: TrafficSignDetectionContext
     ) -> TrafficSignRecognitionEvent {
@@ -806,9 +1573,9 @@ final class SpeedConsumerTests: XCTestCase {
             frameTimestampUtc: timestamp,
             state: .confirmed,
             candidate: TrafficSignRecognitionCandidate(
-                rawClassId: "speed_limit_\(value)",
-                rawLabel: "Maximum speed \(value)",
-                semanticKind: TrafficSignSemanticKind.maximumSpeed.rawValue,
+                rawClassId: "\(semanticKind.rawValue)_\(value)",
+                rawLabel: "\(semanticKind.rawValue) \(value)",
+                semanticKind: semanticKind.rawValue,
                 value: value,
                 unit: "km/h",
                 rawScore: 0.9,
@@ -2711,9 +3478,15 @@ final class SpeedConsumerTests: XCTestCase {
         let resolved = await MainActor.run {
             DriveSessionViewModel.resolveLocalSpeedOverrides(from: observations)
         }
+        let revisions = await MainActor.run {
+            DriveSessionViewModel.resolveLocalSpeedOverrideRevisions(from: observations)
+        }
         XCTAssertEqual(resolved["17721265"], 40)
         XCTAssertEqual(resolved["69233057"], 50)
         XCTAssertEqual(resolved.count, 2)
+        XCTAssertTrue(revisions["17721265"]?.contains("id:obs-latest") == true)
+        XCTAssertTrue(revisions["17721265"]?.contains("updated:\(base)") == true)
+        XCTAssertFalse(revisions["17721265"]?.contains("obs-discarded") == true)
     }
 
     func testMultipartBundleSyncAndFirstQuery() async throws {

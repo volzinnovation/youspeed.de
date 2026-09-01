@@ -18,10 +18,12 @@ The runtime rules are deliberately strict:
   heading, travel direction, and OSM/local source signature captured with the
   frame. An asynchronous result is rejected for runtime override if that
   signature is no longer current.
-- A confirmed numeric result is a transient source with precedence
-  `TSR > local correction > bundled OSM`. It never mutates the lower layers,
-  survives repeated fixes with the same source signature, and is cleared by a
-  newer detection or genuinely new OSM/local information.
+- A confirmed unconditional numeric result is a transient source with
+  precedence `TSR > local correction > bundled OSM`. It never mutates the
+  lower layers, survives repeated fixes with the same source signature, and is
+  cleared by a newer detection or genuinely new OSM/local information. Until
+  an applicability evaluator exists, a newer conditional/unresolved assembly
+  clears the old camera override but does not create a new active limit.
 - Primary signs and white supplementary plates are separate objects linked by
   an assembly ID. `resolving`/`unresolved` plate state must not be collapsed
   into an unconditional permanent speed correction.
@@ -34,6 +36,10 @@ The runtime rules are deliberately strict:
 - Downloaded packs require a trusted signature in addition to per-artifact
   hashes. Bundled/developer packs may be admitted by a separate explicit trust
   policy, but are still hash checked.
+- The current iOS integration therefore rejects Application Support packs in
+  production. An unsigned integrity-checked pack is admitted only from the
+  explicit `YOUSPEED_TSR_MODEL_PACK_DIR` environment override in a DEBUG build;
+  Android remains unavailable until its verified-pack boundary is implemented.
 
 `fixtures/de-direct-pack-v1.json` and `fixtures/recognition-events-v1.json` are
 contract fixtures, not release manifests or benchmark ground truth. Their hash
@@ -41,6 +47,8 @@ values are intentionally synthetic and no model artifact is implied.
 
 `diagnostic-bundle.schema.json` defines the separate, consented image round
 trip. Ordinary inference never writes frames into that storage root. The
-dataset builder verifies consent, redaction state, asset hashes, road context,
-assembly links, and group-safe train/validation/test splitting before materializing
-anything for training.
+dataset builder verifies unexpired consent, redaction state, asset hashes, road
+context, assembly links, and deterministic capture-group
+train/validation/test splitting before materializing anything for training. A
+separate release audit must still merge repeated physical-sign encounters and
+reject near-duplicate leakage across capture groups.

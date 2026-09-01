@@ -59,8 +59,10 @@ object TrafficSignSpeedOverridePolicy {
         currentSourceSignature: TrafficSignRuntimeSourceSignature,
     ): TrafficSignSpeedOverride? {
         if (event.state != TrafficSignRecognitionState.CONFIRMED) return current
+        if (event.source == TrafficSignInputSource.DIAGNOSTIC_IMPORT) return current
         if (current != null && !event.frameTimestampUtc.isAfter(current.detectedAtUtc)) return current
         val context = event.roadContext ?: return current
+        if (context.travelDirection == TrafficSignTravelDirection.UNKNOWN) return current
         if (context.sourceSignature != currentSourceSignature) return current
 
         // Any newer confirmed sign ends the older speed assertion. A numeric
@@ -69,7 +71,11 @@ object TrafficSignSpeedOverridePolicy {
         val speed = candidate.semantic.value
             ?.takeIf {
                 it > 0 &&
-                    candidate.semantic.kind == TrafficSignSemanticKind.MAXIMUM_SPEED &&
+                    candidate.semantic.kind in setOf(
+                        TrafficSignSemanticKind.MAXIMUM_SPEED,
+                        TrafficSignSemanticKind.ZONE_START,
+                        TrafficSignSemanticKind.TEMPORARY,
+                    ) &&
                     candidate.semantic.unit == "km/h" &&
                     candidate.conditionState == TrafficSignConditionState.NONE &&
                     candidate.restrictions.isEmpty()

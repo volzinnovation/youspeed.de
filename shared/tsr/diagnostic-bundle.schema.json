@@ -21,7 +21,7 @@
     "capture_group_id": {
       "type": "string",
       "minLength": 1,
-      "description": "All samples from one drive or import session share this leakage-safe split key."
+      "description": "All samples from one drive or import session share this capture-group split key; physical-sign and near-duplicate grouping are separate release checks."
     },
     "purpose": { "enum": ["training", "evaluation", "replay"] },
     "created_at": { "type": "string", "format": "date-time" },
@@ -207,7 +207,9 @@
           "enum": [
             "weather",
             "time_window",
+            "days_of_week",
             "vehicle",
+            "max_weight",
             "school",
             "resident",
             "exception",

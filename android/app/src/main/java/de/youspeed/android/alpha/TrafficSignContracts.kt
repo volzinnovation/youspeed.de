@@ -182,6 +182,18 @@ enum class TrafficSignRestrictionKind(val wireValue: String) {
     }
 }
 
+enum class TrafficSignRole(val wireValue: String) {
+    PRIMARY_SIGN("primary_sign"),
+    SUPPLEMENTARY_PLATE("supplementary_plate");
+
+    companion object {
+        fun fromWire(raw: String): TrafficSignRole {
+            return entries.firstOrNull { it.wireValue == raw }
+                ?: error("Unsupported traffic-sign role: $raw")
+        }
+    }
+}
+
 data class TrafficSignRestriction(
     val kind: TrafficSignRestrictionKind,
     val rawKind: String = kind.wireValue,
@@ -232,6 +244,8 @@ data class TrafficSignClassMapping(
     val label: String,
     val semantic: TrafficSignSemantic,
     val threshold: Double,
+    val signRole: TrafficSignRole = TrafficSignRole.PRIMARY_SIGN,
+    val restriction: TrafficSignRestriction? = null,
 )
 
 data class TrafficSignSourceCheckpoint(
@@ -273,6 +287,15 @@ data class TrafficSignComponent(
     val artifacts: List<TrafficSignArtifact>,
 )
 
+data class TrafficSignLineage(
+    val sourceManifestSha256: String,
+    val datasetInventorySha256s: List<String>,
+    val trainingRunId: String,
+    val trainingRunSha256: String,
+    val evaluationReportSha256: String,
+    val parityReportSha256: String,
+)
+
 data class TrafficSignLicense(
     val name: String,
     val spdx: String,
@@ -297,6 +320,7 @@ data class TrafficSignModelPack(
     val classMapping: List<TrafficSignClassMapping>,
     val detector: TrafficSignComponent,
     val classifier: TrafficSignComponent?,
+    val lineage: TrafficSignLineage,
     val licenses: List<TrafficSignLicense>,
     val minimumAppVersion: String,
     val signature: TrafficSignSignature?,
@@ -403,6 +427,7 @@ object TrafficSignModelPackJson {
             classMapping = root.tsrRequiredArray("class_mapping").map { it.jsonObject.toClassMapping() },
             detector = root.tsrRequiredObject("detector").toComponent(),
             classifier = root.tsrOptionalObject("classifier")?.toComponent(),
+            lineage = root.tsrRequiredObject("lineage").toLineage(),
             licenses = root.tsrRequiredArray("licenses").map { it.jsonObject.toLicense() },
             minimumAppVersion = root.tsrRequiredString("minimum_app_version"),
             signature = root.tsrOptionalObject("signature")?.toSignature(),
@@ -448,6 +473,49 @@ object TrafficSignModelPackJson {
                 unit = semanticObject.tsrOptionalString("unit"),
             ),
             threshold = tsrRequiredDouble("threshold"),
+            signRole = if (containsKey("sign_role")) {
+                TrafficSignRole.fromWire(tsrRequiredString("sign_role"))
+            } else {
+                TrafficSignRole.PRIMARY_SIGN
+            },
+            restriction = tsrOptionalObject("restriction")?.toRestriction(),
+        )
+    }
+
+    private fun JsonObject.toRestriction(): TrafficSignRestriction {
+        tsrRequireOnlyKeys(
+            path = "class_mapping.restriction",
+            allowed = setOf("kind", "normalized_value", "raw_text", "country_sign_code"),
+        )
+        val rawKind = tsrRequiredString("kind")
+        return TrafficSignRestriction(
+            kind = TrafficSignRestrictionKind.fromWire(rawKind),
+            rawKind = rawKind,
+            normalizedValue = tsrRequiredString("normalized_value"),
+            rawText = if (containsKey("raw_text")) tsrRequiredString("raw_text") else null,
+            countrySignCode = if (containsKey("country_sign_code")) tsrRequiredString("country_sign_code") else null,
+        )
+    }
+
+    private fun JsonObject.toLineage(): TrafficSignLineage {
+        tsrRequireOnlyKeys(
+            path = "lineage",
+            allowed = setOf(
+                "source_manifest_sha256",
+                "dataset_inventory_sha256s",
+                "training_run_id",
+                "training_run_sha256",
+                "evaluation_report_sha256",
+                "parity_report_sha256",
+            ),
+        )
+        return TrafficSignLineage(
+            sourceManifestSha256 = tsrRequiredString("source_manifest_sha256"),
+            datasetInventorySha256s = tsrRequiredStringArray("dataset_inventory_sha256s"),
+            trainingRunId = tsrRequiredString("training_run_id"),
+            trainingRunSha256 = tsrRequiredString("training_run_sha256"),
+            evaluationReportSha256 = tsrRequiredString("evaluation_report_sha256"),
+            parityReportSha256 = tsrRequiredString("parity_report_sha256"),
         )
     }
 
@@ -532,6 +600,7 @@ object TrafficSignModelPackValidator {
             }
         }
         pack.classifier?.let { validateComponent(it, "classifier", pack.calibration.datasetSha256, this) }
+        validateLineage(pack.lineage, this)
         if (pack.licenses.isEmpty()) add("licenses must not be empty")
         pack.licenses.forEachIndexed { index, license ->
             if (license.name.isBlank()) add("licenses[$index].name is missing")
@@ -600,6 +669,38 @@ object TrafficSignModelPackValidator {
             if (value.semantic.value == null || value.semantic.value <= 0) errors += "$path maximum_speed requires a positive value"
             if (value.semantic.unit !in setOf("km/h", "mph")) errors += "$path maximum_speed requires km/h or mph"
         }
+        when (value.signRole) {
+            TrafficSignRole.PRIMARY_SIGN -> if (value.restriction != null) {
+                errors += "$path primary_sign must not declare a restriction"
+            }
+            TrafficSignRole.SUPPLEMENTARY_PLATE -> {
+                if (value.semantic.kind != TrafficSignSemanticKind.UNKNOWN ||
+                    value.semantic.value != null ||
+                    value.semantic.unit != null
+                ) {
+                    errors += "$path supplementary_plate must use an unknown semantic"
+                }
+                if (value.restriction == null) errors += "$path supplementary_plate requires a restriction"
+            }
+        }
+        value.restriction?.let {
+            validateRestriction(it, "$path.restriction", errors, requireNonEmptyMetadata = true)
+        }
+    }
+
+    private fun validateLineage(value: TrafficSignLineage, errors: MutableList<String>) {
+        if (!sha256Pattern.matches(value.sourceManifestSha256)) errors += "lineage.source_manifest_sha256 is invalid"
+        if (value.datasetInventorySha256s.isEmpty()) errors += "lineage.dataset_inventory_sha256s is empty"
+        if (value.datasetInventorySha256s.distinct().size != value.datasetInventorySha256s.size) {
+            errors += "lineage.dataset_inventory_sha256s must be unique"
+        }
+        value.datasetInventorySha256s.filterNot(sha256Pattern::matches).forEach {
+            errors += "lineage.dataset_inventory_sha256s contains an invalid hash"
+        }
+        if (value.trainingRunId.isBlank()) errors += "lineage.training_run_id is missing"
+        if (!sha256Pattern.matches(value.trainingRunSha256)) errors += "lineage.training_run_sha256 is invalid"
+        if (!sha256Pattern.matches(value.evaluationReportSha256)) errors += "lineage.evaluation_report_sha256 is invalid"
+        if (!sha256Pattern.matches(value.parityReportSha256)) errors += "lineage.parity_report_sha256 is invalid"
     }
 
     private fun validateComponent(
@@ -643,6 +744,24 @@ object TrafficSignModelPackValidator {
                 errors += "$artifactPath parity has not passed"
             }
         }
+    }
+}
+
+private fun validateRestriction(
+    value: TrafficSignRestriction,
+    path: String,
+    errors: MutableList<String>,
+    requireNonEmptyMetadata: Boolean = false,
+) {
+    if (TrafficSignRestrictionKind.entries.none { it.wireValue == value.rawKind }) {
+        errors += "$path.kind is unsupported: ${value.rawKind}"
+    }
+    if (value.normalizedValue.isBlank()) errors += "$path.normalized_value is missing"
+    if (requireNonEmptyMetadata && value.rawText != null && value.rawText.isEmpty()) {
+        errors += "$path.raw_text must not be empty"
+    }
+    if (requireNonEmptyMetadata && value.countrySignCode != null && value.countrySignCode.isEmpty()) {
+        errors += "$path.country_sign_code must not be empty"
     }
 }
 
@@ -696,7 +815,7 @@ object TrafficSignRecognitionJson {
             }
             if (candidate.assemblyId != null && candidate.assemblyId.isBlank()) add("candidate.assembly_id must not be blank")
             candidate.restrictions.forEachIndexed { index, restriction ->
-                if (restriction.normalizedValue.isBlank()) add("candidate.restrictions[$index].normalized_value is missing")
+                validateRestriction(restriction, "candidate.restrictions[$index]", this)
             }
         }
         pack?.let { modelPack ->
@@ -729,7 +848,7 @@ object TrafficSignRecognitionJson {
             frameTimestampUtc = Instant.parse(root.tsrRequiredString("frame_timestamp_utc")),
             state = TrafficSignRecognitionState.fromWire(root.tsrRequiredString("state")),
             candidate = root.tsrOptionalObject("candidate")?.toCandidate(),
-            roadContext = root.tsrOptionalObject("road_context")?.toRoadContext(),
+            roadContext = root.tsrRequiredNullableObject("road_context")?.toRoadContext(),
             latencyMs = root.tsrRequiredDouble("latency_ms"),
             thermalState = root.tsrOptionalString("thermal_state"),
         )
@@ -758,9 +877,9 @@ object TrafficSignRecognitionJson {
             ),
             trackId = tsrOptionalString("track_id"),
             evidenceFrames = tsrRequiredInt("evidence_frames"),
-            assemblyId = tsrOptionalString("assembly_id"),
-            conditionState = TrafficSignConditionState.fromWire(tsrOptionalString("condition_state")),
-            restrictions = tsrOptionalArray("restrictions")?.map { it.jsonObject.toRestriction() }.orEmpty(),
+            assemblyId = tsrRequiredNullableString("assembly_id"),
+            conditionState = TrafficSignConditionState.fromWire(tsrRequiredString("condition_state")),
+            restrictions = tsrRequiredArray("restrictions").map { it.jsonObject.toRestriction() },
         )
     }
 
@@ -785,7 +904,7 @@ object TrafficSignRecognitionJson {
             travelDirection = TrafficSignTravelDirection.fromWire(tsrRequiredString("travel_direction")),
             sourceSignature = TrafficSignRuntimeSourceSignature(
                 osmRevision = signature.tsrRequiredString("osm_revision"),
-                localCorrectionRevision = signature.tsrOptionalString("local_correction_revision"),
+                localCorrectionRevision = signature.tsrRequiredNullableString("local_correction_revision"),
             ),
         )
     }
@@ -793,6 +912,14 @@ object TrafficSignRecognitionJson {
 
 private fun JsonObject.tsrRequiredArray(key: String): JsonArray =
     this[key]?.jsonArray ?: error("Missing array field: $key")
+
+private fun JsonObject.tsrRequiredStringArray(key: String): List<String> =
+    tsrRequiredArray(key).mapIndexed { index, element ->
+        val primitive = element as? JsonPrimitive
+            ?: error("Expected string field: $key[$index]")
+        require(primitive.isString) { "Expected string field: $key[$index]" }
+        primitive.content
+    }
 
 private fun JsonObject.tsrOptionalArray(key: String): JsonArray? = when (val element = this[key]) {
     null, JsonNull -> null
@@ -802,6 +929,15 @@ private fun JsonObject.tsrOptionalArray(key: String): JsonArray? = when (val ele
 
 private fun JsonObject.tsrRequiredObject(key: String): JsonObject =
     this[key]?.jsonObject ?: error("Missing object field: $key")
+
+private fun JsonObject.tsrRequiredNullableObject(key: String): JsonObject? {
+    if (!containsKey(key)) error("Missing object field: $key")
+    return when (val element = this[key]) {
+        JsonNull -> null
+        is JsonObject -> element
+        else -> error("Expected object field: $key")
+    }
+}
 
 private fun JsonObject.tsrOptionalObject(key: String): JsonObject? = when (val element = this[key]) {
     null, JsonNull -> null
@@ -813,6 +949,25 @@ private fun JsonObject.tsrRequiredString(key: String): String {
     val primitive = this[key] as? JsonPrimitive ?: error("Missing string field: $key")
     require(primitive.isString) { "Expected string field: $key" }
     return primitive.content
+}
+
+private fun JsonObject.tsrRequiredNullableString(key: String): String? {
+    if (!containsKey(key)) error("Missing string field: $key")
+    return when (val element = this[key]) {
+        JsonNull -> null
+        is JsonPrimitive -> {
+            require(element.isString) { "Expected string field: $key" }
+            element.content
+        }
+        else -> error("Expected string field: $key")
+    }
+}
+
+private fun JsonObject.tsrRequireOnlyKeys(path: String, allowed: Set<String>) {
+    val unexpected = keys - allowed
+    require(unexpected.isEmpty()) {
+        "$path contains unsupported fields: ${unexpected.sorted().joinToString()}"
+    }
 }
 
 private fun JsonObject.tsrOptionalString(key: String): String? = when (val element = this[key]) {

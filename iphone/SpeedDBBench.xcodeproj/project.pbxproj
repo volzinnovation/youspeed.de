@@ -79,6 +79,7 @@
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
 		D679D5F480EAB8BF637CB901 /* LIE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */; };
 		D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */; };
+		D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */; };
 		DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */; };
 		E0878342351689F72CF6243B /* sachsen-anhalt.poly in Resources */ = {isa = PBXBuildFile; fileRef = CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */; };
 		E93B7697F175F99D0D1E163B /* LUX-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 851DCDB1BD9140D246609FF4 /* LUX-rules.json */; };
@@ -112,6 +113,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignRuntime.swift; sourceTree = "<group>"; };
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
 		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 				16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */,
 				B22B25E507BC34DEDF1FF173 /* StartupView.swift */,
 				32933858989CDE151BF55061 /* TrafficSignRecognition.swift */,
+				03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */,
 				264903C5CD98D68477E8823C /* V3BundleManager.swift */,
 				103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */,
 				43951EAFBED46ABE359AF4C6 /* Rules */,
@@ -597,6 +600,7 @@
 				D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */,
 				39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */,
 				401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */,
+				D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */,
 				35E914FB03BBE6F83A65936F /* V3BundleManager.swift in Sources */,
 				48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */,
 			);

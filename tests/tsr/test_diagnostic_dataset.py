@@ -1,5 +1,6 @@
 import copy
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -34,7 +35,7 @@ def test_fixture_round_trips_to_detector_dataset(tmp_path: Path) -> None:
     assert sample["road_context"]["heading_degrees"] == 82.0
 
 
-def test_capture_group_split_is_stable_and_prevents_frame_leakage() -> None:
+def test_capture_group_split_is_stable_and_keeps_a_group_together() -> None:
     first = split_for_group("drive-a", seed="split-v1")
     assert split_for_group("drive-a", seed="split-v1") == first
     assert split_for_group("drive-a", seed="split-v1") in {"train", "validation", "test"}
@@ -110,3 +111,29 @@ def test_unapproved_or_unredacted_full_frames_cannot_be_materialized(tmp_path: P
     manifest.write_text(json.dumps(payload), encoding="utf-8")
     with pytest.raises(DiagnosticBundleError, match="verified redaction"):
         validate_bundle(manifest, verify_assets=False, require_export_approval=True)
+
+
+def test_expired_diagnostic_retention_is_rejected_deterministically(
+    tmp_path: Path,
+) -> None:
+    payload = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
+    payload["consent"]["retention_expires_at"] = "2026-01-02T00:00:00Z"
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(DiagnosticBundleError, match="retention has expired"):
+        validate_bundle(
+            manifest,
+            verify_assets=False,
+            now=datetime(2026, 1, 3, tzinfo=timezone.utc),
+        )
+
+
+def test_diagnostic_timestamps_require_timezones(tmp_path: Path) -> None:
+    payload = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
+    payload["consent"]["granted_at"] = "2026-01-01T11:59:00"
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(DiagnosticBundleError, match="must include a timezone"):
+        validate_bundle(manifest, verify_assets=False)

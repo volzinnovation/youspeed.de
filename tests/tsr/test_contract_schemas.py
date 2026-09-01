@@ -46,3 +46,46 @@ def test_zero_area_detection_box_is_rejected():
 
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.Draft202012Validator(schema).validate(event)
+
+
+def test_confirmed_event_without_candidate_is_rejected():
+    schema = load_json(TSR_ROOT / "recognition-event.schema.json")
+    event = copy.deepcopy(
+        load_json(TSR_ROOT / "fixtures" / "recognition-events-v1.json")[-1]
+    )
+    event["candidate"] = None
+
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.Draft202012Validator(schema).validate(event)
+
+
+def test_diagnostic_and_recognition_restriction_taxonomies_match():
+    recognition_schema = load_json(TSR_ROOT / "recognition-event.schema.json")
+    diagnostic_schema = load_json(TSR_ROOT / "diagnostic-bundle.schema.json")
+
+    recognition_kinds = recognition_schema["$defs"]["restriction"]["properties"][
+        "kind"
+    ]["enum"]
+    diagnostic_kinds = diagnostic_schema["$defs"]["restriction"]["properties"][
+        "kind"
+    ]["enum"]
+
+    assert diagnostic_kinds == recognition_kinds
+
+
+def test_wet_plate_fixture_uses_current_german_sign_code():
+    events = load_json(TSR_ROOT / "fixtures" / "recognition-events-v1.json")
+    bundle = load_json(
+        TSR_ROOT / "fixtures" / "diagnostic-bundle-v1" / "manifest.json"
+    )
+
+    assert (
+        events[-1]["candidate"]["restrictions"][0]["country_sign_code"]
+        == "DE:1053-35"
+    )
+    assert (
+        bundle["samples"][0]["annotation"]["objects"][1]["restriction"][
+            "country_sign_code"
+        ]
+        == "DE:1053-35"
+    )

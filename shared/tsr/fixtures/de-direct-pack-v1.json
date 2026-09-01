@@ -39,6 +39,19 @@
       "label": "Other sign",
       "semantic": { "kind": "unknown" },
       "threshold": 0.5
+    },
+    {
+      "class_id": "supplementary_wet",
+      "label": "Supplementary plate: when wet",
+      "semantic": { "kind": "unknown" },
+      "threshold": 0.7,
+      "sign_role": "supplementary_plate",
+      "restriction": {
+        "kind": "weather",
+        "normalized_value": "wet",
+        "raw_text": "Bei Nässe",
+        "country_sign_code": "DE:1053-35"
+      }
     }
   ],
   "detector": {
@@ -96,6 +109,16 @@
     ]
   },
   "classifier": null,
+  "lineage": {
+    "source_manifest_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "dataset_inventory_sha256s": [
+      "6666666666666666666666666666666666666666666666666666666666666666"
+    ],
+    "training_run_id": "fixture-training-run-v1",
+    "training_run_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "evaluation_report_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "parity_report_sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+  },
   "licenses": [
     {
       "name": "Fixture data only",

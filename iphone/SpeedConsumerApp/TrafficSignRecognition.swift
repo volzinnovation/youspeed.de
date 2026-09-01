@@ -27,6 +27,11 @@ struct TrafficSignModelPackManifest: Codable, Equatable, Sendable {
         case uint8
     }
 
+    enum SignRole: String, Codable, Sendable {
+        case primarySign = "primary_sign"
+        case supplementaryPlate = "supplementary_plate"
+    }
+
     struct Preprocessing: Codable, Equatable, Sendable {
         let version: String
         let inputWidth: Int
@@ -70,6 +75,59 @@ struct TrafficSignModelPackManifest: Codable, Equatable, Sendable {
         let label: String
         let semantic: TrafficSignSemantic
         let threshold: Double
+        let signRole: SignRole
+        let restriction: TrafficSignRestriction?
+
+        init(
+            classId: String,
+            label: String,
+            semantic: TrafficSignSemantic,
+            threshold: Double,
+            signRole: SignRole = .primarySign,
+            restriction: TrafficSignRestriction? = nil
+        ) {
+            self.classId = classId
+            self.label = label
+            self.semantic = semantic
+            self.threshold = threshold
+            self.signRole = signRole
+            self.restriction = restriction
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case classId
+            case label
+            case semantic
+            case threshold
+            case signRole
+            case restriction
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            classId = try container.decode(String.self, forKey: .classId)
+            label = try container.decode(String.self, forKey: .label)
+            semantic = try container.decode(TrafficSignSemantic.self, forKey: .semantic)
+            threshold = try container.decode(Double.self, forKey: .threshold)
+            signRole = try container.decodeIfPresent(SignRole.self, forKey: .signRole)
+                ?? .primarySign
+            restriction = try container.decodeIfPresent(
+                TrafficSignRestriction.self,
+                forKey: .restriction
+            )
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(classId, forKey: .classId)
+            try container.encode(label, forKey: .label)
+            try container.encode(semantic, forKey: .semantic)
+            try container.encode(threshold, forKey: .threshold)
+            if signRole != .primarySign {
+                try container.encode(signRole, forKey: .signRole)
+            }
+            try container.encodeIfPresent(restriction, forKey: .restriction)
+        }
     }
 
     struct SourceCheckpoint: Codable, Equatable, Sendable {
@@ -111,6 +169,87 @@ struct TrafficSignModelPackManifest: Codable, Equatable, Sendable {
         let artifacts: [Artifact]
     }
 
+    struct Lineage: Codable, Equatable, Sendable {
+        let sourceManifestSha256: String
+        let datasetInventorySha256s: [String]
+        let trainingRunId: String
+        let trainingRunSha256: String
+        let evaluationReportSha256: String
+        let parityReportSha256: String
+
+        // Foundation's generic snake-case decoder turns the plural wire key
+        // `dataset_inventory_sha256s` into `datasetInventorySha256S` (capital
+        // trailing S), which does not match the idiomatic Swift property name.
+        // Keep the portable wire contract stable while handling that acronym
+        // edge case explicitly. Encoding uses the normal camel-case spelling
+        // so `.convertToSnakeCase` still emits `dataset_inventory_sha256s`.
+        private enum DecodingKeys: String, CodingKey {
+            case sourceManifestSha256
+            case datasetInventorySha256s = "datasetInventorySha256S"
+            case trainingRunId
+            case trainingRunSha256
+            case evaluationReportSha256
+            case parityReportSha256
+        }
+
+        private enum EncodingKeys: String, CodingKey {
+            case sourceManifestSha256
+            case datasetInventorySha256s
+            case trainingRunId
+            case trainingRunSha256
+            case evaluationReportSha256
+            case parityReportSha256
+        }
+
+        init(
+            sourceManifestSha256: String,
+            datasetInventorySha256s: [String],
+            trainingRunId: String,
+            trainingRunSha256: String,
+            evaluationReportSha256: String,
+            parityReportSha256: String
+        ) {
+            self.sourceManifestSha256 = sourceManifestSha256
+            self.datasetInventorySha256s = datasetInventorySha256s
+            self.trainingRunId = trainingRunId
+            self.trainingRunSha256 = trainingRunSha256
+            self.evaluationReportSha256 = evaluationReportSha256
+            self.parityReportSha256 = parityReportSha256
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: DecodingKeys.self)
+            sourceManifestSha256 = try container.decode(
+                String.self,
+                forKey: .sourceManifestSha256
+            )
+            datasetInventorySha256s = try container.decode(
+                [String].self,
+                forKey: .datasetInventorySha256s
+            )
+            trainingRunId = try container.decode(String.self, forKey: .trainingRunId)
+            trainingRunSha256 = try container.decode(String.self, forKey: .trainingRunSha256)
+            evaluationReportSha256 = try container.decode(
+                String.self,
+                forKey: .evaluationReportSha256
+            )
+            parityReportSha256 = try container.decode(
+                String.self,
+                forKey: .parityReportSha256
+            )
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: EncodingKeys.self)
+            try container.encode(sourceManifestSha256, forKey: .sourceManifestSha256)
+            try container.encode(datasetInventorySha256s, forKey: .datasetInventorySha256s)
+            try container.encode(trainingRunId, forKey: .trainingRunId)
+            try container.encode(trainingRunSha256, forKey: .trainingRunSha256)
+            try container.encode(evaluationReportSha256, forKey: .evaluationReportSha256)
+            try container.encode(parityReportSha256, forKey: .parityReportSha256)
+        }
+    }
+
     struct License: Codable, Equatable, Sendable {
         let name: String
         let spdx: String
@@ -134,6 +273,7 @@ struct TrafficSignModelPackManifest: Codable, Equatable, Sendable {
     let classMapping: [ClassMapping]
     let detector: Component
     let classifier: Component?
+    let lineage: Lineage
     let licenses: [License]
     let minimumAppVersion: String
     let signature: Signature?
@@ -178,16 +318,42 @@ enum TrafficSignPackJSON {
     static func decoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let value = try decoder.singleValueContainer().decode(String.self)
+            if let date = iso8601Formatter(fractionalSeconds: true).date(from: value)
+                ?? iso8601Formatter(fractionalSeconds: false).date(from: value) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(
+                in: try decoder.singleValueContainer(),
+                debugDescription: "Invalid ISO-8601 date: \(value)"
+            )
+        }
         return decoder
     }
 
     static func encoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(
+                iso8601Formatter(fractionalSeconds: true).string(from: date)
+            )
+        }
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return encoder
+    }
+
+    private static func iso8601Formatter(
+        fractionalSeconds: Bool
+    ) -> ISO8601DateFormatter {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = fractionalSeconds
+            ? [.withInternetDateTime, .withFractionalSeconds]
+            : [.withInternetDateTime]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
     }
 }
 
@@ -267,6 +433,7 @@ enum TrafficSignModelPackValidator {
         for component in components {
             try validate(component: component, calibration: manifest.calibration)
         }
+        try validate(lineage: manifest.lineage)
 
         let expectedFormat: TrafficSignModelPackManifest.ArtifactFormat
         let supportedOutputSchemas: Set<String>
@@ -352,6 +519,23 @@ enum TrafficSignModelPackValidator {
             guard !mapping.label.isEmpty, (0...1).contains(mapping.threshold) else {
                 throw TrafficSignPackValidationError.invalid("Invalid TSR class mapping")
             }
+            switch mapping.signRole {
+            case .primarySign:
+                guard mapping.restriction == nil else {
+                    throw TrafficSignPackValidationError.invalid(
+                        "Primary TSR classes cannot declare a supplementary restriction"
+                    )
+                }
+            case .supplementaryPlate:
+                guard mapping.semantic.kind == .unknown,
+                      mapping.semantic.value == nil,
+                      mapping.semantic.unit == nil,
+                      mapping.restriction?.isValid == true else {
+                    throw TrafficSignPackValidationError.invalid(
+                        "Supplementary TSR classes require an unknown primary semantic and typed restriction"
+                    )
+                }
+            }
             let semantic = mapping.semantic
             switch semantic.kind {
             case .maximumSpeed, .zoneStart, .temporary:
@@ -406,6 +590,22 @@ enum TrafficSignModelPackValidator {
                   artifact.parity.measuredMaxAbsDifference <= artifact.parity.tolerance else {
                 throw TrafficSignPackValidationError.invalid("Invalid TSR runtime artifact metadata")
             }
+        }
+    }
+
+    private static func validate(
+        lineage: TrafficSignModelPackManifest.Lineage
+    ) throws {
+        guard isSHA256(lineage.sourceManifestSha256),
+              !lineage.datasetInventorySha256s.isEmpty,
+              Set(lineage.datasetInventorySha256s).count
+                == lineage.datasetInventorySha256s.count,
+              lineage.datasetInventorySha256s.allSatisfy(isSHA256),
+              !lineage.trainingRunId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              isSHA256(lineage.trainingRunSha256),
+              isSHA256(lineage.evaluationReportSha256),
+              isSHA256(lineage.parityReportSha256) else {
+            throw TrafficSignPackValidationError.invalid("Invalid TSR training lineage")
         }
     }
 
@@ -541,6 +741,115 @@ struct TrafficSignDetection: Equatable, Sendable {
         self.assemblyId = assemblyId
         self.conditionState = conditionState
         self.restrictions = restrictions
+    }
+}
+
+enum TrafficSignSpatialAssembly {
+    struct ClassifiedDetection: Equatable, Sendable {
+        let detection: TrafficSignDetection
+        let signRole: TrafficSignModelPackManifest.SignRole
+        let restriction: TrafficSignRestriction?
+    }
+
+    struct Geometry: Equatable, Sendable {
+        let maximumVerticalGap: Double
+        let permittedBoxOverlap: Double
+        let minimumHorizontalOverlapFraction: Double
+
+        init(
+            maximumVerticalGap: Double = 0.18,
+            permittedBoxOverlap: Double = 0.03,
+            minimumHorizontalOverlapFraction: Double = 0.25
+        ) {
+            self.maximumVerticalGap = maximumVerticalGap
+            self.permittedBoxOverlap = permittedBoxOverlap
+            self.minimumHorizontalOverlapFraction = minimumHorizontalOverlapFraction
+        }
+    }
+
+    static func assemble(
+        _ classified: [ClassifiedDetection],
+        assemblyIDPrefix: String = UUID().uuidString.lowercased(),
+        geometry: Geometry = Geometry()
+    ) -> [TrafficSignDetection] {
+        let primaries = classified.filter { $0.signRole == .primarySign }
+        let plates = classified.filter { $0.signRole == .supplementaryPlate }
+        var assignments: [Int: [ClassifiedDetection]] = [:]
+        var assignedPlateCount = 0
+
+        for plate in plates {
+            let best = primaries.indices.compactMap { index -> (Int, Double)? in
+                associationCost(
+                    primary: primaries[index].detection.boundingBox,
+                    plate: plate.detection.boundingBox,
+                    geometry: geometry
+                ).map { (index, $0) }
+            }.min { lhs, rhs in
+                lhs.1 == rhs.1 ? lhs.0 < rhs.0 : lhs.1 < rhs.1
+            }
+            if let best {
+                assignments[best.0, default: []].append(plate)
+                assignedPlateCount += 1
+            }
+        }
+        let hasUnassignedPlate = assignedPlateCount < plates.count
+
+        return primaries.enumerated().map { index, primary in
+            let assigned = assignments[index, default: []]
+                .sorted { $0.detection.boundingBox.y < $1.detection.boundingBox.y }
+            let restrictions = assigned.compactMap(\.restriction)
+            let conditionState: TrafficSignConditionState
+            if assigned.isEmpty {
+                // A detected white plate that narrowly misses the association
+                // geometry is still evidence that an apparently numeric sign
+                // may be conditional. Suppress an unconditional override until
+                // a later frame resolves the assembly.
+                conditionState = hasUnassignedPlate ? .unresolved : .none
+            } else if restrictions.count != assigned.count
+                        || restrictions.contains(where: { $0.kind == .unknown }) {
+                conditionState = .unresolved
+            } else {
+                conditionState = .resolved
+            }
+            let source = primary.detection
+            return TrafficSignDetection(
+                rawClassId: source.rawClassId,
+                rawLabel: source.rawLabel,
+                semantic: source.semantic,
+                rawScore: source.rawScore,
+                calibratedConfidence: source.calibratedConfidence,
+                boundingBox: source.boundingBox,
+                classThreshold: source.classThreshold,
+                assemblyId: "\(assemblyIDPrefix)-assembly-\(index + 1)",
+                conditionState: conditionState,
+                restrictions: restrictions
+            )
+        }
+    }
+
+    private static func associationCost(
+        primary: TrafficSignNormalizedRect,
+        plate: TrafficSignNormalizedRect,
+        geometry: Geometry
+    ) -> Double? {
+        guard primary.isValid, plate.isValid else { return nil }
+        let verticalGap = plate.y - (primary.y + primary.height)
+        guard verticalGap >= -geometry.permittedBoxOverlap,
+              verticalGap <= geometry.maximumVerticalGap else { return nil }
+        let overlap = max(
+            0,
+            min(primary.x + primary.width, plate.x + plate.width)
+                - max(primary.x, plate.x)
+        )
+        let denominator = min(primary.width, plate.width)
+        guard denominator > 0,
+              overlap / denominator >= geometry.minimumHorizontalOverlapFraction else {
+            return nil
+        }
+        let centerDistance = abs(
+            (primary.x + primary.width / 2) - (plate.x + plate.width / 2)
+        )
+        return max(0, verticalGap) + centerDistance
     }
 }
 
@@ -680,9 +989,9 @@ struct TrafficSignTransientSpeedOverride: Codable, Equatable, Sendable {
 }
 
 /// Keeps a confirmed camera value above the local-correction and OSM display
-/// layers without mutating either durable source. The caller supplies a stable
-/// signature for the map/local inputs used when the sign was detected. A new
-/// source revision invalidates the camera value immediately.
+/// layers without mutating either durable source. The exact frame context is
+/// retained as provenance; a new way, travel direction, or map/local source
+/// revision invalidates the camera value immediately.
 struct TrafficSignTransientOverridePolicy: Sendable {
     private(set) var activeOverride: TrafficSignTransientSpeedOverride?
 
@@ -695,6 +1004,7 @@ struct TrafficSignTransientOverridePolicy: Sendable {
               event.source != .diagnosticImport,
               let context = event.roadContext,
               context.isValid,
+              context.travelDirection != .unknown,
               context.sourceSignature == currentSourceSignature else {
             return false
         }
@@ -703,10 +1013,14 @@ struct TrafficSignTransientOverridePolicy: Sendable {
             return false
         }
         // Any newer confirmed sign supersedes the old camera assertion. Only
-        // a numeric maximum-speed candidate creates a replacement override.
+        // an unconditional numeric speed semantic creates a replacement.
         activeOverride = nil
         guard let candidate = event.candidate,
-              candidate.semanticKind == TrafficSignSemanticKind.maximumSpeed.rawValue,
+              [
+                  TrafficSignSemanticKind.maximumSpeed.rawValue,
+                  TrafficSignSemanticKind.zoneStart.rawValue,
+                  TrafficSignSemanticKind.temporary.rawValue,
+              ].contains(candidate.semanticKind),
               let speedKmh = candidate.value,
               speedKmh > 0,
               candidate.unit == "km/h",
@@ -728,10 +1042,17 @@ struct TrafficSignTransientOverridePolicy: Sendable {
     mutating func resolvedSpeedKmh(
         osmSpeedKmh: Int?,
         localCorrectionSpeedKmh: Int?,
-        currentSourceSignature: TrafficSignRuntimeSourceSignature
+        currentContext: TrafficSignDetectionContext?
     ) -> Int? {
-        if activeOverride?.context.sourceSignature != currentSourceSignature {
-            activeOverride = nil
+        if let activeOverride {
+            guard let currentContext,
+                  currentContext.isValid,
+                  activeOverride.context.wayId == currentContext.wayId,
+                  activeOverride.context.travelDirection == currentContext.travelDirection,
+                  activeOverride.context.sourceSignature == currentContext.sourceSignature else {
+                self.activeOverride = nil
+                return localCorrectionSpeedKmh ?? osmSpeedKmh
+            }
         }
         return activeOverride?.speedKmh ?? localCorrectionSpeedKmh ?? osmSpeedKmh
     }
@@ -816,7 +1137,21 @@ struct TrafficSignFusionEngine: Sendable {
     private struct Track: Sendable {
         let id: String
         let semanticKey: String
+        let roadKey: RoadKey?
         var evidence: [StampedDetection]
+    }
+
+    private struct RoadKey: Equatable, Sendable {
+        let wayId: String
+        let travelDirection: TrafficSignTravelDirection
+        let sourceSignature: TrafficSignRuntimeSourceSignature
+
+        init?(_ context: TrafficSignDetectionContext?) {
+            guard let context, context.isValid else { return nil }
+            wayId = context.wayId
+            travelDirection = context.travelDirection
+            sourceSignature = context.sourceSignature
+        }
     }
 
     let packId: String
@@ -838,6 +1173,10 @@ struct TrafficSignFusionEngine: Sendable {
         self.preprocessingVersion = preprocessingVersion
         self.thresholds = thresholds
         self.runtimeOutput = runtimeOutput
+    }
+
+    mutating func reset() {
+        tracks.removeAll(keepingCapacity: true)
     }
 
     mutating func ingest(
@@ -909,8 +1248,10 @@ struct TrafficSignFusionEngine: Sendable {
             )
         }
 
+        let roadKey = RoadKey(roadContext)
         let matchingIndex = tracks.indices.first { index in
             guard tracks[index].semanticKey == detection.semantic.stableKey,
+                  tracks[index].roadKey == roadKey,
                   let previous = tracks[index].evidence.last?.detection else { return false }
             return previous.boundingBox.intersectionOverUnion(with: detection.boundingBox)
                 >= thresholds.minimumTrackIou
@@ -924,6 +1265,7 @@ struct TrafficSignFusionEngine: Sendable {
                 Track(
                     id: UUID().uuidString.lowercased(),
                     semanticKey: detection.semantic.stableKey,
+                    roadKey: roadKey,
                     evidence: [StampedDetection(timestamp: timestamp, detection: detection)]
                 )
             )
@@ -941,6 +1283,24 @@ struct TrafficSignFusionEngine: Sendable {
             && score >= thresholds.provisional
             ? .confirmed
             : .provisional
+        var seenRestrictions = Set<TrafficSignRestriction>()
+        let fusedRestrictions = track.evidence
+            .flatMap(\.detection.restrictions)
+            .filter { seenRestrictions.insert($0).inserted }
+        let fusedConditionState: TrafficSignConditionState
+        let observedConditionStates = track.evidence.map(\.detection.conditionState)
+        if observedConditionStates.contains(.unresolved) {
+            fusedConditionState = .unresolved
+        } else if observedConditionStates.contains(.resolving) {
+            fusedConditionState = .resolving
+        } else if observedConditionStates.contains(.resolved) || !fusedRestrictions.isEmpty {
+            fusedConditionState = .resolved
+        } else {
+            fusedConditionState = .none
+        }
+        let fusedAssemblyID = track.evidence.reversed().compactMap {
+            $0.detection.assemblyId
+        }.first
         return event(
             source: source,
             timestamp: timestamp,
@@ -948,7 +1308,10 @@ struct TrafficSignFusionEngine: Sendable {
             candidate: candidate(
                 from: detection,
                 trackID: track.id,
-                evidenceFrames: evidenceFrames
+                evidenceFrames: evidenceFrames,
+                assemblyId: fusedAssemblyID,
+                conditionState: fusedConditionState,
+                restrictions: fusedRestrictions
             ),
             roadContext: roadContext,
             latencyMs: latencyMs,
@@ -959,7 +1322,10 @@ struct TrafficSignFusionEngine: Sendable {
     private func candidate(
         from detection: TrafficSignDetection,
         trackID: String?,
-        evidenceFrames: Int
+        evidenceFrames: Int,
+        assemblyId: String? = nil,
+        conditionState: TrafficSignConditionState? = nil,
+        restrictions: [TrafficSignRestriction]? = nil
     ) -> TrafficSignRecognitionCandidate {
         TrafficSignRecognitionCandidate(
             rawClassId: detection.rawClassId,
@@ -972,9 +1338,9 @@ struct TrafficSignFusionEngine: Sendable {
             boundingBox: detection.boundingBox,
             trackId: trackID,
             evidenceFrames: evidenceFrames,
-            assemblyId: detection.assemblyId,
-            conditionState: detection.conditionState,
-            restrictions: detection.restrictions
+            assemblyId: assemblyId ?? detection.assemblyId,
+            conditionState: conditionState ?? detection.conditionState,
+            restrictions: restrictions ?? detection.restrictions
         )
     }
 

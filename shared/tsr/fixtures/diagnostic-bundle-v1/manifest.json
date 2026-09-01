@@ -15,7 +15,7 @@
     "policy_version": "fixture-v1",
     "granted_at": "2026-01-01T11:59:00Z",
     "export_approved": true,
-    "retention_expires_at": "2026-02-01T00:00:00Z"
+    "retention_expires_at": "2030-02-01T00:00:00Z"
   },
   "privacy": {
     "full_frame_retention": true,
@@ -148,7 +148,7 @@
               "kind": "weather",
               "normalized_value": "wet",
               "raw_text": "bei Naesse",
-              "country_sign_code": "DE:1052-36"
+              "country_sign_code": "DE:1053-35"
             }
           }
         ],

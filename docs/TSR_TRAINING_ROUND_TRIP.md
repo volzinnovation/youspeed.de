@@ -30,11 +30,11 @@ uses inputs selected from it.
 
 | Input | Pinned identity | Intended use | License / release posture |
 | --- | --- | --- | --- |
-| [ZOD Frames](https://zod.zenseact.com/) | dataset `2.0.0`; devkit `0.8.0@601a3ef5cfccad9cc545230362077d299acbf898` | Real European full-frame proposals, hard negatives, and scene robustness | CC BY-SA 4.0; attribution/share-alike review is mandatory. The publisher exposes no stable aggregate archive hash, so a sorted local SHA-256 file inventory is mandatory. |
+| [ZOD Frames](https://zod.zenseact.com/) | requested dataset `2.0.0` (confirm after provider access); devkit `0.8.0@601a3ef5cfccad9cc545230362077d299acbf898` | Real European full-frame proposals, hard negatives, and scene robustness; use only frames whose Traffic Signs annotation task is present and complete | CC BY-SA 4.0; attribution/share-alike review is mandatory. The publisher exposes no stable aggregate archive hash, so a sorted local SHA-256 file inventory is mandatory. |
 | [GTSIGN-220](https://huggingface.co/datasets/miriamcarnot/GTSIGN-220) | commit `e235536c26486a42858602b146df40520a75be59` | Real German primary and supplementary crops; semantic teacher | CC BY-SA 4.0; attribution/share-alike review is mandatory. Snapshot only the pinned commit and record a selected-file SHA-256 inventory. |
-| [Synset Signset Germany](https://synset.de/datasets/synset-signset-ger/) | DOI `10.35097/dcc1znjxu7apx8rn`; published archive MD5 `373656812a1d57a899f8289c340544b8` | Synthetic primary/plate variation, metadata-driven assemblies, robustness tests | CC BY 4.0; attribution review is mandatory. MD5 identifies the publisher archive but is not collision-resistant, so add an archive SHA-256 and extracted-file inventory locally. |
+| [Synset Signset Germany](https://synset.de/datasets/synset-signset-ger/) | DOI `10.35097/dcc1znjxu7apx8rn`; RADAR version-1 TAR size `17,149,598,208` bytes; published archive MD5 `373656812a1d57a899f8289c340544b8` | Synthetic primary/plate variation, metadata-driven assemblies, robustness tests | CC BY 4.0; attribution review is mandatory. MD5 identifies the publisher archive but is not collision-resistant, so add an archive SHA-256 and extracted-file inventory locally. |
 | GTSIGN-220 ViT teacher | repository commit above; SHA-256 `e84304a7bbb2a1677c9f4ff9e330262969f1d598da456c8dbe290489bb301bad` | Offline teacher, label audit, and distillation reference | CC BY-SA 4.0 lineage review. Its repository-reported evaluation is not a YouSpeed field-validation result and cannot approve a mobile release. |
-| [YOLOX Nano](https://github.com/Megvii-BaseDetection/YOLOX) | `0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce`; SHA-256 `cd28f55fbbc1829f99d9ac9b38a16d259a22889739c8728ea877610201feff7b` | Apache-2.0 proposal-detector control before traffic-sign transfer learning | Permissive control, subject to Apache license/NOTICE review and the licenses of its fine-tuning data. |
+| [YOLOX Nano](https://github.com/Megvii-BaseDetection/YOLOX) | `0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce`; SHA-256 `cd28f55fbbc1829f99d9ac9b38a16d259a22889739c8728ea877610201feff7b` | Proposal-detector control before traffic-sign transfer learning | The repository code is Apache-2.0, but release of the COCO-pretrained weight remains blocked until the weight license, COCO lineage, license/NOTICE obligations, and fine-tuning inputs are explicitly reviewed. |
 | [YOLO26n](https://docs.ultralytics.com/models/yolo26/) and YOLO26n-cls | Ultralytics/assets `v8.4.0@dcececebff9fe00420c144baa5cd25a641d10aa6`; SHA-256 `9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef` and `0dd6f8dbc448870ac98a3cbb7156f923f7ce21fed3755d4019169ffffd279e81` | Detection/classification challengers for technical comparison | Release-blocked by default. Use in a shipped derivative only after an explicit AGPL-3.0 compliance decision or confirmation of an applicable [Ultralytics Enterprise license](https://www.ultralytics.com/license). |
 
 ZOD supplies real scene context; Synset and GTSIGN supply German semantic
@@ -69,8 +69,9 @@ environment later; verification does not make deserialization safe.
 Ordinary TSR inference retains no pixels. Training and test material enters a
 separate diagnostic store only after explicit `tsr_diagnostic_dataset`
 consent. A bundle carries a retention expiry and a second export approval.
-Full frames need verified face/license-plate redaction before export. Raw
-Dashcam video and direct device identifiers are never accepted.
+Full frames need verified face/license-plate redaction before export. Expired
+bundles are rejected. Raw Dashcam video and direct device identifiers are never
+accepted.
 
 For a candidate, uncertainty sample, or hard negative, keep only the bounded
 high-resolution source frame/crops needed for review and record synchronized:
@@ -114,10 +115,18 @@ python3 scripts/tsr/diagnostic_dataset.py build \
 
 Assign groups before augmentation, teacher inference, or tuning. Every frame,
 crop, burst, and repeat view from one physical encounter stays in one split.
-`capture_group_id` should represent at least the drive/import session; the
-dataset inventory additionally records route corridor, UTC day, physical sign
-cluster, data origin, and a pseudonymous device tier. Near-duplicate hashes are
-checked across groups.
+For GTSIGN-220, ignore the supplied split for YouSpeed release evaluation and
+first group crops by the Mapillary source-image identifier encoded before the
+first underscore in each filename. For YouSpeed captures,
+`capture_group_id` represents at least the drive/import session.
+
+The current materializer deterministically keeps one `capture_group_id` in one
+split. It does not yet discover the same physical sign across different drives
+or compute near-duplicate image clusters. Before any release build, a separate
+pre-split grouping audit must merge those encounters using route corridor, UTC
+day, physical-sign cluster, data origin, and pseudonymous device tier, then
+prove there is no physical-sign or near-duplicate overlap. Until that audit is
+implemented and passes, the leakage release gate remains blocked.
 
 The release evaluation set is geographically and temporally held out. It must
 include devices, focal lengths, seasons, lighting, weather, construction signs,
@@ -132,11 +141,12 @@ regression set.
 1. **Freeze provenance.** Validate the source manifest, snapshot selected
    dataset files, create SHA-256 inventories, record label mappings, and approve
    the applicable license gates. A run with different bytes gets a new run ID.
-2. **Train the two-role proposal detector.** Initialize the permissive control
-   from YOLOX Nano, replace COCO classes with `primary_sign` and
+2. **Train the two-role proposal detector.** Initialize the license-gated
+   control from YOLOX Nano, replace COCO classes with `primary_sign` and
    `supplementary_plate`, and train on ZOD plus reviewed YouSpeed full frames.
-   Preserve background-only frames. Benchmark a YOLO26n branch only as the
-   license-gated challenger.
+   Preserve background-only frames only from ZOD frames for which the Traffic
+   Signs annotation task is present and complete; an unannotated frame is not a
+   negative. Benchmark a YOLO26n branch only as the license-gated challenger.
 3. **Train the primary classifier.** Transfer from the pinned GTSIGN teacher or
    distill it into a license-approved mobile student. Combine real GTSIGN crops,
    Synset speed classes, and reviewed high-resolution YouSpeed crops. Keep
@@ -191,9 +201,9 @@ field-test adjustment.
 | Gate | Pass condition |
 | --- | --- |
 | Provenance | Source manifest validates; every selected artifact and dataset inventory matches; the complete lineage is recorded. |
-| Licensing | Every lineage gate is approved. Any YOLO26 derivative remains blocked absent an explicit AGPL-compliance or Enterprise-license decision. |
+| Licensing | Every lineage gate is approved. The YOLOX control remains blocked until its pretrained-weight license and COCO lineage are documented; any YOLO26 derivative remains blocked absent an explicit AGPL-compliance or Enterprise-license decision. |
 | Privacy | Every YouSpeed sample has valid consent/retention metadata; exported full frames have verified redaction; no raw Dashcam video or direct device ID is present. |
-| Leakage | Zero capture-group, physical-sign-cluster, or near-duplicate overlap between train, calibration, validation, and test partitions. |
+| Leakage | The materializer's capture-group split passes, and a separate pre-split audit demonstrates zero physical-sign-cluster or near-duplicate overlap between train, calibration, validation, and test partitions. |
 | Primary semantics | On the real route holdout, the lower 95% confidence bound for confirmed numeric-limit precision is at least 99%; dangerous speed substitutions are at most 0.1%. |
 | Restrictions | The lower 95% confidence bound for resolved restriction precision is at least 98%; a detected but unresolved plate never becomes an unconditional limit. |
 | Temporal behavior | At most one confirmed event per physical assembly; newer detections replace older detections; a stable map/local signature does not clear an override; genuinely new OSM/local source information does. |

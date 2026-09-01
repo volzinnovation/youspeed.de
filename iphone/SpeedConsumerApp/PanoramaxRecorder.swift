@@ -46,6 +46,16 @@ enum DriveRecorderPolicy {
         state == .recording && dashcamActive && !speedCaptureActive
     }
 
+    static func shouldStopAfterTrafficSignRuntimeLoss(
+        for state: DriveRecorderState,
+        dashcamActive: Bool,
+        panoramaxActive: Bool
+    ) -> Bool {
+        (state == .preparing || state == .recording)
+            && !dashcamActive
+            && !panoramaxActive
+    }
+
     static func canProcessPanoramaxUploads(for state: DriveRecorderState) -> Bool {
         switch state {
         case .preparing, .recording, .stopping:
@@ -230,6 +240,14 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             self?.videoOutput.connection(with: .video)?.isEnabled = false
         }
         lastCaptureDetail = "Verkehrszeichenmodell nicht mehr verfuegbar"
+        if DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
+            for: state,
+            dashcamActive: activeDashcamEnabled || dashcamTransitionInFlight,
+            panoramaxActive: activePanoramaxEnabled
+        ) {
+            beginStopping(resultState: .unavailable, detail: lastCaptureDetail)
+            return
+        }
         notifyChange()
     }
 
@@ -251,7 +269,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         let tsrEnabled = trafficSignRecognitionEnabled && frameDispatcher.hasConsumer
-        guard dashcamEnabled || panoramaxEnabled || tsrEnabled else {
+        guard dashcamEnabled || panoramaxEnabled || trafficSignRecognitionEnabled else {
             state = .unavailable
             lastCaptureDetail = trafficSignRecognitionEnabled
                 ? "Noch kein Verkehrszeichenmodell installiert"
@@ -296,11 +314,17 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             do {
                 try configureSession(
                     dashcamEnabled: activeDashcamEnabled,
-                    trafficSignRecognitionEnabled: activeTSREnabled,
+                    // Preserve the user's selection while an asynchronously
+                    // verified model pack is still loading. The selected video
+                    // output must get graph priority even though it cannot
+                    // consume frames until the runtime attaches.
+                    trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
                     panoramaxEnabled: activePanoramaxEnabled
                 )
                 activeDashcamEnabled = activeDashcamEnabled && movieOutputAvailable
-                activeTSREnabled = activeTSREnabled && videoOutputAvailable
+                activeTSREnabled = trafficSignRecognitionEnabled
+                    && frameDispatcher.hasConsumer
+                    && videoOutputAvailable
                 activePanoramaxEnabled = activePanoramaxEnabled && photoOutputAvailable
                 if activePanoramaxEnabled {
                     preparePanoramaxBatch(captureSessionID: captureSessionID)
@@ -335,10 +359,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
 
             let movieURL = dashcamFileURL
+            let trafficSignFramesEnabled = activeTSREnabled
             frameDispatcher.setEnabled(activeTSREnabled)
             scheduleStartTimeout(generation: requestedGeneration)
             sessionQueue.async { [weak self] in
                 guard let self else { return }
+                self.videoOutput.connection(with: .video)?.isEnabled = trafficSignFramesEnabled
                 self.session.startRunning()
                 if let movieURL {
                     self.configureMovieCodecIfPossible()
@@ -573,6 +599,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         let supports4K = session.canSetSessionPreset(.hd4K3840x2160)
         try configureSessionGraph(
             preset: supports4K ? .hd4K3840x2160 : .high,
+            dashcamEnabled: dashcamEnabled,
             trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
             panoramaxEnabled: panoramaxEnabled
         )
@@ -583,10 +610,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         // session starts. No live graph is ever reconfigured.
         let requestedOutputMissing = !movieOutputAvailable
             || (panoramaxEnabled && !photoOutputAvailable)
-            || (frameDispatcher.hasConsumer && !videoOutputAvailable)
+            || !videoOutputAvailable
         if requestedOutputMissing, supports4K {
             try configureSessionGraph(
                 preset: .high,
+                dashcamEnabled: dashcamEnabled,
                 trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
                 panoramaxEnabled: panoramaxEnabled
             )
@@ -600,6 +628,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private func configureSessionGraph(
         preset: AVCaptureSession.Preset,
+        dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
         panoramaxEnabled: Bool
     ) throws {
@@ -658,13 +687,16 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoOutputAvailable = true
         }
 
-        // Keep the graph fixed while the session is running. Movie output is
-        // always attached first so Dashcam remains selectable from the active
-        // recorder strip. TSR gets an output only when a real consumer exists.
-        addMovieOutputIfPossible()
-        if frameDispatcher.hasConsumer { addVideoOutputIfPossible() }
+        // Keep the graph fixed while the session is running. Attach selected
+        // consumers before dormant switchable outputs so a dormant Dashcam or
+        // TSR reservation can never displace a module the user actually chose.
+        if dashcamEnabled { addMovieOutputIfPossible() }
+        if trafficSignRecognitionEnabled { addVideoOutputIfPossible() }
         if panoramaxEnabled { addPhotoOutputIfPossible() }
+        addMovieOutputIfPossible()
+        addVideoOutputIfPossible()
         videoOutput.connection(with: .video)?.isEnabled = trafficSignRecognitionEnabled
+            && frameDispatcher.hasConsumer
         guard movieOutputAvailable || videoOutputAvailable || photoOutputAvailable else {
             throw RecorderError.sessionUnavailable
         }
@@ -735,7 +767,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamFileURL = nil
         clearDashcamTransition()
         lastCaptureDetail = detail
-        notifyChange()
+        if state == .recording, !activePanoramaxEnabled, !activeTSREnabled {
+            beginStopping(resultState: .failed, detail: detail)
+        } else {
+            notifyChange()
+        }
     }
 
     private func finishDashcamDisableWithoutCallback(token: UUID) {
@@ -744,7 +780,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
         lastCaptureDetail = "Dashcam-Aufnahme beendet"
-        notifyChange()
+        if state == .recording, !activePanoramaxEnabled, !activeTSREnabled {
+            beginStopping(resultState: .disabled, detail: lastCaptureDetail)
+        } else {
+            notifyChange()
+        }
     }
 
     private func beginDashcamTransition(_ transition: DashcamTransition) {
@@ -850,6 +890,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private func finishStarting(generation requestedGeneration: Int) {
         guard generation == requestedGeneration, state == .preparing else { return }
+        guard activeDashcamEnabled || activePanoramaxEnabled || activeTSREnabled else {
+            beginStopping(
+                resultState: .unavailable,
+                detail: "Kein aktiviertes Kameramodul ist mehr verfuegbar"
+            )
+            return
+        }
         startTimeoutTask?.cancel()
         startTimeoutTask = nil
         startedAt = Date()
@@ -884,7 +931,22 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                   let self,
                   generation == stopGeneration,
                   state == .stopping else { return }
-            finishStopping(generation: stopGeneration)
+            lastCaptureDetail = "Kamera wird noch beendet"
+            notifyChange()
+            finishStoppingAfterSessionQueue(generation: stopGeneration)
+        }
+    }
+
+    /// A stop timeout may recover from a missing movie-finalization callback,
+    /// but it must never make the coordinator restartable while stopRunning()
+    /// is still blocked. Queueing this barrier after the stop operation keeps
+    /// all AVCaptureSession mutations serialized.
+    private func finishStoppingAfterSessionQueue(generation stopGeneration: Int) {
+        guard generation == stopGeneration, state == .stopping else { return }
+        sessionQueue.async { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.finishStopping(generation: stopGeneration)
+            }
         }
     }
 
@@ -946,7 +1008,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             activeDashcamRecordingURL = nil
         }
         if state == .stopping {
-            finishStopping(generation: generation)
+            finishStoppingAfterSessionQueue(generation: generation)
         } else if state == .preparing {
             activeDashcamEnabled = false
             beginStopping(resultState: .failed, detail: "Dashcam-Aufnahme konnte nicht gestartet werden")

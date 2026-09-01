@@ -15,6 +15,7 @@
     "calibration",
     "class_mapping",
     "detector",
+    "lineage",
     "licenses",
     "minimum_app_version"
   ],
@@ -46,6 +47,7 @@
         { "$ref": "#/$defs/component" }
       ]
     },
+    "lineage": { "$ref": "#/$defs/lineage" },
     "licenses": {
       "type": "array",
       "minItems": 1,
@@ -148,7 +150,73 @@
         "class_id": { "type": "string", "minLength": 1 },
         "label": { "type": "string", "minLength": 1 },
         "semantic": { "$ref": "#/$defs/semantic" },
-        "threshold": { "type": "number", "minimum": 0, "maximum": 1 }
+        "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sign_role": {
+          "enum": ["primary_sign", "supplementary_plate"],
+          "default": "primary_sign"
+        },
+        "restriction": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/restriction" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["sign_role"],
+            "properties": { "sign_role": { "const": "supplementary_plate" } }
+          },
+          "then": {
+            "required": ["restriction"],
+            "properties": {
+              "semantic": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": { "kind": { "const": "unknown" } },
+                "not": {
+                  "anyOf": [
+                    { "required": ["value"] },
+                    { "required": ["unit"] }
+                  ]
+                }
+              },
+              "restriction": { "$ref": "#/$defs/restriction" }
+            }
+          },
+          "else": {
+            "properties": { "restriction": { "type": "null" } }
+          }
+        }
+      ]
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "normalized_value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather",
+            "time_window",
+            "days_of_week",
+            "vehicle",
+            "max_weight",
+            "school",
+            "resident",
+            "exception",
+            "distance",
+            "direction",
+            "extent",
+            "text",
+            "other",
+            "unknown"
+          ]
+        },
+        "normalized_value": { "type": "string", "minLength": 1 },
+        "raw_text": { "type": "string", "minLength": 1 },
+        "country_sign_code": { "type": "string", "minLength": 1 }
       }
     },
     "component": {
@@ -172,6 +240,31 @@
           "minItems": 1,
           "items": { "$ref": "#/$defs/artifact" }
         }
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_sha256",
+        "dataset_inventory_sha256s",
+        "training_run_id",
+        "training_run_sha256",
+        "evaluation_report_sha256",
+        "parity_report_sha256"
+      ],
+      "properties": {
+        "source_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "dataset_inventory_sha256s": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/sha256" }
+        },
+        "training_run_id": { "type": "string", "minLength": 1 },
+        "training_run_sha256": { "$ref": "#/$defs/sha256" },
+        "evaluation_report_sha256": { "$ref": "#/$defs/sha256" },
+        "parity_report_sha256": { "$ref": "#/$defs/sha256" }
       }
     },
     "artifact": {

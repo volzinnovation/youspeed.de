@@ -23,6 +23,28 @@ class TrafficSignFusionEngineTests {
     }
 
     @Test
+    fun rawClassesMappedToSameSemanticShareTemporalEvidence() {
+        val engine = engine()
+
+        val first = engine.observe(
+            detection(box(0.70, 0.15), rawClassId = "speed_limit_30_front"),
+            observedAtMs = 0,
+        )
+        engine.observe(
+            detection(box(0.69, 0.14), rawClassId = "speed_limit_30_alt"),
+            observedAtMs = 400,
+        )
+        val third = engine.observe(
+            detection(box(0.68, 0.14), rawClassId = "speed_limit_30_front"),
+            observedAtMs = 800,
+        )
+
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, third.state)
+        assertEquals(first.candidate?.trackId, third.candidate?.trackId)
+        assertEquals(3, third.candidate?.evidenceFrames)
+    }
+
+    @Test
     fun staleAndSpatiallyUnrelatedEvidenceDoesNotConfirm() {
         val engine = engine()
         engine.observe(detection(box(0.10, 0.10)), observedAtMs = 0)
@@ -34,15 +56,32 @@ class TrafficSignFusionEngineTests {
     }
 
     @Test
-    fun lowScoreIsUnknownOrNoRecognitionWithoutCreatingTrack() {
+    fun classThresholdRejectsWeakKnownClassAndUnknownSemanticNeverCreatesTrack() {
         val engine = engine()
 
         val none = engine.observe(detection(box(0.2, 0.2), calibrated = 0.20), observedAtMs = 0)
-        val unknown = engine.observe(detection(box(0.2, 0.2), calibrated = 0.30), observedAtMs = 100)
-        val provisional = engine.observe(detection(box(0.2, 0.2), calibrated = 0.60), observedAtMs = 200)
+        val belowClassThreshold = engine.observe(
+            detection(box(0.2, 0.2), calibrated = 0.60),
+            observedAtMs = 100,
+        )
+        val unknown = engine.observe(
+            detection(box(0.2, 0.2), calibrated = 0.90).let { detection ->
+                detection.copy(
+                    candidate = detection.candidate.copy(
+                        rawClassId = "other_sign",
+                        rawLabel = "Other sign",
+                        semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN, null, null),
+                    ),
+                )
+            },
+            observedAtMs = 200,
+        )
+        val provisional = engine.observe(detection(box(0.2, 0.2), calibrated = 0.75), observedAtMs = 300)
 
         assertEquals(TrafficSignRecognitionState.NO_RECOGNITION, none.state)
         assertNull(none.candidate)
+        assertEquals(TrafficSignRecognitionState.NO_RECOGNITION, belowClassThreshold.state)
+        assertNull(belowClassThreshold.candidate)
         assertEquals(TrafficSignRecognitionState.UNKNOWN, unknown.state)
         assertNull(unknown.candidate?.trackId)
         assertEquals(TrafficSignRecognitionState.PROVISIONAL, provisional.state)
@@ -77,31 +116,32 @@ class TrafficSignFusionEngineTests {
         val first = detection(
             box = box(0.50, 0.20, width = 0.05, height = 0.08),
             cropQuality = 0.2,
-            assemblyId = "assembly-1",
+            assemblyId = "frame-1-assembly-1",
             conditionState = TrafficSignConditionState.RESOLVING,
         )
         val best = detection(
             box = box(0.49, 0.19, width = 0.08, height = 0.12),
             cropQuality = 0.9,
-            assemblyId = "assembly-1",
+            assemblyId = "frame-2-assembly-1",
             conditionState = TrafficSignConditionState.RESOLVED,
             restrictions = listOf(wet),
         )
         val third = detection(
             box = box(0.49, 0.19, width = 0.07, height = 0.11),
             cropQuality = 0.5,
-            assemblyId = "assembly-1",
-            conditionState = TrafficSignConditionState.RESOLVED,
-            restrictions = listOf(wet),
+            assemblyId = "frame-3-assembly-1",
+            conditionState = TrafficSignConditionState.NONE,
+            restrictions = emptyList(),
         )
 
-        engine.observe(first, 0)
+        val firstResult = engine.observe(first, 0)
         engine.observe(best, 300)
         val result = engine.observe(third, 600)
 
         assertEquals(TrafficSignRecognitionState.CONFIRMED, result.state)
+        assertEquals(firstResult.candidate?.trackId, result.candidate?.trackId)
         assertEquals(best.candidate.boundingBox, result.bestCropBoundingBox)
-        assertEquals("assembly-1", result.candidate?.assemblyId)
+        assertEquals("frame-3-assembly-1", result.candidate?.assemblyId)
         assertEquals(TrafficSignConditionState.RESOLVED, result.candidate?.conditionState)
         assertEquals(listOf(wet), result.candidate?.restrictions)
     }
@@ -121,6 +161,7 @@ class TrafficSignFusionEngineTests {
 
     private fun detection(
         box: NormalizedTrafficSignBoundingBox,
+        rawClassId: String = "speed_limit_30",
         calibrated: Double = 0.80,
         cropQuality: Double = box.area,
         assemblyId: String? = null,
@@ -128,7 +169,7 @@ class TrafficSignFusionEngineTests {
         restrictions: List<TrafficSignRestriction> = emptyList(),
     ) = TrafficSignDetection(
         candidate = TrafficSignCandidate(
-            rawClassId = "speed_limit_30",
+            rawClassId = rawClassId,
             rawLabel = "Maximum speed 30",
             semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 30, "km/h"),
             rawScore = calibrated + 0.05,

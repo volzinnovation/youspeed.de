@@ -60,8 +60,9 @@ class TrafficSignFusionEngine(
         if (detection == null) return noRecognition()
 
         val score = effectiveScore(detection.candidate)
-        if (!score.isFinite() || score < thresholds.unknown) return noRecognition()
-        if (score < thresholds.provisional) {
+        val classThreshold = classThresholds[detection.candidate.rawClassId] ?: 0.0
+        if (!score.isFinite() || score < max(thresholds.unknown, classThreshold)) return noRecognition()
+        if (detection.candidate.semantic.kind == TrafficSignSemanticKind.UNKNOWN) {
             return TrafficSignFusionResult(
                 state = TrafficSignRecognitionState.UNKNOWN,
                 candidate = detection.candidate.copy(trackId = null, evidenceFrames = 1),
@@ -82,11 +83,13 @@ class TrafficSignFusionEngine(
         matchingTrack.observations.removeAll { observedAtMs - it.observedAtMs > thresholds.confirmationWindowMs }
 
         val fusedScore = matchingTrack.weightedScore(::effectiveScore)
-        val classThreshold = classThresholds[detection.candidate.rawClassId] ?: 0.0
-        val requiredScore = max(thresholds.confirmed, classThreshold)
+        val hasConfirmedEvidence = matchingTrack.observations.any {
+            effectiveScore(it.detection.candidate) >= thresholds.confirmed
+        }
         val state = if (
             matchingTrack.observations.size >= thresholds.confirmationFrames &&
-            fusedScore >= requiredScore
+            hasConfirmedEvidence &&
+            score >= thresholds.provisional
         ) {
             TrafficSignRecognitionState.CONFIRMED
         } else {
@@ -164,9 +167,9 @@ class TrafficSignFusionEngine(
 
         fun matches(candidate: TrafficSignCandidate, minimumIou: Double): Boolean {
             val current = latest.candidate
-            if (current.rawClassId != candidate.rawClassId) return false
             if (current.semantic != candidate.semantic) return false
-            if (current.assemblyId != null && candidate.assemblyId != null && current.assemblyId != candidate.assemblyId) return false
+            // Assembly IDs link objects within one frame; they are intentionally
+            // frame-scoped and therefore cannot be used as temporal track IDs.
             return current.boundingBox.intersectionOverUnion(candidate.boundingBox) >= minimumIou
         }
 

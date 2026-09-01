@@ -27,6 +27,12 @@ def test_repository_manifest_pins_sources_hashes_and_release_gates() -> None:
 
     assert manifest.sources_by_id["zod-frames-2.0.0"]["revision"]["value"] == "2.0.0"
     assert (
+        manifest.sources_by_id["zod-frames-2.0.0"]["revision"][
+            "verification_status"
+        ]
+        == "pending_provider_access"
+    )
+    assert (
         manifest.sources_by_id["zod-frames-2.0.0"]["integrity"][
             "post_acquisition_sha256_inventory_required"
         ]
@@ -39,6 +45,14 @@ def test_repository_manifest_pins_sources_hashes_and_release_gates() -> None:
     assert (
         manifest.artifacts_by_id["synset-signset-germany-archive"]["hashes"]["md5"]
         == "373656812a1d57a899f8289c340544b8"
+    )
+    assert (
+        manifest.artifacts_by_id["synset-signset-germany-archive"]["relative_path"]
+        == "datasets/synset-signset-germany/synset-signset-germany.tar"
+    )
+    assert (
+        manifest.artifacts_by_id["synset-signset-germany-archive"]["size_bytes"]
+        == 17149598208
     )
     assert (
         manifest.artifacts_by_id["gtsign-220-vit-all-classes"]["hashes"]["sha256"]
@@ -69,6 +83,19 @@ def test_repository_manifest_pins_sources_hashes_and_release_gates() -> None:
             "ultralytics_agpl_or_enterprise"
         ]["default_decision"]
         == "blocked"
+    )
+    assert (
+        manifest.payload["release_policy"]["license_gates"][
+            "apache_notice_review"
+        ]["default_decision"]
+        == "blocked_pending_weight_and_lineage_review"
+    )
+    assert manifest.sources_by_id["yolox-0.1.1rc0"]["roles"] == [
+        "license_gated_detector_control"
+    ]
+    assert (
+        manifest.artifacts_by_id["yolox-nano-coco-0.1.1rc0"]["role"]
+        == "license_gated_detector_control"
     )
 
 
