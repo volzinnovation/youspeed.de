@@ -15,7 +15,7 @@ struct PanoramaxItemRecord: Codable, Equatable {
     let itemID: String
     let originalPath: String
     let thumbnailPath: String
-    let metadata: PanoramaxCaptureMetadata
+    var metadata: PanoramaxCaptureMetadata
     var state: PanoramaxItemState
     var remoteID: String?
     var isFavorite: Bool = false
@@ -152,6 +152,69 @@ final class PanoramaxQueueStore: @unchecked Sendable {
 
     func originalURL(for item: PanoramaxItemRecord) -> URL? {
         fileURL(forRelativePath: item.originalPath)
+    }
+
+    /// Associates a confirmed TSR result with the nearest picture in the same
+    /// drive and persists the annotation in both the queue sidecar and JPEG.
+    @discardableResult
+    func attachTrafficSignAnnotation(
+        batchID: String,
+        draft: PanoramaxTrafficSignAnnotationDraft,
+        maximumTimeDelta: TimeInterval = 5
+    ) throws -> String? {
+        try lock.withLock {
+            guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
+            guard let index = batch.items.indices.min(by: {
+                abs(batch.items[$0].metadata.capturedAt.timeIntervalSince(draft.frameTimestampUTC))
+                    < abs(batch.items[$1].metadata.capturedAt.timeIntervalSince(draft.frameTimestampUTC))
+            }) else { return nil }
+            var item = batch.items[index]
+            let delta = abs(item.metadata.capturedAt.timeIntervalSince(draft.frameTimestampUTC))
+            guard delta <= maximumTimeDelta,
+                  let originalURL = originalURL(for: item),
+                  let jpeg = try? Data(contentsOf: originalURL),
+                  let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: jpeg),
+                  let annotation = draft.projected(
+                      imageWidth: dimensions.width,
+                      imageHeight: dimensions.height,
+                      imageTimestamp: item.metadata.capturedAt,
+                      maximumTimeDelta: maximumTimeDelta
+                  ) else { return nil }
+
+            var annotations = item.metadata.trafficSignAnnotations ?? []
+            if annotations.contains(where: { $0.sourceEventID == annotation.sourceEventID }) {
+                return item.itemID
+            }
+            if let physicalSignTrackID = annotation.physicalSignTrackID,
+               let existingIndex = annotations.firstIndex(where: {
+                   $0.physicalSignTrackID == physicalSignTrackID
+                       && $0.speedLimitKmh == annotation.speedLimitKmh
+               }) {
+                guard annotation.classificationConfidence > annotations[existingIndex].classificationConfidence else {
+                    return item.itemID
+                }
+                annotations[existingIndex] = annotation
+            } else {
+                annotations.append(annotation)
+            }
+            guard let annotatedJPEG = PanoramaxJPEGMetadata.adding(
+                to: jpeg,
+                location: item.metadata.location,
+                annotations: annotations
+            ) else { throw QueueError.invalidImage }
+            try annotatedJPEG.write(to: originalURL, options: .atomic)
+            protect(originalURL)
+            item.metadata = item.metadata.replacingImageMetadata(
+                sha256: Self.sha256(annotatedJPEG),
+                byteSize: Int64(annotatedJPEG.count),
+                imageWidthPixels: dimensions.width,
+                imageHeightPixels: dimensions.height,
+                trafficSignAnnotations: annotations
+            )
+            batch.items[index] = item
+            try commit(batch)
+            return item.itemID
+        }
     }
 
     @discardableResult

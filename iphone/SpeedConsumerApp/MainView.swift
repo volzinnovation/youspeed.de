@@ -1920,18 +1920,37 @@ private struct LocalRecordingsView: View {
 private struct DashcamRecordingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @State private var sharedRecording: DashcamRecording?
+    @State private var selectedRecordingIDs: Set<String> = []
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
-        List {
-            if viewModel.dashcamRecordings.isEmpty {
-                ContentUnavailableView(
-                    NSLocalizedString("drive_recorder.library.empty", comment: ""),
-                    systemImage: "video.slash"
-                )
-            } else {
-                Section {
-                    ForEach(viewModel.dashcamRecordings) { recording in
-                        HStack(spacing: 12) {
+        VStack(spacing: 0) {
+            Group {
+                if viewModel.dashcamRecordings.isEmpty {
+                    ContentUnavailableView(
+                        NSLocalizedString("drive_recorder.library.empty", comment: ""),
+                        systemImage: "video.slash"
+                    )
+                } else {
+                    List {
+                        Section {
+                            ForEach(viewModel.dashcamRecordings) { recording in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        if selectedRecordingIDs.contains(recording.id) {
+                                            selectedRecordingIDs.remove(recording.id)
+                                        } else {
+                                            selectedRecordingIDs.insert(recording.id)
+                                        }
+                                    } label: {
+                                        Image(systemName: selectedRecordingIDs.contains(recording.id) ? "checkmark.square.fill" : "square")
+                                            .font(.title3.weight(.semibold))
+                                            .foregroundStyle(selectedRecordingIDs.contains(recording.id) ? Color.accentColor : .secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(selectedRecordingIDs.contains(recording.id)
+                                        ? NSLocalizedString("drive_recorder.library.deselect", comment: "")
+                                        : NSLocalizedString("drive_recorder.library.select", comment: ""))
                             Image(systemName: "video.fill")
                                 .foregroundStyle(.secondary)
                             VStack(alignment: .leading, spacing: 3) {
@@ -1949,25 +1968,63 @@ private struct DashcamRecordingsView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(viewModel.isDriveRecorderActive)
-                            Button(role: .destructive) {
-                                viewModel.deleteDashcamRecording(recording)
-                            } label: {
-                                Image(systemName: "trash")
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .disabled(viewModel.isDriveRecorderActive)
+                        } footer: {
+                            Text(NSLocalizedString("drive_recorder.library.retention", comment: ""))
                         }
                     }
-                } footer: {
-                    Text(NSLocalizedString("drive_recorder.library.retention", comment: ""))
                 }
             }
+            .frame(maxHeight: .infinity)
+
+            if !viewModel.dashcamRecordings.isEmpty {
+                HStack(spacing: 8) {
+                    Button {
+                        selectedRecordingIDs = Set(viewModel.dashcamRecordings.map(\.id))
+                    } label: {
+                        Image(systemName: "checkmark.square.fill").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_all", comment: ""))
+                    Button {
+                        selectedRecordingIDs.removeAll()
+                    } label: {
+                        Image(systemName: "square.dashed").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_none", comment: ""))
+                    .disabled(selectedRecordingIDs.isEmpty)
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.delete_selected", comment: ""))
+                    .disabled(selectedRecordingIDs.isEmpty || viewModel.isDriveRecorderActive)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(.bar)
+            }
         }
-        .navigationTitle(NSLocalizedString("drive_recorder.library.title", comment: ""))
-        .navigationBarTitleDisplayMode(.inline)
         .task { viewModel.refreshDashcamRecordings() }
+        .onChange(of: Set(viewModel.dashcamRecordings.map(\.id))) { _, availableIDs in
+            selectedRecordingIDs.formIntersection(availableIDs)
+        }
         .sheet(item: $sharedRecording) { recording in
             ShareSheet(activityItems: [recording.url])
+        }
+        .alert(NSLocalizedString("drive_recorder.library.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+                viewModel.deleteDashcamRecordings(ids: selectedRecordingIDs)
+                selectedRecordingIDs.removeAll()
+            }
+        } message: {
+            Text(String(format: NSLocalizedString("drive_recorder.library.delete_message", comment: ""), selectedRecordingIDs.count))
         }
     }
 }
@@ -2141,6 +2198,25 @@ private struct PanoramaxReviewItemRow: View {
 
 private struct PanoramaxGalleryView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+
+    var body: some View {
+        TabView {
+            PictureGalleryView(viewModel: viewModel)
+                .tabItem {
+                    Label(NSLocalizedString("gallery.tab.pictures", comment: ""), systemImage: "photo.on.rectangle")
+                }
+            DashcamRecordingsView(viewModel: viewModel)
+                .tabItem {
+                    Label(NSLocalizedString("gallery.tab.videos", comment: ""), systemImage: "video.fill")
+                }
+        }
+        .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct PictureGalleryView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
     @State private var selectedItem: GalleryItem?
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
@@ -2181,43 +2257,37 @@ private struct PanoramaxGalleryView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
                             ForEach(entries, id: \.item.itemID) { entry in
                             let galleryItem = GalleryItem(id: entry.item.itemID, batchID: entry.batch.batchID, item: entry.item)
-                            ZStack(alignment: .topTrailing) {
-                                Button { selectedItem = galleryItem } label: {
-                                    thumbnail(for: entry.item)
-                                        .frame(height: 110)
-                                        .frame(maxWidth: .infinity)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            Button { selectedItem = galleryItem } label: {
+                                thumbnail(for: entry.item)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 110)
+                                    .clipped()
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(alignment: .topLeading) {
+                                Button {
+                                    if selectedItemIDs.contains(entry.item.itemID) {
+                                        selectedItemIDs.remove(entry.item.itemID)
+                                    } else if canSelectLocally(batch: entry.batch) {
+                                        selectedItemIDs.insert(entry.item.itemID)
+                                    }
+                                } label: {
+                                    Image(systemName: selectedItemIDs.contains(entry.item.itemID) ? "checkmark.square.fill" : "square")
+                                        .font(.title2.weight(.semibold))
+                                        .foregroundStyle(selectedItemIDs.contains(entry.item.itemID) ? Color.accentColor : .white)
+                                        .padding(6)
+                                        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                                 }
                                 .buttonStyle(.plain)
-                                ZStack(alignment: .topLeading) {
-                                    Button {
-                                        if selectedItemIDs.contains(entry.item.itemID) {
-                                            selectedItemIDs.remove(entry.item.itemID)
-                                        } else if canSelectLocally(batch: entry.batch) {
-                                            selectedItemIDs.insert(entry.item.itemID)
-                                        }
-                                    } label: {
-                                        Image(systemName: selectedItemIDs.contains(entry.item.itemID) ? "checkmark.square.fill" : "square")
-                                            .font(.title2.weight(.semibold))
-                                            .foregroundStyle(selectedItemIDs.contains(entry.item.itemID) ? Color.accentColor : .white)
-                                            .padding(6)
-                                            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .disabled(!canSelectLocally(batch: entry.batch))
-                                    .accessibilityLabel(selectedItemIDs.contains(entry.item.itemID)
-                                        ? NSLocalizedString("panoramax.gallery.deselect", comment: "")
-                                        : NSLocalizedString("panoramax.gallery.select", comment: ""))
-                                }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                                .disabled(!canSelectLocally(batch: entry.batch))
+                                .accessibilityLabel(selectedItemIDs.contains(entry.item.itemID)
+                                    ? NSLocalizedString("panoramax.gallery.deselect", comment: "")
+                                    : NSLocalizedString("panoramax.gallery.select", comment: ""))
                                 .padding(6)
-                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
-                                    .font(.caption2.monospacedDigit())
-                                    .foregroundStyle(.white)
-                                    .padding(5)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                                    .background(Color.black.opacity(0.5), alignment: .bottom)
-                                    .allowsHitTesting(false)
+                            }
+                            .overlay(alignment: .topTrailing) {
                                 Button {
                                     viewModel.togglePanoramaxFavorite(batchID: galleryItem.batchID, itemID: galleryItem.item.itemID)
                                 } label: {
@@ -2235,16 +2305,32 @@ private struct PanoramaxGalleryView: View {
                                     ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
                                     : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
                                 .padding(6)
+                            }
+                            .overlay(alignment: .bottomLeading) {
+                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.white)
+                                    .padding(5)
+                                    .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 5))
+                                    .padding(6)
+                                    .allowsHitTesting(false)
+                            }
+                            .overlay(alignment: .bottomTrailing) {
                                 if let status = statusPresentation(for: entry.item) {
                                     Image(systemName: status.systemImage)
                                         .font(.caption.weight(.bold))
                                         .foregroundStyle(status.color)
                                         .padding(6)
                                         .background(.black.opacity(0.65), in: Circle())
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                                         .padding(6)
                                         .allowsHitTesting(false)
                                         .accessibilityLabel(status.accessibilityLabel)
+                                }
+                            }
+                            .overlay {
+                                if let annotation = primaryTrafficSignAnnotation(for: entry.item) {
+                                    GallerySpeedLimitOverlay(speedLimitKmh: annotation.speedLimitKmh)
+                                        .allowsHitTesting(false)
                                 }
                             }
                             .accessibilityElement(children: .contain)
@@ -2370,7 +2456,15 @@ private struct PanoramaxGalleryView: View {
         .sheet(item: $selectedItem) { selection in
             NavigationStack {
                 if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: image).resizable().scaledToFit().padding().navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: "")).navigationBarTitleDisplayMode(.inline)
+                    ZStack {
+                        Image(uiImage: image).resizable().scaledToFit()
+                        if let annotation = primaryTrafficSignAnnotation(for: selection.item) {
+                            GallerySpeedLimitOverlay(speedLimitKmh: annotation.speedLimitKmh, diameter: 92)
+                        }
+                    }
+                    .padding()
+                    .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
+                    .navigationBarTitleDisplayMode(.inline)
                 } else {
                     ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
                 }
@@ -2440,6 +2534,14 @@ private struct PanoramaxGalleryView: View {
         }
     }
 
+    private func primaryTrafficSignAnnotation(
+        for item: PanoramaxItemRecord
+    ) -> PanoramaxTrafficSignAnnotation? {
+        item.metadata.trafficSignAnnotations?.max {
+            $0.classificationConfidence < $1.classificationConfidence
+        }
+    }
+
     @ViewBuilder
     private func thumbnail(for item: PanoramaxItemRecord) -> some View {
         if let url = viewModel.panoramaxThumbnailURL(for: item), let image = UIImage(contentsOfFile: url.path) {
@@ -2447,6 +2549,28 @@ private struct PanoramaxGalleryView: View {
         } else {
             Color.secondary.opacity(0.2).overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
         }
+    }
+}
+
+private struct GallerySpeedLimitOverlay: View {
+    let speedLimitKmh: Int
+    var diameter: CGFloat = 62
+
+    var body: some View {
+        Text("\(speedLimitKmh)")
+            .font(.system(size: diameter * 0.39, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(.black)
+            .frame(width: diameter, height: diameter)
+            .background(.white, in: Circle())
+            .overlay {
+                Circle().stroke(.red, lineWidth: max(5, diameter * 0.09))
+            }
+            .shadow(color: .black.opacity(0.7), radius: 4, y: 2)
+            .accessibilityLabel(String(
+                format: NSLocalizedString("gallery.recognized_speed", comment: ""),
+                speedLimitKmh
+            ))
     }
 }
 
@@ -3008,12 +3132,17 @@ private struct DebugInformationView: View {
                         shareItem = LocalDebugShareItem(url: matchLogURL)
                     }
                 }
-                if gpsLogURL != nil || matchLogURL != nil {
+                if let tsrLogURL {
+                    Button("TSR-Log teilen") {
+                        shareItem = LocalDebugShareItem(url: tsrLogURL)
+                    }
+                }
+                if gpsLogURL != nil || matchLogURL != nil || tsrLogURL != nil {
                     Button("Fahrlog leeren", role: .destructive) {
                         showingClearDrivingLogConfirm = true
                     }
                 }
-                if gpsLogURL == nil && matchLogURL == nil {
+                if gpsLogURL == nil && matchLogURL == nil && tsrLogURL == nil {
                     Text("Noch keine Logdateien vorhanden.")
                         .foregroundStyle(.secondary)
                 }
@@ -3107,7 +3236,7 @@ private struct DebugInformationView: View {
                 viewModel.clearDrivingLogs()
             }
         } message: {
-            Text("GPS-CSV und Matcher-Log werden geleert. Neue Fahrdaten werden anschliessend wieder normal aufgezeichnet.")
+            Text("GPS-CSV, Matcher-Log und TSR-Log werden geleert. Neue Fahrdaten werden anschliessend wieder normal aufgezeichnet.")
         }
         .sheet(isPresented: $showingOSMBrowser) {
             if let target = osmTarget {
@@ -3167,6 +3296,7 @@ private struct DebugInformationView: View {
             ("Stadt-Resolve", String(format: "%.3f ms", viewModel.lastLookupCityResolveMs)),
             ("GPS-Log", viewModel.gpsLogPath.isEmpty ? "n/a" : viewModel.gpsLogPath),
             ("Matcher-Log", viewModel.matchLogPath.isEmpty ? "n/a" : viewModel.matchLogPath),
+            ("TSR-Log", viewModel.tsrLogPath.isEmpty ? "n/a" : viewModel.tsrLogPath),
             ("Manifest-Endpunkte", "\(viewModel.configuredManifestEndpointCount)"),
             ("Manifest-Länder", viewModel.configuredManifestCountryCodes),
         ]
@@ -3184,6 +3314,11 @@ private struct DebugInformationView: View {
             return nil
         }
         return URL(fileURLWithPath: viewModel.matchLogPath)
+    }
+
+    private var tsrLogURL: URL? {
+        guard !viewModel.tsrLogPath.isEmpty else { return nil }
+        return URL(fileURLWithPath: viewModel.tsrLogPath)
     }
 
     private var latText: String {

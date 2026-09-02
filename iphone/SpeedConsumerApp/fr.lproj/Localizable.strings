@@ -144,6 +144,16 @@
 "panoramax.gallery.delete_after_completion" = "Les images téléversées pourront être supprimées une fois le téléversement Panoramax terminé.";
 "panoramax.gallery.favorite_add" = "Ajouter aux favoris";
 "panoramax.gallery.favorite_remove" = "Retirer des favoris";
+"gallery.tab.pictures" = "Images";
+"gallery.tab.videos" = "Vidéos";
+"gallery.recognized_speed" = "Limitation reconnue : %d";
+"drive_recorder.library.select" = "Sélectionner la vidéo";
+"drive_recorder.library.deselect" = "Désélectionner la vidéo";
+"drive_recorder.library.select_all" = "Tout sélectionner";
+"drive_recorder.library.select_none" = "Tout désélectionner";
+"drive_recorder.library.delete_selected" = "Supprimer les vidéos sélectionnées";
+"drive_recorder.library.delete_title" = "Supprimer les vidéos sélectionnées ?";
+"drive_recorder.library.delete_message" = "%d vidéos sélectionnées seront supprimées définitivement.";
 "panoramax.settings.section" = "Enregistreur de trajet";
 "panoramax.settings.description" = "Démarrez l’enregistrement avec le bouton rouge en bas à gauche. Les images restent d’abord sur cet iPhone et peuvent ensuite être vérifiées et téléversées.";
 "panoramax.settings.status" = "État";

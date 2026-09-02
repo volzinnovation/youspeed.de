@@ -545,6 +545,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
     @Published var matchLogPath: String = ""
+    @Published var tsrLogPath: String = ""
     @Published var lastCandidateTraces: [MatchCandidateTrace] = []
     @Published var lastSelectionTrace: [MatchSelectionTrace] = []
     @Published var startupDataState: StartupDataState = .loading
@@ -754,6 +755,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
     private var preparedMatchLogURL: URL?
+    private var preparedTSRLogURL: URL?
     private var lastProgressUIUpdate = Date.distantPast
     private var lastLoggedSyncProgressSignature: String = ""
     private var lastDownloadProgressAt: Date?
@@ -1312,6 +1314,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveCaptureCoordinator?.onChange = { [weak self] in
             self?.syncDriveRecorderState()
         }
+        driveCaptureCoordinator?.onTrafficSignAnnotation = { [weak self] detail in
+            self?.appendTSRLog("image_link=attached \(detail)")
+            self?.refreshPanoramaxBatches()
+        }
+        clearDrivingLogsOnAppLaunch()
         syncDriveRecorderState()
         prepareTrafficSignRecognitionRuntime()
         refreshDashcamRecordings()
@@ -1326,11 +1333,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
         }
         if let screenshotState = AppScreenshotState.current() {
-            clearDrivingLogsOnAppLaunch()
             configureForScreenshotMode(screenshotState)
             return
         }
-        clearDrivingLogsOnAppLaunch()
         bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
@@ -1482,9 +1487,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
 
-        Self.tsrLogger.notice(
-            "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=loading country=\(countryCode, privacy: .public) model_pack=\(directoryURL.lastPathComponent, privacy: .public)"
-        )
+        let loadingLog = "lifecycle=loading country=\(countryCode) model_pack=\(directoryURL.lastPathComponent)"
+        Self.tsrLogger.notice("timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) \(loadingLog, privacy: .public)")
+        appendTSRLog(loadingLog)
         trafficSignRecognitionUnavailableDetail = "Preparing traffic-sign recognition."
         trafficSignRuntimeLoadTask = Task { @MainActor [weak self] in
             let result = await Task.detached(priority: .utility) {
@@ -1517,6 +1522,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 Self.tsrLogger.notice(
                     "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId, privacy: .public)"
                 )
+                self.appendTSRLog("lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId)")
                 self.trafficSignRecognitionUnavailableDetail = ""
                 if let driveCaptureCoordinator = self.driveCaptureCoordinator {
                     driveCaptureCoordinator.setVideoFrameConsumer(runtime)
@@ -1547,9 +1553,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
         let direction = context?.travelDirection.rawValue ?? "none"
         let captureSessionID = driveCaptureCoordinator?.activeCaptureSessionID ?? "none"
-        Self.tsrLogger.fault(
-            "timestamp=\(timestamp, privacy: .public) lifecycle=unavailable code=\(reason.code.rawValue, privacy: .public) way=\(wayID, privacy: .public) lat=\(latitude, privacy: .public) lon=\(longitude, privacy: .public) direction=\(direction, privacy: .public) capture_session=\(captureSessionID, privacy: .public) detail=\(reason.detail, privacy: .public)"
-        )
+        let line = "lifecycle=unavailable code=\(reason.code.rawValue) way=\(wayID) lat=\(latitude) lon=\(longitude) direction=\(direction) capture_session=\(captureSessionID) detail=\(reason.detail)"
+        Self.tsrLogger.fault("timestamp=\(timestamp, privacy: .public) \(line, privacy: .public)")
+        appendTSRLog(line, timestamp: Date())
         trafficSignRuntime?.stop()
         trafficSignRuntime = nil
         trafficSignRecognitionModelPackID = nil
@@ -1681,6 +1687,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard emission.sessionGeneration == trafficSignRecorderGeneration,
               emission.contextGeneration == trafficSignContextGeneration else { return }
         logTrafficSignRuntimeEmission(emission)
+        driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
         acceptTrafficSignRecognitionEvent(emission.event)
     }
 
@@ -1764,8 +1771,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               event.source == .liveFrame,
               event.state == .confirmed,
               !isInSpeedCaptureMode,
-              !speechSynthesizer.isSpeaking,
-              !captureConfirmationTonePlayer.isPlaying,
               let candidate = event.candidate,
               candidate.semanticKind == TrafficSignSemanticKind.maximumSpeed.rawValue,
               let speedKmh = candidate.value,
@@ -1799,6 +1804,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         Self.tsrLogger.notice(
             "timestamp=\(timestamp, privacy: .public) feedback=\(self.trafficSignFeedbackMode.rawValue, privacy: .public) speed_kmh=\(speedKmh, privacy: .public) track=\(trackID, privacy: .public)"
         )
+        appendTSRLog("feedback=\(trafficSignFeedbackMode.rawValue) speed_kmh=\(speedKmh) track=\(trackID)", timestamp: event.frameTimestampUtc)
     }
 
     private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
@@ -1850,6 +1856,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let latency = String(format: "%.1f", event.latencyMs)
         let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
         Self.tsrLogger.info("\(line, privacy: .public)")
+        appendTSRLogLine(line)
     }
 
     private static func trafficSignTimestamp(_ date: Date) -> String {
@@ -1874,11 +1881,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func prepareSpeechPlaybackAudioSession() {
-        try? AVAudioSession.sharedInstance().setCategory(
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(
             .ambient,
             mode: .default,
             options: [.duckOthers]
         )
+        try? session.setActive(true)
     }
 
     private func publishTrafficSignRecognitionState(
@@ -2108,6 +2117,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func deleteDashcamRecording(_ recording: DashcamRecording) {
         guard !isDriveRecorderActive else { return }
         _ = DriveCaptureCoordinator.deleteDashcamRecording(id: recording.id)
+        refreshDashcamRecordings()
+    }
+
+    func deleteDashcamRecordings(ids: Set<String>) {
+        guard !isDriveRecorderActive, !ids.isEmpty else { return }
+        for id in ids {
+            _ = DriveCaptureCoordinator.deleteDashcamRecording(id: id)
+        }
         refreshDashcamRecordings()
     }
 
@@ -3744,6 +3761,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
             }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
+            }
         } catch {
             lastError = "gps log reset failed: \(error.localizedDescription)"
         }
@@ -3757,6 +3778,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             resetPreparedMatchLogFile()
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
+            }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
             }
             lastError = ""
         } catch {
@@ -3778,7 +3803,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             for url in existingURLs where
                 url.pathExtension == "ndjson" &&
-                url.lastPathComponent.contains("drive_match_log") {
+                (url.lastPathComponent.contains("drive_match_log")
+                    || url.lastPathComponent.contains("tsr_log")) {
                 try fileManager.removeItem(at: url)
             }
 
@@ -3789,6 +3815,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             resetPreparedMatchLogFile()
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
+            }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
             }
             lastError = ""
         } catch {
@@ -5618,6 +5648,51 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         matchLogPath = ""
     }
 
+    private func appendTSRLog(_ fields: String, timestamp: Date = Date()) {
+        appendTSRLogLine("timestamp=\(Self.trafficSignTimestamp(timestamp)) \(fields)")
+    }
+
+    private func appendTSRLogLine(_ line: String) {
+        guard let logURL = prepareTSRLogFileIfNeeded() else { return }
+        do {
+            let handle = try FileHandle(forWritingTo: logURL)
+            try handle.seekToEnd()
+            try handle.write(contentsOf: Data((line + "\n").utf8))
+            try handle.close()
+        } catch {
+            // Diagnostics must never interrupt recognition or recording.
+        }
+    }
+
+    private func prepareTSRLogFileIfNeeded() -> URL? {
+        do {
+            let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
+            if !FileManager.default.fileExists(atPath: base.path) {
+                try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+            }
+            let logURL: URL
+            if let preparedTSRLogURL {
+                logURL = preparedTSRLogURL
+            } else {
+                logURL = makeTimestampedTSRLogURL(in: base)
+                preparedTSRLogURL = logURL
+            }
+            tsrLogPath = logURL.path
+            if !FileManager.default.fileExists(atPath: logURL.path) {
+                try Data().write(to: logURL, options: .atomic)
+            }
+            return logURL
+        } catch {
+            lastError = "TSR log init failed: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    private func resetPreparedTSRLogFile() {
+        preparedTSRLogURL = nil
+        tsrLogPath = ""
+    }
+
     private func makeTimestampedMatchLogURL(in base: URL) -> URL {
         let prefix = Self.exportTimestampFormatter.string(from: Date())
         for suffix in 0...999 {
@@ -5633,6 +5708,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         return base.appendingPathComponent("\(prefix)_\(UUID().uuidString.lowercased())_drive_match_log.ndjson")
+    }
+
+    private func makeTimestampedTSRLogURL(in base: URL) -> URL {
+        let prefix = Self.exportTimestampFormatter.string(from: Date())
+        for suffix in 0...999 {
+            let suffixText = suffix == 0 ? "" : "_\(suffix)"
+            let url = base.appendingPathComponent("\(prefix)\(suffixText)_tsr_log.ndjson")
+            if !FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+        return base.appendingPathComponent("\(prefix)_\(UUID().uuidString.lowercased())_tsr_log.ndjson")
     }
 
     var currentOverspeedKmh: Int {

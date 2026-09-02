@@ -2632,6 +2632,84 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertFalse(metadata.validate().isEmpty)
     }
 
+    func testPanoramaxTrafficSignAnnotationProjectsToImagePixels() throws {
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let draft = PanoramaxTrafficSignAnnotationDraft(
+            annotationID: "annotation-1",
+            sourceEventID: "event-1",
+            frameTimestampUTC: timestamp,
+            normalizedShape: TrafficSignNormalizedRect(x: 0.1, y: 0.2, width: 0.3, height: 0.4),
+            semantics: [PanoramaxSemanticTag(key: "osm|traffic_sign", value: "DE:274-70")],
+            speedLimitKmh: 70,
+            physicalSignTrackID: "track-1",
+            detectionConfidence: 0.919,
+            classificationConfidence: 1,
+            context: makeTrafficSignDetectionContext()
+        )
+
+        let annotation = try XCTUnwrap(draft.projected(
+            imageWidth: 1_000,
+            imageHeight: 500,
+            imageTimestamp: timestamp
+        ))
+        XCTAssertEqual(annotation.shape, [100, 100, 400, 300])
+        XCTAssertEqual(annotation.speedLimitKmh, 70)
+        XCTAssertEqual(annotation.wayID, "123")
+    }
+
+    func testPanoramaxQueueAttachesTrafficSignAnnotationToJPEGAndSidecar() throws {
+        #if canImport(UIKit)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let batch = try store.createBatch(captureSessionID: "session-tsr", createdAt: timestamp)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100))
+        let jpeg = try XCTUnwrap(renderer.jpegData(withCompressionQuality: 0.9) { context in
+            UIColor.gray.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        })
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "capture-tsr",
+            captureSessionID: batch.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: timestamp, accuracyMeters: 5, altitudeMeters: nil, headingDegrees: 82),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+        let item = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
+        let draft = PanoramaxTrafficSignAnnotationDraft(
+            annotationID: "annotation-tsr",
+            sourceEventID: "event-tsr",
+            frameTimestampUTC: timestamp,
+            normalizedShape: TrafficSignNormalizedRect(x: 0.25, y: 0.1, width: 0.2, height: 0.4),
+            semantics: [
+                PanoramaxSemanticTag(key: "osm|traffic_sign", value: "DE:274-70"),
+                PanoramaxSemanticTag(key: "detection_confidence[osm|traffic_sign=DE:274-70]", value: "0.919"),
+                PanoramaxSemanticTag(key: "classification_confidence[osm|traffic_sign=DE:274-70]", value: "1.000"),
+            ],
+            speedLimitKmh: 70,
+            physicalSignTrackID: "track-tsr",
+            detectionConfidence: 0.919,
+            classificationConfidence: 1,
+            context: makeTrafficSignDetectionContext()
+        )
+
+        XCTAssertEqual(try store.attachTrafficSignAnnotation(batchID: batch.batchID, draft: draft), item.itemID)
+        let restored = try XCTUnwrap(store.getBatch(batch.batchID)?.items.first)
+        XCTAssertEqual(restored.metadata.trafficSignAnnotations?.first?.speedLimitKmh, 70)
+        let updatedJPEG = try Data(contentsOf: try XCTUnwrap(store.originalURL(for: restored)))
+        XCTAssertEqual(restored.metadata.sha256, PanoramaxQueueStore.sha256(updatedJPEG))
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(updatedJPEG as CFData, nil))
+        let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any])
+        let exif = try XCTUnwrap(properties[kCGImagePropertyExifDictionary as String] as? [String: Any])
+        let comment = try XCTUnwrap(exif[kCGImagePropertyExifUserComment as String] as? String)
+        XCTAssertTrue(comment.contains("YouSpeed.PanoramaxAnnotations/1"))
+        XCTAssertTrue(comment.contains("DE:274-70"))
+        #endif
+    }
+
     func testPanoramaxQueueCommitsOriginalAndThumbnailSeparately() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -5015,6 +5093,17 @@ final class SpeedConsumerTests: XCTestCase {
         ))
         XCTAssertTrue(fm.fileExists(atPath: secondLogURL.path))
         XCTAssertNotEqual(firstLogURL, secondLogURL)
+        let tsrLogURL = URL(fileURLWithPath: try XCTUnwrap(
+            viewModel.tsrLogPath.isEmpty ? nil : viewModel.tsrLogPath,
+            "Expected TSR log path after clearing driving logs"
+        ))
+        XCTAssertTrue(fm.fileExists(atPath: tsrLogURL.path))
+        XCTAssertNotNil(
+            tsrLogURL.lastPathComponent.range(
+                of: #"^\d{8}_\d{6}_\d{3}(?:_[0-9]+)?_tsr_log\.ndjson$"#,
+                options: .regularExpression
+            )
+        )
     }
 
     @MainActor

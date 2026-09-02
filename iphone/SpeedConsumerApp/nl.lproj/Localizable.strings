@@ -144,6 +144,16 @@
 "panoramax.gallery.delete_after_completion" = "Geüploade beelden kunnen worden verwijderd nadat Panoramax de upload heeft voltooid.";
 "panoramax.gallery.favorite_add" = "Als favoriet markeren";
 "panoramax.gallery.favorite_remove" = "Favoriet verwijderen";
+"gallery.tab.pictures" = "Foto’s";
+"gallery.tab.videos" = "Video’s";
+"gallery.recognized_speed" = "Herkende maximumsnelheid %d";
+"drive_recorder.library.select" = "Video selecteren";
+"drive_recorder.library.deselect" = "Videoselectie opheffen";
+"drive_recorder.library.select_all" = "Alles selecteren";
+"drive_recorder.library.select_none" = "Niets selecteren";
+"drive_recorder.library.delete_selected" = "Geselecteerde video’s verwijderen";
+"drive_recorder.library.delete_title" = "Geselecteerde video’s verwijderen?";
+"drive_recorder.library.delete_message" = "%d geselecteerde video’s worden permanent verwijderd.";
 "panoramax.settings.section" = "Ritrecorder";
 "panoramax.settings.description" = "Start de opname met de rode knop linksonder. Foto’s blijven eerst op deze iPhone en kunnen later worden gecontroleerd en geüpload.";
 "panoramax.settings.status" = "Status";

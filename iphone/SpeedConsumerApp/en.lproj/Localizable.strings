@@ -144,6 +144,16 @@
 "panoramax.gallery.delete_after_completion" = "Uploaded pictures can be deleted after Panoramax finishes the upload.";
 "panoramax.gallery.favorite_add" = "Mark as favorite";
 "panoramax.gallery.favorite_remove" = "Remove favorite";
+"gallery.tab.pictures" = "Pictures";
+"gallery.tab.videos" = "Videos";
+"gallery.recognized_speed" = "Recognized speed limit %d";
+"drive_recorder.library.select" = "Select video";
+"drive_recorder.library.deselect" = "Deselect video";
+"drive_recorder.library.select_all" = "Select all";
+"drive_recorder.library.select_none" = "Select none";
+"drive_recorder.library.delete_selected" = "Delete selected videos";
+"drive_recorder.library.delete_title" = "Delete selected videos?";
+"drive_recorder.library.delete_message" = "%d selected videos will be permanently deleted.";
 "panoramax.settings.section" = "Drive Recorder";
 "panoramax.settings.description" = "Start recording with the red button at the bottom left. Pictures stay on this iPhone first and can be reviewed and uploaded later.";
 "panoramax.settings.status" = "Status";

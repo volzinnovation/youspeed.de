@@ -169,6 +169,7 @@ private struct PanoramaxPhotoProcessingResult {
     let sample: PanoramaxLocationSample
     let saved: Bool
     let detail: String
+    var annotationLogLine: String? = nil
 }
 
 /// A traffic-sign recognizer attaches here without owning or reconfiguring the
@@ -242,6 +243,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     @Published private(set) var lastAccuracyMeters: Double?
 
     var onChange: (() -> Void)?
+    var onTrafficSignAnnotation: ((String) -> Void)?
 
     private let queueStore: PanoramaxQueueStore?
     private let sessionQueue = DispatchQueue(label: "de.youspeed.drive-recorder.camera")
@@ -275,6 +277,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var captureSessionID: String?
     private var activeDashcamRecordingURL: URL?
     private var dashcamTransition: DashcamTransition?
+    private var latestTrafficSignAnnotationDraft: PanoramaxTrafficSignAnnotationDraft?
 
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
@@ -322,6 +325,31 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         notifyChange()
     }
 
+    /// Retains the newest confirmed result for the next still and, when there
+    /// is no still in flight, also tries the most recent picture from this drive.
+    func recordTrafficSignRecognition(_ emission: TrafficSignRuntimeEmission) {
+        guard let draft = PanoramaxTrafficSignAnnotationDraft(emission: emission),
+              let captureSessionID,
+              emission.captureSessionId == captureSessionID else { return }
+        latestTrafficSignAnnotationDraft = draft
+        guard !photoInFlight, let batch, let queueStore else { return }
+        let batchID = batch.batchID
+        photoProcessingQueue.async { [weak self] in
+            let itemID = try? queueStore.attachTrafficSignAnnotation(
+                batchID: batchID,
+                draft: draft
+            )
+            Task { @MainActor [weak self] in
+                guard let self, let itemID else { return }
+                if self.latestTrafficSignAnnotationDraft?.sourceEventID == draft.sourceEventID {
+                    self.latestTrafficSignAnnotationDraft = nil
+                }
+                self.onTrafficSignAnnotation?("event_id=\(draft.sourceEventID) image_id=\(itemID) speed_kmh=\(draft.speedLimitKmh)")
+                self.notifyChange()
+            }
+        }
+    }
+
     func updatePanoramaxConfiguration(
         _ configuration: PanoramaxCadenceConfiguration,
         storageLimitBytes: Int64?
@@ -361,6 +389,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamTransitionTimeoutTask?.cancel()
         dashcamTransitionTimeoutTask = nil
         activeDashcamRecordingURL = nil
+        latestTrafficSignAnnotationDraft = nil
         capturedImageCount = 0
         lastCaptureAt = nil
         lastAccuracyMeters = nil
@@ -567,6 +596,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         pendingSample = nil
         pendingPhotoUniqueID = nil
         photoInFlight = false
+        latestTrafficSignAnnotationDraft = nil
         notifyChange()
         scheduleStopTimeout(generation: stopGeneration)
 
@@ -798,13 +828,16 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return
         }
         let storageLimit = storageLimitBytes
+        let annotationDraft = latestTrafficSignAnnotationDraft
+        latestTrafficSignAnnotationDraft = nil
         photoProcessingQueue.async { [weak self] in
             let result = Self.persistPanoramaxPhoto(
                 data: data,
                 sample: sample,
                 batch: batch,
                 queueStore: queueStore,
-                storageLimitBytes: storageLimit
+                storageLimitBytes: storageLimit,
+                annotationDraft: annotationDraft
             )
             Task { @MainActor [weak self] in
                 self?.finishPhotoProcessing(uniqueID: uniqueID, result: result)
@@ -827,6 +860,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         capturedImageCount += 1
         lastCaptureAt = result.sample.capturedAt
         lastCaptureDetail = "Panoramax-Bild \(capturedImageCount) lokal gespeichert"
+        if let annotationLogLine = result.annotationLogLine {
+            onTrafficSignAnnotation?(annotationLogLine)
+        }
     }
 
     private func finishDashcamToggleFailure(_ detail: String, token: UUID?) {
@@ -908,9 +944,26 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         sample: PanoramaxLocationSample,
         batch: PanoramaxBatchRecord,
         queueStore: PanoramaxQueueStore,
-        storageLimitBytes: Int64?
+        storageLimitBytes: Int64?,
+        annotationDraft: PanoramaxTrafficSignAnnotationDraft?
     ) -> PanoramaxPhotoProcessingResult {
-        let panoramaxJPEG = addLocationMetadata(to: data, sample: sample) ?? data
+        let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: data)
+        let annotations: [PanoramaxTrafficSignAnnotation]
+        if let dimensions,
+           let annotation = annotationDraft?.projected(
+               imageWidth: dimensions.width,
+               imageHeight: dimensions.height,
+               imageTimestamp: sample.capturedAt
+           ) {
+            annotations = [annotation]
+        } else {
+            annotations = []
+        }
+        let panoramaxJPEG = PanoramaxJPEGMetadata.adding(
+            to: data,
+            location: sample,
+            annotations: annotations
+        ) ?? data
         guard let thumbnail = makeThumbnail(from: panoramaxJPEG) else {
             return PanoramaxPhotoProcessingResult(sample: sample, saved: false, detail: "Vorschaubild konnte nicht erstellt werden")
         }
@@ -921,7 +974,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             location: sample,
             sha256: PanoramaxQueueStore.sha256(panoramaxJPEG),
             byteSize: Int64(panoramaxJPEG.count),
-            software: "YouSpeed/1.0.1"
+            software: "YouSpeed/1.0.1",
+            imageWidthPixels: dimensions?.width,
+            imageHeightPixels: dimensions?.height,
+            trafficSignAnnotations: annotations.isEmpty ? nil : annotations
         )
         do {
             _ = try queueStore.addJPEG(
@@ -930,10 +986,18 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 thumbnail: thumbnail,
                 metadata: metadata
             )
+            let annotationLogLine = annotations.first.map {
+                "event_id=\($0.sourceEventID) image_id=\(metadata.captureID) speed_kmh=\($0.speedLimitKmh)"
+            }
             if let storageLimitBytes {
                 _ = try? queueStore.enforceStorageLimit(maxBytes: storageLimitBytes)
             }
-            return PanoramaxPhotoProcessingResult(sample: sample, saved: true, detail: "Panoramax-Bild lokal gespeichert")
+            return PanoramaxPhotoProcessingResult(
+                sample: sample,
+                saved: true,
+                detail: "Panoramax-Bild lokal gespeichert",
+                annotationLogLine: annotationLogLine
+            )
         } catch {
             return PanoramaxPhotoProcessingResult(sample: sample, saved: false, detail: "Aufnahme konnte nicht gespeichert werden")
         }
@@ -951,6 +1015,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
         captureSessionID = nil
+        latestTrafficSignAnnotationDraft = nil
         lastCaptureDetail = stopResultDetail ?? (capturedImageCount > 0
             ? "\(capturedImageCount) Panoramax-Bilder fuer spaeter gespeichert"
             : "Aufnahme beendet")
@@ -1274,44 +1339,6 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return nil
         }
         return thumbnail.jpegData(compressionQuality: 0.72)
-    }
-
-    nonisolated private static func addLocationMetadata(to data: Data, sample: PanoramaxLocationSample) -> Data? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let type = CGImageSourceGetType(source) else { return nil }
-        let output = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(output, type, 1, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any] else {
-            return nil
-        }
-        var merged = properties
-        var gps = (merged[kCGImagePropertyGPSDictionary as String] as? [String: Any]) ?? [:]
-        gps[kCGImagePropertyGPSLatitude as String] = abs(sample.latitude)
-        gps[kCGImagePropertyGPSLatitudeRef as String] = sample.latitude >= 0 ? "N" : "S"
-        gps[kCGImagePropertyGPSLongitude as String] = abs(sample.longitude)
-        gps[kCGImagePropertyGPSLongitudeRef as String] = sample.longitude >= 0 ? "E" : "W"
-        if let altitude = sample.altitudeMeters, altitude.isFinite {
-            gps[kCGImagePropertyGPSAltitude as String] = abs(altitude)
-            gps[kCGImagePropertyGPSAltitudeRef as String] = altitude >= 0 ? 0 : 1
-        }
-        let timeFormatter = DateFormatter()
-        timeFormatter.locale = Locale(identifier: "en_US_POSIX")
-        timeFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        timeFormatter.dateFormat = "HH:mm:ss"
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        dateFormatter.dateFormat = "yyyy:MM:dd"
-        gps[kCGImagePropertyGPSTimeStamp as String] = timeFormatter.string(from: sample.capturedAt)
-        gps[kCGImagePropertyGPSDateStamp as String] = dateFormatter.string(from: sample.capturedAt)
-        if let heading = sample.headingDegrees, heading.isFinite, (0...360).contains(heading) {
-            gps[kCGImagePropertyGPSImgDirection as String] = heading
-            gps[kCGImagePropertyGPSImgDirectionRef as String] = "T"
-        }
-        merged[kCGImagePropertyGPSDictionary as String] = gps
-        CGImageDestinationAddImageFromSource(destination, source, 0, merged as CFDictionary)
-        guard CGImageDestinationFinalize(destination) else { return nil }
-        return output as Data
     }
 
     private func notifyChange() {
