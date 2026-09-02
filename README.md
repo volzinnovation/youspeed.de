@@ -15,19 +15,19 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 ## Get YouSpeed
 
 - [Google Play](https://play.google.com/store/apps/details?id=de.youspeed.android)
-- [iPhone test on TestFlight](https://testflight.apple.com/join/k3a1pgce) (Apple App Store release pending review)
+- [iPhone on the App Store](https://apps.apple.com/de/app/youspeed-de/id6787469256)
 
 Scan to download the app or open its source code:
 
 <table>
   <tr>
     <th width="33%">Android (Google Play)</th>
-    <th width="34%">Apple iPhone (TestFlight)</th>
+    <th width="34%">Apple iPhone (App Store)</th>
     <th width="33%">this.repo</th>
   </tr>
   <tr>
     <td align="center"><a href="https://play.google.com/store/apps/details?id=de.youspeed.android"><img src="docs/qr/google-play.png" alt="QR code for YouSpeed on Google Play"></a></td>
-    <td align="center"><a href="https://testflight.apple.com/join/k3a1pgce"><img src="docs/qr/testflight.png" alt="QR code for the YouSpeed TestFlight"></a></td>
+    <td align="center"><a href="https://apps.apple.com/de/app/youspeed-de/id6787469256"><img src="docs/qr/app-store.png" alt="QR code for YouSpeed on the Apple App Store"></a></td>
     <td align="center"><a href="https://github.com/volzinnovation/youspeed.de"><img src="docs/qr/github.png" alt="QR code for the YouSpeed source repository on GitHub"></a></td>
   </tr>
 </table>
