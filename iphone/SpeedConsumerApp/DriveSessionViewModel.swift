@@ -35,6 +35,7 @@ private final class ConfirmationTonePlayer {
     private let toneBuffer: AVAudioPCMBuffer?
     private var engine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
+    private(set) var isPlaying = false
 
     init() {
         toneBuffer = Self.makeToneBuffer()
@@ -69,6 +70,7 @@ private final class ConfirmationTonePlayer {
 
         self.engine = engine
         self.playerNode = playerNode
+        isPlaying = true
         playerNode.play()
     }
 
@@ -78,6 +80,7 @@ private final class ConfirmationTonePlayer {
     }
 
     private func stop() {
+        isPlaying = false
         playerNode?.stop()
         engine?.stop()
         playerNode = nil
@@ -105,6 +108,92 @@ private final class ConfirmationTonePlayer {
         }
         buffer.frameLength = AVAudioFrameCount(frameCount)
         return buffer
+    }
+}
+
+enum TrafficSignFeedbackMode: String, CaseIterable, Identifiable {
+    case spokenSpeed = "spoken_speed"
+    case sound
+    case silent
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .spokenSpeed:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_spoken", comment: "")
+        case .sound:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_sound", comment: "")
+        case .silent:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_silent", comment: "")
+        }
+    }
+}
+
+/// Prevents a confirmed sign from speaking or chiming on every camera frame.
+/// Fusion track IDs suppress repeats for the complete recorder session; the
+/// short context cooldown also covers a detector that briefly loses a track.
+struct TrafficSignFeedbackGate {
+    private struct RecentRecognition: Equatable {
+        let speedKmh: Int
+        let wayID: String
+        let direction: TrafficSignTravelDirection
+        let timestamp: Date
+    }
+
+    private var emittedTrackKeys = Set<String>()
+    private var recentRecognition: RecentRecognition?
+    private let fragmentedTrackCooldown: TimeInterval
+
+    init(fragmentedTrackCooldown: TimeInterval = 8) {
+        self.fragmentedTrackCooldown = max(0, fragmentedTrackCooldown)
+    }
+
+    mutating func shouldEmit(
+        trackID: String?,
+        speedKmh: Int,
+        context: TrafficSignDetectionContext,
+        timestamp: Date
+    ) -> Bool {
+        guard speedKmh > 0 else { return false }
+        let normalizedTrackID = trackID?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trackKey = normalizedTrackID.flatMap {
+            $0.isEmpty
+                ? nil
+                : "\(context.wayId):\(context.travelDirection.rawValue):\($0):\(speedKmh)"
+        }
+        let current = RecentRecognition(
+            speedKmh: speedKmh,
+            wayID: context.wayId,
+            direction: context.travelDirection,
+            timestamp: timestamp
+        )
+        if let trackKey {
+            guard emittedTrackKeys.insert(trackKey).inserted else { return false }
+            recentRecognition = current
+            return true
+        }
+
+        // A missing track ID is rare, but can occur while a track is being
+        // rebuilt. Only that ambiguous case uses a short context cooldown;
+        // distinct non-empty track IDs always represent distinct signs.
+        if let recentRecognition,
+           recentRecognition.speedKmh == current.speedKmh,
+           recentRecognition.wayID == current.wayID,
+           recentRecognition.direction == current.direction,
+           abs(current.timestamp.timeIntervalSince(recentRecognition.timestamp))
+                < fragmentedTrackCooldown {
+            return false
+        }
+
+        recentRecognition = current
+        return true
+    }
+
+    mutating func reset() {
+        emittedTrackKeys.removeAll(keepingCapacity: true)
+        recentRecognition = nil
     }
 }
 
@@ -384,6 +473,7 @@ enum PanoramaxGalleryDeletionPolicy {
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
+    private nonisolated static let tsrLogger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "tsr")
     enum SpeedCaptureMode: Equatable {
         case idle
         case speakingPrompt
@@ -482,6 +572,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             guard trafficSignRecognitionEnabled != oldValue else { return }
             UserDefaults.standard.set(trafficSignRecognitionEnabled, forKey: Self.trafficSignRecognitionEnabledDefaultsKey)
             trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
+        }
+    }
+    @Published var trafficSignFeedbackMode: TrafficSignFeedbackMode {
+        didSet {
+            guard trafficSignFeedbackMode != oldValue else { return }
+            UserDefaults.standard.set(
+                trafficSignFeedbackMode.rawValue,
+                forKey: Self.trafficSignFeedbackModeDefaultsKey
+            )
+            trafficSignFeedbackGate.reset()
+            Self.tsrLogger.notice(
+                "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) setting=feedback mode=\(self.trafficSignFeedbackMode.rawValue, privacy: .public)"
+            )
         }
     }
     @Published var panoramaxCaptureEnabled: Bool {
@@ -636,6 +739,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignRecorderGeneration: UInt64 = 0
     private var trafficSignContextGeneration: UInt64 = 0
     private var trafficSignFrameContextIsCurrent = false
+    private var trafficSignFeedbackGate = TrafficSignFeedbackGate()
+    private var lastTrafficSignConsoleLogSignature: String?
+    private var lastTrafficSignConsoleLogAt = Date.distantPast
     private var latestTrafficSignLookupFixID = 0
     private var panoramaxUploadTasks: [String: Task<Void, Never>] = [:]
     private var panoramaxInFlightItemIDByBatch: [String: String] = [:]
@@ -718,6 +824,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
     private static let dashcamRecordingEnabledDefaultsKey = "youspeed.drive_recorder.dashcam_enabled"
     private static let trafficSignRecognitionEnabledDefaultsKey = "youspeed.drive_recorder.tsr_enabled"
+    private static let trafficSignFeedbackModeDefaultsKey = "youspeed.drive_recorder.tsr_feedback_mode"
     // The legacy key represented whether the old Panoramax-only recorder was
     // running and was written back to false whenever recording stopped. It is
     // not a valid module preference. A new key prevents that stopped state from
@@ -1154,6 +1261,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
         let storedDashcamEnabled = UserDefaults.standard.object(forKey: Self.dashcamRecordingEnabledDefaultsKey) as? Bool
         let storedTSREnabled = UserDefaults.standard.object(forKey: Self.trafficSignRecognitionEnabledDefaultsKey) as? Bool
+        let storedTSRFeedbackMode = UserDefaults.standard
+            .string(forKey: Self.trafficSignFeedbackModeDefaultsKey)
+            .flatMap(TrafficSignFeedbackMode.init(rawValue:))
         let storedPanoramaxEnabled = UserDefaults.standard.object(forKey: Self.panoramaxCaptureEnabledDefaultsKey) as? Bool
         let storedTriggerMode = UserDefaults.standard.string(forKey: Self.panoramaxTriggerModeDefaultsKey).flatMap(PanoramaxCaptureTriggerMode.init(rawValue:)) ?? .distance
         let storedMinimumDistance = UserDefaults.standard.object(forKey: Self.panoramaxMinimumDistanceDefaultsKey) as? Double
@@ -1179,6 +1289,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // Keep on-device TSR opt-in; its German bootstrap model ships with the
         // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
+        trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
         panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
         panoramaxTriggerMode = storedTriggerMode
         panoramaxMinimumDistanceMeters = min(max(storedMinimumDistance ?? 25, 3), 100)
@@ -1371,6 +1482,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
 
+        Self.tsrLogger.notice(
+            "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=loading country=\(countryCode, privacy: .public) model_pack=\(directoryURL.lastPathComponent, privacy: .public)"
+        )
         trafficSignRecognitionUnavailableDetail = "Preparing traffic-sign recognition."
         trafficSignRuntimeLoadTask = Task { @MainActor [weak self] in
             let result = await Task.detached(priority: .utility) {
@@ -1400,6 +1514,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             case .ready(let runtime):
                 self.trafficSignRuntime = runtime
                 self.trafficSignRecognitionModelPackID = runtime.verifiedPack.manifest.packId
+                Self.tsrLogger.notice(
+                    "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId, privacy: .public)"
+                )
                 self.trafficSignRecognitionUnavailableDetail = ""
                 if let driveCaptureCoordinator = self.driveCaptureCoordinator {
                     driveCaptureCoordinator.setVideoFrameConsumer(runtime)
@@ -1423,6 +1540,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func handleTrafficSignRuntimeUnavailability(
         _ reason: TrafficSignRuntimeUnavailability
     ) {
+        let context = latestTrafficSignDetectionContext
+        let timestamp = Self.trafficSignTimestamp(Date())
+        let wayID = context?.wayId ?? "none"
+        let latitude = context.map { String(format: "%.6f", $0.latitude) } ?? "none"
+        let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
+        let direction = context?.travelDirection.rawValue ?? "none"
+        let captureSessionID = driveCaptureCoordinator?.activeCaptureSessionID ?? "none"
+        Self.tsrLogger.fault(
+            "timestamp=\(timestamp, privacy: .public) lifecycle=unavailable code=\(reason.code.rawValue, privacy: .public) way=\(wayID, privacy: .public) lat=\(latitude, privacy: .public) lon=\(longitude, privacy: .public) direction=\(direction, privacy: .public) capture_session=\(captureSessionID, privacy: .public) detail=\(reason.detail, privacy: .public)"
+        )
         trafficSignRuntime?.stop()
         trafficSignRuntime = nil
         trafficSignRecognitionModelPackID = nil
@@ -1553,6 +1680,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
         guard emission.sessionGeneration == trafficSignRecorderGeneration,
               emission.contextGeneration == trafficSignContextGeneration else { return }
+        logTrafficSignRuntimeEmission(emission)
         acceptTrafficSignRecognitionEvent(emission.event)
     }
 
@@ -1566,6 +1694,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               currentContext.travelDirection == eventContext.travelDirection,
               currentContext.sourceSignature == eventContext.sourceSignature,
               let currentTrafficSignSourceSignature else { return }
+
+        maybeProvideTrafficSignFeedback(for: event, context: eventContext)
 
         if TrafficSignRuntimeDeploymentPolicy.isShadowOnly(packId: event.packId) {
             publishTrafficSignRecognitionState(for: event)
@@ -1624,6 +1754,131 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         maybeNotifyDrivingBanWarning()
         maybeSpeakOverspeedWarning()
+    }
+
+    private func maybeProvideTrafficSignFeedback(
+        for event: TrafficSignRecognitionEvent,
+        context: TrafficSignDetectionContext
+    ) {
+        guard trafficSignFeedbackMode != .silent,
+              event.source == .liveFrame,
+              event.state == .confirmed,
+              !isInSpeedCaptureMode,
+              !speechSynthesizer.isSpeaking,
+              !captureConfirmationTonePlayer.isPlaying,
+              let candidate = event.candidate,
+              candidate.semanticKind == TrafficSignSemanticKind.maximumSpeed.rawValue,
+              let speedKmh = candidate.value,
+              trafficSignFeedbackGate.shouldEmit(
+                  trackID: candidate.trackId,
+                  speedKmh: speedKmh,
+                  context: context,
+                  timestamp: event.frameTimestampUtc
+              ) else { return }
+
+        switch trafficSignFeedbackMode {
+        case .spokenSpeed:
+            prepareSpeechPlaybackAudioSession()
+            let format = NSLocalizedString("tsr.feedback.spoken_speed_format", comment: "")
+            let utterance = AVSpeechUtterance(
+                string: String(format: format, locale: Locale.current, speedKmh)
+            )
+            let language = Self.trafficSignSpeechLanguageIdentifier()
+            utterance.voice = AVSpeechSynthesisVoice(language: language)
+                ?? AVSpeechSynthesisVoice(language: "en")
+            utterance.rate = 0.48
+            speechSynthesizer.speak(utterance)
+        case .sound:
+            captureConfirmationTonePlayer.play()
+        case .silent:
+            return
+        }
+
+        let timestamp = Self.trafficSignTimestamp(event.frameTimestampUtc)
+        let trackID = candidate.trackId ?? "none"
+        Self.tsrLogger.notice(
+            "timestamp=\(timestamp, privacy: .public) feedback=\(self.trafficSignFeedbackMode.rawValue, privacy: .public) speed_kmh=\(speedKmh, privacy: .public) track=\(trackID, privacy: .public)"
+        )
+    }
+
+    private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        let event = emission.event
+        let context = event.roadContext
+        let captureID = emission.shadowEventV2?.diagnosticCapture.captureId
+        let logSignature = [
+            event.state.rawValue,
+            event.candidate?.value.map(String.init) ?? "none",
+            event.candidate?.trackId ?? "none",
+            captureID ?? "none",
+        ].joined(separator: ":")
+        let now = Date()
+        let minimumInterval: TimeInterval = event.state == .noRecognition ? 30 : 2
+        guard logSignature != lastTrafficSignConsoleLogSignature
+                || now.timeIntervalSince(lastTrafficSignConsoleLogAt) >= minimumInterval else {
+            return
+        }
+        lastTrafficSignConsoleLogSignature = logSignature
+        lastTrafficSignConsoleLogAt = now
+
+        let timestamp = Self.trafficSignTimestamp(event.frameTimestampUtc)
+        let eventID = emission.shadowEventV2?.eventId ?? "legacy"
+        let speedText = event.candidate?.value.map(String.init) ?? "none"
+        let confidenceText = event.candidate.map {
+            String(format: "%.4f", $0.calibratedConfidence ?? $0.rawScore)
+        } ?? "none"
+        let trackID = event.candidate?.trackId ?? "none"
+        let wayID = context?.wayId ?? "none"
+        let latitude = context.map { String(format: "%.6f", $0.latitude) } ?? "none"
+        let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
+        let heading = context.map { String(format: "%.1f", $0.headingDegrees) } ?? "none"
+        let direction = context?.travelDirection.rawValue ?? "none"
+        let restrictionCount = event.candidate?.restrictions.count ?? 0
+        let captureSessionID = emission.captureSessionId
+        let imageReference: String
+        let qaLogReference: String
+        if emission.shadowEventV2 != nil, let captureSessionID {
+            qaLogReference = "YouSpeed/TrafficSignQA/v2/\(captureSessionID)/events.ndjson"
+            if let captureID {
+                imageReference = "YouSpeed/TrafficSignQA/v2/\(captureSessionID)/captures/\(captureID).jpg"
+            } else {
+                imageReference = "none"
+            }
+        } else {
+            qaLogReference = "none"
+            imageReference = "none"
+        }
+        let latency = String(format: "%.1f", event.latencyMs)
+        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
+        Self.tsrLogger.info("\(line, privacy: .public)")
+    }
+
+    private static func trafficSignTimestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
+
+    private static func trafficSignSpeechLanguageIdentifier() -> String {
+        let appLanguage = Bundle.main.preferredLocalizations.first
+            ?? Locale.preferredLanguages.first
+            ?? "en"
+        let languageCode = appLanguage
+            .split(separator: "-", maxSplits: 1)
+            .first
+            .map(String.init)
+            ?? appLanguage
+        return Locale.preferredLanguages.first {
+            $0 == languageCode || $0.hasPrefix("\(languageCode)-")
+        } ?? appLanguage
+    }
+
+    private func prepareSpeechPlaybackAudioSession() {
+        try? AVAudioSession.sharedInstance().setCategory(
+            .ambient,
+            mode: .default,
+            options: [.duckOthers]
+        )
     }
 
     private func publishTrafficSignRecognitionState(
@@ -1771,6 +2026,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
             || (previousState == .recording) != (driveRecorderState == .recording) {
             trafficSignRecorderGeneration &+= 1
+            trafficSignFeedbackGate.reset()
+            lastTrafficSignConsoleLogSignature = nil
+            lastTrafficSignConsoleLogAt = .distantPast
             refreshTrafficSignFrameSnapshot()
         }
         if previousDashcamActive != driveRecorderDashcamActive {
@@ -4224,6 +4482,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         utterance.voice = AVSpeechSynthesisVoice(language: Self.speedCaptureSpeechLocaleIdentifier)
             ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? Self.speedCaptureSpeechLocaleIdentifier)
         utterance.rate = 0.46
+        prepareSpeechPlaybackAudioSession()
         speechSynthesizer.speak(utterance)
 
         speedCapturePromptFallbackTask?.cancel()
@@ -5401,6 +5660,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard !isInSpeedCaptureMode else {
             return
         }
+        guard !captureConfirmationTonePlayer.isPlaying else {
+            return
+        }
         guard audioAlertsEnabled else {
             lastAnnouncedSpeechText = nil
             return
@@ -5438,15 +5700,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard changedSignificantly || now.timeIntervalSince(lastAudioFeedbackAt) >= minimumInterval else {
             return
         }
+        guard !speechSynthesizer.isSpeaking else {
+            return
+        }
 
         let utterance = AVSpeechUtterance(string: speechText)
         if let preferredLanguage = Locale.preferredLanguages.first {
             utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
         }
         utterance.rate = 0.48
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        prepareSpeechPlaybackAudioSession()
         speechSynthesizer.speak(utterance)
         lastAudioFeedbackAt = now
         lastAnnouncedSpeechText = speechText
@@ -5481,18 +5744,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speechText = drivingBanMonths == 1
             ? "Achtung. Ein Monat Fahrverbot moeglich."
             : "Achtung. \(drivingBanMonths) Monate Fahrverbot moeglich."
-        if audioAlertsEnabled {
-            if enteringWarning && speechSynthesizer.isSpeaking {
-                speechSynthesizer.stopSpeaking(at: .immediate)
+        if audioAlertsEnabled,
+           !speechSynthesizer.isSpeaking,
+           !captureConfirmationTonePlayer.isPlaying {
+            let utterance = AVSpeechUtterance(string: speechText)
+            if let preferredLanguage = Locale.preferredLanguages.first {
+                utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
             }
-            if enteringWarning || !speechSynthesizer.isSpeaking {
-                let utterance = AVSpeechUtterance(string: speechText)
-                if let preferredLanguage = Locale.preferredLanguages.first {
-                    utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
-                }
-                utterance.rate = 0.46
-                speechSynthesizer.speak(utterance)
-            }
+            utterance.rate = 0.46
+            prepareSpeechPlaybackAudioSession()
+            speechSynthesizer.speak(utterance)
         }
 
         wasDrivingBanWarningActive = true

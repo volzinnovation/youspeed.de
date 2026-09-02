@@ -4,6 +4,7 @@ import CoreGraphics
 import CoreImage
 import Foundation
 import ImageIO
+import OSLog
 import UniformTypeIdentifiers
 @preconcurrency import Vision
 
@@ -15,6 +16,53 @@ protocol DriveVideoFrameConsumer: AnyObject {
     )
 }
 #endif
+
+private enum TrafficSignRuntimeLog {
+    private static let logger = Logger(
+        subsystem: "de.youspeed.SpeedConsumer",
+        category: "tsr"
+    )
+
+    private static func timestamp(_ date: Date = Date()) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
+    }
+
+    static func recoveredAuxiliaryFailure(stage: String, error: Error) {
+        let nsError = error as NSError
+        logger.warning(
+            "timestamp=\(timestamp(), privacy: .public) event=auxiliary_inference_failed stage=\(stage, privacy: .public) error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code) detail=\(String(describing: error), privacy: .public)"
+        )
+    }
+
+    static func frameFailure(
+        frameId: String,
+        eventId: String,
+        source: TrafficSignRecognitionSource,
+        frameTimestampUTC: Date,
+        context: TrafficSignDetectionContext,
+        captureSessionId: String?,
+        consecutiveFailures: Int,
+        terminal: Bool,
+        error: Error
+    ) {
+        let nsError = error as NSError
+        let captureSessionId = captureSessionId ?? "none"
+        logger.error(
+            "timestamp=\(timestamp(), privacy: .public) frame_timestamp_utc=\(timestamp(frameTimestampUTC), privacy: .public) event=frame_inference_failed frame_id=\(frameId, privacy: .public) event_id=\(eventId, privacy: .public) source=\(source.rawValue, privacy: .public) way_id=\(context.wayId, privacy: .public) latitude=\(context.latitude, privacy: .public) longitude=\(context.longitude, privacy: .public) heading_degrees=\(context.headingDegrees, privacy: .public) travel_direction=\(context.travelDirection.rawValue, privacy: .public) capture_session_id=\(captureSessionId, privacy: .public) consecutive_failures=\(consecutiveFailures) terminal=\(terminal) error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code) detail=\(String(describing: error), privacy: .public)"
+        )
+    }
+
+    static func terminalUnavailability(
+        _ reason: TrafficSignRuntimeUnavailability,
+        consecutiveFailures: Int
+    ) {
+        logger.fault(
+            "timestamp=\(timestamp(), privacy: .public) event=runtime_unavailable code=\(reason.code.rawValue, privacy: .public) consecutive_failures=\(consecutiveFailures) detail=\(reason.detail, privacy: .public)"
+        )
+    }
+}
 
 // MARK: - Verified local model packs
 
@@ -568,6 +616,9 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         @unchecked Sendable {
     private static let minimumExtentOCRSignHeight: CGFloat = 0.02
     private static let minimumExtentOCRConfidence: Float = 0.25
+    /// Bounds per-frame Vision work on noisy detector output while retaining far
+    /// more proposals than a normal road scene contains.
+    private static let maximumProposalsPerRole = 12
     private static let kilometerExtentRegex = try! NSRegularExpression(
         pattern: #"([0-9]{1,2}(?:[.,][0-9]{1,2})?)\s*k\s*m"#,
         options: [.caseInsensitive]
@@ -682,16 +733,24 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
 
         let objects = results.compactMap { $0 as? VNRecognizedObjectObservation }
-        let signObjects = objects.filter { object in
-            guard let label = object.labels.first else { return false }
+        let signObjects = Array(objects.filter { object in
+            guard let label = object.labels.first,
+                  object.confidence.isFinite,
+                  Self.isValidNormalizedRegion(object.boundingBox) else { return false }
             return Self.isSignProposal(label.identifier)
                 && Double(object.confidence) >= unknownThreshold
         }
-        let plateObjects = objects.filter { object in
-            guard let label = object.labels.first else { return false }
+        .sorted { $0.confidence > $1.confidence }
+        .prefix(Self.maximumProposalsPerRole))
+        let plateObjects = Array(objects.filter { object in
+            guard let label = object.labels.first,
+                  object.confidence.isFinite,
+                  Self.isValidNormalizedRegion(object.boundingBox) else { return false }
             return Self.isPlateProposal(label.identifier)
                 && Double(object.confidence) >= unknownThreshold
         }
+        .sorted { $0.confidence > $1.confidence }
+        .prefix(Self.maximumProposalsPerRole))
 
         var classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = []
         classified.reserveCapacity((signObjects.count * 2) + plateObjects.count)
@@ -710,9 +769,28 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             )
             guard let result else { continue }
             classified.append(result)
-            if result.detection.semantic.kind == .maximumSpeed,
-               let restriction = try recognizeExtentBelow(object, using: handler)
-                    ?? detectUnreadablePlateBelow(object, using: handler) {
+            var restriction: TrafficSignSpatialAssembly.ClassifiedDetection?
+            if result.detection.semantic.kind == .maximumSpeed {
+                do {
+                    restriction = try recognizeExtentBelow(object, using: handler)
+                } catch {
+                    TrafficSignRuntimeLog.recoveredAuxiliaryFailure(
+                        stage: "supplementary_plate_ocr",
+                        error: error
+                    )
+                }
+                if restriction == nil {
+                    do {
+                        restriction = try detectUnreadablePlateBelow(object, using: handler)
+                    } catch {
+                        TrafficSignRuntimeLog.recoveredAuxiliaryFailure(
+                            stage: "supplementary_plate_rectangle",
+                            error: error
+                        )
+                    }
+                }
+            }
+            if let restriction {
                 classified.append(restriction)
                 synthesizedPlateBoxes.append(restriction.detection.boundingBox)
             }
@@ -748,9 +826,12 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         detectorConfidence: Double,
         using handler: VNImageRequestHandler
     ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
+        guard Self.isValidNormalizedRegion(object.boundingBox) else { return nil }
+        let classifierRegion = Self.classifierRegion(for: object.boundingBox)
+        guard Self.isValidNormalizedRegion(classifierRegion) else { return nil }
         let request = VNCoreMLRequest(model: classifierModel)
         request.imageCropAndScaleOption = .scaleFill
-        request.regionOfInterest = Self.classifierRegion(for: object.boundingBox)
+        request.regionOfInterest = classifierRegion
         try handler.perform([request])
         guard let classification = request.results?
             .compactMap({ $0 as? VNClassificationObservation })
@@ -1101,6 +1182,19 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
     }
 
+    static func isValidNormalizedRegion(_ region: CGRect) -> Bool {
+        guard region.origin.x.isFinite,
+              region.origin.y.isFinite,
+              region.width.isFinite,
+              region.height.isFinite,
+              region.width > 0,
+              region.height > 0 else { return false }
+        return region.minX >= 0
+            && region.minY >= 0
+            && region.maxX <= 1
+            && region.maxY <= 1
+    }
+
     static func supplementaryTextRegion(for signBox: CGRect) -> CGRect {
         let horizontalPadding = signBox.width * 0.18
         let minX = max(0, signBox.minX - horizontalPadding)
@@ -1313,6 +1407,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let frameContext: TrafficSignDetectionContext
     let sessionGeneration: UInt64
     let contextGeneration: UInt64
+    let captureSessionId: String?
     let shadowEventV2: TrafficSignRecognitionEventV2?
 
     init(
@@ -1320,6 +1415,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         frameContext: TrafficSignDetectionContext,
         sessionGeneration: UInt64 = 0,
         contextGeneration: UInt64 = 0,
+        captureSessionId: String? = nil,
         shadowEventV2: TrafficSignRecognitionEventV2? = nil
     ) {
         precondition(
@@ -1330,6 +1426,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.frameContext = frameContext
         self.sessionGeneration = sessionGeneration
         self.contextGeneration = contextGeneration
+        self.captureSessionId = captureSessionId
         self.shadowEventV2 = shadowEventV2
     }
 }
@@ -1347,6 +1444,11 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     typealias SnapshotProvider = @Sendable () -> TrafficSignFrameSnapshot?
     typealias EventHandler = @Sendable (TrafficSignRuntimeEmission) -> Void
     typealias UnavailabilityHandler = @Sendable (TrafficSignRuntimeUnavailability) -> Void
+
+    /// A single Vision/Core ML failure can be caused by transient device load.
+    /// Three failures without an intervening success indicate a persistent
+    /// runtime problem and are reported as terminal unavailability.
+    private static let maximumConsecutiveInferenceFailures = 3
 
     private enum Image: @unchecked Sendable {
         case pixelBuffer(CVPixelBuffer)
@@ -1375,6 +1477,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         var cadenceDroppedLiveFrames: UInt64 = 0
         var replacedPendingLiveFrames: UInt64 = 0
         var completedInferences: UInt64 = 0
+        var consecutiveInferenceFailures = 0
     }
 
     let verifiedPack: TrafficSignVerifiedModelPack
@@ -1413,7 +1516,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         self.shadowEvidenceStoreV2 = shadowEvidenceStoreV2
         inferenceQueue = DispatchQueue(
             label: "de.youspeed.traffic-sign-recognition.inference",
-            qos: .userInitiated
+            qos: .userInitiated,
+            autoreleaseFrequency: .workItem
         )
         fusion = TrafficSignFusionEngine(
             packId: verifiedPack.manifest.packId,
@@ -1646,12 +1750,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 }
                 self.complete(item: item, event: event, shadowEventV2: shadowEventV2)
             } catch {
-                self.fail(
-                    TrafficSignRuntimeUnavailability(
-                        code: .inferenceFailed,
-                        detail: "The verified TSR model failed during on-device inference."
-                    )
-                )
+                self.handleInferenceFailure(item: item, error: error)
             }
         }
     }
@@ -1791,6 +1890,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         var shouldDeliver = false
         lock.lock()
         schedulingState.completedInferences &+= 1
+        schedulingState.consecutiveInferenceFailures = 0
         if event.state == .provisional || event.state == .confirmed || event.state == .unknown {
             schedulingState.candidateBurstUntilUptime = now + 1.5
         }
@@ -1825,6 +1925,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 frameContext: item.snapshot.context,
                 sessionGeneration: item.snapshot.sessionGeneration,
                 contextGeneration: item.snapshot.contextGeneration,
+                captureSessionId: item.snapshot.captureSessionId,
                 shadowEventV2: shadowEventV2
             )
             callbackQueue.async { [weak self, eventHandler] in
@@ -1835,19 +1936,74 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         if let next { perform(next) }
     }
 
-    private func fail(_ reason: TrafficSignRuntimeUnavailability) {
+    private func handleInferenceFailure(item: WorkItem, error: Error) {
+        let reason = TrafficSignRuntimeUnavailability(
+            code: .inferenceFailed,
+            detail: "Speed-sign recognition stopped after three camera-processing errors in a row. Stop and restart recording to try again."
+        )
+        var next: WorkItem?
         var shouldNotify = false
+        var consecutiveFailures = 0
+        var terminal = false
         lock.lock()
-        if !schedulingState.stopped, schedulingState.unavailable == nil {
+        guard !schedulingState.stopped, schedulingState.unavailable == nil else {
+            schedulingState.inferenceInFlight = false
+            schedulingState.latestPendingLive = nil
+            schedulingState.latestPendingStill = nil
+            lock.unlock()
+            return
+        }
+
+        schedulingState.consecutiveInferenceFailures += 1
+        consecutiveFailures = schedulingState.consecutiveInferenceFailures
+        if consecutiveFailures >= Self.maximumConsecutiveInferenceFailures {
             schedulingState.unavailable = reason
             schedulingState.inferenceInFlight = false
             schedulingState.latestPendingLive = nil
             schedulingState.latestPendingStill = nil
             shouldNotify = true
+            terminal = true
+        } else if let live = schedulingState.latestPendingLive,
+                  let still = schedulingState.latestPendingStill {
+            if live.timestampUTC <= still.timestampUTC {
+                schedulingState.latestPendingLive = nil
+                next = live
+            } else {
+                schedulingState.latestPendingStill = nil
+                next = still
+            }
+        } else if let still = schedulingState.latestPendingStill {
+            schedulingState.latestPendingStill = nil
+            next = still
+        } else if let live = schedulingState.latestPendingLive {
+            schedulingState.latestPendingLive = nil
+            next = live
+        } else {
+            schedulingState.inferenceInFlight = false
         }
         lock.unlock()
-        guard shouldNotify, let unavailabilityHandler else { return }
-        callbackQueue.async { unavailabilityHandler(reason) }
+
+        TrafficSignRuntimeLog.frameFailure(
+            frameId: item.frameId,
+            eventId: item.eventId,
+            source: item.source,
+            frameTimestampUTC: item.timestampUTC,
+            context: item.snapshot.context,
+            captureSessionId: item.snapshot.captureSessionId,
+            consecutiveFailures: consecutiveFailures,
+            terminal: terminal,
+            error: error
+        )
+        if terminal {
+            TrafficSignRuntimeLog.terminalUnavailability(
+                reason,
+                consecutiveFailures: consecutiveFailures
+            )
+        }
+        if shouldNotify, let unavailabilityHandler {
+            callbackQueue.async { unavailabilityHandler(reason) }
+        }
+        if let next { perform(next) }
     }
 
     private var canDeliverCallback: Bool {

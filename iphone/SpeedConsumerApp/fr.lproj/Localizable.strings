@@ -48,6 +48,12 @@
 "drive_recorder.settings.dashcam_description" = "Stocke la vidéo du trajet localement sur cet iPhone.";
 "drive_recorder.settings.tsr" = "Reconnaître les panneaux de vitesse";
 "drive_recorder.settings.tsr_description" = "Analyse les images localement lorsqu’un modèle national validé est installé. Une estimation de la caméra ne remplace jamais silencieusement les données cartographiques.";
+"drive_recorder.settings.tsr_feedback" = "Limites de vitesse reconnues";
+"drive_recorder.settings.tsr_feedback_description" = "Utilise le retour choisi une fois pour chaque panneau de vitesse confirmé.";
+"drive_recorder.settings.tsr_feedback_spoken" = "Annonce vocale";
+"drive_recorder.settings.tsr_feedback_sound" = "Son de notification";
+"drive_recorder.settings.tsr_feedback_silent" = "Silencieux";
+"tsr.feedback.spoken_speed_format" = "Limitation de vitesse : %d kilomètres par heure.";
 "drive_recorder.settings.panoramax" = "Échantillonner des scènes Panoramax";
 "drive_recorder.settings.panoramax_description" = "Enregistre localement des scènes de rue géolocalisées pour un examen ultérieur.";
 "drive_recorder.settings.shared_camera" = "Les modules partagent une caméra arrière ; la dashcam et la reconnaissance des panneaux peuvent être activées pendant l’enregistrement.";

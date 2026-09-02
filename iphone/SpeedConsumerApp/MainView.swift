@@ -2509,6 +2509,20 @@ private struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
+                Picker(
+                    NSLocalizedString("drive_recorder.settings.tsr_feedback", comment: ""),
+                    selection: $viewModel.trafficSignFeedbackMode
+                ) {
+                    ForEach(TrafficSignFeedbackMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!viewModel.trafficSignRecognitionEnabled)
+                Text(NSLocalizedString("drive_recorder.settings.tsr_feedback_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
                 Toggle(NSLocalizedString("drive_recorder.settings.panoramax", comment: ""), isOn: $viewModel.panoramaxCaptureEnabled)
                     .disabled(viewModel.isDriveRecorderActive)
                 Text(NSLocalizedString("drive_recorder.settings.panoramax_description", comment: ""))

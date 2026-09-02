@@ -93,6 +93,69 @@ private final class DeterministicTrafficSignShadowInferenceBackend:
     }
 }
 
+private final class ScriptedTrafficSignInferenceBackend:
+    TrafficSignInferenceBackend,
+    @unchecked Sendable
+{
+    enum Step {
+        case success([TrafficSignDetection])
+        case failure
+    }
+
+    private let lock = NSLock()
+    private let invocationSignal = DispatchSemaphore(value: 0)
+    private var steps: [Step]
+    private var count = 0
+
+    init(steps: [Step]) {
+        self.steps = steps
+    }
+
+    var invocationCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
+
+    func waitForInvocation(timeout: DispatchTime) -> DispatchTimeoutResult {
+        invocationSignal.wait(timeout: timeout)
+    }
+
+    func detections(
+        in pixelBuffer: CVPixelBuffer,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        try nextOutput()
+    }
+
+    func detections(
+        in cgImage: CGImage,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        try nextOutput()
+    }
+
+    private func nextOutput() throws -> [TrafficSignDetection] {
+        let step: Step
+        lock.lock()
+        count += 1
+        if steps.isEmpty {
+            step = .failure
+        } else {
+            step = steps.removeFirst()
+        }
+        lock.unlock()
+        invocationSignal.signal()
+
+        switch step {
+        case .success(let detections):
+            return detections
+        case .failure:
+            throw TrafficSignInferenceBackendError.incompatibleOutput
+        }
+    }
+}
+
 private final class TrafficSignTestEmissionStore: @unchecked Sendable {
     private let lock = NSLock()
     private var emissions: [TrafficSignRuntimeEmission] = []
@@ -331,6 +394,99 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
+    func testTrafficSignFeedbackGateEmitsOncePerTrackAndResetsWithRecorderSession() {
+        let context = TrafficSignDetectionContext(
+            wayId: "way-42",
+            latitude: 48.78,
+            longitude: 8.40,
+            headingDegrees: 183,
+            travelDirection: .forward,
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "osm-1",
+                localCorrectionRevision: nil
+            )
+        )
+        let timestamp = Date(timeIntervalSince1970: 1_788_279_272)
+        var gate = TrafficSignFeedbackGate()
+
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: "track-70",
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp
+        ))
+        XCTAssertFalse(gate.shouldEmit(
+            trackID: "track-70",
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp.addingTimeInterval(20)
+        ))
+
+        let nextWayContext = TrafficSignDetectionContext(
+            wayId: "way-43",
+            latitude: 48.781,
+            longitude: 8.401,
+            headingDegrees: 184,
+            travelDirection: .forward,
+            sourceSignature: context.sourceSignature
+        )
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: "track-70",
+            speedKmh: 70,
+            context: nextWayContext,
+            timestamp: timestamp.addingTimeInterval(20)
+        ))
+
+        gate.reset()
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: "track-70",
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp.addingTimeInterval(21)
+        ))
+    }
+
+    func testTrafficSignFeedbackGateKeepsDistinctTracksAndThrottlesMissingTrackIDs() {
+        let context = TrafficSignDetectionContext(
+            wayId: "way-42",
+            latitude: 48.78,
+            longitude: 8.40,
+            headingDegrees: 183,
+            travelDirection: .forward,
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "osm-1",
+                localCorrectionRevision: nil
+            )
+        )
+        let timestamp = Date(timeIntervalSince1970: 1_788_279_272)
+        var gate = TrafficSignFeedbackGate(fragmentedTrackCooldown: 8)
+
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: "track-a",
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp
+        ))
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: "track-b",
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp.addingTimeInterval(2)
+        ))
+        XCTAssertFalse(gate.shouldEmit(
+            trackID: nil,
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp.addingTimeInterval(3)
+        ))
+        XCTAssertTrue(gate.shouldEmit(
+            trackID: nil,
+            speedKmh: 70,
+            context: context,
+            timestamp: timestamp.addingTimeInterval(11)
+        ))
+    }
+
     func testDashcamPreviewRequiresRecordingActiveDashcamAndNoSpeedCapture() {
         XCTAssertTrue(DriveRecorderPolicy.canShowDashcamPreview(
             for: .recording,
@@ -558,6 +714,16 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertLessThanOrEqual(upperRight.maxY, 1)
         XCTAssertGreaterThanOrEqual(upperRight.minX, 0)
         XCTAssertGreaterThanOrEqual(upperRight.minY, 0)
+        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(region))
+        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(
+            CGRect(x: 0.5, y: 0.5, width: 0, height: 0.1)
+        ))
+        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(
+            CGRect(x: .nan, y: 0.5, width: 0.1, height: 0.1)
+        ))
+        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(
+            CGRect(x: 0.95, y: 0.5, width: 0.1, height: 0.1)
+        ))
     }
 
     func testTrafficSignSupplementaryTextRegionStaysBelowSignAndClamps() {
@@ -1497,7 +1663,8 @@ final class SpeedConsumerTests: XCTestCase {
                 lowPowerMode: false,
                 thermalState: .nominal,
                 appIsActive: true
-            )
+            ),
+            captureSessionId: "capture-session-test"
         )
         let emissions = TrafficSignTestEmissionStore()
         let completed = DispatchSemaphore(value: 0)
@@ -1529,6 +1696,155 @@ final class SpeedConsumerTests: XCTestCase {
         let emission = try XCTUnwrap(emissions.snapshot().first)
         XCTAssertEqual(emission.event.state, .provisional)
         XCTAssertNil(emission.shadowEventV2)
+    }
+
+    func testTrafficSignRuntimeRecoversAfterTransientInferenceFailure() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verifiedPack = TrafficSignVerifiedModelPack(
+            directoryURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true),
+            manifest: manifest,
+            detectorArtifact: artifact,
+            detectorArtifactURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                .appendingPathComponent("detector.mlmodel", isDirectory: false)
+        )
+        let backend = ScriptedTrafficSignInferenceBackend(steps: [
+            .success([]),
+            .failure,
+            .success([]),
+        ])
+        let context = makeTrafficSignDetectionContext()
+        let snapshot = TrafficSignFrameSnapshot(
+            context: context,
+            conditions: TrafficSignAnalysisConditions(
+                speedKmh: 50,
+                candidateRecentlySeen: false,
+                lowPowerMode: false,
+                thermalState: .nominal,
+                appIsActive: true
+            ),
+            captureSessionId: "capture-session-test"
+        )
+        let emissions = TrafficSignTestEmissionStore()
+        let emissionSignal = DispatchSemaphore(value: 0)
+        let unavailableSignal = DispatchSemaphore(value: 0)
+        let runtime = TrafficSignRuntime(
+            verifiedPack: verifiedPack,
+            backend: backend,
+            snapshotProvider: { snapshot },
+            callbackQueue: DispatchQueue(label: "de.youspeed.tests.tsr-transient-recovery"),
+            eventHandler: {
+                emissions.append($0)
+                emissionSignal.signal()
+            },
+            unavailabilityHandler: { _ in unavailableSignal.signal() }
+        )
+        defer { runtime.stop() }
+        let image = try makeTrafficSignTestImage()
+        let startedAt = Date(timeIntervalSince1970: 5_000)
+
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: startedAt,
+            snapshot: snapshot
+        )
+        XCTAssertEqual(backend.waitForInvocation(timeout: .now() + 2), .success)
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: startedAt.addingTimeInterval(1),
+            snapshot: snapshot
+        )
+        XCTAssertEqual(backend.waitForInvocation(timeout: .now() + 2), .success)
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: startedAt.addingTimeInterval(2),
+            snapshot: snapshot
+        )
+        XCTAssertEqual(backend.waitForInvocation(timeout: .now() + 2), .success)
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+
+        XCTAssertNil(runtime.unavailability)
+        XCTAssertEqual(unavailableSignal.wait(timeout: .now() + 0.1), .timedOut)
+        XCTAssertEqual(backend.invocationCount, 3)
+        XCTAssertEqual(emissions.snapshot().count, 2)
+        XCTAssertEqual(emissions.snapshot().first?.captureSessionId, "capture-session-test")
+        XCTAssertEqual(runtime.metrics.completedInferences, 2)
+    }
+
+    func testTrafficSignRuntimeFailureThresholdResetsAfterSuccess() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verifiedPack = TrafficSignVerifiedModelPack(
+            directoryURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true),
+            manifest: manifest,
+            detectorArtifact: artifact,
+            detectorArtifactURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+                .appendingPathComponent("detector.mlmodel", isDirectory: false)
+        )
+        let backend = ScriptedTrafficSignInferenceBackend(steps: [
+            .failure,
+            .failure,
+            .success([]),
+            .failure,
+            .failure,
+            .failure,
+        ])
+        let context = makeTrafficSignDetectionContext()
+        let snapshot = TrafficSignFrameSnapshot(
+            context: context,
+            conditions: TrafficSignAnalysisConditions(
+                speedKmh: 50,
+                candidateRecentlySeen: false,
+                lowPowerMode: false,
+                thermalState: .nominal,
+                appIsActive: true
+            )
+        )
+        let emissionSignal = DispatchSemaphore(value: 0)
+        let unavailableSignal = DispatchSemaphore(value: 0)
+        let runtime = TrafficSignRuntime(
+            verifiedPack: verifiedPack,
+            backend: backend,
+            snapshotProvider: { snapshot },
+            callbackQueue: DispatchQueue(label: "de.youspeed.tests.tsr-failure-threshold"),
+            eventHandler: { _ in emissionSignal.signal() },
+            unavailabilityHandler: { _ in unavailableSignal.signal() }
+        )
+        defer { runtime.stop() }
+        let image = try makeTrafficSignTestImage()
+        let startedAt = Date(timeIntervalSince1970: 6_000)
+
+        for index in 0..<3 {
+            runtime.analyzeStill(
+                cgImage: image,
+                orientation: .up,
+                timestampUTC: startedAt.addingTimeInterval(Double(index)),
+                snapshot: snapshot
+            )
+            XCTAssertEqual(backend.waitForInvocation(timeout: .now() + 2), .success)
+        }
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+        XCTAssertNil(runtime.unavailability)
+
+        for index in 3..<6 {
+            runtime.analyzeStill(
+                cgImage: image,
+                orientation: .up,
+                timestampUTC: startedAt.addingTimeInterval(Double(index)),
+                snapshot: snapshot
+            )
+            XCTAssertEqual(backend.waitForInvocation(timeout: .now() + 2), .success)
+        }
+
+        XCTAssertEqual(unavailableSignal.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(runtime.unavailability?.code, .inferenceFailed)
+        XCTAssertEqual(backend.invocationCount, 6)
+        XCTAssertEqual(runtime.metrics.completedInferences, 1)
     }
 
     func testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations() throws {

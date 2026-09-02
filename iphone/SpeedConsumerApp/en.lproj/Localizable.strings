@@ -48,6 +48,12 @@
 "drive_recorder.settings.dashcam_description" = "Stores drive video locally on this iPhone.";
 "drive_recorder.settings.tsr" = "Recognize speed signs";
 "drive_recorder.settings.tsr_description" = "Analyzes camera frames locally when a validated country model is installed. Camera estimates never silently replace map data.";
+"drive_recorder.settings.tsr_feedback" = "Recognized speed limits";
+"drive_recorder.settings.tsr_feedback_description" = "Provides the selected feedback once for each confirmed speed-limit sign.";
+"drive_recorder.settings.tsr_feedback_spoken" = "Speak";
+"drive_recorder.settings.tsr_feedback_sound" = "Notification sound";
+"drive_recorder.settings.tsr_feedback_silent" = "Silent";
+"tsr.feedback.spoken_speed_format" = "Speed limit %d kilometers per hour.";
 "drive_recorder.settings.panoramax" = "Sample Panoramax scenes";
 "drive_recorder.settings.panoramax_description" = "Saves geotagged full street-scene pictures locally for later review.";
 "drive_recorder.settings.shared_camera" = "Modules share one rear-camera session; Dashcam and sign recognition can be switched while recording.";
