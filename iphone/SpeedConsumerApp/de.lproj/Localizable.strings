@@ -54,7 +54,7 @@
 "drive_recorder.settings.tsr_feedback_sound" = "Hinweiston";
 "drive_recorder.settings.tsr_feedback_silent" = "Lautlos";
 "tsr.feedback.spoken_speed_format" = "Tempolimit %d Kilometer pro Stunde.";
-"drive_recorder.settings.panoramax" = "Panoramax-Szenen aufnehmen";
+"drive_recorder.settings.panoramax" = "Bilder aufnehmen";
 "drive_recorder.settings.panoramax_description" = "Speichert georeferenzierte Straßenbilder lokal zur späteren Prüfung.";
 "drive_recorder.settings.shared_camera" = "Die Module teilen eine Rückkamera-Sitzung; Dashcam und Schilderkennung lassen sich während der Aufnahme umschalten.";
 "drive_recorder.settings.upload_later" = "Panoramax-Prüfung, Freigabe und Upload erfolgen nach der Fahrt.";
@@ -113,10 +113,10 @@
 "panoramax.gallery.open_post_drive" = "Bilder";
 "panoramax.gallery.upload_capture_active" = "Der Panoramax-Upload ist nach Ende der aktiven Aufnahme verfügbar.";
 "panoramax.gallery.title" = "Galerie";
-"panoramax.gallery.open" = "Panoramax-Galerie öffnen";
-"panoramax.gallery.image_title" = "Panoramax-Bild";
+"panoramax.gallery.open" = "Galerie öffnen";
+"panoramax.gallery.image_title" = "Bild";
 "panoramax.gallery.image_missing" = "Bild nicht verfügbar";
-"panoramax.gallery.empty" = "Keine Panoramax-Bilder";
+"panoramax.gallery.empty" = "Noch keine Bilder";
 "panoramax.gallery.select" = "Bild auswählen";
 "panoramax.gallery.deselect" = "Bild abwählen";
 "panoramax.gallery.select_all" = "Alle auswählen";

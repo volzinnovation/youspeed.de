@@ -2257,7 +2257,6 @@ private struct PanoramaxGalleryView: View {
             .frame(maxHeight: .infinity)
 
             if !entries.isEmpty
-                || !resumableBatchIDs.isEmpty
                 || !viewModel.activePanoramaxUploadBatchIDs.isEmpty
                 || viewModel.panoramaxMaintenanceIssue != nil {
                 VStack(spacing: 6) {
@@ -2318,7 +2317,7 @@ private struct PanoramaxGalleryView: View {
                             )
                         }
                         Spacer(minLength: 0)
-                        if viewModel.activePanoramaxUploadBatchIDs.isEmpty {
+                        if viewModel.activePanoramaxUploadBatchIDs.isEmpty, !entries.isEmpty {
                             Button {
                                 guard viewModel.canProcessPanoramaxUploads else { return }
                                 guard viewModel.panoramaxUploadIsReady else {

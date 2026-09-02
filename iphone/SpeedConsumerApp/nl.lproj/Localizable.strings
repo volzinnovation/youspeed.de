@@ -54,7 +54,7 @@
 "drive_recorder.settings.tsr_feedback_sound" = "Meldingsgeluid";
 "drive_recorder.settings.tsr_feedback_silent" = "Stil";
 "tsr.feedback.spoken_speed_format" = "Snelheidslimiet %d kilometer per uur.";
-"drive_recorder.settings.panoramax" = "Panoramax-straatbeelden vastleggen";
+"drive_recorder.settings.panoramax" = "Foto’s maken";
 "drive_recorder.settings.panoramax_description" = "Slaat volledige straatbeelden met locatie lokaal op om later te beoordelen.";
 "drive_recorder.settings.shared_camera" = "Modules delen één achtercamerasessie; dashcam en bordherkenning kunnen tijdens de opname worden geschakeld.";
 "drive_recorder.settings.upload_later" = "Panoramax-beoordeling, goedkeuring en upload gebeuren na de rit.";
@@ -113,10 +113,10 @@
 "panoramax.gallery.open_post_drive" = "Beelden";
 "panoramax.gallery.upload_capture_active" = "Panoramax-upload is beschikbaar nadat de actieve opname is beëindigd.";
 "panoramax.gallery.title" = "Galerij";
-"panoramax.gallery.open" = "Panoramax-galerij openen";
-"panoramax.gallery.image_title" = "Panoramax-foto";
+"panoramax.gallery.open" = "Galerij openen";
+"panoramax.gallery.image_title" = "Foto";
 "panoramax.gallery.image_missing" = "Foto niet beschikbaar";
-"panoramax.gallery.empty" = "Geen Panoramax-foto’s";
+"panoramax.gallery.empty" = "Nog geen foto’s";
 "panoramax.gallery.select" = "Foto selecteren";
 "panoramax.gallery.deselect" = "Selectie van foto opheffen";
 "panoramax.gallery.select_all" = "Alles selecteren";

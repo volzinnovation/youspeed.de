@@ -54,7 +54,7 @@
 "drive_recorder.settings.tsr_feedback_sound" = "Son de notification";
 "drive_recorder.settings.tsr_feedback_silent" = "Silencieux";
 "tsr.feedback.spoken_speed_format" = "Limitation de vitesse : %d kilomètres par heure.";
-"drive_recorder.settings.panoramax" = "Échantillonner des scènes Panoramax";
+"drive_recorder.settings.panoramax" = "Prendre des photos";
 "drive_recorder.settings.panoramax_description" = "Enregistre localement des scènes de rue géolocalisées pour un examen ultérieur.";
 "drive_recorder.settings.shared_camera" = "Les modules partagent une caméra arrière ; la dashcam et la reconnaissance des panneaux peuvent être activées pendant l’enregistrement.";
 "drive_recorder.settings.upload_later" = "L’examen, l’approbation et l’envoi Panoramax ont lieu après le trajet.";
@@ -113,10 +113,10 @@
 "panoramax.gallery.open_post_drive" = "Images";
 "panoramax.gallery.upload_capture_active" = "L’envoi Panoramax sera disponible après la fin de l’enregistrement actif.";
 "panoramax.gallery.title" = "Galerie";
-"panoramax.gallery.open" = "Ouvrir la galerie Panoramax";
-"panoramax.gallery.image_title" = "Image Panoramax";
+"panoramax.gallery.open" = "Ouvrir la galerie";
+"panoramax.gallery.image_title" = "Image";
 "panoramax.gallery.image_missing" = "Image indisponible";
-"panoramax.gallery.empty" = "Aucune image Panoramax";
+"panoramax.gallery.empty" = "Pas encore d’images";
 "panoramax.gallery.select" = "Sélectionner l’image";
 "panoramax.gallery.deselect" = "Désélectionner l’image";
 "panoramax.gallery.select_all" = "Tout sélectionner";
