@@ -37,7 +37,7 @@ const locales = {
       lead:
         "Die App zeigt dir das erkannte Tempolimit und deine Geschwindigkeit klar im Blickfeld. Hinweise zu Bußgeld, Punkten und Fahrverbot bleiben unverbindlich und laufen auf lokalen Kartendaten.",
       googlePlay: ["Android-App", "Google Play"],
-      testFlight: ["iPhone-Testversion", "TestFlight"],
+      appStore: ["iPhone-App", "App Store"],
       facts: ["Offline im Fahrbetrieb", "Keine Werbung, kein Tracking", "Lokale Kartendaten"],
     },
     launch: {
@@ -168,7 +168,7 @@ const locales = {
       lead:
         "The app keeps the detected speed limit and your current speed visible at a glance. Fine, points, and driving-ban information stays advisory and runs on local map data.",
       googlePlay: ["Android app", "Google Play"],
-      testFlight: ["iPhone beta", "TestFlight"],
+      appStore: ["iPhone app", "App Store"],
       facts: ["Offline while driving", "No ads, no tracking", "Local map data"],
     },
     launch: {
@@ -299,7 +299,7 @@ const locales = {
       lead:
         "L'app garde la limitation détectée et votre vitesse actuelle visibles en un coup d'oeil. Les informations d'amende, de points et d'interdiction restent indicatives et s'appuient sur des données locales.",
       googlePlay: ["App Android", "Google Play"],
-      testFlight: ["Test iPhone", "TestFlight"],
+      appStore: ["App iPhone", "App Store"],
       facts: ["Hors ligne en conduite", "Sans publicité, sans suivi", "Données cartographiques locales"],
     },
     launch: {
@@ -430,7 +430,7 @@ const locales = {
       lead:
         "De app houdt de herkende snelheidslimiet en je actuele snelheid direct zichtbaar. Boete-, punten- en rijverbodsinformatie blijft indicatief en draait op lokale kaartgegevens.",
       googlePlay: ["Android-app", "Google Play"],
-      testFlight: ["iPhone-test", "TestFlight"],
+      appStore: ["iPhone-app", "App Store"],
       facts: ["Offline tijdens rijden", "Geen advertenties, geen tracking", "Lokale kaartgegevens"],
     },
     launch: {
@@ -540,7 +540,7 @@ const mailto =
   "mailto:studios@moonshots.gmbh?subject=YouSpeed";
 const googlePlayUrl =
   "https://play.google.com/store/apps/details?id=de.youspeed.android";
-const testFlightUrl = "https://testflight.apple.com/join/k3a1pgce";
+const appStoreUrl = "https://apps.apple.com/de/app/youspeed-de/id6787469256";
 const guideFiles = {
   de: "USER_GUIDE_DE.md",
   en: "USER_GUIDE.md",
@@ -695,7 +695,7 @@ function renderStructuredData(locale, content) {
         url: "https://studios.moonshots.gmbh",
       },
       sameAs: ["https://github.com/volzinnovation/youspeed.de"],
-      installUrl: [googlePlayUrl, testFlightUrl],
+      installUrl: [googlePlayUrl, appStoreUrl],
     },
     null,
     2,
@@ -786,8 +786,8 @@ ${renderLanguageSwitch(locale)}
               <a class="btn store-btn store-btn-google" href="${googlePlayUrl}" target="_blank" rel="noreferrer">
                 <span><small>${escapeHtml(content.hero.googlePlay[0])}</small>${escapeHtml(content.hero.googlePlay[1])}</span>
               </a>
-              <a class="btn store-btn store-btn-apple" href="${testFlightUrl}" target="_blank" rel="noreferrer">
-                <span><small>${escapeHtml(content.hero.testFlight[0])}</small>${escapeHtml(content.hero.testFlight[1])}</span>
+              <a class="btn store-btn store-btn-apple" href="${appStoreUrl}" target="_blank" rel="noreferrer">
+                <span><small>${escapeHtml(content.hero.appStore[0])}</small>${escapeHtml(content.hero.appStore[1])}</span>
               </a>
             </div>
             <ul class="hero-facts" aria-label="YouSpeed facts">

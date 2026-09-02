@@ -33,17 +33,17 @@ LOCALES = {
     "en": {
         "title": "YouSpeed.de",
         "subtitle": "Live speed-limit assist with offline maps",
-        "detail": "Coming soon to App Store & Google Play · Offline · No ads",
+        "detail": "Available on App Store & Google Play · Offline · No ads",
     },
     "fr": {
         "title": "YouSpeed.de",
         "subtitle": "Assistant de vitesse avec cartes hors ligne",
-        "detail": "Bientôt sur App Store et Google Play · Hors ligne · Sans publicité",
+        "detail": "Disponible sur App Store et Google Play · Hors ligne · Sans publicité",
     },
     "nl": {
         "title": "YouSpeed.de",
         "subtitle": "Live snelheidslimiet met offline kaarten",
-        "detail": "Binnenkort in App Store en Google Play · Offline · Geen advertenties",
+        "detail": "Beschikbaar in App Store en Google Play · Offline · Geen advertenties",
     },
 }
 
