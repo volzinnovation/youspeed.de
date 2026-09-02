@@ -676,7 +676,7 @@ final class SpeedConsumerTests: XCTestCase {
     }
 
     @MainActor
-    func testBundledTrafficSignPackResolvesAndVerifiesBothModels() throws {
+    func testBundledTrafficSignPackResolvesAndLoadsBothModels() throws {
         let directoryURL = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(
             bundle: .main
         )
@@ -713,6 +713,40 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNotEqual(shadow.detector.calibrationId, shadow.classifier.calibrationId)
         XCTAssertFalse(shadow.detector.calibrationPassed)
         XCTAssertFalse(shadow.classifier.calibrationPassed)
+    }
+
+    func testModelPackLoaderDoesNotRehashPackagedModelsAtRuntime() throws {
+        let fileManager = FileManager.default
+        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(
+            "tsr-packaged-model-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(
+            at: directoryURL,
+            withIntermediateDirectories: true
+        )
+        defer { try? fileManager.removeItem(at: directoryURL) }
+
+        let manifest = makeTrafficSignModelPackManifest()
+        try TrafficSignPackJSON.encoder().encode(manifest).write(
+            to: directoryURL.appendingPathComponent("manifest.json")
+        )
+        try Data("packaged-coreml-placeholder".utf8).write(
+            to: directoryURL.appendingPathComponent("detector.mlmodel")
+        )
+
+        let pack = try TrafficSignModelPackDirectoryLoader.load(
+            from: directoryURL,
+            runtimeVersion: "18.6",
+            appVersion: "1.0.1",
+            countryCode: "DE"
+        )
+
+        XCTAssertEqual(pack.detectorArtifact.path, "detector.mlmodel")
+        XCTAssertEqual(
+            pack.detectorArtifact.sha256,
+            String(repeating: "2", count: 64)
+        )
     }
 
     @MainActor

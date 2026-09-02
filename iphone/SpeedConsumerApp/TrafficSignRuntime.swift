@@ -2,7 +2,6 @@
 @preconcurrency import CoreML
 import CoreGraphics
 import CoreImage
-import CryptoKit
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
@@ -27,8 +26,6 @@ enum TrafficSignRuntimeUnavailableCode: String, Codable, Sendable {
     case noCompatibleArtifact = "no_compatible_artifact"
     case unsafeArtifactPath = "unsafe_artifact_path"
     case artifactMissing = "artifact_missing"
-    case artifactHashMismatch = "artifact_hash_mismatch"
-    case artifactUnreadable = "artifact_unreadable"
     case modelLoadFailed = "model_load_failed"
     case inferenceFailed = "inference_failed"
 }
@@ -276,26 +273,6 @@ enum TrafficSignModelPackDirectoryLoader {
                 detail: "The selected Core ML artifact has an unsupported file type."
             )
         }
-        let actualDigest: String
-        do {
-            actualDigest = try TrafficSignArtifactSHA256.hexDigest(
-                of: artifactURL,
-                fileManager: fileManager
-            )
-        } catch let error as TrafficSignRuntimeUnavailability {
-            throw error
-        } catch {
-            throw TrafficSignRuntimeUnavailability(
-                code: .artifactUnreadable,
-                detail: "The selected TSR model artifact cannot be read."
-            )
-        }
-        guard actualDigest == artifact.sha256 else {
-            throw TrafficSignRuntimeUnavailability(
-                code: .artifactHashMismatch,
-                detail: "The selected TSR model artifact failed its SHA-256 integrity check."
-            )
-        }
         return artifactURL
     }
 
@@ -375,130 +352,6 @@ enum TrafficSignModelPackDirectoryLoader {
             )
         }
         return artifactURL
-    }
-}
-
-/// Raw files are hashed byte-for-byte. Directory artifacts use a deterministic
-/// `tsr-directory-sha256-v1` digest over sorted relative paths, sizes, and file
-/// contents. Symlinks and special files are never followed.
-enum TrafficSignArtifactSHA256 {
-    private static let chunkSize = 1_048_576
-
-    static func hexDigest(
-        of artifactURL: URL,
-        fileManager: FileManager = .default
-    ) throws -> String {
-        let values = try artifactURL.resourceValues(forKeys: [
-            .isRegularFileKey,
-            .isDirectoryKey,
-            .isSymbolicLinkKey,
-        ])
-        guard values.isSymbolicLink != true else {
-            throw TrafficSignRuntimeUnavailability(
-                code: .unsafeArtifactPath,
-                detail: "The TSR model artifact cannot be a symbolic link."
-            )
-        }
-        if values.isRegularFile == true {
-            var hasher = SHA256()
-            try update(&hasher, withContentsOf: artifactURL)
-            return hex(hasher.finalize())
-        }
-        guard values.isDirectory == true else {
-            throw TrafficSignRuntimeUnavailability(
-                code: .artifactUnreadable,
-                detail: "The TSR model artifact is not a file or directory."
-            )
-        }
-
-        let rootURL = artifactURL.standardizedFileURL
-        var enumerationError: Error?
-        guard let enumerator = fileManager.enumerator(
-            at: rootURL,
-            includingPropertiesForKeys: [
-                .isRegularFileKey,
-                .isDirectoryKey,
-                .isSymbolicLinkKey,
-                .fileSizeKey,
-            ],
-            options: [],
-            errorHandler: { _, error in
-                enumerationError = error
-                return false
-            }
-        ) else {
-            throw TrafficSignRuntimeUnavailability(
-                code: .artifactUnreadable,
-                detail: "The TSR model artifact directory cannot be enumerated."
-            )
-        }
-
-        var files: [(relativePath: String, url: URL, byteSize: UInt64)] = []
-        while let childURL = enumerator.nextObject() as? URL {
-            let childValues = try childURL.resourceValues(forKeys: [
-                .isRegularFileKey,
-                .isDirectoryKey,
-                .isSymbolicLinkKey,
-                .fileSizeKey,
-            ])
-            guard childValues.isSymbolicLink != true else {
-                throw TrafficSignRuntimeUnavailability(
-                    code: .unsafeArtifactPath,
-                    detail: "The TSR model artifact directory contains a symbolic link."
-                )
-            }
-            if childValues.isDirectory == true { continue }
-            guard childValues.isRegularFile == true else {
-                throw TrafficSignRuntimeUnavailability(
-                    code: .artifactUnreadable,
-                    detail: "The TSR model artifact directory contains a special file."
-                )
-            }
-            let relativePath = String(childURL.path.dropFirst(rootURL.path.count + 1))
-            guard !relativePath.isEmpty else { continue }
-            files.append((
-                relativePath: relativePath,
-                url: childURL,
-                byteSize: UInt64(max(0, childValues.fileSize ?? 0))
-            ))
-        }
-        if enumerationError != nil {
-            throw TrafficSignRuntimeUnavailability(
-                code: .artifactUnreadable,
-                detail: "The TSR model artifact directory cannot be read completely."
-            )
-        }
-        files.sort { $0.relativePath.utf8.lexicographicallyPrecedes($1.relativePath.utf8) }
-
-        var hasher = SHA256()
-        hasher.update(data: Data("tsr-directory-sha256-v1\u{0}".utf8))
-        for file in files {
-            let pathData = Data(file.relativePath.utf8)
-            update(&hasher, withBigEndian: UInt64(pathData.count))
-            hasher.update(data: pathData)
-            update(&hasher, withBigEndian: file.byteSize)
-            try update(&hasher, withContentsOf: file.url)
-        }
-        return hex(hasher.finalize())
-    }
-
-    private static func update(_ hasher: inout SHA256, withContentsOf url: URL) throws {
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        while let chunk = try handle.read(upToCount: chunkSize), !chunk.isEmpty {
-            hasher.update(data: chunk)
-        }
-    }
-
-    private static func update(_ hasher: inout SHA256, withBigEndian value: UInt64) {
-        var encoded = value.bigEndian
-        withUnsafeBytes(of: &encoded) { bytes in
-            hasher.update(data: Data(bytes))
-        }
-    }
-
-    private static func hex<D: Sequence>(_ digest: D) -> String where D.Element == UInt8 {
-        digest.map { String(format: "%02x", $0) }.joined()
     }
 }
 
