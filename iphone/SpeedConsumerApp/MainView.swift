@@ -2731,23 +2731,10 @@ private struct SettingsView: View {
             }
 
             Section(NSLocalizedString("panoramax.account.section", comment: "")) {
-                Picker(NSLocalizedString("panoramax.account.instance", comment: ""), selection: Binding(
-                    get: { PanoramaxServerCatalog.presets.first(where: { $0.origin == account.instanceOrigin })?.id ?? "custom" },
-                    set: { id in
-                        if let preset = PanoramaxServerCatalog.presets.first(where: { $0.id == id }) { account.instanceOrigin = preset.origin }
-                    }
-                )) {
-                    ForEach(PanoramaxServerCatalog.presets) { preset in
-                        Text(preset.name).tag(preset.id)
-                    }
-                    Text(NSLocalizedString("panoramax.account.other_instance", comment: "")).tag("custom")
-                }
-                .pickerStyle(.menu)
-
-                TextField(NSLocalizedString("panoramax.account.instance_placeholder", comment: ""), text: $account.instanceOrigin)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
+                LabeledContent(
+                    NSLocalizedString("panoramax.account.instance", comment: ""),
+                    value: PanoramaxServiceConfiguration.instanceName
+                )
 
                 Text(NSLocalizedString("panoramax.account.security_description", comment: ""))
                     .font(.footnote)

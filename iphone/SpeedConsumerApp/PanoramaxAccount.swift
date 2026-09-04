@@ -30,32 +30,25 @@ struct PanoramaxTokenResponse: Decodable {
     }
 }
 
+enum PanoramaxServiceConfiguration {
+    static let instanceName = "panoramax.youspeed.de"
+    static let origin = URL(string: "https://\(instanceName)")!
+}
+
 @MainActor
 final class PanoramaxAccountModel: ObservableObject {
-    @Published var instanceOrigin: String {
-        didSet {
-            UserDefaults.standard.set(instanceOrigin, forKey: Self.originDefaultsKey)
-            updateConnectionState()
-        }
-    }
     @Published private(set) var status = "Nicht verbunden"
     @Published private(set) var isConnected = false
     @Published private(set) var tokenID: String?
 
-    private static let originDefaultsKey = "youspeed.panoramax.instance_origin"
     private let credentials = PanoramaxCredentialStore()
 
     init() {
-        instanceOrigin = UserDefaults.standard.string(forKey: Self.originDefaultsKey) ?? "https://panoramax.openstreetmap.fr"
         updateConnectionState()
     }
 
     func connect() {
         let origin = normalizedOrigin
-        guard let origin else {
-            status = "Gueltige HTTPS-Instanz eingeben"
-            return
-        }
         status = "Verbindung wird vorbereitet"
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -75,8 +68,8 @@ final class PanoramaxAccountModel: ObservableObject {
     }
 
     func validateConnection() {
-        guard let origin = normalizedOrigin,
-              let token = credentials.token(for: origin) else {
+        let origin = normalizedOrigin
+        guard let token = credentials.token(for: origin) else {
             updateConnectionState()
             return
         }
@@ -94,10 +87,7 @@ final class PanoramaxAccountModel: ObservableObject {
     }
 
     func disconnect() {
-        guard let origin = normalizedOrigin else {
-            updateConnectionState()
-            return
-        }
+        let origin = normalizedOrigin
         let token = credentials.token(for: origin)
         let existingTokenID = credentials.tokenID(for: origin)
         credentials.delete(origin: origin)
@@ -111,32 +101,17 @@ final class PanoramaxAccountModel: ObservableObject {
         }
     }
 
-    var normalizedOrigin: URL? {
-        var value = instanceOrigin.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !value.isEmpty, !value.contains("://") {
-            value = "https://\(value)"
-        }
-        guard let url = URL(string: value),
-              url.scheme?.lowercased() == "https",
-              let host = url.host, !host.isEmpty,
-              url.user == nil, url.password == nil,
-              url.query == nil, url.fragment == nil else {
-            return nil
-        }
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        components?.path = ""
-        components?.port = url.port
-        return components?.url
+    var normalizedOrigin: URL {
+        PanoramaxServiceConfiguration.origin
     }
 
     func tokenForUpload() -> String? {
-        guard let origin = normalizedOrigin else { return nil }
-        return credentials.token(for: origin)
+        credentials.token(for: normalizedOrigin)
     }
 
     private func updateConnectionState() {
-        guard let origin = normalizedOrigin,
-              credentials.token(for: origin) != nil else {
+        let origin = normalizedOrigin
+        guard credentials.token(for: origin) != nil else {
             tokenID = nil
             isConnected = false
             status = "Nicht verbunden"
@@ -190,38 +165,6 @@ final class PanoramaxAccountModel: ObservableObject {
             }
         }
     }
-}
-
-struct PanoramaxServerPreset: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let origin: String
-}
-
-enum PanoramaxServerCatalog {
-    static let presets: [PanoramaxServerPreset] = [
-        PanoramaxServerPreset(id: "OSM-FR", name: "OpenStreetMap France", origin: "https://panoramax.openstreetmap.fr"),
-        PanoramaxServerPreset(id: "MapComplete", name: "MapComplete", origin: "https://panoramax.mapcomplete.org"),
-        PanoramaxServerPreset(id: "IGN", name: "IGN", origin: "https://panoramax.ign.fr"),
-        PanoramaxServerPreset(id: "Multimob", name: "Multimob", origin: "https://panoramax.multimob.be"),
-        PanoramaxServerPreset(id: "Wales", name: "Panoramax Wales", origin: "https://www.panoramax.wales"),
-        PanoramaxServerPreset(id: "NL", name: "Netherlands", origin: "https://nl.panoramax.xyz"),
-        PanoramaxServerPreset(id: "Basi", name: "Basi.re", origin: "https://panoramax.basi.re"),
-        PanoramaxServerPreset(id: "Bustikiller", name: "Bustikiller", origin: "https://panoramax.bustikiller.com"),
-        PanoramaxServerPreset(id: "OSM-HR", name: "OSM Croatia", origin: "https://panoramax.osm-hr.org"),
-        PanoramaxServerPreset(id: "OSM-TW", name: "OSM Taiwan", origin: "https://panoramax.osm.tw"),
-        PanoramaxServerPreset(id: "KoenHabets", name: "Koen Habets", origin: "https://panoramax.koenhabets.nl"),
-        PanoramaxServerPreset(id: "Libre", name: "Libre Argentina", origin: "https://panoramax.libre.net.ar"),
-        PanoramaxServerPreset(id: "Mahdi", name: "Mahdi", origin: "https://pano.mahdi.cz"),
-        PanoramaxServerPreset(id: "Locus", name: "Locus", origin: "https://pano.locus.sbs"),
-        PanoramaxServerPreset(id: "Kasik", name: "Kasik GIS", origin: "https://pano.kasik-gis.eu"),
-        PanoramaxServerPreset(id: "Fulda", name: "OSM Fulda", origin: "https://panorama.osm-fulda.de"),
-        PanoramaxServerPreset(id: "Burakonder", name: "Burak Onder", origin: "https://panoramax.burakonder.net"),
-        PanoramaxServerPreset(id: "OSM-BE", name: "OSM Belgium", origin: "https://panoramax.osm.be"),
-        PanoramaxServerPreset(id: "SereneDeluge", name: "Serene Deluge", origin: "https://panoramax.serenedeluge.se"),
-        PanoramaxServerPreset(id: "Ulm", name: "Ulm", origin: "https://panoramax-ulm.jjbaur.de"),
-        PanoramaxServerPreset(id: "BikeSpace", name: "Bike Space Project", origin: "https://panoramax.bikespaceproject.ca")
-    ]
 }
 
 private final class PanoramaxCredentialStore {

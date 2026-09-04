@@ -2451,7 +2451,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var panoramaxUploadIsReady: Bool {
-        panoramaxAccount.isConnected && panoramaxAccount.normalizedOrigin != nil && panoramaxAccount.tokenForUpload() != nil
+        panoramaxAccount.isConnected && panoramaxAccount.tokenForUpload() != nil
     }
 
     /// Applies the gallery selection to each affected batch, then starts the existing
@@ -2503,8 +2503,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme starten"
             return
         }
-        guard let origin = panoramaxAccount.normalizedOrigin,
-              let token = panoramaxAccount.tokenForUpload() else {
+        let origin = panoramaxAccount.normalizedOrigin
+        guard let token = panoramaxAccount.tokenForUpload() else {
             panoramaxUploadStatusByBatch[batchID] = "Panoramax-Konto verbinden und bestaetigen"
             return
         }

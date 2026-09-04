@@ -183,12 +183,10 @@
 "panoramax.settings.gps_accuracy_explanation" = "New pictures are captured only with sufficient GPS accuracy and movement of at least 2 × GPS accuracy.";
 "panoramax.account.section" = "Panoramax account";
 "panoramax.account.instance" = "Instance";
-"panoramax.account.other_instance" = "Other instance";
-"panoramax.account.instance_placeholder" = "Instance (https://...)";
-"panoramax.account.security_description" = "There is no YouSpeed API key. Sign-in is per Panoramax instance and is stored as a protected JWT in the iOS keychain.";
+"panoramax.account.security_description" = "Uploads use the fixed YouSpeed Panoramax instance. Your authorization token is stored securely in the iOS Keychain.";
 "panoramax.account.status" = "Status";
 "panoramax.account.disconnect" = "Disconnect account";
-"panoramax.account.connect" = "Connect instance";
+"panoramax.account.connect" = "Authorize account";
 "panoramax.account.validate" = "Check connection";
 "recordings.title" = "Local recordings";
 "recordings.instructions" = "To record a correction, double-tap the sign and then speak the correct speed as a number.";

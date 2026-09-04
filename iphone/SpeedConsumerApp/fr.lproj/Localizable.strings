@@ -183,12 +183,10 @@
 "panoramax.settings.gps_accuracy_explanation" = "Les nouvelles images sont prises uniquement avec une précision GPS suffisante et un déplacement d’au moins 2 × la précision GPS.";
 "panoramax.account.section" = "Compte Panoramax";
 "panoramax.account.instance" = "Instance";
-"panoramax.account.other_instance" = "Autre instance";
-"panoramax.account.instance_placeholder" = "Instance (https://...)";
-"panoramax.account.security_description" = "Il n’existe pas de clé API YouSpeed. La connexion est propre à chaque instance Panoramax et est stockée sous forme de JWT protégé dans le trousseau iOS.";
+"panoramax.account.security_description" = "Les téléversements utilisent l’instance Panoramax fixe de YouSpeed. Votre jeton d’autorisation est stocké de manière sécurisée dans le trousseau iOS.";
 "panoramax.account.status" = "État";
 "panoramax.account.disconnect" = "Déconnecter le compte";
-"panoramax.account.connect" = "Connecter l’instance";
+"panoramax.account.connect" = "Autoriser le compte";
 "panoramax.account.validate" = "Vérifier la connexion";
 "recordings.title" = "Enregistrements locaux";
 "recordings.instructions" = "Pour enregistrer une correction, touchez deux fois le panneau, puis prononcez la vitesse correcte sous forme de nombre.";

@@ -361,6 +361,14 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
+    func testPanoramaxUsesFixedYouSpeedInstance() {
+        XCTAssertEqual(PanoramaxServiceConfiguration.instanceName, "panoramax.youspeed.de")
+        XCTAssertEqual(
+            PanoramaxServiceConfiguration.origin.absoluteString,
+            "https://panoramax.youspeed.de"
+        )
+    }
+
     func testDriveRecorderModuleControlsOnlyToggleWhileRecording() {
         XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .disabled))
         XCTAssertFalse(DriveRecorderPolicy.canToggleModules(for: .preparing))

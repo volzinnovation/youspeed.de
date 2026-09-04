@@ -183,12 +183,10 @@
 "panoramax.settings.gps_accuracy_explanation" = "Nieuwe foto’s worden alleen gemaakt bij voldoende GPS-nauwkeurigheid en een verplaatsing van minstens 2 × GPS-nauwkeurigheid.";
 "panoramax.account.section" = "Panoramax-account";
 "panoramax.account.instance" = "Instantie";
-"panoramax.account.other_instance" = "Andere instantie";
-"panoramax.account.instance_placeholder" = "Instantie (https://...)";
-"panoramax.account.security_description" = "Er is geen YouSpeed-API-sleutel. Aanmelden gebeurt per Panoramax-instantie en wordt als een beveiligde JWT in de iOS-sleutelhanger opgeslagen.";
+"panoramax.account.security_description" = "Uploads gebruiken de vaste Panoramax-instantie van YouSpeed. Je autorisatietoken wordt veilig bewaard in de iOS-sleutelhanger.";
 "panoramax.account.status" = "Status";
 "panoramax.account.disconnect" = "Account verbreken";
-"panoramax.account.connect" = "Instantie verbinden";
+"panoramax.account.connect" = "Account autoriseren";
 "panoramax.account.validate" = "Verbinding controleren";
 "recordings.title" = "Lokale registraties";
 "recordings.instructions" = "Tik tweemaal op het bord om een correctie vast te leggen en spreek daarna de juiste snelheid als getal uit.";
