@@ -349,6 +349,75 @@ class V3SpeedLimitLookupInstrumentedTest {
         }
     }
 
+    @Test
+    fun exposesVerifiedRouteRelationContinuityForSelectedWay() {
+        val dbFile = createFixtureDb("relation-continuity-${UUID.randomUUID()}.sqlite") { db ->
+            execSql(
+                db,
+                """
+                CREATE TABLE ways (
+                  way_id INTEGER PRIMARY KEY, highway TEXT, street_name TEXT, ref TEXT, maxspeed TEXT,
+                  maxspeed_type TEXT, source_maxspeed TEXT, approx_heading_deg REAL, service TEXT, tunnel TEXT,
+                  min_lon REAL NOT NULL, min_lat REAL NOT NULL, max_lon REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE ways_rtree (
+                  way_id INTEGER NOT NULL, min_lon REAL NOT NULL, max_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE way_geom (way_id INTEGER PRIMARY KEY, points_json TEXT NOT NULL);
+                CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE way_continuity_group (
+                  continuity_group_id INTEGER PRIMARY KEY, continuity_kind TEXT NOT NULL, source_relation_id INTEGER
+                );
+                CREATE TABLE way_continuity_membership (
+                  way_id INTEGER NOT NULL, continuity_group_id INTEGER NOT NULL, continuity_kind TEXT NOT NULL,
+                  PRIMARY KEY (way_id, continuity_group_id)
+                );
+
+                INSERT INTO metadata VALUES ('way_continuity_mode', 'route_relation_connected');
+                INSERT INTO ways VALUES (4401, 'primary', 'Relation Way', 'B 10', '70', NULL, NULL, 90.0, 'main', NULL, 13.0, 52.0, 13.004, 52.0);
+                INSERT INTO ways_rtree VALUES (4401, 13.0, 13.004, 52.0, 52.0);
+                INSERT INTO way_geom VALUES (4401, '[[52.0,13.0],[52.0,13.004]]');
+                INSERT INTO way_continuity_group VALUES (77, 'route_relation_connected', 123456);
+                INSERT INTO way_continuity_membership VALUES (4401, 77, 'route_relation_connected');
+                """.trimIndent(),
+            )
+        }
+
+        V3SpeedLimitLookup(dbFile.absolutePath).use { lookup ->
+            val result = lookup.lookup(
+                lat = 52.0,
+                lon = 13.002,
+                radiusM = 100.0,
+                maxCandidates = 16,
+                headingDeg = 90.0,
+                speedKmh = 50.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+            )
+
+            assertEquals("4401", result.wayId)
+            assertEquals(setOf(77L), result.routeRelationGroupIds)
+            assertEquals(setOf(123456L), result.sourceRelationIds)
+            assertTrue(result.routeRelationContinuityAvailable)
+            assertEquals(TrafficSignTravelDirection.FORWARD, result.travelDirection)
+            assertEquals(false, result.matchedWayStable)
+
+            val stabilized = lookup.lookup(
+                lat = 52.0,
+                lon = 13.0021,
+                radiusM = 100.0,
+                maxCandidates = 16,
+                headingDeg = 90.0,
+                speedKmh = 50.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+                matchContext = WayMatchContext(preferredWayId = "4401", matchedFixCount = 1),
+            )
+            assertTrue(stabilized.matchedWayStable)
+        }
+    }
+
     private fun createFixtureDb(
         name: String,
         populate: (SQLiteDatabase) -> Unit,

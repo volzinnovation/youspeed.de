@@ -35,7 +35,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.InflaterInputStream
 import kotlin.math.abs
 import kotlin.math.max
@@ -76,15 +75,32 @@ data class LocalObservation(
     val exportId: String?,
     val oldSpeedKmh: Int?,
     val newSpeedKmh: Int?,
+    val evidenceJson: String? = null,
+    val evidenceSummary: String? = null,
+    val primaryWayId: String? = null,
+    val effectiveAtUTC: String = capturedAtUTC,
+    val finalizedEventId: String? = null,
+    val runtimeApplicable: Boolean = false,
+    val actionKind: TrafficSignActionKind? = null,
+    val resolvedLimitKind: TrafficSignResolvedLimitKind? = null,
+    val directionScope: TrafficSignTravelDirection = TrafficSignTravelDirection.UNKNOWN,
+    val permanent: Boolean = true,
+    val unconditional: Boolean = true,
+    val osmTagKey: String? = null,
+    val canonicalValue: String? = null,
+    val supersededForExport: Boolean = false,
 ) {
     val streetName: String
         get() = streetContext?.trim().orEmpty().ifBlank { "Strassenname n/a" }
 
     val wayId: String?
-        get() = roadCandidateIds.firstOrNull()?.trim()?.ifBlank { null }
+        get() = primaryWayId?.trim()?.ifBlank { null }
+            ?: roadCandidateIds.firstOrNull()?.trim()?.ifBlank { null }
 
     val newSpeedValue: String?
-        get() = value?.trim()?.ifBlank { null } ?: newSpeedKmh?.toString()
+        get() = canonicalValue?.trim()?.ifBlank { null }
+            ?: value?.trim()?.ifBlank { null }
+            ?: newSpeedKmh?.toString()
 }
 
 internal data class ActiveLocalSpeedCorrection(
@@ -112,6 +128,57 @@ internal object LocalSpeedCorrectionPolicy {
         }
     }
 }
+
+/** Serializes the "is this still the newest GPS lookup?" check with TSR mutation. */
+internal class TrafficSignLookupMutationGate {
+    private val lock = Any()
+    private var token = 0L
+
+    fun advance(): Long = synchronized(lock) {
+        token += 1L
+        token
+    }
+
+    fun isCurrent(expected: Long): Boolean = synchronized(lock) { token == expected }
+
+    fun <T> mutateIfCurrent(expected: Long, block: () -> T): T? = synchronized(lock) {
+        if (token != expected) null else block()
+    }
+}
+
+/** Builds the local source beneath a camera assertion after its durable CV write. */
+internal fun trafficSignBaseForPersistedCorrection(
+    currentContext: TrafficSignDetectionContext?,
+    correction: LocalRuntimeCorrection,
+): TrafficSignBaseLimit? {
+    val current = currentContext ?: return null
+    if (current.wayId != correction.wayId) return null
+    if (correction.directionScope == TrafficSignTravelDirection.UNKNOWN ||
+        current.travelDirection != correction.directionScope
+    ) {
+        return null
+    }
+    val resolution = when (val value = correction.canonicalValue.trim().lowercase(Locale.US)) {
+        "walk" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.WALK)
+        "none" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
+        else -> value.toIntOrNull()?.takeIf(::isSharedTrafficSignSpeedKmh)?.let { speed ->
+            TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, speed)
+        }
+    } ?: return null
+    return TrafficSignBaseLimit(
+        resolution = resolution,
+        source = EffectiveSpeedLimitSource.LOCAL_CORRECTION,
+        reason = "local_correction:${correction.observationId}",
+    )
+}
+
+private data class TrafficSignEvaluationOutcome(
+    val effective: EffectiveSpeedLimit,
+    val activatedPassage: TrafficSignPassageEvent?,
+    val persistablePassage: TrafficSignPassageEvent?,
+    val generation: Long,
+    val tsrWasEnabled: Boolean,
+)
 
 private data class PendingStartupData(
     val startupDetail: String,
@@ -183,6 +250,13 @@ data class ConsumerUiState(
     val tunnelModeState: TunnelModeState = TunnelModeState.INACTIVE,
     val isLowSpeedMatchingRuleActive: Boolean = false,
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
+    val trafficSignRecognitionEnabled: Boolean = false,
+    val trafficSignGeneration: Long = 0L,
+    val effectiveSpeedLimitSource: EffectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE,
+    val effectiveSpeedLimitReason: String = "no_limit",
+    val cameraSpeedLimitEvidence: Boolean = false,
+    val trafficSignFinalConfidence: Double? = null,
+    val trafficSignAccumulatedSupport: Double? = null,
 ) {
     val isDatabaseReadyForQueries: Boolean
         get() = startupDataState == StartupDataState.READY && activeDBPath.isNotBlank()
@@ -295,9 +369,12 @@ class ConsumerSessionController(
         ContractJson.decodeBundleTargets(assetReader.readText("BundleTargets.top10.json"))
     }.getOrNull()
     private val manifestEndpoints = targetsConfig?.manifestEndpoints(preferredCountryCode = "DEU").orEmpty()
-    private val lookupToken = AtomicLong(0L)
+    private val lookupToken = TrafficSignLookupMutationGate()
+    private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val wayMatchTracker = WayMatchSessionTracker()
+    private val trafficSignResolver = TrafficSignRuntimeSourceResolver()
+    private val trafficSignStateLock = Any()
     private val bundledVoskModelStore = BundledVoskModelStore(appContext, rootDir)
     private val initialMatcherDebugProfile: MatcherDebugProfile =
         MatcherDebugProfile.resolveInitialProfile(
@@ -316,6 +393,7 @@ class ConsumerSessionController(
 
     private var host: ConsumerHost? = null
     private var isDriving = false
+    private var trafficSignDriveSessionId: String? = null
     private val lookupServiceLock = Any()
     private var lookupService: V3SpeedLimitLookup? = null
     private var lookupServicePath: String? = null
@@ -323,6 +401,11 @@ class ConsumerSessionController(
     private var lookupServiceMatcherProfile: MatcherDebugProfile? = null
     private var localSpeedOverridesByWayId: Map<String, Int> = emptyMap()
     private var localSpeedOverrideValuesByWayId: Map<String, String> = emptyMap()
+    private var latestTrafficSignContext: TrafficSignDetectionContext? = null
+    private var latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
+    private var latestResolverLocation: Location? = null
+    private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
+    private var trafficSignTraversalEpoch = 1L
     private var lastAudioFeedbackAtMs = 0L
     private var lastAnnouncedSpeechText: String? = null
     private var wasDrivingBanWarningActive = false
@@ -385,6 +468,8 @@ class ConsumerSessionController(
             activePenaltyRules = loadPenaltyRules("DEU"),
             appScreenshotState = launchScreenshotState,
             matcherDebugProfile = initialMatcherDebugProfile,
+            trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
+            trafficSignGeneration = trafficSignGeneration.get(),
         ),
     )
         private set
@@ -549,6 +634,12 @@ class ConsumerSessionController(
             return
         }
         isDriving = true
+        trafficSignDriveSessionId = UUID.randomUUID().toString().lowercase(Locale.US)
+        invalidateTrafficSignGeneration(
+            clearAssertion = true,
+            reason = "drive_started",
+            permitWrites = uiState.trafficSignRecognitionEnabled,
+        )
         ensureTextToSpeech()
         if (!hasLocationPermission()) {
             updateState {
@@ -565,6 +656,9 @@ class ConsumerSessionController(
 
     fun stopDriving() {
         isDriving = false
+        lookupToken.advance()
+        invalidateTrafficSignGeneration(clearAssertion = true, reason = "drive_stopped", permitWrites = false)
+        trafficSignDriveSessionId = null
         stopLocationUpdates()
         resetDerivedSpeedTracking()
         wayMatchTracker.reset()
@@ -668,6 +762,214 @@ class ConsumerSessionController(
             lastAnnouncedSpeechText = null
         }
         updateState { copy(audioAlertsEnabled = enabled) }
+    }
+
+    fun setTrafficSignRecognitionEnabled(enabled: Boolean) {
+        if (uiState.trafficSignRecognitionEnabled == enabled) return
+        preferences.edit().putBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, enabled).apply()
+        invalidateTrafficSignGeneration(
+            clearAssertion = true,
+            reason = if (enabled) "tsr_enabled" else "tsr_disabled",
+            permitWrites = enabled && isDriving,
+        )
+        updateState {
+            copy(
+                trafficSignRecognitionEnabled = enabled,
+                trafficSignGeneration = this@ConsumerSessionController.trafficSignGeneration.get(),
+            )
+        }
+    }
+
+    /** Snapshot ingress for a future verified CameraX/model adapter. No detector is instantiated here. */
+    fun currentTrafficSignDetectionContext(): TrafficSignDetectionContextSnapshotValue? =
+        synchronized(trafficSignStateLock) {
+            val (generation, writePermitted) = trafficSignGeneration.snapshot()
+            if (!writePermitted || !uiState.trafficSignRecognitionEnabled || !isDriving) {
+                null
+            } else latestTrafficSignContext?.let { context ->
+                TrafficSignDetectionContextSnapshotValue(
+                    context = context.copy(
+                        routeRelationGroupIds = context.routeRelationGroupIds.toSet(),
+                        sourceRelationIds = context.sourceRelationIds.toSet(),
+                    ),
+                    generation = generation,
+                    runtimeActivationEligible = isDriving &&
+                        uiState.trafficSignRecognitionEnabled &&
+                        uiState.currentSpeedKmh >= TSR_MINIMUM_MOVING_SPEED_KMH,
+                    driveSessionId = trafficSignDriveSessionId,
+                )
+            }
+        }
+
+    /**
+     * Accepts only an already-finalized live-frame passage. Visibility events
+     * and the v2 shadow lane have no API path into the authoritative resolver.
+     */
+    fun submitFinalizedTrafficSignPassage(event: TrafficSignPassageEvent): Boolean {
+        if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
+            event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId
+        ) {
+            return false
+        }
+        return submitBackgroundTask {
+            if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
+                event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId ||
+                uiState.currentSpeedKmh < TSR_MINIMUM_MOVING_SPEED_KMH
+            ) {
+                return@submitBackgroundTask
+            }
+            val outcome = synchronized(trafficSignStateLock) {
+                // Invalidation advances the generation before taking this lock. Recheck all
+                // admission state here so an old callback cannot mutate the resolver after a
+                // disable, stop, or bundle replacement has logically taken effect.
+                if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
+                    event.generation != trafficSignGeneration.get() ||
+                    event.driveSessionId != trafficSignDriveSessionId ||
+                    uiState.currentSpeedKmh < TSR_MINIMUM_MOVING_SPEED_KMH ||
+                    !trafficSignPassageContextIsCurrent(event, latestTrafficSignContext)
+                ) {
+                    return@synchronized null
+                }
+                val base = latestTrafficSignBase
+                var effective = trafficSignResolver.commit(event, base)
+                latestTrafficSignContext?.let { current ->
+                    effective = trafficSignResolver.reconcile(
+                        TrafficSignRoadMatch(
+                            context = current,
+                            matchedAtUtc = clock.instant(),
+                            stabilized = current.matchedWayStable,
+                        ),
+                        base,
+                    )
+                }
+                val activated = trafficSignResolver.takeNewlyActivatedEvent()
+                    ?.takeIf { trafficSignResolver.activeAssertion()?.event?.finalizedEventId == it.finalizedEventId }
+                Triple(effective, activated, trafficSignResolver.takeNewlyPersistableEvent())
+            } ?: return@submitBackgroundTask
+            if (event.generation != trafficSignGeneration.get() || !uiState.trafficSignRecognitionEnabled || !isDriving) {
+                return@submitBackgroundTask
+            }
+            publishEffectiveTrafficSignLimit(outcome.first, outcome.second, event.generation)
+            outcome.third?.let { persistable ->
+                persistFinalizedTrafficSignPassage(
+                    event = persistable,
+                    resolvedLimit = outcome.first.resolution
+                        ?.takeIf { outcome.second?.finalizedEventId == persistable.finalizedEventId }
+                        ?: persistable.resolution,
+                )
+            }
+        }
+    }
+
+    private fun invalidateTrafficSignGeneration(
+        clearAssertion: Boolean,
+        reason: String,
+        permitWrites: Boolean,
+    ) {
+        val generation = trafficSignGeneration.incrementAndGet(permitWrites)
+        val base = synchronized(trafficSignStateLock) {
+            if (clearAssertion) trafficSignResolver.clear()
+            latestTrafficSignContext = null
+            latestResolverLocation = null
+            latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
+            trafficSignTraversalEpoch += 1L
+            latestTrafficSignBase.effective()
+        }
+        updateState {
+            copy(
+                trafficSignGeneration = generation,
+                speedLimitKmh = base.resolution?.speedKmh,
+                speedLimitDisplayText = if (base.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null,
+                isUnlimitedSpeedLimitActive = base.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED,
+                effectiveSpeedLimitSource = base.source,
+                effectiveSpeedLimitReason = reason,
+                cameraSpeedLimitEvidence = false,
+                trafficSignFinalConfidence = null,
+                trafficSignAccumulatedSupport = null,
+            )
+        }
+    }
+
+    private fun persistFinalizedTrafficSignPassage(
+        event: TrafficSignPassageEvent,
+        resolvedLimit: TrafficSignResolvedLimit,
+    ) {
+        runCatching {
+            synchronized(trafficSignStateLock) {
+                trafficSignGeneration.withPermit(event.generation) {
+                    if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
+                        event.driveSessionId != trafficSignDriveSessionId
+                    ) {
+                        return@withPermit null
+                    }
+                    val observation = localObservationStore.recordComputerVisionPassageIfNeeded(
+                        event = event,
+                        resolvedLimit = resolvedLimit,
+                        captureContext = LocalObservationCaptureContext(
+                            lat = event.activationContext?.latitude ?: event.lastSeenContext?.latitude,
+                            lon = event.activationContext?.longitude ?: event.lastSeenContext?.longitude,
+                            headingDeg = event.activationContext?.headingDegrees ?: event.lastSeenContext?.headingDegrees,
+                            roadCandidateIds = listOfNotNull(
+                                event.activationContext?.wayId,
+                                event.lastSeenContext?.wayId,
+                            ).distinct(),
+                            cityContext = uiState.limitCityName,
+                            streetContext = uiState.limitStreetName,
+                            confidenceCalibrated = event.finalConfidence,
+                            sourceVersion = uiState.activeBundleVersion,
+                        ),
+                        writeGate = null,
+                        generationIsCurrent = { it == trafficSignGeneration.get() },
+                        writePermitted = { uiState.trafficSignRecognitionEnabled && isDriving },
+                    )
+                    event.activationContext?.let { activation ->
+                        localObservationStore.runtimeApplicableCorrectionForFinalizedEvent(
+                            finalizedEventId = event.finalizedEventId,
+                            currentDirection = activation.travelDirection,
+                        )?.let { correction ->
+                            trafficSignBaseForPersistedCorrection(latestTrafficSignContext, correction)?.let { localBase ->
+                                // The active camera assertion still wins. This only refreshes
+                                // the underlying source exposed by disable or later expiry.
+                                latestTrafficSignBase = localBase
+                            }
+                        }
+                    }
+                    observation
+                }
+            }
+        }.onSuccess { observation ->
+            if (observation != null) {
+                val updated = localObservationStore.fetchObservations()
+                postState { copy(localObservations = updated) }
+            }
+        }.onFailure { error ->
+            appendRuntimeDiagnosticEvent(
+                event = "traffic_sign_observation_failed",
+                details = mapOf("eventId" to event.finalizedEventId, "error" to (error.message ?: error.javaClass.simpleName)),
+            )
+        }
+    }
+
+    private fun publishEffectiveTrafficSignLimit(
+        effective: EffectiveSpeedLimit,
+        passage: TrafficSignPassageEvent? = null,
+        expectedGeneration: Long = trafficSignGeneration.get(),
+    ) {
+        val resolution = effective.resolution
+        postState {
+            if (this@ConsumerSessionController.trafficSignGeneration.get() != expectedGeneration ||
+                !trafficSignRecognitionEnabled || !this@ConsumerSessionController.isDriving
+            ) this else copy(
+                speedLimitKmh = resolution?.speedKmh,
+                speedLimitDisplayText = if (resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null,
+                isUnlimitedSpeedLimitActive = resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED,
+                effectiveSpeedLimitSource = effective.source,
+                effectiveSpeedLimitReason = effective.presentationReason,
+                cameraSpeedLimitEvidence = effective.cameraEvidence,
+                trafficSignFinalConfidence = passage?.finalConfidence ?: trafficSignFinalConfidence,
+                trafficSignAccumulatedSupport = passage?.finalAccumulatedSupport ?: trafficSignAccumulatedSupport,
+            )
+        }
     }
 
     fun setAudioAlertThresholdKmh(value: Int) {
@@ -1542,7 +1844,7 @@ class ConsumerSessionController(
         }
         maybeSpeakOverspeedWarning()
 
-        val token = lookupToken.incrementAndGet()
+        val token = lookupToken.advance()
         val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
         val fallbackBundleVersion = uiState.activeBundleVersion
         val fallbackPenaltyRules = uiState.activePenaltyRules
@@ -1573,37 +1875,62 @@ class ConsumerSessionController(
                 ?: fallbackCountryCode
                 ?: inferCountryCodeFromDBPath(effectiveDBPath)
             val effectiveBundleVersion = route?.bundleVersion ?: fallbackBundleVersion
+            val effectiveBundleSha256 = route?.dbSha256
+                ?.trim()
+                ?.lowercase(Locale.US)
+                ?.takeIf { VERIFIED_SHA256.matches(it) }
+            val previousTrafficSignBundleSha256 = synchronized(trafficSignStateLock) {
+                latestTrafficSignContext?.bundleSha256
+            }
             val effectivePenaltyRules = if (effectiveCountryCode == fallbackCountryCode) {
                 fallbackPenaltyRules
             } else {
                 loadPenaltyRules(effectiveCountryCode ?: "DEU")
             }
             val routeChanged = route != null && (
-                routedDBPath != fallbackDBPath ||
+                    routedDBPath != fallbackDBPath ||
                     effectiveBundleVersion != fallbackBundleVersion ||
-                    effectiveCountryCode != fallbackCountryCode
+                    effectiveCountryCode != fallbackCountryCode ||
+                    (previousTrafficSignBundleSha256 != null && effectiveBundleSha256 != previousTrafficSignBundleSha256)
             )
 
+            if (!lookupToken.isCurrent(token)) return@submitBackgroundTask
+
             if (routeChanged && effectiveDBPath != null) {
-                appendRuntimeDiagnosticEvent(
-                    event = "bundle_route_switched",
-                    details = mapOf(
-                        "lat" to location.latitude,
-                        "lon" to location.longitude,
-                        "region" to route?.region,
-                        "bundleVersion" to effectiveBundleVersion,
-                        "dbPath" to effectiveDBPath,
-                        "previousDbPath" to fallbackDBPath,
-                        "countryCode" to effectiveCountryCode,
-                    ),
-                )
-                postState {
-                    copy(
-                        activeBundleVersion = effectiveBundleVersion,
-                        activeDBPath = effectiveDBPath,
-                        activePenaltyRules = effectivePenaltyRules,
+                lookupToken.mutateIfCurrent(token) {
+                    val nextTrafficSignGeneration = trafficSignGeneration.incrementAndGet(
+                        uiState.trafficSignRecognitionEnabled && isDriving,
                     )
-                }
+                    synchronized(trafficSignStateLock) {
+                        trafficSignResolver.clear()
+                        latestTrafficSignContext = null
+                        latestResolverLocation = null
+                        trafficSignTraversalEpoch += 1L
+                    }
+                    appendRuntimeDiagnosticEvent(
+                        event = "bundle_route_switched",
+                        details = mapOf(
+                            "lat" to location.latitude,
+                            "lon" to location.longitude,
+                            "region" to route?.region,
+                            "bundleVersion" to effectiveBundleVersion,
+                            "dbPath" to effectiveDBPath,
+                            "previousDbPath" to fallbackDBPath,
+                            "countryCode" to effectiveCountryCode,
+                        ),
+                    )
+                    postState {
+                        if (!lookupToken.isCurrent(token)) this else copy(
+                            activeBundleVersion = effectiveBundleVersion,
+                            activeDBPath = effectiveDBPath,
+                            activePenaltyRules = effectivePenaltyRules,
+                            trafficSignGeneration = nextTrafficSignGeneration,
+                            cameraSpeedLimitEvidence = false,
+                            trafficSignFinalConfidence = null,
+                            trafficSignAccumulatedSupport = null,
+                        )
+                    }
+                } ?: return@submitBackgroundTask
             }
 
             if (effectiveDBPath == null) {
@@ -1671,15 +1998,31 @@ class ConsumerSessionController(
                         matchContext = matchContext,
                     )
                 }
+                if (!lookupToken.isCurrent(token)) return@submitBackgroundTask
                 val activeCorrectionOverrideValue = applyActiveLocalSpeedCorrectionIfNeeded(result = result)
-                val localOverrideValue = activeCorrectionOverrideValue ?: result.wayId?.let { localSpeedOverrideValuesByWayId[it] }
-                val localOverride = localOverrideValue?.toIntOrNull()
-                val effectiveSpeed = localOverride ?: result.speedLimitKmh
-                val effectiveDisplayText = speedLimitDisplayTextForValue(localOverrideValue)
-                val unlimitedActive = localOverrideValue == null &&
-                    result.isUnlimitedSpeedLimit &&
-                    normalizedCountryCode(effectivePenaltyRules.countryCode) == "DEU" &&
-                    result.highway?.trim()?.lowercase(Locale.US) == "motorway"
+                val indexedCorrection = result.wayId?.let { wayId ->
+                    localObservationStore.latestRuntimeApplicableCorrection(wayId, result.travelDirection)
+                }
+                val localOverrideValue = activeCorrectionOverrideValue ?: indexedCorrection?.canonicalValue
+                val baseLimit = trafficSignBaseLimit(
+                    localOverrideValue = localOverrideValue,
+                    localCorrectionId = indexedCorrection?.observationId,
+                    result = result,
+                    countryCode = effectivePenaltyRules.countryCode,
+                )
+                val evaluation = evaluateTrafficSignSources(
+                    expectedLookupToken = token,
+                    result = result,
+                    location = location,
+                    base = baseLimit,
+                    bundleVersion = effectiveBundleVersion,
+                    bundleSha256 = effectiveBundleSha256,
+                    countryCode = effectiveCountryCode ?: effectivePenaltyRules.countryCode,
+                    localCorrectionRevision = indexedCorrection?.observationId,
+                ) ?: return@submitBackgroundTask
+                val effectiveSpeed = evaluation.effective.resolution?.speedKmh
+                val effectiveDisplayText = if (evaluation.effective.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null
+                val unlimitedActive = evaluation.effective.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED
 
                 ensureDrivingLogsExist()
                 appendGpsFixRow(
@@ -1712,21 +2055,34 @@ class ConsumerSessionController(
                     errorText = null,
                 )
 
-                if (lookupToken.get() != token) {
-                    return@submitBackgroundTask
-                }
-                wayMatchTracker.record(
-                    result = result,
-                    lat = location.latitude,
-                    lon = location.longitude,
-                    horizontalAccuracyM = gpsHorizontalAccuracyM,
-                    gpsSignalBars = gpsSignalBars,
-                )
+                val committedEvaluation = lookupToken.mutateIfCurrent(token) {
+                    wayMatchTracker.record(
+                        result = result,
+                        lat = location.latitude,
+                        lon = location.longitude,
+                        horizontalAccuracyM = gpsHorizontalAccuracyM,
+                        gpsSignalBars = gpsSignalBars,
+                    )
+                    evaluation
+                } ?: return@submitBackgroundTask
                 postState {
-                    copy(
+                    if (!lookupToken.isCurrent(token) ||
+                        this@ConsumerSessionController.trafficSignGeneration.get() != committedEvaluation.generation ||
+                        (committedEvaluation.tsrWasEnabled && (!trafficSignRecognitionEnabled || !this@ConsumerSessionController.isDriving))
+                    ) {
+                        this
+                    } else copy(
                         speedLimitKmh = effectiveSpeed,
                         speedLimitDisplayText = effectiveDisplayText,
                         isUnlimitedSpeedLimitActive = unlimitedActive,
+                        effectiveSpeedLimitSource = committedEvaluation.effective.source,
+                        effectiveSpeedLimitReason = committedEvaluation.effective.presentationReason,
+                        cameraSpeedLimitEvidence = committedEvaluation.effective.cameraEvidence,
+                        trafficSignFinalConfidence = committedEvaluation.activatedPassage?.finalConfidence
+                            ?: trafficSignFinalConfidence.takeIf { committedEvaluation.effective.cameraEvidence },
+                        trafficSignAccumulatedSupport = committedEvaluation.activatedPassage?.finalAccumulatedSupport
+                            ?: trafficSignAccumulatedSupport.takeIf { committedEvaluation.effective.cameraEvidence },
+                        trafficSignGeneration = this@ConsumerSessionController.trafficSignGeneration.get(),
                         limitWayId = result.wayId,
                         limitStreetName = result.streetName,
                         limitStreetBaseName = result.streetBaseName,
@@ -1751,8 +2107,10 @@ class ConsumerSessionController(
                     )
                 }
                 mainHandler.post {
-                    maybeSpeakDrivingBanWarning()
-                    maybeSpeakOverspeedWarning()
+                    if (lookupToken.isCurrent(token)) {
+                        maybeSpeakDrivingBanWarning()
+                        maybeSpeakOverspeedWarning()
+                    }
                 }
             } catch (error: Exception) {
                 appendRuntimeDiagnosticEvent(
@@ -2273,6 +2631,136 @@ class ConsumerSessionController(
                 correction.numericSpeedKmh?.let { localSpeedOverridesByWayId = localSpeedOverridesByWayId + (correction.wayId to it) }
                 correction.maxspeedValue
             }
+        }
+    }
+
+    private fun trafficSignBaseLimit(
+        localOverrideValue: String?,
+        localCorrectionId: String?,
+        result: SpeedLookupResult,
+        countryCode: String,
+    ): TrafficSignBaseLimit {
+        val localResolution = resolvedLimitForCanonicalValue(localOverrideValue)
+        if (localResolution != null) {
+            return TrafficSignBaseLimit(
+                resolution = localResolution,
+                source = EffectiveSpeedLimitSource.LOCAL_CORRECTION,
+                reason = "local_correction:${localCorrectionId ?: "session"}",
+            )
+        }
+        val bundleResolution = when {
+            result.isUnlimitedSpeedLimit &&
+                normalizedCountryCode(countryCode) == "DEU" &&
+                result.highway?.trim()?.lowercase(Locale.US) == "motorway" ->
+                TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
+            result.speedLimitKmh != null ->
+                TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, result.speedLimitKmh)
+            else -> null
+        }
+        return TrafficSignBaseLimit(
+            resolution = bundleResolution,
+            source = if (bundleResolution == null) EffectiveSpeedLimitSource.NONE else EffectiveSpeedLimitSource.BUNDLE,
+            reason = if (bundleResolution == null) "bundle_no_limit" else "bundle",
+        )
+    }
+
+    private fun resolvedLimitForCanonicalValue(value: String?): TrafficSignResolvedLimit? = when (
+        val normalized = value?.trim()?.lowercase(Locale.US)
+    ) {
+        null, "" -> null
+        "walk" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.WALK)
+        "none" -> TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNLIMITED)
+        else -> normalized.toIntOrNull()?.takeIf { it > 0 }?.let {
+            TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, it)
+        }
+    }
+
+    private fun evaluateTrafficSignSources(
+        expectedLookupToken: Long,
+        result: SpeedLookupResult,
+        location: Location,
+        base: TrafficSignBaseLimit,
+        bundleVersion: String,
+        bundleSha256: String?,
+        countryCode: String,
+        localCorrectionRevision: String?,
+    ): TrafficSignEvaluationOutcome? = lookupToken.mutateIfCurrent(expectedLookupToken) {
+        synchronized(trafficSignStateLock) {
+        val (evaluationGeneration, writePermitActive) = trafficSignGeneration.snapshot()
+        val tsrEnabledForEvaluation = writePermitActive && uiState.trafficSignRecognitionEnabled && isDriving
+        val previousContext = latestTrafficSignContext
+        val reversed = previousContext?.wayId != null && previousContext.wayId == result.wayId &&
+            previousContext.travelDirection != TrafficSignTravelDirection.UNKNOWN &&
+            result.travelDirection != TrafficSignTravelDirection.UNKNOWN &&
+            previousContext.travelDirection != result.travelDirection
+        val bundleRevision = "bundle:$bundleVersion"
+        val bundleChanged = previousContext != null &&
+            (previousContext.sourceSignature.bundleRevision != bundleRevision ||
+                previousContext.bundleSha256 != bundleSha256)
+        if (reversed || bundleChanged) {
+            trafficSignTraversalEpoch += 1L
+            if (bundleChanged) trafficSignResolver.clear()
+        }
+        val context = TrafficSignDetectionContext(
+            wayId = result.wayId,
+            latitude = location.latitude,
+            longitude = location.longitude,
+            headingDegrees = location.bearing.toDouble().takeIf { location.hasBearing() }
+                ?.let { ((it % 360.0) + 360.0) % 360.0 } ?: 0.0,
+            travelDirection = result.travelDirection,
+            sourceSignature = TrafficSignRuntimeSourceSignature(
+                osmRevision = "$bundleRevision|way:${result.wayId ?: "none"}|maxspeed:${result.speedLimitKmh ?: "none"}",
+                localCorrectionRevision = localCorrectionRevision,
+            ),
+            bundleSha256 = bundleSha256,
+            countryCode = normalizedCountryCode(countryCode) ?: "DEU",
+            routeRelationGroupIds = result.routeRelationGroupIds.toSet(),
+            sourceRelationIds = result.sourceRelationIds.toSet(),
+            continuityCapable = result.routeRelationContinuityAvailable,
+            traversalEpoch = trafficSignTraversalEpoch,
+            matchedWayStable = result.matchedWayStable,
+            speedMetersPerSecond = location.speed.toDouble().takeIf { location.hasSpeed() && it.isFinite() && it >= 0.0 }
+                ?: (uiState.currentSpeedKmh / 3.6).coerceAtLeast(0.0),
+        )
+        val distance = latestResolverLocation?.distanceTo(location)?.toDouble()?.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+        latestResolverLocation = Location(location)
+        latestTrafficSignContext = context
+        latestTrafficSignBase = base
+        latestTrafficSignDirection = result.travelDirection
+        val effective = if (tsrEnabledForEvaluation) {
+            trafficSignResolver.reconcile(
+                match = TrafficSignRoadMatch(
+                    context = context.takeIf { !it.wayId.isNullOrBlank() },
+                    matchedAtUtc = clock.instant(),
+                    distanceFromPreviousM = distance,
+                    stabilized = result.matchedWayStable,
+                    traversalReversed = reversed,
+                ),
+                base = base,
+            )
+        } else {
+            trafficSignResolver.clear()
+            base.effective()
+        }
+            val outcome = TrafficSignEvaluationOutcome(
+                effective = effective,
+                // Capture one-shot outputs in the same lookup-token critical
+                // section as resolver mutation. Persistence below also uses
+                // this frozen outcome before the token can be superseded.
+                activatedPassage = trafficSignResolver.takeNewlyActivatedEvent(),
+                persistablePassage = trafficSignResolver.takeNewlyPersistableEvent(),
+                generation = evaluationGeneration,
+                tsrWasEnabled = tsrEnabledForEvaluation,
+            )
+            outcome.persistablePassage?.let { passage ->
+                persistFinalizedTrafficSignPassage(
+                    event = passage,
+                    resolvedLimit = outcome.effective.resolution
+                        ?.takeIf { outcome.activatedPassage?.finalizedEventId == passage.finalizedEventId }
+                        ?: passage.resolution,
+                )
+            }
+            outcome
         }
     }
 
@@ -2969,7 +3457,9 @@ class ConsumerSessionController(
         @Volatile private var crashObserverInstalled = false
         private const val KEY_AUDIO_ALERT_THRESHOLD = "youspeed.audio_alert_threshold_kmh"
         private const val KEY_AUDIO_ALERTS_ENABLED = "youspeed.audio_alerts_enabled"
+        private const val KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED = "youspeed.traffic_sign_recognition_enabled"
         private const val KEY_BUNDLED_SEED_ASSET_SHA256 = "youspeed.bundled_seed_asset_sha256"
+        private val VERIFIED_SHA256 = Regex("^[a-f0-9]{64}$")
         private const val KEY_HIDE_WELCOME = "youspeed.hide_welcome_screen"
         private const val KEY_MATCHER_DEBUG_PROFILE = "youspeed.matcher_debug_profile"
         private const val KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION = "youspeed.matcher_debug_profile_forced_version"
@@ -2979,6 +3469,7 @@ class ConsumerSessionController(
         private const val DERIVED_SPEED_COMPUTATION_MAX_WINDOW_MS = 4_500L
         private const val DERIVED_SPEED_COMPUTATION_MIN_WINDOW_SECONDS = 2.0
         private const val LOW_SPEED_DERIVED_FALLBACK_THRESHOLD_KMH = 7.0
+        private const val TSR_MINIMUM_MOVING_SPEED_KMH = 1.0
         private const val GPS_LOG_HEADER = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,bearing_deg,status,way_id,street_name,city_name,inside_city,city_source,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
 
         internal fun resetDrivingLogFiles(gpsLogFile: File, matchLogFile: File) {

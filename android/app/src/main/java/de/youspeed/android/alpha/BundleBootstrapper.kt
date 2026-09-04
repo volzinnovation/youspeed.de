@@ -64,6 +64,7 @@ data class LocalBundleRoute(
     val bundleVersion: String,
     val countryCode: String?,
     val dbPath: String,
+    val dbSha256: String? = null,
 )
 
 private data class MaterializedDatabaseArtifact(
@@ -99,6 +100,9 @@ class BundleBootstrapper(
         val bundleVersion: String,
         val countryCode: String?,
         val dbPath: String,
+        val dbSha256: String?,
+        val dbBytes: Long,
+        val dbLastModifiedMillis: Long,
         val bbox: BundleCoverageBBox,
         val rings: List<CoverageRing>,
     )
@@ -112,7 +116,15 @@ class BundleBootstrapper(
         if (!stateFile.exists()) {
             return null
         }
-        return ContractJson.decodeActiveBundleState(stateFile.readText())
+        val state = runCatching { ContractJson.decodeActiveBundleState(stateFile.readText()) }.getOrNull()
+            ?: return null
+        return state.takeIf {
+            verifiedMaterializedSha(
+                file = File(state.dbPath),
+                expectedBytes = state.dbBytes,
+                expectedSha256 = state.dbSha256,
+            ) != null
+        }
     }
 
     fun listDownloadedBundles(): List<DownloadedBundleInfo> {
@@ -197,25 +209,49 @@ class BundleBootstrapper(
         val entries = loadCoverageEntriesIfNeeded()
         if (entries.isEmpty()) {
             val fallback = fallbackDBPath?.trim().orEmpty()
-            return if (fallback.isEmpty()) null else LocalBundleRoute("unknown", "unknown", null, fallback)
+            return fallbackRoute(fallback)
         }
 
         val matches = entries.filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
         if (matches.isEmpty()) {
             val fallback = fallbackDBPath?.trim().orEmpty()
-            return if (fallback.isEmpty()) null else LocalBundleRoute("unknown", "unknown", null, fallback)
+            return fallbackRoute(fallback)
         }
 
-        val best = matches.sortedWith(
+        var best = matches.sortedWith(
             compareBy<CoverageEntry> { bboxArea(it.bbox) }
                 .thenByDescending { it.bundleVersion }
                 .thenBy { it.region },
         ).first()
+        if (!best.materializedArtifactFingerprintMatches()) {
+            best = loadCoverageEntriesIfNeeded(forceReload = true)
+                .filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
+                .sortedWith(
+                    compareBy<CoverageEntry> { bboxArea(it.bbox) }
+                        .thenByDescending { it.bundleVersion }
+                        .thenBy { it.region },
+                )
+                .firstOrNull()
+                ?: return fallbackRoute(fallbackDBPath?.trim().orEmpty())
+        }
         return LocalBundleRoute(
             region = best.region,
             bundleVersion = best.bundleVersion,
             countryCode = best.countryCode,
             dbPath = best.dbPath,
+            dbSha256 = best.dbSha256,
+        )
+    }
+
+    private fun fallbackRoute(dbPath: String): LocalBundleRoute? {
+        if (dbPath.isEmpty()) return null
+        val active = activeState()?.takeIf { it.dbPath == dbPath }
+        return LocalBundleRoute(
+            region = active?.region ?: "unknown",
+            bundleVersion = active?.bundleVersion ?: "unknown",
+            countryCode = active?.countryCode,
+            dbPath = dbPath,
+            dbSha256 = active?.dbSha256,
         )
     }
 
@@ -535,6 +571,12 @@ class BundleBootstrapper(
             if (!dbFile.exists()) {
                 return@forEach
             }
+            val expectedArtifact = materializedDatabaseExpectation(manifest) ?: return@forEach
+            val verifiedSha = verifiedMaterializedSha(
+                file = dbFile,
+                expectedBytes = expectedArtifact.first,
+                expectedSha256 = expectedArtifact.second,
+            ) ?: return@forEach
 
             val rings = if (coverage.poly != null) {
                 val polyText = loadCoveragePolyText(
@@ -556,6 +598,9 @@ class BundleBootstrapper(
                 bundleVersion = manifest.bundleVersion,
                 countryCode = manifest.countryCode,
                 dbPath = dbFile.absolutePath,
+                dbSha256 = verifiedSha,
+                dbBytes = dbFile.length(),
+                dbLastModifiedMillis = dbFile.lastModified(),
                 bbox = coverage.bbox,
                 rings = rings,
             )
@@ -766,6 +811,32 @@ class BundleBootstrapper(
         if (actualSha != expectedSha256.lowercase(Locale.US)) {
             throw IllegalArgumentException("$label sha256 mismatch")
         }
+    }
+
+    private fun materializedDatabaseExpectation(manifest: V3BundleManifest): Pair<Long, String>? {
+        return if (normalizedCompression(manifest.db) == null) {
+            manifest.db.bytes to manifest.db.sha256
+        } else {
+            val bytes = manifest.db.uncompressedBytes ?: return null
+            val sha256 = manifest.db.uncompressedSha256?.trim()?.takeIf(String::isNotEmpty) ?: return null
+            bytes to sha256
+        }
+    }
+
+    private fun verifiedMaterializedSha(
+        file: File,
+        expectedBytes: Long,
+        expectedSha256: String,
+    ): String? {
+        if (!file.isFile || file.length() != expectedBytes) return null
+        val expected = expectedSha256.trim().lowercase(Locale.US)
+        if (!Regex("^[0-9a-f]{64}$").matches(expected)) return null
+        return sha256Hex(file).takeIf { it == expected }
+    }
+
+    private fun CoverageEntry.materializedArtifactFingerprintMatches(): Boolean {
+        val file = File(dbPath)
+        return file.isFile && file.length() == dbBytes && file.lastModified() == dbLastModifiedMillis
     }
 
     private fun sha256Hex(file: File): String {

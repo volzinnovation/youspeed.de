@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "taxonomy_id": "youspeed-tsr-structural-action-v1",
+  "taxonomy_version": "tsr-structural-action-v1",
+  "status": "frozen",
+  "frozen_at": "2026-09-04T00:00:00Z",
+  "scope": "Germany-first structural speed-limit actions emitted by a finalized physical-sign passage",
+  "countries": [
+    "DE"
+  ],
+  "presentation_kinds": [
+    "numeric",
+    "walk",
+    "statutory_default",
+    "unlimited",
+    "unknown"
+  ],
+  "actions": [
+    {
+      "action_id": "posted_maximum",
+      "classifier_labels": [
+        "speed_limit_*"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "required_kmh",
+      "runtime_effect": "push_or_replace_posted_maximum",
+      "observation_intent": "set_maxspeed",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "zone_start",
+      "classifier_labels": [
+        "speed_limit_zone_start_*"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "required_kmh",
+      "runtime_effect": "push_or_replace_speed_zone",
+      "observation_intent": "set_maxspeed",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "zone_end",
+      "classifier_labels": [
+        "speed_limit_zone_end_*"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "optional_ended_kmh",
+      "runtime_effect": "end_speed_zone_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "maximum_speed_end",
+      "classifier_labels": [
+        "maximum_speed_end_*",
+        "DE:278"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "optional_ended_kmh",
+      "runtime_effect": "end_matching_posted_maximum_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "all_restrictions_end",
+      "classifier_labels": [
+        "all_restrictions_end",
+        "DE:282"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "none",
+      "runtime_effect": "end_route_specific_restrictions_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "pedestrian_zone_start",
+      "classifier_labels": [
+        "pedestrian_zone_start"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "none",
+      "runtime_effect": "push_pedestrian_zone",
+      "observation_intent": "set_maxspeed",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "pedestrian_zone_end",
+      "classifier_labels": [
+        "pedestrian_zone_end"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "none",
+      "runtime_effect": "end_pedestrian_zone_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "city_entry",
+      "classifier_labels": [
+        "city_entry",
+        "DE:310"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "required_country",
+      "runtime_effect": "push_city_context",
+      "observation_intent": "set_maxspeed",
+      "export_policy": "resolved_permanent_set_maxspeed",
+      "country_defaults": {
+        "DE": {
+          "presentation_kind": "numeric",
+          "value_kmh": 50
+        }
+      }
+    },
+    {
+      "action_id": "city_exit",
+      "classifier_labels": [
+        "city_exit",
+        "DE:311"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "required_country",
+      "runtime_effect": "end_city_context_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "motorway_exit",
+      "classifier_labels": [
+        "motorway_exit"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "none",
+      "runtime_effect": "end_motorway_context_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "motorroad_exit",
+      "classifier_labels": [
+        "motorroad_exit"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "none",
+      "runtime_effect": "end_motorroad_context_then_resolve_surviving_rule",
+      "observation_intent": "set_maxspeed_or_map_inconsistency",
+      "export_policy": "resolved_permanent_set_maxspeed"
+    },
+    {
+      "action_id": "temporary_maximum",
+      "classifier_labels": [
+        "temporary_speed_limit_*"
+      ],
+      "speed_relevant": true,
+      "passage_event_eligible": true,
+      "value_requirement": "required_kmh",
+      "runtime_effect": "push_or_replace_temporary_maximum_if_condition_resolved",
+      "observation_intent": "temporary_restriction",
+      "export_policy": "never_auto_export"
+    },
+    {
+      "action_id": "non_speed_restriction_end",
+      "classifier_labels": [
+        "overtaking_end",
+        "priority_end",
+        "parking_restriction_end",
+        "other_non_speed_restriction_end"
+      ],
+      "speed_relevant": false,
+      "passage_event_eligible": false,
+      "value_requirement": "none",
+      "runtime_effect": "no_speed_effect",
+      "observation_intent": "evidence_only",
+      "export_policy": "not_applicable"
+    }
+  ],
+  "invariants": {
+    "structural_action_is_not_presentation_value": true,
+    "unresolved_end_must_mask_stale_camera_value": true,
+    "unresolved_end_must_not_fabricate_numeric_value": true,
+    "non_speed_restriction_end_is_hard_negative": true,
+    "temporary_or_conditional_evidence_requires_review": true,
+    "ordinary_runtime_evidence_contains_pixels": false
+  }
+}

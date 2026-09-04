@@ -18,16 +18,19 @@ The runtime rules are deliberately strict:
   while `recognition-event-v2.schema.json` covers the two-component
   proposal/classification shadow target and binds detector and classifier
   artifact, preprocessing, and calibration identities independently.
-- Every live provisional/confirmed event carries the way ID, coordinate,
-  heading, travel direction, and OSM/local source signature captured with the
-  frame. An asynchronous result is rejected for runtime override if that
-  signature is no longer current.
-- A confirmed unconditional numeric result is a transient source with
-  precedence `TSR > local correction > bundled OSM`. It never mutates the
-  lower layers, survives repeated fixes with the same source signature, and is
-  cleared by a newer detection or genuinely new OSM/local information. Until
-  an applicability evaluator exists, a newer conditional/unresolved assembly
-  clears the old camera override but does not create a new active limit.
+- Every live per-frame event carries its capture-time road context and TSR
+  generation as immutable evidence. A visible or armed sign never changes the
+  main speed. Only a generation-current `traffic-sign-passage-event-v1`,
+  finalized after qualified visual loss, may reach the runtime resolver or
+  observation store.
+- A finalized applicable passage has precedence
+  `TSR > local correction > bundled OSM`. It survives repeated fixes on its
+  original way and continuous way-ID changes only within the narrowing
+  intersection of original `route_relation_connected` groups. It is held
+  through a bounded no-match gap and cleared on an unrelated way, reversal,
+  bundle switch, drive stop, or TSR disable. Refreshing the local store after
+  persisting that same camera event is not new road evidence and must not clear
+  the active camera assertion.
 - Primary signs and white supplementary plates are separate objects linked by
   an assembly ID. `resolving`/`unresolved` plate state must not be collapsed
   into an unconditional permanent speed correction.
@@ -48,6 +51,47 @@ The runtime rules are deliberately strict:
 `fixtures/de-direct-pack-v1.json` and `fixtures/recognition-events-v1.json` are
 contract fixtures, not release manifests or benchmark ground truth. Their hash
 values are intentionally synthetic and no model artifact is implied.
+
+## Finalized passage and structural-action contracts
+
+The passage layer is additive. The frozen per-frame `taxonomy-v2.json` and
+`recognition-event-v2.schema.json` remain unchanged and shadow-only:
+
+- `structural-action-taxonomy-v1.json` versions the Germany-first actions used
+  after physical-sign assembly: numeric and zone limits, city and pedestrian
+  zone boundaries, distinct maximum-speed/all-restriction ends, motorway and
+  motorroad exits, and temporary limits. German city entry resolves to 50
+  km/h. Non-speed restriction ends are explicit hard negatives and cannot emit
+  a speed passage.
+- `traffic-sign-passage-event-v1.schema.json` is the only shared contract that
+  can describe an actionable camera passage. It requires a live,
+  override-eligible, calibrated pack; a stable finalized-event id and TSR
+  generation; separate raw, calibrated, frame-fused, and accumulated track
+  evidence; qualified analyzed-missing frames; and immutable first-missing
+  boundary data separate from a later bounded same-scope activation/rematch.
+  It also carries the original relation groups and source relation IDs needed
+  to prevent transitive relation hopping.
+- Structural action, resolved presentation, normalized OSM operation,
+  persisted-row runtime applicability, and export eligibility are separate
+  fields. A resolved permanent observation may participate in the local
+  runtime layer immediately as `local_only`, but it is never export-approved at
+  commit. An unresolved, conditional, temporary, or unsafe observation starts
+  `needs_review` with `runtime_applicable = false`. An unresolved end masks the
+  stale live camera value, presents `unknown`, stores review evidence, and has
+  no OSC operation.
+- `fixtures/traffic-sign-passage-events-v1.json` and
+  `fixtures/passage-reducer-scenarios-v1.json` are golden cross-platform replay
+  data. They cover repeated sightings followed by the first qualified miss,
+  dropout/reappearance without a commit, German city entry, and resolved plus
+  unresolved speed-limit ends. The scenario fixture pins the supplied
+  Panoramax picture, annotation, sequence, and URL provenance; its model and
+  bundle hashes are synthetic contract values, not release artifacts.
+
+Skipped, throttled, invalid, failed, interrupted, disabled, stopped, and
+thermal-paused frames are not visual negatives. Reappearance before calibrated
+loss debounce completes returns a track to `armed` without emitting or
+persisting anything. Current shadow or uncalibrated packs cannot satisfy the
+passage schema and therefore cannot override a speed limit.
 
 ## M0 two-stage shadow contracts
 

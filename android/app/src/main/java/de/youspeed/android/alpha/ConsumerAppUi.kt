@@ -93,6 +93,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -104,6 +105,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -130,6 +132,12 @@ private val HighwayBlue = Color(0xFF0B54C9)
 private val SignalGreen = Color(0xFF1D7A4A)
 private val SignalOrange = Color(0xFFD46A1D)
 private val SignalRed = Color(0xFF9A1D28)
+private val SpeedSignBorderRed = Color(0xFFD21B24)
+private val CameraSpeedNumberRed = Color(
+    red = SpeedSignBorderRed.red * 0.5f,
+    green = SpeedSignBorderRed.green * 0.5f,
+    blue = SpeedSignBorderRed.blue * 0.5f,
+)
 private val BrightYellow = Color(0xFFF9D950)
 private val SoftOrange = Color(0xFFF39A24)
 private val SoftRed = Color(0xFFC5212E)
@@ -591,6 +599,20 @@ private fun MainScreen(
                     ui.isUnlimitedSpeedLimitActive &&
                     !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                 showsPedestrianZoneIcon = showsPedestrianZoneSign,
+                numberIsCameraDerived = ui.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.CAMERA &&
+                    ui.speedLimitKmh != null &&
+                    !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+                showsCameraSourceMarker = ui.cameraSpeedLimitEvidence &&
+                    !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+                cameraSourceStateDescription = when {
+                    !ui.cameraSpeedLimitEvidence -> null
+                    ui.isUnlimitedSpeedLimitActive -> "Durch Kamera erkannt: keine Geschwindigkeitsbegrenzung"
+                    ui.speedLimitDisplayText == "Schritt" -> "Durch Kamera erkannt: Schrittgeschwindigkeit"
+                    ui.speedLimitKmh != null -> "Tempolimit ${ui.speedLimitKmh}, durch Kamera erkannt"
+                    ui.effectiveSpeedLimitReason.contains("end") ->
+                        "Durch Kamera erkanntes Aufhebungszeichen; gueltiges Tempolimit ungeklaert"
+                    else -> "Durch Kamera erkanntes Verkehrszeichen; gueltiges Tempolimit ungeklaert"
+                },
                 onDoubleTap = onCapture,
             )
 
@@ -747,6 +769,9 @@ private fun SpeedLimitSign(
     numberFontSize: androidx.compose.ui.unit.TextUnit,
     showsUnlimitedIcon: Boolean,
     showsPedestrianZoneIcon: Boolean,
+    numberIsCameraDerived: Boolean,
+    showsCameraSourceMarker: Boolean,
+    cameraSourceStateDescription: String?,
     onDoubleTap: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -757,6 +782,13 @@ private fun SpeedLimitSign(
             .then(modifier)
             .size(signSize)
             .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleTap() }) }
+            .semantics {
+                contentDescription = if (showsCameraSourceMarker) {
+                    cameraSourceStateDescription ?: "Tempolimit $limitText, durch Kamera erkannt"
+                } else {
+                    "Tempolimit $limitText"
+                }
+            }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
     ) {
@@ -787,7 +819,7 @@ private fun SpeedLimitSign(
                     drawCircle(color = Color.White)
                     drawCircle(color = Color.Black.copy(alpha = 0.75f), style = Stroke(width = size.minDimension * 0.018f))
                     drawCircle(
-                        color = Color(0xFFD21B24),
+                        color = SpeedSignBorderRed,
                         style = Stroke(width = size.minDimension * 0.134f),
                     )
                     val standardBlackBorderWidth = size.minDimension * 0.018f
@@ -795,7 +827,7 @@ private fun SpeedLimitSign(
                     val standardInnerDiameter = max(1f, size.minDimension - (2f * (standardBlackBorderWidth + standardRedBandWidth)))
                     val targetWidth = standardInnerDiameter * 0.86f
                     val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
-                        color = android.graphics.Color.BLACK
+                        color = if (numberIsCameraDerived) CameraSpeedNumberRed.toArgb() else android.graphics.Color.BLACK
                         textAlign = AndroidPaint.Align.CENTER
                         textSize = numberFontPx
                         typeface = trafficSignTypeface
@@ -811,6 +843,20 @@ private fun SpeedLimitSign(
                     drawContext.canvas.nativeCanvas.drawText(limitText, center.x, baseline, textPaint)
                 }
             }
+        }
+        if (showsCameraSourceMarker) {
+            Text(
+                text = "TSR",
+                color = Color.White,
+                fontSize = (numberFontSize.value * 0.10f).coerceAtLeast(10f).sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = signSize * 0.04f)
+                    .background(Color.Black, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 5.dp, vertical = 1.dp)
+                    .testTag("camera-speed-source-marker"),
+            )
         }
     }
 }
@@ -1076,6 +1122,27 @@ private fun SettingsSheet(
     var confirmDeleteDownloaded by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = "Einstellungen", onDismiss = onDismiss, testTag = "settings-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+            item {
+                SectionCard("Verkehrszeichenerkennung") {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Live-Kamera (TSR)", modifier = Modifier.weight(1f), color = Color.Black)
+                        Switch(
+                            checked = ui.trafficSignRecognitionEnabled,
+                            onCheckedChange = controller::setTrafficSignRecognitionEnabled,
+                            modifier = Modifier.testTag("traffic-sign-recognition-toggle"),
+                        )
+                    }
+                    Text(
+                        if (ui.trafficSignRecognitionEnabled) {
+                            "Erkannte Schilder werden erst nach dem Vorbeifahren wirksam. Ein verifiziertes Android-Modell muss separat bereitgestellt sein."
+                        } else {
+                            "Die Kamera-Erkennung ist ausgeschaltet; TSR-Ereignisse werden nicht verarbeitet."
+                        },
+                        color = Color(0xFF555555),
+                        fontSize = 13.sp,
+                    )
+                }
+            }
             item {
                 SectionCard("Akustische Hinweise") {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1440,6 +1507,14 @@ private fun LocalRecordingsSheet(
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text(observation.capturedAtUTC, color = Color(0xFF777777), fontSize = 12.sp)
                                         Text(observation.streetName, color = Color.Black, fontWeight = FontWeight.SemiBold)
+                                        if (observation.modality == LocalObservationModality.COMPUTER_VISION) {
+                                            Text(
+                                                "Kamera-Erkennung${observation.evidenceSummary?.let { " • $it" }.orEmpty()}",
+                                                color = CameraSpeedNumberRed,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                        }
                                         Text(
                                             observationStateLabel(observation.state),
                                             color = observationStateForeground(observation.state),
@@ -1461,6 +1536,7 @@ private fun LocalRecordingsSheet(
                                     }
                                 }
                                 when (observation.state) {
+                                    LocalObservationState.LOCAL_ONLY,
                                     LocalObservationState.NEEDS_REVIEW -> {
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             OutlinedButton(onClick = { controller.approveLocalObservation(observation.id) }) {

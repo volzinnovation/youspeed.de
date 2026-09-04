@@ -1,0 +1,388 @@
+{
+  "schema_version": 1,
+  "taxonomy_version": "tsr-structural-action-v1",
+  "passage_event_fixture": "traffic-sign-passage-events-v1.json",
+  "source_regressions": [
+    {
+      "regression_id": "panoramax-repeated-speed-limit-passage",
+      "sequence_id": "c532e405-c86b-417d-b5e8-1a448b5040b2",
+      "expected_visibility": [
+        "seen",
+        "seen",
+        "seen",
+        "analyzed_missing"
+      ],
+      "pictures": [
+        {
+          "picture_id": "722e390c-7ac8-4d1f-89d9-3f19d33c3c7e",
+          "annotation_id": "08d9286f-71d0-4e0a-a0fe-fc9cac5acf0a",
+          "url": "https://explore.panoramax.fr/de/index?annot=08d9286f-71d0-4e0a-a0fe-fc9cac5acf0a&focus=pic&map=17/48.792964/8.427128&pic=722e390c-7ac8-4d1f-89d9-3f19d33c3c7e&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=250.97/2.53/65"
+        },
+        {
+          "picture_id": "501e2fec-d5e1-400b-8701-52f26bbad0b1",
+          "annotation_id": "cddc33b2-a933-4c2d-b75e-98bd6ef60d67",
+          "url": "https://explore.panoramax.fr/de/index?annot=cddc33b2-a933-4c2d-b75e-98bd6ef60d67&focus=pic&map=17/48.792894/8.426672&pic=501e2fec-d5e1-400b-8701-52f26bbad0b1&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=251.05/1.75/65"
+        },
+        {
+          "picture_id": "c8c29b58-9b45-42b2-a166-f9a2b6e4057e",
+          "annotation_id": null,
+          "url": "https://explore.panoramax.fr/de/index?focus=pic&map=17/48.792822/8.426214&pic=c8c29b58-9b45-42b2-a166-f9a2b6e4057e&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=250.05/1.75/65"
+        },
+        {
+          "picture_id": "3340eefd-70df-403c-90b8-45729184fd3a",
+          "annotation_id": null,
+          "url": "https://explore.panoramax.fr/de/index?focus=pic&map=17/48.792769/8.425878&pic=3340eefd-70df-403c-90b8-45729184fd3a&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=250.05/1.75/65"
+        }
+      ]
+    },
+    {
+      "regression_id": "panoramax-german-city-entry",
+      "sequence_id": "c532e405-c86b-417d-b5e8-1a448b5040b2",
+      "expected_action": "city_entry",
+      "pictures": [
+        {
+          "picture_id": "e88450f8-b625-4b91-bc3c-2ab09e37cff0",
+          "annotation_id": "d8dbe74f-315b-419b-81b9-a736ce373d27",
+          "url": "https://panoramax.openstreetmap.fr/?annot=d8dbe74f-315b-419b-81b9-a736ce373d27&background=streets&focus=pic&map=17/48.792708/8.425556&pic=e88450f8-b625-4b91-bc3c-2ab09e37cff0&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=88.85/-0.68/65"
+        }
+      ]
+    },
+    {
+      "regression_id": "panoramax-maximum-speed-end",
+      "sequence_id": "c532e405-c86b-417d-b5e8-1a448b5040b2",
+      "expected_action": "maximum_speed_end",
+      "pictures": [
+        {
+          "picture_id": "9a5962cd-518c-4ae3-a027-4a53fbd72acd",
+          "annotation_id": "71bf3a65-23df-4847-acff-5032009a42af",
+          "url": "https://panoramax.openstreetmap.fr/?annot=71bf3a65-23df-4847-acff-5032009a42af&background=streets&focus=pic&map=18.41/48.794189/8.418692&pic=9a5962cd-518c-4ae3-a027-4a53fbd72acd&seq=c532e405-c86b-417d-b5e8-1a448b5040b2&speed=250&theme=default&users=default&xyz=225.29/3.93/65"
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "seen-seen-first-qualified-missing-commits",
+      "purpose": "A repeated sighting arms the physical track, changes no runtime value while visible, and commits exactly once on the first qualified strong-geometry miss.",
+      "source_regression_ids": [
+        "panoramax-repeated-speed-limit-passage"
+      ],
+      "starting_effective_source": "bundle",
+      "input_frames": [
+        {
+          "frame_id": "frame-speed-70-001",
+          "source_picture_id": "722e390c-7ac8-4d1f-89d9-3f19d33c3c7e",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-speed-70-001",
+          "accumulated_support": 0.81,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-speed-70-002",
+          "source_picture_id": "501e2fec-d5e1-400b-8701-52f26bbad0b1",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-speed-70-001",
+          "accumulated_support": 0.91,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-speed-70-003",
+          "source_picture_id": "c8c29b58-9b45-42b2-a166-f9a2b6e4057e",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-speed-70-001",
+          "accumulated_support": 0.93,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-speed-70-004",
+          "source_picture_id": "3340eefd-70df-403c-90b8-45729184fd3a",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "strong"
+        }
+      ],
+      "expected_emitted_event_ids_by_step": [
+        [],
+        [],
+        [],
+        [
+          "passage-70-seen-seen-missing"
+        ]
+      ],
+      "expected_effective_source_by_step": [
+        "bundle",
+        "bundle",
+        "bundle",
+        "camera"
+      ],
+      "expected_finalizer_state": "committed",
+      "expected_finalized_event_id": "passage-70-seen-seen-missing",
+      "expected_boundary_frame_id": "frame-speed-70-004",
+      "expected_activation_reason": "boundary_stable_match"
+    },
+    {
+      "scenario_id": "dropout-and-reappearance-does-not-commit",
+      "purpose": "A weak visual miss starts loss debounce, a throttled frame is not negative evidence, and reappearance returns the same track to armed without an event.",
+      "source_regression_ids": [],
+      "starting_effective_source": "local_correction",
+      "input_frames": [
+        {
+          "frame_id": "frame-dropout-001",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-dropout-001",
+          "accumulated_support": 0.88,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-dropout-002",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "frame-dropout-003",
+          "tsr_generation": 7,
+          "outcome": "throttled_not_analyzed",
+          "analysis_eligible": false,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-dropout-004",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-dropout-001",
+          "accumulated_support": 0.92,
+          "pass_geometry": null
+        }
+      ],
+      "expected_emitted_event_ids_by_step": [
+        [],
+        [],
+        [],
+        []
+      ],
+      "expected_effective_source_by_step": [
+        "local_correction",
+        "local_correction",
+        "local_correction",
+        "local_correction"
+      ],
+      "expected_finalizer_state": "armed",
+      "expected_finalized_event_id": null,
+      "expected_boundary_frame_id": null,
+      "expected_activation_reason": null
+    },
+    {
+      "scenario_id": "german-city-entry-resolves-to-50",
+      "purpose": "A finalized German yellow city-entry sign is a typed city action whose country policy resolves to 50 km/h.",
+      "source_regression_ids": [
+        "panoramax-german-city-entry"
+      ],
+      "starting_effective_source": "bundle",
+      "input_frames": [
+        {
+          "frame_id": "frame-city-entry-001",
+          "source_picture_id": "e88450f8-b625-4b91-bc3c-2ab09e37cff0",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-city-entry-001",
+          "accumulated_support": 0.8,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-city-entry-002",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-city-entry-001",
+          "accumulated_support": 0.9,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-city-entry-003",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "strong"
+        }
+      ],
+      "expected_emitted_event_ids_by_step": [
+        [],
+        [],
+        [
+          "passage-city-entry-de-50"
+        ]
+      ],
+      "expected_effective_source_by_step": [
+        "bundle",
+        "bundle",
+        "camera"
+      ],
+      "expected_finalizer_state": "committed",
+      "expected_finalized_event_id": "passage-city-entry-de-50",
+      "expected_boundary_frame_id": "frame-city-entry-003",
+      "expected_activation_reason": "boundary_stable_match"
+    },
+    {
+      "scenario_id": "maximum-speed-end-resolves-captured-prior",
+      "purpose": "A typed DE:278 end removes the matching camera-posted maximum and restores the captured 50 km/h rule; a bounded same-scope rematch does not rewrite the first-missing boundary.",
+      "source_regression_ids": [
+        "panoramax-maximum-speed-end"
+      ],
+      "starting_effective_source": "camera",
+      "input_frames": [
+        {
+          "frame_id": "frame-max-end-001",
+          "source_picture_id": "9a5962cd-518c-4ae3-a027-4a53fbd72acd",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-max-end-001",
+          "accumulated_support": 0.79,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-max-end-002",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-max-end-001",
+          "accumulated_support": 0.89,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-max-end-003",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "frame-max-end-004",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "context-max-end-rematch-005",
+          "tsr_generation": 7,
+          "outcome": "stabilized_same_scope_rematch",
+          "analysis_eligible": false,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": null
+        }
+      ],
+      "expected_emitted_event_ids_by_step": [
+        [],
+        [],
+        [],
+        [],
+        [
+          "passage-maximum-speed-end-resolved"
+        ]
+      ],
+      "expected_effective_source_by_step": [
+        "camera",
+        "camera",
+        "camera",
+        "camera",
+        "camera"
+      ],
+      "expected_finalizer_state": "committed",
+      "expected_finalized_event_id": "passage-maximum-speed-end-resolved",
+      "expected_boundary_frame_id": "frame-max-end-003",
+      "expected_activation_reason": "first_stabilized_same_scope_rematch"
+    },
+    {
+      "scenario_id": "maximum-speed-end-unresolved-masks-stale-value",
+      "purpose": "An end sign without a captured or corroborated successor masks the stale camera maximum, presents unknown, remains review-only, and has no normalized OSC operation.",
+      "source_regression_ids": [
+        "panoramax-maximum-speed-end"
+      ],
+      "starting_effective_source": "camera",
+      "input_frames": [
+        {
+          "frame_id": "frame-max-end-unresolved-001",
+          "source_picture_id": "9a5962cd-518c-4ae3-a027-4a53fbd72acd",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-max-end-002",
+          "accumulated_support": 0.81,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-max-end-unresolved-002",
+          "tsr_generation": 7,
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "physical_track_id": "track-max-end-002",
+          "accumulated_support": 0.9,
+          "pass_geometry": null
+        },
+        {
+          "frame_id": "frame-max-end-unresolved-003",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "frame-max-end-unresolved-004",
+          "tsr_generation": 7,
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "physical_track_id": null,
+          "accumulated_support": null,
+          "pass_geometry": "not_established"
+        }
+      ],
+      "expected_emitted_event_ids_by_step": [
+        [],
+        [],
+        [],
+        [
+          "passage-maximum-speed-end-unresolved"
+        ]
+      ],
+      "expected_effective_source_by_step": [
+        "camera",
+        "camera",
+        "camera",
+        "camera_unknown"
+      ],
+      "expected_finalizer_state": "committed",
+      "expected_finalized_event_id": "passage-maximum-speed-end-unresolved",
+      "expected_boundary_frame_id": "frame-max-end-unresolved-003",
+      "expected_activation_reason": "boundary_stable_match"
+    }
+  ]
+}

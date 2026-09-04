@@ -430,7 +430,7 @@ data class TrafficSignShadowFrameInputV2(
 ) {
     init {
         require(eventId.isNotBlank()) { "TSR event ID is required" }
-        require(source != TrafficSignInputSourceV2.DIAGNOSTIC_IMPORT || roadContext.wayId.isNotBlank()) {
+        require(source != TrafficSignInputSourceV2.DIAGNOSTIC_IMPORT || !roadContext.wayId.isNullOrBlank()) {
             "Imported TSR evidence still requires its captured road context"
         }
         require(detectorLatencyMs.isFinite() && detectorLatencyMs >= 0.0) { "TSR detector latency is invalid" }
@@ -768,7 +768,7 @@ class TrafficSignShadowRuntimeV2(
     }
 
     private data class RoadKey(
-        val wayId: String,
+        val wayId: String?,
         val direction: TrafficSignTravelDirection,
         val sourceSignature: TrafficSignRuntimeSourceSignature,
     ) {

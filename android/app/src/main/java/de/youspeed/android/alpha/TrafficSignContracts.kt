@@ -13,6 +13,12 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+internal const val MIN_SHARED_TRAFFIC_SIGN_SPEED_KMH = 5
+internal const val MAX_SHARED_TRAFFIC_SIGN_SPEED_KMH = 200
+
+internal fun isSharedTrafficSignSpeedKmh(value: Int): Boolean =
+    value in MIN_SHARED_TRAFFIC_SIGN_SPEED_KMH..MAX_SHARED_TRAFFIC_SIGN_SPEED_KMH
+
 enum class TrafficSignPipeline(val wireValue: String) {
     DIRECT_DETECTION("direct_detection"),
     PROPOSAL_CLASSIFICATION("proposal_classification");
@@ -101,13 +107,18 @@ enum class TrafficSignCalibrationOutput(val wireValue: String) {
 
 enum class TrafficSignSemanticKind(val wireValue: String) {
     MAXIMUM_SPEED("maximum_speed"),
+    MAXIMUM_SPEED_END("maximum_speed_end"),
     ZONE_START("zone_start"),
     ZONE_END("zone_end"),
     RESTRICTION_END("restriction_end"),
+    ALL_RESTRICTIONS_END("all_restrictions_end"),
     CITY_ENTRY("city_entry"),
     CITY_EXIT("city_exit"),
     PEDESTRIAN_ZONE_START("pedestrian_zone_start"),
     PEDESTRIAN_ZONE_END("pedestrian_zone_end"),
+    MOTORWAY_EXIT("motorway_exit"),
+    MOTORROAD_EXIT("motorroad_exit"),
+    NON_SPEED_RESTRICTION_END("non_speed_restriction_end"),
     TEMPORARY("temporary"),
     UNKNOWN("unknown");
 
@@ -375,6 +386,11 @@ data class TrafficSignCandidate(
     val rawScore: Double,
     val calibratedConfidence: Double?,
     val boundingBox: NormalizedTrafficSignBoundingBox,
+    val proposalRawScore: Double? = null,
+    val proposalCalibratedConfidence: Double? = null,
+    val classifierRawScore: Double? = null,
+    val classifierCalibratedConfidence: Double? = null,
+    val assemblyConfidence: Double? = null,
     val trackId: String? = null,
     val evidenceFrames: Int = 1,
     val assemblyId: String? = null,
@@ -394,6 +410,11 @@ data class TrafficSignRecognitionEvent(
     val roadContext: TrafficSignDetectionContext? = null,
     val latencyMs: Double,
     val thermalState: String?,
+    val frameId: String? = null,
+    val driveSessionId: String? = null,
+    val calibrationId: String? = null,
+    val componentRole: String? = null,
+    val modelComponents: List<TrafficSignModelComponentLineage> = emptyList(),
 )
 
 /** No Android inference backend is enabled by this foundation-only slice. */
@@ -665,8 +686,11 @@ object TrafficSignModelPackValidator {
         if (value.classId.isBlank()) errors += "$path.class_id is missing"
         if (value.label.isBlank()) errors += "$path.label is missing"
         if (!value.threshold.isFinite() || value.threshold !in 0.0..1.0) errors += "$path.threshold must be in [0, 1]"
+        if (value.semantic.value != null && !isSharedTrafficSignSpeedKmh(value.semantic.value)) {
+            errors += "$path semantic speed must be in $MIN_SHARED_TRAFFIC_SIGN_SPEED_KMH..$MAX_SHARED_TRAFFIC_SIGN_SPEED_KMH km/h"
+        }
         if (value.semantic.kind == TrafficSignSemanticKind.MAXIMUM_SPEED) {
-            if (value.semantic.value == null || value.semantic.value <= 0) errors += "$path maximum_speed requires a positive value"
+            if (value.semantic.value == null) errors += "$path maximum_speed requires a value"
             if (value.semantic.unit !in setOf("km/h", "mph")) errors += "$path maximum_speed requires km/h or mph"
         }
         when (value.signRole) {
@@ -808,9 +832,23 @@ object TrafficSignRecognitionJson {
             ) {
                 add("candidate.calibrated_confidence must be in [0, 1]")
             }
+            listOf(
+                "proposal_raw_score" to candidate.proposalRawScore,
+                "proposal_calibrated_confidence" to candidate.proposalCalibratedConfidence,
+                "classifier_raw_score" to candidate.classifierRawScore,
+                "classifier_calibrated_confidence" to candidate.classifierCalibratedConfidence,
+                "assembly_confidence" to candidate.assemblyConfidence,
+            ).forEach { (name, score) ->
+                if (score != null && (!score.isFinite() || score !in 0.0..1.0)) {
+                    add("candidate.$name must be in [0, 1]")
+                }
+            }
             if (candidate.evidenceFrames < 1) add("candidate.evidence_frames must be positive")
+            if (candidate.semantic.value != null && !isSharedTrafficSignSpeedKmh(candidate.semantic.value)) {
+                add("semantic speed must be in $MIN_SHARED_TRAFFIC_SIGN_SPEED_KMH..$MAX_SHARED_TRAFFIC_SIGN_SPEED_KMH km/h")
+            }
             if (candidate.semantic.kind == TrafficSignSemanticKind.MAXIMUM_SPEED) {
-                if (candidate.semantic.value == null || candidate.semantic.value <= 0) add("maximum_speed requires a positive value")
+                if (candidate.semantic.value == null) add("maximum_speed requires a value")
                 if (candidate.semantic.unit !in setOf("km/h", "mph")) add("maximum_speed requires km/h or mph")
             }
             if (candidate.assemblyId != null && candidate.assemblyId.isBlank()) add("candidate.assembly_id must not be blank")
@@ -875,6 +913,11 @@ object TrafficSignRecognitionJson {
                 width = box.tsrRequiredDouble("width"),
                 height = box.tsrRequiredDouble("height"),
             ),
+            proposalRawScore = tsrOptionalDouble("proposal_raw_score"),
+            proposalCalibratedConfidence = tsrOptionalDouble("proposal_calibrated_confidence"),
+            classifierRawScore = tsrOptionalDouble("classifier_raw_score"),
+            classifierCalibratedConfidence = tsrOptionalDouble("classifier_calibrated_confidence"),
+            assemblyConfidence = tsrOptionalDouble("assembly_confidence"),
             trackId = tsrOptionalString("track_id"),
             evidenceFrames = tsrRequiredInt("evidence_frames"),
             assemblyId = tsrRequiredNullableString("assembly_id"),
@@ -906,6 +949,7 @@ object TrafficSignRecognitionJson {
                 osmRevision = signature.tsrRequiredString("osm_revision"),
                 localCorrectionRevision = signature.tsrRequiredNullableString("local_correction_revision"),
             ),
+            bundleSha256 = tsrOptionalString("bundle_sha256")?.lowercase(),
         )
     }
 }

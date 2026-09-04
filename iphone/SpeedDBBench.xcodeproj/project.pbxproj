@@ -64,6 +64,7 @@
 		A65EE1B5A52B3FAF53EBE779 /* bayern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 4E59D10489F12AEFC1961E8F /* bayern.poly */; };
 		A75797D06DDA6313931524D2 /* romania.poly in Resources */ = {isa = PBXBuildFile; fileRef = 04E3DFEEB128C612F8014906 /* romania.poly */; };
 		AC731F9E9226A8DA8A79D771 /* GBR-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = D1048BD4E2D87A460F10A013 /* GBR-rules.json */; };
+		ADE1B941F54FE210EB4C73FB /* TrafficSignPassageEvaluation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */; };
 		AFD42A12AE2E643AE69406D0 /* BEL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B039211EBB57486701EE3554 /* BEL-rules.json */; };
 		B0F7FB9AB928E5D1815E50A5 /* thueringen.poly in Resources */ = {isa = PBXBuildFile; fileRef = DD9CC95F2104420AF1B222D3 /* thueringen.poly */; };
 		B24C32C4A3053C7B544A978E /* nl.lproj in Resources */ = {isa = PBXBuildFile; fileRef = E1EF5534FE6EF8015DB05730 /* nl.lproj */; };
@@ -119,6 +120,7 @@
 /* Begin PBXFileReference section */
 		03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignRuntime.swift; sourceTree = "<group>"; };
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
+		07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignPassageEvaluation.swift; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
 		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
 		0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -232,6 +234,7 @@
 				7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */,
 				16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */,
 				B22B25E507BC34DEDF1FF173 /* StartupView.swift */,
+				07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */,
 				32933858989CDE151BF55061 /* TrafficSignRecognition.swift */,
 				03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */,
 				8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */,
@@ -614,6 +617,7 @@
 				260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */,
 				D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */,
 				39B9F74DD81800D88911F9D0 /* StartupView.swift in Sources */,
+				ADE1B941F54FE210EB4C73FB /* TrafficSignPassageEvaluation.swift in Sources */,
 				401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */,
 				D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */,
 				7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */,

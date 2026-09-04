@@ -47,6 +47,12 @@ internal data class SpeedLookupResult(
     val miniHMMCandidateCount: Int,
     val matchHypotheses: List<WayMatchHypothesis>,
     val selectionTrace: List<MatchSelectionTrace>,
+    val speedSource: DerivedSpeedSource = DerivedSpeedSource.NONE,
+    val travelDirection: TrafficSignTravelDirection = TrafficSignTravelDirection.UNKNOWN,
+    val routeRelationGroupIds: Set<Long> = emptySet(),
+    val sourceRelationIds: Set<Long> = emptySet(),
+    val routeRelationContinuityAvailable: Boolean = false,
+    val matchedWayStable: Boolean = true,
 )
 
 internal class V3SpeedLimitLookup(
@@ -80,6 +86,13 @@ internal class V3SpeedLimitLookup(
     private val hasWayGeomTable = tableExists("way_geom")
     private val hasWayLinksTable = tableExists("way_links")
     private val hasCorridorProgressTable = tableExists("corridor_progress")
+    private val hasWayContinuityGroupTable = tableExists("way_continuity_group")
+    private val hasWayContinuityMembershipTable = tableExists("way_continuity_membership")
+    private val routeRelationContinuityAvailable = hasWayContinuityGroupTable &&
+        hasWayContinuityMembershipTable &&
+        metadataValue("way_continuity_mode")
+            ?.split('+')
+            ?.any { it.trim() == ROUTE_RELATION_CONTINUITY_KIND } == true
     private val corridorPairContext: CorridorPairContext by lazy { loadCorridorPairContext() }
     private val hasWayBoundsColumns = hasBoundsColumns("ways")
     private val hasAreaBoundsColumns = hasBoundsColumns("areas")
@@ -232,6 +245,10 @@ internal class V3SpeedLimitLookup(
             corridorPairs = corridorPairs,
         )
         val best = selection.selected
+        val matchedWayStable = best?.wayId != null &&
+            normalizedMatchContext.matchedFixCount > 0 &&
+            normalizedMatchContext.preferredWayId == best.wayId
+        val routeMembership = loadRouteRelationMembership(best?.wayId)
         val insideCityDecision = when {
             highwayImpliesInsideCity(best?.highway) -> true to "highway_class_in_city"
             else -> {
@@ -293,7 +310,52 @@ internal class V3SpeedLimitLookup(
             miniHMMCandidateCount = selection.miniHMMCandidateCount,
             matchHypotheses = selection.matchHypotheses,
             selectionTrace = selection.selectionTrace,
+            speedSource = best?.speedSource ?: DerivedSpeedSource.NONE,
+            travelDirection = resolveTravelDirection(observedHeadingDeg, best?.localHeadingDeg),
+            routeRelationGroupIds = routeMembership.keys,
+            sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
+            routeRelationContinuityAvailable = routeRelationContinuityAvailable,
+            matchedWayStable = matchedWayStable,
         )
+    }
+
+    /** Bundle-local group IDs and their stable source OSM relation IDs for the selected way. */
+    private fun loadRouteRelationMembership(wayId: String?): Map<Long, Long?> {
+        val normalizedWayId = wayId?.trim().orEmpty()
+        if (!routeRelationContinuityAvailable || normalizedWayId.isEmpty()) return emptyMap()
+        val memberships = linkedMapOf<Long, Long?>()
+        db.rawQuery(
+            """
+            SELECT m.continuity_group_id, g.source_relation_id
+            FROM way_continuity_membership m
+            JOIN way_continuity_group g ON g.continuity_group_id = m.continuity_group_id
+            WHERE m.way_id = ?
+              AND m.continuity_kind = ?
+              AND g.continuity_kind = ?
+            ORDER BY m.continuity_group_id
+            """.trimIndent(),
+            arrayOf(normalizedWayId, ROUTE_RELATION_CONTINUITY_KIND, ROUTE_RELATION_CONTINUITY_KIND),
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                val groupId = cursor.getLong(0).takeIf { it > 0L } ?: continue
+                memberships[groupId] = if (cursor.isNull(1)) null else cursor.getLong(1).takeIf { it > 0L }
+            }
+        }
+        return memberships
+    }
+
+    private fun resolveTravelDirection(
+        observedHeadingDeg: Double?,
+        localHeadingDeg: Double?,
+    ): TrafficSignTravelDirection {
+        if (observedHeadingDeg == null || localHeadingDeg == null) return TrafficSignTravelDirection.UNKNOWN
+        val forwardMismatch = directedHeadingMismatchDeg(observedHeadingDeg, localHeadingDeg)
+        val reverseMismatch = directedHeadingMismatchDeg(observedHeadingDeg, (localHeadingDeg + 180.0) % 360.0)
+        return if (forwardMismatch <= reverseMismatch) {
+            TrafficSignTravelDirection.FORWARD
+        } else {
+            TrafficSignTravelDirection.REVERSE
+        }
     }
 
     fun lookupStreetNames(wayIds: List<String>): Map<String, String> {
@@ -5331,6 +5393,13 @@ internal class V3SpeedLimitLookup(
         }
     }
 
+    private fun metadataValue(key: String): String? {
+        if (!tableExists("metadata")) return null
+        db.rawQuery("SELECT value FROM metadata WHERE key = ? LIMIT 1", arrayOf(key)).use { cursor ->
+            return if (cursor.moveToFirst()) cursor.stringOrNull(0) else null
+        }
+    }
+
     private fun columnExists(table: String, column: String): Boolean {
         if (!tableExists(table)) {
             return false
@@ -5348,6 +5417,7 @@ internal class V3SpeedLimitLookup(
     companion object {
         private val THREE_WAY_GATE_CLASS_NAMES = listOf("current", "lowest_distance", "lowest_endpoint")
         private const val HEADING_MIN_SPEED_KMH = 8.0
+        private const val ROUTE_RELATION_CONTINUITY_KIND = "route_relation_connected"
         private const val HEADING_WEIGHT_M_PER_DEG = 1.8
         private const val MAX_TRACE_CANDIDATE_COUNT = 16
         private const val CONNECTED_TRANSITION_WARMUP_FIX_COUNT = 3

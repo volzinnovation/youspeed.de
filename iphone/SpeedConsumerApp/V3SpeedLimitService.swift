@@ -1124,6 +1124,10 @@ final class V3SpeedLimitService {
                 insideCityDecision: insideCityDecision,
                 speedKmh: effectiveSpeed
             )
+            let selectedRouteContinuity = loadSelectedRouteContinuity(
+                db: db,
+                wayID: finalSelected?.wayID
+            )
 
             let candidateTraces = Array(traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
                 MatchCandidateTrace(
@@ -1193,7 +1197,9 @@ final class V3SpeedLimitService {
                 matchHypotheses: matchHypotheses,
                 candidateTraces: candidateTraces,
                 selectionTrace: selectionTrace,
-                activeCorridorState: nil
+                activeCorridorState: nil,
+                routeContinuityAvailable: selectedRouteContinuity.available,
+                routeRelationMemberships: selectedRouteContinuity.memberships
             )
         }
 
@@ -1748,6 +1754,10 @@ final class V3SpeedLimitService {
                 insideCityDecision: insideCityDecision,
                 speedKmh: effectiveSpeed
             )
+            let selectedRouteContinuity = loadSelectedRouteContinuity(
+                db: db,
+                wayID: finalSelected?.wayID
+            )
 
             let selectedTunnelLike = isTruthyOSMTag(finalSelected?.tunnel)
             let candidateTraces = Array(traceRankedCandidates.prefix(Self.maxTraceCandidateCount)).map { entry in
@@ -1818,7 +1828,9 @@ final class V3SpeedLimitService {
                 matchHypotheses: miniHMMSelection.hypotheses,
                 candidateTraces: candidateTraces,
                 selectionTrace: selectionTrace,
-                activeCorridorState: finalActiveCorridorState
+                activeCorridorState: finalActiveCorridorState,
+                routeContinuityAvailable: selectedRouteContinuity.available,
+                routeRelationMemberships: selectedRouteContinuity.memberships
             )
         }
 
@@ -6758,6 +6770,101 @@ final class V3SpeedLimitService {
         }
 
         return WayContinuityContext(available: true, byWayID: byWayID)
+    }
+
+    /// Returns only the route-relation memberships that are safe for a live
+    /// camera assertion. Broad same-name continuity is intentionally excluded.
+    /// Schema/statement failures fail closed as capability unavailable.
+    private func loadSelectedRouteContinuity(
+        db: OpaquePointer,
+        wayID: String?
+    ) -> (available: Bool, memberships: [TrafficSignRouteRelationMembership]) {
+        guard tableExists(db: db, name: "way_continuity_membership"),
+              tableExists(db: db, name: "way_continuity_group"),
+              routeRelationContinuityDeclared(db: db) else {
+            return (false, [])
+        }
+        let hasMembershipKind = columnExists(
+            db: db,
+            table: "way_continuity_membership",
+            column: "continuity_kind"
+        )
+        let hasGroupTable = tableExists(db: db, name: "way_continuity_group")
+        guard hasMembershipKind || hasGroupTable else { return (false, []) }
+        guard let wayID = normalizedWayID(wayID), let numericWayID = Int64(wayID) else {
+            return (true, [])
+        }
+
+        let sql: String
+        if hasGroupTable {
+            let kindExpression = hasMembershipKind ? "m.continuity_kind" : "g.continuity_kind"
+            let sourceExpression = columnExists(
+                db: db,
+                table: "way_continuity_group",
+                column: "source_relation_id"
+            ) ? "g.source_relation_id" : "NULL"
+            sql = """
+            SELECT m.continuity_group_id, \(sourceExpression)
+            FROM way_continuity_membership m
+            JOIN way_continuity_group g
+              ON g.continuity_group_id = m.continuity_group_id
+            WHERE m.way_id = ? AND \(kindExpression) = ?
+            ORDER BY m.continuity_group_id
+            """
+        } else {
+            sql = """
+            SELECT m.continuity_group_id, NULL
+            FROM way_continuity_membership m
+            WHERE m.way_id = ? AND m.continuity_kind = ?
+            ORDER BY m.continuity_group_id
+            """
+        }
+
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            return (false, [])
+        }
+        sqlite3_bind_int64(stmt, 1, numericWayID)
+        sqlite3_bind_text(
+            stmt,
+            2,
+            WayContinuityKind.routeRelationConnected.rawValue,
+            -1,
+            SQLITE_TRANSIENT
+        )
+
+        var memberships: [TrafficSignRouteRelationMembership] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            let groupID = Int(sqlite3_column_int64(stmt, 0))
+            let sourceRelationID = sqlite3_column_type(stmt, 1) == SQLITE_NULL
+                ? nil
+                : sqlite3_column_int64(stmt, 1)
+            let membership = TrafficSignRouteRelationMembership(
+                groupID: groupID,
+                sourceRelationID: sourceRelationID
+            )
+            if membership.isValid { memberships.append(membership) }
+        }
+        return (true, memberships)
+    }
+
+    /// Table presence alone is not a capability signal: fallback bundles may
+    /// contain only same-street-name groups. Require the build metadata to opt
+    /// in to route-relation continuity before it can extend a camera assertion.
+    private func routeRelationContinuityDeclared(db: OpaquePointer) -> Bool {
+        guard tableExists(db: db, name: "metadata") else { return false }
+        let sql = "SELECT value FROM metadata WHERE key = 'way_continuity_mode' LIMIT 1"
+        var stmt: OpaquePointer?
+        defer { sqlite3_finalize(stmt) }
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK,
+              let stmt,
+              sqlite3_step(stmt) == SQLITE_ROW,
+              let value = cStringOptional(sqlite3_column_text(stmt, 0)) else { return false }
+        return value.split(separator: "+").contains {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                == WayContinuityKind.routeRelationConnected.rawValue
+        }
     }
 
     private func loadWayLinksContext(

@@ -10,6 +10,19 @@ private let drivingBanPulseCycleSeconds: Double = 2.2
 private let gpsBadgeSlotMinHeight: CGFloat = 58
 private let cityBadgeSlotMinHeight: CGFloat = 84
 
+enum SpeedLimitSignPalette {
+    static let borderRed = 0.76
+    static let borderGreen = 0.07
+    static let borderBlue = 0.11
+    // Exactly halfway between black and the sign-border red.
+    static let cameraRed = borderRed / 2
+    static let cameraGreen = borderGreen / 2
+    static let cameraBlue = borderBlue / 2
+
+    static let borderColor = Color(red: borderRed, green: borderGreen, blue: borderBlue)
+    static let cameraColor = Color(red: cameraRed, green: cameraGreen, blue: cameraBlue)
+}
+
 enum DriveRecorderWorkspaceSelection: Equatable {
     case preview
     case telemetry
@@ -171,7 +184,10 @@ struct MainView: View {
                         numberFontSize: primaryMetricFontSize,
                         showsTunnelIcon: shouldShowTunnelSignIcon,
                         showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
-                        showsPedestrianZoneIcon: showsPedestrianZoneSign
+                        showsPedestrianZoneIcon: showsPedestrianZoneSign,
+                        numberColor: usesCameraNumberColor ? SpeedLimitSignPalette.cameraColor : .black,
+                        showsCameraSourceMarker: showsCameraSourceMarker,
+                        accessibilityDescription: speedLimitAccessibilityDescription
                     )
                     .frame(width: signSize, height: signSize)
                     .frame(maxWidth: .infinity)
@@ -277,6 +293,18 @@ struct MainView: View {
 
     private var showsPedestrianZoneSign: Bool {
         !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
+    }
+
+    private var usesCameraNumberColor: Bool {
+        guard !viewModel.isInSpeedCaptureMode,
+              viewModel.effectiveSpeedLimitState.source == .camera,
+              case .numeric = viewModel.effectiveSpeedLimitState.value else { return false }
+        return true
+    }
+
+    private var showsCameraSourceMarker: Bool {
+        !viewModel.isInSpeedCaptureMode
+            && viewModel.effectiveSpeedLimitState.hasCameraEvidenceMarker
     }
 
     private var topCornerButtons: some View {
@@ -977,6 +1005,28 @@ struct MainView: View {
         return "\(speedLimit)"
     }
 
+    private var speedLimitAccessibilityDescription: String {
+        if viewModel.isInSpeedCaptureMode {
+            return "Tempolimit \(limitText)"
+        }
+        let state = viewModel.effectiveSpeedLimitState
+        switch state.value {
+        case .numeric(let value):
+            return "Tempolimit \(value) Kilometer pro Stunde"
+        case .walk:
+            return "Fussgaengerzone, Schrittgeschwindigkeit"
+        case .unlimited:
+            return "Keine Geschwindigkeitsbegrenzung"
+        case .unknown:
+            let reason = state.presentationReason.lowercased()
+            if state.hasCameraEvidenceMarker
+                && (reason.contains("end") || reason.contains("exit")) {
+                return "Ende erkannt, Tempolimit unbekannt"
+            }
+            return hasUsableGPSFix ? "Tempolimit unbekannt" : "GPS-Signal wird gesucht"
+        }
+    }
+
     private var shouldShowTunnelSignIcon: Bool {
         false
     }
@@ -1393,6 +1443,9 @@ private struct SpeedLimitSignView: View {
     let showsTunnelIcon: Bool
     let showsUnlimitedIcon: Bool
     let showsPedestrianZoneIcon: Bool
+    let numberColor: Color
+    let showsCameraSourceMarker: Bool
+    let accessibilityDescription: String
 
     var body: some View {
         GeometryReader { proxy in
@@ -1439,7 +1492,7 @@ private struct SpeedLimitSignView: View {
 
                     Circle()
                         .inset(by: standardBlackBorderWidth)
-                        .strokeBorder(Color(red: 0.76, green: 0.07, blue: 0.11), lineWidth: standardRedBandWidth)
+                        .strokeBorder(SpeedLimitSignPalette.borderColor, lineWidth: standardRedBandWidth)
 
                     if showsTunnelIcon {
                         Image(systemName: "tunnel.fill")
@@ -1451,15 +1504,31 @@ private struct SpeedLimitSignView: View {
                             .frame(width: standardInnerDiameter * 0.86, height: standardInnerDiameter * 0.66, alignment: .center)
                             .minimumScaleFactor(0.28)
                             .allowsTightening(true)
-                            .foregroundStyle(.black)
+                            .foregroundStyle(numberColor)
                             .lineLimit(1)
                     }
+                }
+                if showsCameraSourceMarker {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: max(10, size * 0.075), weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(max(5, size * 0.026))
+                        .background(SpeedLimitSignPalette.cameraColor, in: Circle())
+                        .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1))
+                        .offset(x: size * 0.31, y: size * 0.31)
+                        .accessibilityHidden(true)
                 }
             }
             .frame(width: size, height: size)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .aspectRatio(1, contentMode: .fit)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            showsCameraSourceMarker
+                ? "\(accessibilityDescription), von der Kamera erkannt"
+                : accessibilityDescription
+        )
     }
 }
 

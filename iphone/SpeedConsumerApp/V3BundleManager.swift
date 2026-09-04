@@ -16,8 +16,16 @@ actor V3BundleManager {
         let bundleVersion: String
         let countryCode: String?
         let dbPath: String
+        let dbSHA256: String
         let bbox: BundleCoverageBBox
         let rings: [CoverageRing]
+    }
+
+    private struct VerifiedMaterializedDBIdentity {
+        let size: Int64
+        let modificationDate: Date?
+        let expectedSHA256: String
+        let actualSHA256: String
     }
 
     private struct DeltaPathStep {
@@ -33,6 +41,7 @@ actor V3BundleManager {
     private let coverageCacheTTLSeconds: TimeInterval = 60
     private var coverageCacheUpdatedAt: Date?
     private var cachedCoverageEntries: [CoverageEntry] = []
+    private var verifiedMaterializedDBsByPath: [String: VerifiedMaterializedDBIdentity] = [:]
 
     func configuredShardRegions(forCountryCode countryCode: String) -> [String] {
         guard let config = try? V3BundleTargetsConfig.loadBundled(),
@@ -329,7 +338,8 @@ actor V3BundleManager {
             region: best.region,
             bundleVersion: best.bundleVersion,
             countryCode: best.countryCode,
-            dbPath: best.dbPath
+            dbPath: best.dbPath,
+            dbSHA256: best.dbSHA256
         )
     }
 
@@ -535,12 +545,14 @@ actor V3BundleManager {
                 if state.bundleVersion == "seed", let bundledSeed {
                     let bundledPath = bundledSeed.path
                     if dbURL.path != bundledPath {
+                        let seedSHA256 = try fileSHA256(at: bundledSeed)
                         let migrated = ActiveBundleState(
                             region: state.region,
                             bundleVersion: state.bundleVersion,
                             dbFileName: state.dbFileName,
                             activatedAtUTC: nowUTC(),
-                            dbPath: bundledPath
+                            dbPath: bundledPath,
+                            dbSHA256: seedSHA256
                         )
                         try writeActiveState(migrated)
                         let seedDir = try bundlesDir().appendingPathComponent("seed", isDirectory: true)
@@ -550,11 +562,12 @@ actor V3BundleManager {
                             mode: .bootstrap,
                             bundleVersion: state.bundleVersion,
                             dbPath: bundledPath,
-                            details: "seed bundle referenced"
+                            details: "seed bundle referenced",
+                            dbSHA256: seedSHA256
                         )
                     }
                 }
-                return BundleSyncResult(mode: .upToDate, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "existing active bundle")
+                return BundleSyncResult(mode: .upToDate, bundleVersion: state.bundleVersion, dbPath: dbURL.path, details: "existing active bundle", dbSHA256: state.dbSHA256)
             }
             try? clearActiveState()
         }
@@ -569,6 +582,7 @@ actor V3BundleManager {
             )
         }
         try quickValidateDB(at: bundledSeed, runQuickCheck: false)
+        let seedSHA256 = try fileSHA256(at: bundledSeed)
 
         try writeActiveState(
             ActiveBundleState(
@@ -576,7 +590,8 @@ actor V3BundleManager {
                 bundleVersion: "seed",
                 dbFileName: seedDBFileName,
                 activatedAtUTC: nowUTC(),
-                dbPath: bundledSeed.path
+                dbPath: bundledSeed.path,
+                dbSHA256: seedSHA256
             )
         )
         let seedDir = try bundlesDir().appendingPathComponent("seed", isDirectory: true)
@@ -586,7 +601,8 @@ actor V3BundleManager {
             mode: .bootstrap,
             bundleVersion: "seed",
             dbPath: bundledSeed.path,
-            details: "seed bundle referenced"
+            details: "seed bundle referenced",
+            dbSHA256: seedSHA256
         )
     }
 
@@ -614,23 +630,42 @@ actor V3BundleManager {
 
         do {
             let current = try activeState()
+            var targetMaterializationMismatch = false
             if current?.bundleVersion == manifest.bundleVersion,
                current?.region == manifest.region,
                let currentDB = try activeDatabaseURL(),
                fileManager.fileExists(atPath: currentDB.path) {
-                emitProgress(
-                    onProgress,
-                    stage: .completed,
-                    detail: "Bundle already up to date",
-                    completedBytes: manifest.db.bytes,
-                    totalBytes: manifest.db.bytes
-                )
-                try? cleanupStagingArtifacts()
-                Self.logger.notice("sync manifest up_to_date version=\(manifest.bundleVersion, privacy: .public)")
-                return BundleSyncResult(mode: .upToDate, bundleVersion: manifest.bundleVersion, dbPath: currentDB.path, details: "already active")
+                do {
+                    let verifiedSHA = try validateMaterializedDB(
+                        at: currentDB,
+                        artifact: manifest.db,
+                        label: "active bundle db"
+                    )
+                    emitProgress(
+                        onProgress,
+                        stage: .completed,
+                        detail: "Bundle already up to date",
+                        completedBytes: manifest.db.bytes,
+                        totalBytes: manifest.db.bytes
+                    )
+                    try? cleanupStagingArtifacts()
+                    Self.logger.notice("sync manifest up_to_date version=\(manifest.bundleVersion, privacy: .public)")
+                    return BundleSyncResult(
+                        mode: .upToDate,
+                        bundleVersion: manifest.bundleVersion,
+                        dbPath: currentDB.path,
+                        details: "already active",
+                        dbSHA256: verifiedSHA
+                    )
+                } catch {
+                    targetMaterializationMismatch = true
+                    Self.logger.error(
+                        "sync manifest active_materialization_mismatch version=\(manifest.bundleVersion, privacy: .public)"
+                    )
+                }
             }
 
-            let forceFullReload = shouldForceFullReload(currentVersion: current?.bundleVersion, targetVersion: manifest.bundleVersion, maxAgeDays: 30)
+            let forceFullReload = targetMaterializationMismatch || shouldForceFullReload(currentVersion: current?.bundleVersion, targetVersion: manifest.bundleVersion, maxAgeDays: 30)
 
             if !forceFullReload,
                let current,
@@ -755,6 +790,7 @@ actor V3BundleManager {
         )
 
         let stagingDB = try stageCopyOfActiveDB(forVersion: manifest.bundleVersion)
+        let installedSHA: String
         do {
             var downloadedBytes: Int64 = 0
             for (index, step) in deltaSteps.enumerated() {
@@ -783,7 +819,7 @@ actor V3BundleManager {
                 try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
             }
             try quickValidateDB(at: stagingDB)
-            try activatePreparedDB(
+            installedSHA = try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
                 mode: .deltaPatch,
@@ -798,7 +834,8 @@ actor V3BundleManager {
             mode: .deltaPatch,
             bundleVersion: manifest.bundleVersion,
             dbPath: try activeDatabaseURL()?.path ?? stagingDB.path,
-            details: "delta chain applied"
+            details: "delta chain applied",
+            dbSHA256: installedSHA
         )
     }
 
@@ -934,6 +971,7 @@ actor V3BundleManager {
             )
         }
 
+        let installedSHA: String
         do {
             emitProgress(
                 onProgress,
@@ -945,7 +983,7 @@ actor V3BundleManager {
             // Full-file SHA256 was already validated during download/assembly.
             // Keep startup responsive by skipping heavy PRAGMA quick_check here.
             try quickValidateDB(at: stagingDB, runQuickCheck: false)
-            try activatePreparedDB(
+            installedSHA = try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
                 mode: .fullDownload,
@@ -960,7 +998,8 @@ actor V3BundleManager {
             mode: .fullDownload,
             bundleVersion: manifest.bundleVersion,
             dbPath: try activeDatabaseURL()?.path ?? stagingDB.path,
-            details: "full bundle activated"
+            details: "full bundle activated",
+            dbSHA256: installedSHA
         )
     }
 
@@ -969,7 +1008,15 @@ actor V3BundleManager {
         manifest: V3BundleManifest,
         mode: BundleSyncResult.Mode,
         details: String
-    ) throws {
+    ) throws -> String {
+        // Validation is deliberately performed on the final materialized
+        // SQLite bytes (after decompression or SQL delta application). The
+        // compressed download hash is not valid provenance for live TSR.
+        let verifiedSHA = try validateMaterializedDB(
+            at: preparedDB,
+            artifact: manifest.db,
+            label: "materialized bundle db"
+        )
         let bundleDir = try bundlesDir().appendingPathComponent(
             bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
             isDirectory: true
@@ -1026,13 +1073,15 @@ actor V3BundleManager {
                 region: manifest.region,
                 bundleVersion: manifest.bundleVersion,
                 dbFileName: manifest.db.file,
-                activatedAtUTC: nowUTC()
+                activatedAtUTC: nowUTC(),
+                dbSHA256: verifiedSHA
             )
         )
         try? pruneInactiveBundles(keepingVersions: [manifest.bundleVersion])
 
         _ = mode
         _ = details
+        return verifiedSHA
     }
 
     private func recoverFromActiveState(
@@ -1063,12 +1112,14 @@ actor V3BundleManager {
         emitStartupProgress(onProgress, detail: "Validiere aktives Bundle \(state.bundleVersion)", fraction: 0.12)
         do {
             try quickValidateDB(at: dbURL, runQuickCheck: false)
+            let verifiedSHA = try validateRecoveredActiveDB(state, at: dbURL)
             Self.logger.notice("startup_recovery active_state validated version=\(state.bundleVersion, privacy: .public)")
             return BundleSyncResult(
                 mode: .upToDate,
                 bundleVersion: state.bundleVersion,
                 dbPath: dbURL.path,
-                details: "recovered active bundle"
+                details: "recovered active bundle",
+                dbSHA256: verifiedSHA
             )
         } catch {
             Self.logger.error(
@@ -1122,9 +1173,12 @@ actor V3BundleManager {
             Self.logger.notice("startup_recovery bundles candidate version=\(versionName, privacy: .public)")
 
             let manifestURL = bundleDir.appendingPathComponent("bundle-manifest.v3.json")
-            let manifest = decodeManifestIfPresent(at: manifestURL)
-            let dbFileName = manifest?.db.file ?? firstSQLiteFileName(in: bundleDir)
-            guard let dbFileName else {
+            guard let manifest = decodeManifestIfPresent(at: manifestURL) else {
+                Self.logger.error("startup_recovery bundles manifest_missing_or_invalid version=\(versionName, privacy: .public)")
+                continue
+            }
+            let dbFileName = manifest.db.file
+            guard !dbFileName.isEmpty else {
                 Self.logger.error("startup_recovery bundles no_sqlite version=\(versionName, privacy: .public) removing_dir")
                 try? removeItemIfExists(at: bundleDir)
                 continue
@@ -1138,6 +1192,11 @@ actor V3BundleManager {
 
             do {
                 try quickValidateDB(at: dbURL, runQuickCheck: false)
+                _ = try validateMaterializedDB(
+                    at: dbURL,
+                    artifact: manifest.db,
+                    label: "recovered local bundle db"
+                )
             } catch {
                 Self.logger.error(
                     "startup_recovery bundles validation_failed version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public) error=\(String(describing: error), privacy: .public)"
@@ -1148,10 +1207,15 @@ actor V3BundleManager {
             Self.logger.notice("startup_recovery bundles validation_ok version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public)")
 
             let state = ActiveBundleState(
-                region: manifest?.region ?? "DEU",
-                bundleVersion: manifest?.bundleVersion ?? versionName,
+                region: manifest.region,
+                bundleVersion: manifest.bundleVersion,
                 dbFileName: dbFileName,
-                activatedAtUTC: nowUTC()
+                activatedAtUTC: nowUTC(),
+                dbSHA256: try validateMaterializedDB(
+                    at: dbURL,
+                    artifact: manifest.db,
+                    label: "recovered local bundle db"
+                )
             )
             try writeActiveState(state)
             try? pruneInactiveBundles(keepingVersions: [state.bundleVersion, "seed"])
@@ -1160,7 +1224,8 @@ actor V3BundleManager {
                 mode: .upToDate,
                 bundleVersion: state.bundleVersion,
                 dbPath: dbURL.path,
-                details: "recovered local bundle"
+                details: "recovered local bundle",
+                dbSHA256: state.dbSHA256
             )
         }
         return nil
@@ -1392,6 +1457,19 @@ actor V3BundleManager {
             guard fileManager.fileExists(atPath: dbURL.path) else {
                 continue
             }
+            let verifiedSHA: String
+            do {
+                verifiedSHA = try validateMaterializedDB(
+                    at: dbURL,
+                    artifact: manifest.db,
+                    label: "coverage bundle db"
+                )
+            } catch {
+                Self.logger.error(
+                    "coverage db verification failed region=\(manifest.region, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                )
+                continue
+            }
 
             let rings: [CoverageRing]
             if let poly = coverage.poly {
@@ -1420,6 +1498,7 @@ actor V3BundleManager {
                     bundleVersion: manifest.bundleVersion,
                     countryCode: manifest.countryCode,
                     dbPath: dbURL.path,
+                    dbSHA256: verifiedSHA,
                     bbox: coverage.bbox,
                     rings: rings
                 )
@@ -2492,6 +2571,81 @@ actor V3BundleManager {
     }
 
     private func validateSHA256(fileAt url: URL, expectedHex: String, label: String) throws {
+        let actual = try fileSHA256(at: url)
+        if actual != expectedHex.lowercased() {
+            throw ConsumerAppError.checksum("Checksum mismatch for \(label)")
+        }
+    }
+
+    /// Verifies the installed SQLite artifact, not the compressed transfer.
+    /// The small identity cache avoids re-hashing an unchanged regional DB on
+    /// every coverage refresh while still invalidating on size/mtime changes.
+    private func validateMaterializedDB(
+        at url: URL,
+        artifact: BundleArtifact,
+        label: String
+    ) throws -> String {
+        let expectedBytes = expectedInstalledBytes(for: artifact)
+        let expectedSHA = expectedInstalledSHA256(for: artifact).lowercased()
+        guard expectedBytes > 0,
+              expectedSHA.range(
+                of: "^[0-9a-f]{64}$",
+                options: .regularExpression
+              ) != nil else {
+            throw ConsumerAppError.invalidManifest("Invalid installed database digest metadata")
+        }
+        let attrs = try fileManager.attributesOfItem(atPath: url.path)
+        let actualBytes = (attrs[.size] as? NSNumber)?.int64Value ?? 0
+        let modificationDate = attrs[.modificationDate] as? Date
+        guard actualBytes == expectedBytes else {
+            throw ConsumerAppError.checksum("Byte-count mismatch for \(label)")
+        }
+        if let cached = verifiedMaterializedDBsByPath[url.standardizedFileURL.path],
+           cached.size == actualBytes,
+           cached.modificationDate == modificationDate,
+           cached.expectedSHA256 == expectedSHA {
+            return cached.actualSHA256
+        }
+        let actualSHA = try fileSHA256(at: url).lowercased()
+        guard actualSHA == expectedSHA else {
+            throw ConsumerAppError.checksum("Checksum mismatch for \(label)")
+        }
+        verifiedMaterializedDBsByPath[url.standardizedFileURL.path] = VerifiedMaterializedDBIdentity(
+            size: actualBytes,
+            modificationDate: modificationDate,
+            expectedSHA256: expectedSHA,
+            actualSHA256: actualSHA
+        )
+        return actualSHA
+    }
+
+    private func validateRecoveredActiveDB(
+        _ state: ActiveBundleState,
+        at dbURL: URL
+    ) throws -> String {
+        let manifestURL = dbURL.deletingLastPathComponent()
+            .appendingPathComponent("bundle-manifest.v3.json")
+        if let manifest = decodeManifestIfPresent(at: manifestURL),
+           manifest.bundleVersion == state.bundleVersion,
+           manifest.db.file == dbURL.lastPathComponent {
+            return try validateMaterializedDB(
+                at: dbURL,
+                artifact: manifest.db,
+                label: "recovered active bundle db"
+            )
+        }
+        guard let expected = state.dbSHA256?.lowercased(),
+              expected.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil else {
+            throw ConsumerAppError.checksum("Active database has no verified materialized digest")
+        }
+        let actual = try fileSHA256(at: dbURL).lowercased()
+        guard actual == expected else {
+            throw ConsumerAppError.checksum("Checksum mismatch for recovered active bundle db")
+        }
+        return actual
+    }
+
+    private func fileSHA256(at url: URL) throws -> String {
         let inHandle = try FileHandle(forReadingFrom: url)
         defer {
             try? inHandle.close()
@@ -2506,10 +2660,7 @@ actor V3BundleManager {
             hasher.update(data: chunk)
         }
         let digest = hasher.finalize()
-        let actual = digest.map { String(format: "%02x", $0) }.joined()
-        if actual != expectedHex.lowercased() {
-            throw ConsumerAppError.checksum("Checksum mismatch for \(label)")
-        }
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 
     private func fileSize(_ url: URL) throws -> Int64 {
@@ -2718,6 +2869,12 @@ actor V3BundleManager {
         if sqlite3_exec(db, patchSQL, nil, nil, nil) != SQLITE_OK {
             let msg = String(cString: sqlite3_errmsg(db))
             throw ConsumerAppError.sqlite("delta patch failed: \(msg)")
+        }
+        // Ensure the digest below covers every committed patch byte rather
+        // than a main file whose latest pages still live in a WAL companion.
+        guard sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE)", nil, nil, nil) == SQLITE_OK else {
+            let msg = String(cString: sqlite3_errmsg(db))
+            throw ConsumerAppError.sqlite("delta checkpoint failed: \(msg)")
         }
     }
 

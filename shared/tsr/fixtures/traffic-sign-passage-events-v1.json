@@ -1,0 +1,672 @@
+[
+  {
+    "schema_version": 1,
+    "event_kind": "traffic_sign_passage",
+    "finalized_event_id": "passage-70-seen-seen-missing",
+    "drive_session_id": "drive-panoramax-c532e405",
+    "tsr_generation": 7,
+    "committed_at_utc": "2026-09-04T10:00:00.400Z",
+    "pack": {
+      "pack_id": "de-yolox-mnv3-live-v3",
+      "taxonomy_version": "tsr-structural-action-v1",
+      "execution_mode": "live",
+      "override_eligible": true,
+      "calibration_status": "passed",
+      "components": [
+        {
+          "role": "proposal_detector",
+          "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "preprocessing_version": "yolox-letterbox-rgb-v1",
+          "calibration_id": "de-proposal-temperature-v1"
+        },
+        {
+          "role": "semantic_classifier",
+          "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "preprocessing_version": "mnv3-primary-crop-rgb-v1",
+          "calibration_id": "de-primary-temperature-v1"
+        }
+      ]
+    },
+    "track": {
+      "physical_track_id": "track-speed-70-001",
+      "assembly_ids": [
+        "assembly-speed-70-frame-1",
+        "assembly-speed-70-frame-2",
+        "assembly-speed-70-frame-3"
+      ],
+      "first_seen_timestamp_utc": "2026-09-04T10:00:00.000Z",
+      "last_seen_timestamp_utc": "2026-09-04T10:00:00.300Z",
+      "frames_seen": 3,
+      "peak_consecutive_frames_seen": 3,
+      "single_sighting_exception": false,
+      "final_calibrated_confidence": 0.9,
+      "final_accumulated_support": 0.93,
+      "accumulated_support_cap": 0.95,
+      "loss_reason": "strong_pass_geometry",
+      "negative_frames_required": 1,
+      "frame_evidence": [
+        {
+          "frame_id": "frame-speed-70-001",
+          "timestamp_utc": "2026-09-04T10:00:00.000Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.84,
+          "proposal_calibrated_confidence": 0.78,
+          "classifier_raw_score": 0.88,
+          "classifier_calibrated_confidence": 0.83,
+          "assembly_confidence": 0.81,
+          "accumulated_support": 0.81
+        },
+        {
+          "frame_id": "frame-speed-70-002",
+          "timestamp_utc": "2026-09-04T10:00:00.200Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.82,
+          "proposal_calibrated_confidence": 0.8,
+          "classifier_raw_score": 0.9,
+          "classifier_calibrated_confidence": 0.88,
+          "assembly_confidence": 0.86,
+          "accumulated_support": 0.91
+        },
+        {
+          "frame_id": "frame-speed-70-003",
+          "timestamp_utc": "2026-09-04T10:00:00.300Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.87,
+          "proposal_calibrated_confidence": 0.84,
+          "classifier_raw_score": 0.93,
+          "classifier_calibrated_confidence": 0.9,
+          "assembly_confidence": 0.89,
+          "accumulated_support": 0.93
+        }
+      ],
+      "loss_evidence": [
+        {
+          "frame_id": "frame-speed-70-004",
+          "timestamp_utc": "2026-09-04T10:00:00.400Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "strong"
+        }
+      ]
+    },
+    "action": {
+      "kind": "posted_maximum",
+      "value_kmh": 70,
+      "permanence": "permanent",
+      "condition_state": "none",
+      "restrictions": []
+    },
+    "resolution": {
+      "runtime_status": "resolved",
+      "presentation": {
+        "kind": "numeric",
+        "value_kmh": 70
+      },
+      "resolution_basis": "direct_sign",
+      "normalized_operation": {
+        "operation": "set_maxspeed",
+        "tag_key": "maxspeed",
+        "tag_value": "70",
+        "direction_scope": "way"
+      },
+      "masks_stale_camera_assertion": false
+    },
+    "boundary": {
+      "frame_id": "frame-speed-70-004",
+      "timestamp_utc": "2026-09-04T10:00:00.400Z",
+      "latitude": 48.792769,
+      "longitude": 8.425878,
+      "heading_degrees": 250.05,
+      "speed_mps": 13.8,
+      "travel_direction": "forward",
+      "map_match_state": "matched",
+      "way_id": "781000001",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000001:forward"
+    },
+    "activation": {
+      "reason": "boundary_stable_match",
+      "timestamp_utc": "2026-09-04T10:00:00.400Z",
+      "latitude": 48.792769,
+      "longitude": 8.425878,
+      "heading_degrees": 250.05,
+      "travel_direction": "forward",
+      "way_id": "781000001",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000001:forward",
+      "pending_rematch_elapsed_ms": 0,
+      "pending_rematch_distance_m": 0
+    },
+    "applicability_scope": {
+      "bundle_id": "karlsruhe-v3",
+      "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "continuity_epoch_id": "continuity-epoch-70-001",
+      "original_way_id": "781000001",
+      "original_travel_direction": "forward",
+      "continuity_capable_bundle": true,
+      "initial_route_relation_group_ids": [
+        9001
+      ],
+      "eligible_route_relation_group_ids": [
+        9001
+      ],
+      "source_relation_ids": [
+        12345
+      ]
+    },
+    "persistence": {
+      "observation_intent": "set_maxspeed",
+      "review_state": "local_only",
+      "runtime_applicable": true,
+      "export_eligible_at_commit": false,
+      "finalized_event_id_is_idempotency_key": true
+    },
+    "privacy": {
+      "raw_frame_persisted": false,
+      "crop_persisted": false,
+      "image_path_persisted": false
+    }
+  },
+  {
+    "schema_version": 1,
+    "event_kind": "traffic_sign_passage",
+    "finalized_event_id": "passage-city-entry-de-50",
+    "drive_session_id": "drive-panoramax-c532e405",
+    "tsr_generation": 7,
+    "committed_at_utc": "2026-09-04T10:01:00.400Z",
+    "pack": {
+      "pack_id": "de-yolox-mnv3-live-v3",
+      "taxonomy_version": "tsr-structural-action-v1",
+      "execution_mode": "live",
+      "override_eligible": true,
+      "calibration_status": "passed",
+      "components": [
+        {
+          "role": "proposal_detector",
+          "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "preprocessing_version": "yolox-letterbox-rgb-v1",
+          "calibration_id": "de-proposal-temperature-v1"
+        },
+        {
+          "role": "semantic_classifier",
+          "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "preprocessing_version": "mnv3-primary-crop-rgb-v1",
+          "calibration_id": "de-primary-temperature-v1"
+        }
+      ]
+    },
+    "track": {
+      "physical_track_id": "track-city-entry-001",
+      "assembly_ids": [
+        "assembly-city-entry-frame-1",
+        "assembly-city-entry-frame-2"
+      ],
+      "first_seen_timestamp_utc": "2026-09-04T10:01:00.000Z",
+      "last_seen_timestamp_utc": "2026-09-04T10:01:00.200Z",
+      "frames_seen": 2,
+      "peak_consecutive_frames_seen": 2,
+      "single_sighting_exception": false,
+      "final_calibrated_confidence": 0.89,
+      "final_accumulated_support": 0.9,
+      "accumulated_support_cap": 0.95,
+      "loss_reason": "strong_pass_geometry",
+      "negative_frames_required": 1,
+      "frame_evidence": [
+        {
+          "frame_id": "frame-city-entry-001",
+          "timestamp_utc": "2026-09-04T10:01:00.000Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.79,
+          "proposal_calibrated_confidence": 0.77,
+          "classifier_raw_score": 0.85,
+          "classifier_calibrated_confidence": 0.82,
+          "assembly_confidence": 0.8,
+          "accumulated_support": 0.8
+        },
+        {
+          "frame_id": "frame-city-entry-002",
+          "timestamp_utc": "2026-09-04T10:01:00.200Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.86,
+          "proposal_calibrated_confidence": 0.84,
+          "classifier_raw_score": 0.91,
+          "classifier_calibrated_confidence": 0.89,
+          "assembly_confidence": 0.87,
+          "accumulated_support": 0.9
+        }
+      ],
+      "loss_evidence": [
+        {
+          "frame_id": "frame-city-entry-003",
+          "timestamp_utc": "2026-09-04T10:01:00.400Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "strong"
+        }
+      ]
+    },
+    "action": {
+      "kind": "city_entry",
+      "country": "DE",
+      "permanence": "permanent",
+      "condition_state": "none",
+      "restrictions": []
+    },
+    "resolution": {
+      "runtime_status": "resolved",
+      "presentation": {
+        "kind": "numeric",
+        "value_kmh": 50
+      },
+      "resolution_basis": "country_policy",
+      "normalized_operation": {
+        "operation": "set_maxspeed",
+        "tag_key": "maxspeed",
+        "tag_value": "50",
+        "direction_scope": "way"
+      },
+      "masks_stale_camera_assertion": false
+    },
+    "boundary": {
+      "frame_id": "frame-city-entry-003",
+      "timestamp_utc": "2026-09-04T10:01:00.400Z",
+      "latitude": 48.792708,
+      "longitude": 8.425556,
+      "heading_degrees": 88.85,
+      "speed_mps": 12.2,
+      "travel_direction": "forward",
+      "map_match_state": "matched",
+      "way_id": "781000002",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000002:forward"
+    },
+    "activation": {
+      "reason": "boundary_stable_match",
+      "timestamp_utc": "2026-09-04T10:01:00.400Z",
+      "latitude": 48.792708,
+      "longitude": 8.425556,
+      "heading_degrees": 88.85,
+      "travel_direction": "forward",
+      "way_id": "781000002",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000002:forward",
+      "pending_rematch_elapsed_ms": 0,
+      "pending_rematch_distance_m": 0
+    },
+    "applicability_scope": {
+      "bundle_id": "karlsruhe-v3",
+      "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "continuity_epoch_id": "continuity-epoch-city-001",
+      "original_way_id": "781000002",
+      "original_travel_direction": "forward",
+      "continuity_capable_bundle": true,
+      "initial_route_relation_group_ids": [
+        9001
+      ],
+      "eligible_route_relation_group_ids": [
+        9001
+      ],
+      "source_relation_ids": [
+        12345
+      ]
+    },
+    "persistence": {
+      "observation_intent": "set_maxspeed",
+      "review_state": "local_only",
+      "runtime_applicable": true,
+      "export_eligible_at_commit": false,
+      "finalized_event_id_is_idempotency_key": true
+    },
+    "privacy": {
+      "raw_frame_persisted": false,
+      "crop_persisted": false,
+      "image_path_persisted": false
+    }
+  },
+  {
+    "schema_version": 1,
+    "event_kind": "traffic_sign_passage",
+    "finalized_event_id": "passage-maximum-speed-end-resolved",
+    "drive_session_id": "drive-panoramax-c532e405",
+    "tsr_generation": 7,
+    "committed_at_utc": "2026-09-04T10:02:01.000Z",
+    "pack": {
+      "pack_id": "de-yolox-mnv3-live-v3",
+      "taxonomy_version": "tsr-structural-action-v1",
+      "execution_mode": "live",
+      "override_eligible": true,
+      "calibration_status": "passed",
+      "components": [
+        {
+          "role": "proposal_detector",
+          "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "preprocessing_version": "yolox-letterbox-rgb-v1",
+          "calibration_id": "de-proposal-temperature-v1"
+        },
+        {
+          "role": "semantic_classifier",
+          "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "preprocessing_version": "mnv3-primary-crop-rgb-v1",
+          "calibration_id": "de-primary-temperature-v1"
+        }
+      ]
+    },
+    "track": {
+      "physical_track_id": "track-max-end-001",
+      "assembly_ids": [
+        "assembly-max-end-frame-1",
+        "assembly-max-end-frame-2"
+      ],
+      "first_seen_timestamp_utc": "2026-09-04T10:02:00.000Z",
+      "last_seen_timestamp_utc": "2026-09-04T10:02:00.200Z",
+      "frames_seen": 2,
+      "peak_consecutive_frames_seen": 2,
+      "single_sighting_exception": false,
+      "final_calibrated_confidence": 0.88,
+      "final_accumulated_support": 0.89,
+      "accumulated_support_cap": 0.95,
+      "loss_reason": "negative_debounce",
+      "negative_frames_required": 2,
+      "frame_evidence": [
+        {
+          "frame_id": "frame-max-end-001",
+          "timestamp_utc": "2026-09-04T10:02:00.000Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.8,
+          "proposal_calibrated_confidence": 0.76,
+          "classifier_raw_score": 0.86,
+          "classifier_calibrated_confidence": 0.84,
+          "assembly_confidence": 0.79,
+          "accumulated_support": 0.79
+        },
+        {
+          "frame_id": "frame-max-end-002",
+          "timestamp_utc": "2026-09-04T10:02:00.200Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.78,
+          "proposal_calibrated_confidence": 0.77,
+          "classifier_raw_score": 0.91,
+          "classifier_calibrated_confidence": 0.88,
+          "assembly_confidence": 0.85,
+          "accumulated_support": 0.89
+        }
+      ],
+      "loss_evidence": [
+        {
+          "frame_id": "frame-max-end-003",
+          "timestamp_utc": "2026-09-04T10:02:00.400Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "frame-max-end-004",
+          "timestamp_utc": "2026-09-04T10:02:00.600Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "not_established"
+        }
+      ]
+    },
+    "action": {
+      "kind": "maximum_speed_end",
+      "ended_value_kmh": 70,
+      "permanence": "permanent",
+      "condition_state": "none",
+      "restrictions": []
+    },
+    "resolution": {
+      "runtime_status": "resolved",
+      "presentation": {
+        "kind": "numeric",
+        "value_kmh": 50
+      },
+      "resolution_basis": "captured_prior_rule",
+      "normalized_operation": {
+        "operation": "set_maxspeed",
+        "tag_key": "maxspeed",
+        "tag_value": "50",
+        "direction_scope": "way"
+      },
+      "masks_stale_camera_assertion": false
+    },
+    "boundary": {
+      "frame_id": "frame-max-end-003",
+      "timestamp_utc": "2026-09-04T10:02:00.400Z",
+      "latitude": 48.794189,
+      "longitude": 8.418692,
+      "heading_degrees": 225.29,
+      "speed_mps": 13.1,
+      "travel_direction": "forward",
+      "map_match_state": "no_match",
+      "way_id": null,
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": null
+    },
+    "activation": {
+      "reason": "first_stabilized_same_scope_rematch",
+      "timestamp_utc": "2026-09-04T10:02:01.000Z",
+      "latitude": 48.7941,
+      "longitude": 8.4185,
+      "heading_degrees": 225.4,
+      "travel_direction": "forward",
+      "way_id": "781000003",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000003:forward",
+      "pending_rematch_elapsed_ms": 600,
+      "pending_rematch_distance_m": 8.2
+    },
+    "applicability_scope": {
+      "bundle_id": "karlsruhe-v3",
+      "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "continuity_epoch_id": "continuity-epoch-max-end-001",
+      "original_way_id": "781000003",
+      "original_travel_direction": "forward",
+      "continuity_capable_bundle": true,
+      "initial_route_relation_group_ids": [
+        9001
+      ],
+      "eligible_route_relation_group_ids": [
+        9001
+      ],
+      "source_relation_ids": [
+        12345
+      ]
+    },
+    "persistence": {
+      "observation_intent": "set_maxspeed",
+      "review_state": "local_only",
+      "runtime_applicable": true,
+      "export_eligible_at_commit": false,
+      "finalized_event_id_is_idempotency_key": true
+    },
+    "privacy": {
+      "raw_frame_persisted": false,
+      "crop_persisted": false,
+      "image_path_persisted": false
+    }
+  },
+  {
+    "schema_version": 1,
+    "event_kind": "traffic_sign_passage",
+    "finalized_event_id": "passage-maximum-speed-end-unresolved",
+    "drive_session_id": "drive-panoramax-c532e405",
+    "tsr_generation": 7,
+    "committed_at_utc": "2026-09-04T10:03:00.600Z",
+    "pack": {
+      "pack_id": "de-yolox-mnv3-live-v3",
+      "taxonomy_version": "tsr-structural-action-v1",
+      "execution_mode": "live",
+      "override_eligible": true,
+      "calibration_status": "passed",
+      "components": [
+        {
+          "role": "proposal_detector",
+          "artifact_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "preprocessing_version": "yolox-letterbox-rgb-v1",
+          "calibration_id": "de-proposal-temperature-v1"
+        },
+        {
+          "role": "semantic_classifier",
+          "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "preprocessing_version": "mnv3-primary-crop-rgb-v1",
+          "calibration_id": "de-primary-temperature-v1"
+        }
+      ]
+    },
+    "track": {
+      "physical_track_id": "track-max-end-002",
+      "assembly_ids": [
+        "assembly-max-end-unresolved-frame-1",
+        "assembly-max-end-unresolved-frame-2"
+      ],
+      "first_seen_timestamp_utc": "2026-09-04T10:03:00.000Z",
+      "last_seen_timestamp_utc": "2026-09-04T10:03:00.200Z",
+      "frames_seen": 2,
+      "peak_consecutive_frames_seen": 2,
+      "single_sighting_exception": false,
+      "final_calibrated_confidence": 0.89,
+      "final_accumulated_support": 0.9,
+      "accumulated_support_cap": 0.95,
+      "loss_reason": "negative_debounce",
+      "negative_frames_required": 2,
+      "frame_evidence": [
+        {
+          "frame_id": "frame-max-end-unresolved-001",
+          "timestamp_utc": "2026-09-04T10:03:00.000Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.83,
+          "proposal_calibrated_confidence": 0.79,
+          "classifier_raw_score": 0.86,
+          "classifier_calibrated_confidence": 0.84,
+          "assembly_confidence": 0.81,
+          "accumulated_support": 0.81
+        },
+        {
+          "frame_id": "frame-max-end-unresolved-002",
+          "timestamp_utc": "2026-09-04T10:03:00.200Z",
+          "outcome": "seen",
+          "analysis_eligible": true,
+          "proposal_raw_score": 0.81,
+          "proposal_calibrated_confidence": 0.8,
+          "classifier_raw_score": 0.92,
+          "classifier_calibrated_confidence": 0.89,
+          "assembly_confidence": 0.86,
+          "accumulated_support": 0.9
+        }
+      ],
+      "loss_evidence": [
+        {
+          "frame_id": "frame-max-end-unresolved-003",
+          "timestamp_utc": "2026-09-04T10:03:00.400Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "not_established"
+        },
+        {
+          "frame_id": "frame-max-end-unresolved-004",
+          "timestamp_utc": "2026-09-04T10:03:00.600Z",
+          "outcome": "analyzed_missing",
+          "analysis_eligible": true,
+          "pass_geometry": "not_established"
+        }
+      ]
+    },
+    "action": {
+      "kind": "maximum_speed_end",
+      "ended_value_kmh": 70,
+      "permanence": "permanent",
+      "condition_state": "none",
+      "restrictions": []
+    },
+    "resolution": {
+      "runtime_status": "unresolved_end",
+      "presentation": {
+        "kind": "unknown"
+      },
+      "resolution_basis": "unresolved",
+      "normalized_operation": null,
+      "masks_stale_camera_assertion": true,
+      "unresolved_reason": "No captured prior rule or corroborated statutory/map baseline"
+    },
+    "boundary": {
+      "frame_id": "frame-max-end-unresolved-003",
+      "timestamp_utc": "2026-09-04T10:03:00.400Z",
+      "latitude": 48.7943,
+      "longitude": 8.4182,
+      "heading_degrees": 225.5,
+      "speed_mps": 13.3,
+      "travel_direction": "forward",
+      "map_match_state": "matched",
+      "way_id": "781000004",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000004:forward"
+    },
+    "activation": {
+      "reason": "boundary_stable_match",
+      "timestamp_utc": "2026-09-04T10:03:00.600Z",
+      "latitude": 48.7943,
+      "longitude": 8.4182,
+      "heading_degrees": 225.5,
+      "travel_direction": "forward",
+      "way_id": "781000004",
+      "route_relation_group_ids": [
+        9001
+      ],
+      "source_signature": "karlsruhe-v3:781000004:forward",
+      "pending_rematch_elapsed_ms": 0,
+      "pending_rematch_distance_m": 0
+    },
+    "applicability_scope": {
+      "bundle_id": "karlsruhe-v3",
+      "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "continuity_epoch_id": "continuity-epoch-max-end-002",
+      "original_way_id": "781000004",
+      "original_travel_direction": "forward",
+      "continuity_capable_bundle": true,
+      "initial_route_relation_group_ids": [
+        9001
+      ],
+      "eligible_route_relation_group_ids": [
+        9001
+      ],
+      "source_relation_ids": [
+        12345
+      ]
+    },
+    "persistence": {
+      "observation_intent": "map_inconsistency",
+      "review_state": "needs_review",
+      "runtime_applicable": false,
+      "export_eligible_at_commit": false,
+      "finalized_event_id_is_idempotency_key": true
+    },
+    "privacy": {
+      "raw_frame_persisted": false,
+      "crop_persisted": false,
+      "image_path_persisted": false
+    }
+  }
+]

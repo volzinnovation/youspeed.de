@@ -156,6 +156,56 @@ private final class ScriptedTrafficSignInferenceBackend:
     }
 }
 
+private final class FirstInvocationBlockingTrafficSignInferenceBackend:
+    TrafficSignInferenceBackend,
+    @unchecked Sendable
+{
+    private let lock = NSLock()
+    private let started = DispatchSemaphore(value: 0)
+    private let release = DispatchSemaphore(value: 0)
+    private let completed = DispatchSemaphore(value: 0)
+    private var invocationCount = 0
+
+    func waitUntilStarted(timeout: DispatchTime) -> DispatchTimeoutResult {
+        started.wait(timeout: timeout)
+    }
+
+    func releaseFirstInvocation() {
+        release.signal()
+    }
+
+    func waitUntilFirstCompleted(timeout: DispatchTime) -> DispatchTimeoutResult {
+        completed.wait(timeout: timeout)
+    }
+
+    func detections(
+        in pixelBuffer: CVPixelBuffer,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        try next()
+    }
+
+    func detections(
+        in cgImage: CGImage,
+        orientation: CGImagePropertyOrientation
+    ) throws -> [TrafficSignDetection] {
+        try next()
+    }
+
+    private func next() throws -> [TrafficSignDetection] {
+        lock.lock()
+        invocationCount += 1
+        let shouldBlock = invocationCount == 1
+        lock.unlock()
+        if shouldBlock {
+            started.signal()
+            _ = release.wait(timeout: .now() + 3)
+            completed.signal()
+        }
+        return []
+    }
+}
+
 private final class TrafficSignTestEmissionStore: @unchecked Sendable {
     private let lock = NSLock()
     private var emissions: [TrafficSignRuntimeEmission] = []
@@ -627,6 +677,57 @@ final class SpeedConsumerTests: XCTestCase {
                 error as? TrafficSignPackValidationError,
                 .invalid("TSR pack does not support the active country")
             )
+        }
+    }
+
+    func testTrafficSignModelPackEnforcesSharedSpeedValueRange() {
+        for value in [5, 200] {
+            let manifest = makeTrafficSignModelPackManifest(
+                additionalClassMappings: [TrafficSignModelPackManifest.ClassMapping(
+                    classId: "speed_limit_\(value)",
+                    label: "Maximum speed \(value)",
+                    semantic: TrafficSignSemantic(
+                        kind: .maximumSpeed,
+                        value: value,
+                        unit: "km/h"
+                    ),
+                    threshold: 0.7
+                )]
+            )
+            XCTAssertNoThrow(try TrafficSignModelPackValidator.validate(
+                manifest,
+                platform: .ios,
+                runtimeVersion: "18.6",
+                appVersion: "1.0.1",
+                countryCode: "DE"
+            ))
+        }
+
+        for value in [4, 201] {
+            let manifest = makeTrafficSignModelPackManifest(
+                additionalClassMappings: [TrafficSignModelPackManifest.ClassMapping(
+                    classId: "speed_limit_\(value)",
+                    label: "Maximum speed \(value)",
+                    semantic: TrafficSignSemantic(
+                        kind: .maximumSpeed,
+                        value: value,
+                        unit: "km/h"
+                    ),
+                    threshold: 0.7
+                )]
+            )
+            XCTAssertThrowsError(try TrafficSignModelPackValidator.validate(
+                manifest,
+                platform: .ios,
+                runtimeVersion: "18.6",
+                appVersion: "1.0.1",
+                countryCode: "DE"
+            )) { error in
+                XCTAssertEqual(
+                    error as? TrafficSignPackValidationError,
+                    .invalid("Speed TSR semantic requires a 5...200 value and unit")
+                )
+            }
         }
     }
 
@@ -1508,7 +1609,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(confirmed.candidate?.restrictions, [wet])
     }
 
-    func testTrafficSignFusionStartsFreshWhenWayDirectionOrSourceChanges() throws {
+    func testTrafficSignFusionUsesTraversalEpochAndBundleRevisionForRoadIdentity() throws {
         let thresholds = TrafficSignModelPackManifest.Thresholds(
             provisional: 0.45,
             confirmed: 0.7,
@@ -1524,17 +1625,33 @@ final class SpeedConsumerTests: XCTestCase {
             thresholds: thresholds
         )
         let start = Date(timeIntervalSince1970: 2_000)
-        let forward = makeTrafficSignDetectionContext()
+        let forwardSource = TrafficSignRuntimeSourceSignature(
+            osmRevision: "bundle:v42|way:123|direction:forward|maxspeed:50",
+            localCorrectionRevision: nil
+        )
+        let forward = TrafficSignDetectionContext(
+            wayId: "123",
+            latitude: 49.0069,
+            longitude: 8.4037,
+            headingDegrees: 82,
+            travelDirection: .forward,
+            sourceSignature: forwardSource,
+            traversalEpoch: 7
+        )
         let reverse = TrafficSignDetectionContext(
             wayId: forward.wayId,
             latitude: forward.latitude,
             longitude: forward.longitude,
             headingDegrees: 262,
             travelDirection: .reverse,
-            sourceSignature: forward.sourceSignature
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "bundle:v42|way:123|direction:reverse|maxspeed:50",
+                localCorrectionRevision: nil
+            ),
+            traversalEpoch: 8
         )
         let nextWaySource = TrafficSignRuntimeSourceSignature(
-            osmRevision: "bundle-de-v42:way-456:70",
+            osmRevision: "bundle:v42|way:456|direction:forward|maxspeed:70",
             localCorrectionRevision: nil
         )
         let nextWay = TrafficSignDetectionContext(
@@ -1543,7 +1660,8 @@ final class SpeedConsumerTests: XCTestCase {
             longitude: 8.4051,
             headingDegrees: 84,
             travelDirection: .forward,
-            sourceSignature: nextWaySource
+            sourceSignature: nextWaySource,
+            traversalEpoch: reverse.traversalEpoch
         )
         let revisedSource = TrafficSignRuntimeSourceSignature(
             osmRevision: nextWaySource.osmRevision,
@@ -1555,7 +1673,20 @@ final class SpeedConsumerTests: XCTestCase {
             longitude: 8.4056,
             headingDegrees: 86,
             travelDirection: nextWay.travelDirection,
-            sourceSignature: revisedSource
+            sourceSignature: revisedSource,
+            traversalEpoch: nextWay.traversalEpoch
+        )
+        let nextBundleContext = TrafficSignDetectionContext(
+            wayId: nextWay.wayId,
+            latitude: 49.0080,
+            longitude: 8.4059,
+            headingDegrees: 87,
+            travelDirection: nextWay.travelDirection,
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "bundle:v43|way:456|direction:forward|maxspeed:70",
+                localCorrectionRevision: revisedSource.localCorrectionRevision
+            ),
+            traversalEpoch: nextWay.traversalEpoch
         )
         let detection = makeTrafficSignDetection(
             score: 0.9,
@@ -1602,6 +1733,14 @@ final class SpeedConsumerTests: XCTestCase {
             latencyMs: 10,
             thermalState: .nominal
         )
+        let afterBundleChange = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: start.addingTimeInterval(1.5),
+            roadContext: nextBundleContext,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
 
         XCTAssertEqual(first.candidate?.evidenceFrames, 1)
         XCTAssertEqual(second.candidate?.evidenceFrames, 2)
@@ -1610,13 +1749,17 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNotEqual(afterUTurn.candidate?.trackId, second.candidate?.trackId)
         XCTAssertEqual(afterUTurn.roadContext, reverse)
         XCTAssertEqual(afterWayChange.state, .provisional)
-        XCTAssertEqual(afterWayChange.candidate?.evidenceFrames, 1)
-        XCTAssertNotEqual(afterWayChange.candidate?.trackId, afterUTurn.candidate?.trackId)
+        XCTAssertEqual(afterWayChange.candidate?.evidenceFrames, 2)
+        XCTAssertEqual(afterWayChange.candidate?.trackId, afterUTurn.candidate?.trackId)
         XCTAssertEqual(afterWayChange.roadContext, nextWay)
-        XCTAssertEqual(afterSourceChange.state, .provisional)
-        XCTAssertEqual(afterSourceChange.candidate?.evidenceFrames, 1)
-        XCTAssertNotEqual(afterSourceChange.candidate?.trackId, afterWayChange.candidate?.trackId)
+        XCTAssertEqual(afterSourceChange.state, .confirmed)
+        XCTAssertEqual(afterSourceChange.candidate?.evidenceFrames, 3)
+        XCTAssertEqual(afterSourceChange.candidate?.trackId, afterWayChange.candidate?.trackId)
         XCTAssertEqual(afterSourceChange.roadContext, revisedContext)
+        XCTAssertEqual(afterBundleChange.state, .provisional)
+        XCTAssertEqual(afterBundleChange.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(afterBundleChange.candidate?.trackId, afterSourceChange.candidate?.trackId)
+        XCTAssertEqual(afterBundleChange.roadContext, nextBundleContext)
     }
 
     func testTrafficSignRuntimeKeepsLegacyResultWhenShadowObservationIsInvalid() throws {
@@ -1853,6 +1996,151 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(runtime.unavailability?.code, .inferenceFailed)
         XCTAssertEqual(backend.invocationCount, 6)
         XCTAssertEqual(runtime.metrics.completedInferences, 1)
+    }
+
+    func testQueuedTerminalFailureCannotTearDownRapidlyReenabledGeneration() {
+        let reason = TrafficSignRuntimeUnavailability(
+            code: .inferenceFailed,
+            detail: "old generation failed"
+        )
+        let stale = TrafficSignRuntimeUnavailabilityEmission(
+            reason: reason,
+            sessionGeneration: 8,
+            contextGeneration: 13,
+            captureSessionId: "capture-old",
+            runtimeIdentity: "runtime-old"
+        )
+        let reenabledToken = TrafficSignGenerationToken(session: 9, context: 14)
+
+        XCTAssertFalse(DriveSessionViewModel.trafficSignRuntimeUnavailabilityIsCurrent(
+            stale,
+            activeRuntimeIdentity: "runtime-new",
+            activeToken: reenabledToken,
+            activeCaptureSessionID: "capture-new"
+        ))
+        // Generation validation remains independently fail-closed even if a
+        // coordinator reuses the same runtime object/capture-session string.
+        XCTAssertFalse(DriveSessionViewModel.trafficSignRuntimeUnavailabilityIsCurrent(
+            stale,
+            activeRuntimeIdentity: "runtime-old",
+            activeToken: reenabledToken,
+            activeCaptureSessionID: "capture-old"
+        ))
+        XCTAssertTrue(DriveSessionViewModel.trafficSignRuntimeUnavailabilityIsCurrent(
+            stale,
+            activeRuntimeIdentity: "runtime-old",
+            activeToken: TrafficSignGenerationToken(session: 8, context: 13),
+            activeCaptureSessionID: "capture-old"
+        ))
+    }
+
+    func testOldGenerationPersistenceContinuationCannotPublishAfterDisableOrReenable() {
+        let old = TrafficSignGenerationToken(session: 8, context: 13)
+        XCTAssertTrue(DriveSessionViewModel.trafficSignPersistenceContinuationIsCurrent(
+            expectedToken: old,
+            activeToken: old,
+            mutationEnabled: true
+        ))
+        XCTAssertFalse(DriveSessionViewModel.trafficSignPersistenceContinuationIsCurrent(
+            expectedToken: old,
+            activeToken: old,
+            mutationEnabled: false
+        ))
+        XCTAssertFalse(DriveSessionViewModel.trafficSignPersistenceContinuationIsCurrent(
+            expectedToken: old,
+            activeToken: TrafficSignGenerationToken(session: 9, context: 14),
+            mutationEnabled: true
+        ))
+    }
+
+    func testInFlightOldGenerationIsDroppedBeforeFusionAndNewGenerationContinues() throws {
+        let manifest = makeTrafficSignModelPackManifest()
+        let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
+        let verifiedPack = TrafficSignVerifiedModelPack(
+            directoryURL: URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true),
+            manifest: manifest,
+            detectorArtifact: artifact,
+            detectorArtifactURL: URL(fileURLWithPath: NSTemporaryDirectory())
+                .appendingPathComponent("detector.mlmodel")
+        )
+        let backend = FirstInvocationBlockingTrafficSignInferenceBackend()
+        let context = makeTrafficSignDetectionContext()
+        let oldSnapshot = TrafficSignFrameSnapshot(
+            context: context,
+            conditions: TrafficSignAnalysisConditions(
+                speedKmh: 50,
+                candidateRecentlySeen: false,
+                lowPowerMode: false,
+                thermalState: .nominal,
+                appIsActive: true
+            ),
+            sessionGeneration: 4,
+            contextGeneration: 7,
+            captureSessionId: "capture-old"
+        )
+        let newSnapshot = TrafficSignFrameSnapshot(
+            context: context,
+            conditions: oldSnapshot.conditions,
+            sessionGeneration: 5,
+            contextGeneration: 8,
+            captureSessionId: "capture-new"
+        )
+        let frameState = TrafficSignAtomicFrameState(value: oldSnapshot)
+        let processingGate = TrafficSignWriteGate()
+        processingGate.update(
+            token: TrafficSignGenerationToken(session: 4, context: 7),
+            enabled: true
+        )
+        let emissions = TrafficSignTestEmissionStore()
+        let emissionSignal = DispatchSemaphore(value: 0)
+        let unavailableSignal = DispatchSemaphore(value: 0)
+        let runtime = TrafficSignRuntime(
+            verifiedPack: verifiedPack,
+            backend: backend,
+            snapshotProvider: { frameState.snapshot() },
+            callbackQueue: DispatchQueue(label: "de.youspeed.tests.tsr-generation-gate"),
+            eventHandler: {
+                emissions.append($0)
+                emissionSignal.signal()
+            },
+            unavailabilityHandler: { _ in unavailableSignal.signal() },
+            processingGate: processingGate
+        )
+        defer { runtime.stop() }
+        let image = try makeTrafficSignTestImage()
+
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: Date(timeIntervalSince1970: 7_000),
+            snapshot: oldSnapshot
+        )
+        XCTAssertEqual(backend.waitUntilStarted(timeout: .now() + 2), .success)
+
+        // Disable/re-enable advances both hard gates while the first inference
+        // is still admitted on the worker queue. Its result must be inert; the
+        // queued replacement generation must still run normally.
+        processingGate.update(
+            token: TrafficSignGenerationToken(session: 5, context: 8),
+            enabled: true
+        )
+        frameState.update(newSnapshot)
+        runtime.analyzeStill(
+            cgImage: image,
+            orientation: .up,
+            timestampUTC: Date(timeIntervalSince1970: 7_001),
+            snapshot: newSnapshot
+        )
+        backend.releaseFirstInvocation()
+        XCTAssertEqual(backend.waitUntilFirstCompleted(timeout: .now() + 2), .success)
+        XCTAssertEqual(emissionSignal.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(unavailableSignal.wait(timeout: .now() + 0.1), .timedOut)
+
+        let delivered = emissions.snapshot()
+        XCTAssertEqual(delivered.count, 1)
+        XCTAssertEqual(delivered[0].sessionGeneration, 5)
+        XCTAssertEqual(delivered[0].contextGeneration, 8)
+        XCTAssertEqual(delivered[0].captureSessionId, "capture-new")
     }
 
     func testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations() throws {
@@ -5325,6 +5613,104 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(all.first(where: { $0.id == captured.id })?.state, .exportedOsc)
     }
 
+    func testLocalObservationExportReservationIsStaledAndQuarantinedByNewerOverlappingCorrection() async throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-localobs-stale-export-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.localobs.stale-export.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: defaultsName) else {
+            return XCTFail("failed to create isolated defaults suite")
+        }
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fm,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { Date(timeIntervalSince1970: 1_788_280_000) }
+        )
+        let context = LocalObservationCaptureContext(
+            lat: 48.8,
+            lon: 8.4,
+            headingDeg: 90,
+            roadCandidateIDs: ["17721265"],
+            cityContext: "Karlsruhe",
+            streetContext: "Teststrasse",
+            confidenceCalibrated: 0.9,
+            sourceVersion: "test"
+        )
+
+        let old = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 50,
+            newMaxspeedValue: "30",
+            context: context
+        )
+        let approvedOld = try await store.reviewAndApproveProposal(observationID: old.id)
+        let frozenRevision = try XCTUnwrap(approvedOld.approvalRevision)
+        let reservation = try await store.testReserveExportBatch(observationID: old.id)
+        XCTAssertEqual(reservation.memberObservationIDs, [old.id])
+        let pendingStatus = try await store.testExportBatchStatus(batchID: reservation.batchID)
+        XCTAssertEqual(pendingStatus, "pending")
+
+        // Simulate the crash window after the deterministic directory was
+        // published but before its database finalization committed.
+        try fm.createDirectory(at: reservation.packageDirectory, withIntermediateDirectories: true)
+        try Data("stale package".utf8).write(
+            to: reservation.packageDirectory.appendingPathComponent("changes.osc"),
+            options: .atomic
+        )
+
+        let newer = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 30,
+            newMaxspeedValue: "50",
+            context: context
+        )
+        let staleStatus = try await store.testExportBatchStatus(batchID: reservation.batchID)
+        XCTAssertEqual(staleStatus, "stale")
+        XCTAssertFalse(fm.fileExists(atPath: reservation.packageDirectory.path))
+        XCTAssertTrue(fm.fileExists(atPath: root
+            .appendingPathComponent("stale-osm-editor-packages", isDirectory: true)
+            .appendingPathComponent(reservation.batchID, isDirectory: true).path))
+
+        let observations = try await store.fetchObservations(limit: 10)
+        let supersededOld = try XCTUnwrap(observations.first { $0.id == old.id })
+        XCTAssertEqual(supersededOld.exportDisposition, .superseded)
+        XCTAssertEqual(supersededOld.approvalRevision, frozenRevision)
+
+        do {
+            try await store.testFinalizeReservedExportBatch(batchID: reservation.batchID)
+            XCTFail("a newer overlapping correction must prevent stale finalization")
+        } catch {
+            // Expected: stale reservations are never published/finalized.
+        }
+        do {
+            _ = try await store.exportProposalAsOscPackage(observationID: old.id)
+            XCTFail("a superseded approval must not export")
+        } catch {
+            // Expected.
+        }
+        do {
+            _ = try await store.reviewAndApproveProposal(observationID: old.id)
+            XCTFail("an already-approved superseded revision cannot be re-approved")
+        } catch {
+            // Expected.
+        }
+
+        _ = try await store.reviewAndApproveProposal(observationID: newer.id)
+        let firstExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
+        let recoveredExport = try await store.exportProposalAsOscPackage(observationID: newer.id)
+        XCTAssertEqual(firstExport.exportID, recoveredExport.exportID)
+        XCTAssertEqual(firstExport.packageDirectory, recoveredExport.packageDirectory)
+        XCTAssertTrue(fm.fileExists(atPath: recoveredExport.changesFile.path))
+    }
+
     func testLocalObservationStoreBulkExportAndDeleteFlow() async throws {
         let fm = FileManager.default
         let root = fm.temporaryDirectory.appendingPathComponent("speedconsumer-localobs-bulk-\(UUID().uuidString)", isDirectory: true)
@@ -5984,7 +6370,6 @@ final class SpeedConsumerTests: XCTestCase {
             options: .atomic
         )
 
-        let seedData = try Data(contentsOf: seedDB)
         let manifestURL = URL(string: "https://speedconsumer.test/DEU-latest.bundle-manifest.v3.json")!
         let dbURL = URL(string: "https://speedconsumer.test/DEU-latest.speeds_v3.sqlite")!
         let deltaIndexURL = URL(string: "https://speedconsumer.test/DEU-latest.delta-index.v3.json")!
@@ -6012,6 +6397,15 @@ final class SpeedConsumerTests: XCTestCase {
         let patch1Data = try zlibCompressedData(Data(patch1SQL.utf8))
         let patch2Data = try zlibCompressedData(Data(patch2SQL.utf8))
 
+        // The target manifest identifies the fully materialized database, not
+        // the seed input. Build the deterministic expected target so the test
+        // exercises the same post-delta digest verification as production.
+        let expectedTargetDB = seedDir.appendingPathComponent("fixture-target.sqlite")
+        try fm.copyItem(at: seedDB, to: expectedTargetDB)
+        try executeSQL(at: expectedTargetDB, sql: patch1SQL)
+        try executeSQL(at: expectedTargetDB, sql: patch2SQL)
+        let expectedTargetData = try Data(contentsOf: expectedTargetDB)
+
         let manifest = V3BundleManifest(
             format: "youspeed.v3.bundle.manifest",
             schemaVersion: 1,
@@ -6022,8 +6416,8 @@ final class SpeedConsumerTests: XCTestCase {
             minAppVersion: "1.0.0",
             db: BundleArtifact(
                 file: "DEU-latest.speeds_v3.sqlite",
-                bytes: Int64(seedData.count),
-                sha256: sha256Hex(seedData),
+                bytes: Int64(expectedTargetData.count),
+                sha256: sha256Hex(expectedTargetData),
                 url: dbURL.absoluteString
             ),
             dbParts: nil,
@@ -6284,6 +6678,80 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(result.speedLimitKmh, 30)
         XCTAssertEqual(result.wayID, "100")
+    }
+
+    func testStartupRecoveryRejectsValidSQLiteWhoseMaterializedChecksumWasTampered() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) {
+            try fm.removeItem(at: supportDir)
+        }
+        defer { try? fm.removeItem(at: supportDir) }
+
+        let bundleDir = supportDir
+            .appendingPathComponent("bundles", isDirectory: true)
+            .appendingPathComponent("deu-2026-09-04-tamper", isDirectory: true)
+        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        let dbURL = bundleDir.appendingPathComponent("DEU-tamper.speeds_v3.sqlite")
+        try createFixtureV3DB(at: dbURL)
+        let originalData = try Data(contentsOf: dbURL)
+        let originalBytes = originalData.count
+        let originalSHA = sha256Hex(originalData)
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest",
+            schemaVersion: 1,
+            variant: "v3",
+            region: "DEU",
+            countryCode: "DE",
+            bundleVersion: "2026-09-04-tamper",
+            createdAtUTC: "2026-09-04T00:00:00Z",
+            minAppVersion: "1.0.0",
+            db: BundleArtifact(
+                file: dbURL.lastPathComponent,
+                bytes: Int64(originalBytes),
+                sha256: originalSHA,
+                url: nil
+            ),
+            dbParts: nil,
+            deltaIndex: nil
+        )
+        try JSONEncoder().encode(manifest).write(
+            to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"),
+            options: .atomic
+        )
+
+        // Keep the file a valid v3 SQLite database and keep its byte count
+        // unchanged, so rejection specifically exercises the materialized SHA.
+        try executeSQL(
+            at: dbURL,
+            sql: "UPDATE ways SET maxspeed='31' WHERE way_id='100';"
+        )
+        let tamperedData = try Data(contentsOf: dbURL)
+        XCTAssertEqual(tamperedData.count, originalBytes)
+        XCTAssertNotEqual(sha256Hex(tamperedData), originalSHA)
+        XCTAssertEqual(
+            try V3SpeedLimitService(dbPath: dbURL.path).lookupSpeedLimit(
+                lat: 52.5205,
+                lon: 13.4055,
+                radiusM: 250,
+                maxCandidates: 64
+            ).speedLimitKmh,
+            31,
+            "the tampered artifact remains structurally valid SQLite"
+        )
+
+        let manager = V3BundleManager(
+            fileManager: fm,
+            session: URLSession(configuration: .ephemeral)
+        )
+        let recovered = try await manager.recoverLocalDataAtStartup()
+        let activeState = try await manager.activeState()
+        XCTAssertNil(recovered)
+        XCTAssertNil(activeState)
+        XCTAssertFalse(
+            fm.fileExists(atPath: bundleDir.path),
+            "checksum-invalid materialized bundles must be removed, never activated"
+        )
     }
 
     func testStartupRecoveryRemovesUnusableRemnantsWhenNothingIsRecoverable() async throws {
@@ -14139,6 +14607,2070 @@ final class SpeedConsumerTests: XCTestCase {
                 expectedPoint.expectedWayID,
                 "Unexpected way ID for track index \(index) lat=\(point.lat) lon=\(point.lon)"
             )
+        }
+    }
+}
+
+final class TrafficSignPassageEvaluationTests: XCTestCase {
+    private let baseTime = Date(timeIntervalSince1970: 1_788_279_200)
+    private let verifiedSHA = String(repeating: "a", count: 64)
+
+    func testRepeatedTrackCommitsOnSecondMissingFrameAndFreezesFirstBoundary() throws {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, context: context, confidence: 0.80),
+            sessionGeneration: 1,
+            contextGeneration: 2,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.1, context: context, confidence: 0.87, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 2,
+            calibratedActivationEligible: true
+        )
+
+        let firstMissing = finalizer.ingest(
+            makeMissing(offset: 0.2, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 2,
+            calibratedActivationEligible: true
+        )
+        guard case .lossPending(let boundary, let negativeFrames) = firstMissing else {
+            return XCTFail("ordinary loss must debounce")
+        }
+        XCTAssertEqual(boundary, baseTime.addingTimeInterval(0.2))
+        XCTAssertEqual(negativeFrames, 1)
+
+        let secondMissing = finalizer.ingest(
+            makeMissing(offset: 0.3, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 2,
+            strongPassGeometry: true,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let passage) = secondMissing else {
+            return XCTFail("second calibrated negative must finalize a repeated track")
+        }
+        XCTAssertEqual(passage.passageBoundaryTimestampUTC, baseTime.addingTimeInterval(0.2))
+        XCTAssertEqual(passage.lossNegativeFrames, 2)
+        XCTAssertEqual(passage.lossReason, .negativeDebounce)
+        XCTAssertEqual(passage.negativeFramesRequired, 2)
+        XCTAssertEqual(passage.frameEvidence.count, 2)
+        XCTAssertEqual(passage.frameEvidence.last?.proposalRawScore, 0.71)
+        XCTAssertEqual(passage.frameEvidence.last?.proposalCalibratedConfidence, 0.73)
+        XCTAssertEqual(passage.frameEvidence.last?.classifierRawScore, 0.81)
+        XCTAssertEqual(passage.frameEvidence.last?.classifierCalibratedConfidence, 0.83)
+        XCTAssertEqual(passage.frameEvidence.last?.assemblyConfidence, 0.82)
+        XCTAssertEqual(passage.lossEvidence.count, 2)
+        XCTAssertEqual(passage.lossEvidence.first?.outcome, "analyzed_missing")
+    }
+
+    func testStrongPassGeometryAllowsOneMissingFrameOnlyForRepeatedTrack() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.1, context: context, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let result = finalizer.ingest(
+            makeMissing(offset: 0.2, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            strongPassGeometry: true,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let passage) = result else {
+            return XCTFail("strong geometry should finalize a repeatedly seen sign immediately")
+        }
+        XCTAssertEqual(passage.lossReason, .strongPassGeometry)
+        XCTAssertEqual(passage.negativeFramesRequired, 1)
+
+        let unsafeConfiguration = TrafficSignPassageFinalizer.Configuration(
+            repeatedSightingLossFrames: 1,
+            singleSightingLossFrames: 1
+        )
+        XCTAssertGreaterThan(
+            unsafeConfiguration.singleSightingLossFrames,
+            unsafeConfiguration.repeatedSightingLossFrames
+        )
+        var single = TrafficSignPassageFinalizer(configuration: unsafeConfiguration)
+        _ = single.ingest(
+            makeSeen(offset: 1, context: context, confidence: 0.99, state: .confirmed),
+            sessionGeneration: 2,
+            contextGeneration: 2,
+            calibratedActivationEligible: true
+        )
+        for miss in 0..<2 {
+            let update = single.ingest(
+                makeMissing(offset: 1.1 + Double(miss) * 0.1, context: context),
+                sessionGeneration: 2,
+                contextGeneration: 2,
+                strongPassGeometry: true,
+                calibratedActivationEligible: true
+            )
+            guard case .lossPending = update else {
+                return XCTFail("single-frame recognition must keep the stricter debounce")
+            }
+        }
+    }
+
+    func testVisualReappearanceDuringNoMatchCancelsLossAndPreservesTrack() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        arm(&finalizer, context: context)
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.2, context: nil),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let reappeared = finalizer.ingest(
+            makeSeen(offset: 0.3, context: nil, confidence: 0.92, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .armed = reappeared else {
+            return XCTFail("a compatible visual reappearance must cancel pending loss")
+        }
+        let nextMissing = finalizer.ingest(
+            makeMissing(offset: 0.4, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .lossPending(let boundary, let count) = nextMissing else {
+            return XCTFail("loss debounce must restart after reappearance")
+        }
+        XCTAssertEqual(boundary, baseTime.addingTimeInterval(0.4))
+        XCTAssertEqual(count, 1)
+    }
+
+    func testEntirelyUnmatchedVisibleTrackCannotAcquireWayOnlyAfterLoss() {
+        var finalizer = TrafficSignPassageFinalizer()
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, context: nil),
+            sessionGeneration: 4,
+            contextGeneration: 5,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.1, context: nil, state: .confirmed),
+            sessionGeneration: 4,
+            contextGeneration: 5,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.2, context: nil),
+            sessionGeneration: 4,
+            contextGeneration: 5,
+            frameCoordinate: .init(latitude: 48.1, longitude: 8.1),
+            calibratedActivationEligible: true
+        )
+        let terminalLoss = finalizer.ingest(
+            makeMissing(offset: 0.3, context: nil),
+            sessionGeneration: 4,
+            contextGeneration: 5,
+            frameCoordinate: .init(latitude: 48.1001, longitude: 8.1001),
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(
+            terminalLoss,
+            .discarded(reason: "passage_missing_recognition_origin")
+        )
+        let stable = makeContext(wayID: "456")
+        let firstRematch = finalizer.ingest(
+            makeMissing(offset: 0.4, context: stable),
+            sessionGeneration: 4,
+            contextGeneration: 5,
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(firstRematch, .idle)
+    }
+
+    func testBoundaryCannotAcquireRelationOutsideNarrowedRecognitionScope() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let contextA = makeContext(wayID: "501", groups: [1, 2])
+        let contextB = makeContext(wayID: "502", groups: [2, 3])
+        let contextC = makeContext(wayID: "503", groups: [3])
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, context: contextA),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.1, context: contextB, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+
+        let result = finalizer.ingest(
+            makeMissing(offset: 0.2, context: contextC),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            strongPassGeometry: true,
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(
+            result,
+            .discarded(reason: "passage_boundary_left_recognition_scope")
+        )
+    }
+
+    func testDifferentVisibleCandidateAndTraversalEpochReplacePendingTrack() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let oldContext = makeContext(epoch: 7)
+        arm(&finalizer, context: oldContext)
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.2, context: nil),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let newContext = makeContext(wayID: "999", groups: [9], epoch: 8)
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.3, value: 50, trackID: "new-track", context: newContext),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.4, value: 50, trackID: "new-track", context: newContext, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.5, context: newContext),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let result = finalizer.ingest(
+            makeMissing(offset: 0.6, context: newContext),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let passage) = result else {
+            return XCTFail("new physical track should finalize independently")
+        }
+        XCTAssertEqual(passage.physicalTrackID, "new-track")
+        XCTAssertEqual(passage.action, .postedMaximum(50))
+        XCTAssertEqual(passage.frameEvidence.count, 2)
+    }
+
+    func testAdjacentVisibleSignDebouncesOldPassageAndKeepsNewTrack() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        arm(&finalizer, context: context)
+
+        let firstAdjacent = finalizer.ingest(
+            makeSeen(offset: 0.2, value: 50, trackID: "adjacent-50", context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .lossPending(let boundary, let count) = firstAdjacent else {
+            return XCTFail("a different visible sign is qualified loss evidence for the old track")
+        }
+        XCTAssertEqual(boundary, baseTime.addingTimeInterval(0.2))
+        XCTAssertEqual(count, 1)
+
+        let secondAdjacent = finalizer.ingest(
+            makeSeen(
+                offset: 0.3,
+                value: 50,
+                trackID: "adjacent-50",
+                context: context,
+                state: .confirmed
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let oldPassage) = secondAdjacent else {
+            return XCTFail("the second adjacent-sign frame should finalize the old passage")
+        }
+        XCTAssertEqual(oldPassage.action, .postedMaximum(30))
+        XCTAssertEqual(oldPassage.lossEvidence.map(\.frameID), ["frame-200", "frame-300"])
+
+        let firstBlank = finalizer.ingest(
+            makeMissing(offset: 0.4, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .lossPending = firstBlank else {
+            return XCTFail("the adjacent track must survive the old commit")
+        }
+        let secondBlank = finalizer.ingest(
+            makeMissing(offset: 0.5, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let newPassage) = secondBlank else {
+            return XCTFail("the adjacent sign must later emit its own passage")
+        }
+        XCTAssertEqual(newPassage.action, .postedMaximum(50))
+        XCTAssertEqual(newPassage.physicalTrackID, "adjacent-50")
+    }
+
+    func testReusedPhysicalTrackIDOnlySuppressesTheCommittedStructuralAction() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, value: 50, trackID: "reused-id", context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(
+                offset: 0.1,
+                value: 50,
+                trackID: "reused-id",
+                context: context,
+                state: .confirmed
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+
+        let adjacent70 = finalizer.ingest(
+            makeSeen(
+                offset: 0.2,
+                value: 70,
+                trackID: "reused-id",
+                context: context,
+                confidence: 0.86
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .lossPending = adjacent70 else {
+            return XCTFail("the different semantic must queue while the old passage debounces")
+        }
+        let oldCommit = finalizer.ingest(
+            makeMissing(offset: 0.3, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let oldPassage) = oldCommit else {
+            return XCTFail("the prior 50 passage should commit first")
+        }
+        XCTAssertEqual(oldPassage.action, .postedMaximum(50))
+
+        let nonSpeed = makeCandidate(
+            value: nil,
+            trackID: "reused-id",
+            confidence: 0.99,
+            semanticKind: TrafficSignSemanticKind.restrictionEnd.rawValue,
+            rawClassID: "parking_restriction_end"
+        )
+        let neutral = finalizer.ingest(
+            makeEvent(offset: 0.35, state: .confirmed, candidate: nonSpeed, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .tracking(_, let evidenceFrames) = neutral else {
+            return XCTFail("a hard-negative class must remain neutral to the queued speed sign")
+        }
+        XCTAssertEqual(evidenceFrames, 1)
+
+        let resumed70 = finalizer.ingest(
+            makeSeen(
+                offset: 0.4,
+                value: 70,
+                trackID: "reused-id",
+                context: context,
+                state: .confirmed
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .armed(_, let evidenceFrames) = resumed70 else {
+            return XCTFail("committed 50/reused-id must not suppress 70/reused-id")
+        }
+        XCTAssertEqual(evidenceFrames, 2)
+
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.5, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let newCommit = finalizer.ingest(
+            makeMissing(offset: 0.6, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let newPassage) = newCommit else {
+            return XCTFail("the reused-ID 70 sign should independently finalize")
+        }
+        XCTAssertEqual(newPassage.physicalTrackID, "reused-id")
+        XCTAssertEqual(newPassage.action, .postedMaximum(70))
+    }
+
+    func testAccidentalNearbyTrackSplitIsSuppressedBySemanticAndLocation() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, value: 50, trackID: "split-a", context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(
+                offset: 0.1,
+                value: 50,
+                trackID: "split-a",
+                context: context,
+                state: .confirmed
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.2, value: 50, trackID: "split-b", context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let firstCommit = finalizer.ingest(
+            makeSeen(
+                offset: 0.3,
+                value: 50,
+                trackID: "split-b",
+                context: context,
+                state: .confirmed
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let passage) = firstCommit else {
+            return XCTFail("the original physical sign should commit at the split edge")
+        }
+        XCTAssertEqual(passage.physicalTrackID, "split-a")
+
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.4, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let duplicate = finalizer.ingest(
+            makeMissing(offset: 0.5, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(
+            duplicate,
+            .discarded(reason: "recent_physical_sign_duplicate")
+        )
+    }
+
+    func testSpatialSuppressionAllowsFarRepeatAndInterveningSemantic() {
+        var farFinalizer = TrafficSignPassageFinalizer()
+        let near = makeContext(latitude: 48, longitude: 8)
+        arm(&farFinalizer, context: near)
+        _ = farFinalizer.ingest(
+            makeMissing(offset: 0.2, context: near),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed = farFinalizer.ingest(
+            makeMissing(offset: 0.3, context: near),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        ) else {
+            return XCTFail("the first sign should commit")
+        }
+
+        let far = makeContext(latitude: 48.001, longitude: 8)
+        _ = farFinalizer.ingest(
+            makeSeen(offset: 0.4, trackID: "far-30", context: far),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = farFinalizer.ingest(
+            makeSeen(offset: 0.5, trackID: "far-30", context: far, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = farFinalizer.ingest(
+            makeMissing(offset: 0.6, context: far),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let farPassage) = farFinalizer.ingest(
+            makeMissing(offset: 0.7, context: far),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        ) else {
+            return XCTFail("the same semantic at a new location must not be suppressed")
+        }
+        XCTAssertEqual(farPassage.action, .postedMaximum(30))
+
+        var sequenceFinalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        for (value, trackID, start) in [(50, "sequence-50-a", 1.0), (70, "sequence-70", 1.4), (50, "sequence-50-b", 1.8)] {
+            _ = sequenceFinalizer.ingest(
+                makeSeen(offset: start, value: value, trackID: trackID, context: context),
+                sessionGeneration: 2,
+                contextGeneration: 2,
+                calibratedActivationEligible: true
+            )
+            _ = sequenceFinalizer.ingest(
+                makeSeen(
+                    offset: start + 0.1,
+                    value: value,
+                    trackID: trackID,
+                    context: context,
+                    state: .confirmed
+                ),
+                sessionGeneration: 2,
+                contextGeneration: 2,
+                calibratedActivationEligible: true
+            )
+            _ = sequenceFinalizer.ingest(
+                makeMissing(offset: start + 0.2, context: context),
+                sessionGeneration: 2,
+                contextGeneration: 2,
+                calibratedActivationEligible: true
+            )
+            guard case .committed(let passage) = sequenceFinalizer.ingest(
+                makeMissing(offset: start + 0.3, context: context),
+                sessionGeneration: 2,
+                contextGeneration: 2,
+                calibratedActivationEligible: true
+            ) else {
+                return XCTFail("\(value) should commit in the 50 -> 70 -> 50 sequence")
+            }
+            XCTAssertEqual(passage.action, .postedMaximum(value))
+        }
+    }
+
+    func testCalibrationAndTaxonomyHardGatesCannotArm() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        let disabled = finalizer.ingest(
+            makeSeen(offset: 0, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: false
+        )
+        XCTAssertEqual(disabled, .idle)
+        let missingCalibration = finalizer.ingest(
+            makeSeen(offset: 0.1, context: context, confidence: nil),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(missingCalibration, .idle)
+        let parkingEnd = makeCandidate(
+            value: nil,
+            trackID: "parking-end",
+            confidence: 0.99,
+            semanticKind: TrafficSignSemanticKind.restrictionEnd.rawValue,
+            rawClassID: "parking_restriction_end"
+        )
+        let excluded = finalizer.ingest(
+            makeEvent(offset: 0.2, state: .confirmed, candidate: parkingEnd, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        XCTAssertEqual(excluded, .idle)
+    }
+
+    func testResolverKeepsCameraAcrossRelatedWayAndBaseRefreshThenClearsOnScopeLoss() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let recognized = makeContext(wayID: "100", direction: .forward, groups: [1, 2])
+        let committed = resolver.commit(
+            makePassage(action: .postedMaximum(30), context: recognized),
+            base: makeBase(70, source: .localCorrection)
+        )
+        XCTAssertTrue(committed.applied)
+        XCTAssertEqual(committed.effectiveState.value, .numeric(30))
+
+        let relatedReverseDigitization = makeContext(
+            wayID: "101",
+            direction: .reverse,
+            groups: [2, 3]
+        )
+        XCTAssertEqual(
+            resolver.resolve(
+                base: makeBase(50, source: .localCorrection),
+                currentContext: relatedReverseDigitization,
+                currentCoordinate: .init(latitude: 48.01, longitude: 8.01),
+                timestamp: baseTime.addingTimeInterval(1)
+            ).value,
+            .numeric(30)
+        )
+        let unrelated = makeContext(wayID: "102", groups: [3])
+        let fallback = resolver.resolve(
+            base: makeBase(50, source: .localCorrection),
+            currentContext: unrelated,
+            currentCoordinate: .init(latitude: 48.02, longitude: 8.02),
+            timestamp: baseTime.addingTimeInterval(2)
+        )
+        XCTAssertEqual(fallback.value, .numeric(50))
+        XCTAssertEqual(fallback.source, .localCorrection)
+    }
+
+    func testRecognitionTimeRelationSetIsNotPreNarrowed() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let recognizedOnB = makeContext(wayID: "200", groups: [2, 3])
+        XCTAssertTrue(resolver.commit(
+            makePassage(action: .postedMaximum(40), context: recognizedOnB),
+            base: makeBase(70)
+        ).applied)
+        let laterC = makeContext(wayID: "201", groups: [3])
+        XCTAssertEqual(
+            resolver.resolve(
+                base: makeBase(70),
+                currentContext: laterC,
+                currentCoordinate: .init(latitude: 48.01, longitude: 8.01),
+                timestamp: baseTime.addingTimeInterval(1)
+            ).value,
+            .numeric(40)
+        )
+
+        var noTransitiveHop = TrafficSignEffectiveLimitResolver()
+        let activationB = makeContext(wayID: "300", groups: [1, 2])
+        XCTAssertTrue(noTransitiveHop.commit(
+            makePassage(
+                action: .postedMaximum(40),
+                context: activationB,
+                eventID: "recognition-a-activation-b",
+                recognitionGroups: [1]
+            ),
+            base: makeBase(70)
+        ).applied)
+        let onlyNewActivationGroup = makeContext(wayID: "301", groups: [2])
+        XCTAssertEqual(
+            noTransitiveHop.resolve(
+                base: makeBase(70),
+                currentContext: onlyNewActivationGroup,
+                currentCoordinate: .init(latitude: 48.01, longitude: 8.01),
+                timestamp: baseTime.addingTimeInterval(1)
+            ).value,
+            .numeric(70),
+            "activation must not acquire a relation absent at recognition time"
+        )
+    }
+
+    func testDelayedPassageIsSideEffectFreeAfterLatestRoadScopeChanges() {
+        let recognized = makeContext(wayID: "700", groups: [7], epoch: 42)
+        let passage = makePassage(
+            action: .postedMaximum(30),
+            context: recognized,
+            eventID: "delayed-result"
+        )
+
+        let sameScopeWay = makeContext(wayID: "701", groups: [7, 8], epoch: 42)
+        XCTAssertTrue(passage.isCompatibleWithLatestRoadScope(
+            sameScopeWay,
+            coordinate: .init(latitude: 48.001, longitude: 8.001),
+            timestamp: baseTime.addingTimeInterval(1)
+        ))
+
+        let unrelatedWay = makeContext(wayID: "702", groups: [8], epoch: 42)
+        XCTAssertFalse(passage.isCompatibleWithLatestRoadScope(
+            unrelatedWay,
+            coordinate: .init(latitude: 48.001, longitude: 8.001),
+            timestamp: baseTime.addingTimeInterval(1)
+        ))
+
+        XCTAssertTrue(passage.isCompatibleWithLatestRoadScope(
+            nil,
+            coordinate: .init(latitude: 48.001, longitude: 8.001),
+            timestamp: baseTime.addingTimeInterval(1)
+        ))
+        XCTAssertFalse(passage.isCompatibleWithLatestRoadScope(
+            nil,
+            coordinate: .init(latitude: 48.001, longitude: 8.001),
+            timestamp: baseTime.addingTimeInterval(20)
+        ))
+    }
+
+    func testTraversalEpochUsesAdjacentContinuityWhileAssertionPreventsTransitiveHop() {
+        var tracker = TrafficSignTraversalTracker()
+        let a = tracker.update(
+            wayID: "400",
+            direction: .forward,
+            continuityAvailable: true,
+            memberships: memberships([1, 2])
+        )
+        let b = tracker.update(
+            wayID: "401",
+            direction: .reverse,
+            continuityAvailable: true,
+            memberships: memberships([2, 3])
+        )
+        let c = tracker.update(
+            wayID: "402",
+            direction: .forward,
+            continuityAvailable: true,
+            memberships: memberships([3])
+        )
+        XCTAssertEqual(a.epoch, b.epoch)
+        XCTAssertEqual(b.epoch, c.epoch)
+        XCTAssertTrue(b.continuouslyRelated)
+        XCTAssertTrue(c.continuouslyRelated)
+
+        var recognizedOnB = TrafficSignEffectiveLimitResolver()
+        let contextB = makeContext(wayID: "401", groups: [2, 3], epoch: b.epoch)
+        _ = recognizedOnB.commit(
+            makePassage(action: .postedMaximum(40), context: contextB),
+            base: makeBase(70)
+        )
+        let contextC = makeContext(wayID: "402", groups: [3], epoch: c.epoch)
+        XCTAssertEqual(recognizedOnB.resolve(
+            base: makeBase(70),
+            currentContext: contextC,
+            currentCoordinate: .init(latitude: 48.01, longitude: 8.01),
+            timestamp: baseTime.addingTimeInterval(1)
+        ).value, .numeric(40))
+
+        var recognizedOnA = TrafficSignEffectiveLimitResolver()
+        let contextA = makeContext(wayID: "400", groups: [1, 2], epoch: a.epoch)
+        _ = recognizedOnA.commit(
+            makePassage(action: .postedMaximum(30), context: contextA),
+            base: makeBase(70)
+        )
+        _ = recognizedOnA.resolve(
+            base: makeBase(70),
+            currentContext: contextB,
+            currentCoordinate: .init(latitude: 48.01, longitude: 8.01),
+            timestamp: baseTime.addingTimeInterval(1)
+        )
+        XCTAssertEqual(recognizedOnA.resolve(
+            base: makeBase(70),
+            currentContext: contextC,
+            currentCoordinate: .init(latitude: 48.02, longitude: 8.02),
+            timestamp: baseTime.addingTimeInterval(2)
+        ).value, .numeric(70))
+    }
+
+    func testMaximumEndMismatchPreservesCameraRuleButMatchingEndMasksStaleBase() {
+        var mismatchResolver = TrafficSignEffectiveLimitResolver()
+        let context = makeContext()
+        _ = mismatchResolver.commit(
+            makePassage(action: .postedMaximum(70), context: context),
+            base: makeBase(50)
+        )
+        let mismatch = mismatchResolver.commit(
+            makePassage(action: .maximumSpeedEnd(50), context: context, eventID: "end-50"),
+            base: makeBase(50)
+        )
+        XCTAssertFalse(mismatch.applied)
+        XCTAssertEqual(mismatch.effectiveState.value, .numeric(70))
+        XCTAssertFalse(mismatch.persistence.runtimeApplicable)
+        XCTAssertEqual(mismatch.persistence.initialState, .needsReview)
+
+        var matchingResolver = TrafficSignEffectiveLimitResolver()
+        _ = matchingResolver.commit(
+            makePassage(action: .postedMaximum(70), context: context),
+            base: makeBase(70, source: .localCorrection)
+        )
+        let matching = matchingResolver.commit(
+            makePassage(action: .maximumSpeedEnd(70), context: context, eventID: "end-70"),
+            base: makeBase(70, source: .localCorrection)
+        )
+        XCTAssertTrue(matching.applied)
+        XCTAssertEqual(matching.effectiveState.value, .unknown)
+        XCTAssertEqual(matching.effectiveState.source, .none)
+        XCTAssertTrue(matching.effectiveState.hasCameraEvidenceMarker)
+        XCTAssertFalse(matching.persistence.runtimeApplicable)
+    }
+
+    func testMotorwayAndMotorroadExitsClearPostedLayerAndOnlyRestoreVerifiedEnclosingRule() {
+        let context = makeContext()
+        let cases: [(name: String, action: TrafficSignStructuralAction)] = [
+            ("motorway", .motorwayExit),
+            ("motorroad", .motorroadExit),
+        ]
+
+        for testCase in cases {
+            var resolved = TrafficSignEffectiveLimitResolver()
+            _ = resolved.commit(
+                makePassage(
+                    action: .postedMaximum(70),
+                    context: context,
+                    eventID: "\(testCase.name)-posted"
+                ),
+                base: makeBase(90, source: .localCorrection)
+            )
+            let verifiedExit = resolved.commit(
+                makePassage(
+                    action: testCase.action,
+                    context: context,
+                    eventID: "\(testCase.name)-verified-exit"
+                ),
+                base: makeBase(70, source: .localCorrection),
+                verifiedEnclosingBase: makeBase(50)
+            )
+            XCTAssertTrue(verifiedExit.applied, testCase.name)
+            XCTAssertEqual(verifiedExit.effectiveState.value, .numeric(50), testCase.name)
+            XCTAssertTrue(verifiedExit.persistence.runtimeApplicable, testCase.name)
+            XCTAssertEqual(verifiedExit.persistence.value, "50", testCase.name)
+
+            var unresolved = TrafficSignEffectiveLimitResolver()
+            _ = unresolved.commit(
+                makePassage(
+                    action: .postedMaximum(70),
+                    context: context,
+                    eventID: "\(testCase.name)-stale-posted"
+                ),
+                base: makeBase(90, source: .localCorrection)
+            )
+            let unresolvedExit = unresolved.commit(
+                makePassage(
+                    action: testCase.action,
+                    context: context,
+                    eventID: "\(testCase.name)-unresolved-exit"
+                ),
+                base: makeBase(70, source: .localCorrection)
+            )
+            XCTAssertTrue(unresolvedExit.applied, testCase.name)
+            XCTAssertEqual(unresolvedExit.effectiveState.value, .unknown, testCase.name)
+            XCTAssertFalse(unresolvedExit.persistence.runtimeApplicable, testCase.name)
+
+            let laterEnd = unresolved.commit(
+                makePassage(
+                    action: .maximumSpeedEnd(nil),
+                    context: context,
+                    eventID: "\(testCase.name)-later-end"
+                ),
+                base: makeBase(70, source: .localCorrection)
+            )
+            XCTAssertEqual(
+                laterEnd.effectiveState.value,
+                .unknown,
+                "\(testCase.name) exit must not leave a stale posted 70 to resurrect"
+            )
+        }
+    }
+
+    func testUnsafeAndConditionalZoneEndMismatchPreservesActiveCameraZone() {
+        let stable = makeContext()
+        let cases: [(name: String, context: TrafficSignDetectionContext, condition: TrafficSignConditionState)] = [
+            ("unstable", makeContext(stable: false), .none),
+            ("conditional", stable, .resolved),
+        ]
+
+        for testCase in cases {
+            var resolver = TrafficSignEffectiveLimitResolver()
+            let started = resolver.commit(
+                makePassage(
+                    action: .zoneStart(30),
+                    context: stable,
+                    eventID: "\(testCase.name)-zone-start"
+                ),
+                base: makeBase(70)
+            )
+            XCTAssertTrue(started.applied, testCase.name)
+            XCTAssertEqual(started.effectiveState.value, .numeric(30), testCase.name)
+
+            let mismatch = resolver.commit(
+                makePassage(
+                    action: .zoneEnd(20),
+                    context: testCase.context,
+                    eventID: "\(testCase.name)-zone-end-mismatch",
+                    conditionState: testCase.condition
+                ),
+                base: makeBase(70, source: .localCorrection)
+            )
+            XCTAssertFalse(mismatch.applied, testCase.name)
+            XCTAssertEqual(mismatch.effectiveState.value, .numeric(30), testCase.name)
+            XCTAssertEqual(mismatch.persistence.initialState, .needsReview, testCase.name)
+            XCTAssertFalse(mismatch.persistence.runtimeApplicable, testCase.name)
+            XCTAssertTrue(mismatch.persistence.reason.hasSuffix("_mismatch_review_only"), testCase.name)
+
+            let stillActive = resolver.resolve(
+                base: makeBase(70, source: .localCorrection),
+                currentContext: stable,
+                currentCoordinate: .init(latitude: stable.latitude, longitude: stable.longitude),
+                timestamp: baseTime.addingTimeInterval(1)
+            )
+            XCTAssertEqual(stillActive.value, .numeric(30), testCase.name)
+            XCTAssertEqual(stillActive.source, .camera, testCase.name)
+        }
+    }
+
+    func testUnsafeEndMasksDatabaseButUnknownDirectionCannotApplyNumericSign() {
+        let unstable = makeContext(stable: false)
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let end = resolver.commit(
+            makePassage(action: .allRestrictionsEnd, context: unstable),
+            base: makeBase(90, source: .localCorrection)
+        )
+        XCTAssertTrue(end.applied)
+        XCTAssertEqual(end.effectiveState.value, .unknown)
+        XCTAssertTrue(end.effectiveState.hasCameraEvidenceMarker)
+
+        let unknownDirection = makeContext(direction: .unknown)
+        var numericResolver = TrafficSignEffectiveLimitResolver()
+        let numeric = numericResolver.commit(
+            makePassage(action: .postedMaximum(30), context: unknownDirection),
+            base: makeBase(90)
+        )
+        XCTAssertFalse(numeric.applied)
+        XCTAssertEqual(numeric.effectiveState.value, .numeric(90))
+        XCTAssertFalse(numeric.persistence.runtimeApplicable)
+    }
+
+    func testResolverRequiresVerifiedBundleAndSupportsGermanCityEntryAndUnlimitedBase() {
+        var resolver = TrafficSignEffectiveLimitResolver()
+        let unverified = makeContext(bundleSHA: nil, useDefaultSHA: false)
+        XCTAssertFalse(resolver.commit(
+            makePassage(action: .cityEntry("DE"), context: unverified),
+            base: makeBase(80)
+        ).applied)
+
+        let verified = makeContext()
+        let city = resolver.commit(
+            makePassage(action: .cityEntry("DE"), context: verified, eventID: "city"),
+            base: makeBase(80)
+        )
+        XCTAssertTrue(city.applied)
+        XCTAssertEqual(city.effectiveState.value, .numeric(50))
+        XCTAssertEqual(city.effectiveState.source, .camera)
+        XCTAssertEqual(
+            EffectiveSpeedLimitState.base(
+                localValue: "none",
+                bundledSpeedKmh: 80,
+                bundledUnlimited: false
+            ).value,
+            .unlimited
+        )
+    }
+
+    func testPassageNormalizationAndResolverEnforceSharedSpeedValueRange() {
+        let context = makeContext()
+        for value in [4, 201] {
+            let candidate = makeCandidate(value: value, trackID: "track-\(value)")
+            guard case .unresolved = TrafficSignStructuralAction.normalized(from: candidate) else {
+                XCTFail("out-of-range value \(value) must not normalize to a live action")
+                continue
+            }
+
+            var finalizer = TrafficSignPassageFinalizer()
+            XCTAssertEqual(
+                finalizer.ingest(
+                    makeSeen(
+                        offset: TimeInterval(value),
+                        value: value,
+                        trackID: "track-\(value)",
+                        context: context,
+                        state: .confirmed
+                    ),
+                    sessionGeneration: 1,
+                    contextGeneration: 1,
+                    calibratedActivationEligible: true
+                ),
+                .idle
+            )
+
+            var resolver = TrafficSignEffectiveLimitResolver()
+            let rejected = resolver.commit(
+                makePassage(action: .postedMaximum(value), context: context),
+                base: makeBase(70)
+            )
+            XCTAssertFalse(rejected.applied)
+            XCTAssertEqual(rejected.effectiveState.value, .numeric(70))
+            XCTAssertFalse(rejected.persistence.runtimeApplicable)
+        }
+
+        for value in [5, 200] {
+            let candidate = makeCandidate(value: value, trackID: "track-\(value)")
+            XCTAssertEqual(
+                TrafficSignStructuralAction.normalized(from: candidate),
+                .postedMaximum(value)
+            )
+            var resolver = TrafficSignEffectiveLimitResolver()
+            let accepted = resolver.commit(
+                makePassage(
+                    action: .postedMaximum(value),
+                    context: context,
+                    eventID: "edge-\(value)"
+                ),
+                base: makeBase(70)
+            )
+            XCTAssertTrue(accepted.applied)
+            XCTAssertEqual(accepted.effectiveState.value, .numeric(value))
+            XCTAssertTrue(accepted.persistence.runtimeApplicable)
+        }
+    }
+
+    func testCanonicalPassageWireEncodingPreservesContractAndEvidenceLineage() throws {
+        let initialContext = makeContext(wayID: "810", groups: [1, 2, 3])
+        let activationContext = makeContext(wayID: "811", groups: [2, 3])
+        let components = [
+            TrafficSignModelComponentLineage(
+                role: "proposal_detector",
+                artifactSHA256: String(repeating: "b", count: 64),
+                preprocessingVersion: "proposal-v2",
+                calibrationID: "proposal-calibration-v4"
+            ),
+            TrafficSignModelComponentLineage(
+                role: "semantic_classifier",
+                artifactSHA256: String(repeating: "c", count: 64),
+                preprocessingVersion: "classifier-v3",
+                calibrationID: "classifier-calibration-v5"
+            ),
+        ]
+        let event = makePassage(
+            action: .postedMaximum(50),
+            context: activationContext,
+            eventID: "canonical-wire-event",
+            initialRecognitionGroups: [1, 2, 3],
+            eligibleRecognitionGroups: [2, 3],
+            initialRecognitionContext: initialContext,
+            assemblyIDs: ["assembly-first", "assembly-second"],
+            modelComponents: components
+        )
+        let decision = TrafficSignPassagePersistenceDecision(
+            value: "50",
+            oldSpeedKmh: 70,
+            runtimeApplicable: true,
+            initialState: .localOnly,
+            operation: .setMaxspeed,
+            directionScope: .forward,
+            applicability: .permanent,
+            exportTagKey: "maxspeed:forward",
+            reason: "camera_posted_maximum"
+        )
+
+        let data = try TrafficSignPassageWireEncoder.encode(event: event, decision: decision)
+        let root = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        let requiredTopLevelKeys: Set<String> = [
+            "schema_version", "event_kind", "finalized_event_id", "drive_session_id",
+            "tsr_generation", "committed_at_utc", "pack", "track", "action",
+            "resolution", "boundary", "activation", "applicability_scope",
+            "persistence", "privacy",
+        ]
+        XCTAssertTrue(requiredTopLevelKeys.isSubset(of: Set(root.keys)))
+
+        let pack = try XCTUnwrap(root["pack"] as? [String: Any])
+        let encodedComponents = try XCTUnwrap(pack["components"] as? [[String: Any]])
+        XCTAssertEqual(encodedComponents.count, 2)
+        XCTAssertEqual(encodedComponents.compactMap { $0["role"] as? String }, [
+            "proposal_detector", "semantic_classifier",
+        ])
+        XCTAssertEqual(encodedComponents.compactMap { $0["calibration_id"] as? String }, [
+            "proposal-calibration-v4", "classifier-calibration-v5",
+        ])
+        for component in encodedComponents {
+            XCTAssertNotNil(component["artifact_sha256"] as? String)
+            XCTAssertNotNil(component["preprocessing_version"] as? String)
+        }
+
+        let track = try XCTUnwrap(root["track"] as? [String: Any])
+        XCTAssertEqual(track["assembly_ids"] as? [String], ["assembly-first", "assembly-second"])
+        XCTAssertEqual((track["peak_consecutive_frames_seen"] as? NSNumber)?.intValue, 2)
+        XCTAssertEqual(track["loss_reason"] as? String, "negative_debounce")
+        XCTAssertEqual((track["negative_frames_required"] as? NSNumber)?.intValue, 2)
+        XCTAssertEqual((track["frame_evidence"] as? [[String: Any]])?.count, 2)
+        XCTAssertEqual((track["loss_evidence"] as? [[String: Any]])?.count, 2)
+
+        let scope = try XCTUnwrap(root["applicability_scope"] as? [String: Any])
+        let initialGroups = (scope["initial_route_relation_group_ids"] as? [NSNumber])?.map(\.intValue)
+        let eligibleGroups = (scope["eligible_route_relation_group_ids"] as? [NSNumber])?.map(\.intValue)
+        let sourceRelationIDs = (scope["source_relation_ids"] as? [NSNumber])?.map(\.int64Value)
+        XCTAssertEqual(initialGroups, [1, 2, 3])
+        XCTAssertEqual(eligibleGroups, [2, 3])
+        XCTAssertEqual(sourceRelationIDs, [1_002, 1_003])
+        XCTAssertEqual(scope["original_way_id"] as? String, "810")
+
+        for (name, exitAction) in [
+            ("motorway", TrafficSignStructuralAction.motorwayExit),
+            ("motorroad", TrafficSignStructuralAction.motorroadExit),
+        ] {
+            let exitData = try TrafficSignPassageWireEncoder.encode(
+                event: makePassage(
+                    action: exitAction,
+                    context: activationContext,
+                    eventID: "canonical-\(name)-exit"
+                ),
+                decision: TrafficSignPassagePersistenceDecision(
+                    value: "50",
+                    oldSpeedKmh: 70,
+                    runtimeApplicable: true,
+                    initialState: .localOnly,
+                    operation: .setMaxspeed,
+                    directionScope: .forward,
+                    applicability: .permanent,
+                    exportTagKey: "maxspeed:forward",
+                    reason: "camera_\(name)_exit_restored_enclosing"
+                )
+            )
+            let exitRoot = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: exitData) as? [String: Any]
+            )
+            let exitResolution = try XCTUnwrap(exitRoot["resolution"] as? [String: Any])
+            XCTAssertEqual(
+                exitResolution["resolution_basis"] as? String,
+                "captured_prior_rule",
+                name
+            )
+        }
+    }
+
+    func testTypedCorrectionSupersessionCoversWayWideAndDirectionalScopes() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-overlapping-supersession-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+
+        let defaultsName = "SpeedConsumerTests.overlapping-supersession.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let storeNow = baseTime.addingTimeInterval(100)
+        let store = LocalObservationStore(
+            fileManager: fileManager,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { storeNow }
+        )
+        let token = TrafficSignGenerationToken(session: 1, context: 1)
+        let gate = TrafficSignWriteGate()
+        gate.update(token: token, enabled: true)
+        let permit = try XCTUnwrap(gate.permit(for: token))
+
+        // A newer way-wide value invalidates an older approved directional
+        // correction, instead of merely making its later export fail closed.
+        let forwardContext = makeContext(wayID: "91001", direction: .forward, groups: [91])
+        let oldForward = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(30),
+                context: forwardContext,
+                eventID: "old-forward"
+            ),
+            decision: persistenceDecision(value: "30", direction: .forward),
+            writePermit: permit
+        )
+        let oldForwardID = try XCTUnwrap(oldForward.observation?.id)
+        _ = try await store.reviewAndApproveProposal(observationID: oldForwardID)
+        let manualContext = LocalObservationCaptureContext(
+            lat: 48,
+            lon: 8,
+            headingDeg: 90,
+            roadCandidateIDs: ["91001"],
+            cityContext: nil,
+            streetContext: nil,
+            confidenceCalibrated: 0.9,
+            sourceVersion: "test"
+        )
+        _ = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 30,
+            newMaxspeedValue: "50",
+            context: manualContext
+        )
+        var observations = try await store.fetchObservations(limit: 20)
+        XCTAssertEqual(
+            observations.first { $0.id == oldForwardID }?.exportDisposition,
+            .superseded
+        )
+        let latestForward = try await store.fetchLatestRuntimeApplicableCorrection(
+            wayID: "91001",
+            direction: .forward
+        )
+        XCTAssertEqual(latestForward?.value, "50")
+
+        // The inverse overlap is also atomic: a newer backward-specific value
+        // supersedes the older approved way-wide fallback on that target.
+        let genericContext = LocalObservationCaptureContext(
+            lat: 48,
+            lon: 8,
+            headingDeg: 270,
+            roadCandidateIDs: ["91002"],
+            cityContext: nil,
+            streetContext: nil,
+            confidenceCalibrated: 0.9,
+            sourceVersion: "test"
+        )
+        let oldGeneric = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 70,
+            newMaxspeedValue: "40",
+            context: genericContext
+        )
+        _ = try await store.reviewAndApproveProposal(observationID: oldGeneric.id)
+        let backwardContext = makeContext(wayID: "91002", direction: .reverse, groups: [92])
+        _ = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(70),
+                context: backwardContext,
+                eventID: "new-backward",
+                timeOffset: 200
+            ),
+            decision: persistenceDecision(value: "70", direction: .backward),
+            writePermit: permit
+        )
+        observations = try await store.fetchObservations(limit: 20)
+        XCTAssertEqual(
+            observations.first { $0.id == oldGeneric.id }?.exportDisposition,
+            .superseded
+        )
+        let latestBackward = try await store.fetchLatestRuntimeApplicableCorrection(
+            wayID: "91002",
+            direction: .backward
+        )
+        XCTAssertEqual(latestBackward?.value, "70")
+    }
+
+    func testBulkExportRetainsManualLocalOnlyCompatibilityButRequiresCameraApproval() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-manual-camera-bulk-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let defaultsName = "SpeedConsumerTests.manual-camera-bulk.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fileManager,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { Date(timeIntervalSince1970: 1_788_280_000) }
+        )
+        let token = TrafficSignGenerationToken(session: 1, context: 1)
+        let gate = TrafficSignWriteGate()
+        gate.update(token: token, enabled: true)
+        let permit = try XCTUnwrap(gate.permit(for: token))
+        let camera = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(30),
+                context: makeContext(wayID: "92001", direction: .forward, groups: [92]),
+                eventID: "unapproved-camera-bulk"
+            ),
+            decision: persistenceDecision(value: "30", direction: .forward),
+            writePermit: permit
+        )
+        let cameraID = try XCTUnwrap(camera.observation?.id)
+        let validCameraEvidence = try XCTUnwrap(camera.observation?.evidenceJSON)
+
+        do {
+            _ = try await store.exportAllLocalObservationsAsOsc()
+            XCTFail("an unapproved computer-vision row must never enter bulk export")
+        } catch {
+            // Expected: no implicitly approved manual row exists yet.
+        }
+
+        let databaseURL = root.appendingPathComponent("local_observation_store.sqlite")
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET evidence_json = ?1 WHERE observation_id = ?2",
+            bindings: ["{truncated", cameraID]
+        )
+        do {
+            _ = try await store.reviewAndApproveProposal(observationID: cameraID)
+            XCTFail("corrupt computer-vision evidence must fail approval")
+        } catch {
+            // Expected: approval is an evidence-validation boundary.
+        }
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET evidence_json = ?1 WHERE observation_id = ?2",
+            bindings: [validCameraEvidence, cameraID]
+        )
+        _ = try await store.reviewAndApproveProposal(observationID: cameraID)
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET evidence_json = ?1 WHERE observation_id = ?2",
+            bindings: ["{truncated", cameraID]
+        )
+        do {
+            _ = try await store.exportAllLocalObservationsAsOsc()
+            XCTFail("evidence corrupted after approval must fail export revalidation")
+        } catch {
+            // Expected: reserve/revalidate never trusts denormalized CV fields.
+        }
+        _ = try await store.discardObservation(observationID: cameraID)
+
+        let manual = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 50,
+            newMaxspeedValue: "40",
+            context: LocalObservationCaptureContext(
+                lat: 48,
+                lon: 8,
+                headingDeg: 90,
+                roadCandidateIDs: ["92002"],
+                cityContext: nil,
+                streetContext: nil,
+                confidenceCalibrated: 0.9,
+                sourceVersion: "test"
+            )
+        )
+        XCTAssertEqual(manual.state, .localOnly)
+        let reviewManual = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 50,
+            newMaxspeedValue: "60",
+            context: LocalObservationCaptureContext(
+                lat: 48,
+                lon: 8,
+                headingDeg: 90,
+                roadCandidateIDs: ["92003"],
+                cityContext: nil,
+                streetContext: nil,
+                confidenceCalibrated: 0.9,
+                sourceVersion: "test"
+            )
+        )
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET state = ?1 WHERE observation_id = ?2",
+            bindings: [LocalObservationState.needsReview.rawValue, reviewManual.id]
+        )
+        let bulk = try await store.exportAllLocalObservationsAsOsc()
+        XCTAssertEqual(bulk.includedCount, 2)
+        let osc = try String(contentsOf: bulk.changesFile, encoding: .utf8)
+        XCTAssertTrue(osc.contains("<way id=\"92002\">"))
+        XCTAssertTrue(osc.contains("<way id=\"92003\">"))
+        XCTAssertFalse(osc.contains("<way id=\"92001\">"))
+        let observations = try await store.fetchObservations(limit: 10)
+        XCTAssertEqual(observations.first { $0.id == cameraID }?.state, .discarded)
+        XCTAssertEqual(observations.first { $0.id == manual.id }?.state, .exportedOsc)
+        XCTAssertEqual(observations.first { $0.id == reviewManual.id }?.state, .exportedOsc)
+    }
+
+    func testDiscardingNewerCorrectionRestoresExportSupersededRuntimeHistory() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-runtime-history-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let defaultsName = "SpeedConsumerTests.runtime-history.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let storeNow = baseTime.addingTimeInterval(100)
+        let store = LocalObservationStore(
+            fileManager: fileManager,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { storeNow }
+        )
+        let captureContext = LocalObservationCaptureContext(
+            lat: 48,
+            lon: 8,
+            headingDeg: 90,
+            roadCandidateIDs: ["93001"],
+            cityContext: nil,
+            streetContext: nil,
+            confidenceCalibrated: 0.9,
+            sourceVersion: "test"
+        )
+        let old = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 70,
+            newMaxspeedValue: "50",
+            context: captureContext
+        )
+        _ = try await store.reviewAndApproveProposal(observationID: old.id)
+
+        let token = TrafficSignGenerationToken(session: 1, context: 1)
+        let gate = TrafficSignWriteGate()
+        gate.update(token: token, enabled: true)
+        let permit = try XCTUnwrap(gate.permit(for: token))
+        let newer = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(70),
+                context: makeContext(wayID: "93001", direction: .forward, groups: [93]),
+                eventID: "newer-runtime-70",
+                timeOffset: 200
+            ),
+            decision: persistenceDecision(value: "70", direction: .forward),
+            writePermit: permit
+        )
+        let newerID = try XCTUnwrap(newer.observation?.id)
+        let observationsAfterNewer = try await store.fetchObservations(limit: 10)
+        XCTAssertEqual(
+            observationsAfterNewer.first { $0.id == old.id }?.exportDisposition,
+            .superseded
+        )
+        _ = try await store.discardObservation(observationID: newerID)
+
+        let restored = try await store.fetchLatestRuntimeApplicableCorrection(
+            wayID: "93001",
+            direction: .forward
+        )
+        XCTAssertEqual(restored?.id, old.id)
+        XCTAssertEqual(restored?.value, "50")
+
+        let observationsAfterDiscard = try await store.fetchObservations(limit: 10)
+        let cachedValues = await MainActor.run {
+            DriveSessionViewModel.resolveLocalSpeedOverrideValues(
+                from: observationsAfterDiscard
+            )
+        }
+        let cachedNumeric = await MainActor.run {
+            DriveSessionViewModel.resolveLocalSpeedOverrides(
+                from: observationsAfterDiscard
+            )
+        }
+        let cachedRevisions = await MainActor.run {
+            DriveSessionViewModel.resolveLocalSpeedOverrideRevisions(
+                from: observationsAfterDiscard
+            )
+        }
+        XCTAssertEqual(cachedValues["93001"], "50")
+        XCTAssertEqual(cachedNumeric["93001"], 50)
+        XCTAssertTrue(cachedRevisions["93001"]?.contains("id:\(old.id)") == true)
+        do {
+            _ = try await store.exportProposalAsOscPackage(observationID: old.id)
+            XCTFail("export supersession must remain enforced after runtime fallback")
+        } catch {
+            // Expected: export-only supersession remains intact.
+        }
+    }
+
+    func testRuntimeLookupSkipsNewerFutureAndMalformedRowsForLookupAndEquivalence() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-runtime-validation-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let defaultsName = "SpeedConsumerTests.runtime-validation.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+
+        let store = LocalObservationStore(
+            fileManager: fileManager,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { Date(timeIntervalSince1970: 1_788_280_000) }
+        )
+        let context = LocalObservationCaptureContext(
+            lat: 48,
+            lon: 8,
+            headingDeg: 90,
+            roadCandidateIDs: ["94001"],
+            cityContext: nil,
+            streetContext: nil,
+            confidenceCalibrated: 0.9,
+            sourceVersion: "test"
+        )
+        let olderValid = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 70,
+            newMaxspeedValue: "50",
+            context: context
+        )
+        let futureEnum = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 50,
+            newMaxspeedValue: "60",
+            context: context
+        )
+        let badCanonical = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 60,
+            newMaxspeedValue: "70",
+            context: context
+        )
+        let badTag = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 70,
+            newMaxspeedValue: "80",
+            context: context
+        )
+        let badEvidence = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 80,
+            newMaxspeedValue: "90",
+            context: context
+        )
+        let badApplicability = try await store.recordSpeedLimitChange(
+            oldSpeedKmh: 90,
+            newMaxspeedValue: "100",
+            context: context
+        )
+        let databaseURL = root.appendingPathComponent("local_observation_store.sqlite")
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET modality = ?1, effective_at_utc = ?2 WHERE observation_id = ?3",
+            bindings: ["future_camera", "2035-01-06T00:00:00.000Z", futureEnum.id]
+        )
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET value = ?1, effective_at_utc = ?2 WHERE observation_id = ?3",
+            bindings: ["201", "2035-01-05T00:00:00.000Z", badCanonical.id]
+        )
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET export_tag_key = ?1, effective_at_utc = ?2 WHERE observation_id = ?3",
+            bindings: ["maxspeed:forward", "2035-01-04T00:00:00.000Z", badTag.id]
+        )
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET modality = ?1, finalized_event_id = ?2, evidence_json = ?3, effective_at_utc = ?4 WHERE observation_id = ?5",
+            bindings: [
+                LocalObservationModality.computer_vision.rawValue,
+                "malformed-camera-evidence",
+                #"{"event_kind":"traffic_sign_passage"}"#,
+                "2035-01-03T00:00:00.000Z",
+                badEvidence.id,
+            ]
+        )
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET applicability = ?1, effective_at_utc = ?2 WHERE observation_id = ?3",
+            bindings: [
+                LocalObservationApplicability.conditional.rawValue,
+                "2035-01-02T00:00:00.000Z",
+                badApplicability.id,
+            ]
+        )
+
+        let token = TrafficSignGenerationToken(session: 1, context: 1)
+        let gate = TrafficSignWriteGate()
+        gate.update(token: token, enabled: true)
+        let permit = try XCTUnwrap(gate.permit(for: token))
+        let reviewOnlyCamera = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(110),
+                context: makeContext(wayID: "94001", direction: .forward, groups: [94]),
+                eventID: "camera-row-for-review-state-regression",
+                timeOffset: 300
+            ),
+            decision: persistenceDecision(value: "110", direction: .forward),
+            writePermit: permit
+        )
+        let reviewOnlyCameraID = try XCTUnwrap(reviewOnlyCamera.observation?.id)
+        try executeStoreMutation(
+            databaseURL: databaseURL,
+            sql: "UPDATE observations SET state = ?1, effective_at_utc = ?2 WHERE observation_id = ?3",
+            bindings: [
+                LocalObservationState.needsReview.rawValue,
+                "2035-01-07T00:00:00.000Z",
+                reviewOnlyCameraID,
+            ]
+        )
+
+        let latest = try await store.fetchLatestRuntimeApplicableCorrection(
+            wayID: "94001",
+            direction: .forward
+        )
+        XCTAssertEqual(latest?.id, olderValid.id)
+        XCTAssertEqual(latest?.value, "50")
+
+        // The idempotency/equivalence path uses the same scanner. It must link
+        // this finalized passage to the older valid manual correction instead
+        // of inserting a duplicate after seeing malformed newer rows.
+        let equivalent = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(50),
+                context: makeContext(wayID: "94001", direction: .forward, groups: [94]),
+                eventID: "valid-after-malformed-runtime-rows",
+                timeOffset: 400
+            ),
+            decision: persistenceDecision(value: "50", direction: .forward),
+            writePermit: permit
+        )
+        XCTAssertEqual(equivalent.decision, .equivalent)
+        XCTAssertNil(equivalent.observation)
+    }
+
+    @MainActor
+    func testPersistedDirectionalCameraCorrectionBecomesBaseWithoutDisplacingCamera() async throws {
+        let viewModel = DriveSessionViewModel()
+        try await viewModel.testWaitForStartupDataLoad()
+        try await viewModel.testResetLocalObservationStore()
+        let context = makeContext(wayID: "95001", direction: .forward, groups: [95])
+        let passage = makePassage(
+            action: .postedMaximum(70),
+            context: context,
+            eventID: "directional-camera-base-install-\(UUID().uuidString)"
+        )
+        viewModel.testConfigureCurrentTrafficSignBase(
+            context: context,
+            bundledSpeedKmh: 50
+        )
+        let decision = viewModel.testApplyTrafficSignPassage(passage)
+        XCTAssertTrue(decision.runtimeApplicable)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .camera)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
+
+        let persisted = try await viewModel.testPersistTrafficSignPassage(
+            passage,
+            decision: decision
+        )
+        XCTAssertEqual(persisted.decision, .inserted)
+        let stored = try XCTUnwrap(persisted.observation)
+        let indexed = try await viewModel.testLatestRuntimeCorrection(
+            wayID: context.wayId,
+            direction: .forward
+        )
+        let evidenceDiagnostic = stored.evidenceJSON ?? "nil"
+        XCTAssertEqual(
+            indexed?.value,
+            "70",
+            "Stored row was rejected: \(stored); evidence=\(evidenceDiagnostic)"
+        )
+        // Refreshing the durable base must not displace the higher-priority
+        // active camera assertion.
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .camera)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
+
+        // Disabling TSR clears only the transient assertion. The just-written
+        // directional local correction is already installed underneath it.
+        viewModel.testClearTrafficSignAssertionKeepingCurrentBase()
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.source, .localCorrection)
+        XCTAssertEqual(viewModel.effectiveSpeedLimitState.value, .numeric(70))
+        try await viewModel.testResetLocalObservationStore()
+    }
+
+    func testDelayedOlderPassageDoesNotStaleNewerPendingExport() async throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appendingPathComponent(
+            "speedconsumer-delayed-passage-export-\(UUID().uuidString)",
+            isDirectory: true
+        )
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let defaultsName = "SpeedConsumerTests.delayed-passage-export.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsName))
+        defaults.removePersistentDomain(forName: defaultsName)
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        let store = LocalObservationStore(
+            fileManager: fileManager,
+            userDefaults: defaults,
+            bundle: Bundle(for: SpeedConsumerAppDelegate.self),
+            rootDirectoryOverride: root,
+            nowProvider: { Date(timeIntervalSince1970: 1_788_281_000) }
+        )
+        let token = TrafficSignGenerationToken(session: 1, context: 1)
+        let gate = TrafficSignWriteGate()
+        gate.update(token: token, enabled: true)
+        let permit = try XCTUnwrap(gate.permit(for: token))
+        let context = makeContext(wayID: "96001", direction: .forward, groups: [96])
+
+        let newer = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(70),
+                context: context,
+                eventID: "newer-frozen-export",
+                timeOffset: 500
+            ),
+            decision: persistenceDecision(value: "70", direction: .forward),
+            writePermit: permit
+        )
+        let newerID = try XCTUnwrap(newer.observation?.id)
+        _ = try await store.reviewAndApproveProposal(observationID: newerID)
+        let reservation = try await store.testReserveExportBatch(observationID: newerID)
+        let initiallyPending = try await store.testExportBatchStatus(
+            batchID: reservation.batchID
+        )
+        XCTAssertEqual(initiallyPending, "pending")
+
+        let delayedOlder = try await store.recordComputerVisionPassageIfNeeded(
+            event: makePassage(
+                action: .postedMaximum(50),
+                context: context,
+                eventID: "delayed-older-passage",
+                timeOffset: 100
+            ),
+            decision: persistenceDecision(value: "50", direction: .forward),
+            writePermit: permit
+        )
+        XCTAssertEqual(delayedOlder.decision, .inserted)
+        let stillPending = try await store.testExportBatchStatus(
+            batchID: reservation.batchID
+        )
+        XCTAssertEqual(stillPending, "pending")
+        let observations = try await store.fetchObservations(limit: 10)
+        XCTAssertEqual(
+            observations.first { $0.id == newerID }?.exportDisposition,
+            .eligible
+        )
+
+        try await store.testFinalizeReservedExportBatch(batchID: reservation.batchID)
+        let finalized = try await store.testExportBatchStatus(batchID: reservation.batchID)
+        XCTAssertEqual(finalized, "finalized")
+        let osc = try String(
+            contentsOf: reservation.packageDirectory.appendingPathComponent("changes.osc"),
+            encoding: .utf8
+        )
+        XCTAssertTrue(osc.contains("v=\"70\""))
+        XCTAssertFalse(osc.contains("v=\"50\""))
+    }
+
+    func testSpeedLimitCameraColorIsExactlyHalfBorderColor() {
+        XCTAssertEqual(SpeedLimitSignPalette.cameraRed, SpeedLimitSignPalette.borderRed / 2)
+        XCTAssertEqual(SpeedLimitSignPalette.cameraGreen, SpeedLimitSignPalette.borderGreen / 2)
+        XCTAssertEqual(SpeedLimitSignPalette.cameraBlue, SpeedLimitSignPalette.borderBlue / 2)
+    }
+
+    private func executeStoreMutation(
+        databaseURL: URL,
+        sql: String,
+        bindings: [String]
+    ) throws {
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(
+            databaseURL.path,
+            &db,
+            SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX,
+            nil
+        ) == SQLITE_OK, let db else {
+            defer { if let db { sqlite3_close(db) } }
+            return XCTFail("could not open local observation test database")
+        }
+        defer { sqlite3_close(db) }
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            return XCTFail("could not prepare local observation test mutation")
+        }
+        defer { sqlite3_finalize(stmt) }
+        for (offset, value) in bindings.enumerated() {
+            sqlite3_bind_text(stmt, Int32(offset + 1), value, -1, SQLITE_TRANSIENT)
+        }
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            return XCTFail("could not execute local observation test mutation")
+        }
+    }
+
+    private func arm(
+        _ finalizer: inout TrafficSignPassageFinalizer,
+        context: TrafficSignDetectionContext
+    ) {
+        _ = finalizer.ingest(
+            makeSeen(offset: 0, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        _ = finalizer.ingest(
+            makeSeen(offset: 0.1, context: context, state: .confirmed),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+    }
+
+    private func makeContext(
+        wayID: String = "123",
+        direction: TrafficSignTravelDirection = .forward,
+        groups: [Int] = [1, 2],
+        epoch: UInt64 = 7,
+        stable: Bool = true,
+        continuity: Bool = true,
+        latitude: Double = 48,
+        longitude: Double = 8,
+        bundleSHA: String? = nil,
+        useDefaultSHA: Bool = true
+    ) -> TrafficSignDetectionContext {
+        let sha = useDefaultSHA ? (bundleSHA ?? verifiedSHA) : bundleSHA
+        return TrafficSignDetectionContext(
+            wayId: wayID,
+            latitude: latitude,
+            longitude: longitude,
+            headingDegrees: 90,
+            travelDirection: direction,
+            sourceSignature: TrafficSignRuntimeSourceSignature(
+                osmRevision: "bundle:test|way:\(wayID)",
+                localCorrectionRevision: nil,
+                bundleSHA256: sha
+            ),
+            routeContinuityAvailable: continuity,
+            routeRelationMemberships: groups.map {
+                TrafficSignRouteRelationMembership(groupID: $0, sourceRelationID: Int64($0 + 1_000))
+            },
+            traversalEpoch: epoch,
+            matchedWayStable: stable
+        )
+    }
+
+    private func makeCandidate(
+        value: Int? = 30,
+        trackID: String = "track-30",
+        confidence: Double? = 0.86,
+        semanticKind: String = TrafficSignSemanticKind.maximumSpeed.rawValue,
+        rawClassID: String = "speed_limit_30"
+    ) -> TrafficSignRecognitionCandidate {
+        TrafficSignRecognitionCandidate(
+            rawClassId: rawClassID,
+            rawLabel: rawClassID,
+            semanticKind: semanticKind,
+            value: value,
+            unit: value == nil ? nil : "km/h",
+            rawScore: 0.84,
+            calibratedConfidence: confidence,
+            detectorRawScore: 0.71,
+            detectorCalibratedConfidence: 0.73,
+            classifierRawScore: 0.81,
+            classifierCalibratedConfidence: 0.83,
+            assemblyConfidence: 0.82,
+            boundingBox: .init(x: 0.4, y: 0.2, width: 0.1, height: 0.1),
+            trackId: trackID,
+            evidenceFrames: 1,
+            assemblyId: "assembly-\(trackID)"
+        )
+    }
+
+    private func makeSeen(
+        offset: TimeInterval,
+        value: Int = 30,
+        trackID: String = "track-30",
+        context: TrafficSignDetectionContext?,
+        confidence: Double? = 0.86,
+        state: TrafficSignRecognitionResultState = .provisional
+    ) -> TrafficSignRecognitionEvent {
+        makeEvent(
+            offset: offset,
+            state: state,
+            candidate: makeCandidate(value: value, trackID: trackID, confidence: confidence),
+            context: context
+        )
+    }
+
+    private func makeMissing(
+        offset: TimeInterval,
+        context: TrafficSignDetectionContext?
+    ) -> TrafficSignRecognitionEvent {
+        makeEvent(offset: offset, state: .noRecognition, candidate: nil, context: context)
+    }
+
+    private func makeEvent(
+        offset: TimeInterval,
+        state: TrafficSignRecognitionResultState,
+        candidate: TrafficSignRecognitionCandidate?,
+        context: TrafficSignDetectionContext?
+    ) -> TrafficSignRecognitionEvent {
+        TrafficSignRecognitionEvent(
+            schemaVersion: 1,
+            packId: "active-calibrated-pack",
+            artifactSha256: String(repeating: "b", count: 64),
+            preprocessingVersion: "test-v1",
+            modelComponents: [TrafficSignModelComponentLineage(
+                role: "direct_detector",
+                artifactSHA256: String(repeating: "b", count: 64),
+                preprocessingVersion: "test-v1",
+                calibrationID: "calibration-test-v1"
+            )],
+            frameId: "frame-\(Int((offset * 1_000).rounded()))",
+            driveSessionId: "drive-test",
+            analysisEligible: true,
+            source: .liveFrame,
+            frameTimestampUtc: baseTime.addingTimeInterval(offset),
+            state: state,
+            candidate: candidate,
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: "nominal"
+        )
+    }
+
+    private func makePassage(
+        action: TrafficSignStructuralAction,
+        context: TrafficSignDetectionContext,
+        eventID: String = "passage-1",
+        recognitionGroups: [Int]? = nil,
+        initialRecognitionGroups: [Int]? = nil,
+        eligibleRecognitionGroups: [Int]? = nil,
+        initialRecognitionContext: TrafficSignDetectionContext? = nil,
+        assemblyIDs: [String] = ["assembly-1", "assembly-2"],
+        modelComponents: [TrafficSignModelComponentLineage]? = nil,
+        timeOffset: TimeInterval = 0,
+        conditionState: TrafficSignConditionState = .none
+    ) -> TrafficSignPassageEvent {
+        let firstSeen = baseTime.addingTimeInterval(timeOffset)
+        let resolvedInitialGroups = initialRecognitionGroups
+            ?? recognitionGroups
+            ?? context.routeRelationMemberships.map(\.groupID)
+        let resolvedEligibleGroups = eligibleRecognitionGroups
+            ?? recognitionGroups
+            ?? context.routeRelationMemberships.map(\.groupID)
+        let components = modelComponents ?? [TrafficSignModelComponentLineage(
+            role: "direct_detector",
+            artifactSHA256: String(repeating: "b", count: 64),
+            preprocessingVersion: "test-v1",
+            calibrationID: "calibration-test-v1"
+        )]
+        return TrafficSignPassageEvent(
+            schemaVersion: 1,
+            finalizedEventID: eventID,
+            driveSessionID: "drive-test",
+            physicalTrackID: "physical-1",
+            assemblyID: assemblyIDs.last,
+            assemblyIDs: assemblyIDs,
+            packID: "active-calibrated-pack",
+            artifactSHA256: String(repeating: "b", count: 64),
+            preprocessingVersion: "test-v1",
+            modelComponents: components,
+            action: action,
+            conditionState: conditionState,
+            restrictions: [],
+            firstSeenTimestampUTC: firstSeen,
+            lastSeenTimestampUTC: firstSeen.addingTimeInterval(0.1),
+            passageBoundaryTimestampUTC: firstSeen.addingTimeInterval(0.2),
+            lastSeenContext: context,
+            passageBoundaryCoordinate: .init(latitude: context.latitude, longitude: context.longitude),
+            passageBoundaryContext: context,
+            initialRecognitionContext: initialRecognitionContext ?? context,
+            activationContext: context,
+            activationTimestampUTC: firstSeen.addingTimeInterval(0.2),
+            initialRecognitionRouteRelationMemberships: resolvedInitialGroups.map {
+                TrafficSignRouteRelationMembership(
+                    groupID: $0,
+                    sourceRelationID: Int64($0 + 1_000)
+                )
+            },
+            recognitionRouteRelationMemberships: resolvedEligibleGroups.map {
+                TrafficSignRouteRelationMembership(
+                    groupID: $0,
+                    sourceRelationID: Int64($0 + 1_000)
+                )
+            },
+            frameEvidence: [
+                TrafficSignPassageFrameEvidence(
+                    frameID: "frame-seen-1-\(eventID)",
+                    timestampUTC: firstSeen,
+                    outcome: "seen",
+                    analysisEligible: true,
+                    rawScore: 0.80,
+                    calibratedConfidence: 0.82,
+                    proposalRawScore: 0.71,
+                    proposalCalibratedConfidence: 0.73,
+                    classifierRawScore: 0.81,
+                    classifierCalibratedConfidence: 0.83,
+                    assemblyConfidence: 0.82,
+                    accumulatedSupport: 0.82,
+                    wayID: (initialRecognitionContext ?? context).wayId
+                ),
+                TrafficSignPassageFrameEvidence(
+                    frameID: "frame-seen-2-\(eventID)",
+                    timestampUTC: firstSeen.addingTimeInterval(0.1),
+                    outcome: "seen",
+                    analysisEligible: true,
+                    rawScore: 0.88,
+                    calibratedConfidence: 0.90,
+                    proposalRawScore: 0.79,
+                    proposalCalibratedConfidence: 0.81,
+                    classifierRawScore: 0.87,
+                    classifierCalibratedConfidence: 0.89,
+                    assemblyConfidence: 0.88,
+                    accumulatedSupport: 0.90,
+                    wayID: context.wayId
+                ),
+            ],
+            lossEvidence: [
+                TrafficSignPassageLossFrameEvidence(
+                    frameID: "frame-loss-1-\(eventID)",
+                    timestampUTC: firstSeen.addingTimeInterval(0.2),
+                    outcome: "analyzed_missing",
+                    analysisEligible: true,
+                    strongPassGeometry: false,
+                    speedMPS: 10,
+                    wayID: context.wayId
+                ),
+                TrafficSignPassageLossFrameEvidence(
+                    frameID: "frame-loss-2-\(eventID)",
+                    timestampUTC: firstSeen.addingTimeInterval(0.3),
+                    outcome: "analyzed_missing",
+                    analysisEligible: true,
+                    strongPassGeometry: false,
+                    speedMPS: 10,
+                    wayID: context.wayId
+                ),
+            ],
+            accumulatedSupport: 0.9,
+            finalCalibratedConfidence: 0.9,
+            peakConsecutiveFramesSeen: 2,
+            lossNegativeFrames: 2,
+            lossReason: .negativeDebounce,
+            negativeFramesRequired: 2,
+            sessionGeneration: 1,
+            contextGeneration: 1
+        )
+    }
+
+    private func persistenceDecision(
+        value: String,
+        direction: LocalObservationDirectionScope
+    ) -> TrafficSignPassagePersistenceDecision {
+        let tagKey: String
+        switch direction {
+        case .wayWide, .unknown: tagKey = "maxspeed"
+        case .forward: tagKey = "maxspeed:forward"
+        case .backward: tagKey = "maxspeed:backward"
+        }
+        return TrafficSignPassagePersistenceDecision(
+            value: value,
+            oldSpeedKmh: nil,
+            runtimeApplicable: direction != .unknown,
+            initialState: direction == .unknown ? .needsReview : .localOnly,
+            operation: direction == .unknown ? nil : .setMaxspeed,
+            directionScope: direction,
+            applicability: .permanent,
+            exportTagKey: direction == .unknown ? nil : tagKey,
+            reason: "test_camera_value"
+        )
+    }
+
+    private func makeBase(
+        _ value: Int,
+        source: EffectiveSpeedLimitSource = .bundle
+    ) -> EffectiveSpeedLimitState {
+        EffectiveSpeedLimitState(
+            value: .numeric(value),
+            source: source,
+            presentationReason: "test-base",
+            hasCameraEvidenceMarker: false
+        )
+    }
+
+    private func memberships(_ groups: [Int]) -> [TrafficSignRouteRelationMembership] {
+        groups.map {
+            TrafficSignRouteRelationMembership(groupID: $0, sourceRelationID: Int64($0 + 1_000))
         }
     }
 }

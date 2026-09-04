@@ -387,6 +387,21 @@ struct LocalBundleRoute: Sendable {
     let bundleVersion: String
     let countryCode: String?
     let dbPath: String
+    let dbSHA256: String?
+
+    init(
+        region: String,
+        bundleVersion: String,
+        countryCode: String?,
+        dbPath: String,
+        dbSHA256: String? = nil
+    ) {
+        self.region = region
+        self.bundleVersion = bundleVersion
+        self.countryCode = countryCode
+        self.dbPath = dbPath
+        self.dbSHA256 = dbSHA256
+    }
 }
 
 struct PenaltyRuleContext: Sendable {
@@ -447,19 +462,22 @@ struct ActiveBundleState: Codable {
     let dbFileName: String
     let dbPath: String?
     let activatedAtUTC: String
+    let dbSHA256: String?
 
     init(
         region: String,
         bundleVersion: String,
         dbFileName: String,
         activatedAtUTC: String,
-        dbPath: String? = nil
+        dbPath: String? = nil,
+        dbSHA256: String? = nil
     ) {
         self.region = region
         self.bundleVersion = bundleVersion
         self.dbFileName = dbFileName
         self.dbPath = dbPath
         self.activatedAtUTC = activatedAtUTC
+        self.dbSHA256 = dbSHA256
     }
 
     enum CodingKeys: String, CodingKey {
@@ -468,6 +486,7 @@ struct ActiveBundleState: Codable {
         case dbFileName = "db_file_name"
         case dbPath = "db_path"
         case activatedAtUTC = "activated_at_utc"
+        case dbSHA256 = "db_sha256"
     }
 }
 
@@ -483,6 +502,21 @@ struct BundleSyncResult: Codable {
     let bundleVersion: String
     let dbPath: String
     let details: String
+    let dbSHA256: String?
+
+    init(
+        mode: Mode,
+        bundleVersion: String,
+        dbPath: String,
+        details: String,
+        dbSHA256: String? = nil
+    ) {
+        self.mode = mode
+        self.bundleVersion = bundleVersion
+        self.dbPath = dbPath
+        self.details = details
+        self.dbSHA256 = dbSHA256
+    }
 }
 
 struct BundleSyncProgress: Sendable {
@@ -799,6 +833,10 @@ struct SpeedLimitResult: Codable, Sendable {
     let candidateTraces: [MatchCandidateTrace]
     let selectionTrace: [MatchSelectionTrace]
     let activeCorridorState: CorridorMatchState?
+    /// `nil` means the result came from an older serialized log. `false`
+    /// means the opened bundle was inspected and lacks the capability.
+    let routeContinuityAvailable: Bool?
+    let routeRelationMemberships: [TrafficSignRouteRelationMembership]?
 }
 
 struct DriveMatchLogEntry: Codable, Sendable {
@@ -894,6 +932,30 @@ enum LocalObservationState: String, Codable, Sendable, CaseIterable {
     case discarded = "discarded"
 }
 
+enum LocalObservationOperation: String, Codable, Sendable {
+    case setMaxspeed = "set_maxspeed"
+}
+
+enum LocalObservationDirectionScope: String, Codable, Sendable {
+    case wayWide = "way_wide"
+    case forward
+    case backward
+    case unknown
+}
+
+enum LocalObservationApplicability: String, Codable, Sendable {
+    case permanent
+    case temporary
+    case conditional
+    case unresolved
+}
+
+enum LocalObservationExportDisposition: String, Codable, Sendable {
+    case eligible
+    case superseded
+    case exported
+}
+
 struct LocalObservation: Codable, Sendable, Identifiable {
     let id: String
     let modality: LocalObservationModality
@@ -914,6 +976,81 @@ struct LocalObservation: Codable, Sendable, Identifiable {
     let exportID: String?
     let oldSpeedKmh: Int?
     let newSpeedKmh: Int?
+    let evidenceJSON: String?
+    let primaryWayID: String?
+    let effectiveAtUTC: String?
+    let operation: LocalObservationOperation?
+    let directionScope: LocalObservationDirectionScope?
+    let applicability: LocalObservationApplicability?
+    let runtimeApplicable: Bool?
+    let finalizedEventID: String?
+    let approvalRevision: String?
+    let exportDisposition: LocalObservationExportDisposition?
+    let exportTagKey: String?
+
+    init(
+        id: String,
+        modality: LocalObservationModality,
+        intentType: LocalObservationIntentType,
+        value: String?,
+        lat: Double?,
+        lon: Double?,
+        headingDeg: Double?,
+        roadCandidateIDs: [String],
+        cityContext: String?,
+        streetContext: String?,
+        capturedAtUTC: String,
+        confidenceCalibrated: Double?,
+        sourceVersion: String,
+        state: LocalObservationState,
+        devicePseudoID: String,
+        updatedAtUTC: String,
+        exportID: String?,
+        oldSpeedKmh: Int?,
+        newSpeedKmh: Int?,
+        evidenceJSON: String? = nil,
+        primaryWayID: String? = nil,
+        effectiveAtUTC: String? = nil,
+        operation: LocalObservationOperation? = nil,
+        directionScope: LocalObservationDirectionScope? = nil,
+        applicability: LocalObservationApplicability? = nil,
+        runtimeApplicable: Bool? = nil,
+        finalizedEventID: String? = nil,
+        approvalRevision: String? = nil,
+        exportDisposition: LocalObservationExportDisposition? = nil,
+        exportTagKey: String? = nil
+    ) {
+        self.id = id
+        self.modality = modality
+        self.intentType = intentType
+        self.value = value
+        self.lat = lat
+        self.lon = lon
+        self.headingDeg = headingDeg
+        self.roadCandidateIDs = roadCandidateIDs
+        self.cityContext = cityContext
+        self.streetContext = streetContext
+        self.capturedAtUTC = capturedAtUTC
+        self.confidenceCalibrated = confidenceCalibrated
+        self.sourceVersion = sourceVersion
+        self.state = state
+        self.devicePseudoID = devicePseudoID
+        self.updatedAtUTC = updatedAtUTC
+        self.exportID = exportID
+        self.oldSpeedKmh = oldSpeedKmh
+        self.newSpeedKmh = newSpeedKmh
+        self.evidenceJSON = evidenceJSON
+        self.primaryWayID = primaryWayID
+        self.effectiveAtUTC = effectiveAtUTC
+        self.operation = operation
+        self.directionScope = directionScope
+        self.applicability = applicability
+        self.runtimeApplicable = runtimeApplicable
+        self.finalizedEventID = finalizedEventID
+        self.approvalRevision = approvalRevision
+        self.exportDisposition = exportDisposition
+        self.exportTagKey = exportTagKey
+    }
 }
 
 struct LocalObservationCaptureContext: Sendable {
@@ -954,7 +1091,44 @@ struct LocalObservationBulkExportResult: Sendable {
     let includedCount: Int
 }
 
+enum LocalObservationComputerVisionReceiptDecision: String, Codable, Sendable {
+    case inserted
+    case equivalent
+    case staleGeneration = "stale_generation"
+}
+
+struct LocalObservationComputerVisionRecordResult: Sendable {
+    let decision: LocalObservationComputerVisionReceiptDecision
+    let observation: LocalObservation?
+}
+
 actor LocalObservationStore {
+    private struct FrozenExportMember: Codable, Sendable {
+        let observationID: String
+        let wayID: String
+        let tagKey: String
+        let value: String
+        let directionScope: LocalObservationDirectionScope
+        let approvalRevision: String
+        let effectiveAtUTC: String
+        let capturedAtUTC: String
+        let sourceVersion: String
+        let streetContext: String?
+        let cityContext: String?
+        let confidenceCalibrated: Double?
+
+        var targetKey: String { "way:\(wayID)|tag:\(tagKey)" }
+    }
+
+    private struct ExportReservation: Sendable {
+        let batchID: String
+        let createdAtUTC: String
+        let packageDirectory: URL
+        let status: String
+        let packageSHA256: String?
+        let members: [FrozenExportMember]
+    }
+
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "local-observations")
     private let fileManager: FileManager
     private let userDefaults: UserDefaults
@@ -1046,12 +1220,566 @@ actor LocalObservationStore {
         return observation
     }
 
+    /// Consumes one finalized passage under the controller's generation gate.
+    /// The receipt and optional observation are committed in the same SQLite
+    /// transaction, making retries exactly-once even when the value already
+    /// exists as the newest correction for the typed target.
+    func recordComputerVisionPassageIfNeeded(
+        event: TrafficSignPassageEvent,
+        decision: TrafficSignPassagePersistenceDecision,
+        writePermit: TrafficSignWritePermit
+    ) throws -> LocalObservationComputerVisionRecordResult {
+        var staleExportBatchIDs: [String] = []
+        let consumed = try writePermit.consume {
+            try withDatabase { db in
+                guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
+                    throw sqliteError(db: db, context: "begin computer-vision observation")
+                }
+                do {
+                    if let existing = try computerVisionReceipt(
+                        db: db,
+                        finalizedEventID: event.finalizedEventID
+                    ) {
+                        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+                            throw sqliteError(db: db, context: "commit existing computer-vision receipt")
+                        }
+                        return existing
+                    }
+
+                    let activation = event.activationContext
+                    // A boundary match may be absent or explicitly unstable.
+                    // The finalizer's stabilized activation/rematch is the only
+                    // authoritative target; the boundary remains evidence.
+                    let primaryWayID = activation.wayId
+                    guard Self.isPositiveWayID(primaryWayID) else {
+                        throw ConsumerAppError.io("Computer-vision passage has no valid OSM way id")
+                    }
+                    let canonicalValue = Self.canonicalMaxspeedValue(decision.value)
+                    let evidenceData = try TrafficSignPassageWireEncoder.encode(
+                        event: event,
+                        decision: decision
+                    )
+                    guard let evidenceJSON = String(data: evidenceData, encoding: .utf8) else {
+                        throw ConsumerAppError.io("Could not encode computer-vision passage evidence")
+                    }
+                    let canCompareTypedTarget = decision.operation == .setMaxspeed
+                        && decision.runtimeApplicable
+                        && decision.directionScope != .unknown
+                        && canonicalValue != nil
+                    let equivalentCorrection: (value: String, observationID: String)?
+                    if canCompareTypedTarget {
+                        equivalentCorrection = try newestRuntimeCorrection(
+                            db: db,
+                            wayID: primaryWayID,
+                            direction: decision.directionScope
+                        )
+                    } else {
+                        equivalentCorrection = nil
+                    }
+                    let equivalent = equivalentCorrection?.value == canonicalValue
+
+                    let consumedAtUTC = Self.isoFormatter.string(from: nowProvider())
+                    if equivalent {
+                        try insertComputerVisionPassageEvidence(
+                            db: db,
+                            finalizedEventID: event.finalizedEventID,
+                            evidenceJSON: evidenceJSON,
+                            equivalentObservationID: equivalentCorrection?.observationID,
+                            consumedAtUTC: consumedAtUTC
+                        )
+                        try insertComputerVisionReceipt(
+                            db: db,
+                            finalizedEventID: event.finalizedEventID,
+                            decision: .equivalent,
+                            observationID: equivalentCorrection?.observationID,
+                            consumedAtUTC: consumedAtUTC
+                        )
+                        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+                            throw sqliteError(db: db, context: "commit equivalent computer-vision receipt")
+                        }
+                        return LocalObservationComputerVisionRecordResult(
+                            decision: .equivalent,
+                            observation: nil
+                        )
+                    }
+
+                    let observationID = UUID().uuidString.lowercased()
+                    let effectiveAtUTC = Self.isoFormatter.string(from: event.passageBoundaryTimestampUTC)
+                    let coordinate = event.passageBoundaryCoordinate ?? TrafficSignCoordinate(
+                        latitude: activation.latitude,
+                        longitude: activation.longitude
+                    )
+                    let roadIDsData = try JSONEncoder().encode([primaryWayID])
+                    let roadIDsJSON = String(data: roadIDsData, encoding: .utf8) ?? "[]"
+                    let intent: LocalObservationIntentType
+                    if decision.applicability == .temporary {
+                        intent = .temporary_restriction
+                    } else if decision.operation == .setMaxspeed {
+                        intent = .set_maxspeed
+                    } else {
+                        intent = .map_inconsistency
+                    }
+                    let exportDisposition: LocalObservationExportDisposition? = decision.operation == .setMaxspeed
+                        && decision.applicability == .permanent
+                        && decision.directionScope != .unknown
+                        ? .eligible
+                        : nil
+                    let bundleSHA = activation.sourceSignature.bundleSHA256 ?? "unverified"
+                    let sourceVersion = "tsr:\(event.packID)|artifact:\(event.artifactSHA256)|bundle_sha256:\(bundleSHA)"
+                    let insertSQL = """
+                    INSERT INTO observations (
+                      observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+                      city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+                      device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+                      evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+                      runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+                    ) VALUES (
+                      ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, NULL, ?9, ?10, ?11, ?12, ?13, ?14,
+                      NULL, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, NULL, ?25, ?26
+                    )
+                    """
+                    var insertStmt: OpaquePointer?
+                    guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK,
+                          let insertStmt else {
+                        throw sqliteError(db: db, context: "prepare computer-vision observation insert")
+                    }
+                    sqlite3_bind_text(insertStmt, 1, observationID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 2, LocalObservationModality.computer_vision.rawValue, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 3, intent.rawValue, -1, SQLITE_TRANSIENT)
+                    bindOptionalText(canonicalValue, stmt: insertStmt, index: 4)
+                    sqlite3_bind_double(insertStmt, 5, coordinate.latitude)
+                    sqlite3_bind_double(insertStmt, 6, coordinate.longitude)
+                    sqlite3_bind_double(insertStmt, 7, activation.headingDegrees)
+                    sqlite3_bind_text(insertStmt, 8, roadIDsJSON, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 9, effectiveAtUTC, -1, SQLITE_TRANSIENT)
+                    bindOptionalDouble(event.finalCalibratedConfidence, stmt: insertStmt, index: 10)
+                    sqlite3_bind_text(insertStmt, 11, sourceVersion, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 12, decision.initialState.rawValue, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 13, ensureDevicePseudoID(), -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 14, consumedAtUTC, -1, SQLITE_TRANSIENT)
+                    bindOptionalInt(decision.oldSpeedKmh, stmt: insertStmt, index: 15)
+                    bindOptionalInt(canonicalValue.flatMap(Int.init), stmt: insertStmt, index: 16)
+                    sqlite3_bind_text(insertStmt, 17, evidenceJSON, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 18, primaryWayID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 19, effectiveAtUTC, -1, SQLITE_TRANSIENT)
+                    bindOptionalText(decision.operation?.rawValue, stmt: insertStmt, index: 20)
+                    sqlite3_bind_text(insertStmt, 21, decision.directionScope.rawValue, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(insertStmt, 22, decision.applicability.rawValue, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_int(insertStmt, 23, decision.runtimeApplicable ? 1 : 0)
+                    sqlite3_bind_text(insertStmt, 24, event.finalizedEventID, -1, SQLITE_TRANSIENT)
+                    bindOptionalText(exportDisposition?.rawValue, stmt: insertStmt, index: 25)
+                    bindOptionalText(decision.exportTagKey, stmt: insertStmt, index: 26)
+                    guard sqlite3_step(insertStmt) == SQLITE_DONE else {
+                        sqlite3_finalize(insertStmt)
+                        throw sqliteError(db: db, context: "execute computer-vision observation insert")
+                    }
+                    sqlite3_finalize(insertStmt)
+
+                    staleExportBatchIDs += try staleOverlappingPendingExportBatches(
+                        db: db,
+                        wayID: primaryWayID,
+                        direction: decision.directionScope,
+                        incomingObservationID: observationID
+                    )
+
+                    if decision.runtimeApplicable,
+                       decision.operation == .setMaxspeed,
+                       decision.applicability == .permanent,
+                       canonicalValue != nil {
+                        staleExportBatchIDs += try supersedeOlderTypedCorrections(
+                            db: db,
+                            wayID: primaryWayID,
+                            direction: decision.directionScope,
+                            effectiveAtUTC: effectiveAtUTC,
+                            keepingObservationID: observationID
+                        )
+                    }
+
+                    try insertComputerVisionPassageEvidence(
+                        db: db,
+                        finalizedEventID: event.finalizedEventID,
+                        evidenceJSON: evidenceJSON,
+                        equivalentObservationID: nil,
+                        consumedAtUTC: consumedAtUTC
+                    )
+
+                    try insertComputerVisionReceipt(
+                        db: db,
+                        finalizedEventID: event.finalizedEventID,
+                        decision: .inserted,
+                        observationID: observationID,
+                        consumedAtUTC: consumedAtUTC
+                    )
+                    guard let observation = try fetchObservation(
+                        db: db,
+                        observationID: observationID
+                    ) else {
+                        throw ConsumerAppError.sqlite("Inserted computer-vision observation could not be decoded")
+                    }
+                    guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+                        throw sqliteError(db: db, context: "commit computer-vision observation")
+                    }
+                    return LocalObservationComputerVisionRecordResult(
+                        decision: .inserted,
+                        observation: observation
+                    )
+                } catch {
+                    sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                    throw error
+                }
+            }
+        }
+        quarantineStaleExportBatches(staleExportBatchIDs)
+        return consumed ?? LocalObservationComputerVisionRecordResult(
+            decision: .staleGeneration,
+            observation: nil
+        )
+    }
+
+    func fetchLatestRuntimeApplicableCorrection(
+        wayID: String,
+        direction: LocalObservationDirectionScope
+    ) throws -> LocalObservation? {
+        guard Self.isPositiveWayID(wayID) else { return nil }
+        return try withDatabase { db in
+            try latestValidatedRuntimeCorrection(
+                db: db,
+                wayID: wayID,
+                direction: direction
+            )?.observation
+        }
+    }
+
+    private func computerVisionReceipt(
+        db: OpaquePointer,
+        finalizedEventID: String
+    ) throws -> LocalObservationComputerVisionRecordResult? {
+        let sql = """
+        SELECT decision, observation_id
+        FROM computer_vision_event_receipts
+        WHERE finalized_event_id = ?1
+        LIMIT 1
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare computer-vision receipt lookup")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, finalizedEventID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_ROW,
+              let raw = cStringOptional(sqlite3_column_text(stmt, 0)),
+              let decision = LocalObservationComputerVisionReceiptDecision(rawValue: raw) else {
+            return nil
+        }
+        let observationID = cStringOptional(sqlite3_column_text(stmt, 1))
+        let observation = try observationID.flatMap {
+            try fetchObservation(db: db, observationID: $0)
+        }
+        return LocalObservationComputerVisionRecordResult(
+            decision: decision,
+            observation: observation
+        )
+    }
+
+    private func insertComputerVisionReceipt(
+        db: OpaquePointer,
+        finalizedEventID: String,
+        decision: LocalObservationComputerVisionReceiptDecision,
+        observationID: String?,
+        consumedAtUTC: String
+    ) throws {
+        let sql = """
+        INSERT INTO computer_vision_event_receipts (
+          finalized_event_id, decision, observation_id, consumed_at_utc
+        ) VALUES (?1, ?2, ?3, ?4)
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare computer-vision receipt insert")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, finalizedEventID, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 2, decision.rawValue, -1, SQLITE_TRANSIENT)
+        bindOptionalText(observationID, stmt: stmt, index: 3)
+        sqlite3_bind_text(stmt, 4, consumedAtUTC, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            throw sqliteError(db: db, context: "execute computer-vision receipt insert")
+        }
+    }
+
+    private func insertComputerVisionPassageEvidence(
+        db: OpaquePointer,
+        finalizedEventID: String,
+        evidenceJSON: String,
+        equivalentObservationID: String?,
+        consumedAtUTC: String
+    ) throws {
+        let sql = """
+        INSERT INTO computer_vision_passage_events (
+          finalized_event_id, evidence_json, equivalent_observation_id, consumed_at_utc
+        ) VALUES (?1, ?2, ?3, ?4)
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare computer-vision passage evidence")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, finalizedEventID, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 2, evidenceJSON, -1, SQLITE_TRANSIENT)
+        bindOptionalText(equivalentObservationID, stmt: stmt, index: 3)
+        sqlite3_bind_text(stmt, 4, consumedAtUTC, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            throw sqliteError(db: db, context: "insert computer-vision passage evidence")
+        }
+    }
+
+    private func newestRuntimeCorrection(
+        db: OpaquePointer,
+        wayID: String,
+        direction: LocalObservationDirectionScope
+    ) throws -> (value: String, observationID: String)? {
+        guard let correction = try latestValidatedRuntimeCorrection(
+            db: db,
+            wayID: wayID,
+            direction: direction
+        ) else {
+            return nil
+        }
+        return (correction.canonicalValue, correction.observation.id)
+    }
+
+    /// Reads candidates newest-first and deliberately validates each decoded
+    /// row. A future enum or a malformed newer row must not hide an older safe
+    /// correction, and SQL predicates alone are not an authorization boundary.
+    private func latestValidatedRuntimeCorrection(
+        db: OpaquePointer,
+        wayID: String,
+        direction: LocalObservationDirectionScope
+    ) throws -> (observation: LocalObservation, canonicalValue: String)? {
+        let acceptedDirections: [LocalObservationDirectionScope]
+        switch direction {
+        case .forward, .backward:
+            acceptedDirections = [direction, .wayWide]
+        case .wayWide, .unknown:
+            acceptedDirections = [.wayWide]
+        }
+        let placeholders = acceptedDirections.indices
+            .map { "?\($0 + 3)" }
+            .joined(separator: ",")
+        let sql = """
+        SELECT observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+               city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+               device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+               evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+               runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+        FROM observations
+        WHERE primary_way_id = ?1
+          AND direction_scope IN (\(placeholders))
+          AND runtime_applicable = 1
+        ORDER BY effective_at_utc DESC,
+                 CASE WHEN direction_scope = ?2 THEN 0 ELSE 1 END,
+                 observation_id DESC
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare validated runtime correction lookup")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, wayID, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, 2, direction.rawValue, -1, SQLITE_TRANSIENT)
+        for (offset, accepted) in acceptedDirections.enumerated() {
+            sqlite3_bind_text(stmt, Int32(3 + offset), accepted.rawValue, -1, SQLITE_TRANSIENT)
+        }
+
+        while true {
+            switch sqlite3_step(stmt) {
+            case SQLITE_ROW:
+                guard let observation = decodeObservationRow(stmt),
+                      let canonicalValue = Self.validatedRuntimeCorrectionValue(
+                        observation,
+                        expectedWayID: wayID,
+                        acceptedDirections: acceptedDirections
+                      ) else {
+                    continue
+                }
+                return (observation, canonicalValue)
+            case SQLITE_DONE:
+                return nil
+            default:
+                throw sqliteError(db: db, context: "execute validated runtime correction lookup")
+            }
+        }
+    }
+
+    /// A newer correction wins for the same typed target. Older approved rows
+    /// remain in the audit trail but cannot be exported or selected at runtime.
+    private func supersedeOlderTypedCorrections(
+        db: OpaquePointer,
+        wayID: String,
+        direction: LocalObservationDirectionScope,
+        effectiveAtUTC: String,
+        keepingObservationID: String
+    ) throws -> [String] {
+        let staleBatchIDs = try staleOverlappingPendingExportBatches(
+            db: db,
+            wayID: wayID,
+            direction: direction,
+            incomingObservationID: keepingObservationID
+        )
+        // A way-wide correction overlaps both directional tags, while a
+        // directional correction overlaps the way-wide fallback for that
+        // direction. Unknown-direction evidence is never runtime-applicable,
+        // but an older unknown typed row must not remain export-eligible once
+        // a newer applicable correction resolves its scope.
+        let overlappingDirections: [LocalObservationDirectionScope]
+        switch direction {
+        case .wayWide, .unknown:
+            overlappingDirections = [.wayWide, .forward, .backward, .unknown]
+        case .forward:
+            overlappingDirections = [.wayWide, .forward, .unknown]
+        case .backward:
+            overlappingDirections = [.wayWide, .backward, .unknown]
+        }
+        let directionPlaceholders = overlappingDirections.indices
+            .map { "?\($0 + 2)" }
+            .joined(separator: ",")
+        let keepingIndex = Int32(overlappingDirections.count + 2)
+        let effectiveAtIndex = keepingIndex + 1
+        let sql = """
+        UPDATE observations
+           SET export_disposition = 'superseded'
+         WHERE primary_way_id = ?1
+           AND direction_scope IN (\(directionPlaceholders))
+           AND operation = 'set_maxspeed'
+           AND applicability = 'permanent'
+           AND observation_id != ?\(keepingIndex)
+           AND COALESCE(effective_at_utc, captured_at_utc) <= ?\(effectiveAtIndex)
+           AND COALESCE(export_disposition, 'eligible') != 'exported'
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare typed correction supersession")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, wayID, -1, SQLITE_TRANSIENT)
+        for (offset, overlappingDirection) in overlappingDirections.enumerated() {
+            sqlite3_bind_text(
+                stmt,
+                Int32(offset + 2),
+                overlappingDirection.rawValue,
+                -1,
+                SQLITE_TRANSIENT
+            )
+        }
+        sqlite3_bind_text(stmt, keepingIndex, keepingObservationID, -1, SQLITE_TRANSIENT)
+        sqlite3_bind_text(stmt, effectiveAtIndex, effectiveAtUTC, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            throw sqliteError(db: db, context: "execute typed correction supersession")
+        }
+        return staleBatchIDs
+    }
+
+    private func staleOverlappingPendingExportBatches(
+        db: OpaquePointer,
+        wayID: String,
+        direction: LocalObservationDirectionScope,
+        incomingObservationID: String
+    ) throws -> [String] {
+        let overlappingTagKeys: [String]
+        switch direction {
+        case .wayWide:
+            overlappingTagKeys = ["maxspeed", "maxspeed:forward", "maxspeed:backward"]
+        case .forward:
+            overlappingTagKeys = ["maxspeed", "maxspeed:forward"]
+        case .backward:
+            overlappingTagKeys = ["maxspeed", "maxspeed:backward"]
+        case .unknown:
+            overlappingTagKeys = ["maxspeed", "maxspeed:forward", "maxspeed:backward"]
+        }
+        var staleBatchIDs: [String] = []
+        if !overlappingTagKeys.isEmpty {
+            let targetKeys = overlappingTagKeys.map { "way:\(wayID)|tag:\($0)" }
+            let placeholders = targetKeys.indices.map { "?\($0 + 1)" }.joined(separator: ",")
+            let incomingIndex = Int32(targetKeys.count + 1)
+            var selectStmt: OpaquePointer?
+            let selectSQL = """
+            SELECT DISTINCT m.batch_id
+              FROM local_observation_export_members m
+              JOIN observations frozen ON frozen.observation_id = m.observation_id
+              JOIN observations incoming ON incoming.observation_id = ?\(incomingIndex)
+             WHERE m.status = 'pending'
+               AND m.target_key IN (\(placeholders))
+               AND (
+                    COALESCE(frozen.effective_at_utc, frozen.captured_at_utc)
+                        < COALESCE(incoming.effective_at_utc, incoming.captured_at_utc)
+                    OR (
+                        COALESCE(frozen.effective_at_utc, frozen.captured_at_utc)
+                            = COALESCE(incoming.effective_at_utc, incoming.captured_at_utc)
+                        AND frozen.rowid < incoming.rowid
+                    )
+               )
+             ORDER BY m.batch_id
+            """
+            guard sqlite3_prepare_v2(db, selectSQL, -1, &selectStmt, nil) == SQLITE_OK,
+                  let selectStmt else {
+                throw sqliteError(db: db, context: "prepare overlapping OSC batch lookup")
+            }
+            for (index, targetKey) in targetKeys.enumerated() {
+                sqlite3_bind_text(selectStmt, Int32(index + 1), targetKey, -1, SQLITE_TRANSIENT)
+            }
+            sqlite3_bind_text(
+                selectStmt,
+                incomingIndex,
+                incomingObservationID,
+                -1,
+                SQLITE_TRANSIENT
+            )
+            while sqlite3_step(selectStmt) == SQLITE_ROW {
+                if let batchID = cStringOptional(sqlite3_column_text(selectStmt, 0)) {
+                    staleBatchIDs.append(batchID)
+                }
+            }
+            sqlite3_finalize(selectStmt)
+            for batchID in staleBatchIDs {
+                try markExportBatchStaleInDatabase(db: db, batchID: batchID)
+            }
+        }
+
+        return staleBatchIDs
+    }
+
+    private func fetchObservation(
+        db: OpaquePointer,
+        observationID: String
+    ) throws -> LocalObservation? {
+        let sql = """
+        SELECT observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+               city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+               device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+               evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+               runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+        FROM observations
+        WHERE observation_id = ?1
+        LIMIT 1
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare observation transaction fetch")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, observationID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+        return decodeObservationRow(stmt)
+    }
+
     func fetchObservations(states: [LocalObservationState]? = nil, limit: Int = 50) throws -> [LocalObservation] {
         try withDatabase { db in
             var sql = """
             SELECT observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
                    city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
-                   device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh
+                   device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+                   evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+                   runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
             FROM observations
             """
             if let states, !states.isEmpty {
@@ -1077,7 +1805,9 @@ actor LocalObservationStore {
 
             var out: [LocalObservation] = []
             while sqlite3_step(stmt) == SQLITE_ROW {
-                out.append(try decodeObservationRow(stmt))
+                if let observation = decodeObservationRow(stmt) {
+                    out.append(observation)
+                }
             }
             return out
         }
@@ -1085,6 +1815,9 @@ actor LocalObservationStore {
 
     func deleteObservation(observationID: String) throws {
         try withDatabase { db in
+            guard try !hasPendingExportMember(db: db, observationID: observationID) else {
+                throw ConsumerAppError.io("Observation is frozen in a pending OSC export")
+            }
             let sql = "DELETE FROM observations WHERE observation_id = ?1"
             var stmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
@@ -1100,6 +1833,21 @@ actor LocalObservationStore {
 
     func deleteAllObservations() throws -> Int {
         try withDatabase { db in
+            var pendingStmt: OpaquePointer?
+            guard sqlite3_prepare_v2(
+                db,
+                "SELECT 1 FROM local_observation_export_members WHERE status = 'pending' LIMIT 1",
+                -1,
+                &pendingStmt,
+                nil
+            ) == SQLITE_OK, let pendingStmt else {
+                throw sqliteError(db: db, context: "prepare pending OSC deletion guard")
+            }
+            let hasPending = sqlite3_step(pendingStmt) == SQLITE_ROW
+            sqlite3_finalize(pendingStmt)
+            guard !hasPending else {
+                throw ConsumerAppError.io("Cannot delete observations while an OSC export is pending")
+            }
             var countStmt: OpaquePointer?
             guard sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM observations", -1, &countStmt, nil) == SQLITE_OK,
                   let countStmt else {
@@ -1130,194 +1878,934 @@ actor LocalObservationStore {
 
     func buildOsmProposal(observationID: String) throws -> LocalObservationProposal {
         let observation = try fetchObservation(observationID: observationID)
-        guard observation.state == .approvedForExport || observation.state == .needsReview else {
-            throw ConsumerAppError.io("Observation \(observationID) is not exportable in current state \(observation.state.rawValue)")
-        }
-        guard let wayID = observation.roadCandidateIDs.first, !wayID.isEmpty else {
-            throw ConsumerAppError.io("Observation \(observationID) has no road candidate id")
-        }
-        guard let rawValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !rawValue.isEmpty else {
-            throw ConsumerAppError.io("Observation \(observationID) does not contain a maxspeed value")
-        }
+        let target = try validatedExportTarget(observation)
 
-        let xml = Self.makeOsmChangeXML(wayID: wayID, maxspeedValue: rawValue)
+        let xml = Self.makeOsmChangeXML(
+            wayID: target.wayID,
+            tagKey: target.tagKey,
+            maxspeedValue: target.value
+        )
         let summary = observation.confidenceCalibrated.map { String(format: "confidence=%.2f", $0) } ?? "confidence=n/a"
         return LocalObservationProposal(
             observationID: observationID,
-            targetObjects: [.init(type: "way", id: wayID)],
+            targetObjects: [.init(type: "way", id: target.wayID)],
             oscXML: xml,
             confidenceSummary: summary
         )
     }
 
     func exportProposalAsOscPackage(observationID: String) throws -> LocalObservationExportResult {
-        let proposal = try buildOsmProposal(observationID: observationID)
-        let observation = try fetchObservation(observationID: observationID)
-        guard observation.state == .approvedForExport else {
-            throw ConsumerAppError.io("Observation must be approved_for_export before export")
+        let reservation = try reserveExportBatch(observationID: observationID)
+        guard reservation.members.count == 1,
+              reservation.members[0].observationID == observationID else {
+            throw ConsumerAppError.io("Reserved export does not match the requested observation")
         }
-
-        let createdAt = nowProvider()
-        let createdAtUTC = Self.isoFormatter.string(from: createdAt)
-        let exportID = UUID().uuidString.lowercased()
-        let packageDirectory = try exportsDirectory()
-            .appendingPathComponent("osm-export-\(Self.safeTimestamp(createdAtUTC))-\(String(exportID.prefix(8)))", isDirectory: true)
-        try createDirectoryIfNeeded(at: packageDirectory)
-
-        let changesFile = packageDirectory.appendingPathComponent("changes.osc")
-        let reviewFile = packageDirectory.appendingPathComponent("review.json")
-        let readmeFile = packageDirectory.appendingPathComponent("README.txt")
-
-        let oscData = Data(proposal.oscXML.utf8)
-        try oscData.write(to: changesFile, options: .atomic)
-        let reviewJSON = try makeReviewJSON(
-            exportID: exportID,
-            createdAtUTC: createdAtUTC,
-            observation: observation,
-            proposal: proposal
-        )
-        try reviewJSON.write(to: reviewFile, options: .atomic)
-        try Data(Self.readmeTemplate.utf8).write(to: readmeFile, options: .atomic)
-
-        let oscSHA = SHA256.hash(data: oscData).compactMap { String(format: "%02x", $0) }.joined()
-        try withDatabase { db in
-            let insertExportSQL = """
-            INSERT OR REPLACE INTO exports (
-              export_id, created_at_utc, package_path, package_sha256, observation_ids, returned_changeset_id
-            ) VALUES (?1, ?2, ?3, ?4, ?5, NULL)
-            """
-            var exportStmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, insertExportSQL, -1, &exportStmt, nil) == SQLITE_OK, let exportStmt else {
-                throw sqliteError(db: db, context: "prepare export insert")
-            }
-            defer { sqlite3_finalize(exportStmt) }
-            sqlite3_bind_text(exportStmt, 1, exportID, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 2, createdAtUTC, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 3, packageDirectory.path, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 4, oscSHA, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 5, "[\"\(observation.id)\"]", -1, SQLITE_TRANSIENT)
-            guard sqlite3_step(exportStmt) == SQLITE_DONE else {
-                throw sqliteError(db: db, context: "insert export row")
-            }
-
-            let updateObsSQL = """
-            UPDATE observations
-               SET state = ?1, updated_at_utc = ?2, export_id = ?3
-             WHERE observation_id = ?4
-            """
-            var updateStmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, updateObsSQL, -1, &updateStmt, nil) == SQLITE_OK, let updateStmt else {
-                throw sqliteError(db: db, context: "prepare observation update after export")
-            }
-            defer { sqlite3_finalize(updateStmt) }
-            sqlite3_bind_text(updateStmt, 1, LocalObservationState.exportedOsc.rawValue, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(updateStmt, 2, createdAtUTC, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(updateStmt, 3, exportID, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(updateStmt, 4, observation.id, -1, SQLITE_TRANSIENT)
-            guard sqlite3_step(updateStmt) == SQLITE_DONE else {
-                throw sqliteError(db: db, context: "update exported observation state")
-            }
-        }
+        try materializeAndFinalizeExport(reservation)
 
         return LocalObservationExportResult(
-            exportID: exportID,
-            packageDirectory: packageDirectory,
-            changesFile: changesFile,
-            reviewFile: reviewFile,
-            readmeFile: readmeFile
+            exportID: reservation.batchID,
+            packageDirectory: reservation.packageDirectory,
+            changesFile: reservation.packageDirectory.appendingPathComponent("changes.osc"),
+            reviewFile: reservation.packageDirectory.appendingPathComponent("review.json"),
+            readmeFile: reservation.packageDirectory.appendingPathComponent("README.txt")
         )
     }
 
     func exportAllLocalObservationsAsOsc() throws -> LocalObservationBulkExportResult {
-        let observations = try fetchObservations(limit: 1_000)
-            .filter { $0.state != .discarded }
-            .sorted { $0.capturedAtUTC < $1.capturedAtUTC }
-        let reduced = observations.reduce(into: [String: LocalObservation]()) { partial, observation in
-            guard let wayID = observation.roadCandidateIDs.first,
-                  !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  let maxspeedValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !maxspeedValue.isEmpty else {
-                return
-            }
-            if let newSpeed = observation.newSpeedKmh, newSpeed <= 0 {
-                return
-            }
-            partial[wayID] = observation
-        }
-        let payload = reduced.values.sorted { lhs, rhs in
-            lhs.capturedAtUTC < rhs.capturedAtUTC
-        }
-        guard !payload.isEmpty else {
-            throw ConsumerAppError.io("Keine lokalen Erfassungen mit Way-ID und maxspeed-Wert vorhanden.")
-        }
-
-        let createdAt = nowProvider()
-        let createdAtUTC = Self.isoFormatter.string(from: createdAt)
-        let exportID = UUID().uuidString.lowercased()
-        let packageDirectory = try exportsDirectory()
-            .appendingPathComponent("osm-export-all-\(Self.safeTimestamp(createdAtUTC))-\(String(exportID.prefix(8)))", isDirectory: true)
-        try createDirectoryIfNeeded(at: packageDirectory)
-
-        let changesFile = packageDirectory.appendingPathComponent("changes.osc")
-        let xml = Self.makeBulkOsmChangeXML(observations: payload)
-        let oscData = Data(xml.utf8)
-        try oscData.write(to: changesFile, options: .atomic)
-        let oscSHA = SHA256.hash(data: oscData).compactMap { String(format: "%02x", $0) }.joined()
-
-        let observationIDsJSONData = try JSONEncoder().encode(payload.map(\.id))
-        let observationIDsJSON = String(data: observationIDsJSONData, encoding: .utf8) ?? "[]"
-
-        try withDatabase { db in
-            let insertExportSQL = """
-            INSERT OR REPLACE INTO exports (
-              export_id, created_at_utc, package_path, package_sha256, observation_ids, returned_changeset_id
-            ) VALUES (?1, ?2, ?3, ?4, ?5, NULL)
-            """
-            var exportStmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, insertExportSQL, -1, &exportStmt, nil) == SQLITE_OK, let exportStmt else {
-                throw sqliteError(db: db, context: "prepare bulk export insert")
-            }
-            defer { sqlite3_finalize(exportStmt) }
-            sqlite3_bind_text(exportStmt, 1, exportID, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 2, createdAtUTC, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 3, packageDirectory.path, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 4, oscSHA, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(exportStmt, 5, observationIDsJSON, -1, SQLITE_TRANSIENT)
-            guard sqlite3_step(exportStmt) == SQLITE_DONE else {
-                throw sqliteError(db: db, context: "insert bulk export row")
-            }
-        }
+        let reservation = try reserveExportBatch(observationID: nil)
+        try materializeAndFinalizeExport(reservation)
 
         return LocalObservationBulkExportResult(
-            exportID: exportID,
-            packageDirectory: packageDirectory,
-            changesFile: changesFile,
-            includedCount: payload.count
+            exportID: reservation.batchID,
+            packageDirectory: reservation.packageDirectory,
+            changesFile: reservation.packageDirectory.appendingPathComponent("changes.osc"),
+            includedCount: reservation.members.count
         )
+    }
+
+#if DEBUG
+    /// Narrow test seam around the durable reservation boundary. Production
+    /// callers continue to use the atomic public export methods above.
+    struct ExportReservationTestSnapshot: Sendable {
+        let batchID: String
+        let packageDirectory: URL
+        let memberObservationIDs: [String]
+    }
+
+    func testReserveExportBatch(observationID: String?) throws -> ExportReservationTestSnapshot {
+        let reservation = try reserveExportBatch(observationID: observationID)
+        return ExportReservationTestSnapshot(
+            batchID: reservation.batchID,
+            packageDirectory: reservation.packageDirectory,
+            memberObservationIDs: reservation.members.map(\.observationID)
+        )
+    }
+
+    func testFinalizeReservedExportBatch(batchID: String) throws {
+        let reservation = try withDatabase { db in
+            try loadExportReservation(db: db, batchID: batchID)
+        }
+        guard let reservation else {
+            throw ConsumerAppError.io("OSC test reservation not found")
+        }
+        try materializeAndFinalizeExport(reservation)
+    }
+
+    func testExportBatchStatus(batchID: String) throws -> String? {
+        try withDatabase { db in
+            try exportBatchStatus(db: db, batchID: batchID)
+        }
+    }
+#endif
+
+    /// Freezes the complete, reviewed typed target set before any package file
+    /// is written. A pending reservation is durable and deterministic, so a
+    /// launch after a crash resumes the same batch/path instead of creating a
+    /// second OSC package.
+    private func reserveExportBatch(observationID: String?) throws -> ExportReservation {
+        try withDatabase { db in
+            try beginImmediate(db, context: "begin OSC export reservation")
+            do {
+                try staleInvalidPendingExportBatches(db: db)
+                if let existing = try resumableExportReservation(
+                    db: db,
+                    observationID: observationID
+                ) {
+                    try commit(db, context: "commit resumed OSC export reservation")
+                    return existing
+                }
+
+                let observations = try approvedExportObservations(
+                    db: db,
+                    observationID: observationID
+                )
+                let allowsManualLocalOnly = observationID == nil
+                var newestByTarget: [String: FrozenExportMember] = [:]
+                for observation in observations {
+                    let target = try validatedExportTarget(
+                        observation,
+                        allowManualLocalOnly: allowsManualLocalOnly
+                    )
+                    guard try isNewestTypedTarget(db: db, observation: observation) else {
+                        continue
+                    }
+                    guard let direction = observation.directionScope else { continue }
+                    let approvalRevision = observation.approvalRevision
+                        ?? Self.approvalRevision(
+                            wayID: target.wayID,
+                            tagKey: target.tagKey,
+                            value: target.value,
+                            direction: direction
+                        )
+                    let member = FrozenExportMember(
+                        observationID: observation.id,
+                        wayID: target.wayID,
+                        tagKey: target.tagKey,
+                        value: target.value,
+                        directionScope: direction,
+                        approvalRevision: approvalRevision,
+                        effectiveAtUTC: observation.effectiveAtUTC ?? observation.capturedAtUTC,
+                        capturedAtUTC: observation.capturedAtUTC,
+                        sourceVersion: observation.sourceVersion,
+                        streetContext: observation.streetContext,
+                        cityContext: observation.cityContext,
+                        confidenceCalibrated: observation.confidenceCalibrated
+                    )
+                    let key = member.targetKey
+                    if let previous = newestByTarget[key] {
+                        if (member.effectiveAtUTC, member.observationID)
+                            > (previous.effectiveAtUTC, previous.observationID) {
+                            newestByTarget[key] = member
+                        }
+                    } else {
+                        newestByTarget[key] = member
+                    }
+                }
+                let members = newestByTarget.values.sorted {
+                    ($0.targetKey, $0.observationID) < ($1.targetKey, $1.observationID)
+                }
+                guard !members.isEmpty else {
+                    throw ConsumerAppError.io(
+                        observationID == nil
+                            ? "Keine freigegebenen, aktuellen maxspeed-Korrekturen vorhanden."
+                            : "Observation is not the newest approved export target"
+                    )
+                }
+                if let observationID,
+                   members.count != 1 || members[0].observationID != observationID {
+                    throw ConsumerAppError.io("Observation is not eligible for OSC export")
+                }
+
+                let identity = members.map {
+                    [
+                        $0.observationID,
+                        $0.targetKey,
+                        $0.value,
+                        $0.directionScope.rawValue,
+                        $0.approvalRevision,
+                        $0.effectiveAtUTC,
+                    ].joined(separator: "|")
+                }.joined(separator: "\n")
+                let batchID = SHA256.hash(data: Data(identity.utf8))
+                    .map { String(format: "%02x", $0) }
+                    .joined()
+                if let existing = try loadExportReservation(db: db, batchID: batchID) {
+                    try commit(db, context: "commit deterministic OSC export reservation reuse")
+                    return existing
+                }
+                let createdAtUTC = Self.isoFormatter.string(from: nowProvider())
+                let packageDirectory = try exportsDirectory().appendingPathComponent(
+                    "osm-export-\(String(batchID.prefix(20)))",
+                    isDirectory: true
+                )
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.sortedKeys]
+                let payloadJSON = String(
+                    data: try encoder.encode(members),
+                    encoding: .utf8
+                ) ?? "[]"
+
+                let insertBatchSQL = """
+                INSERT INTO local_observation_export_batches (
+                  batch_id, created_at_utc, status, package_path, package_sha256,
+                  payload_json, finalized_at_utc
+                ) VALUES (?1, ?2, 'pending', ?3, NULL, ?4, NULL)
+                """
+                var batchStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, insertBatchSQL, -1, &batchStmt, nil) == SQLITE_OK,
+                      let batchStmt else {
+                    throw sqliteError(db: db, context: "prepare OSC export batch reservation")
+                }
+                sqlite3_bind_text(batchStmt, 1, batchID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(batchStmt, 2, createdAtUTC, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(batchStmt, 3, packageDirectory.path, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(batchStmt, 4, payloadJSON, -1, SQLITE_TRANSIENT)
+                let batchStep = sqlite3_step(batchStmt)
+                sqlite3_finalize(batchStmt)
+                guard batchStep == SQLITE_DONE else {
+                    throw sqliteError(db: db, context: "reserve OSC export batch")
+                }
+
+                let insertMemberSQL = """
+                INSERT INTO local_observation_export_members (
+                  batch_id, observation_id, target_key, approval_revision, status
+                ) VALUES (?1, ?2, ?3, ?4, 'pending')
+                """
+                for member in members {
+                    var memberStmt: OpaquePointer?
+                    guard sqlite3_prepare_v2(db, insertMemberSQL, -1, &memberStmt, nil) == SQLITE_OK,
+                          let memberStmt else {
+                        throw sqliteError(db: db, context: "prepare OSC export member reservation")
+                    }
+                    sqlite3_bind_text(memberStmt, 1, batchID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(memberStmt, 2, member.observationID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(memberStmt, 3, member.targetKey, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(memberStmt, 4, member.approvalRevision, -1, SQLITE_TRANSIENT)
+                    let memberStep = sqlite3_step(memberStmt)
+                    sqlite3_finalize(memberStmt)
+                    guard memberStep == SQLITE_DONE else {
+                        throw sqliteError(db: db, context: "reserve OSC export member")
+                    }
+                }
+                let reservation = ExportReservation(
+                    batchID: batchID,
+                    createdAtUTC: createdAtUTC,
+                    packageDirectory: packageDirectory,
+                    status: "pending",
+                    packageSHA256: nil,
+                    members: members
+                )
+                try commit(db, context: "commit OSC export reservation")
+                return reservation
+            } catch {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
+            }
+        }
+    }
+
+    private func materializeAndFinalizeExport(_ reservation: ExportReservation) throws {
+        let oscData = Data(Self.makeFrozenOsmChangeXML(members: reservation.members).utf8)
+        let oscSHA = SHA256.hash(data: oscData).map { String(format: "%02x", $0) }.joined()
+        let finalDirectory = reservation.packageDirectory
+        let changesFile = finalDirectory.appendingPathComponent("changes.osc")
+        let reviewFile = finalDirectory.appendingPathComponent("review.json")
+        let readmeFile = finalDirectory.appendingPathComponent("README.txt")
+
+        if reservation.status == "finalized",
+           fileManager.fileExists(atPath: changesFile.path),
+           try SHA256.hash(data: Data(contentsOf: changesFile))
+            .map({ String(format: "%02x", $0) }).joined() == oscSHA {
+            return
+        }
+
+        try revalidatePendingReservation(reservation, packageSHA256: oscSHA)
+
+        let temporaryDirectory = try exportsDirectory().appendingPathComponent(
+            ".\(reservation.batchID).tmp",
+            isDirectory: true
+        )
+        if fileManager.fileExists(atPath: temporaryDirectory.path) {
+            try fileManager.removeItem(at: temporaryDirectory)
+        }
+        try fileManager.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        do {
+            try oscData.write(
+                to: temporaryDirectory.appendingPathComponent("changes.osc"),
+                options: .atomic
+            )
+            try makeFrozenReviewJSON(reservation).write(
+                to: temporaryDirectory.appendingPathComponent("review.json"),
+                options: .atomic
+            )
+            try Data(Self.readmeTemplate.utf8).write(
+                to: temporaryDirectory.appendingPathComponent("README.txt"),
+                options: .atomic
+            )
+
+            // Revalidate after all bytes are frozen but before publishing the
+            // directory. If a newer target won, this batch becomes stale and
+            // no final OSC path is exposed.
+            try revalidatePendingReservation(reservation, packageSHA256: oscSHA)
+            if fileManager.fileExists(atPath: finalDirectory.path) {
+                let existing = finalDirectory.appendingPathComponent("changes.osc")
+                guard fileManager.fileExists(atPath: existing.path),
+                      SHA256.hash(data: try Data(contentsOf: existing))
+                        .map({ String(format: "%02x", $0) }).joined() == oscSHA else {
+                    throw ConsumerAppError.io("Existing deterministic OSC package does not match its reservation")
+                }
+                try fileManager.removeItem(at: temporaryDirectory)
+            } else {
+                try fileManager.moveItem(at: temporaryDirectory, to: finalDirectory)
+            }
+            try finalizeExportReservation(reservation, packageSHA256: oscSHA)
+        } catch {
+            try? fileManager.removeItem(at: temporaryDirectory)
+            throw error
+        }
+
+        guard fileManager.fileExists(atPath: changesFile.path),
+              fileManager.fileExists(atPath: reviewFile.path),
+              fileManager.fileExists(atPath: readmeFile.path) else {
+            throw ConsumerAppError.io("Finalized OSC package is incomplete")
+        }
+    }
+
+    private func revalidatePendingReservation(
+        _ reservation: ExportReservation,
+        packageSHA256: String
+    ) throws {
+        try withDatabase { db in
+            try beginImmediate(db, context: "begin OSC reservation validation")
+            do {
+                guard try exportReservationIsCurrent(db: db, reservation: reservation) else {
+                    try markExportBatchStale(db: db, batchID: reservation.batchID)
+                    try commit(db, context: "commit stale OSC reservation")
+                    throw ConsumerAppError.io("OSC export reservation became stale and must be reviewed again")
+                }
+                let sql = """
+                UPDATE local_observation_export_batches
+                   SET package_sha256 = ?1
+                 WHERE batch_id = ?2 AND status = 'pending'
+                """
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                    throw sqliteError(db: db, context: "prepare OSC reservation hash")
+                }
+                sqlite3_bind_text(stmt, 1, packageSHA256, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 2, reservation.batchID, -1, SQLITE_TRANSIENT)
+                let step = sqlite3_step(stmt)
+                sqlite3_finalize(stmt)
+                guard step == SQLITE_DONE else {
+                    throw sqliteError(db: db, context: "store OSC reservation hash")
+                }
+                try commit(db, context: "commit OSC reservation validation")
+            } catch {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
+            }
+        }
+    }
+
+    private func finalizeExportReservation(
+        _ reservation: ExportReservation,
+        packageSHA256: String
+    ) throws {
+        try withDatabase { db in
+            try beginImmediate(db, context: "begin OSC export finalization")
+            do {
+                if try exportBatchStatus(db: db, batchID: reservation.batchID) == "finalized" {
+                    try commit(db, context: "commit already finalized OSC export")
+                    return
+                }
+                guard try exportReservationIsCurrent(db: db, reservation: reservation) else {
+                    try markExportBatchStale(db: db, batchID: reservation.batchID)
+                    try commit(db, context: "commit stale OSC export finalization")
+                    throw ConsumerAppError.io("OSC export changed before finalization")
+                }
+
+                let observationIDs = reservation.members.map(\.observationID)
+                let observationIDsJSON = String(
+                    data: try JSONEncoder().encode(observationIDs),
+                    encoding: .utf8
+                ) ?? "[]"
+                let insertExportSQL = """
+                INSERT OR IGNORE INTO exports (
+                  export_id, created_at_utc, package_path, package_sha256,
+                  observation_ids, returned_changeset_id
+                ) VALUES (?1, ?2, ?3, ?4, ?5, NULL)
+                """
+                var exportStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, insertExportSQL, -1, &exportStmt, nil) == SQLITE_OK,
+                      let exportStmt else {
+                    throw sqliteError(db: db, context: "prepare frozen OSC export insert")
+                }
+                sqlite3_bind_text(exportStmt, 1, reservation.batchID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(exportStmt, 2, reservation.createdAtUTC, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(exportStmt, 3, reservation.packageDirectory.path, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(exportStmt, 4, packageSHA256, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(exportStmt, 5, observationIDsJSON, -1, SQLITE_TRANSIENT)
+                let exportStep = sqlite3_step(exportStmt)
+                sqlite3_finalize(exportStmt)
+                guard exportStep == SQLITE_DONE else {
+                    throw sqliteError(db: db, context: "insert frozen OSC export")
+                }
+
+                let finalizedAtUTC = Self.isoFormatter.string(from: nowProvider())
+                let updateObservationSQL = """
+                UPDATE observations
+                   SET state = 'exported_osc', updated_at_utc = ?1,
+                       export_id = ?2, export_disposition = 'exported'
+                 WHERE observation_id = ?3
+                   AND ((state = 'approved_for_export' AND approval_revision = ?4)
+                        OR (state IN ('local_only', 'needs_review')
+                            AND modality != 'computer_vision'
+                            AND approval_revision IS NULL))
+                   AND export_disposition = 'eligible'
+                   AND primary_way_id = ?5
+                   AND export_tag_key = ?6
+                   AND LOWER(TRIM(value)) = ?7
+                """
+                for member in reservation.members {
+                    var updateStmt: OpaquePointer?
+                    guard sqlite3_prepare_v2(db, updateObservationSQL, -1, &updateStmt, nil) == SQLITE_OK,
+                          let updateStmt else {
+                        throw sqliteError(db: db, context: "prepare guarded OSC member finalization")
+                    }
+                    sqlite3_bind_text(updateStmt, 1, finalizedAtUTC, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 2, reservation.batchID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 3, member.observationID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 4, member.approvalRevision, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 5, member.wayID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 6, member.tagKey, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(updateStmt, 7, member.value, -1, SQLITE_TRANSIENT)
+                    let updateStep = sqlite3_step(updateStmt)
+                    let changed = sqlite3_changes(db)
+                    sqlite3_finalize(updateStmt)
+                    guard updateStep == SQLITE_DONE, changed == 1 else {
+                        throw ConsumerAppError.io("OSC member changed during guarded finalization")
+                    }
+                }
+
+                let finalizeSQL = """
+                UPDATE local_observation_export_batches
+                   SET status = 'finalized', package_sha256 = ?1, finalized_at_utc = ?2
+                 WHERE batch_id = ?3 AND status = 'pending';
+                UPDATE local_observation_export_members
+                   SET status = 'finalized'
+                 WHERE batch_id = ?3 AND status = 'pending';
+                """
+                var finalizeError: UnsafeMutablePointer<Int8>?
+                let quotedSHA = packageSHA256.replacingOccurrences(of: "'", with: "''")
+                let quotedTime = finalizedAtUTC.replacingOccurrences(of: "'", with: "''")
+                let quotedBatch = reservation.batchID.replacingOccurrences(of: "'", with: "''")
+                let boundFinalizeSQL = finalizeSQL
+                    .replacingOccurrences(of: "?1", with: "'\(quotedSHA)'")
+                    .replacingOccurrences(of: "?2", with: "'\(quotedTime)'")
+                    .replacingOccurrences(of: "?3", with: "'\(quotedBatch)'")
+                guard sqlite3_exec(db, boundFinalizeSQL, nil, nil, &finalizeError) == SQLITE_OK else {
+                    let detail = finalizeError.map { String(cString: $0) } ?? "unknown"
+                    sqlite3_free(finalizeError)
+                    throw ConsumerAppError.sqlite("finalize OSC reservation: \(detail)")
+                }
+                try commit(db, context: "commit OSC export finalization")
+            } catch {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
+            }
+        }
+    }
+
+    private func approvedExportObservations(
+        db: OpaquePointer,
+        observationID: String?
+    ) throws -> [LocalObservation] {
+        var sql = """
+        SELECT observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+               city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+               device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+               evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+               runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+        FROM observations
+        WHERE (state = 'approved_for_export'
+               OR (?1 IS NULL
+                   AND state IN ('local_only', 'needs_review')
+                   AND modality != 'computer_vision'))
+        """
+        if observationID != nil { sql += " AND observation_id = ?2" }
+        sql += " ORDER BY COALESCE(effective_at_utc, captured_at_utc), observation_id"
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare approved OSC members")
+        }
+        defer { sqlite3_finalize(stmt) }
+        bindOptionalText(observationID, stmt: stmt, index: 1)
+        if let observationID { sqlite3_bind_text(stmt, 2, observationID, -1, SQLITE_TRANSIENT) }
+        var result: [LocalObservation] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let observation = decodeObservationRow(stmt) { result.append(observation) }
+        }
+        return result
+    }
+
+    private func resumableExportReservation(
+        db: OpaquePointer,
+        observationID: String?
+    ) throws -> ExportReservation? {
+        let sql: String
+        if observationID != nil {
+            sql = """
+            SELECT b.batch_id
+              FROM local_observation_export_batches b
+              JOIN local_observation_export_members m ON m.batch_id = b.batch_id
+             WHERE m.observation_id = ?1 AND b.status IN ('pending', 'finalized')
+             ORDER BY CASE b.status WHEN 'pending' THEN 0 ELSE 1 END, b.created_at_utc DESC
+             LIMIT 1
+            """
+        } else {
+            sql = """
+            SELECT batch_id
+              FROM local_observation_export_batches
+             WHERE status = 'pending'
+             ORDER BY created_at_utc, batch_id
+             LIMIT 1
+            """
+        }
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare resumable OSC reservation")
+        }
+        defer { sqlite3_finalize(stmt) }
+        if let observationID {
+            sqlite3_bind_text(stmt, 1, observationID, -1, SQLITE_TRANSIENT)
+        }
+        guard sqlite3_step(stmt) == SQLITE_ROW,
+              let batchID = cStringOptional(sqlite3_column_text(stmt, 0)) else { return nil }
+        return try loadExportReservation(db: db, batchID: batchID)
+    }
+
+    private func loadExportReservation(
+        db: OpaquePointer,
+        batchID: String
+    ) throws -> ExportReservation? {
+        let sql = """
+        SELECT created_at_utc, status, package_path, package_sha256, payload_json
+          FROM local_observation_export_batches
+         WHERE batch_id = ?1
+         LIMIT 1
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare OSC reservation load")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, batchID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_ROW,
+              let createdAtUTC = cStringOptional(sqlite3_column_text(stmt, 0)),
+              let status = cStringOptional(sqlite3_column_text(stmt, 1)),
+              ["pending", "finalized", "stale"].contains(status),
+              let packagePath = cStringOptional(sqlite3_column_text(stmt, 2)),
+              let payload = cStringOptional(sqlite3_column_text(stmt, 4))?.data(using: .utf8) else {
+            return nil
+        }
+        let members = try JSONDecoder().decode([FrozenExportMember].self, from: payload)
+        guard !members.isEmpty else { return nil }
+        let expectedDirectory = try exportsDirectory().appendingPathComponent(
+            "osm-export-\(String(batchID.prefix(20)))",
+            isDirectory: true
+        ).standardizedFileURL
+        guard URL(fileURLWithPath: packagePath, isDirectory: true).standardizedFileURL.path
+                == expectedDirectory.path else {
+            throw ConsumerAppError.io("OSC reservation package path is invalid")
+        }
+        return ExportReservation(
+            batchID: batchID,
+            createdAtUTC: createdAtUTC,
+            packageDirectory: expectedDirectory,
+            status: status,
+            packageSHA256: cStringOptional(sqlite3_column_text(stmt, 3)),
+            members: members
+        )
+    }
+
+    private func staleInvalidPendingExportBatches(db: OpaquePointer) throws {
+        let sql = """
+        SELECT batch_id
+          FROM local_observation_export_batches
+         WHERE status = 'pending'
+         ORDER BY created_at_utc, batch_id
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare pending OSC reservation audit")
+        }
+        var batchIDs: [String] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            if let id = cStringOptional(sqlite3_column_text(stmt, 0)) { batchIDs.append(id) }
+        }
+        sqlite3_finalize(stmt)
+        for batchID in batchIDs {
+            guard let reservation = try loadExportReservation(db: db, batchID: batchID),
+                  try exportReservationIsCurrent(db: db, reservation: reservation) else {
+                try markExportBatchStale(db: db, batchID: batchID)
+                continue
+            }
+        }
+    }
+
+    private func exportReservationIsCurrent(
+        db: OpaquePointer,
+        reservation: ExportReservation
+    ) throws -> Bool {
+        guard try exportBatchStatus(db: db, batchID: reservation.batchID) == "pending" else {
+            return false
+        }
+        for member in reservation.members {
+            guard let observation = try fetchObservation(
+                db: db,
+                observationID: member.observationID
+            ),
+                  observation.exportDisposition == .eligible,
+                  observation.primaryWayID == member.wayID,
+                  observation.exportTagKey == member.tagKey,
+                  Self.canonicalMaxspeedValue(observation.value) == member.value,
+                  observation.directionScope == member.directionScope,
+                  let target = try? validatedExportTarget(
+                    observation,
+                    allowManualLocalOnly: true
+                  ),
+                  target.wayID == member.wayID,
+                  target.tagKey == member.tagKey,
+                  target.value == member.value,
+                  member.approvalRevision == Self.approvalRevision(
+                    wayID: member.wayID,
+                    tagKey: member.tagKey,
+                    value: member.value,
+                    direction: member.directionScope
+                  ),
+                  try isNewestTypedTarget(db: db, observation: observation) else {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func exportBatchStatus(db: OpaquePointer, batchID: String) throws -> String? {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(
+            db,
+            "SELECT status FROM local_observation_export_batches WHERE batch_id = ?1 LIMIT 1",
+            -1,
+            &stmt,
+            nil
+        ) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare OSC batch status")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, batchID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
+        return cStringOptional(sqlite3_column_text(stmt, 0))
+    }
+
+    private func markExportBatchStaleInDatabase(db: OpaquePointer, batchID: String) throws {
+        let sql = """
+        UPDATE local_observation_export_batches
+           SET status = 'stale'
+         WHERE batch_id = ?1 AND status = 'pending';
+        UPDATE local_observation_export_members
+           SET status = 'stale'
+         WHERE batch_id = ?1 AND status = 'pending';
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare stale OSC batch")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, batchID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(stmt) == SQLITE_DONE else {
+            throw sqliteError(db: db, context: "mark OSC batch stale")
+        }
+        // sqlite3_prepare_v2 compiles only the first statement; update members
+        // separately so partial-index uniqueness is released deterministically.
+        var memberStmt: OpaquePointer?
+        guard sqlite3_prepare_v2(
+            db,
+            "UPDATE local_observation_export_members SET status = 'stale' WHERE batch_id = ?1 AND status = 'pending'",
+            -1,
+            &memberStmt,
+            nil
+        ) == SQLITE_OK, let memberStmt else {
+            throw sqliteError(db: db, context: "prepare stale OSC members")
+        }
+        defer { sqlite3_finalize(memberStmt) }
+        sqlite3_bind_text(memberStmt, 1, batchID, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(memberStmt) == SQLITE_DONE else {
+            throw sqliteError(db: db, context: "mark OSC members stale")
+        }
+    }
+
+    private func markExportBatchStale(db: OpaquePointer, batchID: String) throws {
+        try markExportBatchStaleInDatabase(db: db, batchID: batchID)
+        if let reservation = try loadExportReservation(db: db, batchID: batchID) {
+            try quarantineStaleExportPackage(reservation)
+        }
+    }
+
+    private func isNewestTypedTarget(
+        db: OpaquePointer,
+        observation: LocalObservation
+    ) throws -> Bool {
+        guard let wayID = observation.primaryWayID,
+              let direction = observation.directionScope else { return false }
+        let applicableDirections: [LocalObservationDirectionScope]
+        switch direction {
+        case .wayWide:
+            applicableDirections = [.wayWide, .forward, .backward, .unknown]
+        case .forward:
+            applicableDirections = [.forward, .wayWide, .unknown]
+        case .backward:
+            applicableDirections = [.backward, .wayWide, .unknown]
+        case .unknown:
+            return false
+        }
+        let placeholders = applicableDirections.indices.map { "?\($0 + 2)" }.joined(separator: ",")
+        let sql = """
+        SELECT observation_id
+          FROM observations
+         WHERE primary_way_id = ?1
+           AND direction_scope IN (\(placeholders))
+           AND state != 'discarded'
+           AND (operation = 'set_maxspeed'
+                OR intent_type IN ('map_inconsistency', 'temporary_restriction'))
+         ORDER BY COALESCE(effective_at_utc, captured_at_utc) DESC, rowid DESC
+         LIMIT 1
+        """
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare newest OSC target validation")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, wayID, -1, SQLITE_TRANSIENT)
+        for (offset, applicable) in applicableDirections.enumerated() {
+            sqlite3_bind_text(stmt, Int32(offset + 2), applicable.rawValue, -1, SQLITE_TRANSIENT)
+        }
+        guard sqlite3_step(stmt) == SQLITE_ROW else { return false }
+        return cStringOptional(sqlite3_column_text(stmt, 0)) == observation.id
+    }
+
+    private func quarantineStaleExportPackage(_ reservation: ExportReservation) throws {
+        let source = reservation.packageDirectory
+        guard fileManager.fileExists(atPath: source.path) else { return }
+        let quarantineRoot = try rootDir().appendingPathComponent(
+            "stale-osm-editor-packages",
+            isDirectory: true
+        )
+        try createDirectoryIfNeeded(at: quarantineRoot)
+        let destination = quarantineRoot.appendingPathComponent(
+            reservation.batchID,
+            isDirectory: true
+        )
+        if fileManager.fileExists(atPath: destination.path) {
+            try fileManager.removeItem(at: source)
+        } else {
+            try fileManager.moveItem(at: source, to: destination)
+        }
+    }
+
+    private func quarantineStaleExportBatches(_ batchIDs: [String]) {
+        for batchID in Set(batchIDs) {
+            do {
+                try withDatabase { db in
+                    if let reservation = try loadExportReservation(db: db, batchID: batchID),
+                       reservation.status == "stale" {
+                        try quarantineStaleExportPackage(reservation)
+                    }
+                }
+            } catch {
+                Self.logger.error(
+                    "OSC stale package quarantine failed batch=\(batchID, privacy: .public) error=\(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+    }
+
+    private func makeFrozenReviewJSON(_ reservation: ExportReservation) throws -> Data {
+        let payload: [String: Any] = [
+            "export_id": reservation.batchID,
+            "created_at_utc": reservation.createdAtUTC,
+            "app_version": appVersion(),
+            "observation_ids": reservation.members.map(\.observationID),
+            "target_objects": reservation.members.map { ["type": "way", "id": $0.wayID] },
+            "suggested_changeset_comment": "Update maxspeed based on YouSpeed local observations",
+            "suggested_changeset_source": "YouSpeed local observation",
+            "frozen_targets": reservation.members.map {
+                [
+                    "way_id": $0.wayID,
+                    "tag_key": $0.tagKey,
+                    "value": $0.value,
+                    "approval_revision": $0.approvalRevision,
+                ]
+            },
+        ]
+        guard JSONSerialization.isValidJSONObject(payload) else {
+            throw ConsumerAppError.io("Invalid frozen review.json payload")
+        }
+        return try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
+    }
+
+    private static func makeFrozenOsmChangeXML(members: [FrozenExportMember]) -> String {
+        let body = members.sorted {
+            ($0.targetKey, $0.observationID) < ($1.targetKey, $1.observationID)
+        }.map { member in
+            """
+                <way id="\(xmlEscape(member.wayID))">
+                  <tag k="\(xmlEscape(member.tagKey))" v="\(xmlEscape(member.value))"/>
+                </way>
+            """
+        }.joined(separator: "\n")
+        return """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <osmChange version="0.6" generator="youspeed-export-v1">
+          <modify>
+        \(body)
+          </modify>
+        </osmChange>
+        """
+    }
+
+    private func beginImmediate(_ db: OpaquePointer, context: String) throws {
+        guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
+            throw sqliteError(db: db, context: context)
+        }
+    }
+
+    private func hasPendingExportMember(
+        db: OpaquePointer,
+        observationID: String
+    ) throws -> Bool {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(
+            db,
+            "SELECT 1 FROM local_observation_export_members WHERE observation_id = ?1 AND status = 'pending' LIMIT 1",
+            -1,
+            &stmt,
+            nil
+        ) == SQLITE_OK, let stmt else {
+            throw sqliteError(db: db, context: "prepare pending OSC member guard")
+        }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, observationID, -1, SQLITE_TRANSIENT)
+        return sqlite3_step(stmt) == SQLITE_ROW
+    }
+
+    private func commit(_ db: OpaquePointer, context: String) throws {
+        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+            throw sqliteError(db: db, context: context)
+        }
     }
 
     private func updateObservationState(observationID: String, newState: LocalObservationState) throws -> LocalObservation {
         let nowUTC = Self.isoFormatter.string(from: nowProvider())
-        try withDatabase { db in
-            let sql = """
-            UPDATE observations
-               SET state = ?1, updated_at_utc = ?2
-             WHERE observation_id = ?3
-            """
-            var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
-                throw sqliteError(db: db, context: "prepare observation state update")
-            }
-            defer { sqlite3_finalize(stmt) }
-            sqlite3_bind_text(stmt, 1, newState.rawValue, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 2, nowUTC, -1, SQLITE_TRANSIENT)
-            sqlite3_bind_text(stmt, 3, observationID, -1, SQLITE_TRANSIENT)
-            guard sqlite3_step(stmt) == SQLITE_DONE else {
-                throw sqliteError(db: db, context: "execute observation state update")
+        return try withDatabase { db in
+            try beginImmediate(db, context: "begin observation review transition")
+            do {
+                guard let existing = try fetchObservation(db: db, observationID: observationID) else {
+                    throw ConsumerAppError.io("Observation not found: \(observationID)")
+                }
+                guard try !hasPendingExportMember(db: db, observationID: observationID) else {
+                    throw ConsumerAppError.io("Observation is frozen in a pending OSC export")
+                }
+                let approvalRevision: String?
+                switch newState {
+                case .approvedForExport:
+                    guard existing.state == .localOnly || existing.state == .needsReview else {
+                        throw ConsumerAppError.io("Only local or review observations can be approved")
+                    }
+                    guard existing.exportDisposition != .superseded,
+                          let wayID = existing.primaryWayID,
+                          Self.isPositiveWayID(wayID),
+                          existing.operation == .setMaxspeed,
+                          let direction = existing.directionScope,
+                          direction != .unknown,
+                          existing.applicability == .permanent,
+                          let tagKey = existing.exportTagKey,
+                          ["maxspeed", "maxspeed:forward", "maxspeed:backward"].contains(tagKey),
+                          let value = Self.canonicalMaxspeedValue(existing.value),
+                          existing.modality != .computer_vision
+                            || Self.hasSafeComputerVisionRuntimeEvidence(
+                                existing,
+                                wayID: wayID,
+                                direction: direction,
+                                tagKey: tagKey,
+                                canonicalValue: value
+                            ),
+                          try isNewestTypedTarget(db: db, observation: existing) else {
+                        throw ConsumerAppError.io("Observation is not the newest safe typed maxspeed target")
+                    }
+                    approvalRevision = Self.approvalRevision(
+                        wayID: wayID,
+                        tagKey: tagKey,
+                        value: value,
+                        direction: direction
+                    )
+                case .discarded:
+                    guard existing.state == .localOnly
+                            || existing.state == .needsReview
+                            || existing.state == .approvedForExport else {
+                        throw ConsumerAppError.io("Exported or terminal observations cannot be discarded")
+                    }
+                    approvalRevision = nil
+                default:
+                    throw ConsumerAppError.io("Unsupported local observation state transition")
+                }
+                let sql = """
+                UPDATE observations
+                   SET state = ?1, updated_at_utc = ?2, approval_revision = ?3
+                 WHERE observation_id = ?4 AND state = ?5
+                """
+                var stmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
+                    throw sqliteError(db: db, context: "prepare guarded observation state update")
+                }
+                sqlite3_bind_text(stmt, 1, newState.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 2, nowUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalText(approvalRevision, stmt: stmt, index: 3)
+                sqlite3_bind_text(stmt, 4, observationID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(stmt, 5, existing.state.rawValue, -1, SQLITE_TRANSIENT)
+                let step = sqlite3_step(stmt)
+                let changed = sqlite3_changes(db)
+                sqlite3_finalize(stmt)
+                guard step == SQLITE_DONE, changed == 1,
+                      let updated = try fetchObservation(db: db, observationID: observationID) else {
+                    throw ConsumerAppError.io("Observation changed during review transition")
+                }
+                try commit(db, context: "commit observation review transition")
+                return updated
+            } catch {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
             }
         }
-        return try fetchObservation(observationID: observationID)
     }
 
     private func insertObservation(
@@ -1329,11 +2817,21 @@ actor LocalObservationStore {
         oldSpeedKmh: Int? = nil,
         newSpeedKmh: Int? = nil
     ) throws -> LocalObservation {
+        var staleExportBatchIDs: [String] = []
         let id = UUID().uuidString.lowercased()
         let nowUTC = Self.isoFormatter.string(from: nowProvider())
         let devicePseudoID = ensureDevicePseudoID()
         let roadIDsData = try JSONEncoder().encode(context.roadCandidateIDs)
         let roadIDsJSON = String(data: roadIDsData, encoding: .utf8) ?? "[]"
+        let primaryWayID = context.roadCandidateIDs.first(where: Self.isPositiveWayID)
+        let normalizedValue = Self.canonicalMaxspeedValue(value)
+        let isCanonicalCorrection = intent == .set_maxspeed
+            && primaryWayID != nil
+            && normalizedValue != nil
+        let operation: LocalObservationOperation? = isCanonicalCorrection ? .setMaxspeed : nil
+        let directionScope: LocalObservationDirectionScope? = isCanonicalCorrection ? .wayWide : nil
+        let applicability: LocalObservationApplicability? = isCanonicalCorrection ? .permanent : nil
+        let exportDisposition: LocalObservationExportDisposition? = isCanonicalCorrection ? .eligible : nil
 
         do {
             try withDatabase { db in
@@ -1341,8 +2839,13 @@ actor LocalObservationStore {
                 INSERT INTO observations (
                   observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
                   city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
-                  device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh
-                ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, NULL, ?17, ?18)
+                  device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+                  evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+                  runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+                ) VALUES (
+                  ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16,
+                  NULL, ?17, ?18, NULL, ?19, ?20, ?21, ?22, ?23, ?24, NULL, NULL, ?25, ?26
+                )
                 """
                 var stmt: OpaquePointer?
                 guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
@@ -1372,11 +2875,29 @@ actor LocalObservationStore {
                 sqlite3_bind_text(stmt, 16, nowUTC, -1, SQLITE_TRANSIENT)
                 bindOptionalInt(oldSpeedKmh, stmt: stmt, index: 17)
                 bindOptionalInt(newSpeedKmh, stmt: stmt, index: 18)
+                bindOptionalText(primaryWayID, stmt: stmt, index: 19)
+                sqlite3_bind_text(stmt, 20, nowUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalText(operation?.rawValue, stmt: stmt, index: 21)
+                bindOptionalText(directionScope?.rawValue, stmt: stmt, index: 22)
+                bindOptionalText(applicability?.rawValue, stmt: stmt, index: 23)
+                sqlite3_bind_int(stmt, 24, isCanonicalCorrection ? 1 : 0)
+                bindOptionalText(exportDisposition?.rawValue, stmt: stmt, index: 25)
+                bindOptionalText(isCanonicalCorrection ? "maxspeed" : nil, stmt: stmt, index: 26)
 
                 guard sqlite3_step(stmt) == SQLITE_DONE else {
                     throw sqliteError(db: db, context: "execute observation insert")
                 }
+                if isCanonicalCorrection, let primaryWayID, let directionScope {
+                    staleExportBatchIDs += try supersedeOlderTypedCorrections(
+                        db: db,
+                        wayID: primaryWayID,
+                        direction: directionScope,
+                        effectiveAtUTC: nowUTC,
+                        keepingObservationID: id
+                    )
+                }
             }
+            quarantineStaleExportBatches(staleExportBatchIDs)
             let observation = try fetchObservation(observationID: id)
             Self.logger.notice(
                 "local_obs insert saved id=\(observation.id, privacy: .public) modality=\(observation.modality.rawValue, privacy: .public) state=\(observation.state.rawValue, privacy: .public) way=\(observation.roadCandidateIDs.first ?? "n/a", privacy: .public)"
@@ -1395,7 +2916,9 @@ actor LocalObservationStore {
             let sql = """
             SELECT observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
                    city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
-                   device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh
+                   device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+                   evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+                   runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
             FROM observations
             WHERE observation_id = ?1
             LIMIT 1
@@ -1409,11 +2932,14 @@ actor LocalObservationStore {
             guard sqlite3_step(stmt) == SQLITE_ROW else {
                 throw ConsumerAppError.io("Observation not found: \(observationID)")
             }
-            return try decodeObservationRow(stmt)
+            guard let observation = decodeObservationRow(stmt) else {
+                throw ConsumerAppError.io("Observation is from an unsupported future schema: \(observationID)")
+            }
+            return observation
         }
     }
 
-    private func decodeObservationRow(_ stmt: OpaquePointer) throws -> LocalObservation {
+    private func decodeObservationRow(_ stmt: OpaquePointer) -> LocalObservation? {
         guard let id = cString(sqlite3_column_text(stmt, 0)),
               let modalityRaw = cString(sqlite3_column_text(stmt, 1)),
               let modality = LocalObservationModality(rawValue: modalityRaw),
@@ -1425,7 +2951,7 @@ actor LocalObservationStore {
               let state = LocalObservationState(rawValue: stateRaw),
               let devicePseudoID = cString(sqlite3_column_text(stmt, 14)),
               let updatedAt = cString(sqlite3_column_text(stmt, 15)) else {
-            throw ConsumerAppError.sqlite("Invalid observation row")
+            return nil
         }
 
         let roadJSON = cString(sqlite3_column_text(stmt, 7)) ?? "[]"
@@ -1435,6 +2961,17 @@ actor LocalObservationStore {
             roadIDs = decoded
         } else {
             roadIDs = []
+        }
+
+        let operationRaw = cStringOptional(sqlite3_column_text(stmt, 22))
+        let directionRaw = cStringOptional(sqlite3_column_text(stmt, 23))
+        let applicabilityRaw = cStringOptional(sqlite3_column_text(stmt, 24))
+        let dispositionRaw = cStringOptional(sqlite3_column_text(stmt, 28))
+        guard operationRaw == nil || LocalObservationOperation(rawValue: operationRaw!) != nil,
+              directionRaw == nil || LocalObservationDirectionScope(rawValue: directionRaw!) != nil,
+              applicabilityRaw == nil || LocalObservationApplicability(rawValue: applicabilityRaw!) != nil,
+              dispositionRaw == nil || LocalObservationExportDisposition(rawValue: dispositionRaw!) != nil else {
+            return nil
         }
 
         return LocalObservation(
@@ -1456,8 +2993,228 @@ actor LocalObservationStore {
             updatedAtUTC: updatedAt,
             exportID: cStringOptional(sqlite3_column_text(stmt, 16)),
             oldSpeedKmh: sqliteOptionalInt(stmt, index: 17),
-            newSpeedKmh: sqliteOptionalInt(stmt, index: 18)
+            newSpeedKmh: sqliteOptionalInt(stmt, index: 18),
+            evidenceJSON: cStringOptional(sqlite3_column_text(stmt, 19)),
+            primaryWayID: cStringOptional(sqlite3_column_text(stmt, 20)),
+            effectiveAtUTC: cStringOptional(sqlite3_column_text(stmt, 21)),
+            operation: operationRaw.flatMap(LocalObservationOperation.init(rawValue:)),
+            directionScope: directionRaw.flatMap(LocalObservationDirectionScope.init(rawValue:)),
+            applicability: applicabilityRaw.flatMap(LocalObservationApplicability.init(rawValue:)),
+            runtimeApplicable: sqliteOptionalInt(stmt, index: 25).map { $0 != 0 },
+            finalizedEventID: cStringOptional(sqlite3_column_text(stmt, 26)),
+            approvalRevision: cStringOptional(sqlite3_column_text(stmt, 27)),
+            exportDisposition: dispositionRaw.flatMap(LocalObservationExportDisposition.init(rawValue:)),
+            exportTagKey: cStringOptional(sqlite3_column_text(stmt, 29))
         )
+    }
+
+    /// Fail-closed structural gate shared by direct runtime lookup and
+    /// computer-vision equivalence detection. Export approval/disposition is
+    /// intentionally absent: those fields govern OSC publication, not runtime
+    /// correction history.
+    private static func validatedRuntimeCorrectionValue(
+        _ observation: LocalObservation,
+        expectedWayID: String,
+        acceptedDirections: [LocalObservationDirectionScope]
+    ) -> String? {
+        guard observation.runtimeApplicable == true,
+              observation.state != .discarded,
+              observation.intentType == .set_maxspeed,
+              observation.operation == .setMaxspeed,
+              observation.applicability == .permanent,
+              let wayID = observation.primaryWayID?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+              wayID == expectedWayID,
+              isPositiveWayID(wayID),
+              let direction = observation.directionScope,
+              acceptedDirections.contains(direction),
+              direction != .unknown,
+              let canonicalValue = canonicalMaxspeedValue(observation.value),
+              let expectedTagKey = runtimeTagKey(for: direction),
+              observation.exportTagKey == expectedTagKey else {
+            return nil
+        }
+
+        switch observation.modality {
+        case .voice_command:
+            // Preserve the documented legacy voice/manual behavior: safely
+            // typed historical rows can remain runtime-active while awaiting
+            // review. Review-only camera evidence has no such compatibility
+            // exception.
+            break
+        case .computer_vision:
+            guard observation.state != .needsReview,
+                  hasSafeComputerVisionRuntimeEvidence(
+                observation,
+                wayID: wayID,
+                direction: direction,
+                tagKey: expectedTagKey,
+                canonicalValue: canonicalValue
+            ) else {
+                return nil
+            }
+        case .lock_current_speed:
+            return nil
+        }
+        return canonicalValue
+    }
+
+    /// Camera corrections are authoritative only while their immutable shared
+    /// passage envelope proves the same resolved, unconditional typed target as
+    /// the indexed columns. Corrupt or partial evidence is review data only.
+    private static func hasSafeComputerVisionRuntimeEvidence(
+        _ observation: LocalObservation,
+        wayID: String,
+        direction: LocalObservationDirectionScope,
+        tagKey: String,
+        canonicalValue: String
+    ) -> Bool {
+        guard let finalizedEventID = nonemptyRuntimeString(observation.finalizedEventID),
+              let evidenceJSON = observation.evidenceJSON,
+              let evidenceData = evidenceJSON.data(using: .utf8),
+              let root = (try? JSONSerialization.jsonObject(with: evidenceData)) as? [String: Any],
+              (root["schema_version"] as? NSNumber)?.intValue == 1,
+              root["event_kind"] as? String == "traffic_sign_passage",
+              root["finalized_event_id"] as? String == finalizedEventID,
+              nonemptyRuntimeString(root["drive_session_id"] as? String) != nil,
+              let pack = root["pack"] as? [String: Any],
+              pack["override_eligible"] as? Bool == true,
+              pack["calibration_status"] as? String == "passed",
+              let components = pack["components"] as? [[String: Any]],
+              !components.isEmpty,
+              components.allSatisfy({ component in
+                  nonemptyRuntimeString(component["role"] as? String) != nil
+                      && isRuntimeSHA256(component["artifact_sha256"] as? String)
+                      && nonemptyRuntimeString(component["preprocessing_version"] as? String) != nil
+                      && nonemptyRuntimeString(component["calibration_id"] as? String) != nil
+              }),
+              let action = root["action"] as? [String: Any],
+              nonemptyRuntimeString(action["kind"] as? String) != nil,
+              action["permanence"] as? String == "permanent",
+              action["condition_state"] as? String == "none",
+              let restrictions = action["restrictions"] as? [Any],
+              restrictions.isEmpty,
+              let activation = root["activation"] as? [String: Any],
+              activation["way_id"] as? String == wayID,
+              let scope = root["applicability_scope"] as? [String: Any],
+              scope["continuity_capable_bundle"] as? Bool == true,
+              isRuntimeSHA256(scope["bundle_sha256"] as? String),
+              let resolution = root["resolution"] as? [String: Any],
+              resolution["runtime_status"] as? String == "resolved",
+              let operation = resolution["normalized_operation"] as? [String: Any],
+              operation["operation"] as? String == "set_maxspeed",
+              operation["tag_key"] as? String == tagKey,
+              canonicalMaxspeedValue(operation["tag_value"] as? String) == canonicalValue,
+              operation["direction_scope"] as? String == runtimeWireDirection(for: direction),
+              let persistence = root["persistence"] as? [String: Any],
+              persistence["observation_intent"] as? String == "set_maxspeed",
+              persistence["runtime_applicable"] as? Bool == true else {
+            return false
+        }
+        return true
+    }
+
+    private static func runtimeTagKey(
+        for direction: LocalObservationDirectionScope
+    ) -> String? {
+        switch direction {
+        case .wayWide: return "maxspeed"
+        case .forward: return "maxspeed:forward"
+        case .backward: return "maxspeed:backward"
+        case .unknown: return nil
+        }
+    }
+
+    private static func runtimeWireDirection(
+        for direction: LocalObservationDirectionScope
+    ) -> String? {
+        switch direction {
+        case .wayWide: return "way"
+        case .forward: return "forward"
+        case .backward: return "backward"
+        case .unknown: return nil
+        }
+    }
+
+    private static func nonemptyRuntimeString(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
+    private static func isRuntimeSHA256(_ value: String?) -> Bool {
+        guard let value, value.count == 64 else { return false }
+        return value.unicodeScalars.allSatisfy { scalar in
+            switch scalar.value {
+            case 48...57, 65...70, 97...102: return true
+            default: return false
+            }
+        }
+    }
+
+    private func validatedExportTarget(
+        _ observation: LocalObservation,
+        allowManualLocalOnly: Bool = false
+    ) throws -> (wayID: String, tagKey: String, value: String) {
+        let explicitlyApproved = observation.state == .approvedForExport
+        let implicitManualBulkApproval = allowManualLocalOnly
+            && (observation.state == .localOnly || observation.state == .needsReview)
+            && observation.modality != .computer_vision
+            && observation.approvalRevision == nil
+        guard explicitlyApproved || implicitManualBulkApproval else {
+            throw ConsumerAppError.io(
+                observation.modality == .computer_vision
+                    ? "Computer-vision observations must be approved_for_export before OSC generation"
+                    : "Observation must be approved_for_export before OSC generation"
+            )
+        }
+        guard observation.exportDisposition == .eligible,
+              observation.operation == .setMaxspeed,
+              observation.applicability == .permanent,
+              let direction = observation.directionScope,
+              direction != .unknown,
+              let wayID = observation.primaryWayID,
+              Self.isPositiveWayID(wayID),
+              let tagKey = observation.exportTagKey,
+              ["maxspeed", "maxspeed:forward", "maxspeed:backward"].contains(tagKey),
+              let value = Self.canonicalMaxspeedValue(observation.value) else {
+            throw ConsumerAppError.io("Observation has no eligible typed permanent maxspeed operation")
+        }
+        let expectedTagKey: String
+        switch direction {
+        case .wayWide: expectedTagKey = "maxspeed"
+        case .forward: expectedTagKey = "maxspeed:forward"
+        case .backward: expectedTagKey = "maxspeed:backward"
+        case .unknown:
+            throw ConsumerAppError.io("Unknown direction cannot be exported")
+        }
+        guard tagKey == expectedTagKey else {
+            throw ConsumerAppError.io("Observation tag key does not match its reviewed direction")
+        }
+        guard observation.modality != .computer_vision
+                || Self.hasSafeComputerVisionRuntimeEvidence(
+                    observation,
+                    wayID: wayID,
+                    direction: direction,
+                    tagKey: tagKey,
+                    canonicalValue: value
+                ) else {
+            throw ConsumerAppError.io(
+                "Computer-vision observation has incomplete or inconsistent passage evidence"
+            )
+        }
+        let expectedRevision = Self.approvalRevision(
+            wayID: wayID,
+            tagKey: tagKey,
+            value: value,
+            direction: direction
+        )
+        guard implicitManualBulkApproval || observation.approvalRevision == expectedRevision else {
+            throw ConsumerAppError.io("Observation changed after approval and must be reviewed again")
+        }
+        return (wayID, tagKey, value)
     }
 
     private func makeReviewJSON(
@@ -1511,13 +3268,17 @@ actor LocalObservationStore {
     - You are responsible for reviewing correctness before upload.
     """
 
-    private static func makeOsmChangeXML(wayID: String, maxspeedValue: String) -> String {
+    private static func makeOsmChangeXML(
+        wayID: String,
+        tagKey: String,
+        maxspeedValue: String
+    ) -> String {
         """
         <?xml version="1.0" encoding="UTF-8"?>
         <osmChange version="0.6" generator="youspeed-export-v1">
           <modify>
             <way id="\(xmlEscape(wayID))">
-              <tag k="maxspeed" v="\(xmlEscape(maxspeedValue))"/>
+              <tag k="\(xmlEscape(tagKey))" v="\(xmlEscape(maxspeedValue))"/>
             </way>
           </modify>
         </osmChange>
@@ -1526,14 +3287,15 @@ actor LocalObservationStore {
 
     private static func makeBulkOsmChangeXML(observations: [LocalObservation]) -> String {
         let body = observations.compactMap { observation -> String? in
-            guard let wayID = observation.roadCandidateIDs.first,
+            guard let wayID = observation.primaryWayID,
+                  let tagKey = observation.exportTagKey,
                   let maxspeedValue = observation.value?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !maxspeedValue.isEmpty else {
                 return nil
             }
             return """
                 <way id="\(xmlEscape(wayID))">
-                  <tag k="maxspeed" v="\(xmlEscape(maxspeedValue))"/>
+                  <tag k="\(xmlEscape(tagKey))" v="\(xmlEscape(maxspeedValue))"/>
                 </way>
             """
         }.joined(separator: "\n")
@@ -1585,6 +3347,31 @@ actor LocalObservationStore {
             return nil
         }
         return value
+    }
+
+    private static func canonicalMaxspeedValue(_ value: String?) -> String? {
+        guard let normalized = value?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased(), !normalized.isEmpty else { return nil }
+        if normalized == "walk" || normalized == "none" { return normalized }
+        guard let numeric = Int(normalized), (5...200).contains(numeric) else { return nil }
+        return String(numeric)
+    }
+
+    private static func isPositiveWayID(_ value: String) -> Bool {
+        guard let numeric = Int64(value.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return false
+        }
+        return numeric > 0
+    }
+
+    private static func approvalRevision(
+        wayID: String,
+        tagKey: String,
+        value: String,
+        direction: LocalObservationDirectionScope
+    ) -> String {
+        "way:\(wayID)|tag:\(tagKey)|value:\(value)|direction:\(direction.rawValue)"
     }
 
     private func rootDir() throws -> URL {
@@ -1646,7 +3433,18 @@ actor LocalObservationStore {
           updated_at_utc TEXT NOT NULL,
           export_id TEXT,
           old_speed_kmh INTEGER,
-          new_speed_kmh INTEGER
+          new_speed_kmh INTEGER,
+          evidence_json TEXT,
+          primary_way_id TEXT,
+          effective_at_utc TEXT,
+          operation TEXT,
+          direction_scope TEXT,
+          applicability TEXT,
+          runtime_applicable INTEGER NOT NULL DEFAULT 0,
+          finalized_event_id TEXT,
+          approval_revision TEXT,
+          export_disposition TEXT,
+          export_tag_key TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_observations_state ON observations(state);
         CREATE INDEX IF NOT EXISTS idx_observations_captured ON observations(captured_at_utc DESC);
@@ -1658,12 +3456,149 @@ actor LocalObservationStore {
           observation_ids TEXT NOT NULL,
           returned_changeset_id TEXT
         );
+        CREATE TABLE IF NOT EXISTS computer_vision_event_receipts (
+          finalized_event_id TEXT PRIMARY KEY,
+          decision TEXT NOT NULL,
+          observation_id TEXT,
+          consumed_at_utc TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS computer_vision_passage_events (
+          finalized_event_id TEXT PRIMARY KEY,
+          evidence_json TEXT NOT NULL,
+          equivalent_observation_id TEXT,
+          consumed_at_utc TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS local_observation_export_batches (
+          batch_id TEXT PRIMARY KEY,
+          created_at_utc TEXT NOT NULL,
+          status TEXT NOT NULL,
+          package_path TEXT NOT NULL,
+          package_sha256 TEXT,
+          payload_json TEXT NOT NULL,
+          finalized_at_utc TEXT
+        );
+        CREATE TABLE IF NOT EXISTS local_observation_export_members (
+          batch_id TEXT NOT NULL,
+          observation_id TEXT NOT NULL,
+          target_key TEXT NOT NULL,
+          approval_revision TEXT NOT NULL,
+          status TEXT NOT NULL,
+          PRIMARY KEY (batch_id, observation_id),
+          FOREIGN KEY (batch_id) REFERENCES local_observation_export_batches(batch_id)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_export_members_pending_observation
+          ON local_observation_export_members(observation_id)
+          WHERE status = 'pending';
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_export_members_pending_target
+          ON local_observation_export_members(target_key)
+          WHERE status = 'pending';
         """
         guard sqlite3_exec(db, sql, nil, nil, nil) == SQLITE_OK else {
             throw sqliteError(db: db, context: "ensure local observation schema")
         }
         try ensureObservationColumn(db: db, columnName: "old_speed_kmh", typeDeclaration: "INTEGER")
         try ensureObservationColumn(db: db, columnName: "new_speed_kmh", typeDeclaration: "INTEGER")
+        try ensureObservationColumn(db: db, columnName: "evidence_json", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "primary_way_id", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "effective_at_utc", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "operation", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "direction_scope", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "applicability", typeDeclaration: "TEXT")
+        try ensureObservationColumn(
+            db: db,
+            columnName: "runtime_applicable",
+            typeDeclaration: "INTEGER NOT NULL DEFAULT 0"
+        )
+        try ensureObservationColumn(db: db, columnName: "finalized_event_id", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "approval_revision", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "export_disposition", typeDeclaration: "TEXT")
+        try ensureObservationColumn(db: db, columnName: "export_tag_key", typeDeclaration: "TEXT")
+        try backfillLegacyObservationSemantics(db: db)
+        let indexSQL = """
+        CREATE INDEX IF NOT EXISTS idx_observations_runtime_way
+          ON observations(primary_way_id, direction_scope, effective_at_utc DESC, observation_id DESC)
+          WHERE runtime_applicable = 1;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_observations_cv_event
+          ON observations(finalized_event_id)
+          WHERE finalized_event_id IS NOT NULL;
+        """
+        guard sqlite3_exec(db, indexSQL, nil, nil, nil) == SQLITE_OK else {
+            throw sqliteError(db: db, context: "ensure observation runtime indexes")
+        }
+    }
+
+    private func backfillLegacyObservationSemantics(db: OpaquePointer) throws {
+        let selectSQL = """
+        SELECT observation_id, intent_type, value, road_candidate_ids, captured_at_utc, state
+        FROM observations
+        WHERE effective_at_utc IS NULL OR operation IS NULL
+        """
+        var selectStmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, selectSQL, -1, &selectStmt, nil) == SQLITE_OK,
+              let selectStmt else {
+            throw sqliteError(db: db, context: "prepare legacy observation backfill")
+        }
+        defer { sqlite3_finalize(selectStmt) }
+
+        let updateSQL = """
+        UPDATE observations
+           SET primary_way_id = COALESCE(primary_way_id, ?1),
+               effective_at_utc = COALESCE(effective_at_utc, ?2),
+               operation = COALESCE(operation, ?3),
+               direction_scope = COALESCE(direction_scope, ?4),
+               applicability = COALESCE(applicability, ?5),
+               runtime_applicable = ?6,
+               export_disposition = COALESCE(export_disposition, ?7),
+               export_tag_key = COALESCE(export_tag_key, ?8),
+               approval_revision = COALESCE(approval_revision, ?9)
+         WHERE observation_id = ?10
+        """
+        while sqlite3_step(selectStmt) == SQLITE_ROW {
+            guard let id = cStringOptional(sqlite3_column_text(selectStmt, 0)),
+                  let capturedAt = cStringOptional(sqlite3_column_text(selectStmt, 4)) else { continue }
+            let intent = cStringOptional(sqlite3_column_text(selectStmt, 1))
+            let value = cStringOptional(sqlite3_column_text(selectStmt, 2))
+            let state = cStringOptional(sqlite3_column_text(selectStmt, 5))
+            let roadJSON = cStringOptional(sqlite3_column_text(selectStmt, 3)) ?? "[]"
+            let roads = roadJSON.data(using: .utf8).flatMap {
+                try? JSONDecoder().decode([String].self, from: $0)
+            } ?? []
+            let primaryWayID = roads.first(where: Self.isPositiveWayID)
+            let normalized = Self.canonicalMaxspeedValue(value)
+            let canonical = intent == LocalObservationIntentType.set_maxspeed.rawValue
+                && primaryWayID != nil
+                && normalized != nil
+            let approvalRevision = canonical
+                && state == LocalObservationState.approvedForExport.rawValue
+                ? Self.approvalRevision(
+                    wayID: primaryWayID!,
+                    tagKey: "maxspeed",
+                    value: normalized!,
+                    direction: .wayWide
+                )
+                : nil
+
+            var updateStmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, updateSQL, -1, &updateStmt, nil) == SQLITE_OK,
+                  let updateStmt else {
+                throw sqliteError(db: db, context: "prepare legacy observation update")
+            }
+            bindOptionalText(primaryWayID, stmt: updateStmt, index: 1)
+            sqlite3_bind_text(updateStmt, 2, capturedAt, -1, SQLITE_TRANSIENT)
+            bindOptionalText(canonical ? LocalObservationOperation.setMaxspeed.rawValue : nil, stmt: updateStmt, index: 3)
+            bindOptionalText(canonical ? LocalObservationDirectionScope.wayWide.rawValue : nil, stmt: updateStmt, index: 4)
+            bindOptionalText(canonical ? LocalObservationApplicability.permanent.rawValue : nil, stmt: updateStmt, index: 5)
+            sqlite3_bind_int(updateStmt, 6, canonical ? 1 : 0)
+            bindOptionalText(canonical ? LocalObservationExportDisposition.eligible.rawValue : nil, stmt: updateStmt, index: 7)
+            bindOptionalText(canonical ? "maxspeed" : nil, stmt: updateStmt, index: 8)
+            bindOptionalText(approvalRevision, stmt: updateStmt, index: 9)
+            sqlite3_bind_text(updateStmt, 10, id, -1, SQLITE_TRANSIENT)
+            guard sqlite3_step(updateStmt) == SQLITE_DONE else {
+                sqlite3_finalize(updateStmt)
+                throw sqliteError(db: db, context: "execute legacy observation update")
+            }
+            sqlite3_finalize(updateStmt)
+        }
     }
 
     private func ensureObservationColumn(

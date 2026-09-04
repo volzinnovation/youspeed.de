@@ -164,6 +164,49 @@ class TrafficSignContractTests {
     }
 
     @Test
+    fun sharedTrafficSignSpeedRangeAcceptsOnlyFiveThroughTwoHundred() {
+        val pack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode)
+        val speedMapping = requireNotNull(pack.classFor("speed_limit_30"))
+        fun packErrors(value: Int) = TrafficSignModelPackValidator.validate(
+            pack.copy(
+                classMapping = pack.classMapping.map { mapping ->
+                    if (mapping.classId == speedMapping.classId) {
+                        mapping.copy(semantic = mapping.semantic.copy(value = value))
+                    } else {
+                        mapping
+                    }
+                },
+            ),
+        )
+
+        listOf(5, 200).forEach { value ->
+            assertTrue("Expected $value to be accepted: ${packErrors(value)}", packErrors(value).isEmpty())
+            assertTrue(isSharedTrafficSignSpeedKmh(value))
+            TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, value)
+        }
+        listOf(4, 201).forEach { value ->
+            assertTrue(packErrors(value).any { it.contains("5..200") })
+            assertFalse(isSharedTrafficSignSpeedKmh(value))
+            assertThrows(IllegalArgumentException::class.java) {
+                TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, value)
+            }
+        }
+
+        val recognition = TrafficSignRecognitionJson.decodeList(
+            fixture("recognition-events-v1.json").readText(),
+        ).last()
+        listOf(4, 201).forEach { value ->
+            val candidate = requireNotNull(recognition.candidate).copy(
+                semantic = requireNotNull(recognition.candidate).semantic.copy(value = value),
+            )
+            assertTrue(
+                TrafficSignRecognitionJson.validate(recognition.copy(candidate = candidate))
+                    .any { it.contains("5..200") },
+            )
+        }
+    }
+
+    @Test
     fun assemblyAndRoadContextSurviveSharedJsonDecoding() {
         val event = TrafficSignRecognitionJson.decodeList(fixture("recognition-events-v1.json").readText()).first()
         val candidate = requireNotNull(event.candidate)

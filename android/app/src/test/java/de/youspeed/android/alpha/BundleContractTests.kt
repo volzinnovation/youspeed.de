@@ -507,6 +507,30 @@ class BundleContractTests {
 
         assertEquals("bbox-only", route?.region)
         assertEquals(dbFile.absolutePath, route?.dbPath)
+        assertEquals(sha256Hex(dbFile.readBytes()), route?.dbSha256)
+    }
+
+    @Test
+    fun resolveLocalBundleRouteDropsChecksumWhenMaterializedDatabaseChanges() {
+        val tempRoot = createTempDirectory("android-alpha-route-integrity").toFile()
+        tempRoot.deleteOnExit()
+        val dbFile = writeCoverageBundle(
+            rootDir = tempRoot,
+            regionDirName = "integrity",
+            bundleVersion = "2026-03-17",
+            manifestRegion = "integrity",
+            dbFileName = "integrity.sqlite",
+            bbox = BundleCoverageBBox(minLon = 8.0, minLat = 48.0, maxLon = 9.0, maxLat = 49.0),
+            polyFileName = null,
+        )
+        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+        assertNotNull(bootstrapper.resolveLocalBundleRoute(48.5, 8.5, fallbackDBPath = null)?.dbSha256)
+
+        val previousModified = dbFile.lastModified()
+        dbFile.writeBytes(ByteArray(dbFile.length().toInt()) { 0x5a })
+        dbFile.setLastModified(previousModified + 2_000L)
+
+        assertEquals(null, bootstrapper.resolveLocalBundleRoute(48.5, 8.5, fallbackDBPath = null))
     }
 
     @Test

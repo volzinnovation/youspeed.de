@@ -123,7 +123,17 @@ class TrafficSignRecognitionOrchestratorTests {
         val confirmed = harness.observer.outputs.last()
         assertEquals(TrafficSignRecognitionState.CONFIRMED, confirmed.event.state)
         assertEquals("4711", confirmed.event.roadContext?.wayId)
-        assertEquals(30, confirmed.speedOverride?.speedKmh)
+        assertNull(confirmed.speedOverride)
+        harness.clockNanos = 1_500_000_000L
+        harness.orchestrator.submit(harness.frame("passed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 35_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        harness.clockNanos = 2_000_000_000L
+        harness.orchestrator.submit(harness.frame("passed-confirmed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 35_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        assertEquals(30, harness.observer.outputs.last().passageEvent?.resolution?.speedKmh)
+        assertEquals(30, harness.observer.outputs.last().speedOverride?.speedKmh)
         assertEquals(30, harness.orchestrator.effectiveSpeedKmh(localCorrectionKmh = 50, bundledMapKmh = 70))
 
         val retained = harness.orchestrator.speedOverride()
@@ -160,6 +170,25 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
+    fun stationaryContextCannotArmOrFinalizeAuthoritativePassage() {
+        val harness = Harness()
+        harness.runtimeActivationEligible = false
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            harness.orchestrator.submit(harness.frame("stationary-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        }
+        repeat(3) { index ->
+            harness.clockNanos += 500_000_000L
+            harness.orchestrator.submit(harness.frame("stationary-miss-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        }
+
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+        assertNull(harness.orchestrator.speedOverride())
+    }
+
+    @Test
     fun delayedResultFromAnOlderSourceCannotOverrideTheNewSource() {
         val harness = Harness()
         harness.context = context(signature = signature("bundle-old", null))
@@ -182,6 +211,40 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
+    fun inFlightResultCannotAdoptRelationsFromALaterUnrelatedSameGenerationContext() {
+        val harness = Harness()
+        harness.context = context(wayId = "way-x").copy(
+            routeRelationGroupIds = setOf(1L),
+            sourceRelationIds = setOf(9_001L),
+        )
+        val oldFrame = harness.frame("old-way-x", capturedAtNanos = 0L)
+        assertTrue(harness.orchestrator.submit(oldFrame))
+
+        // Map matching leaves relation 1 without advancing the TSR setting
+        // generation. The accepted X frame must retain its own {1} scope and
+        // reset epoch rather than validating against Z's replacement {2}.
+        harness.context = context(wayId = "way-z").copy(
+            routeRelationGroupIds = setOf(2L),
+            sourceRelationIds = setOf(9_002L),
+        )
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+        harness.clockNanos = 25_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+
+        val staleOutput = harness.observer.outputs.single()
+        assertEquals(TrafficSignRecognitionState.NO_RECOGNITION, staleOutput.event.state)
+        assertNull(staleOutput.event.candidate)
+        assertNull(staleOutput.passageEvent)
+        assertNull(harness.orchestrator.speedOverride())
+
+        harness.clockNanos = 500_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("missing-way-z", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null, strongPassGeometry = true))
+        assertNull(harness.observer.outputs.last().passageEvent)
+        assertEquals(1, oldFrame.releaseCount)
+    }
+
+    @Test
     fun sameRoadFixRetainsOverrideButWayOrDirectionChangeClearsIt() {
         val harness = Harness()
         val source = signature("bundle-v1|way:4711|direction:forward", "local-v1")
@@ -198,6 +261,14 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.clockNanos += 20_000_000L
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
         }
+        harness.clockNanos = 1_500_000_000L
+        harness.orchestrator.submit(harness.frame("confirm-passed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 20_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        harness.clockNanos = 2_000_000_000L
+        harness.orchestrator.submit(harness.frame("confirm-passed-confirmed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 20_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
         val confirmed = requireNotNull(harness.orchestrator.speedOverride())
 
         harness.orchestrator.reconcileContext(
@@ -246,6 +317,250 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
+    fun unknownToKnownDirectionOnSameWayDoesNotDiscardArmedPassage() {
+        val harness = Harness()
+        harness.context = context(direction = TrafficSignTravelDirection.UNKNOWN)
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            harness.orchestrator.submit(harness.frame("unknown-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        }
+
+        harness.context = harness.context.copy(travelDirection = TrafficSignTravelDirection.FORWARD)
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+        repeat(2) { index ->
+            harness.clockNanos += 500_000_000L
+            harness.orchestrator.submit(harness.frame("known-miss-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        }
+
+        assertEquals(30, harness.observer.outputs.last().passageEvent?.resolution?.speedKmh)
+    }
+
+    @Test
+    fun unknownDirectionGapCannotHideSameWayReversalOfArmedTrack() {
+        val harness = Harness()
+        val highConfidence = detection().let { detection ->
+            detection.copy(candidate = detection.candidate.copy(rawScore = 0.98, calibratedConfidence = 0.98))
+        }
+        harness.context = context(
+            wayId = "4711",
+            direction = TrafficSignTravelDirection.FORWARD,
+        )
+        repeat(2) { index ->
+            harness.clockNanos = index * 500_000_000L
+            assertTrue(harness.orchestrator.submit(harness.frame("forward-seen-$index", capturedAtNanos = harness.clockNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(highConfidence))
+        }
+
+        harness.context = harness.context.copy(
+            headingDegrees = 100.0,
+            travelDirection = TrafficSignTravelDirection.UNKNOWN,
+        )
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+        harness.context = harness.context.copy(
+            headingDegrees = 270.0,
+            travelDirection = TrafficSignTravelDirection.REVERSE,
+        )
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+
+        harness.clockNanos = 1_000_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("reverse-missing", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null, strongPassGeometry = true))
+
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+        assertNull(harness.orchestrator.speedOverride())
+    }
+
+    @Test
+    fun noMatchAcquisitionAdoptsFirstMatchedScopeAndPassesOnRelatedWay() {
+        val harness = Harness()
+        val highConfidence = detection().let { detection ->
+            detection.copy(
+                candidate = detection.candidate.copy(
+                    rawScore = 0.99,
+                    calibratedConfidence = 0.99,
+                ),
+            )
+        }
+        harness.context = context(wayId = "unused").copy(
+            wayId = null,
+            routeRelationGroupIds = emptySet(),
+            sourceRelationIds = emptySet(),
+            matchedWayStable = false,
+        )
+        harness.orchestrator.submit(harness.frame("visible-no-match", capturedAtNanos = 0L))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(highConfidence))
+
+        harness.clockNanos = 500_000_000L
+        harness.context = context(wayId = "way-b").copy(
+            routeRelationGroupIds = setOf(7L),
+            sourceRelationIds = setOf(70L),
+        )
+        harness.orchestrator.submit(harness.frame("visible-way-b", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(highConfidence))
+
+        harness.clockNanos = 1_000_000_000L
+        harness.context = context(wayId = "way-c").copy(
+            routeRelationGroupIds = setOf(7L),
+            sourceRelationIds = setOf(70L),
+        )
+        harness.orchestrator.submit(harness.frame("missing-way-c", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(
+            TrafficSignBackendResult.Recognition(
+                detection = null,
+                strongPassGeometry = true,
+            ),
+        )
+
+        val passage = requireNotNull(harness.observer.outputs.last().passageEvent)
+        assertEquals("way-b", passage.firstSeenContext?.wayId)
+        assertEquals(setOf(7L), passage.initialRouteRelationGroupIds)
+        assertEquals(setOf(7L), passage.eligibleRouteRelationGroupIds)
+        assertEquals("way-c", passage.activationContext?.wayId)
+        assertEquals(30, passage.resolution.speedKmh)
+    }
+
+    @Test
+    fun promotedAdjacentTrackUsesItsOwnRecognitionScopeInsteadOfPriorTracksIntersection() {
+        val harness = Harness()
+        fun scopedContext(wayId: String, groups: Set<Long>) = context(wayId = wayId).copy(
+            routeRelationGroupIds = groups,
+            sourceRelationIds = groups.map { it + 9_000L }.toSet(),
+        )
+        fun highConfidenceDetection(speedKmh: Int): TrafficSignDetection = detection().let { detection ->
+            detection.copy(
+                candidate = detection.candidate.copy(
+                    rawClassId = "speed_limit_$speedKmh",
+                    rawLabel = "Maximum speed $speedKmh",
+                    semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, speedKmh, "km/h"),
+                    rawScore = 0.98,
+                    calibratedConfidence = 0.98,
+                ),
+            )
+        }
+        fun submitRecognition(frameId: String, atNanos: Long, speedKmh: Int) {
+            harness.clockNanos = atNanos
+            assertTrue(harness.orchestrator.submit(harness.frame(frameId, capturedAtNanos = atNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(highConfidenceDetection(speedKmh)))
+        }
+
+        harness.context = scopedContext("way-x", setOf(1L))
+        submitRecognition("a-x", 0L, 30)
+        harness.context = scopedContext("way-y", setOf(1L, 2L))
+        submitRecognition("a-y", 500_000_000L, 30)
+
+        // B is a different supported sign. Its first Y frame counts as loss
+        // for A while B starts an independent queued track rooted in {1,2}.
+        submitRecognition("b-y-1", 1_000_000_000L, 50)
+        submitRecognition("b-y-2", 1_500_000_000L, 50)
+        val firstPassage = requireNotNull(harness.observer.outputs.last().passageEvent)
+        assertEquals(30, firstPassage.action.valueKmh)
+        assertEquals(setOf(1L), firstPassage.eligibleRouteRelationGroupIds)
+
+        // Losing B on Z/{2} must use B's {1,2} origin, not A's {1} scope.
+        harness.context = scopedContext("way-z", setOf(2L))
+        harness.clockNanos = 2_000_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("b-missing-z", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(
+            TrafficSignBackendResult.Recognition(
+                detection = null,
+                strongPassGeometry = true,
+            ),
+        )
+
+        val promotedPassage = requireNotNull(harness.observer.outputs.last().passageEvent)
+        assertEquals(50, promotedPassage.action.valueKmh)
+        assertEquals("way-y", promotedPassage.firstSeenContext?.wayId)
+        assertEquals(setOf(1L, 2L), promotedPassage.initialRouteRelationGroupIds)
+        assertEquals(setOf(2L), promotedPassage.eligibleRouteRelationGroupIds)
+        assertEquals("way-z", promotedPassage.activationContext?.wayId)
+    }
+
+    @Test
+    fun queuedAdjacentTrackSurvivesOwnRelationBeforeOldTrackFinishesDebounce() {
+        val harness = Harness()
+        fun scopedContext(wayId: String, groups: Set<Long>) = context(wayId = wayId).copy(
+            routeRelationGroupIds = groups,
+            sourceRelationIds = groups.map { it + 9_000L }.toSet(),
+        )
+        fun recognized(speedKmh: Int) = detection().let { detection ->
+            detection.copy(
+                candidate = detection.candidate.copy(
+                    rawClassId = "speed_limit_$speedKmh",
+                    rawLabel = "Maximum speed $speedKmh",
+                    semantic = TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, speedKmh, "km/h"),
+                    rawScore = 0.98,
+                    calibratedConfidence = 0.98,
+                ),
+            )
+        }
+        fun submit(frameId: String, nanos: Long, speedKmh: Int) {
+            harness.clockNanos = nanos
+            assertTrue(harness.orchestrator.submit(harness.frame(frameId, capturedAtNanos = nanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(recognized(speedKmh)))
+        }
+
+        harness.context = scopedContext("way-x", setOf(1L))
+        submit("a-x-1", 0L, 30)
+        submit("a-x-2", 500_000_000L, 30)
+        harness.context = scopedContext("way-y", setOf(1L, 2L))
+        submit("b-y-1", 1_000_000_000L, 50)
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+
+        // A is still one negative short of committing. Moving onto relation 2
+        // drops A but promotes B using B's independent {1,2} origin.
+        harness.context = scopedContext("way-z", setOf(2L))
+        submit("b-z-2", 1_500_000_000L, 50)
+        harness.clockNanos = 2_000_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("b-missing-z", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null, strongPassGeometry = true))
+
+        val passages = harness.observer.outputs.mapNotNull { it.passageEvent }
+        assertEquals(1, passages.size)
+        assertEquals(50, passages.single().action.valueKmh)
+        assertEquals("way-y", passages.single().firstSeenContext?.wayId)
+        assertEquals(setOf(1L, 2L), passages.single().initialRouteRelationGroupIds)
+        assertEquals(setOf(2L), passages.single().eligibleRouteRelationGroupIds)
+        assertEquals("way-z", passages.single().activationContext?.wayId)
+    }
+
+    @Test
+    fun firstStableRematchAfterNoMatchMustBelongToKnownTracksFrozenScope() {
+        val harness = Harness()
+        fun scopedContext(wayId: String, groups: Set<Long>) = context(wayId = wayId).copy(
+            routeRelationGroupIds = groups,
+            sourceRelationIds = groups.map { it + 9_000L }.toSet(),
+        )
+        val highConfidence = detection().let { detection ->
+            detection.copy(candidate = detection.candidate.copy(rawScore = 0.98, calibratedConfidence = 0.98))
+        }
+        harness.context = scopedContext("way-x", setOf(1L))
+        repeat(2) { index ->
+            harness.clockNanos = index * 500_000_000L
+            assertTrue(harness.orchestrator.submit(harness.frame("x-seen-$index", capturedAtNanos = harness.clockNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(highConfidence))
+        }
+
+        harness.context = harness.context.copy(
+            wayId = null,
+            routeRelationGroupIds = emptySet(),
+            sourceRelationIds = emptySet(),
+            matchedWayStable = false,
+        )
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+
+        harness.context = scopedContext("way-z", setOf(2L))
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+        harness.clockNanos = 1_000_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("z-missing", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null, strongPassGeometry = true))
+
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+        assertNull(harness.orchestrator.speedOverride())
+    }
+
+    @Test
     fun staleSnapshotCannotRollBackAnExplicitlyReconciledContextGeneration() {
         val harness = Harness()
         val nextSource = signature("bundle-v2", "local-v2")
@@ -269,6 +584,14 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.clockNanos += 20_000_000L
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
         }
+        harness.clockNanos = 1_500_000_000L
+        harness.orchestrator.submit(harness.frame("close-passed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 20_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        harness.clockNanos = 2_000_000_000L
+        harness.orchestrator.submit(harness.frame("close-passed-confirmed", capturedAtNanos = harness.clockNanos))
+        harness.clockNanos += 20_000_000L
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
         assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
 
         harness.orchestrator.close()
@@ -285,12 +608,18 @@ class TrafficSignRecognitionOrchestratorTests {
         var clockNanos = 0L
         var context = context()
         var contextGeneration = 0L
+        var runtimeActivationEligible = true
         val orchestrator = TrafficSignRecognitionOrchestrator(
             modelPack = pack,
             runtimeArtifact = requireNotNull(pack.androidArtifact()),
             backend = backend,
             contextSnapshot = TrafficSignDetectionContextSnapshot {
-                TrafficSignDetectionContextSnapshotValue(context, contextGeneration)
+                TrafficSignDetectionContextSnapshotValue(
+                    context,
+                    contextGeneration,
+                    runtimeActivationEligible,
+                    driveSessionId = "drive-test",
+                )
             },
             conditionsSnapshot = { TrafficSignAnalysisConditions() },
             monotonicClockNanos = { clockNanos },
@@ -380,6 +709,11 @@ class TrafficSignRecognitionOrchestratorTests {
             headingDegrees = heading,
             travelDirection = direction,
             sourceSignature = signature,
+            bundleSha256 = "a".repeat(64),
+            routeRelationGroupIds = setOf(1L),
+            sourceRelationIds = setOf(9_001L),
+            continuityCapable = true,
+            traversalEpoch = 1L,
         )
 
         fun signature(osm: String, local: String?) = TrafficSignRuntimeSourceSignature(

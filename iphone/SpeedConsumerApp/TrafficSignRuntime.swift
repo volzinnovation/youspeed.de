@@ -41,7 +41,7 @@ private enum TrafficSignRuntimeLog {
         eventId: String,
         source: TrafficSignRecognitionSource,
         frameTimestampUTC: Date,
-        context: TrafficSignDetectionContext,
+        context: TrafficSignDetectionContext?,
         captureSessionId: String?,
         consecutiveFailures: Int,
         terminal: Bool,
@@ -49,8 +49,13 @@ private enum TrafficSignRuntimeLog {
     ) {
         let nsError = error as NSError
         let captureSessionId = captureSessionId ?? "none"
+        let wayID = context?.wayId ?? "unmatched"
+        let latitude = context?.latitude ?? .nan
+        let longitude = context?.longitude ?? .nan
+        let heading = context?.headingDegrees ?? .nan
+        let direction = context?.travelDirection.rawValue ?? "unknown"
         logger.error(
-            "timestamp=\(timestamp(), privacy: .public) frame_timestamp_utc=\(timestamp(frameTimestampUTC), privacy: .public) event=frame_inference_failed frame_id=\(frameId, privacy: .public) event_id=\(eventId, privacy: .public) source=\(source.rawValue, privacy: .public) way_id=\(context.wayId, privacy: .public) latitude=\(context.latitude, privacy: .public) longitude=\(context.longitude, privacy: .public) heading_degrees=\(context.headingDegrees, privacy: .public) travel_direction=\(context.travelDirection.rawValue, privacy: .public) capture_session_id=\(captureSessionId, privacy: .public) consecutive_failures=\(consecutiveFailures) terminal=\(terminal) error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code) detail=\(String(describing: error), privacy: .public)"
+            "timestamp=\(timestamp(), privacy: .public) frame_timestamp_utc=\(timestamp(frameTimestampUTC), privacy: .public) event=frame_inference_failed frame_id=\(frameId, privacy: .public) event_id=\(eventId, privacy: .public) source=\(source.rawValue, privacy: .public) way_id=\(wayID, privacy: .public) latitude=\(latitude, privacy: .public) longitude=\(longitude, privacy: .public) heading_degrees=\(heading, privacy: .public) travel_direction=\(direction, privacy: .public) capture_session_id=\(captureSessionId, privacy: .public) consecutive_failures=\(consecutiveFailures) terminal=\(terminal) error_domain=\(nsError.domain, privacy: .public) error_code=\(nsError.code) detail=\(String(describing: error), privacy: .public)"
         )
     }
 
@@ -1354,7 +1359,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 // MARK: - Atomic frame state
 
 struct TrafficSignFrameSnapshot: Equatable, Sendable {
-    let context: TrafficSignDetectionContext
+    let context: TrafficSignDetectionContext?
+    let coordinate: TrafficSignCoordinate?
     let conditions: TrafficSignAnalysisConditions
     let sessionGeneration: UInt64
     let contextGeneration: UInt64
@@ -1362,7 +1368,8 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
     let diagnosticCaptureEnabled: Bool
 
     init(
-        context: TrafficSignDetectionContext,
+        context: TrafficSignDetectionContext?,
+        coordinate: TrafficSignCoordinate? = nil,
         conditions: TrafficSignAnalysisConditions,
         sessionGeneration: UInt64 = 0,
         contextGeneration: UInt64 = 0,
@@ -1370,6 +1377,9 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         diagnosticCaptureEnabled: Bool = false
     ) {
         self.context = context
+        self.coordinate = coordinate ?? context.map {
+            TrafficSignCoordinate(latitude: $0.latitude, longitude: $0.longitude)
+        }
         self.conditions = conditions
         self.sessionGeneration = sessionGeneration
         self.contextGeneration = contextGeneration
@@ -1404,19 +1414,23 @@ final class TrafficSignAtomicFrameState: @unchecked Sendable {
 
 struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let event: TrafficSignRecognitionEvent
-    let frameContext: TrafficSignDetectionContext
+    let frameContext: TrafficSignDetectionContext?
+    let frameSpeedKmh: Double?
     let sessionGeneration: UInt64
     let contextGeneration: UInt64
     let captureSessionId: String?
     let shadowEventV2: TrafficSignRecognitionEventV2?
+    let passageUpdate: TrafficSignPassageFinalizerUpdate
 
     init(
         event: TrafficSignRecognitionEvent,
-        frameContext: TrafficSignDetectionContext,
+        frameContext: TrafficSignDetectionContext?,
+        frameSpeedKmh: Double? = nil,
         sessionGeneration: UInt64 = 0,
         contextGeneration: UInt64 = 0,
         captureSessionId: String? = nil,
-        shadowEventV2: TrafficSignRecognitionEventV2? = nil
+        shadowEventV2: TrafficSignRecognitionEventV2? = nil,
+        passageUpdate: TrafficSignPassageFinalizerUpdate = .idle
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1424,11 +1438,24 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         )
         self.event = event
         self.frameContext = frameContext
+        self.frameSpeedKmh = frameSpeedKmh
         self.sessionGeneration = sessionGeneration
         self.contextGeneration = contextGeneration
         self.captureSessionId = captureSessionId
         self.shadowEventV2 = shadowEventV2
+        self.passageUpdate = passageUpdate
     }
+}
+
+/// Terminal failures are asynchronous frame results too. Carry the immutable
+/// frame generations and runtime identity so a callback queued before a
+/// disable/re-enable cycle cannot tear down the replacement generation.
+struct TrafficSignRuntimeUnavailabilityEmission: Equatable, Sendable {
+    let reason: TrafficSignRuntimeUnavailability
+    let sessionGeneration: UInt64
+    let contextGeneration: UInt64
+    let captureSessionId: String?
+    let runtimeIdentity: String
 }
 
 struct TrafficSignRuntimeMetrics: Equatable, Sendable {
@@ -1443,7 +1470,7 @@ struct TrafficSignRuntimeMetrics: Equatable, Sendable {
 final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     typealias SnapshotProvider = @Sendable () -> TrafficSignFrameSnapshot?
     typealias EventHandler = @Sendable (TrafficSignRuntimeEmission) -> Void
-    typealias UnavailabilityHandler = @Sendable (TrafficSignRuntimeUnavailability) -> Void
+    typealias UnavailabilityHandler = @Sendable (TrafficSignRuntimeUnavailabilityEmission) -> Void
 
     /// A single Vision/Core ML failure can be caused by transient device load.
     /// Three failures without an intervening success indicate a persistent
@@ -1465,9 +1492,18 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let snapshot: TrafficSignFrameSnapshot
     }
 
+    private struct SuccessfulProcessingResult {
+        let event: TrafficSignRecognitionEvent
+        let shadowEventV2: TrafficSignRecognitionEventV2?
+        let passageUpdate: TrafficSignPassageFinalizerUpdate
+    }
+
     private struct SchedulingState {
         var stopped = false
         var unavailable: TrafficSignRuntimeUnavailability?
+        var unavailableSessionGeneration: UInt64?
+        var unavailableContextGeneration: UInt64?
+        var unavailableCaptureSessionID: String?
         var inferenceInFlight = false
         var latestPendingLive: WorkItem?
         var latestPendingStill: WorkItem?
@@ -1481,11 +1517,13 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     }
 
     let verifiedPack: TrafficSignVerifiedModelPack
+    let runtimeIdentity = UUID().uuidString.lowercased()
 
     private let backend: any TrafficSignInferenceBackend
     private let snapshotProvider: SnapshotProvider
     private let eventHandler: EventHandler
     private let unavailabilityHandler: UnavailabilityHandler?
+    private let processingGate: TrafficSignWriteGate?
     private let shadowRuntimeV2: TrafficSignShadowRuntimeV2?
     private let shadowEvidenceStoreV2: TrafficSignShadowEvidenceStoreV2?
     private let callbackQueue: DispatchQueue
@@ -1493,6 +1531,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private let lock = NSLock()
     private var schedulingState = SchedulingState()
     private var fusion: TrafficSignFusionEngine
+    private var passageFinalizer = TrafficSignPassageFinalizer()
     private var fusionSessionGeneration: UInt64?
     private var fusionContextGeneration: UInt64?
 
@@ -1503,6 +1542,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         callbackQueue: DispatchQueue = .main,
         eventHandler: @escaping EventHandler,
         unavailabilityHandler: UnavailabilityHandler? = nil,
+        processingGate: TrafficSignWriteGate? = nil,
         shadowRuntimeV2: TrafficSignShadowRuntimeV2? = nil,
         shadowEvidenceStoreV2: TrafficSignShadowEvidenceStoreV2? = nil
     ) {
@@ -1512,6 +1552,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         self.callbackQueue = callbackQueue
         self.eventHandler = eventHandler
         self.unavailabilityHandler = unavailabilityHandler
+        self.processingGate = processingGate
         self.shadowRuntimeV2 = shadowRuntimeV2
         self.shadowEvidenceStoreV2 = shadowEvidenceStoreV2
         inferenceQueue = DispatchQueue(
@@ -1524,8 +1565,34 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             artifactSha256: verifiedPack.detectorArtifact.sha256,
             preprocessingVersion: verifiedPack.manifest.preprocessing.version,
             thresholds: verifiedPack.manifest.thresholds,
-            runtimeOutput: verifiedPack.manifest.calibration.runtimeOutput
+            runtimeOutput: verifiedPack.manifest.calibration.runtimeOutput,
+            modelComponents: Self.modelComponentLineage(for: verifiedPack)
         )
+    }
+
+    private static func modelComponentLineage(
+        for pack: TrafficSignVerifiedModelPack
+    ) -> [TrafficSignModelComponentLineage] {
+        let preprocessing = pack.manifest.preprocessing.version
+        let calibration = pack.manifest.calibration.revision
+        let detectorRole = pack.classifierArtifact == nil
+            ? "direct_detector"
+            : "proposal_detector"
+        var components = [TrafficSignModelComponentLineage(
+            role: detectorRole,
+            artifactSHA256: pack.detectorArtifact.sha256,
+            preprocessingVersion: preprocessing,
+            calibrationID: calibration
+        )]
+        if let classifier = pack.classifierArtifact {
+            components.append(TrafficSignModelComponentLineage(
+                role: "semantic_classifier",
+                artifactSHA256: classifier.sha256,
+                preprocessingVersion: preprocessing,
+                calibrationID: calibration
+            ))
+        }
+        return components
     }
 
     func consumeVideoFrame(
@@ -1535,8 +1602,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let timestampUTC = Date()
         guard CMSampleBufferDataIsReady(sampleBuffer),
               let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-              let snapshot = snapshotProvider(),
-              snapshot.context.isValid else {
+              let snapshot = snapshotProvider() else {
             return
         }
         submitLive(
@@ -1562,7 +1628,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         timestampUTC: Date = Date(),
         snapshot: TrafficSignFrameSnapshot
     ) {
-        guard snapshot.context.isValid else { return }
+        guard snapshot.context?.isValid == true else { return }
         submitWithoutCadence(
             WorkItem(
                 eventId: UUID().uuidString.lowercased(),
@@ -1582,7 +1648,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         timestampUTC: Date = Date(),
         snapshot: TrafficSignFrameSnapshot
     ) {
-        guard snapshot.context.isValid else { return }
+        guard snapshot.context?.isValid == true else { return }
         submitWithoutCadence(
             WorkItem(
                 eventId: UUID().uuidString.lowercased(),
@@ -1625,6 +1691,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let now = ProcessInfo.processInfo.systemUptime
         var shouldStart = false
         lock.lock()
+        reactivateTerminalFailureForNewGenerationIfNeeded(item.snapshot)
         guard !schedulingState.stopped, schedulingState.unavailable == nil else {
             lock.unlock()
             return
@@ -1662,6 +1729,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private func submitWithoutCadence(_ item: WorkItem) {
         var shouldStart = false
         lock.lock()
+        reactivateTerminalFailureForNewGenerationIfNeeded(item.snapshot)
         guard !schedulingState.stopped, schedulingState.unavailable == nil else {
             lock.unlock()
             return
@@ -1675,6 +1743,25 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         lock.unlock()
 
         if shouldStart { perform(item) }
+    }
+
+    /// Called only while `lock` is held. Terminal inference health belongs to
+    /// the generation that produced it; a later explicitly enabled generation
+    /// gets a fresh failure budget even when it reuses the loaded model object.
+    private func reactivateTerminalFailureForNewGenerationIfNeeded(
+        _ snapshot: TrafficSignFrameSnapshot
+    ) {
+        guard schedulingState.unavailable != nil else { return }
+        let sameGeneration = schedulingState.unavailableSessionGeneration
+                == snapshot.sessionGeneration
+            && schedulingState.unavailableContextGeneration == snapshot.contextGeneration
+            && schedulingState.unavailableCaptureSessionID == snapshot.captureSessionId
+        guard !sameGeneration else { return }
+        schedulingState.unavailable = nil
+        schedulingState.unavailableSessionGeneration = nil
+        schedulingState.unavailableContextGeneration = nil
+        schedulingState.unavailableCaptureSessionID = nil
+        schedulingState.consecutiveInferenceFailures = 0
     }
 
     private func perform(_ item: WorkItem) {
@@ -1720,35 +1807,77 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     0,
                     (ProcessInfo.processInfo.systemUptime - startedAt) * 1_000
                 )
-                if self.fusionSessionGeneration != item.snapshot.sessionGeneration
-                    || self.fusionContextGeneration != item.snapshot.contextGeneration {
-                    self.fusion.reset()
-                    self.shadowRuntimeV2?.reset()
-                    self.fusionSessionGeneration = item.snapshot.sessionGeneration
-                    self.fusionContextGeneration = item.snapshot.contextGeneration
-                }
-                let event = self.fusion.ingest(
-                    detections: detections,
-                    source: item.source,
-                    timestamp: item.timestampUTC,
-                    roadContext: item.snapshot.context,
-                    latencyMs: latencyMs,
-                    thermalState: item.snapshot.conditions.thermalState
-                )
-                // Shadow QA must never disable the existing recognition UI. A
-                // malformed observation or local persistence problem drops
-                // only this v2 event; the independently fused v1 result still
-                // completes normally.
-                let shadowEventV2: TrafficSignRecognitionEventV2?
-                do {
-                    shadowEventV2 = try self.processShadowV2(
-                        result: twoStageResult,
-                        item: item
+                let process = { () -> SuccessfulProcessingResult in
+                    if self.fusionSessionGeneration != item.snapshot.sessionGeneration
+                        || self.fusionContextGeneration != item.snapshot.contextGeneration {
+                        self.fusion.reset()
+                        self.passageFinalizer.reset()
+                        self.shadowRuntimeV2?.reset()
+                        self.fusionSessionGeneration = item.snapshot.sessionGeneration
+                        self.fusionContextGeneration = item.snapshot.contextGeneration
+                    }
+                    let event = self.fusion.ingest(
+                        detections: detections,
+                        source: item.source,
+                        timestamp: item.timestampUTC,
+                        roadContext: item.snapshot.context,
+                        latencyMs: latencyMs,
+                        thermalState: item.snapshot.conditions.thermalState,
+                        frameID: item.frameId,
+                        driveSessionID: item.snapshot.captureSessionId
                     )
-                } catch {
-                    shadowEventV2 = nil
+                    let passageUpdate = self.passageFinalizer.ingest(
+                        event,
+                        sessionGeneration: item.snapshot.sessionGeneration,
+                        contextGeneration: item.snapshot.contextGeneration,
+                        frameCoordinate: item.snapshot.coordinate,
+                        frameSpeedKmh: item.snapshot.conditions.speedKmh,
+                        calibratedActivationEligible: self.verifiedPack.manifest.calibration.calibrated
+                            && self.verifiedPack.manifest.calibration.runtimeOutput == .calibratedConfidence
+                            && item.snapshot.conditions.speedKmh.map { $0.isFinite && $0 >= 1 } == true
+                    )
+                    // Shadow QA must never disable the existing recognition
+                    // UI. The admission gate covers staging/JPEG/event sinks,
+                    // so invalidating a generation is a barrier after which an
+                    // old frame cannot write any diagnostic artifact.
+                    let shadowEventV2: TrafficSignRecognitionEventV2?
+                    do {
+                        shadowEventV2 = try self.processShadowV2(
+                            result: twoStageResult,
+                            item: item
+                        )
+                    } catch {
+                        shadowEventV2 = nil
+                    }
+                    return SuccessfulProcessingResult(
+                        event: event,
+                        shadowEventV2: shadowEventV2,
+                        passageUpdate: passageUpdate
+                    )
                 }
-                self.complete(item: item, event: event, shadowEventV2: shadowEventV2)
+
+                let processed: SuccessfulProcessingResult?
+                let expectedToken = TrafficSignGenerationToken(
+                    session: item.snapshot.sessionGeneration,
+                    context: item.snapshot.contextGeneration
+                )
+                if let processingGate = self.processingGate {
+                    processed = processingGate.permit(for: expectedToken)?.consume(process)
+                } else if self.isWorkItemStillCurrent(item) {
+                    processed = process()
+                } else {
+                    processed = nil
+                }
+                guard let processed else {
+                    self.discardStaleWorkItem()
+                    return
+                }
+                self.complete(
+                    item: item,
+                    event: processed.event,
+                    shadowEventV2: processed.shadowEventV2,
+                    passageUpdate: processed.passageUpdate
+                )
             } catch {
                 self.handleInferenceFailure(item: item, error: error)
             }
@@ -1759,7 +1888,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         result: TrafficSignTwoStageInferenceResultV2?,
         item: WorkItem
     ) throws -> TrafficSignRecognitionEventV2? {
-        guard let result, let shadowRuntimeV2 else { return nil }
+        guard let result,
+              let shadowRuntimeV2,
+              let roadContext = item.snapshot.context else { return nil }
         let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
         let calibrationPassed = shadowRuntimeV2.configuration.classifier.calibrationPassed
         var diagnosticReasons: [TrafficSignDiagnosticReasonV2] = []
@@ -1810,7 +1941,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 width: dimensions.width,
                 height: dimensions.height
             ),
-            roadContext: item.snapshot.context,
+            roadContext: roadContext,
             requestedState: result.assemblies.isEmpty ? .noRecognition : .confirmed,
             detectorLatencyMs: result.detectorLatencyMs,
             classifierInvoked: result.classifierInvoked,
@@ -1880,10 +2011,47 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         return destinationData as Data
     }
 
+    private func isWorkItemStillCurrent(_ item: WorkItem) -> Bool {
+        guard let current = snapshotProvider() else { return false }
+        return current.sessionGeneration == item.snapshot.sessionGeneration
+            && current.contextGeneration == item.snapshot.contextGeneration
+            && current.captureSessionId == item.snapshot.captureSessionId
+    }
+
+    private func discardStaleWorkItem() {
+        var next: WorkItem?
+        lock.lock()
+        if schedulingState.stopped || schedulingState.unavailable != nil {
+            schedulingState.inferenceInFlight = false
+            schedulingState.latestPendingLive = nil
+            schedulingState.latestPendingStill = nil
+        } else if let live = schedulingState.latestPendingLive,
+                  let still = schedulingState.latestPendingStill {
+            if live.timestampUTC <= still.timestampUTC {
+                schedulingState.latestPendingLive = nil
+                next = live
+            } else {
+                schedulingState.latestPendingStill = nil
+                next = still
+            }
+        } else if let still = schedulingState.latestPendingStill {
+            schedulingState.latestPendingStill = nil
+            next = still
+        } else if let live = schedulingState.latestPendingLive {
+            schedulingState.latestPendingLive = nil
+            next = live
+        } else {
+            schedulingState.inferenceInFlight = false
+        }
+        lock.unlock()
+        if let next { perform(next) }
+    }
+
     private func complete(
         item: WorkItem,
         event: TrafficSignRecognitionEvent,
-        shadowEventV2: TrafficSignRecognitionEventV2?
+        shadowEventV2: TrafficSignRecognitionEventV2?,
+        passageUpdate: TrafficSignPassageFinalizerUpdate
     ) {
         let now = ProcessInfo.processInfo.systemUptime
         var next: WorkItem?
@@ -1923,10 +2091,12 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             let emission = TrafficSignRuntimeEmission(
                 event: event,
                 frameContext: item.snapshot.context,
+                frameSpeedKmh: item.snapshot.conditions.speedKmh,
                 sessionGeneration: item.snapshot.sessionGeneration,
                 contextGeneration: item.snapshot.contextGeneration,
                 captureSessionId: item.snapshot.captureSessionId,
-                shadowEventV2: shadowEventV2
+                shadowEventV2: shadowEventV2,
+                passageUpdate: passageUpdate
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }
@@ -1937,6 +2107,29 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     }
 
     private func handleInferenceFailure(item: WorkItem, error: Error) {
+        let expectedToken = TrafficSignGenerationToken(
+            session: item.snapshot.sessionGeneration,
+            context: item.snapshot.contextGeneration
+        )
+        if let processingGate {
+            guard let permit = processingGate.permit(for: expectedToken),
+                  permit.consume({
+                      self.handleAdmittedInferenceFailure(item: item, error: error)
+                      return true
+                  }) == true else {
+                discardStaleWorkItem()
+                return
+            }
+            return
+        }
+        guard isWorkItemStillCurrent(item) else {
+            discardStaleWorkItem()
+            return
+        }
+        handleAdmittedInferenceFailure(item: item, error: error)
+    }
+
+    private func handleAdmittedInferenceFailure(item: WorkItem, error: Error) {
         let reason = TrafficSignRuntimeUnavailability(
             code: .inferenceFailed,
             detail: "Speed-sign recognition stopped after three camera-processing errors in a row. Stop and restart recording to try again."
@@ -1958,6 +2151,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         consecutiveFailures = schedulingState.consecutiveInferenceFailures
         if consecutiveFailures >= Self.maximumConsecutiveInferenceFailures {
             schedulingState.unavailable = reason
+            schedulingState.unavailableSessionGeneration = item.snapshot.sessionGeneration
+            schedulingState.unavailableContextGeneration = item.snapshot.contextGeneration
+            schedulingState.unavailableCaptureSessionID = item.snapshot.captureSessionId
             schedulingState.inferenceInFlight = false
             schedulingState.latestPendingLive = nil
             schedulingState.latestPendingStill = nil
@@ -2001,7 +2197,14 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             )
         }
         if shouldNotify, let unavailabilityHandler {
-            callbackQueue.async { unavailabilityHandler(reason) }
+            let emission = TrafficSignRuntimeUnavailabilityEmission(
+                reason: reason,
+                sessionGeneration: item.snapshot.sessionGeneration,
+                contextGeneration: item.snapshot.contextGeneration,
+                captureSessionId: item.snapshot.captureSessionId,
+                runtimeIdentity: runtimeIdentity
+            )
+            callbackQueue.async { unavailabilityHandler(emission) }
         }
         if let next { perform(next) }
     }
@@ -2032,7 +2235,8 @@ enum TrafficSignRuntimeBootstrap {
         callbackQueue: DispatchQueue = .main,
         backendFactory: BackendFactory? = nil,
         eventHandler: @escaping TrafficSignRuntime.EventHandler,
-        unavailabilityHandler: TrafficSignRuntime.UnavailabilityHandler? = nil
+        unavailabilityHandler: TrafficSignRuntime.UnavailabilityHandler? = nil,
+        processingGate: TrafficSignWriteGate? = nil
     ) -> TrafficSignRuntimeBootstrapResult {
         do {
             let pack = try TrafficSignModelPackDirectoryLoader.load(
@@ -2073,6 +2277,7 @@ enum TrafficSignRuntimeBootstrap {
                 callbackQueue: callbackQueue,
                 eventHandler: eventHandler,
                 unavailabilityHandler: unavailabilityHandler,
+                processingGate: processingGate,
                 shadowRuntimeV2: shadowRuntimeV2,
                 shadowEvidenceStoreV2: shadowEvidenceStoreV2
             ))

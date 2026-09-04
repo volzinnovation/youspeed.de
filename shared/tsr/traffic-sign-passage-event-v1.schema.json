@@ -1,0 +1,1230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/traffic-sign-passage-event-v1.schema.json",
+  "title": "YouSpeed finalized traffic-sign passage event v1",
+  "description": "An actionable, calibrated event emitted exactly once after an armed physical-sign track is no longer visible in eligible analyzed frames. Per-frame recognition events remain separate immutable evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_kind",
+    "finalized_event_id",
+    "drive_session_id",
+    "tsr_generation",
+    "committed_at_utc",
+    "pack",
+    "track",
+    "action",
+    "resolution",
+    "boundary",
+    "activation",
+    "applicability_scope",
+    "persistence",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "event_kind": {
+      "const": "traffic_sign_passage"
+    },
+    "finalized_event_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "drive_session_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "tsr_generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "committed_at_utc": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "pack": {
+      "$ref": "#/$defs/livePack"
+    },
+    "track": {
+      "$ref": "#/$defs/physicalTrack"
+    },
+    "action": {
+      "$ref": "#/$defs/structuralAction"
+    },
+    "resolution": {
+      "$ref": "#/$defs/actionResolution"
+    },
+    "boundary": {
+      "$ref": "#/$defs/boundarySnapshot"
+    },
+    "activation": {
+      "$ref": "#/$defs/activationSnapshot"
+    },
+    "applicability_scope": {
+      "$ref": "#/$defs/applicabilityScope"
+    },
+    "persistence": {
+      "$ref": "#/$defs/persistenceDisposition"
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "resolution"
+        ],
+        "properties": {
+          "resolution": {
+            "required": [
+              "runtime_status"
+            ],
+            "properties": {
+              "runtime_status": {
+                "const": "unresolved_end"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "action": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "zone_end",
+                  "maximum_speed_end",
+                  "all_restrictions_end",
+                  "pedestrian_zone_end",
+                  "city_exit",
+                  "motorway_exit",
+                  "motorroad_exit"
+                ]
+              }
+            }
+          },
+          "persistence": {
+            "properties": {
+              "observation_intent": {
+                "const": "map_inconsistency"
+              },
+              "review_state": {
+                "const": "needs_review"
+              },
+              "runtime_applicable": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "resolution"
+        ],
+        "properties": {
+          "resolution": {
+            "required": [
+              "runtime_status"
+            ],
+            "properties": {
+              "runtime_status": {
+                "const": "review_only"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "persistence": {
+            "properties": {
+              "review_state": {
+                "const": "needs_review"
+              },
+              "runtime_applicable": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "action"
+        ],
+        "properties": {
+          "action": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "temporary_maximum"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "persistence": {
+            "properties": {
+              "observation_intent": {
+                "const": "temporary_restriction"
+              },
+              "review_state": {
+                "const": "needs_review"
+              },
+              "runtime_applicable": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "resolution",
+          "action"
+        ],
+        "properties": {
+          "resolution": {
+            "required": [
+              "runtime_status"
+            ],
+            "properties": {
+              "runtime_status": {
+                "const": "resolved"
+              }
+            }
+          },
+          "action": {
+            "required": [
+              "permanence"
+            ],
+            "properties": {
+              "permanence": {
+                "const": "permanent"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "if": {
+          "properties": {
+            "action": {
+              "properties": {
+                "condition_state": {
+                  "const": "none"
+                },
+                "restrictions": {
+                  "maxItems": 0
+                }
+              }
+            },
+            "activation": {
+              "properties": {
+                "travel_direction": {
+                  "enum": [
+                    "forward",
+                    "reverse"
+                  ]
+                }
+              }
+            },
+            "applicability_scope": {
+              "properties": {
+                "continuity_capable_bundle": {
+                  "const": true
+                }
+              }
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "persistence": {
+              "properties": {
+                "review_state": {
+                  "const": "local_only"
+                },
+                "runtime_applicable": {
+                  "const": true
+                }
+              }
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "persistence": {
+              "properties": {
+                "review_state": {
+                  "const": "needs_review"
+                },
+                "runtime_applicable": {
+                  "const": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "wayId": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]*$"
+    },
+    "latitude": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "longitude": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "heading": {
+      "type": "number",
+      "minimum": 0,
+      "exclusiveMaximum": 360
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "relationGroupIds": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "uniqueItems": true
+    },
+    "livePack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pack_id",
+        "taxonomy_version",
+        "execution_mode",
+        "override_eligible",
+        "calibration_status",
+        "components"
+      ],
+      "properties": {
+        "pack_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "taxonomy_version": {
+          "const": "tsr-structural-action-v1"
+        },
+        "execution_mode": {
+          "const": "live"
+        },
+        "override_eligible": {
+          "const": true
+        },
+        "calibration_status": {
+          "const": "passed"
+        },
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/modelComponent"
+          }
+        }
+      }
+    },
+    "modelComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "artifact_sha256",
+        "preprocessing_version",
+        "calibration_id"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "proposal_detector",
+            "semantic_classifier",
+            "direct_detector"
+          ]
+        },
+        "artifact_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "preprocessing_version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "calibration_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "physicalTrack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "physical_track_id",
+        "assembly_ids",
+        "first_seen_timestamp_utc",
+        "last_seen_timestamp_utc",
+        "frames_seen",
+        "peak_consecutive_frames_seen",
+        "single_sighting_exception",
+        "final_calibrated_confidence",
+        "final_accumulated_support",
+        "accumulated_support_cap",
+        "loss_reason",
+        "negative_frames_required",
+        "frame_evidence",
+        "loss_evidence"
+      ],
+      "properties": {
+        "physical_track_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "assembly_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "first_seen_timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "last_seen_timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "frames_seen": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "peak_consecutive_frames_seen": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "single_sighting_exception": {
+          "type": "boolean"
+        },
+        "final_calibrated_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "final_accumulated_support": {
+          "$ref": "#/$defs/confidence"
+        },
+        "accumulated_support_cap": {
+          "$ref": "#/$defs/confidence"
+        },
+        "loss_reason": {
+          "enum": [
+            "strong_pass_geometry",
+            "negative_debounce"
+          ]
+        },
+        "negative_frames_required": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "frame_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/seenFrameEvidence"
+          }
+        },
+        "loss_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/lossFrameEvidence"
+          }
+        }
+      }
+    },
+    "seenFrameEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_id",
+        "timestamp_utc",
+        "outcome",
+        "analysis_eligible",
+        "proposal_raw_score",
+        "proposal_calibrated_confidence",
+        "classifier_raw_score",
+        "classifier_calibrated_confidence",
+        "assembly_confidence",
+        "accumulated_support"
+      ],
+      "properties": {
+        "frame_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "outcome": {
+          "const": "seen"
+        },
+        "analysis_eligible": {
+          "const": true
+        },
+        "proposal_raw_score": {
+          "$ref": "#/$defs/confidence"
+        },
+        "proposal_calibrated_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "classifier_raw_score": {
+          "$ref": "#/$defs/confidence"
+        },
+        "classifier_calibrated_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "assembly_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "accumulated_support": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    },
+    "lossFrameEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_id",
+        "timestamp_utc",
+        "outcome",
+        "analysis_eligible",
+        "pass_geometry"
+      ],
+      "properties": {
+        "frame_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "outcome": {
+          "const": "analyzed_missing"
+        },
+        "analysis_eligible": {
+          "const": true
+        },
+        "pass_geometry": {
+          "enum": [
+            "strong",
+            "not_established"
+          ]
+        }
+      }
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "evidence_state"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather",
+            "time_window",
+            "days_of_week",
+            "vehicle",
+            "max_weight",
+            "school",
+            "resident",
+            "exception",
+            "distance",
+            "direction",
+            "extent",
+            "text",
+            "other",
+            "unknown"
+          ]
+        },
+        "evidence_state": {
+          "enum": [
+            "present_readable",
+            "present_unreadable"
+          ]
+        },
+        "normalized_value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "evidence_state": {
+                "const": "present_unreadable"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "normalized_value"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "structuralAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "permanence",
+        "condition_state",
+        "restrictions"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "posted_maximum",
+            "zone_start",
+            "zone_end",
+            "maximum_speed_end",
+            "all_restrictions_end",
+            "pedestrian_zone_start",
+            "pedestrian_zone_end",
+            "city_entry",
+            "city_exit",
+            "motorway_exit",
+            "motorroad_exit",
+            "temporary_maximum"
+          ]
+        },
+        "value_kmh": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 200
+        },
+        "ended_value_kmh": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 200
+        },
+        "country": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "permanence": {
+          "enum": [
+            "permanent",
+            "temporary"
+          ]
+        },
+        "condition_state": {
+          "enum": [
+            "none",
+            "resolved",
+            "unresolved"
+          ]
+        },
+        "restrictions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/restriction"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "posted_maximum",
+                  "zone_start",
+                  "temporary_maximum"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "value_kmh"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "value_kmh"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "city_entry",
+                  "city_exit"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "country"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "country"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "zone_end",
+                  "maximum_speed_end"
+                ]
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "ended_value_kmh"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "temporary_maximum"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "permanence": {
+                "const": "temporary"
+              },
+              "condition_state": {
+                "enum": [
+                  "resolved",
+                  "unresolved"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "permanence": {
+                "const": "permanent"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "runtimePresentation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value_kmh"
+          ],
+          "properties": {
+            "kind": {
+              "const": "numeric"
+            },
+            "value_kmh": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 200
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "walk",
+                "statutory_default",
+                "unlimited",
+                "unknown"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "normalizedOperation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "tag_key",
+        "tag_value",
+        "direction_scope"
+      ],
+      "properties": {
+        "operation": {
+          "const": "set_maxspeed"
+        },
+        "tag_key": {
+          "enum": [
+            "maxspeed",
+            "maxspeed:forward",
+            "maxspeed:backward"
+          ]
+        },
+        "tag_value": {
+          "type": "string",
+          "pattern": "^([1-9][0-9]{0,2}|walk|none)$"
+        },
+        "direction_scope": {
+          "enum": [
+            "way",
+            "forward",
+            "backward"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "tag_key": {
+              "const": "maxspeed"
+            },
+            "direction_scope": {
+              "const": "way"
+            }
+          }
+        },
+        {
+          "properties": {
+            "tag_key": {
+              "const": "maxspeed:forward"
+            },
+            "direction_scope": {
+              "const": "forward"
+            }
+          }
+        },
+        {
+          "properties": {
+            "tag_key": {
+              "const": "maxspeed:backward"
+            },
+            "direction_scope": {
+              "const": "backward"
+            }
+          }
+        }
+      ]
+    },
+    "actionResolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_status",
+        "presentation",
+        "resolution_basis",
+        "normalized_operation",
+        "masks_stale_camera_assertion"
+      ],
+      "properties": {
+        "runtime_status": {
+          "enum": [
+            "resolved",
+            "unresolved_end",
+            "review_only"
+          ]
+        },
+        "presentation": {
+          "$ref": "#/$defs/runtimePresentation"
+        },
+        "resolution_basis": {
+          "enum": [
+            "direct_sign",
+            "country_policy",
+            "captured_prior_rule",
+            "corroborated_road_context",
+            "unresolved"
+          ]
+        },
+        "normalized_operation": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/normalizedOperation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "masks_stale_camera_assertion": {
+          "type": "boolean"
+        },
+        "unresolved_reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "runtime_status": {
+                "const": "resolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "normalized_operation": {
+                "$ref": "#/$defs/normalizedOperation"
+              },
+              "masks_stale_camera_assertion": {
+                "const": false
+              }
+            },
+            "not": {
+              "required": [
+                "unresolved_reason"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "runtime_status": {
+                "const": "unresolved_end"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "unresolved_reason"
+            ],
+            "properties": {
+              "presentation": {
+                "type": "object",
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "unknown"
+                  }
+                }
+              },
+              "normalized_operation": {
+                "type": "null"
+              },
+              "masks_stale_camera_assertion": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
+    "boundarySnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frame_id",
+        "timestamp_utc",
+        "latitude",
+        "longitude",
+        "heading_degrees",
+        "speed_mps",
+        "travel_direction",
+        "map_match_state",
+        "way_id",
+        "route_relation_group_ids",
+        "source_signature"
+      ],
+      "properties": {
+        "frame_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "latitude": {
+          "$ref": "#/$defs/latitude"
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude"
+        },
+        "heading_degrees": {
+          "$ref": "#/$defs/heading"
+        },
+        "speed_mps": {
+          "type": "number",
+          "minimum": 0
+        },
+        "travel_direction": {
+          "enum": [
+            "forward",
+            "reverse",
+            "unknown"
+          ]
+        },
+        "map_match_state": {
+          "enum": [
+            "matched",
+            "no_match",
+            "unstable"
+          ]
+        },
+        "way_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/wayId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "route_relation_group_ids": {
+          "$ref": "#/$defs/relationGroupIds"
+        },
+        "source_signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "activationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "timestamp_utc",
+        "latitude",
+        "longitude",
+        "heading_degrees",
+        "travel_direction",
+        "way_id",
+        "route_relation_group_ids",
+        "source_signature",
+        "pending_rematch_elapsed_ms",
+        "pending_rematch_distance_m"
+      ],
+      "properties": {
+        "reason": {
+          "enum": [
+            "boundary_stable_match",
+            "first_stabilized_same_scope_rematch"
+          ]
+        },
+        "timestamp_utc": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "latitude": {
+          "$ref": "#/$defs/latitude"
+        },
+        "longitude": {
+          "$ref": "#/$defs/longitude"
+        },
+        "heading_degrees": {
+          "$ref": "#/$defs/heading"
+        },
+        "travel_direction": {
+          "enum": [
+            "forward",
+            "reverse",
+            "unknown"
+          ]
+        },
+        "way_id": {
+          "$ref": "#/$defs/wayId"
+        },
+        "route_relation_group_ids": {
+          "$ref": "#/$defs/relationGroupIds"
+        },
+        "source_signature": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "pending_rematch_elapsed_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_rematch_distance_m": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "applicabilityScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bundle_id",
+        "bundle_sha256",
+        "continuity_epoch_id",
+        "original_way_id",
+        "original_travel_direction",
+        "continuity_capable_bundle",
+        "initial_route_relation_group_ids",
+        "eligible_route_relation_group_ids",
+        "source_relation_ids"
+      ],
+      "properties": {
+        "bundle_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "bundle_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "continuity_epoch_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "original_way_id": {
+          "$ref": "#/$defs/wayId"
+        },
+        "original_travel_direction": {
+          "enum": [
+            "forward",
+            "reverse",
+            "unknown"
+          ]
+        },
+        "continuity_capable_bundle": {
+          "type": "boolean"
+        },
+        "initial_route_relation_group_ids": {
+          "$ref": "#/$defs/relationGroupIds"
+        },
+        "eligible_route_relation_group_ids": {
+          "$ref": "#/$defs/relationGroupIds"
+        },
+        "source_relation_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "persistenceDisposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_intent",
+        "review_state",
+        "runtime_applicable",
+        "export_eligible_at_commit",
+        "finalized_event_id_is_idempotency_key"
+      ],
+      "properties": {
+        "observation_intent": {
+          "enum": [
+            "set_maxspeed",
+            "temporary_restriction",
+            "map_inconsistency"
+          ]
+        },
+        "review_state": {
+          "enum": [
+            "local_only",
+            "needs_review"
+          ]
+        },
+        "runtime_applicable": {
+          "type": "boolean"
+        },
+        "export_eligible_at_commit": {
+          "const": false
+        },
+        "finalized_event_id_is_idempotency_key": {
+          "const": true
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_frame_persisted",
+        "crop_persisted",
+        "image_path_persisted"
+      ],
+      "properties": {
+        "raw_frame_persisted": {
+          "const": false
+        },
+        "crop_persisted": {
+          "const": false
+        },
+        "image_path_persisted": {
+          "const": false
+        }
+      }
+    }
+  }
+}

@@ -23,24 +23,54 @@ data class TrafficSignRuntimeSourceSignature(
             "Local-correction revision must not be blank"
         }
     }
+
+    /** Stable bundle identity; per-way/value decorations are navigation state, not a new bundle. */
+    val bundleRevision: String
+        get() = osmRevision.substringBefore("|way:")
 }
 
 /** Snapshot taken with the frame, before any asynchronous inference starts. */
 data class TrafficSignDetectionContext(
-    val wayId: String,
+    val wayId: String?,
     val latitude: Double,
     val longitude: Double,
     val headingDegrees: Double,
     val travelDirection: TrafficSignTravelDirection,
     val sourceSignature: TrafficSignRuntimeSourceSignature,
+    /** Verified SHA-256 of the materialized SQLite bundle used for this match. */
+    val bundleSha256: String? = null,
+    val countryCode: String = "DEU",
+    val routeRelationGroupIds: Set<Long> = emptySet(),
+    val sourceRelationIds: Set<Long> = emptySet(),
+    val continuityCapable: Boolean = false,
+    val traversalEpoch: Long = 0L,
+    val matchedWayStable: Boolean = true,
+    val speedMetersPerSecond: Double = 0.0,
 ) {
     init {
-        require(wayId.isNotBlank()) { "Detection way ID is required" }
+        require(wayId == null || wayId.isNotBlank()) { "Detection way ID must not be blank" }
         require(latitude.isFinite() && latitude in -90.0..90.0) { "Detection latitude is invalid" }
         require(longitude.isFinite() && longitude in -180.0..180.0) { "Detection longitude is invalid" }
         require(headingDegrees.isFinite() && headingDegrees >= 0.0 && headingDegrees < 360.0) {
             "Detection heading is invalid"
         }
+        require(countryCode.isNotBlank()) { "Detection country code is required" }
+        require(bundleSha256 == null || VERIFIED_SHA256.matches(bundleSha256)) {
+            "Detection bundle SHA-256 is invalid"
+        }
+        require(routeRelationGroupIds.none { it <= 0L }) { "Route-relation group IDs must be positive" }
+        require(sourceRelationIds.none { it <= 0L }) { "Source relation IDs must be positive" }
+        require(traversalEpoch >= 0L) { "Traversal epoch must not be negative" }
+        require(speedMetersPerSecond.isFinite() && speedMetersPerSecond >= 0.0) {
+            "Detection speed is invalid"
+        }
+    }
+
+    val hasVerifiedBundle: Boolean
+        get() = bundleSha256 != null && VERIFIED_SHA256.matches(bundleSha256)
+
+    private companion object {
+        val VERIFIED_SHA256 = Regex("^[a-f0-9]{64}$")
     }
 }
 
@@ -99,6 +129,27 @@ object TrafficSignSpeedOverridePolicy {
             trackId = candidate.trackId,
             context = context,
         )
+    }
+
+    /** Only a finalized visible-to-missing passage may change the legacy numeric projection. */
+    fun applyPassage(
+        current: TrafficSignSpeedOverride?,
+        event: TrafficSignPassageEvent,
+    ): TrafficSignSpeedOverride? {
+        if (!event.overrideEligible || event.action.isConditional || !event.action.isPermanentRuntimeAction) return current
+        val context = event.activationContext ?: return current
+        if (context.wayId.isNullOrBlank() || context.travelDirection == TrafficSignTravelDirection.UNKNOWN) return current
+        if (!context.continuityCapable || !context.matchedWayStable || !context.hasVerifiedBundle) return current
+        if (current != null && !event.passageBoundary.timestampUtc.isAfter(current.detectedAtUtc)) return current
+        return when (event.resolution.kind) {
+            TrafficSignResolvedLimitKind.NUMERIC -> TrafficSignSpeedOverride(
+                speedKmh = requireNotNull(event.resolution.speedKmh),
+                detectedAtUtc = event.passageBoundary.timestampUtc,
+                trackId = event.physicalTrackId,
+                context = context,
+            )
+            else -> null
+        }
     }
 
     /**
