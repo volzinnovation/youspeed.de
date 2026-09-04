@@ -76,4 +76,3 @@ class TrafficSignFramePolicyTests {
         assertTrue(slot.hasPendingFrame())
     }
 }
-

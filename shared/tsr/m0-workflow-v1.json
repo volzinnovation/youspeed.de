@@ -55,7 +55,7 @@
     {
       "document_id": "recognition-event-v2-schema",
       "path": "shared/tsr/recognition-event-v2.schema.json",
-      "sha256": "38dda21c8f795e10027cc12a99eb4a14a59a5761efb05fc7b9961ba37058baef"
+      "sha256": "d26163743f5d4b18ed98147dbb77e74c715894313a3fc6c6451bf344667f88aa"
     }
   ],
   "contract_mappings": {

@@ -156,4 +156,3 @@ class TrafficSignLatestFrameSlot<T>(
     @Synchronized
     fun isAnalysisInFlight(): Boolean = analysisInFlight
 }
-
