@@ -1,0 +1,582 @@
+{
+  "schema_version": 1,
+  "manifest_id": "youspeed-tsr-training-sources-v1",
+  "as_of_date": "2026-09-01",
+  "release_policy": {
+    "default": "blocked_until_every_lineage_gate_is_approved",
+    "requirements": [
+      "Verify every selected artifact against this manifest before use.",
+      "Record a SHA-256 inventory for every acquired dataset snapshot before training.",
+      "Preserve attribution, notices, and share-alike obligations for every training input.",
+      "Record the complete training lineage in the signed mobile model pack.",
+      "Confirm the requested ZOD dataset snapshot with the provider after access, and treat only frames with a present and complete Traffic Signs annotation task as eligible hard negatives.",
+      "Do not release the pinned Panoramax classifier or a derivative until both its CC-BY-SA-4.0 dataset lineage/share-alike obligations and its Ultralytics YOLO26 AGPL-3.0-or-Enterprise obligations are explicitly approved.",
+      "Do not release a model pack containing an Ultralytics YOLO26 derivative unless the ultralytics_agpl_or_enterprise gate is explicitly approved.",
+      "Do not release until route-held-out evaluation, calibration, mobile export parity, and signing gates pass."
+    ],
+    "license_gates": {
+      "apache_notice_review": {
+        "default_decision": "blocked_pending_weight_and_lineage_review",
+        "reason": "The repository or model card declares Apache-2.0, but release of a pretrained checkpoint remains blocked until the weight license, upstream training-data lineage, and applicable license/NOTICE obligations are explicitly documented."
+      },
+      "attribution_review": {
+        "default_decision": "allow_after_attribution_review",
+        "reason": "Record the source attribution and indicate modifications before publication."
+      },
+      "attribution_share_alike_review": {
+        "default_decision": "blocked_pending_legal_review",
+        "reason": "Confirm attribution and share-alike treatment for the dataset, labels, derived data, and released model before publication."
+      },
+      "panoramax_cc_by_sa_and_ultralytics_review": {
+        "default_decision": "blocked",
+        "requires": [
+          "attribution_share_alike_review",
+          "ultralytics_agpl_or_enterprise"
+        ],
+        "reason": "The Panoramax classifier model card is Etalab-2.0, but the checkpoint declares both the CC-BY-SA-4.0 Panoramax classified crop dataset and Ultralytics YOLO26 lineage. Release requires an explicit decision for the dataset attribution/share-alike treatment and either AGPL-3.0 compliance for the Ultralytics derivative or an applicable Ultralytics Enterprise license."
+      },
+      "ultralytics_agpl_or_enterprise": {
+        "default_decision": "blocked",
+        "reason": "A public release must either comply with the Ultralytics AGPL-3.0 terms for code and models or be covered by an applicable Ultralytics Enterprise license."
+      }
+    }
+  },
+  "sources": [
+    {
+      "source_id": "zod-frames-2.0.0",
+      "kind": "dataset",
+      "roles": [
+        "real_scene_proposal_detector",
+        "real_scene_holdout"
+      ],
+      "name": "Zenseact Open Dataset (ZOD) Frames",
+      "homepage": "https://zod.zenseact.com/",
+      "revision": {
+        "kind": "dataset_version",
+        "value": "2.0.0",
+        "supporting_code": "zenseact/zod@601a3ef5cfccad9cc545230362077d299acbf898",
+        "verification_status": "pending_provider_access"
+      },
+      "license": {
+        "expression": "CC-BY-SA-4.0",
+        "url": "https://zod.zenseact.com/license/",
+        "notice_required": true,
+        "share_alike": true,
+        "release_gate": "attribution_share_alike_review"
+      },
+      "acquisition": {
+        "mode": "manual_access",
+        "locator": "https://zod.zenseact.com/download/",
+        "subset": "Frames full; front blurred images plus traffic-sign annotations only"
+      },
+      "integrity": {
+        "immutable_reference": false,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": true,
+        "note": "The public pages confirm the Frames scale, Traffic Signs annotation task, and CC BY-SA 4.0 license, but do not independently expose the requested 2.0.0 snapshot identity. Confirm that version after provider access, then freeze its exact file set and commit a sorted path/size/SHA-256 inventory before training."
+      }
+    },
+    {
+      "source_id": "gtsign-220-e235536",
+      "kind": "dataset",
+      "roles": [
+        "real_primary_classifier",
+        "real_supplementary_classifier",
+        "teacher_reference"
+      ],
+      "name": "GTSIGN-220",
+      "homepage": "https://huggingface.co/datasets/miriamcarnot/GTSIGN-220",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "e235536c26486a42858602b146df40520a75be59"
+      },
+      "license": {
+        "expression": "CC-BY-SA-4.0",
+        "url": "https://huggingface.co/datasets/miriamcarnot/GTSIGN-220/blob/e235536c26486a42858602b146df40520a75be59/README.md",
+        "notice_required": true,
+        "share_alike": true,
+        "release_gate": "attribution_share_alike_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/datasets/miriamcarnot/GTSIGN-220/tree/e235536c26486a42858602b146df40520a75be59",
+        "subset": "Reviewed German traffic-sign crops and metadata; select only classes represented in tsr-semantic-v1"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": true,
+        "note": "The Hugging Face commit pins the repository tree. Record the selected files and their SHA-256 values because no single aggregate dataset checksum is published."
+      }
+    },
+    {
+      "source_id": "panoramax-de-crops-b485694",
+      "kind": "dataset",
+      "roles": [
+        "real_primary_classifier_bootstrap",
+        "leakage_audit_fixture"
+      ],
+      "name": "Panoramax classified German road signs",
+      "homepage": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "b4856947ed7cb6312587258acc90e8cf88a4aa13"
+      },
+      "license": {
+        "expression": "CC-BY-SA-4.0",
+        "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
+        "notice_required": true,
+        "share_alike": true,
+        "release_gate": "attribution_share_alike_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
+        "subset": "Pinned train.zip and val.zip crop archives; preserve their published split only to reproduce the leakage audit, then rebuild grouped YouSpeed splits before evaluation"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": true,
+        "note": "Both official archives have exact byte sizes and SHA-256 entries below. At this revision the reproducible legacy filename audit reports 1,297 overlapping source IDs and streamed member SHA-256 hashing finds 522 validation images in training. The historical source-ID convention removes a leading DE_ and the final filename character; it is not a general UUID parser. This split is bootstrap material only and is unsuitable as an acceptance set."
+      }
+    },
+    {
+      "source_id": "panoramax-de-classifier-5360aa6",
+      "kind": "model_framework",
+      "roles": [
+        "third_party_crop_classifier_baseline"
+      ],
+      "name": "Panoramax classify German road signs",
+      "homepage": "https://huggingface.co/Panoramax/classify_de_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790"
+      },
+      "license": {
+        "expression": "Etalab-2.0",
+        "url": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "release_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+        "subset": "classify_de_road_signs.pt crop-classification baseline only; the model card declares YOLO26 and Panoramax/classified_de_road_signs lineage"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The selected checkpoint has an exact SHA-256 entry below. The model card reports 98.6% accuracy with verified=false. Because the linked dataset split leaks source identities and exact images, that metric is neither independent nor acceptable as a YouSpeed release gate. Treat the .pt checkpoint as opaque pickle-capable bytes and deserialize only inside an isolated conversion environment."
+      }
+    },
+    {
+      "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+      "kind": "model_framework",
+      "roles": [
+        "classifier_student_initialization"
+      ],
+      "name": "timm MobileNetV3 Large 100 RA ImageNet-1k",
+      "homepage": "https://huggingface.co/timm/mobilenetv3_large_100.ra_in1k",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "96f46a1c52932f27492dff66c72378eb99b443a7"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "url": "https://huggingface.co/timm/mobilenetv3_large_100.ra_in1k/blob/96f46a1c52932f27492dff66c72378eb99b443a7/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "release_gate": "apache_notice_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/timm/mobilenetv3_large_100.ra_in1k/tree/96f46a1c52932f27492dff66c72378eb99b443a7",
+        "subset": "model.safetensors ImageNet-1k initialization only"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The selected safetensors checkpoint has an exact SHA-256 entry below. The official model card declares Apache-2.0 and ImageNet-1k. Use only as a student initialization; release remains blocked pending explicit pretrained-weight, ImageNet lineage, and NOTICE review."
+      }
+    },
+    {
+      "source_id": "timm-mobilenetv3-small-lamb-in1k-1824797",
+      "kind": "model_framework",
+      "roles": [
+        "classifier_student_initialization"
+      ],
+      "name": "timm MobileNetV3 Small 100 LAMB ImageNet-1k",
+      "homepage": "https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "1824797e7887cbec1990e4adbd6675960a36c589"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "url": "https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k/blob/1824797e7887cbec1990e4adbd6675960a36c589/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "release_gate": "apache_notice_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k/tree/1824797e7887cbec1990e4adbd6675960a36c589",
+        "subset": "model.safetensors ImageNet-1k initialization only"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The selected safetensors checkpoint has an exact SHA-256 entry below. The official model card declares Apache-2.0 and ImageNet-1k. Use only as a student initialization; release remains blocked pending explicit pretrained-weight, ImageNet lineage, and NOTICE review."
+      }
+    },
+    {
+      "source_id": "synset-signset-germany-dcc1znjxu7apx8rn",
+      "kind": "dataset",
+      "roles": [
+        "synthetic_primary_classifier",
+        "synthetic_supplementary_classifier",
+        "robustness_testing"
+      ],
+      "name": "Synset Signset Germany",
+      "homepage": "https://synset.de/datasets/synset-signset-ger/",
+      "revision": {
+        "kind": "doi",
+        "value": "10.35097/dcc1znjxu7apx8rn"
+      },
+      "license": {
+        "expression": "CC-BY-4.0",
+        "url": "https://synset.de/datasets/synset-signset-ger/",
+        "notice_required": true,
+        "share_alike": false,
+        "release_gate": "attribution_review"
+      },
+      "acquisition": {
+        "mode": "manual_doi",
+        "locator": "https://doi.org/10.35097/dcc1znjxu7apx8rn",
+        "subset": "All 211 classes and metadata; retain geometry.upperSign and geometry.lowerSign when building assemblies"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": "md5:373656812a1d57a899f8289c340544b8",
+        "post_acquisition_sha256_inventory_required": true,
+        "note": "The publisher supplies an MD5 archive identity. Verify it, then record a collision-resistant SHA-256 archive hash and extracted-file inventory before training."
+      }
+    },
+    {
+      "source_id": "yolox-0.1.1rc0",
+      "kind": "model_framework",
+      "roles": [
+        "license_gated_detector_control"
+      ],
+      "name": "YOLOX",
+      "homepage": "https://github.com/Megvii-BaseDetection/YOLOX",
+      "revision": {
+        "kind": "git_tag_and_commit",
+        "value": "0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "url": "https://github.com/Megvii-BaseDetection/YOLOX/blob/e1052df71842031413f6030723c3607b839c80ce/LICENSE",
+        "notice_required": true,
+        "share_alike": false,
+        "release_gate": "apache_notice_review"
+      },
+      "acquisition": {
+        "mode": "public_release",
+        "locator": "https://github.com/Megvii-BaseDetection/YOLOX/releases/tag/0.1.1rc0",
+        "subset": "YOLOX-Nano COCO checkpoint used only as a license-gated proposal-detector control"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The selected checkpoint has an exact SHA-256 entry below. The repository code license alone does not approve release of the pretrained weight; its weight license and COCO training lineage remain gated."
+      }
+    },
+    {
+      "source_id": "ultralytics-yolo26-v8.4.0",
+      "kind": "model_framework",
+      "roles": [
+        "license_gated_detector_challenger",
+        "license_gated_classifier_challenger"
+      ],
+      "name": "Ultralytics YOLO26",
+      "homepage": "https://docs.ultralytics.com/models/yolo26/",
+      "revision": {
+        "kind": "git_tag_and_commits",
+        "value": "ultralytics/ultralytics:v8.4.0@f2d3aed634a5b0e4828024718d4a61ab2f83fb19;ultralytics/assets:v8.4.0@dcececebff9fe00420c144baa5cd25a641d10aa6"
+      },
+      "license": {
+        "expression": "AGPL-3.0-only",
+        "commercial_alternative": "Ultralytics Enterprise",
+        "url": "https://www.ultralytics.com/license",
+        "notice_required": true,
+        "share_alike": true,
+        "release_gate": "ultralytics_agpl_or_enterprise"
+      },
+      "acquisition": {
+        "mode": "public_release",
+        "locator": "https://github.com/ultralytics/assets/releases/tag/v8.4.0",
+        "subset": "YOLO26n detection and YOLO26n-cls checkpoints as technical challengers only"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "Both selected checkpoints have exact SHA-256 entries below."
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "synset-signset-germany-archive",
+      "source_id": "synset-signset-germany-dcc1znjxu7apx8rn",
+      "role": "dataset_archive",
+      "revision": "10.35097/dcc1znjxu7apx8rn",
+      "relative_path": "datasets/synset-signset-germany/synset-signset-germany.tar",
+      "size_bytes": 17149598208,
+      "format": "archive",
+      "serialization_risk": "data_archive",
+      "hashes": {
+        "md5": "373656812a1d57a899f8289c340544b8"
+      },
+      "download": {
+        "allowed": false,
+        "url": null,
+        "allowed_hosts": []
+      },
+      "release_gate": "attribution_review",
+      "note": "Acquire the version-1 application/x-tar archive from the DOI landing page. MD5 is the publisher identity only; add SHA-256 and an extracted-file inventory to the immutable local snapshot before training."
+    },
+    {
+      "artifact_id": "gtsign-220-vit-all-classes",
+      "source_id": "gtsign-220-e235536",
+      "role": "teacher_checkpoint",
+      "revision": "e235536c26486a42858602b146df40520a75be59",
+      "relative_path": "models/gtsign-220/vit_gtsign_all_classes/model.safetensors",
+      "size_bytes": 343894552,
+      "format": "safetensors",
+      "serialization_risk": "data_only",
+      "hashes": {
+        "sha256": "e84304a7bbb2a1677c9f4ff9e330262969f1d598da456c8dbe290489bb301bad"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/datasets/miriamcarnot/GTSIGN-220/resolve/e235536c26486a42858602b146df40520a75be59/trained_models/vit_gtsign_all_classes/model.safetensors",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "attribution_share_alike_review",
+      "note": "Use as an offline teacher or pseudo-label reference, never as a mobile checkpoint or sole evaluation authority."
+    },
+    {
+      "artifact_id": "panoramax-de-train-b485694",
+      "source_id": "panoramax-de-crops-b485694",
+      "role": "training_dataset_archive",
+      "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+      "relative_path": "datasets/panoramax/classified-de-road-signs/b485694/train.zip",
+      "size_bytes": 59887779,
+      "format": "archive",
+      "serialization_risk": "data_archive",
+      "hashes": {
+        "sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/resolve/b4856947ed7cb6312587258acc90e8cf88a4aa13/train.zip",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "attribution_share_alike_review",
+      "note": "Pinned official training archive. Preserve it to reproduce the published split and leakage audit, but rebuild grouped YouSpeed splits before training or acceptance evaluation."
+    },
+    {
+      "artifact_id": "panoramax-de-validation-b485694",
+      "source_id": "panoramax-de-crops-b485694",
+      "role": "validation_dataset_archive",
+      "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+      "relative_path": "datasets/panoramax/classified-de-road-signs/b485694/val.zip",
+      "size_bytes": 29740678,
+      "format": "archive",
+      "serialization_risk": "data_archive",
+      "hashes": {
+        "sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/resolve/b4856947ed7cb6312587258acc90e8cf88a4aa13/val.zip",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "attribution_share_alike_review",
+      "note": "Pinned official validation archive. It is useful for reproducing the published comparison only; known source-ID and byte-identical leakage makes it unsuitable as a YouSpeed acceptance set."
+    },
+    {
+      "artifact_id": "panoramax-de-yolo26-classifier-5360aa6",
+      "source_id": "panoramax-de-classifier-5360aa6",
+      "role": "third_party_crop_classifier_baseline",
+      "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+      "relative_path": "models/panoramax/classify-de-road-signs/5360aa6/classify_de_road_signs.pt",
+      "size_bytes": 26282865,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/Panoramax/classify_de_road_signs/resolve/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "panoramax_cc_by_sa_and_ultralytics_review",
+      "note": "Pinned third-party crop-classifier baseline. The bootstrap tool treats this .pt file as opaque bytes; isolate any later deserialization. The model card's Etalab-2.0 declaration does not clear the linked dataset share-alike and Ultralytics YOLO26 lineage gates."
+    },
+    {
+      "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1",
+      "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+      "role": "classifier_student_initialization",
+      "revision": "96f46a1c52932f27492dff66c72378eb99b443a7",
+      "relative_path": "models/timm/mobilenetv3-large-ra-in1k/96f46a1/model.safetensors",
+      "size_bytes": 22058321,
+      "format": "safetensors",
+      "serialization_risk": "data_only",
+      "hashes": {
+        "sha256": "f425af34cc1cead2b5d6211f789a1f30b94835dc32f9c0fcc5a916e4fd2dde85"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/timm/mobilenetv3_large_100.ra_in1k/resolve/96f46a1c52932f27492dff66c72378eb99b443a7/model.safetensors",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "apache_notice_review",
+      "note": "Official safetensors initialization only. Release remains blocked until the pretrained-weight and ImageNet-1k lineage plus applicable NOTICE obligations are explicitly reviewed."
+    },
+    {
+      "artifact_id": "mobilenetv3-small-lamb-in1k-1824797",
+      "source_id": "timm-mobilenetv3-small-lamb-in1k-1824797",
+      "role": "classifier_student_initialization",
+      "revision": "1824797e7887cbec1990e4adbd6675960a36c589",
+      "relative_path": "models/timm/mobilenetv3-small-lamb-in1k/1824797/model.safetensors",
+      "size_bytes": 10241912,
+      "format": "safetensors",
+      "serialization_risk": "data_only",
+      "hashes": {
+        "sha256": "46d2c063b18125884c48937afa4c49e18128869e52e8db96df48bf0a4d7ff697"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/timm/mobilenetv3_small_100.lamb_in1k/resolve/1824797e7887cbec1990e4adbd6675960a36c589/model.safetensors",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "apache_notice_review",
+      "note": "Official safetensors initialization only. Release remains blocked until the pretrained-weight and ImageNet-1k lineage plus applicable NOTICE obligations are explicitly reviewed."
+    },
+    {
+      "artifact_id": "yolox-nano-coco-0.1.1rc0",
+      "source_id": "yolox-0.1.1rc0",
+      "role": "license_gated_detector_control",
+      "revision": "0.1.1rc0@e1052df71842031413f6030723c3607b839c80ce",
+      "relative_path": "models/yolox/0.1.1rc0/yolox_nano.pth",
+      "size_bytes": 7694953,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "cd28f55fbbc1829f99d9ac9b38a16d259a22889739c8728ea877610201feff7b"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_nano.pth",
+        "allowed_hosts": [
+          "github.com",
+          "release-assets.githubusercontent.com"
+        ]
+      },
+      "release_gate": "apache_notice_review",
+      "note": "The bootstrap tool only downloads and hashes this pickle-capable file; it never deserializes it. Isolate any later framework conversion. Release remains blocked until the checkpoint's weight license and COCO training lineage are documented."
+    },
+    {
+      "artifact_id": "yolo26n-coco-v8.4.0",
+      "source_id": "ultralytics-yolo26-v8.4.0",
+      "role": "license_gated_detector_challenger",
+      "revision": "assets:v8.4.0@dcececebff9fe00420c144baa5cd25a641d10aa6",
+      "relative_path": "models/ultralytics/v8.4.0/yolo26n.pt",
+      "size_bytes": 5544453,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt",
+        "allowed_hosts": [
+          "github.com",
+          "release-assets.githubusercontent.com"
+        ]
+      },
+      "release_gate": "ultralytics_agpl_or_enterprise",
+      "note": "Technical detector challenger only. Release is blocked by default pending an explicit AGPL-compliance or Enterprise-license decision."
+    },
+    {
+      "artifact_id": "yolo26n-cls-imagenet-v8.4.0",
+      "source_id": "ultralytics-yolo26-v8.4.0",
+      "role": "license_gated_classifier_challenger",
+      "revision": "assets:v8.4.0@dcececebff9fe00420c144baa5cd25a641d10aa6",
+      "relative_path": "models/ultralytics/v8.4.0/yolo26n-cls.pt",
+      "size_bytes": 5786434,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "0dd6f8dbc448870ac98a3cbb7156f923f7ce21fed3755d4019169ffffd279e81"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n-cls.pt",
+        "allowed_hosts": [
+          "github.com",
+          "release-assets.githubusercontent.com"
+        ]
+      },
+      "release_gate": "ultralytics_agpl_or_enterprise",
+      "note": "Technical crop-classifier challenger only. Release is blocked by default pending an explicit AGPL-compliance or Enterprise-license decision."
+    }
+  ]
+}

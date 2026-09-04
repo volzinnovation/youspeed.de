@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/recognition-event-v1.json",
+  "title": "YouSpeed normalized traffic-sign recognition event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pack_id",
+    "artifact_sha256",
+    "preprocessing_version",
+    "source",
+    "frame_timestamp_utc",
+    "state",
+    "road_context",
+    "latency_ms"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "pack_id": { "type": "string", "minLength": 1 },
+    "artifact_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "preprocessing_version": { "type": "string", "minLength": 1 },
+    "source": { "enum": ["live_frame", "camera_still", "diagnostic_import"] },
+    "frame_timestamp_utc": { "type": "string", "format": "date-time" },
+    "state": { "enum": ["no_recognition", "provisional", "confirmed", "unknown", "unavailable"] },
+    "candidate": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "raw_class_id",
+            "raw_label",
+            "semantic_kind",
+            "raw_score",
+            "bounding_box",
+            "evidence_frames",
+            "assembly_id",
+            "condition_state",
+            "restrictions"
+          ],
+          "properties": {
+            "raw_class_id": { "type": "string", "minLength": 1 },
+            "raw_label": { "type": "string", "minLength": 1 },
+            "semantic_kind": { "type": "string", "minLength": 1 },
+            "value": { "type": ["integer", "null"] },
+            "unit": { "type": ["string", "null"] },
+            "raw_score": { "type": "number" },
+            "calibrated_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "bounding_box": {
+              "$ref": "#/$defs/normalizedRect"
+            },
+            "track_id": { "type": ["string", "null"] },
+            "evidence_frames": { "type": "integer", "minimum": 1 },
+            "assembly_id": { "type": ["string", "null"], "minLength": 1 },
+            "condition_state": {
+              "enum": ["none", "resolving", "resolved", "unresolved"]
+            },
+            "restrictions": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/restriction" }
+            }
+          }
+        }
+      ]
+    },
+    "road_context": {
+      "oneOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/roadContext" }
+      ]
+    },
+    "latency_ms": { "type": "number", "minimum": 0 },
+    "thermal_state": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source": { "const": "live_frame" },
+          "state": { "enum": ["provisional", "confirmed"] }
+        },
+        "required": ["source", "state"]
+      },
+      "then": {
+        "properties": {
+          "road_context": { "$ref": "#/$defs/roadContext" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": { "enum": ["provisional", "confirmed", "unknown"] }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "required": ["candidate"],
+        "properties": {
+          "candidate": { "type": "object" }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": { "enum": ["no_recognition", "unavailable"] }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "candidate": { "type": "null" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "normalizedRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "restriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "normalized_value"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather",
+            "time_window",
+            "days_of_week",
+            "vehicle",
+            "max_weight",
+            "school",
+            "resident",
+            "exception",
+            "distance",
+            "direction",
+            "extent",
+            "text",
+            "other",
+            "unknown"
+          ]
+        },
+        "normalized_value": { "type": "string", "minLength": 1 },
+        "raw_text": { "type": ["string", "null"] },
+        "country_sign_code": { "type": ["string", "null"] }
+      }
+    },
+    "roadContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "way_id",
+        "latitude",
+        "longitude",
+        "heading_degrees",
+        "travel_direction",
+        "source_signature"
+      ],
+      "properties": {
+        "way_id": { "type": "string", "minLength": 1 },
+        "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+        "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+        "heading_degrees": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "travel_direction": { "enum": ["forward", "reverse", "unknown"] },
+        "source_signature": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["osm_revision", "local_correction_revision"],
+          "properties": {
+            "osm_revision": { "type": "string", "minLength": 1 },
+            "local_correction_revision": { "type": ["string", "null"], "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

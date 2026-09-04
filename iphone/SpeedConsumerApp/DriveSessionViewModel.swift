@@ -35,6 +35,7 @@ private final class ConfirmationTonePlayer {
     private let toneBuffer: AVAudioPCMBuffer?
     private var engine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
+    private(set) var isPlaying = false
 
     init() {
         toneBuffer = Self.makeToneBuffer()
@@ -69,6 +70,7 @@ private final class ConfirmationTonePlayer {
 
         self.engine = engine
         self.playerNode = playerNode
+        isPlaying = true
         playerNode.play()
     }
 
@@ -78,6 +80,7 @@ private final class ConfirmationTonePlayer {
     }
 
     private func stop() {
+        isPlaying = false
         playerNode?.stop()
         engine?.stop()
         playerNode = nil
@@ -105,6 +108,92 @@ private final class ConfirmationTonePlayer {
         }
         buffer.frameLength = AVAudioFrameCount(frameCount)
         return buffer
+    }
+}
+
+enum TrafficSignFeedbackMode: String, CaseIterable, Identifiable {
+    case spokenSpeed = "spoken_speed"
+    case sound
+    case silent
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .spokenSpeed:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_spoken", comment: "")
+        case .sound:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_sound", comment: "")
+        case .silent:
+            return NSLocalizedString("drive_recorder.settings.tsr_feedback_silent", comment: "")
+        }
+    }
+}
+
+/// Prevents a confirmed sign from speaking or chiming on every camera frame.
+/// Fusion track IDs suppress repeats for the complete recorder session; the
+/// short context cooldown also covers a detector that briefly loses a track.
+struct TrafficSignFeedbackGate {
+    private struct RecentRecognition: Equatable {
+        let speedKmh: Int
+        let wayID: String
+        let direction: TrafficSignTravelDirection
+        let timestamp: Date
+    }
+
+    private var emittedTrackKeys = Set<String>()
+    private var recentRecognition: RecentRecognition?
+    private let fragmentedTrackCooldown: TimeInterval
+
+    init(fragmentedTrackCooldown: TimeInterval = 8) {
+        self.fragmentedTrackCooldown = max(0, fragmentedTrackCooldown)
+    }
+
+    mutating func shouldEmit(
+        trackID: String?,
+        speedKmh: Int,
+        context: TrafficSignDetectionContext,
+        timestamp: Date
+    ) -> Bool {
+        guard speedKmh > 0 else { return false }
+        let normalizedTrackID = trackID?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let trackKey = normalizedTrackID.flatMap {
+            $0.isEmpty
+                ? nil
+                : "\(context.wayId):\(context.travelDirection.rawValue):\($0):\(speedKmh)"
+        }
+        let current = RecentRecognition(
+            speedKmh: speedKmh,
+            wayID: context.wayId,
+            direction: context.travelDirection,
+            timestamp: timestamp
+        )
+        if let trackKey {
+            guard emittedTrackKeys.insert(trackKey).inserted else { return false }
+            recentRecognition = current
+            return true
+        }
+
+        // A missing track ID is rare, but can occur while a track is being
+        // rebuilt. Only that ambiguous case uses a short context cooldown;
+        // distinct non-empty track IDs always represent distinct signs.
+        if let recentRecognition,
+           recentRecognition.speedKmh == current.speedKmh,
+           recentRecognition.wayID == current.wayID,
+           recentRecognition.direction == current.direction,
+           abs(current.timestamp.timeIntervalSince(recentRecognition.timestamp))
+                < fragmentedTrackCooldown {
+            return false
+        }
+
+        recentRecognition = current
+        return true
+    }
+
+    mutating func reset() {
+        emittedTrackKeys.removeAll(keepingCapacity: true)
+        recentRecognition = nil
     }
 }
 
@@ -320,9 +409,71 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
     }
 }
 
+final class PanoramaxLocalDeletionIntentRegistry: @unchecked Sendable {
+    private let lock = NSLock()
+    private var itemIDsByBatch: [String: Set<String>] = [:]
+
+    func mark(batchID: String, itemIDs: Set<String>) {
+        guard !itemIDs.isEmpty else { return }
+        lock.lock()
+        defer { lock.unlock() }
+        itemIDsByBatch[batchID, default: []].formUnion(itemIDs)
+    }
+
+    func contains(batchID: String, itemID: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return itemIDsByBatch[batchID]?.contains(itemID) == true
+    }
+
+    func clear(batchID: String, itemIDs: Set<String>) {
+        lock.lock()
+        defer { lock.unlock() }
+        itemIDsByBatch[batchID]?.subtract(itemIDs)
+        if itemIDsByBatch[batchID]?.isEmpty == true {
+            itemIDsByBatch[batchID] = nil
+        }
+    }
+
+    /// Clears only deletion requests that are no longer present in the
+    /// durable queue. A failed queue mutation keeps its intent, preventing a
+    /// pending upload from starting after the maintenance task returns.
+    func reconcile(
+        batchID: String,
+        requestedItemIDs: Set<String>,
+        remainingItemIDs: Set<String>
+    ) {
+        clear(
+            batchID: batchID,
+            itemIDs: requestedItemIDs.subtracting(remainingItemIDs)
+        )
+    }
+}
+
+enum PanoramaxGalleryDeletionPolicy {
+    /// Pending items are blocked by `PanoramaxLocalDeletionIntentRegistry` at
+    /// the pre-transport boundary. Cancellation is reserved for the deleted
+    /// current item or a batch-level create/poll request with no item boundary.
+    @discardableResult
+    static func cancelUploadTaskIfNeeded(
+        _ task: Task<Void, Never>?,
+        deleting itemIDs: Set<String>,
+        inFlightItemID: String?,
+        batchState: PanoramaxBatchState?
+    ) -> Bool {
+        guard let task, !itemIDs.isEmpty else { return false }
+        let deletesCurrentItem = inFlightItemID.map(itemIDs.contains) ?? false
+        let deletesDuringBatchRequest = batchState == .creatingUploadSet || batchState == .processing
+        guard deletesCurrentItem || deletesDuringBatchRequest else { return false }
+        task.cancel()
+        return true
+    }
+}
+
 @MainActor
 final class DriveSessionViewModel: NSObject, ObservableObject {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "session")
+    private nonisolated static let tsrLogger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "tsr")
     enum SpeedCaptureMode: Equatable {
         case idle
         case speakingPrompt
@@ -394,6 +545,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var gpsFixCount: Int = 0
     @Published var gpsLogPath: String = ""
     @Published var matchLogPath: String = ""
+    @Published var tsrLogPath: String = ""
     @Published var lastCandidateTraces: [MatchCandidateTrace] = []
     @Published var lastSelectionTrace: [MatchSelectionTrace] = []
     @Published var startupDataState: StartupDataState = .loading
@@ -410,6 +562,113 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var downloadedBundleLatestVersionByRegion: [String: String] = [:]
     @Published private(set) var expectedBundleBytesByRegion: [String: Int64] = [:]
     @Published private(set) var activeDownloadOptionID: String?
+    @Published var dashcamRecordingEnabled: Bool {
+        didSet {
+            guard dashcamRecordingEnabled != oldValue else { return }
+            UserDefaults.standard.set(dashcamRecordingEnabled, forKey: Self.dashcamRecordingEnabledDefaultsKey)
+        }
+    }
+    @Published var trafficSignRecognitionEnabled: Bool {
+        didSet {
+            guard trafficSignRecognitionEnabled != oldValue else { return }
+            UserDefaults.standard.set(trafficSignRecognitionEnabled, forKey: Self.trafficSignRecognitionEnabledDefaultsKey)
+            trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
+        }
+    }
+    @Published var trafficSignFeedbackMode: TrafficSignFeedbackMode {
+        didSet {
+            guard trafficSignFeedbackMode != oldValue else { return }
+            UserDefaults.standard.set(
+                trafficSignFeedbackMode.rawValue,
+                forKey: Self.trafficSignFeedbackModeDefaultsKey
+            )
+            trafficSignFeedbackGate.reset()
+            Self.tsrLogger.notice(
+                "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) setting=feedback mode=\(self.trafficSignFeedbackMode.rawValue, privacy: .public)"
+            )
+        }
+    }
+    @Published var panoramaxCaptureEnabled: Bool {
+        didSet {
+            guard panoramaxCaptureEnabled != oldValue else { return }
+            UserDefaults.standard.set(panoramaxCaptureEnabled, forKey: Self.panoramaxCaptureEnabledDefaultsKey)
+        }
+    }
+    @Published private(set) var driveRecorderState: DriveRecorderState = .disabled
+    @Published private(set) var driveRecorderStartedAt: Date?
+    @Published private(set) var dashcamFileURL: URL?
+    @Published private(set) var dashcamRecordings: [DashcamRecording] = []
+    @Published private(set) var driveRecorderDashcamActive = false
+    @Published private(set) var driveRecorderDashcamTransitioning = false
+    @Published private(set) var driveRecorderDashcamAvailable = false
+    @Published private(set) var driveRecorderTrafficSignRecognitionActive = false
+    @Published private(set) var driveRecorderTrafficSignRecognitionAvailable = false
+    @Published private(set) var driveRecorderPanoramaxActive = false
+    @Published private(set) var trafficSignRecognitionState: TrafficSignRecognitionState = .unavailable
+    @Published private(set) var trafficSignRecognitionLastEvent: TrafficSignRecognitionEvent?
+    @Published private(set) var trafficSignRecognitionActiveOverride: TrafficSignTransientSpeedOverride?
+    @Published private(set) var trafficSignRecognitionModelPackID: String?
+    @Published private(set) var trafficSignRecognitionUnavailableDetail = "Traffic-sign recognition is unavailable."
+    @Published private(set) var panoramaxCaptureState: PanoramaxRecorderState = .disabled
+    @Published private(set) var panoramaxCaptureCount = 0
+    @Published private(set) var panoramaxLastCaptureAt: Date?
+    @Published private(set) var panoramaxLastCaptureDetail = "Noch keine Aufnahme"
+    @Published private(set) var panoramaxLastAccuracyMeters: Double?
+    @Published private(set) var panoramaxBatches: [PanoramaxBatchRecord] = []
+    @Published private(set) var panoramaxUploadStatusByBatch: [String: String] = [:]
+    @Published private(set) var panoramaxUploadProgressByBatch: [String: PanoramaxUploadProgress] = [:]
+    @Published private(set) var activePanoramaxUploadBatchIDs: Set<String> = []
+    @Published private(set) var panoramaxMaintenanceIssue: String?
+    @Published private(set) var panoramaxQueueMaintenanceInProgress = false
+    @Published var panoramaxTriggerMode: PanoramaxCaptureTriggerMode {
+        didSet {
+            UserDefaults.standard.set(panoramaxTriggerMode.rawValue, forKey: Self.panoramaxTriggerModeDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxMinimumDistanceMeters: Double {
+        didSet {
+            let clamped = min(max(panoramaxMinimumDistanceMeters, 3), 100)
+            if clamped != panoramaxMinimumDistanceMeters { panoramaxMinimumDistanceMeters = clamped; return }
+            UserDefaults.standard.set(panoramaxMinimumDistanceMeters, forKey: Self.panoramaxMinimumDistanceDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxMinimumIntervalSeconds: Double {
+        didSet {
+            let clamped = min(max(panoramaxMinimumIntervalSeconds, 1), 60)
+            if clamped != panoramaxMinimumIntervalSeconds { panoramaxMinimumIntervalSeconds = clamped; return }
+            UserDefaults.standard.set(panoramaxMinimumIntervalSeconds, forKey: Self.panoramaxMinimumIntervalDefaultsKey)
+            applyPanoramaxConfiguration()
+        }
+    }
+    @Published var panoramaxUnlimitedStorage: Bool {
+        didSet {
+            UserDefaults.standard.set(panoramaxUnlimitedStorage, forKey: Self.panoramaxUnlimitedStorageDefaultsKey)
+            applyPanoramaxConfiguration()
+            enforcePanoramaxStorageLimit()
+        }
+    }
+    @Published var panoramaxStorageLimitMB: Double {
+        didSet {
+            let clamped = min(max(panoramaxStorageLimitMB, 100), 10_000)
+            if clamped != panoramaxStorageLimitMB { panoramaxStorageLimitMB = clamped; return }
+            UserDefaults.standard.set(panoramaxStorageLimitMB, forKey: Self.panoramaxStorageLimitDefaultsKey)
+            applyPanoramaxConfiguration()
+            enforcePanoramaxStorageLimit()
+        }
+    }
+    @Published var panoramaxDeleteUploadedImages: Bool {
+        didSet {
+            UserDefaults.standard.set(
+                panoramaxDeleteUploadedImages,
+                forKey: Self.panoramaxDeleteUploadedImagesDefaultsKey
+            )
+            if panoramaxDeleteUploadedImages {
+                retryCompletedPanoramaxRetention()
+            }
+        }
+    }
     @Published private(set) var speedCaptureMode: SpeedCaptureMode = .idle
     @Published private(set) var tunnelModeState: TunnelModeTracker.State = .inactive
     @Published private(set) var isUnlimitedSpeedLimitActive: Bool = false
@@ -456,6 +715,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(matcherDebugProfile.rawValue, forKey: Self.matcherDebugProfileDefaultsKey)
             resetWayMatchContinuity()
             resetTunnelModeTracking()
+            invalidateTrafficSignOverrideForBaseSourceMutation()
             if appScreenshotState == nil, !activeDBPath.isEmpty {
                 speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
             }
@@ -469,10 +729,33 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let captureConfirmationTonePlayer = ConfirmationTonePlayer()
     private let bundledTargetsConfig: V3BundleTargetsConfig?
     private let manifestEndpoints: [V3ManifestEndpoint]
+    let panoramaxAccount: PanoramaxAccountModel
+    private var panoramaxQueueStore: PanoramaxQueueStore?
     private var speedLimitService: V3SpeedLimitService?
+    private var driveCaptureCoordinator: DriveCaptureCoordinator?
+    private let trafficSignFrameState = TrafficSignAtomicFrameState()
+    private var trafficSignRuntime: TrafficSignRuntime?
+    private var trafficSignRuntimeLoadTask: Task<Void, Never>?
+    private var trafficSignApplicationIsActive = true
+    private var trafficSignRecorderGeneration: UInt64 = 0
+    private var trafficSignContextGeneration: UInt64 = 0
+    private var trafficSignFrameContextIsCurrent = false
+    private var trafficSignFeedbackGate = TrafficSignFeedbackGate()
+    private var lastTrafficSignConsoleLogSignature: String?
+    private var lastTrafficSignConsoleLogAt = Date.distantPast
+    private var latestTrafficSignLookupFixID = 0
+    private var panoramaxUploadTasks: [String: Task<Void, Never>] = [:]
+    private var panoramaxInFlightItemIDByBatch: [String: String] = [:]
+    private let panoramaxLocalDeletionIntents = PanoramaxLocalDeletionIntentRegistry()
+    private var panoramaxQueueMaintenanceTask: Task<Void, Never>?
+    private var panoramaxQueueMaintenanceGeneration: UInt64 = 0
+    private var panoramaxBatchPublicationGeneration: UInt64 = 0
+    private var panoramaxStorageLimitTask: Task<Void, Never>?
+    private var panoramaxStorageLimitGeneration: UInt64 = 0
     private var isDriving = false
     private var hasPreparedGPSLogFile = false
     private var preparedMatchLogURL: URL?
+    private var preparedTSRLogURL: URL?
     private var lastProgressUIUpdate = Date.distantPast
     private var lastLoggedSyncProgressSignature: String = ""
     private var lastDownloadProgressAt: Date?
@@ -524,18 +807,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var lastKnownSpeedLimitKmh: Int?
     private var localSpeedOverridesByWayID: [String: Int] = [:]
     private var localSpeedOverrideValuesByWayID: [String: String] = [:]
+    private var localSpeedOverrideRevisionsByWayID: [String: String] = [:]
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection?
+    private var trafficSignOverridePolicy = TrafficSignTransientOverridePolicy()
+    private var currentTrafficSignSourceSignature: TrafficSignRuntimeSourceSignature?
+    private var currentBundledSpeedLimitKmh: Int?
+    private var currentLocalCorrectionSpeedKmh: Int?
+    private var currentBaseSpeedLimitDisplayText: String?
+    private var currentBundledUnlimitedSpeedLimitActive = false
+    private var currentBaseUnlimitedSpeedLimitActive = false
+    private var currentTrafficSignTravelDirection: TrafficSignTravelDirection = .unknown
+    private var latestTrafficSignDetectionContext: TrafficSignDetectionContext?
     private var limitStreetBaseName: String?
     private var limitStreetRef: String?
     private var tunnelModeTracker = TunnelModeTracker()
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
+    private static let dashcamRecordingEnabledDefaultsKey = "youspeed.drive_recorder.dashcam_enabled"
+    private static let trafficSignRecognitionEnabledDefaultsKey = "youspeed.drive_recorder.tsr_enabled"
+    private static let trafficSignFeedbackModeDefaultsKey = "youspeed.drive_recorder.tsr_feedback_mode"
+    // The legacy key represented whether the old Panoramax-only recorder was
+    // running and was written back to false whenever recording stopped. It is
+    // not a valid module preference. A new key prevents that stopped state from
+    // disabling every consumer after migration to the shared Drive Recorder.
+    private static let panoramaxCaptureEnabledDefaultsKey = "youspeed.drive_recorder.panoramax_enabled"
+    private static let panoramaxTriggerModeDefaultsKey = "youspeed.panoramax_trigger_mode"
+    private static let panoramaxMinimumDistanceDefaultsKey = "youspeed.panoramax_minimum_distance_m"
+    private static let panoramaxMinimumIntervalDefaultsKey = "youspeed.panoramax_minimum_interval_s"
+    private static let panoramaxUnlimitedStorageDefaultsKey = "youspeed.panoramax_unlimited_storage"
+    private static let panoramaxStorageLimitDefaultsKey = "youspeed.panoramax_storage_limit_mb"
+    private static let panoramaxDeleteUploadedImagesDefaultsKey = "youspeed.panoramax_delete_uploaded_images"
     private static let matcherDebugProfileDefaultsKey = "youspeed.matcher_debug_profile"
     private static let matcherDebugProfileForcedVersionDefaultsKey = "youspeed.matcher_debug_profile_forced_version"
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
     private static let defaultHideWelcomeScreen = false
+    private static let defaultTrafficSignCountryCode = "DE"
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let fallbackLookupRadiusM: Double = 50.0
     private static let minLookupRadiusM: Double = 50.0
@@ -953,6 +1261,20 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
+        let storedDashcamEnabled = UserDefaults.standard.object(forKey: Self.dashcamRecordingEnabledDefaultsKey) as? Bool
+        let storedTSREnabled = UserDefaults.standard.object(forKey: Self.trafficSignRecognitionEnabledDefaultsKey) as? Bool
+        let storedTSRFeedbackMode = UserDefaults.standard
+            .string(forKey: Self.trafficSignFeedbackModeDefaultsKey)
+            .flatMap(TrafficSignFeedbackMode.init(rawValue:))
+        let storedPanoramaxEnabled = UserDefaults.standard.object(forKey: Self.panoramaxCaptureEnabledDefaultsKey) as? Bool
+        let storedTriggerMode = UserDefaults.standard.string(forKey: Self.panoramaxTriggerModeDefaultsKey).flatMap(PanoramaxCaptureTriggerMode.init(rawValue:)) ?? .distance
+        let storedMinimumDistance = UserDefaults.standard.object(forKey: Self.panoramaxMinimumDistanceDefaultsKey) as? Double
+        let storedMinimumInterval = UserDefaults.standard.object(forKey: Self.panoramaxMinimumIntervalDefaultsKey) as? Double
+        let storedUnlimitedStorage = UserDefaults.standard.object(forKey: Self.panoramaxUnlimitedStorageDefaultsKey) as? Bool
+        let storedStorageLimit = UserDefaults.standard.object(forKey: Self.panoramaxStorageLimitDefaultsKey) as? Double
+        let storedDeleteUploadedImages = UserDefaults.standard.object(
+            forKey: Self.panoramaxDeleteUploadedImagesDefaultsKey
+        ) as? Bool
         let storedMatcherProfile = UserDefaults.standard.string(forKey: Self.matcherDebugProfileDefaultsKey)
         let storedMatcherForcedVersion = UserDefaults.standard.integer(forKey: Self.matcherDebugProfileForcedVersionDefaultsKey)
         let bundledRules = (try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules")) ?? SpeedPenaltyRuleSet.fallbackDEU()
@@ -965,12 +1287,42 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
         hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
+        dashcamRecordingEnabled = storedDashcamEnabled ?? false
+        // Keep on-device TSR opt-in; its German bootstrap model ships with the
+        // app and is prepared in the background.
+        trafficSignRecognitionEnabled = storedTSREnabled ?? false
+        trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
+        panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
+        panoramaxTriggerMode = storedTriggerMode
+        panoramaxMinimumDistanceMeters = min(max(storedMinimumDistance ?? 25, 3), 100)
+        panoramaxMinimumIntervalSeconds = min(max(storedMinimumInterval ?? 5, 1), 60)
+        panoramaxUnlimitedStorage = storedUnlimitedStorage ?? false
+        panoramaxStorageLimitMB = min(max(storedStorageLimit ?? 1000, 100), 10_000)
+        panoramaxDeleteUploadedImages = storedDeleteUploadedImages ?? false
         matcherDebugProfile = initialMatcherProfile
         bundledTargetsConfig = try? V3BundleTargetsConfig.loadBundled()
         manifestEndpoints = Self.defaultManifestEndpoints()
+        panoramaxAccount = PanoramaxAccountModel()
         let endpointCount = manifestEndpoints.count
         Self.logger.notice("sync endpoints configured count=\(endpointCount, privacy: .public)")
         super.init()
+        trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
+        panoramaxQueueStore = try? PanoramaxQueueStore(performStartupMaintenance: false)
+        startPanoramaxQueueMaintenance()
+        driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: panoramaxQueueStore)
+        applyPanoramaxConfiguration()
+        driveCaptureCoordinator?.onChange = { [weak self] in
+            self?.syncDriveRecorderState()
+        }
+        driveCaptureCoordinator?.onTrafficSignAnnotation = { [weak self] detail in
+            self?.appendTSRLog("image_link=attached \(detail)")
+            self?.refreshPanoramaxBatches()
+        }
+        clearDrivingLogsOnAppLaunch()
+        syncDriveRecorderState()
+        prepareTrafficSignRecognitionRuntime()
+        refreshDashcamRecordings()
+        refreshPanoramaxBatches()
         if storedMatcherForcedVersion < MatcherDebugProfile.forcedProfileVersion
             || storedMatcherProfile != initialMatcherProfile.rawValue
         {
@@ -981,11 +1333,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
         }
         if let screenshotState = AppScreenshotState.current() {
-            clearDrivingLogsOnAppLaunch()
             configureForScreenshotMode(screenshotState)
             return
         }
-        clearDrivingLogsOnAppLaunch()
         bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
@@ -1002,6 +1352,1546 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var isDatabaseReadyForQueries: Bool {
         startupDataState == .ready && speedLimitService != nil && !activeDBPath.isEmpty
+    }
+
+    var driveRecorderPreviewSession: AVCaptureSession? {
+        driveCaptureCoordinator?.session
+    }
+
+    var panoramaxPreviewSession: AVCaptureSession? {
+        driveRecorderPreviewSession
+    }
+
+    var isDriveRecorderActive: Bool {
+        switch driveRecorderState {
+        case .preparing, .recording, .stopping:
+            return true
+        case .disabled, .denied, .unavailable, .failed:
+            return false
+        }
+    }
+
+    var isPanoramaxRecordingActive: Bool {
+        isDriveRecorderActive && panoramaxCaptureEnabled
+    }
+
+    var canProcessPanoramaxUploads: Bool {
+        DriveRecorderPolicy.canProcessPanoramaxUploads(for: driveRecorderState)
+    }
+
+    var canToggleDriveRecorderModules: Bool {
+        DriveRecorderPolicy.canToggleModules(for: driveRecorderState)
+    }
+
+    func toggleDriveRecorder() {
+        if isDriveRecorderActive {
+            guard driveRecorderState != .stopping else { return }
+            driveCaptureCoordinator?.stop()
+            return
+        }
+        guard !(panoramaxCaptureEnabled && panoramaxQueueMaintenanceInProgress) else {
+            panoramaxLastCaptureDetail = "Panoramax-Speicher wird vorbereitet"
+            return
+        }
+        if trafficSignRecognitionEnabled, trafficSignRuntime == nil {
+            prepareTrafficSignRecognitionRuntime()
+        }
+        let configuration = DriveRecorderPolicy.mainControlStartConfiguration(
+            trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
+            panoramaxEnabled: panoramaxCaptureEnabled
+        )
+        // The main recorder control owns the Dashcam start. Persist that
+        // selection before the coordinator publishes `.preparing`, while
+        // retaining the independently selected TSR and Panoramax consumers.
+        dashcamRecordingEnabled = configuration.dashcamEnabled
+        cancelPanoramaxUploadsForRecorderStart()
+        driveCaptureCoordinator?.start(
+            dashcamEnabled: configuration.dashcamEnabled,
+            trafficSignRecognitionEnabled: configuration.trafficSignRecognitionEnabled,
+            panoramaxEnabled: configuration.panoramaxEnabled
+        )
+    }
+
+    func togglePanoramaxRecording() {
+        toggleDriveRecorder()
+    }
+
+    static func trafficSignModelPackDirectoryURL(
+        countryCode: String = "DE",
+        bundle: Bundle = .main
+    ) throws -> URL {
+        #if DEBUG
+        if let configuredPath = ProcessInfo.processInfo.environment["YOUSPEED_TSR_MODEL_PACK_DIR"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !configuredPath.isEmpty {
+            return URL(fileURLWithPath: configuredPath, isDirectory: true)
+        }
+        #endif
+        let normalizedCountry = countryCode
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+        if let bundledPackURL = bundle.url(
+            forResource: "\(normalizedCountry).panoramax-bootstrap",
+            withExtension: "tsrmodelpack",
+            subdirectory: "TSRModelPacks"
+        ) {
+            return bundledPackURL
+        }
+        throw TrafficSignRuntimeUnavailability(
+            code: .modelPackDirectoryMissing,
+            detail: "Traffic-sign recognition is unavailable because its bundled model is missing."
+        )
+    }
+
+    /// Keeps lifecycle state in the same atomic snapshot as the map context.
+    /// The camera queue never reaches into this MainActor-owned view model.
+    func setTrafficSignApplicationActive(_ isActive: Bool) {
+        trafficSignApplicationIsActive = isActive
+        refreshTrafficSignFrameSnapshot()
+    }
+
+    private func prepareTrafficSignRecognitionRuntime() {
+        guard trafficSignRuntime == nil, trafficSignRuntimeLoadTask == nil else { return }
+
+        let directoryURL: URL
+        do {
+            directoryURL = try Self.trafficSignModelPackDirectoryURL()
+        } catch let reason as TrafficSignRuntimeUnavailability {
+            handleTrafficSignRuntimeUnavailability(reason)
+            return
+        } catch {
+            handleTrafficSignRuntimeUnavailability(TrafficSignRuntimeUnavailability(
+                code: .modelPackDirectoryMissing,
+                detail: "The local TSR model-pack directory is unavailable."
+            ))
+            return
+        }
+
+        let frameState = trafficSignFrameState
+        let snapshotProvider: TrafficSignRuntime.SnapshotProvider = {
+            frameState.snapshot()
+        }
+        let runtimeVersion = UIDevice.current.systemVersion
+        let countryCode = Self.defaultTrafficSignCountryCode
+        let appVersion = (Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String) ?? "0.0.0"
+        let eventHandler: TrafficSignRuntime.EventHandler = { [weak self] emission in
+            Task { @MainActor [weak self] in
+                self?.acceptTrafficSignRuntimeEmission(emission)
+            }
+        }
+        let unavailableHandler: TrafficSignRuntime.UnavailabilityHandler = { [weak self] reason in
+            Task { @MainActor [weak self] in
+                self?.handleTrafficSignRuntimeUnavailability(reason)
+            }
+        }
+
+        let loadingLog = "lifecycle=loading country=\(countryCode) model_pack=\(directoryURL.lastPathComponent)"
+        Self.tsrLogger.notice("timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) \(loadingLog, privacy: .public)")
+        appendTSRLog(loadingLog)
+        trafficSignRecognitionUnavailableDetail = "Preparing traffic-sign recognition."
+        trafficSignRuntimeLoadTask = Task { @MainActor [weak self] in
+            let result = await Task.detached(priority: .utility) {
+                TrafficSignRuntimeBootstrap.make(
+                    modelPackDirectoryURL: directoryURL,
+                    runtimeVersion: runtimeVersion,
+                    appVersion: appVersion,
+                    countryCode: countryCode,
+                    snapshotProvider: snapshotProvider,
+                    callbackQueue: .main,
+                    eventHandler: eventHandler,
+                    unavailabilityHandler: unavailableHandler
+                )
+            }.value
+
+            guard let self else {
+                if case .ready(let runtime) = result { runtime.stop() }
+                return
+            }
+            self.trafficSignRuntimeLoadTask = nil
+            guard !Task.isCancelled else {
+                if case .ready(let runtime) = result { runtime.stop() }
+                return
+            }
+
+            switch result {
+            case .ready(let runtime):
+                self.trafficSignRuntime = runtime
+                self.trafficSignRecognitionModelPackID = runtime.verifiedPack.manifest.packId
+                Self.tsrLogger.notice(
+                    "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId, privacy: .public)"
+                )
+                self.appendTSRLog("lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId)")
+                self.trafficSignRecognitionUnavailableDetail = ""
+                if let driveCaptureCoordinator = self.driveCaptureCoordinator {
+                    driveCaptureCoordinator.setVideoFrameConsumer(runtime)
+                    if self.trafficSignRecognitionEnabled,
+                       driveCaptureCoordinator.state == .recording {
+                        _ = driveCaptureCoordinator
+                            .setTrafficSignRecognitionEnabledDuringRecording(true)
+                    }
+                }
+                if self.trafficSignRecognitionEnabled,
+                   self.driveRecorderState != .recording {
+                    self.trafficSignRecognitionState = .noRecognition
+                }
+                self.syncDriveRecorderState()
+            case .unavailable(let reason):
+                self.handleTrafficSignRuntimeUnavailability(reason)
+            }
+        }
+    }
+
+    private func handleTrafficSignRuntimeUnavailability(
+        _ reason: TrafficSignRuntimeUnavailability
+    ) {
+        let context = latestTrafficSignDetectionContext
+        let timestamp = Self.trafficSignTimestamp(Date())
+        let wayID = context?.wayId ?? "none"
+        let latitude = context.map { String(format: "%.6f", $0.latitude) } ?? "none"
+        let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
+        let direction = context?.travelDirection.rawValue ?? "none"
+        let captureSessionID = driveCaptureCoordinator?.activeCaptureSessionID ?? "none"
+        let line = "lifecycle=unavailable code=\(reason.code.rawValue) way=\(wayID) lat=\(latitude) lon=\(longitude) direction=\(direction) capture_session=\(captureSessionID) detail=\(reason.detail)"
+        Self.tsrLogger.fault("timestamp=\(timestamp, privacy: .public) \(line, privacy: .public)")
+        appendTSRLog(line, timestamp: Date())
+        trafficSignRuntime?.stop()
+        trafficSignRuntime = nil
+        trafficSignRecognitionModelPackID = nil
+        trafficSignRecognitionUnavailableDetail = reason.detail
+        driveCaptureCoordinator?.setVideoFrameConsumer(nil)
+        if trafficSignRecognitionEnabled {
+            trafficSignRecognitionState = .unavailable
+        }
+        syncDriveRecorderState()
+    }
+
+    private func refreshTrafficSignFrameSnapshot() {
+        guard trafficSignFrameContextIsCurrent,
+              let context = latestTrafficSignDetectionContext,
+              context.isValid else {
+            trafficSignFrameState.update(nil)
+            return
+        }
+        let candidateRecentlySeen: Bool
+        if let event = trafficSignRecognitionLastEvent {
+            switch event.state {
+            case .provisional, .confirmed, .unknown:
+                candidateRecentlySeen = abs(event.frameTimestampUtc.timeIntervalSinceNow) <= 1.5
+            case .noRecognition, .unavailable:
+                candidateRecentlySeen = false
+            }
+        } else {
+            candidateRecentlySeen = false
+        }
+        trafficSignFrameState.update(TrafficSignFrameSnapshot(
+            context: context,
+            conditions: TrafficSignAnalysisConditions(
+                speedKmh: currentSpeedKmh,
+                candidateRecentlySeen: candidateRecentlySeen,
+                lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                thermalState: Self.trafficSignThermalState(ProcessInfo.processInfo.thermalState),
+                appIsActive: trafficSignApplicationIsActive
+            ),
+            sessionGeneration: trafficSignRecorderGeneration,
+            contextGeneration: trafficSignContextGeneration,
+            captureSessionId: driveCaptureCoordinator?.activeCaptureSessionID,
+            // Selecting both local Dashcam recording and on-device TSR is the
+            // explicit existing action that enables bounded local QA frames.
+            // These files never enter the Panoramax queue.
+            diagnosticCaptureEnabled: driveRecorderState == .recording
+                && driveRecorderDashcamActive
+                && driveRecorderTrafficSignRecognitionActive
+        ))
+    }
+
+    private func beginTrafficSignContextLookup(fixID: Int) {
+        latestTrafficSignLookupFixID = fixID
+        // Pause new frame admission while the fix is being matched, but keep
+        // the previous identity long enough to distinguish a coordinate-only
+        // update from a real way/direction/source change. This prevents slow
+        // inference from being starved by routine same-road GPS fixes.
+        trafficSignFrameContextIsCurrent = false
+        trafficSignFrameState.update(nil)
+    }
+
+    /// Any newly committed base-source information invalidates frames captured
+    /// under the previous OSM/local snapshot immediately. The next completed
+    /// map match publishes a fresh coherent context.
+    private func invalidateTrafficSignInferenceContext() {
+        trafficSignContextGeneration &+= 1
+        trafficSignFrameContextIsCurrent = false
+        latestTrafficSignDetectionContext = nil
+        trafficSignFrameState.update(nil)
+    }
+
+    /// Clears only the transient camera layer when a durable map/local input
+    /// changes outside the normal GPS lookup. This prevents a stationary drive
+    /// from retaining a detection after a bundle activation or a correction
+    /// edit while leaving both durable sources untouched.
+    private func invalidateTrafficSignOverrideForBaseSourceMutation() {
+        let hadPublishedTrafficSignState = currentTrafficSignSourceSignature != nil
+            || latestTrafficSignDetectionContext != nil
+            || trafficSignOverridePolicy.activeOverride != nil
+            || trafficSignRecognitionLastEvent != nil
+        // Always advance the epoch: a first lookup may already be running even
+        // though no context has been published yet.
+        currentTrafficSignSourceSignature = nil
+        invalidateTrafficSignInferenceContext()
+        guard hadPublishedTrafficSignState else { return }
+        trafficSignOverridePolicy.clear()
+        trafficSignRecognitionActiveOverride = nil
+        trafficSignRecognitionLastEvent = nil
+        restoreBaseSpeedLimitPresentation()
+        if !trafficSignRecognitionEnabled {
+            trafficSignRecognitionState = .disabled
+        } else if trafficSignRuntime == nil {
+            trafficSignRecognitionState = .unavailable
+        } else {
+            trafficSignRecognitionState = .noRecognition
+        }
+    }
+
+    private func invalidateTrafficSignOverrideIfBundleWillChange(
+        bundleVersion: String,
+        dbPath: String
+    ) {
+        guard bundleVersion != activeBundleVersion || dbPath != activeDBPath else { return }
+        invalidateTrafficSignOverrideForBaseSourceMutation()
+    }
+
+    private static func trafficSignThermalState(
+        _ state: ProcessInfo.ThermalState
+    ) -> TrafficSignThermalState {
+        switch state {
+        case .nominal: return .nominal
+        case .fair: return .fair
+        case .serious: return .serious
+        case .critical: return .critical
+        @unknown default: return .serious
+        }
+    }
+
+    /// Frame consumers request this snapshot before dispatching asynchronous
+    /// inference. The returned value is later embedded in the recognition
+    /// event, so a callback can never borrow a newer way/location by accident.
+    func trafficSignDetectionContextSnapshot() -> TrafficSignDetectionContext? {
+        latestTrafficSignDetectionContext
+    }
+
+    /// Accepts one normalized result from either the live camera or the
+    /// still-image path. A camera result affects only the transient runtime
+    /// source; OSM and local corrections remain unchanged and reviewable.
+    private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        guard emission.sessionGeneration == trafficSignRecorderGeneration,
+              emission.contextGeneration == trafficSignContextGeneration else { return }
+        logTrafficSignRuntimeEmission(emission)
+        driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
+        acceptTrafficSignRecognitionEvent(emission.event)
+    }
+
+    func acceptTrafficSignRecognitionEvent(_ event: TrafficSignRecognitionEvent) {
+        guard driveRecorderState == .recording,
+              driveRecorderTrafficSignRecognitionActive,
+              trafficSignFrameContextIsCurrent,
+              let currentContext = latestTrafficSignDetectionContext,
+              let eventContext = event.roadContext,
+              currentContext.wayId == eventContext.wayId,
+              currentContext.travelDirection == eventContext.travelDirection,
+              currentContext.sourceSignature == eventContext.sourceSignature,
+              let currentTrafficSignSourceSignature else { return }
+
+        maybeProvideTrafficSignFeedback(for: event, context: eventContext)
+
+        if TrafficSignRuntimeDeploymentPolicy.isShadowOnly(packId: event.packId) {
+            publishTrafficSignRecognitionState(for: event)
+            refreshTrafficSignFrameSnapshot()
+            let latitudeText = String(format: "%.5f", eventContext.latitude)
+            let longitudeText = String(format: "%.5f", eventContext.longitude)
+            let headingText = String(format: "%.1f", eventContext.headingDegrees)
+            appendLookupEvent(
+                "tsr-shadow state=\(event.state.rawValue) way=\(eventContext.wayId) lat=\(latitudeText) lon=\(longitudeText) heading=\(headingText) direction=\(eventContext.travelDirection.rawValue)"
+            )
+            return
+        }
+
+        let previousOverride = trafficSignOverridePolicy.activeOverride
+        let acceptedConfirmedDetection = trafficSignOverridePolicy.ingestConfirmedDetection(
+            event,
+            currentSourceSignature: currentTrafficSignSourceSignature
+        )
+        trafficSignRecognitionActiveOverride = trafficSignOverridePolicy.activeOverride
+
+        // Once a confirmed camera limit is actively driving the display, an
+        // empty or provisional later frame must not make the badge claim that
+        // no camera result is in force. Only a newer confirmed detection (which
+        // may replace or explicitly end it) changes the effective presentation.
+        if previousOverride == nil || acceptedConfirmedDetection {
+            publishTrafficSignRecognitionState(for: event)
+        }
+        refreshTrafficSignFrameSnapshot()
+
+        guard acceptedConfirmedDetection else { return }
+        let resolved = trafficSignOverridePolicy.resolvedSpeedKmh(
+            osmSpeedKmh: currentBundledSpeedLimitKmh,
+            localCorrectionSpeedKmh: currentLocalCorrectionSpeedKmh,
+            currentContext: currentContext
+        )
+        trafficSignRecognitionActiveOverride = trafficSignOverridePolicy.activeOverride
+        speedLimitKmh = resolved
+        if trafficSignOverridePolicy.activeOverride != nil {
+            speedLimitDisplayText = nil
+            isUnlimitedSpeedLimitActive = false
+        } else {
+            speedLimitDisplayText = currentBaseSpeedLimitDisplayText
+            isUnlimitedSpeedLimitActive = currentBaseUnlimitedSpeedLimitActive
+        }
+        if let resolved {
+            lastKnownSpeedLimitKmh = resolved
+        }
+        if let context = event.roadContext {
+            let latitudeText = String(format: "%.5f", context.latitude)
+            let longitudeText = String(format: "%.5f", context.longitude)
+            let headingText = String(format: "%.1f", context.headingDegrees)
+            let effectiveText = resolved.map(String.init) ?? "nil"
+            appendLookupEvent(
+                "tsr state=\(event.state.rawValue) way=\(context.wayId) lat=\(latitudeText) lon=\(longitudeText) heading=\(headingText) direction=\(context.travelDirection.rawValue) effective=\(effectiveText)"
+            )
+        }
+        maybeNotifyDrivingBanWarning()
+        maybeSpeakOverspeedWarning()
+    }
+
+    private func maybeProvideTrafficSignFeedback(
+        for event: TrafficSignRecognitionEvent,
+        context: TrafficSignDetectionContext
+    ) {
+        guard trafficSignFeedbackMode != .silent,
+              event.source == .liveFrame,
+              event.state == .confirmed,
+              !isInSpeedCaptureMode,
+              let candidate = event.candidate,
+              candidate.semanticKind == TrafficSignSemanticKind.maximumSpeed.rawValue,
+              let speedKmh = candidate.value,
+              trafficSignFeedbackGate.shouldEmit(
+                  trackID: candidate.trackId,
+                  speedKmh: speedKmh,
+                  context: context,
+                  timestamp: event.frameTimestampUtc
+              ) else { return }
+
+        switch trafficSignFeedbackMode {
+        case .spokenSpeed:
+            prepareSpeechPlaybackAudioSession()
+            let format = NSLocalizedString("tsr.feedback.spoken_speed_format", comment: "")
+            let utterance = AVSpeechUtterance(
+                string: String(format: format, locale: Locale.current, speedKmh)
+            )
+            let language = Self.trafficSignSpeechLanguageIdentifier()
+            utterance.voice = AVSpeechSynthesisVoice(language: language)
+                ?? AVSpeechSynthesisVoice(language: "en")
+            utterance.rate = 0.48
+            speechSynthesizer.speak(utterance)
+        case .sound:
+            captureConfirmationTonePlayer.play()
+        case .silent:
+            return
+        }
+
+        let timestamp = Self.trafficSignTimestamp(event.frameTimestampUtc)
+        let trackID = candidate.trackId ?? "none"
+        Self.tsrLogger.notice(
+            "timestamp=\(timestamp, privacy: .public) feedback=\(self.trafficSignFeedbackMode.rawValue, privacy: .public) speed_kmh=\(speedKmh, privacy: .public) track=\(trackID, privacy: .public)"
+        )
+        appendTSRLog("feedback=\(trafficSignFeedbackMode.rawValue) speed_kmh=\(speedKmh) track=\(trackID)", timestamp: event.frameTimestampUtc)
+    }
+
+    private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        let event = emission.event
+        let context = event.roadContext
+        let captureID = emission.shadowEventV2?.diagnosticCapture.captureId
+        let logSignature = [
+            event.state.rawValue,
+            event.candidate?.value.map(String.init) ?? "none",
+            event.candidate?.trackId ?? "none",
+            captureID ?? "none",
+        ].joined(separator: ":")
+        let now = Date()
+        let minimumInterval: TimeInterval = event.state == .noRecognition ? 30 : 2
+        guard logSignature != lastTrafficSignConsoleLogSignature
+                || now.timeIntervalSince(lastTrafficSignConsoleLogAt) >= minimumInterval else {
+            return
+        }
+        lastTrafficSignConsoleLogSignature = logSignature
+        lastTrafficSignConsoleLogAt = now
+
+        let timestamp = Self.trafficSignTimestamp(event.frameTimestampUtc)
+        let eventID = emission.shadowEventV2?.eventId ?? "legacy"
+        let speedText = event.candidate?.value.map(String.init) ?? "none"
+        let confidenceText = event.candidate.map {
+            String(format: "%.4f", $0.calibratedConfidence ?? $0.rawScore)
+        } ?? "none"
+        let trackID = event.candidate?.trackId ?? "none"
+        let wayID = context?.wayId ?? "none"
+        let latitude = context.map { String(format: "%.6f", $0.latitude) } ?? "none"
+        let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
+        let heading = context.map { String(format: "%.1f", $0.headingDegrees) } ?? "none"
+        let direction = context?.travelDirection.rawValue ?? "none"
+        let restrictionCount = event.candidate?.restrictions.count ?? 0
+        let captureSessionID = emission.captureSessionId
+        let imageReference: String
+        let qaLogReference: String
+        if emission.shadowEventV2 != nil, let captureSessionID {
+            qaLogReference = "YouSpeed/TrafficSignQA/v2/\(captureSessionID)/events.ndjson"
+            if let captureID {
+                imageReference = "YouSpeed/TrafficSignQA/v2/\(captureSessionID)/captures/\(captureID).jpg"
+            } else {
+                imageReference = "none"
+            }
+        } else {
+            qaLogReference = "none"
+            imageReference = "none"
+        }
+        let latency = String(format: "%.1f", event.latencyMs)
+        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
+        Self.tsrLogger.info("\(line, privacy: .public)")
+        appendTSRLogLine(line)
+    }
+
+    private static func trafficSignTimestamp(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter.string(from: date)
+    }
+
+    private static func trafficSignSpeechLanguageIdentifier() -> String {
+        let appLanguage = Bundle.main.preferredLocalizations.first
+            ?? Locale.preferredLanguages.first
+            ?? "en"
+        let languageCode = appLanguage
+            .split(separator: "-", maxSplits: 1)
+            .first
+            .map(String.init)
+            ?? appLanguage
+        return Locale.preferredLanguages.first {
+            $0 == languageCode || $0.hasPrefix("\(languageCode)-")
+        } ?? appLanguage
+    }
+
+    private func prepareSpeechPlaybackAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(
+            .ambient,
+            mode: .default,
+            options: [.duckOthers]
+        )
+        try? session.setActive(true)
+    }
+
+    private func publishTrafficSignRecognitionState(
+        for event: TrafficSignRecognitionEvent
+    ) {
+        trafficSignRecognitionLastEvent = event
+        switch event.state {
+        case .noRecognition:
+            trafficSignRecognitionState = .noRecognition
+        case .provisional:
+            if let value = event.candidate?.value {
+                trafficSignRecognitionState = .provisional(value)
+            } else {
+                trafficSignRecognitionState = .unknown
+            }
+        case .confirmed:
+            if let value = event.candidate?.value {
+                trafficSignRecognitionState = .confirmed(value)
+            } else {
+                trafficSignRecognitionState = .unknown
+            }
+        case .unknown:
+            trafficSignRecognitionState = .unknown
+        case .unavailable:
+            trafficSignRecognitionState = .unavailable
+        }
+    }
+
+    /// Changes only the Dashcam consumer. The shared camera session, elapsed
+    /// drive time, TSR, and Panoramax capture stay untouched.
+    @discardableResult
+    func toggleDriveRecorderDashcam() -> Bool {
+        guard canToggleDriveRecorderModules,
+              !driveRecorderDashcamTransitioning,
+              let driveCaptureCoordinator else { return false }
+
+        if driveRecorderDashcamActive {
+            dashcamRecordingEnabled = false
+            if !driveRecorderPanoramaxActive && !driveRecorderTrafficSignRecognitionActive {
+                driveCaptureCoordinator.stop()
+                return true
+            }
+            guard driveCaptureCoordinator.setDashcamEnabledDuringRecording(false) else {
+                dashcamRecordingEnabled = true
+                return false
+            }
+            return true
+        }
+
+        guard driveCaptureCoordinator.setDashcamEnabledDuringRecording(true) else {
+            return false
+        }
+        dashcamRecordingEnabled = true
+        syncDriveRecorderState()
+        return true
+    }
+
+    /// Changes only the model-backed TSR consumer. If its bundled runtime is
+    /// still loading, the selection is retained and attached when ready.
+    @discardableResult
+    func toggleDriveRecorderTrafficSignRecognition() -> Bool {
+        guard canToggleDriveRecorderModules,
+              let driveCaptureCoordinator else { return false }
+
+        if driveRecorderTrafficSignRecognitionActive {
+            trafficSignRecognitionEnabled = false
+            if !driveRecorderPanoramaxActive
+                && !driveRecorderDashcamActive
+                && !driveRecorderDashcamTransitioning {
+                driveCaptureCoordinator.stop()
+                return true
+            }
+            guard driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(false) else {
+                trafficSignRecognitionEnabled = true
+                return false
+            }
+            return true
+        }
+
+        if !driveRecorderTrafficSignRecognitionAvailable {
+            prepareTrafficSignRecognitionRuntime()
+            if trafficSignRecognitionEnabled {
+                trafficSignRecognitionEnabled = false
+                syncDriveRecorderState()
+                return true
+            }
+            // Preserve an explicit selection while remaining honest about the
+            // missing model. The chip shows selected + unavailable, and the
+            // recorder continues with its other consumers.
+            trafficSignRecognitionEnabled = true
+            _ = driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(true)
+            syncDriveRecorderState()
+            return false
+        }
+
+        guard driveCaptureCoordinator.setTrafficSignRecognitionEnabledDuringRecording(true) else {
+            return false
+        }
+        trafficSignRecognitionEnabled = true
+        syncDriveRecorderState()
+        return true
+    }
+
+    private func applyPanoramaxConfiguration() {
+        let cadence = PanoramaxCadenceConfiguration(
+            distanceMeters: panoramaxMinimumDistanceMeters,
+            fallbackInterval: panoramaxMinimumIntervalSeconds,
+            maxLocationAge: 10,
+            maxAccuracyMeters: 50,
+            triggerMode: panoramaxTriggerMode
+        )
+        driveCaptureCoordinator?.updatePanoramaxConfiguration(
+            cadence,
+            storageLimitBytes: panoramaxUnlimitedStorage ? nil : Int64(panoramaxStorageLimitMB * 1_000_000)
+        )
+    }
+
+    private func syncDriveRecorderState() {
+        let previousState = driveRecorderState
+        let previousDashcamURL = dashcamFileURL
+        let previousDashcamActive = driveRecorderDashcamActive
+        let previousTrafficSignActive = driveRecorderTrafficSignRecognitionActive
+        driveRecorderState = driveCaptureCoordinator?.state ?? .failed
+        driveRecorderStartedAt = driveCaptureCoordinator?.startedAt
+        dashcamFileURL = driveCaptureCoordinator?.dashcamFileURL
+        driveRecorderDashcamActive = driveCaptureCoordinator?.isDashcamModuleActive ?? false
+        driveRecorderDashcamTransitioning = driveCaptureCoordinator?.dashcamTransitionInFlight ?? false
+        driveRecorderDashcamAvailable = driveCaptureCoordinator?.isDashcamOutputAvailable ?? false
+        driveRecorderTrafficSignRecognitionActive = driveCaptureCoordinator?.isTrafficSignRecognitionModuleActive ?? false
+        driveRecorderTrafficSignRecognitionAvailable = driveCaptureCoordinator?.isTrafficSignRecognitionOutputAvailable ?? false
+        driveRecorderPanoramaxActive = driveCaptureCoordinator?.isPanoramaxModuleActive ?? false
+        // The model may finish loading while camera permission/session setup is
+        // still in progress. Honor the persisted chip selection as soon as the
+        // coordinator reaches recording instead of requiring a second tap.
+        if driveRecorderState == .recording,
+           trafficSignRecognitionEnabled,
+           trafficSignRuntime != nil,
+           !driveRecorderTrafficSignRecognitionActive,
+           driveRecorderTrafficSignRecognitionAvailable,
+           driveCaptureCoordinator?.setTrafficSignRecognitionEnabledDuringRecording(true) == true {
+            // The coordinator notification re-enters this method with its
+            // active state already committed; let that pass publish the rest.
+            return
+        }
+        if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
+            || (previousState == .recording) != (driveRecorderState == .recording) {
+            trafficSignRecorderGeneration &+= 1
+            trafficSignFeedbackGate.reset()
+            lastTrafficSignConsoleLogSignature = nil
+            lastTrafficSignConsoleLogAt = .distantPast
+            refreshTrafficSignFrameSnapshot()
+        }
+        if previousDashcamActive != driveRecorderDashcamActive {
+            refreshTrafficSignFrameSnapshot()
+        }
+        if !trafficSignRecognitionEnabled {
+            trafficSignRecognitionState = .disabled
+        } else if driveRecorderTrafficSignRecognitionActive,
+                  trafficSignRecognitionState == .unavailable {
+            trafficSignRecognitionUnavailableDetail = ""
+            trafficSignRecognitionState = .noRecognition
+        } else if trafficSignRuntime == nil {
+            trafficSignRecognitionState = .unavailable
+        } else if driveRecorderState == .recording,
+                  !driveRecorderTrafficSignRecognitionActive {
+            trafficSignRecognitionState = .unavailable
+            if trafficSignRecognitionUnavailableDetail.isEmpty {
+                trafficSignRecognitionUnavailableDetail =
+                    "The TSR camera output is unavailable for this recording configuration."
+            }
+        } else if trafficSignRecognitionState == .unavailable {
+            trafficSignRecognitionState = .noRecognition
+        }
+        panoramaxCaptureState = driveRecorderState
+        panoramaxCaptureCount = driveCaptureCoordinator?.capturedImageCount ?? 0
+        panoramaxLastCaptureAt = driveCaptureCoordinator?.lastCaptureAt
+        panoramaxLastCaptureDetail = driveCaptureCoordinator?.lastCaptureDetail ?? "Panoramax-Speicher nicht verfuegbar"
+        panoramaxLastAccuracyMeters = driveCaptureCoordinator?.lastAccuracyMeters
+        if previousState != driveRecorderState, canProcessPanoramaxUploads {
+            refreshPanoramaxBatches()
+        }
+        let trafficSignSessionEnded = previousState == .recording
+            && driveRecorderState != .recording
+        let trafficSignModuleBecameInactive = previousTrafficSignActive
+            && !driveRecorderTrafficSignRecognitionActive
+        if trafficSignSessionEnded
+            || trafficSignModuleBecameInactive
+            || !trafficSignRecognitionEnabled {
+            trafficSignOverridePolicy.clear()
+            trafficSignRecognitionActiveOverride = nil
+            trafficSignRecognitionLastEvent = nil
+            restoreBaseSpeedLimitPresentation()
+            if !trafficSignRecognitionEnabled {
+                trafficSignRecognitionState = .disabled
+            } else if trafficSignRuntime == nil {
+                trafficSignRecognitionState = .unavailable
+            } else if driveRecorderState == .recording,
+                      !driveRecorderTrafficSignRecognitionActive {
+                // A selected runtime can still be rejected by the concrete
+                // multi-output capture graph. Do not present that as an active
+                // recognizer which merely found no sign.
+                trafficSignRecognitionState = .unavailable
+            } else {
+                trafficSignRecognitionState = .noRecognition
+            }
+        }
+        if previousState != driveRecorderState
+            || previousDashcamURL != dashcamFileURL
+            || previousDashcamActive != driveRecorderDashcamActive {
+            refreshDashcamRecordings()
+        }
+    }
+
+    private func restoreBaseSpeedLimitPresentation() {
+        speedLimitKmh = currentLocalCorrectionSpeedKmh ?? currentBundledSpeedLimitKmh
+        speedLimitDisplayText = currentBaseSpeedLimitDisplayText
+        isUnlimitedSpeedLimitActive = currentBaseUnlimitedSpeedLimitActive
+        if let speedLimitKmh {
+            lastKnownSpeedLimitKmh = speedLimitKmh
+        }
+    }
+
+    func refreshDashcamRecordings() {
+        dashcamRecordings = DriveCaptureCoordinator.listDashcamRecordings()
+    }
+
+    func deleteDashcamRecording(_ recording: DashcamRecording) {
+        guard !isDriveRecorderActive else { return }
+        _ = DriveCaptureCoordinator.deleteDashcamRecording(id: recording.id)
+        refreshDashcamRecordings()
+    }
+
+    func deleteDashcamRecordings(ids: Set<String>) {
+        guard !isDriveRecorderActive, !ids.isEmpty else { return }
+        for id in ids {
+            _ = DriveCaptureCoordinator.deleteDashcamRecording(id: id)
+        }
+        refreshDashcamRecordings()
+    }
+
+    func refreshPanoramaxBatches() {
+        guard let store = panoramaxQueueStore else {
+            panoramaxBatches = []
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: store)
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+        }
+    }
+
+    var panoramaxGalleryItems: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        panoramaxBatches.flatMap { batch in batch.items.map { (batch: batch, item: $0) } }
+            .sorted { $0.item.metadata.capturedAt > $1.item.metadata.capturedAt }
+    }
+
+    func panoramaxThumbnailURL(for item: PanoramaxItemRecord) -> URL? {
+        panoramaxQueueStore?.thumbnailURL(for: item)
+    }
+
+    func panoramaxOriginalURL(for item: PanoramaxItemRecord) -> URL? {
+        panoramaxQueueStore?.originalURL(for: item)
+    }
+
+    func setPanoramaxItemIncluded(batchID: String, itemID: String, included: Bool) {
+        guard canProcessPanoramaxUploads,
+              !activePanoramaxUploadBatchIDs.contains(batchID),
+              let batch = try? panoramaxQueueStore?.getBatch(batchID),
+              DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state),
+              let item = batch.items.first(where: { $0.itemID == itemID }),
+              DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state) else { return }
+        do {
+            _ = try panoramaxQueueStore?.updateItem(
+                batchID: batchID,
+                itemID: itemID,
+                state: included ? .included : .excluded
+            )
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Bildstatus konnte nicht gespeichert werden"
+        }
+    }
+
+    func togglePanoramaxFavorite(batchID: String, itemID: String) {
+        guard canProcessPanoramaxUploads,
+              !activePanoramaxUploadBatchIDs.contains(batchID) else { return }
+        guard let batch = panoramaxBatches.first(where: { $0.batchID == batchID }),
+              let item = batch.items.first(where: { $0.itemID == itemID }) else { return }
+        do {
+            _ = try panoramaxQueueStore?.updateItemFavorite(batchID: batchID, itemID: itemID, isFavorite: !item.isFavorite)
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Favorit konnte nicht gespeichert werden"
+        }
+    }
+
+    private func enforcePanoramaxStorageLimit() {
+        panoramaxStorageLimitGeneration &+= 1
+        let storageGeneration = panoramaxStorageLimitGeneration
+        panoramaxStorageLimitTask?.cancel()
+        guard !panoramaxUnlimitedStorage, let store = panoramaxQueueStore else {
+            panoramaxStorageLimitTask = nil
+            return
+        }
+        let maxBytes = Int64(panoramaxStorageLimitMB * 1_000_000)
+        panoramaxStorageLimitTask = Task { @MainActor [weak self] in
+            // Slider updates arrive in bursts. Debounce them so a transient
+            // lower value cannot evict images after the user chose a larger
+            // limit or switched to unlimited storage.
+            do {
+                try await Task.sleep(nanoseconds: 250_000_000)
+            } catch {
+                return
+            }
+            guard let self,
+                  storageGeneration == panoramaxStorageLimitGeneration,
+                  !panoramaxUnlimitedStorage else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.enforceStorageLimit(
+                store: store,
+                maxBytes: maxBytes
+            )
+            guard !Task.isCancelled,
+                  storageGeneration == panoramaxStorageLimitGeneration else { return }
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+            panoramaxStorageLimitTask = nil
+        }
+    }
+
+    func deletePanoramaxItem(batchID: String, itemID: String) {
+        guard canProcessPanoramaxUploads,
+              let store = panoramaxQueueStore else { return }
+        let itemIDs: Set<String> = [itemID]
+        panoramaxLocalDeletionIntents.mark(batchID: batchID, itemIDs: itemIDs)
+        cancelPanoramaxUploadForLocalDeletion(
+            batchID: batchID,
+            itemIDs: itemIDs,
+            store: store
+        )
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.deleteItems(
+                store: store,
+                itemIDsByBatch: [batchID: [itemID]]
+            )
+            reconcilePanoramaxLocalDeletionIntents(
+                [batchID: itemIDs],
+                store: store
+            )
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+        }
+    }
+
+    func deletePanoramaxSelections(_ selections: [(batchID: String, itemID: String)]) {
+        guard canProcessPanoramaxUploads, let store = panoramaxQueueStore else { return }
+        let selectionsByBatch = Dictionary(grouping: selections, by: { $0.batchID })
+        let deletable = selectionsByBatch.reduce(into: [String: Set<String>]()) { result, entry in
+            result[entry.key] = Set(entry.value.map(\.itemID))
+        }
+        guard !deletable.isEmpty else { return }
+        for (batchID, itemIDs) in deletable {
+            panoramaxLocalDeletionIntents.mark(batchID: batchID, itemIDs: itemIDs)
+            cancelPanoramaxUploadForLocalDeletion(
+                batchID: batchID,
+                itemIDs: itemIDs,
+                store: store
+            )
+        }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.deleteItems(
+                store: store,
+                itemIDsByBatch: deletable
+            )
+            reconcilePanoramaxLocalDeletionIntents(deletable, store: store)
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+        }
+    }
+
+    private func reconcilePanoramaxLocalDeletionIntents(
+        _ requestedItemIDsByBatch: [String: Set<String>],
+        store: PanoramaxQueueStore
+    ) {
+        for (batchID, requestedItemIDs) in requestedItemIDsByBatch {
+            do {
+                let remainingItemIDs = Set(
+                    try store.getBatch(batchID)?.items.map(\.itemID) ?? []
+                )
+                panoramaxLocalDeletionIntents.reconcile(
+                    batchID: batchID,
+                    requestedItemIDs: requestedItemIDs,
+                    remainingItemIDs: remainingItemIDs
+                )
+            } catch {
+                // Keep every intent when the durable queue cannot be read. A
+                // later explicit delete can retry, but upload must stay blocked.
+            }
+        }
+    }
+
+    private func cancelPanoramaxUploadForLocalDeletion(
+        batchID: String,
+        itemIDs: Set<String>,
+        store: PanoramaxQueueStore
+    ) {
+        let batchState = (try? store.getBatch(batchID))?.state
+        guard PanoramaxGalleryDeletionPolicy.cancelUploadTaskIfNeeded(
+            panoramaxUploadTasks[batchID],
+            deleting: itemIDs,
+            inFlightItemID: panoramaxInFlightItemIDByBatch[batchID],
+            batchState: batchState
+        ) else { return }
+        if let progress = panoramaxUploadProgressByBatch[batchID] {
+            panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                completedItems: progress.completedItems,
+                totalItems: progress.totalItems,
+                phase: .stopping
+            )
+        }
+        panoramaxUploadStatusByBatch[batchID] = NSLocalizedString(
+            "panoramax.gallery.status_deleting_active_upload",
+            comment: ""
+        )
+    }
+
+    private func notePanoramaxCleanupFailures(_ failedPaths: [String]) {
+        guard !failedPaths.isEmpty else { return }
+        panoramaxMaintenanceIssue = String(
+            format: NSLocalizedString("panoramax.gallery.cleanup_failed", comment: ""),
+            failedPaths.count
+        )
+    }
+
+    private func startPanoramaxQueueMaintenance() {
+        guard let store = panoramaxQueueStore else { return }
+        panoramaxQueueMaintenanceInProgress = true
+        panoramaxQueueMaintenanceGeneration &+= 1
+        let generation = panoramaxQueueMaintenanceGeneration
+        let deleteCompletedUploads = panoramaxDeleteUploadedImages
+        panoramaxQueueMaintenanceTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
+                store: store,
+                deleteCompletedUploads: deleteCompletedUploads
+            )
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+            if generation == panoramaxQueueMaintenanceGeneration {
+                panoramaxQueueMaintenanceInProgress = false
+                panoramaxQueueMaintenanceTask = nil
+            }
+        }
+    }
+
+    /// Applies or retries the opt-in retention policy to batches whose remote
+    /// processing already completed. Disk scanning/deletion runs on the shared
+    /// serial maintenance actor, never on SwiftUI's main actor.
+    private func retryCompletedPanoramaxRetention() {
+        guard panoramaxDeleteUploadedImages, let store = panoramaxQueueStore else { return }
+        panoramaxQueueMaintenanceInProgress = true
+        panoramaxQueueMaintenanceGeneration &+= 1
+        let generation = panoramaxQueueMaintenanceGeneration
+        panoramaxQueueMaintenanceTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+            let result = await PanoramaxQueueMaintenanceExecutor.shared.retryCompletedRetention(store: store)
+            applyPanoramaxMaintenanceResult(
+                result,
+                publicationGeneration: publicationGeneration
+            )
+            if generation == panoramaxQueueMaintenanceGeneration {
+                panoramaxQueueMaintenanceInProgress = false
+                panoramaxQueueMaintenanceTask = nil
+            }
+        }
+    }
+
+    private func nextPanoramaxBatchPublicationGeneration() -> UInt64 {
+        panoramaxBatchPublicationGeneration &+= 1
+        return panoramaxBatchPublicationGeneration
+    }
+
+    private func applyPanoramaxMaintenanceResult(
+        _ result: PanoramaxQueueMaintenanceResult,
+        publicationGeneration: UInt64
+    ) {
+        if let startup = result.startupCleanup, startup.hasFailures {
+            notePanoramaxCleanupFailures(startup.failedRelativePaths)
+        }
+        notePanoramaxCleanupFailures(result.deletion.failedRelativePaths)
+        guard publicationGeneration == panoramaxBatchPublicationGeneration,
+              result.batchLoadSucceeded else { return }
+        panoramaxBatches = result.batches
+    }
+
+    func approvePanoramaxBatch(batchID: String) {
+        guard canProcessPanoramaxUploads else {
+            panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme bearbeiten"
+            return
+        }
+        do {
+            guard var batch = try panoramaxQueueStore?.getBatch(batchID) else { return }
+            guard batch.state == .awaitingReview else { return }
+            batch.items = batch.items.map { item in
+                guard item.state == .captured else { return item }
+                var included = item
+                included.state = .included
+                return included
+            }
+            guard batch.items.contains(where: { $0.state == .included || $0.state == .retryableError }) else {
+                panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt"
+                return
+            }
+            batch.state = .approved
+            try panoramaxQueueStore?.updateBatch(batch)
+            refreshPanoramaxBatches()
+        } catch {
+            panoramaxLastCaptureDetail = "Batch konnte nicht freigegeben werden"
+        }
+    }
+
+    func panoramaxUploadStatus(for batchID: String) -> String? {
+        panoramaxUploadStatusByBatch[batchID]
+    }
+
+    var panoramaxAggregateUploadProgress: PanoramaxUploadProgress? {
+        let active = activePanoramaxUploadBatchIDs.compactMap { panoramaxUploadProgressByBatch[$0] }
+        guard !active.isEmpty else { return nil }
+        let completed = active.reduce(0) { $0 + $1.completedItems }
+        let total = active.reduce(0) { $0 + $1.totalItems }
+        let phase: PanoramaxUploadProgress.Phase
+        if active.contains(where: { $0.phase == .stopping }) {
+            phase = .stopping
+        } else if active.contains(where: { $0.phase == .uploading }) {
+            phase = .uploading
+        } else if active.contains(where: { $0.phase == .processing }) {
+            phase = .processing
+        } else {
+            phase = .preparing
+        }
+        return PanoramaxUploadProgress(completedItems: completed, totalItems: total, phase: phase)
+    }
+
+    var panoramaxUploadIsReady: Bool {
+        panoramaxAccount.isConnected && panoramaxAccount.tokenForUpload() != nil
+    }
+
+    /// Applies the gallery selection to each affected batch, then starts the existing
+    /// upload-set workflow. Unselected, non-terminal items are explicitly excluded.
+    func uploadPanoramaxSelections(_ selections: [(batchID: String, itemID: String)]) {
+        guard canProcessPanoramaxUploads else {
+            for batchID in Set(selections.map(\.batchID)) {
+                panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme starten"
+            }
+            return
+        }
+        guard panoramaxUploadIsReady, let store = panoramaxQueueStore else { return }
+        let selectedByBatch = Dictionary(grouping: selections, by: { $0.batchID })
+        for (batchID, selected) in selectedByBatch {
+            guard !activePanoramaxUploadBatchIDs.contains(batchID) else { continue }
+            let loadedBatch: PanoramaxBatchRecord?
+            do {
+                loadedBatch = try store.getBatch(batchID)
+            } catch {
+                panoramaxUploadStatusByBatch[batchID] = "Auswahl konnte nicht gelesen werden"
+                continue
+            }
+            guard let loadedBatch,
+                  DriveRecorderPolicy.canEditPanoramaxSelection(in: loadedBatch.state) else { continue }
+            var batch = loadedBatch
+            let editableIDs = Set(batch.items.filter { DriveRecorderPolicy.canSelectPanoramaxItem(in: $0.state) }.map(\.itemID))
+            let selectedIDs = Set(selected.map(\.itemID)).intersection(editableIDs)
+            guard !selectedIDs.isEmpty else { continue }
+            batch.items = batch.items.map { item in
+                guard editableIDs.contains(item.itemID) else { return item }
+                var updated = item
+                updated.state = selectedIDs.contains(item.itemID) ? .queued : .excluded
+                return updated
+            }
+            batch.state = .approved
+            do {
+                try store.updateBatch(batch)
+            } catch {
+                panoramaxUploadStatusByBatch[batchID] = "Auswahl konnte nicht gespeichert werden"
+                continue
+            }
+            uploadPanoramaxBatch(batchID: batchID)
+        }
+        refreshPanoramaxBatches()
+    }
+
+    func uploadPanoramaxBatch(batchID: String) {
+        guard canProcessPanoramaxUploads else {
+            panoramaxUploadStatusByBatch[batchID] = "Upload erst nach Ende der Aufnahme starten"
+            return
+        }
+        let origin = panoramaxAccount.normalizedOrigin
+        guard let token = panoramaxAccount.tokenForUpload() else {
+            panoramaxUploadStatusByBatch[batchID] = "Panoramax-Konto verbinden und bestaetigen"
+            return
+        }
+        guard let store = panoramaxQueueStore else {
+            panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
+            return
+        }
+        guard panoramaxUploadTasks[batchID] == nil else {
+            panoramaxUploadStatusByBatch[batchID] = "Upload fuer diesen Batch laeuft bereits"
+            return
+        }
+        let loadedBatch: PanoramaxBatchRecord?
+        do {
+            loadedBatch = try store.getBatch(batchID)
+        } catch {
+            panoramaxUploadStatusByBatch[batchID] = "Batch konnte nicht gelesen werden"
+            return
+        }
+        guard var batch = loadedBatch,
+              DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) else {
+            panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
+            return
+        }
+        let selected = batch.items.filter {
+            $0.state == .queued || $0.state == .included || $0.state == .retryableError
+        }
+        let previouslyUploadedCount = batch.items.filter {
+            $0.state == .uploaded || $0.state == .accepted || $0.state == .duplicate
+        }.count
+        let canResumeRemoteSet = DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+            batchState: batch.state,
+            remoteUploadSetID: batch.remoteUploadSetID,
+            itemStates: batch.items.map(\.state)
+        )
+        guard !selected.isEmpty || canResumeRemoteSet || batch.state == .processing else {
+            panoramaxUploadStatusByBatch[batchID] = "Keine Bilder ausgewaehlt"
+            return
+        }
+        if batch.state != .processing {
+            batch.state = batch.remoteUploadSetID == nil ? .creatingUploadSet : .uploading
+        }
+        batch.instanceOrigin = origin.absoluteString
+        do {
+            try store.updateBatch(batch)
+        } catch {
+            panoramaxUploadStatusByBatch[batchID] = "Upload-Status konnte nicht gespeichert werden"
+            return
+        }
+        refreshPanoramaxBatches()
+        panoramaxUploadStatusByBatch[batchID] = "Upload wird vorbereitet"
+        panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+            completedItems: previouslyUploadedCount,
+            totalItems: previouslyUploadedCount + selected.count,
+            phase: .preparing
+        )
+
+        activePanoramaxUploadBatchIDs.insert(batchID)
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer {
+                panoramaxUploadTasks[batchID] = nil
+                panoramaxInFlightItemIDByBatch[batchID] = nil
+                activePanoramaxUploadBatchIDs.remove(batchID)
+                panoramaxUploadProgressByBatch[batchID] = nil
+            }
+            do {
+                try await performPanoramaxUpload(
+                    batchID: batchID,
+                    initialBatch: batch,
+                    selected: selected,
+                    previouslyUploadedCount: previouslyUploadedCount,
+                    origin: origin,
+                    token: token,
+                    store: store
+                )
+            } catch {
+                handlePanoramaxUploadFailure(batchID: batchID, error: error, store: store)
+            }
+        }
+        panoramaxUploadTasks[batchID] = task
+    }
+
+    func isPanoramaxUploadActive(batchID: String) -> Bool {
+        activePanoramaxUploadBatchIDs.contains(batchID)
+    }
+
+    private func performPanoramaxUpload(
+        batchID: String,
+        initialBatch: PanoramaxBatchRecord,
+        selected: [PanoramaxItemRecord],
+        previouslyUploadedCount: Int,
+        origin: URL,
+        token: String,
+        store: PanoramaxQueueStore
+    ) async throws {
+        let client = PanoramaxUploadClient(origin: origin, token: token)
+        let localDeletionIntents = panoramaxLocalDeletionIntents
+        var uploadSetID = initialBatch.remoteUploadSetID
+
+        if initialBatch.state == .processing {
+            guard let uploadSetID else { throw PanoramaxProcessingError.missingRemoteUploadSet }
+            panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                completedItems: previouslyUploadedCount,
+                totalItems: previouslyUploadedCount,
+                phase: .processing
+            )
+            try requirePanoramaxProcessingAllowed()
+            do {
+                _ = try await client.pollUntilReady(uploadSetID: uploadSetID)
+                try await finishPanoramaxUpload(batchID: batchID, store: store)
+            } catch PanoramaxUploadClient.UploadError.timedOut {
+                panoramaxUploadStatusByBatch[batchID] = "Upload uebertragen – Verarbeitung laeuft weiter"
+            }
+            return
+        }
+
+        if uploadSetID == nil {
+            try requirePanoramaxProcessingAllowed()
+            let title = "YouSpeed \(initialBatch.createdAt.formatted(date: .abbreviated, time: .shortened))"
+            let uploadSet = try await client.createUploadSet(
+                title: title,
+                estimatedFileCount: max(selected.count, 1)
+            )
+            uploadSetID = uploadSet.id
+            guard var current = try store.getBatch(batchID) else { return }
+            current.remoteUploadSetID = uploadSet.id
+            current.state = .uploading
+            try store.updateBatch(current)
+            refreshPanoramaxBatches()
+            // Persist a server ID that was already created even if a drive-start
+            // cancellation arrived while the response was in flight. The next
+            // network boundary remains blocked, and retry will reuse this set.
+            try requirePanoramaxProcessingAllowed()
+        }
+
+        guard let uploadSetID else { throw PanoramaxProcessingError.missingRemoteUploadSet }
+        var total = previouslyUploadedCount + selected.count
+        panoramaxUploadStatusByBatch[batchID] = "\(previouslyUploadedCount)/\(total) Bilder werden uebertragen"
+        var uploaded = previouslyUploadedCount
+        panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+            completedItems: uploaded,
+            totalItems: total,
+            phase: .uploading
+        )
+        for item in selected {
+            try requirePanoramaxProcessingAllowed()
+            guard let durableItem = try store.getBatch(batchID)?
+                .items.first(where: { $0.itemID == item.itemID }),
+                  !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID),
+                  durableItem.state == .queued
+                    || durableItem.state == .included
+                    || durableItem.state == .retryableError,
+                  let fileURL = panoramaxOriginalURL(for: durableItem) else {
+                total = max(uploaded, total - 1)
+                panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                    completedItems: uploaded,
+                    totalItems: total,
+                    phase: .uploading
+                )
+                continue
+            }
+
+            panoramaxInFlightItemIDByBatch[batchID] = item.itemID
+            do {
+                defer {
+                    if panoramaxInFlightItemIDByBatch[batchID] == item.itemID {
+                        panoramaxInFlightItemIDByBatch[batchID] = nil
+                    }
+                }
+                do {
+                    try await client.upload(
+                        file: fileURL,
+                        uploadSetID: uploadSetID,
+                        fileName: "\(item.itemID).jpg",
+                        beforeRequest: {
+                            try Task.checkCancellation()
+                            guard !localDeletionIntents.contains(
+                                batchID: batchID,
+                                itemID: item.itemID
+                            ) else {
+                                throw PanoramaxProcessingError.locallyDeletedItem
+                            }
+                            // Persist the in-flight marker only after multipart
+                            // preparation and limiter waiting, immediately before
+                            // the transport can put bytes on the wire. A local
+                            // deletion makes this atomic update fail, so a queued
+                            // stale snapshot never reaches the transport.
+                            try store.updateItem(
+                                batchID: batchID,
+                                itemID: item.itemID,
+                                state: .uploading
+                            )
+                        }
+                    )
+                } catch {
+                    if localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) {
+                        total = max(uploaded, total - 1)
+                        refreshPanoramaxBatches()
+                        continue
+                    }
+                    let durableItemAfterFailure: PanoramaxItemRecord?
+                    do {
+                        durableItemAfterFailure = try store.getBatch(batchID)?
+                            .items.first(where: { $0.itemID == item.itemID })
+                    } catch {
+                        throw error
+                    }
+                    // Local deletion wins over any stale queued snapshot or
+                    // transport failure. The record is gone, so there is no
+                    // retry state to write and no reason to stop other items.
+                    guard let durableItemAfterFailure else {
+                        total = max(uploaded, total - 1)
+                        refreshPanoramaxBatches()
+                        continue
+                    }
+                    // A preparation/permit cancellation never reached the
+                    // before-request hook, so its queued item must stay retryable.
+                    if durableItemAfterFailure.state == .uploading {
+                        _ = try? store.updateItem(
+                            batchID: batchID,
+                            itemID: item.itemID,
+                            state: PanoramaxUploadClient.durableItemStateAfterUploadFailure(
+                                error,
+                                taskIsCancelled: Task.isCancelled
+                            )
+                        )
+                    }
+                    refreshPanoramaxBatches()
+                    throw error
+                }
+                // A successful response is durable evidence that this original
+                // was accepted, unless authoritative local deletion removed it
+                // while the response was in flight. `updateItem` never recreates
+                // a missing item.
+                guard !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID) else {
+                    total = max(uploaded, total - 1)
+                    refreshPanoramaxBatches()
+                    continue
+                }
+                do {
+                    try store.updateItem(batchID: batchID, itemID: item.itemID, state: .uploaded)
+                } catch PanoramaxQueueStore.QueueError.unknownItem {
+                    total = max(uploaded, total - 1)
+                    refreshPanoramaxBatches()
+                    continue
+                }
+            }
+            uploaded += 1
+            panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(total) Bilder uebertragen"
+            panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                completedItems: uploaded,
+                totalItems: total,
+                phase: .uploading
+            )
+            refreshPanoramaxBatches()
+            try requirePanoramaxProcessingAllowed()
+        }
+
+        guard var current = try store.getBatch(batchID) else { return }
+        let remaining = current.items.filter {
+            $0.state == .queued || $0.state == .included || $0.state == .retryableError
+        }
+        if !remaining.isEmpty {
+            current.state = .partial
+            try store.updateBatch(current)
+            refreshPanoramaxBatches()
+            panoramaxUploadStatusByBatch[batchID] = "\(uploaded)/\(total) uebertragen – erneut versuchen"
+            return
+        }
+
+        try requirePanoramaxProcessingAllowed()
+        _ = try await client.complete(uploadSetID: uploadSetID)
+        current = try store.getBatch(batchID) ?? current
+        current.state = .processing
+        try store.updateBatch(current)
+        refreshPanoramaxBatches()
+        panoramaxUploadStatusByBatch[batchID] = "Panoramax verarbeitet den Batch"
+        panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+            completedItems: uploaded,
+            totalItems: total,
+            phase: .processing
+        )
+        // Completion has already reached the server. Persist that transition
+        // before cancellation, then prohibit the next polling request.
+        try requirePanoramaxProcessingAllowed()
+        do {
+            _ = try await client.pollUntilReady(uploadSetID: uploadSetID)
+            try await finishPanoramaxUpload(batchID: batchID, store: store)
+        } catch PanoramaxUploadClient.UploadError.timedOut {
+            panoramaxUploadStatusByBatch[batchID] = "Upload uebertragen – Verarbeitung laeuft weiter"
+        }
+    }
+
+    /// Finalizes the remote set before applying local retention. This ordering
+    /// preserves the accepted-item ledger for resume until Panoramax confirms
+    /// that server-side processing is complete.
+    private func finishPanoramaxUpload(batchID: String, store: PanoramaxQueueStore) async throws {
+        let publicationGeneration = nextPanoramaxBatchPublicationGeneration()
+        let result = try await PanoramaxQueueMaintenanceExecutor.shared.finalizeRemoteCompletion(
+            store: store,
+            batchID: batchID,
+            deleteUploadedImages: panoramaxDeleteUploadedImages
+        )
+        let cleanupFailures = result.deletion.failedRelativePaths
+        applyPanoramaxMaintenanceResult(
+            result,
+            publicationGeneration: publicationGeneration
+        )
+        panoramaxUploadStatusByBatch[batchID] = cleanupFailures.isEmpty
+            ? "Upload abgeschlossen"
+            : "Upload abgeschlossen – lokale Dateien konnten nicht vollstaendig entfernt werden"
+    }
+
+    private func requirePanoramaxProcessingAllowed() throws {
+        guard !Task.isCancelled, canProcessPanoramaxUploads else {
+            throw CancellationError()
+        }
+    }
+
+    private func handlePanoramaxUploadFailure(
+        batchID: String,
+        error: Error,
+        store: PanoramaxQueueStore
+    ) {
+        let wasCancelled = Task.isCancelled
+            || error is CancellationError
+            || (error as? URLError)?.code == .cancelled
+        do {
+            // This also handles a persistence failure after a successful
+            // server response: any item still durably `.uploading` has an
+            // unknown remote outcome and must be quarantined immediately,
+            // regardless of the error that brought us here.
+            _ = try store.abandonInFlightItems(batchID: batchID)
+            refreshPanoramaxBatches()
+        } catch PanoramaxQueueStore.QueueError.unknownBatch {
+            // Authoritative deletion of the final local item may remove the
+            // batch while a cancelled request is unwinding. Nothing remains to
+            // quarantine or resurrect.
+            panoramaxUploadStatusByBatch[batchID] = nil
+            refreshPanoramaxBatches()
+            return
+        } catch {
+            panoramaxUploadStatusByBatch[batchID] =
+                "Upload beendet; sicherer Status konnte nicht gespeichert werden"
+            refreshPanoramaxBatches()
+            return
+        }
+        panoramaxUploadStatusByBatch[batchID] = wasCancelled
+            ? "Upload gestoppt; wartende Bilder bleiben vorgemerkt"
+            : "Upload fehlgeschlagen: \(error.localizedDescription)"
+        refreshPanoramaxBatches()
+    }
+
+    func stopPanoramaxUploads() {
+        stopPanoramaxUploads(status: "Upload wird gestoppt")
+    }
+
+    private func cancelPanoramaxUploadsForRecorderStart() {
+        stopPanoramaxUploads(status: "Upload fuer die Fahrtaufnahme pausiert")
+    }
+
+    private func stopPanoramaxUploads(status: String) {
+        for (batchID, task) in panoramaxUploadTasks {
+            _ = try? panoramaxQueueStore?.abandonInFlightItems(batchID: batchID)
+            if let progress = panoramaxUploadProgressByBatch[batchID] {
+                panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
+                    completedItems: progress.completedItems,
+                    totalItems: progress.totalItems,
+                    phase: .stopping
+                )
+            }
+            task.cancel()
+            panoramaxUploadStatusByBatch[batchID] = status
+        }
+        refreshPanoramaxBatches()
+    }
+
+    private enum PanoramaxProcessingError: LocalizedError {
+        case missingRemoteUploadSet
+        case locallyDeletedItem
+
+        var errorDescription: String? {
+            switch self {
+            case .missingRemoteUploadSet: return "Panoramax-Upload-ID fehlt"
+            case .locallyDeletedItem: return "Lokales Bild wurde gelöscht"
+            }
+        }
     }
 
     var isScreenshotMode: Bool {
@@ -1185,6 +3075,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         self?.applySyncProgress(progress)
                     }
                 }
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: sync.bundleVersion,
+                    dbPath: sync.dbPath
+                )
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
                 speedLimitService = makeSpeedLimitService(
@@ -1243,6 +3137,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let activeExists = activeURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
                     if !activeExists {
                         let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                        invalidateTrafficSignOverrideIfBundleWillChange(
+                            bundleVersion: bootstrap.bundleVersion,
+                            dbPath: bootstrap.dbPath
+                        )
                         activeBundleVersion = bootstrap.bundleVersion
                         activeDBPath = bootstrap.dbPath
                         await applyPenaltyRulesForActiveBundle()
@@ -1351,6 +3249,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 lastDownloadProgressBytes = nil
                 syncStatus = "bootstrapping"
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: bootstrap.bundleVersion,
+                    dbPath: bootstrap.dbPath
+                )
                 activeBundleVersion = bootstrap.bundleVersion
                 activeDBPath = bootstrap.dbPath
                 Self.logger.notice(
@@ -1382,6 +3284,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         self?.applySyncProgress(progress)
                     }
                 }
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: sync.bundleVersion,
+                    dbPath: sync.dbPath
+                )
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
                 await applyPenaltyRulesForActiveBundle()
@@ -1431,8 +3337,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             do {
                 let removed = try await bundleManager.flushLocalContributionState()
                 resetWayMatchContinuity()
+                let currentWayID = latestTrafficSignDetectionContext?.wayId
+                    ?? limitWayID?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let removedCurrentRoadCorrection = currentWayID.map {
+                    self.localSpeedOverridesByWayID[$0] != nil
+                        || self.localSpeedOverrideValuesByWayID[$0] != nil
+                        || self.localSpeedOverrideRevisionsByWayID[$0] != nil
+                } ?? false
                 localSpeedOverridesByWayID.removeAll(keepingCapacity: false)
                 localSpeedOverrideValuesByWayID.removeAll(keepingCapacity: false)
+                localSpeedOverrideRevisionsByWayID.removeAll(keepingCapacity: false)
+                activeLocalSpeedCorrection = nil
+                if removedCurrentRoadCorrection {
+                    currentLocalCorrectionSpeedKmh = nil
+                    currentBaseSpeedLimitDisplayText = nil
+                    currentBaseUnlimitedSpeedLimitActive =
+                        currentBundledUnlimitedSpeedLimitActive
+                    invalidateTrafficSignOverrideForBaseSourceMutation()
+                }
                 maintenanceMessage = removed > 0
                     ? "Lokale Korrekturen geloescht (\(removed) Eintraege). Starte Synchronisierung."
                     : "Keine lokalen Korrekturen gefunden. Starte Synchronisierung."
@@ -1464,6 +3386,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             do {
                 let removed = try await bundleManager.removeDownloadedBundlesKeepingSeed()
                 let bootstrap = try await bundleManager.bootstrapSeedIfNeeded()
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: bootstrap.bundleVersion,
+                    dbPath: bootstrap.dbPath
+                )
                 activeBundleVersion = bootstrap.bundleVersion
                 activeDBPath = bootstrap.dbPath
                 await applyPenaltyRulesForActiveBundle()
@@ -1549,6 +3475,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     startupResult = try await bundleManager.bootstrapSeedIfNeeded()
                 }
 
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: startupResult.bundleVersion,
+                    dbPath: startupResult.dbPath
+                )
                 activeBundleVersion = startupResult.bundleVersion
                 activeDBPath = startupResult.dbPath
                 if startupResult.dbPath.isEmpty {
@@ -1586,6 +3516,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let fixture = screenshotState.fixture
         appScreenshotState = screenshotState
         driveStatus = "running"
+        invalidateTrafficSignOverrideIfBundleWillChange(
+            bundleVersion: "screenshot",
+            dbPath: screenshotState.rawValue
+        )
         activeBundleVersion = "screenshot"
         activeDBPath = screenshotState.rawValue
         currentSpeedKmh = fixture.currentSpeedKmh
@@ -1725,7 +3659,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func startDriving() {
-        if speedLimitService == nil {
+        if speedLimitService == nil && startupDataState != .ready {
             ensureSeedBootstrapIfNeeded()
         }
         isDriving = true
@@ -1747,7 +3681,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func stopDriving() {
         isDriving = false
+        driveCaptureCoordinator?.stop()
         locationManager.stopUpdatingLocation()
+        latestTrafficSignDetectionContext = nil
+        currentTrafficSignSourceSignature = nil
+        trafficSignFrameContextIsCurrent = false
+        latestTrafficSignLookupFixID = 0
+        trafficSignContextGeneration &+= 1
+        trafficSignFrameState.update(nil)
+        trafficSignOverridePolicy.clear()
+        trafficSignRecognitionActiveOverride = nil
+        trafficSignRecognitionLastEvent = nil
+        if trafficSignRecognitionEnabled {
+            trafficSignRecognitionState = trafficSignRuntime == nil
+                ? .unavailable
+                : .noRecognition
+        }
         resetDerivedSpeedTracking()
         driveStatus = "stopped"
         cancelSpeedCapture(reason: nil)
@@ -1812,6 +3761,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
             }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
+            }
         } catch {
             lastError = "gps log reset failed: \(error.localizedDescription)"
         }
@@ -1825,6 +3778,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             resetPreparedMatchLogFile()
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
+            }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
             }
             lastError = ""
         } catch {
@@ -1846,7 +3803,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             for url in existingURLs where
                 url.pathExtension == "ndjson" &&
-                url.lastPathComponent.contains("drive_match_log") {
+                (url.lastPathComponent.contains("drive_match_log")
+                    || url.lastPathComponent.contains("tsr_log")) {
                 try fileManager.removeItem(at: url)
             }
 
@@ -1857,6 +3815,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             resetPreparedMatchLogFile()
             if let matchLogURL = prepareMatchLogFileIfNeeded() {
                 try Data().write(to: matchLogURL, options: .atomic)
+            }
+            resetPreparedTSRLogFile()
+            if let tsrLogURL = prepareTSRLogFileIfNeeded() {
+                try Data().write(to: tsrLogURL, options: .atomic)
             }
             lastError = ""
         } catch {
@@ -2380,10 +4342,34 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     func refreshLocalObservations() async {
         do {
             let observations = try await localObservationStore.fetchObservations(limit: 500)
+            let resolvedNumeric = Self.resolveLocalSpeedOverrides(from: observations)
+            let resolvedValues = Self.resolveLocalSpeedOverrideValues(from: observations)
+            let resolvedRevisions = Self.resolveLocalSpeedOverrideRevisions(from: observations)
+            let currentWayID = latestTrafficSignDetectionContext?.wayId
+                ?? limitWayID?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let currentRoadCorrectionChanged = currentWayID.map {
+                localSpeedOverridesByWayID[$0] != resolvedNumeric[$0]
+                    || localSpeedOverrideValuesByWayID[$0] != resolvedValues[$0]
+                    || localSpeedOverrideRevisionsByWayID[$0] != resolvedRevisions[$0]
+            } ?? false
             localObservations = observations
-            localSpeedOverridesByWayID = Self.resolveLocalSpeedOverrides(from: observations)
-            localSpeedOverrideValuesByWayID = Self.resolveLocalSpeedOverrideValues(from: observations)
+            localSpeedOverridesByWayID = resolvedNumeric
+            localSpeedOverrideValuesByWayID = resolvedValues
+            localSpeedOverrideRevisionsByWayID = resolvedRevisions
             localObservationStreetNames = resolveStreetNames(for: observations)
+            if currentRoadCorrectionChanged, let currentWayID {
+                if activeLocalSpeedCorrection?.wayID == currentWayID,
+                   activeLocalSpeedCorrection?.maxspeedValue != resolvedValues[currentWayID] {
+                    activeLocalSpeedCorrection = nil
+                }
+                currentLocalCorrectionSpeedKmh = resolvedNumeric[currentWayID]
+                currentBaseSpeedLimitDisplayText = Self.speedLimitDisplayText(
+                    for: resolvedValues[currentWayID]
+                )
+                currentBaseUnlimitedSpeedLimitActive = resolvedValues[currentWayID] == nil
+                    && currentBundledUnlimitedSpeedLimitActive
+                invalidateTrafficSignOverrideForBaseSourceMutation()
+            }
         } catch {
             localObservationStatus = "Lokale Beobachtungen konnten nicht geladen werden: \(error.localizedDescription)"
             lastError = localObservationStatus
@@ -2430,6 +4416,30 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         return resolved
+    }
+
+    static func resolveLocalSpeedOverrideRevisions(
+        from observations: [LocalObservation]
+    ) -> [String: String] {
+        var resolved: [String: String] = [:]
+        for observation in observations {
+            guard observation.state != .discarded,
+                  let wayID = observation.roadCandidateIDs.first?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !wayID.isEmpty,
+                  let value = observation.value?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !value.isEmpty,
+                  resolved[wayID] == nil else { continue }
+            resolved[wayID] = localSpeedCorrectionRevisionToken(for: observation)
+        }
+        return resolved
+    }
+
+    private static func localSpeedCorrectionRevisionToken(
+        for observation: LocalObservation
+    ) -> String {
+        "id:\(observation.id)|updated:\(observation.updatedAtUTC)|state:\(observation.state.rawValue)|source:\(observation.sourceVersion)"
     }
 
     static func speedLimitDisplayText(for maxspeedValue: String?) -> String? {
@@ -2502,6 +4512,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         utterance.voice = AVSpeechSynthesisVoice(language: Self.speedCaptureSpeechLocaleIdentifier)
             ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? Self.speedCaptureSpeechLocaleIdentifier)
         utterance.rate = 0.46
+        prepareSpeechPlaybackAudioSession()
         speechSynthesizer.speak(utterance)
 
         speedCapturePromptFallbackTask?.cancel()
@@ -2667,12 +4678,29 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     localSpeedOverrideValuesByWayID[wayID] = selection.value
+                    localSpeedOverrideRevisionsByWayID[wayID] =
+                        Self.localSpeedCorrectionRevisionToken(for: observation)
+                }
+                // A newly committed local correction is genuinely new source
+                // information and therefore ends any older camera assertion.
+                trafficSignOverridePolicy.clear()
+                trafficSignRecognitionActiveOverride = nil
+                trafficSignRecognitionLastEvent = nil
+                currentTrafficSignSourceSignature = nil
+                invalidateTrafficSignInferenceContext()
+                if trafficSignRecognitionEnabled {
+                    trafficSignRecognitionState = trafficSignRuntime == nil
+                        ? .unavailable
+                        : .noRecognition
                 }
                 if let numericSpeed = observation.newSpeedKmh,
                    let wayID = observation.roadCandidateIDs.first,
                    !wayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     localSpeedOverridesByWayID[wayID] = numericSpeed
                     if limitWayID == wayID {
+                        currentLocalCorrectionSpeedKmh = numericSpeed
+                        currentBaseSpeedLimitDisplayText = nil
+                        currentBaseUnlimitedSpeedLimitActive = false
                         speedLimitKmh = numericSpeed
                         lastKnownSpeedLimitKmh = numericSpeed
                         isUnlimitedSpeedLimitActive = false
@@ -2681,9 +4709,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if let wayID = observation.roadCandidateIDs.first,
                    limitWayID == wayID {
                     if observation.newSpeedKmh == nil {
+                        currentLocalCorrectionSpeedKmh = nil
                         speedLimitKmh = nil
                     }
-                    speedLimitDisplayText = Self.speedLimitDisplayText(for: selection.value)
+                    let displayText = Self.speedLimitDisplayText(for: selection.value)
+                    currentBaseSpeedLimitDisplayText = displayText
+                    currentBaseUnlimitedSpeedLimitActive = false
+                    speedLimitDisplayText = displayText
                     if speedLimitDisplayText != nil {
                         isUnlimitedSpeedLimitActive = false
                     }
@@ -2749,6 +4781,117 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             localSpeedOverridesByWayID[wayID] = numeric
         }
         return correction.maxspeedValue
+    }
+
+    private func makeTrafficSignSourceSignature(
+        result: SpeedLimitResult,
+        localOverrideValue: String?,
+        travelDirection: TrafficSignTravelDirection
+    ) -> TrafficSignRuntimeSourceSignature {
+        let bundle = activeBundleVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+        let way = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "none"
+        let osmValue: String
+        if result.isUnlimitedSpeedLimit == true {
+            osmValue = "unlimited"
+        } else {
+            osmValue = result.speedLimitKmh.map(String.init) ?? "none"
+        }
+        let osmRevision = "bundle:\(bundle.isEmpty ? "none" : bundle)|way:\(way.isEmpty ? "none" : way)|direction:\(travelDirection.rawValue)|maxspeed:\(osmValue)"
+        let localRevision = localOverrideValue.map { value in
+            let correctionRevision = localSpeedOverrideRevisionsByWayID[way]
+                ?? "unversioned"
+            return "way:\(way.isEmpty ? "none" : way)|maxspeed:\(value)|revision:\(correctionRevision)"
+        }
+        return TrafficSignRuntimeSourceSignature(
+            osmRevision: osmRevision,
+            localCorrectionRevision: localRevision
+        )
+    }
+
+    private func makeTrafficSignDetectionContext(
+        result: SpeedLimitResult,
+        latitude: Double,
+        longitude: Double,
+        headingDegrees: Double?,
+        travelDirection: TrafficSignTravelDirection,
+        sourceSignature: TrafficSignRuntimeSourceSignature
+    ) -> TrafficSignDetectionContext? {
+        guard let wayId = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !wayId.isEmpty,
+              let headingDegrees,
+              headingDegrees.isFinite,
+              headingDegrees >= 0,
+              headingDegrees < 360 else {
+            return nil
+        }
+        let context = TrafficSignDetectionContext(
+            wayId: wayId,
+            latitude: latitude,
+            longitude: longitude,
+            headingDegrees: headingDegrees,
+            travelDirection: travelDirection,
+            sourceSignature: sourceSignature
+        )
+        return context.isValid ? context : nil
+    }
+
+    private static func hasSameTrafficSignRoadIdentity(
+        _ lhs: TrafficSignDetectionContext?,
+        _ rhs: TrafficSignDetectionContext?
+    ) -> Bool {
+        switch (lhs, rhs) {
+        case (nil, nil):
+            return true
+        case let (lhs?, rhs?):
+            return lhs.wayId == rhs.wayId
+                && lhs.travelDirection == rhs.travelDirection
+                && lhs.sourceSignature == rhs.sourceSignature
+        case (.some, nil), (nil, .some):
+            return false
+        }
+    }
+
+    private static func trafficSignTravelDirection(
+        for result: SpeedLimitResult,
+        headingDegrees: Double?
+    ) -> TrafficSignTravelDirection {
+        guard let headingDegrees,
+              headingDegrees.isFinite,
+              headingDegrees >= 0,
+              headingDegrees < 360,
+              let wayID = result.wayID,
+              let hypothesis = result.matchHypotheses.first(where: { $0.wayID == wayID }),
+              let startLat = hypothesis.startLat,
+              let startLon = hypothesis.startLon,
+              let endLat = hypothesis.endLat,
+              let endLon = hypothesis.endLon,
+              let wayHeading = initialBearingDegrees(
+                  startLatitude: startLat,
+                  startLongitude: startLon,
+                  endLatitude: endLat,
+                  endLongitude: endLon
+              ) else {
+            return .unknown
+        }
+        let clockwise = (headingDegrees - wayHeading + 360).truncatingRemainder(dividingBy: 360)
+        let difference = min(clockwise, 360 - clockwise)
+        return difference <= 90 ? .forward : .reverse
+    }
+
+    private static func initialBearingDegrees(
+        startLatitude: Double,
+        startLongitude: Double,
+        endLatitude: Double,
+        endLongitude: Double
+    ) -> Double? {
+        let latitude1 = startLatitude * .pi / 180
+        let latitude2 = endLatitude * .pi / 180
+        let longitudeDelta = (endLongitude - startLongitude) * .pi / 180
+        let y = sin(longitudeDelta) * cos(latitude2)
+        let x = cos(latitude1) * sin(latitude2)
+            - sin(latitude1) * cos(latitude2) * cos(longitudeDelta)
+        guard x.isFinite, y.isFinite, abs(x) + abs(y) > 1e-12 else { return nil }
+        return (atan2(y, x) * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
     }
 
     private func cancelSpeedCapture(reason: String?) {
@@ -2896,6 +5039,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func routeDatabaseForCoordinate(lat: Double, lon: Double, fixTimestamp: String, fixID: Int) async {
+        let routingContextGeneration = trafficSignContextGeneration
         do {
             guard let route = try await bundleManager.resolveLocalBundleRoute(
                 lat: lat,
@@ -2904,9 +5048,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             ) else {
                 return
             }
-            guard route.dbPath != activeDBPath else {
+            guard fixID == latestTrafficSignLookupFixID,
+                  routingContextGeneration == trafficSignContextGeneration else { return }
+            guard route.dbPath != activeDBPath
+                    || route.bundleVersion != activeBundleVersion else {
                 return
             }
+            invalidateTrafficSignOverrideIfBundleWillChange(
+                bundleVersion: route.bundleVersion,
+                dbPath: route.dbPath
+            )
             activeDBPath = route.dbPath
             activeBundleVersion = route.bundleVersion
             speedLimitService = makeSpeedLimitService(
@@ -2939,6 +5090,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         await routeDatabaseForCoordinate(lat: lat, lon: lon, fixTimestamp: fixTimestamp, fixID: fixID)
 
+        guard fixID == latestTrafficSignLookupFixID else { return }
+
         guard let service = speedLimitService else {
             wasDrivingBanWarningActive = false
             isUnlimitedSpeedLimitActive = false
@@ -2967,6 +5120,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let maxCandidates = lookupMaxCandidates
         let matchContext = currentWayMatchContext()
         let gpsBars = gpsSignalBars
+        let lookupContextGeneration = trafficSignContextGeneration
 
         Task.detached(priority: .utility) {
             do {
@@ -2983,13 +5137,62 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     gpsSignalBars: gpsBars
                 )
                 await MainActor.run {
+                    guard fixID == self.latestTrafficSignLookupFixID,
+                          lookupContextGeneration == self.trafficSignContextGeneration else {
+                        self.appendLookupEvent(
+                            "\(fixTimestamp) fix=\(fixID) status=stale_lookup_or_source_discarded"
+                        )
+                        return
+                    }
                     let propagatedOverrideValue = self.applyActiveLocalSpeedCorrectionIfNeeded(for: result, lat: lat, lon: lon)
                     let localOverrideValue = propagatedOverrideValue ?? result.wayID.flatMap { self.localSpeedOverrideValuesByWayID[$0] }
                     let localOverride = localOverrideValue.flatMap(Int.init)
-                    let effectiveSpeedLimit = localOverride ?? result.speedLimitKmh
-                    let unlimitedMatch = self.isGermanAutobahnUnlimitedMatch(result: result, localOverrideValue: localOverrideValue)
+                    let travelDirection = Self.trafficSignTravelDirection(
+                        for: result,
+                        headingDegrees: course
+                    )
+                    let sourceSignature = self.makeTrafficSignSourceSignature(
+                        result: result,
+                        localOverrideValue: localOverrideValue,
+                        travelDirection: travelDirection
+                    )
+                    self.currentTrafficSignSourceSignature = sourceSignature
+                    self.currentBundledSpeedLimitKmh = result.speedLimitKmh
+                    self.currentLocalCorrectionSpeedKmh = localOverride
+                    let baseSpeedLimitDisplayText = Self.speedLimitDisplayText(
+                        for: localOverrideValue
+                    )
+                    let bundledUnlimitedMatch = self.isGermanAutobahnUnlimitedMatch(
+                        result: result,
+                        localOverrideValue: nil
+                    )
+                    let baseUnlimitedMatch = localOverrideValue == nil
+                        && bundledUnlimitedMatch
+                    self.currentBaseSpeedLimitDisplayText = baseSpeedLimitDisplayText
+                    self.currentBundledUnlimitedSpeedLimitActive = bundledUnlimitedMatch
+                    self.currentBaseUnlimitedSpeedLimitActive = baseUnlimitedMatch
+                    let nextTrafficSignContext = self.makeTrafficSignDetectionContext(
+                        result: result,
+                        latitude: lat,
+                        longitude: lon,
+                        headingDegrees: course,
+                        travelDirection: travelDirection,
+                        sourceSignature: sourceSignature
+                    )
+                    let effectiveSpeedLimit = self.trafficSignOverridePolicy.resolvedSpeedKmh(
+                        osmSpeedKmh: result.speedLimitKmh,
+                        localCorrectionSpeedKmh: localOverride,
+                        currentContext: nextTrafficSignContext
+                    )
+                    self.trafficSignRecognitionActiveOverride = self.trafficSignOverridePolicy.activeOverride
+                    let hasTrafficSignOverride = self.trafficSignOverridePolicy.activeOverride != nil
+                    let unlimitedMatch = hasTrafficSignOverride
+                        ? false
+                        : baseUnlimitedMatch
                     self.speedLimitKmh = effectiveSpeedLimit
-                    self.speedLimitDisplayText = Self.speedLimitDisplayText(for: localOverrideValue)
+                    self.speedLimitDisplayText = hasTrafficSignOverride
+                        ? nil
+                        : baseSpeedLimitDisplayText
                     self.isUnlimitedSpeedLimitActive = unlimitedMatch
                     if let resolved = effectiveSpeedLimit {
                         self.lastKnownSpeedLimitKmh = resolved
@@ -3001,6 +5204,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.limitCityName = result.cityName
                     self.limitCityPlaceName = result.cityPlaceName
                     self.limitCityDistrictName = result.cityDistrictName
+                    let roadIdentityChanged = !Self.hasSameTrafficSignRoadIdentity(
+                        self.latestTrafficSignDetectionContext,
+                        nextTrafficSignContext
+                    )
+                    if roadIdentityChanged {
+                        self.trafficSignContextGeneration &+= 1
+                        self.trafficSignRecognitionLastEvent = nil
+                        if !self.trafficSignRecognitionEnabled {
+                            self.trafficSignRecognitionState = .disabled
+                        } else if self.trafficSignRuntime == nil {
+                            self.trafficSignRecognitionState = .unavailable
+                        } else {
+                            self.trafficSignRecognitionState = .noRecognition
+                        }
+                    }
+                    self.currentTrafficSignTravelDirection = travelDirection
+                    self.latestTrafficSignDetectionContext = nextTrafficSignContext
+                    self.trafficSignFrameContextIsCurrent = self.latestTrafficSignDetectionContext != nil
+                    self.refreshTrafficSignFrameSnapshot()
                     self.tunnelModeTracker.consumeFix(isTunnelSegment: result.isTunnelSegment)
                     self.syncTunnelModePublishedState()
                     self.recordWayMatch(
@@ -3020,6 +5242,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         lookupStatus = "matched_unlimited"
                     } else if effectiveSpeedLimit == nil {
                         lookupStatus = "no_match"
+                    } else if hasTrafficSignOverride {
+                        lookupStatus = "matched_camera_override"
                     } else if localOverride != nil {
                         lookupStatus = "matched_local_override"
                     } else {
@@ -3086,6 +5310,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
             } catch {
                 await MainActor.run {
+                    guard fixID == self.latestTrafficSignLookupFixID else { return }
+                    self.trafficSignFrameContextIsCurrent = false
+                    self.trafficSignFrameState.update(nil)
                     self.isUnlimitedSpeedLimitActive = false
                     self.lastLookupStatus = "error"
                     self.lastError = error.localizedDescription
@@ -3421,6 +5648,51 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         matchLogPath = ""
     }
 
+    private func appendTSRLog(_ fields: String, timestamp: Date = Date()) {
+        appendTSRLogLine("timestamp=\(Self.trafficSignTimestamp(timestamp)) \(fields)")
+    }
+
+    private func appendTSRLogLine(_ line: String) {
+        guard let logURL = prepareTSRLogFileIfNeeded() else { return }
+        do {
+            let handle = try FileHandle(forWritingTo: logURL)
+            try handle.seekToEnd()
+            try handle.write(contentsOf: Data((line + "\n").utf8))
+            try handle.close()
+        } catch {
+            // Diagnostics must never interrupt recognition or recording.
+        }
+    }
+
+    private func prepareTSRLogFileIfNeeded() -> URL? {
+        do {
+            let base = try V3BundleManager.applicationSupportDirectory(fileManager: .default)
+            if !FileManager.default.fileExists(atPath: base.path) {
+                try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+            }
+            let logURL: URL
+            if let preparedTSRLogURL {
+                logURL = preparedTSRLogURL
+            } else {
+                logURL = makeTimestampedTSRLogURL(in: base)
+                preparedTSRLogURL = logURL
+            }
+            tsrLogPath = logURL.path
+            if !FileManager.default.fileExists(atPath: logURL.path) {
+                try Data().write(to: logURL, options: .atomic)
+            }
+            return logURL
+        } catch {
+            lastError = "TSR log init failed: \(error.localizedDescription)"
+            return nil
+        }
+    }
+
+    private func resetPreparedTSRLogFile() {
+        preparedTSRLogURL = nil
+        tsrLogPath = ""
+    }
+
     private func makeTimestampedMatchLogURL(in base: URL) -> URL {
         let prefix = Self.exportTimestampFormatter.string(from: Date())
         for suffix in 0...999 {
@@ -3436,6 +5708,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
         return base.appendingPathComponent("\(prefix)_\(UUID().uuidString.lowercased())_drive_match_log.ndjson")
+    }
+
+    private func makeTimestampedTSRLogURL(in base: URL) -> URL {
+        let prefix = Self.exportTimestampFormatter.string(from: Date())
+        for suffix in 0...999 {
+            let suffixText = suffix == 0 ? "" : "_\(suffix)"
+            let url = base.appendingPathComponent("\(prefix)\(suffixText)_tsr_log.ndjson")
+            if !FileManager.default.fileExists(atPath: url.path) {
+                return url
+            }
+        }
+        return base.appendingPathComponent("\(prefix)_\(UUID().uuidString.lowercased())_tsr_log.ndjson")
     }
 
     var currentOverspeedKmh: Int {
@@ -3461,6 +5745,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
         guard !isInSpeedCaptureMode else {
+            return
+        }
+        guard !captureConfirmationTonePlayer.isPlaying else {
             return
         }
         guard audioAlertsEnabled else {
@@ -3500,15 +5787,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard changedSignificantly || now.timeIntervalSince(lastAudioFeedbackAt) >= minimumInterval else {
             return
         }
+        guard !speechSynthesizer.isSpeaking else {
+            return
+        }
 
         let utterance = AVSpeechUtterance(string: speechText)
         if let preferredLanguage = Locale.preferredLanguages.first {
             utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
         }
         utterance.rate = 0.48
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        prepareSpeechPlaybackAudioSession()
         speechSynthesizer.speak(utterance)
         lastAudioFeedbackAt = now
         lastAnnouncedSpeechText = speechText
@@ -3543,18 +5831,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speechText = drivingBanMonths == 1
             ? "Achtung. Ein Monat Fahrverbot moeglich."
             : "Achtung. \(drivingBanMonths) Monate Fahrverbot moeglich."
-        if audioAlertsEnabled {
-            if enteringWarning && speechSynthesizer.isSpeaking {
-                speechSynthesizer.stopSpeaking(at: .immediate)
+        if audioAlertsEnabled,
+           !speechSynthesizer.isSpeaking,
+           !captureConfirmationTonePlayer.isPlaying {
+            let utterance = AVSpeechUtterance(string: speechText)
+            if let preferredLanguage = Locale.preferredLanguages.first {
+                utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
             }
-            if enteringWarning || !speechSynthesizer.isSpeaking {
-                let utterance = AVSpeechUtterance(string: speechText)
-                if let preferredLanguage = Locale.preferredLanguages.first {
-                    utterance.voice = AVSpeechSynthesisVoice(language: preferredLanguage)
-                }
-                utterance.rate = 0.46
-                speechSynthesizer.speak(utterance)
-            }
+            utterance.rate = 0.46
+            prepareSpeechPlaybackAudioSession()
+            speechSynthesizer.speak(utterance)
         }
 
         wasDrivingBanWarningActive = true
@@ -3708,9 +5994,11 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             let displaySpeedKmh = updateCurrentSpeed(from: location)
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
+            driveCaptureCoordinator?.ingest(location: location)
             gpsFixCount += 1
             maybeSpeakOverspeedWarning()
             let fixID = gpsFixCount
+            beginTrafficSignContextLookup(fixID: fixID)
             Task { @MainActor [weak self] in
                 guard let self else {
                     return

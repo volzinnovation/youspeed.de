@@ -14,8 +14,49 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main class="layout">
-      <section class="panel">
+    <header class="app-header">
+      <a class="inspector-brand" href="./" aria-label="YouSpeed Inspector Startseite">
+        <span class="inspector-brand-mark" aria-hidden="true">YS</span>
+        <span class="inspector-brand-copy">
+          <span>YouSpeed</span>
+          <strong>Inspector</strong>
+        </span>
+      </a>
+      <nav class="mode-switch" role="tablist" aria-label="Inspector-Modus">
+        <button
+          id="matcher-mode-btn"
+          class="mode-switch-button active"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="matcher-workspace"
+        >
+          Map Matcher
+        </button>
+        <button
+          id="tsr-mode-btn"
+          class="mode-switch-button"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="tsr-workspace"
+        >
+          TSR QA
+        </button>
+      </nav>
+      <div class="workspace-locality">
+        <span class="workspace-locality-dot" aria-hidden="true"></span>
+        QA-Daten lokal verarbeitet
+      </div>
+    </header>
+
+    <main
+      id="matcher-workspace"
+      class="layout mode-workspace"
+      role="tabpanel"
+      aria-labelledby="matcher-mode-btn"
+    >
+      <section id="matcher-panel-content" class="panel">
         <h1>YouSpeed Inspector</h1>
         <p class="hint">
           Arbeitet mit lokaler YouSpeed-SQLite (Seed oder Download). Browser-Standort lesen oder Way-ID eingeben, um direkt auf den Way zu zentrieren.
@@ -85,12 +126,248 @@
       </section>
     </main>
 
+    <main
+      id="tsr-workspace"
+      class="tsr-workspace mode-workspace"
+      role="tabpanel"
+      aria-labelledby="tsr-mode-btn"
+      hidden
+    >
+      <aside id="tsr-panel-content" class="tsr-rail" aria-label="TSR Daten und Prüfliste">
+        <div class="tsr-rail-heading">
+          <span class="section-kicker">Traffic Sign Recognition</span>
+          <h1>TSR QA</h1>
+          <p class="hint">
+            Erkennungsereignisse und freigegebene Diagnose-Bundles lokal prüfen.
+          </p>
+          <div class="truth-badges" aria-label="Modellstatus">
+            <span id="tsr-model-truth" class="truth-badge inactive">Kein aktives Release-Modell</span>
+            <span id="tsr-fixture-truth" class="truth-badge fixture">Fixture · nur Vertragsdaten</span>
+          </div>
+        </div>
+
+        <section class="tsr-rail-section" aria-label="Daten laden">
+          <div class="section-heading-row">
+            <h2>Daten</h2>
+            <span class="button-row">
+              <button id="tsr-load-fixture-btn" class="text-button" type="button">v1 Fixture</button>
+              <button id="tsr-load-m0-fixture-btn" class="text-button" type="button">M0 Panoramax</button>
+            </span>
+          </div>
+
+          <div class="tsr-file-stack">
+            <label class="file-control" for="tsr-model-pack-input">
+              <span>Model-Pack Manifest</span>
+              <small>Optional · Klassen, Schwellen und Herkunft</small>
+              <input id="tsr-model-pack-input" type="file" accept=".json,application/json" />
+            </label>
+
+            <label class="file-control" for="tsr-event-file-input">
+              <span>Recognition Events</span>
+              <small>JSON, JSONL oder NDJSON</small>
+              <input
+                id="tsr-event-file-input"
+                type="file"
+                accept=".ndjson,.jsonl,.json,application/json"
+              />
+            </label>
+
+            <label class="file-control" for="tsr-bundle-directory-input">
+              <span>Diagnostic Bundle</span>
+              <small>Ordner mit manifest.json und Bilddateien</small>
+              <input
+                id="tsr-bundle-directory-input"
+                type="file"
+                accept="image/*,.json,.ppm"
+                webkitdirectory
+                directory
+                multiple
+              />
+            </label>
+          </div>
+
+          <p id="tsr-intake-status" class="tsr-intake-status" role="status" aria-live="polite">
+            Noch keine TSR-Daten geladen.
+          </p>
+        </section>
+
+        <section class="tsr-rail-section" aria-label="TSR Übersicht">
+          <div class="section-heading-row">
+            <h2>Übersicht</h2>
+            <span id="tsr-summary" class="section-count">0 Samples</span>
+          </div>
+          <div id="tsr-overview" class="tsr-overview" aria-live="polite">
+            <div class="tsr-zero-state">Lade Events oder ein Diagnose-Bundle, um die QA-Verteilung zu sehen.</div>
+          </div>
+        </section>
+
+        <section class="tsr-rail-section tsr-queue-section" aria-label="TSR Prüfliste">
+          <div class="section-heading-row">
+            <h2>Prüfliste</h2>
+            <span id="tsr-queue-summary" class="section-count">0 von 0</span>
+          </div>
+          <div class="tsr-filter-row">
+            <label>
+              <span>Status</span>
+              <select id="tsr-state-filter">
+                <option value="all">Alle Erkennungen</option>
+                <option value="confirmed">Bestätigt</option>
+                <option value="provisional">Vorläufig</option>
+                <option value="unknown">Unbekannt</option>
+                <option value="no_recognition">Keine Erkennung</option>
+                <option value="unavailable">Nicht verfügbar</option>
+              </select>
+            </label>
+            <label>
+              <span>QA</span>
+              <select id="tsr-review-filter">
+                <option value="all">Alle Entscheidungen</option>
+                <option value="open">Offen</option>
+                <option value="correct">Plausibel</option>
+                <option value="review">Prüfen</option>
+                <option value="reject">Verwerfen</option>
+              </select>
+            </label>
+          </div>
+          <div
+            id="tsr-queue"
+            class="tsr-queue"
+            role="listbox"
+            aria-label="TSR Samples"
+            tabindex="0"
+          >
+            <div class="tsr-zero-state">Keine Samples in der Prüfliste.</div>
+          </div>
+          <div id="tsr-event-timeline" class="tsr-event-timeline" aria-label="Erkennungsverlauf"></div>
+        </section>
+      </aside>
+
+      <section class="tsr-evidence" aria-label="TSR Bildbeleg">
+        <header class="tsr-evidence-header">
+          <div class="tsr-evidence-heading">
+            <span class="section-kicker">Bildbeleg</span>
+            <h2 id="tsr-evidence-title">Kein Sample ausgewählt</h2>
+            <p id="tsr-evidence-subtitle">Frame, Crop oder Event auswählen.</p>
+          </div>
+          <div class="tsr-evidence-actions">
+            <label class="compact-select" for="tsr-asset-select">
+              <span>Ansicht</span>
+              <select id="tsr-asset-select" disabled>
+                <option value="">Kein Asset</option>
+              </select>
+            </label>
+            <div class="stepper" aria-label="Sample wechseln">
+              <button id="tsr-prev-btn" type="button" aria-label="Vorheriges Sample" title="Vorheriges Sample" disabled>←</button>
+              <button id="tsr-next-btn" type="button" aria-label="Nächstes Sample" title="Nächstes Sample" disabled>→</button>
+            </div>
+          </div>
+        </header>
+
+        <div class="tsr-overlay-controls" aria-label="Bildmarkierungen">
+          <label class="overlay-toggle" for="tsr-show-predictions">
+            <input id="tsr-show-predictions" type="checkbox" checked />
+            <span class="legend-line prediction" aria-hidden="true"></span>
+            Vorhersagen
+          </label>
+          <label class="overlay-toggle" for="tsr-show-annotations">
+            <input id="tsr-show-annotations" type="checkbox" checked />
+            <span class="legend-line annotation" aria-hidden="true"></span>
+            Annotationen
+          </label>
+          <button id="tsr-focus-map-btn" class="text-button push-right" type="button" disabled>
+            Way auf Karte prüfen (OSM)
+          </button>
+        </div>
+
+        <figure id="tsr-evidence-stage" class="tsr-evidence-stage" aria-busy="false">
+          <canvas
+            id="tsr-evidence-canvas"
+            width="1280"
+            height="720"
+            role="img"
+            aria-label="TSR Bildbeleg mit Erkennungs- und Annotationsrahmen"
+          >
+            Der Browser unterstützt die Bildansicht nicht.
+          </canvas>
+          <div id="tsr-evidence-empty" class="tsr-evidence-empty">
+            <span class="evidence-reticle" aria-hidden="true"></span>
+            <strong>Noch kein Bildbeleg</strong>
+            <span>Diagnostic Bundle laden oder ein Recognition Event auswählen.</span>
+          </div>
+        </figure>
+
+        <div id="tsr-evidence-legend" class="tsr-evidence-legend" aria-live="polite">
+          <span><i class="legend-line prediction" aria-hidden="true"></i>Vorhersage</span>
+          <span><i class="legend-line annotation" aria-hidden="true"></i>Annotation</span>
+          <span class="push-right">Normalisierte Boxen · frame-relative Koordinaten</span>
+        </div>
+      </section>
+
+      <aside class="tsr-detail" aria-label="TSR Detailinspektor">
+        <div class="tsr-detail-heading">
+          <span class="section-kicker">Inspektor</span>
+          <h2>Sample Details</h2>
+          <p id="tsr-detail-summary" class="hint">Kein Sample ausgewählt.</p>
+        </div>
+
+        <section class="tsr-detail-section">
+          <h3>Modell</h3>
+          <div id="tsr-detail-model" class="tsr-detail-content">
+            <div class="tsr-zero-state">Kein Model-Pack geladen.</div>
+          </div>
+        </section>
+
+        <section class="tsr-detail-section">
+          <h3>Erkennung</h3>
+          <div id="tsr-detail-detection" class="tsr-detail-content">
+            <div class="tsr-zero-state">Keine Erkennung ausgewählt.</div>
+          </div>
+        </section>
+
+        <section class="tsr-detail-section">
+          <h3>Way &amp; Richtung</h3>
+          <div id="tsr-detail-context" class="tsr-detail-content">
+            <div class="tsr-zero-state">Kein Frame-Kontext verfügbar.</div>
+          </div>
+        </section>
+
+        <section class="tsr-detail-section tsr-review-section">
+          <div class="section-heading-row">
+            <h3>Lokale QA</h3>
+            <span class="qa-separation-label">separat vom Bundle</span>
+          </div>
+          <p class="tsr-review-disclaimer">
+            Diese Entscheidung verändert weder Diagnostic Bundle noch Trainingsannotation.
+          </p>
+          <div class="verdict-control" role="group" aria-label="Lokale QA-Entscheidung">
+            <button id="tsr-verdict-correct" type="button" aria-pressed="false">Plausibel</button>
+            <button id="tsr-verdict-review" type="button" aria-pressed="false">Prüfen</button>
+            <button id="tsr-verdict-reject" type="button" aria-pressed="false">Verwerfen</button>
+          </div>
+          <label class="review-note" for="tsr-review-note">
+            <span>QA-Notiz</span>
+            <textarea id="tsr-review-note" rows="3" placeholder="Beobachtung für den QA-Bericht …"></textarea>
+          </label>
+          <div id="tsr-detail-review" class="tsr-detail-content"></div>
+          <button id="tsr-export-report-btn" class="primary-action" type="button" disabled>
+            QA-Bericht exportieren
+          </button>
+        </section>
+
+        <details class="raw-details">
+          <summary>Rohdaten</summary>
+          <pre id="tsr-detail-raw" class="raw-block">Kein Sample ausgewählt.</pre>
+        </details>
+      </aside>
+    </main>
+
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
       crossorigin=""
     ></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
     <script src="./app.js"></script>
+    <script src="./tsr-qa-core.js"></script>
+    <script src="./tsr-qa.js"></script>
   </body>
 </html>

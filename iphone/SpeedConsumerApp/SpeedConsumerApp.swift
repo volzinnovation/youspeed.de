@@ -22,7 +22,7 @@ struct SpeedConsumerApp: App {
                         dismissedWelcomeThisSession = true
                         shouldOpenSettingsOnMainAppear = openSettings
                     }
-                } else if viewModel.isDatabaseReadyForQueries {
+                } else if viewModel.startupDataState == .ready {
                     MainView(
                         viewModel: viewModel,
                         openSettingsOnAppear: shouldOpenSettingsOnMainAppear,
@@ -34,13 +34,13 @@ struct SpeedConsumerApp: App {
                     StartupView(viewModel: viewModel)
                 }
             }
-            .onAppear { updateIdleTimer(for: scenePhase) }
+            .onAppear { updateLifecycle(for: scenePhase) }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
                 dismissedWelcomeThisSession = false
             }
-            updateIdleTimer(for: newPhase)
+            updateLifecycle(for: newPhase)
         }
     }
 
@@ -54,7 +54,8 @@ struct SpeedConsumerApp: App {
         return Self.requiresWelcome(bundleVersion: viewModel.activeBundleVersion, now: Date())
     }
 
-    private func updateIdleTimer(for phase: ScenePhase) {
+    private func updateLifecycle(for phase: ScenePhase) {
+        viewModel.setTrafficSignApplicationActive(phase == .active)
         #if canImport(UIKit)
         UIApplication.shared.isIdleTimerDisabled = (phase == .active)
         #endif

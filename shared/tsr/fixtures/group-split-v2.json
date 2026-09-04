@@ -1,0 +1,108 @@
+{
+  "schema_version": 2,
+  "manifest_id": "youspeed-tsr-group-split-v2-f711f982bffbe5ce",
+  "taxonomy_version": "tsr-semantic-v2",
+  "seed": "youspeed-tsr-m0-split-v2-66",
+  "strategy": {
+    "algorithm": "connected_components_seeded_sha256_v1",
+    "group_keys": ["drive_id", "physical_sign_id", "near_duplicate_cluster_id"],
+    "partitions": {
+      "train": 0.8,
+      "calibration": 0.1,
+      "holdout": 0.1
+    }
+  },
+  "prohibited_source_splits": [
+    {
+      "source_split_id": "panoramax-classified-de-road-signs-b485694-validation",
+      "aliases": ["panoramax-de-validation-b485694"],
+      "reason": "The published Panoramax classifier validation archive has source-ID and byte-identical leakage with its training archive and is bootstrap/audit material only.",
+      "permitted_usage": "bootstrap_or_leakage_audit_only",
+      "assigned_sample_count": 0
+    }
+  ],
+  "components": [
+    {
+      "component_id": "group-d40bb0c1f0178b406ea6",
+      "drive_ids": ["drive-train-a", "drive-train-b"],
+      "physical_sign_ids": ["physical-sign-train-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-train-a"],
+      "sample_ids": ["sample-train-a", "sample-train-b"],
+      "partition": "train",
+      "assignment_digest": "3bf868d41a8b6518966ac5dd0bc52693ad674fddb632ebea603ae67be59e95df"
+    },
+    {
+      "component_id": "group-d4c5708562011b91e7c0",
+      "drive_ids": ["drive-calibration-a"],
+      "physical_sign_ids": ["physical-sign-calibration-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-calibration-a"],
+      "sample_ids": ["sample-calibration-a"],
+      "partition": "calibration",
+      "assignment_digest": "4fdb8886996a73d0e4920d442dd913781411e8ce4ed90a0fa07da6228d8058ce"
+    },
+    {
+      "component_id": "group-942fcdad040f88d9f390",
+      "drive_ids": ["drive-holdout-a"],
+      "physical_sign_ids": ["physical-sign-holdout-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-holdout-a"],
+      "sample_ids": ["sample-holdout-a", "sample-holdout-b"],
+      "partition": "holdout",
+      "assignment_digest": "9bd51df91a313a49e25b499a842f5426ef50a22a0b2e3bd2787eeab2d0f9cd26"
+    }
+  ],
+  "samples": [
+    {
+      "sample_id": "sample-train-a",
+      "drive_id": "drive-train-a",
+      "physical_sign_ids": ["physical-sign-train-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-train-a"],
+      "source_split_id": "youspeed-reviewed-v2",
+      "component_id": "group-d40bb0c1f0178b406ea6",
+      "partition": "train"
+    },
+    {
+      "sample_id": "sample-train-b",
+      "drive_id": "drive-train-b",
+      "physical_sign_ids": ["physical-sign-train-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-train-a"],
+      "source_split_id": "youspeed-reviewed-v2",
+      "component_id": "group-d40bb0c1f0178b406ea6",
+      "partition": "train"
+    },
+    {
+      "sample_id": "sample-calibration-a",
+      "drive_id": "drive-calibration-a",
+      "physical_sign_ids": ["physical-sign-calibration-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-calibration-a"],
+      "source_split_id": "reviewed-synthetic-v2",
+      "component_id": "group-d4c5708562011b91e7c0",
+      "partition": "calibration"
+    },
+    {
+      "sample_id": "sample-holdout-a",
+      "drive_id": "drive-holdout-a",
+      "physical_sign_ids": ["physical-sign-holdout-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-holdout-a"],
+      "source_split_id": "youspeed-reviewed-v2",
+      "component_id": "group-942fcdad040f88d9f390",
+      "partition": "holdout"
+    },
+    {
+      "sample_id": "sample-holdout-b",
+      "drive_id": "drive-holdout-a",
+      "physical_sign_ids": ["physical-sign-holdout-a"],
+      "near_duplicate_cluster_ids": ["near-duplicate-holdout-a"],
+      "source_split_id": "youspeed-reviewed-v2",
+      "component_id": "group-942fcdad040f88d9f390",
+      "partition": "holdout"
+    }
+  ],
+  "leakage_audit": {
+    "drive_overlap_count": 0,
+    "physical_sign_overlap_count": 0,
+    "near_duplicate_analysis_status": "passed",
+    "near_duplicate_overlap_count": 0,
+    "prohibited_source_split_count": 0,
+    "passed": true
+  }
+}

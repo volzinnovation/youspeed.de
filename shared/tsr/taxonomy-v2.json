@@ -1,0 +1,115 @@
+{
+  "schema_version": 2,
+  "taxonomy_id": "youspeed-tsr-semantic-v2",
+  "taxonomy_version": "tsr-semantic-v2",
+  "status": "frozen",
+  "frozen_at": "2026-09-01T00:00:00Z",
+  "scope": "German numeric maximum-speed signs and their separately boxed white supplementary restrictions",
+  "countries": ["DE"],
+  "detector_classes": [
+    {
+      "class_id": "primary_sign",
+      "output_index": 0,
+      "requires_separate_full_scene_box": true
+    },
+    {
+      "class_id": "supplementary_plate",
+      "output_index": 1,
+      "requires_separate_full_scene_box": true
+    }
+  ],
+  "primary_classifier_taxonomy": {
+    "numeric_class_prefix": "speed_limit_",
+    "numeric_values_kmh": [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130],
+    "non_numeric_classes": [
+      {
+        "class_id": "maximum_speed_end",
+        "semantic_kind": "maximum_speed_end"
+      },
+      {
+        "class_id": "maximum_speed_zone_start",
+        "semantic_kind": "zone_start"
+      },
+      {
+        "class_id": "maximum_speed_zone_end",
+        "semantic_kind": "zone_end"
+      },
+      {
+        "class_id": "restriction_end",
+        "semantic_kind": "restriction_end"
+      },
+      {
+        "class_id": "other_or_unknown_primary",
+        "semantic_kind": "unknown"
+      }
+    ]
+  },
+  "supplementary_classifier_taxonomy": {
+    "restriction_kinds": [
+      "weather",
+      "time_window",
+      "days_of_week",
+      "vehicle",
+      "max_weight",
+      "school",
+      "resident",
+      "exception",
+      "distance",
+      "direction",
+      "extent",
+      "text",
+      "other",
+      "unknown"
+    ],
+    "evidence_states": ["present_readable", "present_unreadable"],
+    "distance_semantics": {
+      "distance": "distance to a future applicability point",
+      "extent": "length of the section over which the primary sign applies"
+    }
+  },
+  "annotation_rules": {
+    "coordinate_system": "pixel_xywh_top_left_after_orientation_normalization",
+    "full_scene_required": true,
+    "primary_and_supplementary_boxes_must_be_separate": true,
+    "assembly_link_required": true,
+    "drive_id_required": true,
+    "physical_sign_id_required": true,
+    "unreadable_plate_rule": "Record plate presence and its box, but no class ID, raw text, normalized value, or restriction parameters.",
+    "temporal_rule": "Per-frame evidence is immutable. A track may upgrade an unreadable restriction only from a later calibrated readable observation of the same physical sign.",
+    "no_hallucination_rule": "Never copy later restriction text or parameters into the annotation or event for an earlier unreadable frame."
+  },
+  "split_rules": {
+    "partitions": ["train", "calibration", "holdout"],
+    "group_keys": ["drive_id", "physical_sign_id", "near_duplicate_cluster_id"],
+    "connected_components_required": true,
+    "published_panoramax_validation_allowed": false,
+    "prohibited_source_split_id": "panoramax-classified-de-road-signs-b485694-validation",
+    "prohibited_source_split_aliases": ["panoramax-de-validation-b485694"]
+  },
+  "source_eligibility": {
+    "zod_audit_id": "zod-supplementary-plate-audit-v1",
+    "zod_primary_scene_and_hard_negative_use": "eligible_with_complete_traffic_sign_task_and_frozen_inventory",
+    "zod_supplementary_plate_use": "ineligible",
+    "supplementary_detector_training_requirement": {
+      "mode": "at_least_one_reviewed_source",
+      "accepted_sources": [
+        "reviewed_youspeed_full_scene_boxes",
+        "reviewed_synthetic_full_scene_assemblies"
+      ]
+    }
+  },
+  "model_role_constraints": [
+    {
+      "reference_id": "gtsign-220-vit",
+      "role": "offline_teacher",
+      "runtime_included": false,
+      "acceptance_gate_eligible": false
+    },
+    {
+      "reference_id": "panoramax-classify-de-road-signs",
+      "role": "offline_crop_benchmark",
+      "runtime_included": false,
+      "acceptance_gate_eligible": false
+    }
+  ]
+}

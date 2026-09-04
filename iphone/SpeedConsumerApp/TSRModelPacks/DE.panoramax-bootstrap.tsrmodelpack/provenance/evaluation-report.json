@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "scope": "two supplied Panoramax field-test frames",
+  "recorded_precision": "rounded_to_3_decimals",
+  "samples": [
+    {
+      "picture_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+      "expected_class": "maxspeed:70",
+      "source_detector_score": 0.905,
+      "coreml_detector_score": 0.903,
+      "source_classifier_score": 1.000,
+      "coreml_classifier_score": 1.000
+    },
+    {
+      "picture_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "expected_class": "maxspeed:70",
+      "source_detector_score": 0.792,
+      "coreml_detector_score": 0.764,
+      "source_classifier_score": 0.985,
+      "coreml_classifier_score": 0.989
+    }
+  ],
+  "result": "both Core ML stages identify maxspeed:70 on both frames"
+}

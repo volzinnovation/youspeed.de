@@ -1,0 +1,215 @@
+[
+  {
+    "schema_version": 2,
+    "event_id": "expected-panoramax-hard-preceding-frame-v2",
+    "pack_id": "de-yolox-nano-mnv3-large-shadow-fixture-v2",
+    "taxonomy_version": "tsr-semantic-v2",
+    "evidence_origin": "reviewed_expectation",
+    "execution_mode": "shadow",
+    "override_eligible": false,
+    "override_disposition": "shadow_evidence_only",
+    "qa_disposition": "emit",
+    "source": "panoramax_replay",
+    "frame": {
+      "frame_id": "49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "timestamp_utc": "2026-09-01T16:14:33.731Z",
+      "width": 2376,
+      "height": 4224
+    },
+    "stage_runs": {
+      "detector": {
+        "component_id": "de-yolox-nano-proposals-fixture-v2",
+        "artifact_id": "detector-coreml-fixture-v2",
+        "artifact_sha256": "1616161616161616161616161616161616161616161616161616161616161616",
+        "artifact_format": "coreml",
+        "preprocessing_version": "yolox-letterbox-rgb-640-v2",
+        "calibration_id": "detector-temperature-fixture-v2",
+        "invoked": false,
+        "latency_ms": 0
+      },
+      "classifier": {
+        "component_id": "de-mnv3-large-union-fixture-v2",
+        "artifact_id": "classifier-coreml-fixture-v2",
+        "artifact_sha256": "2626262626262626262626262626262626262626262626262626262626262626",
+        "artifact_format": "coreml",
+        "preprocessing_version": "mnv3-proposal-rgb-224-v2",
+        "calibration_id": "classifier-temperature-fixture-v2",
+        "invoked": false,
+        "latency_ms": 0
+      }
+    },
+    "state": "provisional",
+    "assemblies": [
+      {
+        "assembly_id": "expected-assembly-hard-preceding-frame",
+        "physical_sign_track_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+        "primary": {
+          "object_id": "expected-primary-hard-preceding-frame",
+          "bounding_box": {
+            "x": 0.490740740741,
+            "y": 0.427320075758,
+            "width": 0.023148148148,
+            "height": 0.013257575758
+          },
+          "detector_score": null,
+          "classifier_score": null,
+          "class_id": "speed_limit_70",
+          "semantic": {
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          }
+        },
+        "supplementary_plates": [
+          {
+            "object_id": "expected-plate-hard-preceding-frame",
+            "bounding_box": {
+              "x": 0.492424242424,
+              "y": 0.440104166667,
+              "width": 0.018518518519,
+              "height": 0.005918560606
+            },
+            "detector_score": null,
+            "classifier_score": null,
+            "class_id": null,
+            "readability": "unreadable",
+            "restriction": null
+          }
+        ],
+        "condition_state": "unresolved",
+        "temporal_evidence": {
+          "evidence_frame_count": 1,
+          "prior_event_id": null,
+          "restriction_transition": "none"
+        }
+      }
+    ],
+    "road_context": {
+      "way_id": "52869774",
+      "latitude": 48.780302778,
+      "longitude": 8.402511111,
+      "heading_degrees": 184.0,
+      "travel_direction": "reverse",
+      "source_signature": {
+        "osm_revision": "bundle:3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89|way:52869774|maxspeed:70",
+        "local_correction_revision": null
+      }
+    },
+    "diagnostic_capture": {
+      "status": "requested",
+      "reasons": ["unreadable_supplementary_plate"],
+      "capture_id": null
+    },
+    "thermal_state": null
+  },
+  {
+    "schema_version": 2,
+    "event_id": "expected-panoramax-later-readable-frame-v2",
+    "pack_id": "de-yolox-nano-mnv3-large-shadow-fixture-v2",
+    "taxonomy_version": "tsr-semantic-v2",
+    "evidence_origin": "reviewed_expectation",
+    "execution_mode": "shadow",
+    "override_eligible": false,
+    "override_disposition": "shadow_evidence_only",
+    "qa_disposition": "emit",
+    "source": "panoramax_replay",
+    "frame": {
+      "frame_id": "0906fc23-7175-430e-acc0-106e7d45eca7",
+      "timestamp_utc": "2026-09-01T16:14:35.468Z",
+      "width": 2376,
+      "height": 4224
+    },
+    "stage_runs": {
+      "detector": {
+        "component_id": "de-yolox-nano-proposals-fixture-v2",
+        "artifact_id": "detector-coreml-fixture-v2",
+        "artifact_sha256": "1616161616161616161616161616161616161616161616161616161616161616",
+        "artifact_format": "coreml",
+        "preprocessing_version": "yolox-letterbox-rgb-640-v2",
+        "calibration_id": "detector-temperature-fixture-v2",
+        "invoked": false,
+        "latency_ms": 0
+      },
+      "classifier": {
+        "component_id": "de-mnv3-large-union-fixture-v2",
+        "artifact_id": "classifier-coreml-fixture-v2",
+        "artifact_sha256": "2626262626262626262626262626262626262626262626262626262626262626",
+        "artifact_format": "coreml",
+        "preprocessing_version": "mnv3-proposal-rgb-224-v2",
+        "calibration_id": "classifier-temperature-fixture-v2",
+        "invoked": false,
+        "latency_ms": 0
+      }
+    },
+    "state": "confirmed",
+    "assemblies": [
+      {
+        "assembly_id": "expected-assembly-later-readable-frame",
+        "physical_sign_track_id": "panoramax-physical-sign-70-extent-2km-48.7800-8.4025",
+        "primary": {
+          "object_id": "expected-primary-later-readable-frame",
+          "bounding_box": {
+            "x": 0.70202020202,
+            "y": 0.391571969697,
+            "width": 0.06271043771,
+            "height": 0.034564393939
+          },
+          "detector_score": null,
+          "classifier_score": null,
+          "class_id": "speed_limit_70",
+          "semantic": {
+            "kind": "maximum_speed",
+            "value": 70,
+            "unit": "km/h"
+          }
+        },
+        "supplementary_plates": [
+          {
+            "object_id": "expected-plate-later-readable-frame",
+            "bounding_box": {
+              "x": 0.704545454545,
+              "y": 0.425426136364,
+              "width": 0.046717171717,
+              "height": 0.015861742424
+            },
+            "detector_score": null,
+            "classifier_score": null,
+            "class_id": "supplementary_extent",
+            "readability": "readable",
+            "restriction": {
+              "kind": "extent",
+              "normalized_value": "2000 m",
+              "distance_m": null,
+              "extent_m": 2000,
+              "raw_text": "↕ 2 km",
+              "country_sign_code": null
+            }
+          }
+        ],
+        "condition_state": "resolved",
+        "temporal_evidence": {
+          "evidence_frame_count": 2,
+          "prior_event_id": "expected-panoramax-hard-preceding-frame-v2",
+          "restriction_transition": "upgraded_from_later_readable_evidence"
+        }
+      }
+    ],
+    "road_context": {
+      "way_id": "52869774",
+      "latitude": 48.779997222,
+      "longitude": 8.402469444,
+      "heading_degrees": 183.0,
+      "travel_direction": "reverse",
+      "source_signature": {
+        "osm_revision": "bundle:3efd3c6ff66f90006778bb23d6995483fbe483620b72e838f83bcf77538cac89|way:52869774|maxspeed:70",
+        "local_correction_revision": null
+      }
+    },
+    "diagnostic_capture": {
+      "status": "requested",
+      "reasons": ["temporal_upgrade"],
+      "capture_id": null
+    },
+    "thermal_state": null
+  }
+]

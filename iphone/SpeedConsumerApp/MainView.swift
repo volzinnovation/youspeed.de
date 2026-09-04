@@ -10,6 +10,92 @@ private let drivingBanPulseCycleSeconds: Double = 2.2
 private let gpsBadgeSlotMinHeight: CGFloat = 58
 private let cityBadgeSlotMinHeight: CGFloat = 84
 
+enum DriveRecorderWorkspaceSelection: Equatable {
+    case preview
+    case telemetry
+
+    func showsPreview(whenAvailable previewAvailable: Bool) -> Bool {
+        self == .preview && previewAvailable
+    }
+}
+
+struct DriveRecorderPreviewPresentation: Equatable {
+    let isAttached: Bool
+    let isVisible: Bool
+
+    static func resolve(
+        sessionAvailable: Bool,
+        selection: DriveRecorderWorkspaceSelection,
+        previewAvailable: Bool
+    ) -> Self {
+        Self(
+            // The preview layer is a permanent fourth camera consumer. It must
+            // be attached before movie recording begins because attaching it
+            // afterward reconfigures the active AVFoundation capture graph.
+            isAttached: sessionAvailable,
+            isVisible: sessionAvailable && selection.showsPreview(whenAvailable: previewAvailable)
+        )
+    }
+}
+
+enum DriveRecorderPreviewInteractionPolicy {
+    static let activationTapGuardInterval: TimeInterval = 0.6
+
+    static func canDismissPreview(at date: Date, notBefore: Date) -> Bool {
+        date >= notBefore
+    }
+}
+
+struct DriveRecorderMainControlPresentation: Equatable {
+    enum Action: Equatable {
+        case start
+        case stop
+    }
+
+    let action: Action
+    let isEnabled: Bool
+
+    static func resolve(for state: DriveRecorderState) -> Self {
+        switch state {
+        case .disabled, .denied, .unavailable, .failed:
+            return Self(action: .start, isEnabled: true)
+        case .preparing, .recording:
+            return Self(action: .stop, isEnabled: true)
+        case .stopping:
+            return Self(action: .stop, isEnabled: false)
+        }
+    }
+
+    var systemImageName: String {
+        action == .start ? "circle.fill" : "stop.fill"
+    }
+
+    var usesRedIcon: Bool {
+        action == .stop
+    }
+
+    var accessibilityLocalizationKey: String {
+        action == .start ? "drive_recorder.start" : "drive_recorder.stop"
+    }
+}
+
+struct DriveRecorderGalleryControlPresentation: Equatable {
+    let isEnabled: Bool
+
+    static func resolve(for state: DriveRecorderState) -> Self {
+        switch state {
+        case .preparing, .recording, .stopping:
+            return Self(isEnabled: false)
+        case .disabled, .denied, .unavailable, .failed:
+            return Self(isEnabled: true)
+        }
+    }
+
+    var opacity: Double {
+        isEnabled ? 1 : 0.38
+    }
+}
+
 enum LegalDisclaimerText {
     static var short: String {
         NSLocalizedString("legal.disclaimer.short", comment: "")
@@ -22,6 +108,7 @@ enum LegalDisclaimerText {
 
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     var openSettingsOnAppear: Bool = false
     var onOpenSettingsConsumed: (() -> Void)?
     @State private var hasAutoTriggeredSyncForTests = false
@@ -29,6 +116,14 @@ struct MainView: View {
     @State private var showingLegalInfo = false
     @State private var showingDebug = false
     @State private var showingLocalRecordings = false
+    @State private var showingPanoramaxGallery = false
+    @State private var showingTrafficSignDetails = false
+    // Keep the user's selection independent from transient recorder
+    // availability. Published recorder fields arrive one after another; if a
+    // short unavailable state overwrites this preference, the preview flashes
+    // once and then incorrectly stays hidden.
+    @State private var driveRecorderWorkspaceSelection: DriveRecorderWorkspaceSelection = .preview
+    @State private var driveRecorderPreviewDismissalAllowedAt = Date.distantPast
 
     var body: some View {
         GeometryReader { proxy in
@@ -40,10 +135,11 @@ struct MainView: View {
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
             let sectionGap = max(14, minDimension * 0.04)
-            let topControlBottom = topPadding + controlDiameter
+            let topControlBottom = topPadding + 62
             let bottomControlTopInset = bottomPadding + controlDiameter
             let contentTopInset = topControlBottom + max(10, minDimension * 0.028)
-            let contentBottomInset = bottomControlTopInset + max(10, minDimension * 0.03)
+            let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? 68 : 0
+            let contentBottomInset = bottomControlTopInset + recorderStatusReserve + max(10, minDimension * 0.03)
             let locationReserve = viewModel.isInSpeedCaptureMode
                 ? CGFloat(0)
                 : max(cityBadgeSlotMinHeight, minDimension * 0.225)
@@ -87,17 +183,14 @@ struct MainView: View {
                         }
                     )
 
-                    metricStatusBlock(
+                    driveStatusWorkspace(
                         primaryFont: primaryMetricFontSize,
-                        secondaryFont: secondaryFont
-                    )
-                    .padding(.horizontal, horizontalPadding)
-
-                    locationStatusBlock(
+                        secondaryFont: secondaryFont,
                         badgeWidth: bottomButtonGapWidth,
                         debugFont: debugFont,
                         debugSpacing: debugSpacing,
-                        reservedHeight: locationReserve
+                        reservedHeight: locationReserve,
+                        sectionGap: sectionGap
                     )
                     .padding(.horizontal, horizontalPadding)
                 }
@@ -110,6 +203,13 @@ struct MainView: View {
                     .padding(.top, topPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
+                if showsDriveRecorderStatusStrip {
+                    driveRecorderStatusStrip
+                        .padding(.horizontal, max(12, horizontalPadding * 0.72))
+                        .padding(.bottom, bottomPadding + controlDiameter + 8)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
+
                 bottomCornerButtons(horizontalPadding: screenInset)
                     .padding(.bottom, bottomPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -117,7 +217,7 @@ struct MainView: View {
         }
         .sheet(isPresented: $showingSettings) {
             NavigationStack {
-                SettingsView(viewModel: viewModel)
+                SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
             }
         }
         .sheet(isPresented: $showingLegalInfo) {
@@ -135,6 +235,16 @@ struct MainView: View {
                 LocalRecordingsView(viewModel: viewModel)
             }
         }
+        .sheet(isPresented: $showingPanoramaxGallery) {
+            NavigationStack {
+                PanoramaxGalleryView(viewModel: viewModel)
+            }
+        }
+        .sheet(isPresented: $showingTrafficSignDetails) {
+            NavigationStack {
+                TrafficSignRecognitionDetailsView(viewModel: viewModel)
+            }
+        }
         .onAppear {
             if viewModel.driveStatus == "stopped" {
                 viewModel.startDriving()
@@ -150,6 +260,19 @@ struct MainView: View {
             print("SPEEDCONSUMER_TEST_AUTOTAP_SYNC triggered")
             viewModel.bootstrapAndSync()
         }
+        .onChange(of: viewModel.driveRecorderDashcamActive) { previousValue, active in
+            if active != previousValue {
+                // Each new Dashcam selection defaults to the confidence view.
+                // When Dashcam stops, keep the same default ready for the next
+                // segment without forcing a visible transition now.
+                setDriveRecorderPreviewVisible(true)
+            }
+        }
+        .onChange(of: viewModel.driveRecorderState) { previousState, state in
+            if state == .recording, previousState != .recording {
+                setDriveRecorderPreviewVisible(true)
+            }
+        }
     }
 
     private var showsPedestrianZoneSign: Bool {
@@ -157,12 +280,12 @@ struct MainView: View {
     }
 
     private var topCornerButtons: some View {
-        HStack {
+        HStack(alignment: .top) {
             localRecordingsButton
 
             Spacer()
 
-            gpsSignalBadge
+            trafficSignRecognitionBadge
         }
         .foregroundStyle(primaryForegroundColor)
     }
@@ -183,48 +306,510 @@ struct MainView: View {
         }
     }
 
-    private var gpsSignalBadge: some View {
-        GPSSignalBadge(
-            bars: viewModel.gpsSignalBars,
-            accuracyText: viewModel.gpsHorizontalAccuracyM.map { String(format: "%.0f m", $0) } ?? nil,
-            foregroundColor: primaryForegroundColor
-        )
-    }
-
     private func bottomCornerButtons(horizontalPadding: CGFloat) -> some View {
-        HStack {
+        let recorderControl = DriveRecorderMainControlPresentation.resolve(
+            for: viewModel.driveRecorderState
+        )
+        let galleryControl = DriveRecorderGalleryControlPresentation.resolve(
+            for: viewModel.driveRecorderState
+        )
+
+        return HStack {
             Button {
-                showingLegalInfo = true
+                viewModel.toggleDriveRecorder()
             } label: {
+                Image(systemName: recorderControl.systemImageName)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .background(Color.black, in: Circle())
+            .overlay {
+                Circle()
+                    .strokeBorder(Color.white, lineWidth: 1.5)
+            }
+            .contentShape(Circle())
+            .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
+            .disabled(!recorderControl.isEnabled)
+
+            Spacer()
+
+            Button {
+                guard galleryControl.isEnabled else { return }
+                showingPanoramaxGallery = true
+            } label: {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(galleryControl.isEnabled ? primaryForegroundColor : Color.gray)
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.plain)
+            .background(
+                galleryControl.isEnabled ? actionButtonBackgroundColor : Color.gray.opacity(0.16),
+                in: Circle()
+            )
+            .overlay {
+                Circle().strokeBorder(
+                    galleryControl.isEnabled ? actionButtonBorderColor : Color.gray.opacity(0.6),
+                    lineWidth: 1.5
+                )
+            }
+            .contentShape(Circle())
+            .opacity(galleryControl.opacity)
+            .accessibilityLabel(NSLocalizedString("panoramax.gallery.open", comment: ""))
+            .disabled(!galleryControl.isEnabled)
+
+            Spacer()
+
+            Button { showingLegalInfo = true } label: {
                 Image(systemName: "info.circle.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-            }
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
 
             Spacer()
 
-            Button {
-                showingSettings = true
-            } label: {
+            Button { showingSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(actionButtonBorderColor, lineWidth: 1.5)
-            }
+            .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
         }
         .padding(.horizontal, horizontalPadding)
         .foregroundStyle(primaryForegroundColor)
+    }
+
+    private var trafficSignRecognitionBadge: some View {
+        Button {
+            showingTrafficSignDetails = true
+        } label: {
+            VStack(spacing: 1) {
+                HStack(spacing: 4) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.caption2.weight(.bold))
+                    Text(NSLocalizedString("tsr.badge.title", comment: ""))
+                        .font(.caption2.weight(.bold))
+                        .lineLimit(1)
+                }
+
+                Text(trafficSignRecognitionValueText)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+
+                Text(trafficSignRecognitionStatusText)
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(primaryForegroundColor)
+            .frame(width: 96, height: 58)
+            .background(actionButtonBackgroundColor, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(trafficSignRecognitionAccentColor, lineWidth: 2)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(trafficSignRecognitionAccessibilityLabel)
+        .accessibilityHint(NSLocalizedString("tsr.details.open", comment: ""))
+    }
+
+    private var driveRecorderStatusStrip: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            HStack(spacing: 7) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(viewModel.driveRecorderState == .recording ? Color.red : Color.orange)
+                        .frame(width: 9, height: 9)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(driveRecorderStateText.uppercased())
+                            .font(.caption2.weight(.bold))
+                        Text(driveRecorderElapsedText(at: context.date))
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                    }
+                }
+                .accessibilityElement(children: .combine)
+
+                Spacer(minLength: 0)
+
+                driveRecorderModuleButton(
+                    symbol: "video.fill",
+                    label: NSLocalizedString("drive_recorder.status.dashcam", comment: ""),
+                    selected: viewModel.driveRecorderDashcamActive || viewModel.driveRecorderDashcamTransitioning,
+                    active: viewModel.driveRecorderDashcamActive,
+                    available: viewModel.driveRecorderDashcamAvailable,
+                    transitioning: viewModel.driveRecorderDashcamTransitioning
+                ) {
+                    _ = viewModel.toggleDriveRecorderDashcam()
+                }
+
+                driveRecorderModuleButton(
+                    symbol: trafficSignRecognitionModuleSymbol,
+                    label: NSLocalizedString("drive_recorder.status.tsr", comment: ""),
+                    selected: viewModel.trafficSignRecognitionEnabled,
+                    active: viewModel.driveRecorderTrafficSignRecognitionActive,
+                    available: viewModel.driveRecorderTrafficSignRecognitionAvailable,
+                    transitioning: false
+                ) {
+                    if !viewModel.toggleDriveRecorderTrafficSignRecognition() {
+                        showingTrafficSignDetails = true
+                    }
+                }
+
+                driveRecorderModuleIndicator(
+                    symbol: "photo.stack.fill",
+                    label: NSLocalizedString("drive_recorder.status.panoramax", comment: ""),
+                    enabled: viewModel.driveRecorderPanoramaxActive,
+                    detail: viewModel.driveRecorderPanoramaxActive ? "\(viewModel.panoramaxCaptureCount)" : nil
+                )
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .foregroundStyle(primaryForegroundColor)
+            .background(actionButtonBackgroundColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(actionButtonBorderColor.opacity(0.85), lineWidth: 1.5)
+            }
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    private var showsDriveRecorderStatusStrip: Bool {
+        viewModel.driveRecorderState != .disabled
+    }
+
+    private func driveRecorderModuleIndicator(
+        symbol: String,
+        label: String,
+        enabled: Bool,
+        detail: String? = nil
+    ) -> some View {
+        VStack(spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: enabled ? symbol : "circle.slash")
+                    .font(.caption.weight(.semibold))
+                if let detail {
+                    Text(detail)
+                        .font(.caption2.monospacedDigit().weight(.bold))
+                }
+            }
+            Text(label)
+                .font(.system(size: 9, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(minWidth: 48, minHeight: 44)
+        .opacity(enabled ? 1 : 0.55)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(label), \(NSLocalizedString(enabled ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: ""))")
+    }
+
+    private func driveRecorderModuleButton(
+        symbol: String,
+        label: String,
+        selected: Bool,
+        active: Bool,
+        available: Bool,
+        transitioning: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 1) {
+                if transitioning {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .tint(primaryForegroundColor)
+                } else {
+                    Image(systemName: active ? symbol : (available ? "circle.slash" : "exclamationmark.triangle.fill"))
+                        .font(.caption.weight(.semibold))
+                }
+                Text(label)
+                    .font(.system(size: 9, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            .frame(minWidth: 50, minHeight: 44)
+            .contentShape(Rectangle())
+            .background(
+                active ? Color.red.opacity(0.16) : (selected ? Color.orange.opacity(0.16) : Color.clear),
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(
+                        active ? Color.red.opacity(0.9) : (selected ? Color.orange.opacity(0.9) : Color.clear),
+                        lineWidth: 1.5
+                    )
+            }
+            .opacity(active || selected || transitioning ? 1 : 0.62)
+        }
+        .buttonStyle(.plain)
+        .disabled(!viewModel.canToggleDriveRecorderModules || transitioning)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(driveRecorderModuleAccessibilityValue(
+            active: active,
+            selected: selected,
+            available: available,
+            transitioning: transitioning
+        ))
+        .accessibilityHint(NSLocalizedString("drive_recorder.status.toggle_hint", comment: ""))
+    }
+
+    private func driveRecorderModuleAccessibilityValue(
+        active: Bool,
+        selected: Bool,
+        available: Bool,
+        transitioning: Bool
+    ) -> String {
+        if transitioning {
+            return NSLocalizedString("drive_recorder.status.changing", comment: "")
+        }
+        if !available {
+            return NSLocalizedString(
+                selected ? "drive_recorder.status.selected_unavailable" : "drive_recorder.status.unavailable",
+                comment: ""
+            )
+        }
+        return NSLocalizedString(active ? "drive_recorder.status.on" : "drive_recorder.status.off", comment: "")
+    }
+
+    private var driveRecorderStateText: String {
+        switch viewModel.driveRecorderState {
+        case .disabled:
+            return NSLocalizedString("drive_recorder.state.ready", comment: "")
+        case .preparing:
+            return NSLocalizedString("drive_recorder.state.preparing", comment: "")
+        case .recording:
+            return NSLocalizedString("drive_recorder.state.recording", comment: "")
+        case .stopping:
+            return NSLocalizedString("drive_recorder.state.stopping", comment: "")
+        case .denied:
+            return NSLocalizedString("drive_recorder.state.denied", comment: "")
+        case .unavailable:
+            return NSLocalizedString("drive_recorder.state.unavailable", comment: "")
+        case .failed:
+            return NSLocalizedString("drive_recorder.state.failed", comment: "")
+        }
+    }
+
+    private func driveRecorderElapsedText(at date: Date) -> String {
+        guard let startedAt = viewModel.driveRecorderStartedAt else {
+            return "00:00"
+        }
+        let elapsed = max(0, Int(date.timeIntervalSince(startedAt)))
+        let hours = elapsed / 3_600
+        let minutes = (elapsed % 3_600) / 60
+        let seconds = elapsed % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        }
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var trafficSignRecognitionValueText: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .disabled, .noRecognition:
+            return "—"
+        case .unavailable:
+            return "×"
+        case .provisional(let value), .confirmed(let value):
+            return "\(value)"
+        case .unknown:
+            return "?"
+        }
+    }
+
+    private var trafficSignRecognitionStatusText: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .disabled:
+            return NSLocalizedString("tsr.state.disabled", comment: "")
+        case .unavailable:
+            return NSLocalizedString("tsr.state.unavailable", comment: "")
+        case .noRecognition:
+            return NSLocalizedString("tsr.state.no_recognition", comment: "")
+        case .provisional:
+            return NSLocalizedString("tsr.state.provisional", comment: "")
+        case .confirmed:
+            return NSLocalizedString("tsr.state.confirmed", comment: "")
+        case .unknown:
+            return NSLocalizedString("tsr.state.unknown", comment: "")
+        }
+    }
+
+    private var trafficSignRecognitionAccentColor: Color {
+        switch viewModel.trafficSignRecognitionState {
+        case .confirmed:
+            return .green
+        case .provisional, .unknown:
+            return .orange
+        case .unavailable:
+            return .red
+        case .disabled, .noRecognition:
+            return actionButtonBorderColor.opacity(0.75)
+        }
+    }
+
+    private var trafficSignRecognitionAccessibilityLabel: String {
+        String(
+            format: NSLocalizedString("tsr.badge.accessibility", comment: ""),
+            trafficSignRecognitionValueText,
+            trafficSignRecognitionStatusText
+        )
+    }
+
+    private var trafficSignRecognitionModuleSymbol: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .confirmed:
+            return "checkmark.circle.fill"
+        case .provisional:
+            return "ellipsis.circle.fill"
+        case .unknown:
+            return "questionmark.circle.fill"
+        case .unavailable:
+            return "exclamationmark.triangle.fill"
+        case .disabled, .noRecognition:
+            return "camera.viewfinder"
+        }
+    }
+
+    private var canShowDriveRecorderPreview: Bool {
+        DriveRecorderPolicy.canShowDashcamPreview(
+            for: viewModel.driveRecorderState,
+            dashcamActive: viewModel.driveRecorderDashcamActive,
+            speedCaptureActive: viewModel.isInSpeedCaptureMode
+        ) && viewModel.driveRecorderPreviewSession != nil
+    }
+
+    private func setDriveRecorderPreviewVisible(_ visible: Bool) {
+        if visible {
+            // The Dashcam chip can overlap the workspace on compact layouts.
+            // SwiftUI may finish dispatching that same tap after inserting the
+            // preview, causing its tap-to-hide gesture to fire immediately.
+            driveRecorderPreviewDismissalAllowedAt = Date().addingTimeInterval(
+                DriveRecorderPreviewInteractionPolicy.activationTapGuardInterval
+            )
+        }
+        let selection: DriveRecorderWorkspaceSelection = visible ? .preview : .telemetry
+        guard driveRecorderWorkspaceSelection != selection else { return }
+        if accessibilityReduceMotion {
+            driveRecorderWorkspaceSelection = selection
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                driveRecorderWorkspaceSelection = selection
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func driveStatusWorkspace(
+        primaryFont: CGFloat,
+        secondaryFont: CGFloat,
+        badgeWidth: CGFloat,
+        debugFont: CGFloat,
+        debugSpacing: CGFloat,
+        reservedHeight: CGFloat,
+        sectionGap: CGFloat
+    ) -> some View {
+        let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
+        let workspaceHeight = metricSlotMinHeight + reservedHeight + sectionGap
+        let previewSession = viewModel.driveRecorderPreviewSession
+        let previewPresentation = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable: previewSession != nil,
+            selection: driveRecorderWorkspaceSelection,
+            previewAvailable: canShowDriveRecorderPreview
+        )
+        let showingPreview = previewPresentation.isVisible
+
+        ZStack {
+            VStack(spacing: sectionGap) {
+                metricStatusBlock(
+                    primaryFont: primaryFont,
+                    secondaryFont: secondaryFont
+                )
+                locationStatusBlock(
+                    badgeWidth: badgeWidth,
+                    debugFont: debugFont,
+                    debugSpacing: debugSpacing,
+                    reservedHeight: reservedHeight
+                )
+            }
+            .frame(maxWidth: .infinity, minHeight: workspaceHeight)
+            .contentShape(Rectangle())
+            .opacity(showingPreview ? 0 : 1)
+            .allowsHitTesting(!showingPreview)
+            .accessibilityHidden(showingPreview)
+            .onTapGesture {
+                guard canShowDriveRecorderPreview else { return }
+                setDriveRecorderPreviewVisible(true)
+            }
+
+            // Keep this representable mounted even while telemetry is visible.
+            // Removing/reinserting it assigns AVCaptureVideoPreviewLayer.session
+            // during movie recording, which rebuilds the graph and terminates
+            // the Dashcam file on physical devices.
+            if previewPresentation.isAttached, let session = previewSession {
+                DriveCameraPreview(session: session)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: workspaceHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.32), lineWidth: 1)
+                    }
+                    .overlay {
+                        VStack {
+                            HStack {
+                                Label(
+                                    "\(NSLocalizedString("drive_recorder.preview.live", comment: "")) · \(NSLocalizedString("drive_recorder.status.dashcam", comment: ""))",
+                                    systemImage: "video.fill"
+                                )
+                                .font(.caption.weight(.bold))
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 6)
+                                .background(.black.opacity(0.62), in: Capsule())
+                                Spacer()
+                            }
+                            Spacer()
+                            Text(NSLocalizedString("drive_recorder.preview.hide", comment: ""))
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.black.opacity(0.62), in: Capsule())
+                        }
+                        .foregroundStyle(.white)
+                        .padding(12)
+                    }
+                    .contentShape(Rectangle())
+                    .opacity(showingPreview ? 1 : 0)
+                    .allowsHitTesting(showingPreview)
+                    .accessibilityHidden(!showingPreview)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.preview.live", comment: ""))
+                    .accessibilityHint(NSLocalizedString("drive_recorder.preview.hide", comment: ""))
+                    .onTapGesture {
+                        guard DriveRecorderPreviewInteractionPolicy.canDismissPreview(
+                            at: Date(),
+                            notBefore: driveRecorderPreviewDismissalAllowedAt
+                        ) else { return }
+                        setDriveRecorderPreviewVisible(false)
+                    }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: workspaceHeight)
+        .accessibilityAction(named: NSLocalizedString("drive_recorder.preview.show", comment: "")) {
+            guard canShowDriveRecorderPreview, !showingPreview else { return }
+            setDriveRecorderPreviewVisible(true)
+        }
     }
 
     @ViewBuilder
@@ -281,7 +866,7 @@ struct MainView: View {
                     badgeWidth: badgeWidth
                 )
                 .contentShape(Rectangle())
-                .onTapGesture(count: 2) {
+                .onLongPressGesture {
                     showingDebug = true
                 }
             } else {
@@ -299,7 +884,7 @@ struct MainView: View {
                 .foregroundStyle(primaryForegroundColor)
                 .multilineTextAlignment(.center)
                 .contentShape(Rectangle())
-                .onTapGesture(count: 2) {
+                .onLongPressGesture {
                     showingDebug = true
                 }
             }
@@ -642,6 +1227,166 @@ struct MainView: View {
     }
 }
 
+private struct TrafficSignRecognitionDetailsView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section {
+                LabeledContent(NSLocalizedString("tsr.details.source", comment: "")) {
+                    Label(NSLocalizedString("tsr.details.source_camera", comment: ""), systemImage: "camera.viewfinder")
+                }
+
+                LabeledContent(NSLocalizedString("tsr.details.result", comment: "")) {
+                    HStack(spacing: 8) {
+                        Text(valueText)
+                            .font(.headline.monospacedDigit())
+                        Text(statusText)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Text(stateDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Label(NSLocalizedString("tsr.details.notice", comment: ""), systemImage: "exclamationmark.triangle")
+                    .font(.subheadline.weight(.semibold))
+                Text(NSLocalizedString("tsr.details.privacy", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let event = viewModel.trafficSignRecognitionLastEvent,
+               let context = event.roadContext {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    LabeledContent(NSLocalizedString("tsr.details.model_pack", comment: ""), value: event.packId)
+                    LabeledContent(NSLocalizedString("tsr.details.way_id", comment: ""), value: context.wayId)
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.coordinate", comment: ""),
+                        value: String(format: "%.5f, %.5f", context.latitude, context.longitude)
+                    )
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.direction", comment: ""),
+                        value: String(
+                            format: "%@ · %.0f°",
+                            localizedDirection(context.travelDirection),
+                            context.headingDegrees
+                        )
+                    )
+                    if let candidate = event.candidate {
+                        LabeledContent(
+                            NSLocalizedString("tsr.details.confidence", comment: ""),
+                            value: confidenceText(candidate)
+                        )
+                        if !candidate.restrictions.isEmpty {
+                            LabeledContent(
+                                NSLocalizedString("tsr.details.restrictions", comment: ""),
+                                value: candidate.restrictions
+                                    .map { "\($0.kind.rawValue)=\($0.normalizedValue)" }
+                                    .joined(separator: ", ")
+                            )
+                        }
+                    }
+                    LabeledContent(
+                        NSLocalizedString("tsr.details.precedence", comment: ""),
+                        value: viewModel.trafficSignRecognitionActiveOverride == nil
+                            ? NSLocalizedString("tsr.details.precedence_base", comment: "")
+                            : NSLocalizedString("tsr.details.precedence_camera", comment: "")
+                    )
+                }
+            } else if let packID = viewModel.trafficSignRecognitionModelPackID {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    LabeledContent(NSLocalizedString("tsr.details.model_pack", comment: ""), value: packID)
+                }
+            } else if !viewModel.trafficSignRecognitionUnavailableDetail.isEmpty {
+                Section(NSLocalizedString("tsr.details.context", comment: "")) {
+                    Text(viewModel.trafficSignRecognitionUnavailableDetail)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle(NSLocalizedString("tsr.details.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(NSLocalizedString("common.done", comment: "")) {
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    private var valueText: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .disabled, .noRecognition:
+            return "—"
+        case .unavailable:
+            return "×"
+        case .provisional(let value), .confirmed(let value):
+            return "\(value) km/h"
+        case .unknown:
+            return "?"
+        }
+    }
+
+    private var statusText: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .disabled:
+            return NSLocalizedString("tsr.state.disabled", comment: "")
+        case .unavailable:
+            return NSLocalizedString("tsr.state.unavailable", comment: "")
+        case .noRecognition:
+            return NSLocalizedString("tsr.state.no_recognition", comment: "")
+        case .provisional:
+            return NSLocalizedString("tsr.state.provisional", comment: "")
+        case .confirmed:
+            return NSLocalizedString("tsr.state.confirmed", comment: "")
+        case .unknown:
+            return NSLocalizedString("tsr.state.unknown", comment: "")
+        }
+    }
+
+    private var stateDescription: String {
+        switch viewModel.trafficSignRecognitionState {
+        case .disabled:
+            return NSLocalizedString("tsr.details.disabled", comment: "")
+        case .unavailable:
+            return NSLocalizedString("tsr.details.unavailable", comment: "")
+        case .noRecognition:
+            return NSLocalizedString("tsr.details.no_recognition", comment: "")
+        case .provisional:
+            return NSLocalizedString("tsr.details.provisional", comment: "")
+        case .confirmed:
+            return NSLocalizedString("tsr.details.confirmed", comment: "")
+        case .unknown:
+            return NSLocalizedString("tsr.details.unknown", comment: "")
+        }
+    }
+
+    private func confidenceText(_ candidate: TrafficSignRecognitionCandidate) -> String {
+        if let confidence = candidate.calibratedConfidence {
+            return String(format: "%.1f%%", confidence * 100)
+        }
+        return String(format: "raw %.3f", candidate.rawScore)
+    }
+
+    private func localizedDirection(_ direction: TrafficSignTravelDirection) -> String {
+        switch direction {
+        case .forward:
+            return NSLocalizedString("tsr.direction.forward", comment: "")
+        case .reverse:
+            return NSLocalizedString("tsr.direction.reverse", comment: "")
+        case .unknown:
+            return NSLocalizedString("tsr.direction.unknown", comment: "")
+        }
+    }
+}
+
 private struct SpeedLimitSignView: View {
     let limitText: String
     let numberFontSize: CGFloat
@@ -767,6 +1512,7 @@ private func trafficSignNumberFont(size: CGFloat) -> Font {
 private struct LegalInformationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var legalText: String = LegalTextLoader.load()
+    @State private var trafficSignNoticesText: String = TrafficSignThirdPartyNoticesLoader.load()
 
     var body: some View {
         ScrollView {
@@ -781,6 +1527,50 @@ private struct LegalInformationView: View {
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Color.yellow.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(NSLocalizedString("about.tsr_attribution.title", comment: ""))
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    Text(NSLocalizedString("about.tsr_attribution.intro", comment: ""))
+                        .font(.system(size: 14, weight: .regular, design: .default))
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.detector", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.detector
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.classifier", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.classifier
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.training_data", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.trainingData
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.exporter", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.exporter
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.coremltools", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.coreMLTools
+                    )
+                    Link(
+                        NSLocalizedString("about.tsr_attribution.pytorch", comment: ""),
+                        destination: TrafficSignModelAttributionLinks.pyTorch
+                    )
+                    Divider()
+                    NavigationLink {
+                        TrafficSignThirdPartyNoticesView(text: trafficSignNoticesText)
+                    } label: {
+                        Label(
+                            NSLocalizedString("about.tsr_attribution.licenses", comment: ""),
+                            systemImage: "doc.text"
+                        )
+                    }
+                }
+                .font(.system(size: 14, weight: .regular, design: .default))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Text(legalText)
                     .font(.system(size: 15, weight: .regular, design: .default))
@@ -802,6 +1592,43 @@ private struct LegalInformationView: View {
     }
 }
 
+private struct TrafficSignThirdPartyNoticesView: View {
+    let text: String
+
+    var body: some View {
+        ScrollView {
+            Text(text)
+                .font(.system(size: 13, weight: .regular, design: .monospaced))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .padding(16)
+        }
+        .navigationTitle(NSLocalizedString("about.tsr_attribution.licenses", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private enum TrafficSignModelAttributionLinks {
+    static let detector = URL(
+        string: "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt"
+    )!
+    static let classifier = URL(
+        string: "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md"
+    )!
+    static let trainingData = URL(
+        string: "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13"
+    )!
+    static let exporter = URL(
+        string: "https://github.com/ultralytics/ultralytics/tree/v8.4.56"
+    )!
+    static let coreMLTools = URL(
+        string: "https://github.com/apple/coremltools/tree/9.0"
+    )!
+    static let pyTorch = URL(
+        string: "https://github.com/pytorch/pytorch/tree/v2.13.0"
+    )!
+}
+
 private enum LegalTextLoader {
     static func load(bundle: Bundle = .main) -> String {
         let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
@@ -813,6 +1640,26 @@ private enum LegalTextLoader {
             return text.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return "Rechtliche Hinweise konnten nicht geladen werden."
+    }
+}
+
+enum TrafficSignThirdPartyNoticesLoader {
+    private static let packSubdirectory =
+        "TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack"
+
+    static func load(bundle: Bundle = .main) -> String {
+        let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
+        for candidateBundle in bundles {
+            guard let url = candidateBundle.url(
+                forResource: "THIRD_PARTY_NOTICES",
+                withExtension: "txt",
+                subdirectory: packSubdirectory
+            ), let text = try? String(contentsOf: url, encoding: .utf8) else {
+                continue
+            }
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return NSLocalizedString("about.tsr_attribution.licenses_unavailable", comment: "")
     }
 }
 
@@ -873,6 +1720,77 @@ private struct LocalRecordingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 6)
+
+            NavigationLink {
+                DashcamRecordingsView(viewModel: viewModel)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "video.fill")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(NSLocalizedString("drive_recorder.library.title", comment: ""))
+                            .font(.subheadline.weight(.semibold))
+                        Text(String(
+                            format: NSLocalizedString("drive_recorder.library.count", comment: ""),
+                            viewModel.dashcamRecordings.count
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Label(NSLocalizedString("panoramax.post_drive.title", comment: ""), systemImage: "clock.arrow.circlepath")
+                    .font(.headline)
+
+                Text(NSLocalizedString("panoramax.post_drive.description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Text(String(
+                    format: NSLocalizedString("panoramax.review.local_count", comment: ""),
+                    viewModel.panoramaxBatches.reduce(0) { $0 + $1.items.count }
+                ))
+                .font(.caption.weight(.semibold))
+
+                if !viewModel.canProcessPanoramaxUploads {
+                    Label(NSLocalizedString("panoramax.post_drive.capture_active", comment: ""), systemImage: "record.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+
+                HStack(spacing: 8) {
+                    NavigationLink {
+                        PanoramaxReviewView(viewModel: viewModel)
+                    } label: {
+                        Label(NSLocalizedString("panoramax.review.open", comment: ""), systemImage: "checkmark.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!viewModel.canProcessPanoramaxUploads)
+
+                    NavigationLink {
+                        PanoramaxGalleryView(viewModel: viewModel)
+                    } label: {
+                        Label(NSLocalizedString("panoramax.gallery.open_post_drive", comment: ""), systemImage: "square.grid.2x2")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!viewModel.canProcessPanoramaxUploads)
+                }
+            }
+            .padding(12)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 16)
+            .padding(.top, 4)
 
             List {
                 if viewModel.localObservations.isEmpty {
@@ -999,6 +1917,663 @@ private struct LocalRecordingsView: View {
     }
 }
 
+private struct DashcamRecordingsView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var sharedRecording: DashcamRecording?
+    @State private var selectedRecordingIDs: Set<String> = []
+    @State private var showingDeleteConfirmation = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Group {
+                if viewModel.dashcamRecordings.isEmpty {
+                    ContentUnavailableView(
+                        NSLocalizedString("drive_recorder.library.empty", comment: ""),
+                        systemImage: "video.slash"
+                    )
+                } else {
+                    List {
+                        Section {
+                            ForEach(viewModel.dashcamRecordings) { recording in
+                                HStack(spacing: 12) {
+                                    Button {
+                                        if selectedRecordingIDs.contains(recording.id) {
+                                            selectedRecordingIDs.remove(recording.id)
+                                        } else {
+                                            selectedRecordingIDs.insert(recording.id)
+                                        }
+                                    } label: {
+                                        Image(systemName: selectedRecordingIDs.contains(recording.id) ? "checkmark.square.fill" : "square")
+                                            .font(.title3.weight(.semibold))
+                                            .foregroundStyle(selectedRecordingIDs.contains(recording.id) ? Color.accentColor : .secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(selectedRecordingIDs.contains(recording.id)
+                                        ? NSLocalizedString("drive_recorder.library.deselect", comment: "")
+                                        : NSLocalizedString("drive_recorder.library.select", comment: ""))
+                            Image(systemName: "video.fill")
+                                .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(recording.createdAt.formatted(date: .abbreviated, time: .shortened))
+                                    .font(.subheadline.weight(.semibold))
+                                Text(ByteCountFormatter.string(fromByteCount: recording.byteSize, countStyle: .file))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button {
+                                sharedRecording = recording
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(viewModel.isDriveRecorderActive)
+                                }
+                            }
+                        } footer: {
+                            Text(NSLocalizedString("drive_recorder.library.retention", comment: ""))
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            if !viewModel.dashcamRecordings.isEmpty {
+                HStack(spacing: 8) {
+                    Button {
+                        selectedRecordingIDs = Set(viewModel.dashcamRecordings.map(\.id))
+                    } label: {
+                        Image(systemName: "checkmark.square.fill").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_all", comment: ""))
+                    Button {
+                        selectedRecordingIDs.removeAll()
+                    } label: {
+                        Image(systemName: "square.dashed").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_none", comment: ""))
+                    .disabled(selectedRecordingIDs.isEmpty)
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash").frame(width: 24, height: 24)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel(NSLocalizedString("drive_recorder.library.delete_selected", comment: ""))
+                    .disabled(selectedRecordingIDs.isEmpty || viewModel.isDriveRecorderActive)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(.bar)
+            }
+        }
+        .task { viewModel.refreshDashcamRecordings() }
+        .onChange(of: Set(viewModel.dashcamRecordings.map(\.id))) { _, availableIDs in
+            selectedRecordingIDs.formIntersection(availableIDs)
+        }
+        .sheet(item: $sharedRecording) { recording in
+            ShareSheet(activityItems: [recording.url])
+        }
+        .alert(NSLocalizedString("drive_recorder.library.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+                viewModel.deleteDashcamRecordings(ids: selectedRecordingIDs)
+                selectedRecordingIDs.removeAll()
+            }
+        } message: {
+            Text(String(format: NSLocalizedString("drive_recorder.library.delete_message", comment: ""), selectedRecordingIDs.count))
+        }
+    }
+}
+
+private struct PanoramaxReviewView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+
+    var body: some View {
+        List {
+            if viewModel.panoramaxBatches.isEmpty {
+                ContentUnavailableView(
+                    NSLocalizedString("panoramax.review.empty_title", comment: ""),
+                    systemImage: "camera.aperture",
+                    description: Text(NSLocalizedString("panoramax.review.empty_description", comment: ""))
+                )
+            } else {
+                ForEach(viewModel.panoramaxBatches, id: \.batchID) { batch in
+                    Section {
+                        ForEach(batch.items, id: \.itemID) { item in
+                            PanoramaxReviewItemRow(batch: batch, item: item, viewModel: viewModel)
+                        }
+                    } header: {
+                        HStack {
+                            Text(batch.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            Spacer()
+                            Text(batch.state.rawValue.replacingOccurrences(of: "_", with: " "))
+                        }
+                    } footer: {
+                        let included = batch.items.filter {
+                            $0.state == .captured || $0.state == .included || $0.state == .retryableError
+                        }.count
+                        if batch.state == .awaitingReview, included > 0 {
+                            Button(NSLocalizedString("panoramax.review.approve", comment: "")) {
+                                viewModel.approvePanoramaxBatch(batchID: batch.batchID)
+                            }
+                            .disabled(!viewModel.canProcessPanoramaxUploads)
+                        } else if DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) {
+                            Button(NSLocalizedString("panoramax.gallery.upload", comment: "")) {
+                                viewModel.uploadPanoramaxBatch(batchID: batch.batchID)
+                            }
+                            .disabled(
+                                !viewModel.canProcessPanoramaxUploads
+                                || !viewModel.panoramaxUploadIsReady
+                                || viewModel.isPanoramaxUploadActive(batchID: batch.batchID)
+                            )
+                            if let status = viewModel.panoramaxUploadStatus(for: batch.batchID) { Text(status) }
+                        } else {
+                            Text(String(format: NSLocalizedString("panoramax.review.selected_count", comment: ""), included))
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(NSLocalizedString("panoramax.review.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .task { viewModel.refreshPanoramaxBatches() }
+    }
+}
+
+private struct PanoramaxReviewItemRow: View {
+    let batch: PanoramaxBatchRecord
+    let item: PanoramaxItemRecord
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var showingOriginal = false
+
+    private var included: Bool {
+        item.state == .captured || item.state == .included || item.state == .retryableError
+    }
+
+    private var canEdit: Bool {
+        viewModel.canProcessPanoramaxUploads
+            && !viewModel.isPanoramaxUploadActive(batchID: batch.batchID)
+            && DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state)
+            && DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state)
+    }
+
+    private var canDeleteLocally: Bool {
+        viewModel.canProcessPanoramaxUploads
+            && DriveRecorderPolicy.canDeletePanoramaxItem(
+                batchState: batch.state,
+                itemState: item.state
+            )
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button { showingOriginal = true } label: {
+                thumbnail.frame(width: 112, height: 64)
+            }
+            .buttonStyle(.plain)
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    viewModel.togglePanoramaxFavorite(batchID: batch.batchID, itemID: item.itemID)
+                } label: {
+                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(item.isFavorite ? .yellow : .white)
+                        .padding(6)
+                        .background(.black.opacity(0.55), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!canEdit)
+                .accessibilityLabel(item.isFavorite
+                    ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
+                    : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
+                .padding(4)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.metadata.capturedAt.formatted(date: .omitted, time: .standard))
+                    .font(.caption.weight(.semibold))
+                Text(String(format: "%.5f, %.5f", item.metadata.location.latitude, item.metadata.location.longitude))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                if let heading = item.metadata.location.headingDegrees {
+                    Text(String(format: "Blickrichtung %.0f°", heading))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Text(included ? "Eingeschlossen" : "Ausgeschlossen")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(included ? .green : .secondary)
+            }
+            Spacer(minLength: 0)
+            Button {
+                viewModel.setPanoramaxItemIncluded(batchID: batch.batchID, itemID: item.itemID, included: !included)
+            } label: {
+                Image(systemName: included ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(included ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canEdit)
+            Button(role: .destructive) {
+                viewModel.deletePanoramaxItem(batchID: batch.batchID, itemID: item.itemID)
+            } label: {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.plain)
+            .disabled(!canDeleteLocally)
+        }
+        .sheet(isPresented: $showingOriginal) {
+            NavigationStack {
+                if let url = viewModel.panoramaxOriginalURL(for: item),
+                   let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .padding()
+                        .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
+                        .navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        if let url = viewModel.panoramaxThumbnailURL(for: item),
+           let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Color.secondary.opacity(0.2)
+                .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
+        }
+    }
+}
+
+private struct PanoramaxGalleryView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+
+    var body: some View {
+        TabView {
+            PictureGalleryView(viewModel: viewModel)
+                .tabItem {
+                    Label(NSLocalizedString("gallery.tab.pictures", comment: ""), systemImage: "photo.on.rectangle")
+                }
+            DashcamRecordingsView(viewModel: viewModel)
+                .tabItem {
+                    Label(NSLocalizedString("gallery.tab.videos", comment: ""), systemImage: "video.fill")
+                }
+        }
+        .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct PictureGalleryView: View {
+    @ObservedObject var viewModel: DriveSessionViewModel
+    @State private var selectedItem: GalleryItem?
+    @State private var selectedItemIDs: Set<String> = []
+    @State private var showingDeleteConfirmation = false
+    @State private var showingAccountRequired = false
+
+    private struct GalleryItem: Identifiable {
+        let id: String
+        let batchID: String
+        let item: PanoramaxItemRecord
+    }
+
+    private var entries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] { viewModel.panoramaxGalleryItems }
+    private var locallySelectableEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        entries.filter { canSelectLocally(batch: $0.batch) }
+    }
+    private var selectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        entries.filter { selectedItemIDs.contains($0.item.itemID) }
+    }
+    private var uploadableSelectedEntries: [(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord)] {
+        selectedEntries.filter { isUploadEligible(batch: $0.batch, item: $0.item) }
+    }
+    private var resumableBatchIDs: Set<String> {
+        Set(viewModel.panoramaxBatches.compactMap { batch in
+            DriveRecorderPolicy.canResumePanoramaxRemoteSet(
+                batchState: batch.state,
+                remoteUploadSetID: batch.remoteUploadSetID,
+                itemStates: batch.items.map(\.state)
+            ) ? batch.batchID : nil
+        })
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            Group {
+                if entries.isEmpty {
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.empty", comment: ""), systemImage: "photo.on.rectangle")
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                            ForEach(entries, id: \.item.itemID) { entry in
+                            let galleryItem = GalleryItem(id: entry.item.itemID, batchID: entry.batch.batchID, item: entry.item)
+                            Button { selectedItem = galleryItem } label: {
+                                thumbnail(for: entry.item)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 110)
+                                    .clipped()
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(alignment: .topLeading) {
+                                Button {
+                                    if selectedItemIDs.contains(entry.item.itemID) {
+                                        selectedItemIDs.remove(entry.item.itemID)
+                                    } else if canSelectLocally(batch: entry.batch) {
+                                        selectedItemIDs.insert(entry.item.itemID)
+                                    }
+                                } label: {
+                                    Image(systemName: selectedItemIDs.contains(entry.item.itemID) ? "checkmark.square.fill" : "square")
+                                        .font(.title2.weight(.semibold))
+                                        .foregroundStyle(selectedItemIDs.contains(entry.item.itemID) ? Color.accentColor : .white)
+                                        .padding(6)
+                                        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!canSelectLocally(batch: entry.batch))
+                                .accessibilityLabel(selectedItemIDs.contains(entry.item.itemID)
+                                    ? NSLocalizedString("panoramax.gallery.deselect", comment: "")
+                                    : NSLocalizedString("panoramax.gallery.select", comment: ""))
+                                .padding(6)
+                            }
+                            .overlay(alignment: .topTrailing) {
+                                Button {
+                                    viewModel.togglePanoramaxFavorite(batchID: galleryItem.batchID, itemID: galleryItem.item.itemID)
+                                } label: {
+                                    Image(systemName: entry.item.isFavorite ? "star.fill" : "star")
+                                        .foregroundStyle(entry.item.isFavorite ? .yellow : .white)
+                                        .padding(7)
+                                        .background(.black.opacity(0.55), in: Circle())
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(
+                                    !viewModel.canProcessPanoramaxUploads
+                                    || viewModel.isPanoramaxUploadActive(batchID: entry.batch.batchID)
+                                )
+                                .accessibilityLabel(entry.item.isFavorite
+                                    ? NSLocalizedString("panoramax.gallery.favorite_remove", comment: "")
+                                    : NSLocalizedString("panoramax.gallery.favorite_add", comment: ""))
+                                .padding(6)
+                            }
+                            .overlay(alignment: .bottomLeading) {
+                                Text(entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.white)
+                                    .padding(5)
+                                    .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 5))
+                                    .padding(6)
+                                    .allowsHitTesting(false)
+                            }
+                            .overlay(alignment: .bottomTrailing) {
+                                if let status = statusPresentation(for: entry.item) {
+                                    Image(systemName: status.systemImage)
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(status.color)
+                                        .padding(6)
+                                        .background(.black.opacity(0.65), in: Circle())
+                                        .padding(6)
+                                        .allowsHitTesting(false)
+                                        .accessibilityLabel(status.accessibilityLabel)
+                                }
+                            }
+                            .overlay {
+                                if let annotation = primaryTrafficSignAnnotation(for: entry.item) {
+                                    GallerySpeedLimitOverlay(speedLimitKmh: annotation.speedLimitKmh)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                            .accessibilityElement(children: .contain)
+                        }
+                        }
+                        .padding(12)
+                    }
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            if !entries.isEmpty
+                || !viewModel.activePanoramaxUploadBatchIDs.isEmpty
+                || viewModel.panoramaxMaintenanceIssue != nil {
+                VStack(spacing: 6) {
+                    if !viewModel.canProcessPanoramaxUploads {
+                        Label(NSLocalizedString("panoramax.gallery.upload_capture_active", comment: ""), systemImage: "record.circle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.center)
+                    }
+                    if let issue = viewModel.panoramaxMaintenanceIssue {
+                        Label(issue, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .multilineTextAlignment(.center)
+                    }
+                    if let progress = viewModel.panoramaxAggregateUploadProgress {
+                        VStack(spacing: 3) {
+                            if progress.totalItems > 0 {
+                                ProgressView(value: progress.fractionCompleted)
+                            } else {
+                                ProgressView()
+                            }
+                            Text(progressText(progress))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 12)
+                    }
+                    HStack(spacing: 8) {
+                        if !entries.isEmpty {
+                            Button {
+                                selectedItemIDs = Set(locallySelectableEntries.map { $0.item.itemID })
+                            } label: {
+                                Image(systemName: "checkmark.square.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_all", comment: ""))
+                            .disabled(locallySelectableEntries.isEmpty)
+                            Button {
+                                selectedItemIDs.removeAll()
+                            } label: {
+                                Image(systemName: "square.dashed")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_none", comment: ""))
+                            .disabled(selectedItemIDs.isEmpty)
+                            Button(role: .destructive) { showingDeleteConfirmation = true } label: {
+                                Image(systemName: "trash")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.delete", comment: ""))
+                            .disabled(
+                                selectedItemIDs.isEmpty
+                                || !viewModel.canProcessPanoramaxUploads
+                            )
+                        }
+                        Spacer(minLength: 0)
+                        if viewModel.activePanoramaxUploadBatchIDs.isEmpty, !entries.isEmpty {
+                            Button {
+                                guard viewModel.canProcessPanoramaxUploads else { return }
+                                guard viewModel.panoramaxUploadIsReady else {
+                                    showingAccountRequired = true
+                                    return
+                                }
+                                viewModel.uploadPanoramaxSelections(
+                                    uploadableSelectedEntries.map {
+                                        (batchID: $0.batch.batchID, itemID: $0.item.itemID)
+                                    }
+                                )
+                                let newlyStartedBatchIDs = Set(uploadableSelectedEntries.map { $0.batch.batchID })
+                                for batchID in resumableBatchIDs.subtracting(newlyStartedBatchIDs) {
+                                    viewModel.uploadPanoramaxBatch(batchID: batchID)
+                                }
+                            } label: {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.upload", comment: ""))
+                            .disabled(
+                                (uploadableSelectedEntries.isEmpty && resumableBatchIDs.isEmpty)
+                                || !viewModel.canProcessPanoramaxUploads
+                            )
+                        } else {
+                            Button(role: .destructive) {
+                                viewModel.stopPanoramaxUploads()
+                            } label: {
+                                Image(systemName: "stop.circle.fill")
+                                    .frame(width: 24, height: 24)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .accessibilityLabel(NSLocalizedString("panoramax.gallery.stop_upload", comment: ""))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                }
+                .background(.bar)
+            }
+        }
+        .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .task { viewModel.refreshPanoramaxBatches() }
+        .onChange(of: Set(entries.map { $0.item.itemID })) { _, availableIDs in
+            selectedItemIDs.formIntersection(availableIDs)
+        }
+        .sheet(item: $selectedItem) { selection in
+            NavigationStack {
+                if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
+                    ZStack {
+                        Image(uiImage: image).resizable().scaledToFit()
+                        if let annotation = primaryTrafficSignAnnotation(for: selection.item) {
+                            GallerySpeedLimitOverlay(speedLimitKmh: annotation.speedLimitKmh, diameter: 92)
+                        }
+                    }
+                    .padding()
+                    .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
+                    .navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
+                }
+            }
+        }
+        .alert(NSLocalizedString("panoramax.gallery.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+                viewModel.deletePanoramaxSelections(selectedEntries.map { (batchID: $0.batch.batchID, itemID: $0.item.itemID) })
+                selectedItemIDs.removeAll()
+            }
+        } message: {
+            Text(String(format: NSLocalizedString("panoramax.gallery.delete_message", comment: ""), selectedItemIDs.count))
+        }
+        .alert(NSLocalizedString("panoramax.gallery.account_required_title", comment: ""), isPresented: $showingAccountRequired) {
+            Button(NSLocalizedString("common.done", comment: ""), role: .cancel) {}
+        } message: {
+            Text(NSLocalizedString("panoramax.gallery.upload_requires_account", comment: ""))
+        }
+    }
+
+    private func canSelectLocally(batch _: PanoramaxBatchRecord) -> Bool {
+        viewModel.canProcessPanoramaxUploads
+    }
+
+    private func isUploadEligible(batch: PanoramaxBatchRecord, item: PanoramaxItemRecord) -> Bool {
+        canSelectLocally(batch: batch)
+            && DriveRecorderPolicy.canEditPanoramaxSelection(in: batch.state)
+            && DriveRecorderPolicy.canSelectPanoramaxItem(in: item.state)
+    }
+
+    private func progressText(_ progress: PanoramaxUploadProgress) -> String {
+        let key: String
+        switch progress.phase {
+        case .preparing: key = "panoramax.gallery.progress_preparing"
+        case .uploading: key = "panoramax.gallery.progress_uploading"
+        case .processing: key = "panoramax.gallery.progress_processing"
+        case .stopping: key = "panoramax.gallery.progress_stopping"
+        }
+        return String(
+            format: NSLocalizedString(key, comment: ""),
+            progress.completedItems,
+            progress.totalItems
+        )
+    }
+
+    private func statusPresentation(for item: PanoramaxItemRecord) -> (
+        systemImage: String,
+        color: Color,
+        accessibilityLabel: String
+    )? {
+        switch item.state {
+        case .captured, .queued, .included:
+            return ("clock.fill", .orange, NSLocalizedString("panoramax.gallery.status_waiting", comment: ""))
+        case .uploading:
+            return ("arrow.up.circle.fill", .blue, NSLocalizedString("panoramax.gallery.status_uploading", comment: ""))
+        case .uploaded, .accepted, .duplicate:
+            return ("pano.fill", .green, NSLocalizedString("panoramax.gallery.status_uploaded", comment: ""))
+        case .retryableError:
+            return ("clock.fill", .orange, NSLocalizedString("panoramax.gallery.status_retry", comment: ""))
+        case .abandoned:
+            return ("exclamationmark.triangle.fill", .orange, NSLocalizedString("panoramax.gallery.status_abandoned", comment: ""))
+        case .rejected, .permanentError:
+            return ("exclamationmark.triangle.fill", .red, NSLocalizedString("panoramax.gallery.status_failed", comment: ""))
+        case .excluded:
+            return nil
+        }
+    }
+
+    private func primaryTrafficSignAnnotation(
+        for item: PanoramaxItemRecord
+    ) -> PanoramaxTrafficSignAnnotation? {
+        item.metadata.trafficSignAnnotations?.max {
+            $0.classificationConfidence < $1.classificationConfidence
+        }
+    }
+
+    @ViewBuilder
+    private func thumbnail(for item: PanoramaxItemRecord) -> some View {
+        if let url = viewModel.panoramaxThumbnailURL(for: item), let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image).resizable().scaledToFill()
+        } else {
+            Color.secondary.opacity(0.2).overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
+        }
+    }
+}
+
+private struct GallerySpeedLimitOverlay: View {
+    let speedLimitKmh: Int
+    var diameter: CGFloat = 62
+
+    var body: some View {
+        Text("\(speedLimitKmh)")
+            .font(.system(size: diameter * 0.39, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(.black)
+            .frame(width: diameter, height: diameter)
+            .background(.white, in: Circle())
+            .overlay {
+                Circle().stroke(.red, lineWidth: max(5, diameter * 0.09))
+            }
+            .shadow(color: .black.opacity(0.7), radius: 4, y: 2)
+            .accessibilityLabel(String(
+                format: NSLocalizedString("gallery.recognized_speed", comment: ""),
+                speedLimitKmh
+            ))
+    }
+}
+
 private struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
 
@@ -1011,6 +2586,7 @@ private struct ShareSheet: UIViewControllerRepresentable {
 
 private struct SettingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @ObservedObject var account: PanoramaxAccountModel
     @State private var showingDeleteDownloadedBundlesConfirm = false
 
     var body: some View {
@@ -1041,6 +2617,143 @@ private struct SettingsView: View {
                 Text(audioHintText)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+            }
+
+            Section(NSLocalizedString("drive_recorder.settings.section", comment: "")) {
+                Text(NSLocalizedString("drive_recorder.settings.description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent(NSLocalizedString("drive_recorder.settings.status", comment: ""), value: driveRecorderStatusText)
+
+                Toggle(NSLocalizedString("drive_recorder.settings.tsr", comment: ""), isOn: $viewModel.trafficSignRecognitionEnabled)
+                    .disabled(viewModel.isDriveRecorderActive)
+                Text(NSLocalizedString("drive_recorder.settings.tsr_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Picker(
+                    NSLocalizedString("drive_recorder.settings.tsr_feedback", comment: ""),
+                    selection: $viewModel.trafficSignFeedbackMode
+                ) {
+                    ForEach(TrafficSignFeedbackMode.allCases) { mode in
+                        Text(mode.label).tag(mode)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(!viewModel.trafficSignRecognitionEnabled)
+                Text(NSLocalizedString("drive_recorder.settings.tsr_feedback_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Toggle(NSLocalizedString("drive_recorder.settings.panoramax", comment: ""), isOn: $viewModel.panoramaxCaptureEnabled)
+                    .disabled(viewModel.isDriveRecorderActive)
+                Text(NSLocalizedString("drive_recorder.settings.panoramax_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Label(NSLocalizedString("drive_recorder.settings.shared_camera", comment: ""), systemImage: "camera.viewfinder")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Label(NSLocalizedString("drive_recorder.settings.upload_later", comment: ""), systemImage: "clock.arrow.circlepath")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                if viewModel.panoramaxCaptureEnabled {
+                    LabeledContent(NSLocalizedString("panoramax.settings.saved_images", comment: ""), value: "\(viewModel.panoramaxCaptureCount)")
+
+                    Picker(NSLocalizedString("panoramax.settings.trigger", comment: ""), selection: $viewModel.panoramaxTriggerMode) {
+                        ForEach(PanoramaxCaptureTriggerMode.allCases, id: \.self) { mode in
+                            Text(mode.label).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(NSLocalizedString("panoramax.settings.minimum_distance", comment: ""))
+                            Spacer()
+                            Text("\(Int(viewModel.panoramaxMinimumDistanceMeters.rounded())) m")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $viewModel.panoramaxMinimumDistanceMeters, in: 3...100, step: 1)
+                    }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(NSLocalizedString("panoramax.settings.minimum_time", comment: ""))
+                            Spacer()
+                            Text("\(Int(viewModel.panoramaxMinimumIntervalSeconds.rounded())) s")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $viewModel.panoramaxMinimumIntervalSeconds, in: 1...60, step: 1)
+                    }
+
+                    if let accuracy = viewModel.panoramaxLastAccuracyMeters {
+                        Text(String(format: NSLocalizedString("panoramax.settings.gps_distance_explanation", comment: ""), Int(accuracy.rounded())))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text(NSLocalizedString("panoramax.settings.gps_accuracy_explanation", comment: ""))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Toggle(NSLocalizedString("panoramax.settings.unlimited_storage", comment: ""), isOn: $viewModel.panoramaxUnlimitedStorage)
+                    if !viewModel.panoramaxUnlimitedStorage {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(NSLocalizedString("panoramax.settings.storage_limit", comment: ""))
+                                Spacer()
+                                Text("\(Int(viewModel.panoramaxStorageLimitMB.rounded())) MB")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: $viewModel.panoramaxStorageLimitMB, in: 100...10_000, step: 100)
+                        }
+                        Text(NSLocalizedString("panoramax.settings.retention_description", comment: ""))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                }
+
+                Toggle(
+                    NSLocalizedString("panoramax.settings.delete_uploaded", comment: ""),
+                    isOn: $viewModel.panoramaxDeleteUploadedImages
+                )
+                Text(NSLocalizedString("panoramax.settings.delete_uploaded_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(NSLocalizedString("panoramax.account.section", comment: "")) {
+                LabeledContent(
+                    NSLocalizedString("panoramax.account.instance", comment: ""),
+                    value: PanoramaxServiceConfiguration.instanceName
+                )
+
+                Text(NSLocalizedString("panoramax.account.security_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent(NSLocalizedString("panoramax.account.status", comment: ""), value: account.status)
+
+                if account.isConnected {
+                    Button(NSLocalizedString("panoramax.account.disconnect", comment: ""), role: .destructive) {
+                        account.disconnect()
+                    }
+                } else {
+                    Button(NSLocalizedString("panoramax.account.connect", comment: "")) {
+                        account.connect()
+                    }
+                    Button(NSLocalizedString("panoramax.account.validate", comment: "")) {
+                        account.validateConnection()
+                    }
+                }
             }
 
             Section(NSLocalizedString("settings.maps.section", comment: "")) {
@@ -1200,6 +2913,25 @@ private struct SettingsView: View {
             return "Synchronisierung fehlgeschlagen"
         default:
             return viewModel.syncStatus.replacingOccurrences(of: "_", with: " ")
+        }
+    }
+
+    private var driveRecorderStatusText: String {
+        switch viewModel.driveRecorderState {
+        case .disabled:
+            return NSLocalizedString("drive_recorder.state.ready", comment: "")
+        case .preparing:
+            return NSLocalizedString("drive_recorder.state.preparing", comment: "")
+        case .recording:
+            return NSLocalizedString("drive_recorder.state.recording", comment: "")
+        case .stopping:
+            return NSLocalizedString("drive_recorder.state.stopping", comment: "")
+        case .denied:
+            return NSLocalizedString("drive_recorder.state.denied", comment: "")
+        case .unavailable:
+            return NSLocalizedString("drive_recorder.state.unavailable", comment: "")
+        case .failed:
+            return NSLocalizedString("drive_recorder.state.failed", comment: "")
         }
     }
 
@@ -1387,12 +3119,17 @@ private struct DebugInformationView: View {
                         shareItem = LocalDebugShareItem(url: matchLogURL)
                     }
                 }
-                if gpsLogURL != nil || matchLogURL != nil {
+                if let tsrLogURL {
+                    Button("TSR-Log teilen") {
+                        shareItem = LocalDebugShareItem(url: tsrLogURL)
+                    }
+                }
+                if gpsLogURL != nil || matchLogURL != nil || tsrLogURL != nil {
                     Button("Fahrlog leeren", role: .destructive) {
                         showingClearDrivingLogConfirm = true
                     }
                 }
-                if gpsLogURL == nil && matchLogURL == nil {
+                if gpsLogURL == nil && matchLogURL == nil && tsrLogURL == nil {
                     Text("Noch keine Logdateien vorhanden.")
                         .foregroundStyle(.secondary)
                 }
@@ -1486,7 +3223,7 @@ private struct DebugInformationView: View {
                 viewModel.clearDrivingLogs()
             }
         } message: {
-            Text("GPS-CSV und Matcher-Log werden geleert. Neue Fahrdaten werden anschliessend wieder normal aufgezeichnet.")
+            Text("GPS-CSV, Matcher-Log und TSR-Log werden geleert. Neue Fahrdaten werden anschliessend wieder normal aufgezeichnet.")
         }
         .sheet(isPresented: $showingOSMBrowser) {
             if let target = osmTarget {
@@ -1546,6 +3283,7 @@ private struct DebugInformationView: View {
             ("Stadt-Resolve", String(format: "%.3f ms", viewModel.lastLookupCityResolveMs)),
             ("GPS-Log", viewModel.gpsLogPath.isEmpty ? "n/a" : viewModel.gpsLogPath),
             ("Matcher-Log", viewModel.matchLogPath.isEmpty ? "n/a" : viewModel.matchLogPath),
+            ("TSR-Log", viewModel.tsrLogPath.isEmpty ? "n/a" : viewModel.tsrLogPath),
             ("Manifest-Endpunkte", "\(viewModel.configuredManifestEndpointCount)"),
             ("Manifest-Länder", viewModel.configuredManifestCountryCodes),
         ]
@@ -1563,6 +3301,11 @@ private struct DebugInformationView: View {
             return nil
         }
         return URL(fileURLWithPath: viewModel.matchLogPath)
+    }
+
+    private var tsrLogURL: URL? {
+        guard !viewModel.tsrLogPath.isEmpty else { return nil }
+        return URL(fileURLWithPath: viewModel.tsrLogPath)
     }
 
     private var latText: String {

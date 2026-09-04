@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "bundle_id": "fixture-diagnostic-bundle-v1",
+  "capture_group_id": "fixture-drive-2026-01-01",
+  "purpose": "training",
+  "created_at": "2026-01-01T12:00:05Z",
+  "producer": {
+    "platform": "ios",
+    "app_version": "1.0.1",
+    "build": "fixture",
+    "device_tier": "fixture"
+  },
+  "consent": {
+    "scope": "tsr_diagnostic_dataset",
+    "policy_version": "fixture-v1",
+    "granted_at": "2026-01-01T11:59:00Z",
+    "export_approved": true,
+    "retention_expires_at": "2030-02-01T00:00:00Z"
+  },
+  "privacy": {
+    "full_frame_retention": true,
+    "location_mode": "exact_local_encrypted",
+    "redaction_state": "verified",
+    "raw_dashcam_video_included": false,
+    "direct_device_identifier_included": false
+  },
+  "active_model": {
+    "pack_id": "de-speed-signs-fixture-v1",
+    "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "preprocessing_version": "vision-scale-fit-rgb-v1"
+  },
+  "samples": [
+    {
+      "sample_id": "fixture-sample-0001",
+      "source": "live_shared_frame",
+      "frame_timestamp_utc": "2026-01-01T12:00:00.400Z",
+      "monotonic_timestamp_ns": 400000000,
+      "trigger": "candidate",
+      "capture_context": {
+        "road_context_complete": true,
+        "way_id": "123456",
+        "latitude": 49.0069,
+        "longitude": 8.4037,
+        "heading_degrees": 82.0,
+        "travel_direction": "forward",
+        "speed_kmh": 42.0,
+        "map_context_revision": 17,
+        "map_source_signature": "way:123456|local:none|osm:50"
+      },
+      "assets": [
+        {
+          "role": "full_frame",
+          "assembly_id": null,
+          "object_id": null,
+          "path": "frames/frame-0001.ppm",
+          "sha256": "9c17bd807bb67f0a040820b9905c41108beab041a2751e330c56e5fa7f51f177",
+          "media_type": "image/x-portable-pixmap",
+          "width": 4,
+          "height": 4,
+          "source_bounding_box": null
+        },
+        {
+          "role": "assembly_crop",
+          "assembly_id": "assembly-1",
+          "object_id": null,
+          "path": "crops/assembly-0001.ppm",
+          "sha256": "88a7b221430c50e3042fa445e9e9201dd3b315ff083d8bdd387504130c9dc99e",
+          "media_type": "image/x-portable-pixmap",
+          "width": 2,
+          "height": 3,
+          "source_bounding_box": {
+            "x": 0.65,
+            "y": 0.1,
+            "width": 0.2,
+            "height": 0.45
+          }
+        }
+      ],
+      "predictions": [
+        {
+          "object_id": "prediction-primary-1",
+          "assembly_id": "assembly-1",
+          "parent_object_id": null,
+          "role": "primary_sign",
+          "raw_class_id": "speed_limit_30",
+          "raw_score": 0.9,
+          "calibrated_confidence": 0.86,
+          "bounding_box": {
+            "x": 0.69,
+            "y": 0.14,
+            "width": 0.09,
+            "height": 0.13
+          }
+        },
+        {
+          "object_id": "prediction-plate-1",
+          "assembly_id": "assembly-1",
+          "parent_object_id": "prediction-primary-1",
+          "role": "supplementary_plate",
+          "raw_class_id": "supplementary_wet",
+          "raw_score": 0.74,
+          "calibrated_confidence": 0.68,
+          "bounding_box": {
+            "x": 0.69,
+            "y": 0.28,
+            "width": 0.11,
+            "height": 0.07
+          }
+        }
+      ],
+      "annotation": {
+        "status": "corrected",
+        "reviewed_at": "2026-01-01T12:05:00Z",
+        "objects": [
+          {
+            "object_id": "primary-1",
+            "assembly_id": "assembly-1",
+            "parent_object_id": null,
+            "role": "primary_sign",
+            "class_id": "speed_limit_30",
+            "bounding_box": {
+              "x": 0.69,
+              "y": 0.14,
+              "width": 0.09,
+              "height": 0.13
+            },
+            "primary_semantic": {
+              "kind": "maximum_speed",
+              "value": 30,
+              "unit": "km/h"
+            },
+            "restriction": null
+          },
+          {
+            "object_id": "plate-1",
+            "assembly_id": "assembly-1",
+            "parent_object_id": "primary-1",
+            "role": "supplementary_plate",
+            "class_id": "supplementary_wet",
+            "bounding_box": {
+              "x": 0.69,
+              "y": 0.28,
+              "width": 0.11,
+              "height": 0.07
+            },
+            "primary_semantic": null,
+            "restriction": {
+              "kind": "weather",
+              "normalized_value": "wet",
+              "raw_text": "bei Naesse",
+              "country_sign_code": "DE:1053-35"
+            }
+          }
+        ],
+        "assemblies": [
+          {
+            "assembly_id": "assembly-1",
+            "bounding_box": {
+              "x": 0.65,
+              "y": 0.1,
+              "width": 0.2,
+              "height": 0.45
+            },
+            "primary_object_id": "primary-1",
+            "supplementary_object_ids": ["plate-1"],
+            "condition_state": "resolved"
+          }
+        ]
+      }
+    }
+  ]
+}

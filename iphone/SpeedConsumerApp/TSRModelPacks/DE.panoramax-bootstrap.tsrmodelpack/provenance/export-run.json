@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "run_id": "panoramax-bootstrap-coreml-export-2026-09-02",
+  "mode": "published_checkpoint_conversion_only",
+  "exporter": {
+    "ultralytics": "8.4.56",
+    "coremltools": "9.0",
+    "torch": "2.13.0"
+  },
+  "artifacts": [
+    {
+      "component": "detector",
+      "source_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+      "configuration": "imgsz=1280,batch=1,half=true,nms=true",
+      "output": "yolo11n_panoramax.mlmodelc"
+    },
+    {
+      "component": "classifier",
+      "source_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+      "configuration": "imgsz=224,batch=1,half=true,nms=false",
+      "output": "classify_de_road_signs.mlmodelc"
+    }
+  ]
+}

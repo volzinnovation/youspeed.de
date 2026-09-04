@@ -1,0 +1,709 @@
+{
+  "schema_version": 1,
+  "workflow_id": "youspeed-tsr-m0-v2-offline",
+  "mode": "offline_readiness_only",
+  "safety_policy": {
+    "network_allowed": false,
+    "paid_compute_allowed": false,
+    "executes_training": false,
+    "executes_export": false,
+    "deserializes_models": false,
+    "generates_model_artifacts": false
+  },
+  "source_manifest": {
+    "document_id": "youspeed-tsr-training-sources-v1",
+    "path": "shared/tsr/training-sources-v1.json",
+    "sha256": "4985ebb8a146918c113700d312e6becb893acfed1d07f2bfa16263fadf0c1cbc"
+  },
+  "selection_registry": {
+    "document_id": "youspeed-tsr-model-selection-v1",
+    "path": "shared/tsr/model-selection-v1.json",
+    "sha256": "7019d6abaae0f16e774de910172cdbebbc7fe766140b32d043b7fd527d996dda",
+    "selected_candidate_id": null
+  },
+  "contracts": [
+    {
+      "document_id": "taxonomy-v2",
+      "path": "shared/tsr/taxonomy-v2.json",
+      "sha256": "7028a0baaaa4036816bb592d11ab29e8672472dca089bd92cc6971a162cb10f6"
+    },
+    {
+      "document_id": "zod-supplementary-plate-audit-v1",
+      "path": "shared/tsr/zod-supplementary-plate-audit-v1.json",
+      "sha256": "545ba35f67de2e2ba551e028bee40447e1d9360f109c39e870cbce4c4762d634"
+    },
+    {
+      "document_id": "full-scene-annotation-v2-schema",
+      "path": "shared/tsr/full-scene-annotation-v2.schema.json",
+      "sha256": "d3a1ad7cc343eeb016bd67a4d761eadc4e45c9a96cf2849bb1ad7b83560e9f56"
+    },
+    {
+      "document_id": "group-split-v2-schema",
+      "path": "shared/tsr/group-split-v2.schema.json",
+      "sha256": "b3d366b36555036478fbfc5821b33fa8d39053ca0141c49627a9f06865ecae12"
+    },
+    {
+      "document_id": "model-pack-v2-schema",
+      "path": "shared/tsr/model-pack-v2.schema.json",
+      "sha256": "6afe894f8217f772315110ce4a1c8fb033a718b62644941fd0a10da8d1ab53f7"
+    },
+    {
+      "document_id": "model-evaluation-v1-schema",
+      "path": "shared/tsr/model-evaluation.schema.json",
+      "sha256": "f264a648f62a9ca8cd987becb2556c82380092f59c8243724e25405d030c2d2b"
+    },
+    {
+      "document_id": "recognition-event-v2-schema",
+      "path": "shared/tsr/recognition-event-v2.schema.json",
+      "sha256": "d26163743f5d4b18ed98147dbb77e74c715894313a3fc6c6451bf344667f88aa"
+    }
+  ],
+  "contract_mappings": {
+    "registry_to_pack_roles": {
+      "proposal_detector": "proposal_detector",
+      "classifier": "semantic_classifier"
+    },
+    "pack_to_evaluation_artifacts": {
+      "checkpoint": "trained_checkpoint",
+      "onnx": "reference_onnx",
+      "coreml": "coreml",
+      "litert": "litert"
+    },
+    "serialization_to_evaluation_formats": {
+      "safetensors": "safetensors",
+      "onnx": "onnx",
+      "coreml_mlpackage_zip": "coreml-compiled-model",
+      "tflite_flatbuffer": "litert-flatbuffer"
+    }
+  },
+  "source_artifact_requirements": [
+    {
+      "requirement_id": "yolox-initialization",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "yolox-0.1.1rc0",
+        "artifact_id": "yolox-nano-coco-0.1.1rc0"
+      }
+    },
+    {
+      "requirement_id": "mnv3-large-initialization",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+        "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1"
+      }
+    },
+    {
+      "requirement_id": "mnv3-small-initialization",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "timm-mobilenetv3-small-lamb-in1k-1824797",
+        "artifact_id": "mobilenetv3-small-lamb-in1k-1824797"
+      }
+    },
+    {
+      "requirement_id": "gtsign-offline-teacher",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "gtsign-220-e235536",
+        "artifact_id": "gtsign-220-vit-all-classes"
+      }
+    },
+    {
+      "requirement_id": "panoramax-training-crops",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "panoramax-de-crops-b485694",
+        "artifact_id": "panoramax-de-train-b485694"
+      }
+    },
+    {
+      "requirement_id": "synset-training-archive",
+      "phase": "training",
+      "source_ref": {
+        "source_id": "synset-signset-germany-dcc1znjxu7apx8rn",
+        "artifact_id": "synset-signset-germany-archive"
+      }
+    },
+    {
+      "requirement_id": "panoramax-offline-benchmark",
+      "phase": "evidence",
+      "source_ref": {
+        "source_id": "panoramax-de-classifier-5360aa6",
+        "artifact_id": "panoramax-de-yolo26-classifier-5360aa6"
+      }
+    }
+  ],
+  "data_requirements": [
+    {
+      "requirement_id": "reviewed-full-scene-annotations",
+      "kind": "full_scene_annotation_manifest_v2",
+      "phase": "training",
+      "path": "inputs/reviewed-full-scene-annotations-v2.json",
+      "source_ids": [],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "No frozen reviewed full-scene supplementary-plate box inventory exists."
+      }
+    },
+    {
+      "requirement_id": "grouped-train-calibration-holdout-split",
+      "kind": "group_split_manifest_v2",
+      "phase": "training",
+      "path": "inputs/group-split-v2.json",
+      "source_ids": [
+        "zod-frames-2.0.0",
+        "gtsign-220-e235536",
+        "panoramax-de-crops-b485694",
+        "synset-signset-germany-dcc1znjxu7apx8rn"
+      ],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "No frozen connected-component train/calibration/holdout split exists."
+      }
+    },
+    {
+      "requirement_id": "zod-byte-inventory",
+      "kind": "sha256_inventory",
+      "phase": "training",
+      "path": "inventories/zod-frames-2.0.0-sha256.json",
+      "source_ids": ["zod-frames-2.0.0"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "ZOD access and the exact eligible-byte inventory are not frozen."
+      }
+    },
+    {
+      "requirement_id": "gtsign-byte-inventory",
+      "kind": "sha256_inventory",
+      "phase": "training",
+      "path": "inventories/gtsign-220-e235536-sha256.json",
+      "source_ids": ["gtsign-220-e235536"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The selected GTSIGN crop and metadata bytes are not inventoried."
+      }
+    },
+    {
+      "requirement_id": "panoramax-regrouped-byte-inventory",
+      "kind": "sha256_inventory",
+      "phase": "training",
+      "path": "inventories/panoramax-regrouped-training-sha256.json",
+      "source_ids": ["panoramax-de-crops-b485694"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "Panoramax crops have not been regrouped into leakage-safe YouSpeed partitions."
+      }
+    },
+    {
+      "requirement_id": "synset-byte-inventory",
+      "kind": "sha256_inventory",
+      "phase": "training",
+      "path": "inventories/synset-signset-germany-sha256.json",
+      "source_ids": ["synset-signset-germany-dcc1znjxu7apx8rn"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The manually acquired Synset archive and extracted files lack a SHA-256 inventory."
+      }
+    },
+    {
+      "requirement_id": "gtsign-taxonomy-adapter",
+      "kind": "taxonomy_adapter",
+      "phase": "training",
+      "path": "adapters/gtsign-220-to-tsr-semantic-v2.json",
+      "source_ids": ["gtsign-220-e235536"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The reviewed GTSIGN-to-YouSpeed taxonomy adapter is missing."
+      }
+    },
+    {
+      "requirement_id": "panoramax-taxonomy-adapter",
+      "kind": "taxonomy_adapter",
+      "phase": "evidence",
+      "path": "adapters/panoramax-classifier-to-tsr-semantic-v2.json",
+      "source_ids": ["panoramax-de-classifier-5360aa6"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The reviewed Panoramax benchmark taxonomy adapter is missing."
+      }
+    },
+    {
+      "requirement_id": "training-environment-lock",
+      "kind": "environment_lock",
+      "phase": "training",
+      "path": "locks/offline-training-environment.json",
+      "source_ids": [],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "No digest-pinned network-disabled training environment is frozen."
+      }
+    },
+    {
+      "requirement_id": "export-environment-lock",
+      "kind": "environment_lock",
+      "phase": "export",
+      "path": "locks/offline-export-environment.json",
+      "source_ids": [],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "No digest-pinned network-disabled export environment is frozen."
+      }
+    },
+    {
+      "requirement_id": "detector-training-recipe",
+      "kind": "training_recipe",
+      "phase": "training",
+      "path": "recipes/yolox-nano-two-role-detector.json",
+      "source_ids": ["zod-frames-2.0.0", "yolox-0.1.1rc0"],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The deterministic YOLOX-Nano two-role detector recipe is not frozen."
+      }
+    },
+    {
+      "requirement_id": "large-classifier-training-recipe",
+      "kind": "training_recipe",
+      "phase": "training",
+      "path": "recipes/mobilenetv3-large-union-classifier.json",
+      "source_ids": [
+        "gtsign-220-e235536",
+        "panoramax-de-crops-b485694",
+        "synset-signset-germany-dcc1znjxu7apx8rn",
+        "timm-mobilenetv3-large-ra-in1k-96f46a1"
+      ],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The deterministic MobileNetV3-Large union-label recipe is not frozen."
+      }
+    },
+    {
+      "requirement_id": "small-classifier-training-recipe",
+      "kind": "training_recipe",
+      "phase": "training",
+      "path": "recipes/mobilenetv3-small-union-classifier.json",
+      "source_ids": [
+        "gtsign-220-e235536",
+        "panoramax-de-crops-b485694",
+        "synset-signset-germany-dcc1znjxu7apx8rn",
+        "timm-mobilenetv3-small-lamb-in1k-1824797"
+      ],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The controlled MobileNetV3-Small challenger recipe is not frozen."
+      }
+    },
+    {
+      "requirement_id": "mobile-export-recipe",
+      "kind": "export_recipe",
+      "phase": "export",
+      "path": "recipes/onnx-coreml-litert-export.json",
+      "source_ids": [],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "The deterministic ONNX/Core ML/LiteRT export recipe is not frozen."
+      }
+    },
+    {
+      "requirement_id": "parity-corpus-inventory",
+      "kind": "parity_corpus_inventory",
+      "phase": "evidence",
+      "path": "evidence/parity-corpus-inventory.json",
+      "source_ids": [],
+      "materialization": {
+        "state": "pending",
+        "sha256": null,
+        "byte_length": null,
+        "blocking_reason": "No trusted frozen parity corpus is approved in the scorecard registry."
+      }
+    }
+  ],
+  "components": [
+    {
+      "component_id": "m0-yolox-nano-two-role-detector-v2",
+      "registry_role": "proposal_detector",
+      "pack_role": "proposal_detector",
+      "architecture": "YOLOX-Nano",
+      "initialization": {
+        "source_id": "yolox-0.1.1rc0",
+        "artifact_id": "yolox-nano-coco-0.1.1rc0"
+      },
+      "training_requirement_ids": [
+        "reviewed-full-scene-annotations",
+        "grouped-train-calibration-holdout-split",
+        "zod-byte-inventory",
+        "training-environment-lock",
+        "detector-training-recipe"
+      ],
+      "artifact_family_id": "m0-yolox-nano-detector-v2",
+      "artifacts": {
+        "checkpoint": {
+          "artifact_id": "m0-yolox-nano-detector-v2-checkpoint",
+          "artifact_family_id": "m0-yolox-nano-detector-v2",
+          "role": "checkpoint",
+          "format": "checkpoint",
+          "serialization_format": "safetensors",
+          "platform": "training",
+          "path": "runs/m0-yolox-nano-two-role-detector-v2/checkpoint/model.safetensors",
+          "derived_from_artifact_id": null,
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The trained detector checkpoint does not exist."
+          }
+        },
+        "onnx": {
+          "artifact_id": "m0-yolox-nano-detector-v2-onnx",
+          "artifact_family_id": "m0-yolox-nano-detector-v2",
+          "role": "onnx",
+          "format": "onnx",
+          "serialization_format": "onnx",
+          "platform": "reference",
+          "path": "runs/m0-yolox-nano-two-role-detector-v2/reference/model.onnx",
+          "derived_from_artifact_id": "m0-yolox-nano-detector-v2-checkpoint",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The detector reference ONNX export does not exist."
+          }
+        },
+        "coreml": {
+          "artifact_id": "m0-yolox-nano-detector-v2-coreml",
+          "artifact_family_id": "m0-yolox-nano-detector-v2",
+          "role": "coreml",
+          "format": "coreml",
+          "serialization_format": "coreml_mlpackage_zip",
+          "platform": "ios",
+          "path": "runs/m0-yolox-nano-two-role-detector-v2/ios/model.mlpackage.zip",
+          "derived_from_artifact_id": "m0-yolox-nano-detector-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The detector Core ML archive does not exist."
+          }
+        },
+        "litert": {
+          "artifact_id": "m0-yolox-nano-detector-v2-litert",
+          "artifact_family_id": "m0-yolox-nano-detector-v2",
+          "role": "litert",
+          "format": "litert",
+          "serialization_format": "tflite_flatbuffer",
+          "platform": "android",
+          "path": "runs/m0-yolox-nano-two-role-detector-v2/android/model.tflite",
+          "derived_from_artifact_id": "m0-yolox-nano-detector-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The detector LiteRT export does not exist."
+          }
+        }
+      }
+    },
+    {
+      "component_id": "m0-mobilenetv3-large-union-classifier-v2",
+      "registry_role": "classifier",
+      "pack_role": "semantic_classifier",
+      "architecture": "MobileNetV3-Large",
+      "initialization": {
+        "source_id": "timm-mobilenetv3-large-ra-in1k-96f46a1",
+        "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1"
+      },
+      "training_requirement_ids": [
+        "grouped-train-calibration-holdout-split",
+        "gtsign-byte-inventory",
+        "panoramax-regrouped-byte-inventory",
+        "synset-byte-inventory",
+        "gtsign-taxonomy-adapter",
+        "training-environment-lock",
+        "large-classifier-training-recipe"
+      ],
+      "artifact_family_id": "m0-mnv3-large-classifier-v2",
+      "artifacts": {
+        "checkpoint": {
+          "artifact_id": "m0-mnv3-large-classifier-v2-checkpoint",
+          "artifact_family_id": "m0-mnv3-large-classifier-v2",
+          "role": "checkpoint",
+          "format": "checkpoint",
+          "serialization_format": "safetensors",
+          "platform": "training",
+          "path": "runs/m0-mobilenetv3-large-union-classifier-v2/checkpoint/model.safetensors",
+          "derived_from_artifact_id": null,
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The trained MobileNetV3-Large checkpoint does not exist."
+          }
+        },
+        "onnx": {
+          "artifact_id": "m0-mnv3-large-classifier-v2-onnx",
+          "artifact_family_id": "m0-mnv3-large-classifier-v2",
+          "role": "onnx",
+          "format": "onnx",
+          "serialization_format": "onnx",
+          "platform": "reference",
+          "path": "runs/m0-mobilenetv3-large-union-classifier-v2/reference/model.onnx",
+          "derived_from_artifact_id": "m0-mnv3-large-classifier-v2-checkpoint",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Large reference ONNX export does not exist."
+          }
+        },
+        "coreml": {
+          "artifact_id": "m0-mnv3-large-classifier-v2-coreml",
+          "artifact_family_id": "m0-mnv3-large-classifier-v2",
+          "role": "coreml",
+          "format": "coreml",
+          "serialization_format": "coreml_mlpackage_zip",
+          "platform": "ios",
+          "path": "runs/m0-mobilenetv3-large-union-classifier-v2/ios/model.mlpackage.zip",
+          "derived_from_artifact_id": "m0-mnv3-large-classifier-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Large Core ML archive does not exist."
+          }
+        },
+        "litert": {
+          "artifact_id": "m0-mnv3-large-classifier-v2-litert",
+          "artifact_family_id": "m0-mnv3-large-classifier-v2",
+          "role": "litert",
+          "format": "litert",
+          "serialization_format": "tflite_flatbuffer",
+          "platform": "android",
+          "path": "runs/m0-mobilenetv3-large-union-classifier-v2/android/model.tflite",
+          "derived_from_artifact_id": "m0-mnv3-large-classifier-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Large LiteRT export does not exist."
+          }
+        }
+      }
+    },
+    {
+      "component_id": "m0-mobilenetv3-small-union-classifier-v2",
+      "registry_role": "classifier",
+      "pack_role": "semantic_classifier",
+      "architecture": "MobileNetV3-Small",
+      "initialization": {
+        "source_id": "timm-mobilenetv3-small-lamb-in1k-1824797",
+        "artifact_id": "mobilenetv3-small-lamb-in1k-1824797"
+      },
+      "training_requirement_ids": [
+        "grouped-train-calibration-holdout-split",
+        "gtsign-byte-inventory",
+        "panoramax-regrouped-byte-inventory",
+        "synset-byte-inventory",
+        "gtsign-taxonomy-adapter",
+        "training-environment-lock",
+        "small-classifier-training-recipe"
+      ],
+      "artifact_family_id": "m0-mnv3-small-classifier-v2",
+      "artifacts": {
+        "checkpoint": {
+          "artifact_id": "m0-mnv3-small-classifier-v2-checkpoint",
+          "artifact_family_id": "m0-mnv3-small-classifier-v2",
+          "role": "checkpoint",
+          "format": "checkpoint",
+          "serialization_format": "safetensors",
+          "platform": "training",
+          "path": "runs/m0-mobilenetv3-small-union-classifier-v2/checkpoint/model.safetensors",
+          "derived_from_artifact_id": null,
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The trained MobileNetV3-Small checkpoint does not exist."
+          }
+        },
+        "onnx": {
+          "artifact_id": "m0-mnv3-small-classifier-v2-onnx",
+          "artifact_family_id": "m0-mnv3-small-classifier-v2",
+          "role": "onnx",
+          "format": "onnx",
+          "serialization_format": "onnx",
+          "platform": "reference",
+          "path": "runs/m0-mobilenetv3-small-union-classifier-v2/reference/model.onnx",
+          "derived_from_artifact_id": "m0-mnv3-small-classifier-v2-checkpoint",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Small reference ONNX export does not exist."
+          }
+        },
+        "coreml": {
+          "artifact_id": "m0-mnv3-small-classifier-v2-coreml",
+          "artifact_family_id": "m0-mnv3-small-classifier-v2",
+          "role": "coreml",
+          "format": "coreml",
+          "serialization_format": "coreml_mlpackage_zip",
+          "platform": "ios",
+          "path": "runs/m0-mobilenetv3-small-union-classifier-v2/ios/model.mlpackage.zip",
+          "derived_from_artifact_id": "m0-mnv3-small-classifier-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Small Core ML archive does not exist."
+          }
+        },
+        "litert": {
+          "artifact_id": "m0-mnv3-small-classifier-v2-litert",
+          "artifact_family_id": "m0-mnv3-small-classifier-v2",
+          "role": "litert",
+          "format": "litert",
+          "serialization_format": "tflite_flatbuffer",
+          "platform": "android",
+          "path": "runs/m0-mobilenetv3-small-union-classifier-v2/android/model.tflite",
+          "derived_from_artifact_id": "m0-mnv3-small-classifier-v2-onnx",
+          "materialization": {
+            "state": "pending",
+            "sha256": null,
+            "byte_length": null,
+            "blocking_reason": "The MobileNetV3-Small LiteRT export does not exist."
+          }
+        }
+      }
+    }
+  ],
+  "candidate_compositions": [
+    {
+      "candidate_id": "de-yolox-nano-mnv3-large-proposal-classification",
+      "expected_pack_id": "de-yolox-nano-mnv3-large-proposal-classification-m0-v2",
+      "lane": "target",
+      "detector_component_id": "m0-yolox-nano-two-role-detector-v2",
+      "classifier_component_id": "m0-mobilenetv3-large-union-classifier-v2",
+      "training_manifest": {
+        "path": "evidence/de-yolox-nano-mnv3-large-proposal-classification/training-manifest.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No evaluation-compatible training manifest exists."
+        }
+      },
+      "model_pack": {
+        "path": "packs/de-yolox-nano-mnv3-large-proposal-classification/model-pack-v2.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No candidate v2 model pack exists."
+        }
+      },
+      "evaluation_report": {
+        "path": "evidence/de-yolox-nano-mnv3-large-proposal-classification/model-evaluation-v1.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No verified target scorecard bundle exists."
+        }
+      }
+    },
+    {
+      "candidate_id": "de-yolox-nano-mnv3-small-proposal-classification",
+      "expected_pack_id": "de-yolox-nano-mnv3-small-proposal-classification-m0-v2",
+      "lane": "controlled_challenger",
+      "detector_component_id": "m0-yolox-nano-two-role-detector-v2",
+      "classifier_component_id": "m0-mobilenetv3-small-union-classifier-v2",
+      "training_manifest": {
+        "path": "evidence/de-yolox-nano-mnv3-small-proposal-classification/training-manifest.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No evaluation-compatible challenger training manifest exists."
+        }
+      },
+      "model_pack": {
+        "path": "packs/de-yolox-nano-mnv3-small-proposal-classification/model-pack-v2.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No challenger v2 model pack exists."
+        }
+      },
+      "evaluation_report": {
+        "path": "evidence/de-yolox-nano-mnv3-small-proposal-classification/model-evaluation-v1.json",
+        "materialization": {
+          "state": "pending",
+          "sha256": null,
+          "byte_length": null,
+          "blocking_reason": "No verified challenger scorecard bundle exists."
+        }
+      }
+    }
+  ],
+  "controlled_comparison": {
+    "target_candidate_id": "de-yolox-nano-mnv3-large-proposal-classification",
+    "challenger_candidate_id": "de-yolox-nano-mnv3-small-proposal-classification",
+    "shared_detector_component_id": "m0-yolox-nano-two-role-detector-v2",
+    "only_controlled_variable": "semantic_classifier_architecture_initialization_and_exports"
+  },
+  "external_references": [
+    {
+      "reference_id": "gtsign-220-vit",
+      "role": "offline_teacher",
+      "source_ref": {
+        "source_id": "gtsign-220-e235536",
+        "artifact_id": "gtsign-220-vit-all-classes"
+      },
+      "runtime_included": false,
+      "acceptance_gate_eligible": false,
+      "required_phase": "training",
+      "taxonomy_adapter_requirement_id": "gtsign-taxonomy-adapter"
+    },
+    {
+      "reference_id": "panoramax-classify-de-road-signs",
+      "role": "offline_crop_benchmark",
+      "source_ref": {
+        "source_id": "panoramax-de-classifier-5360aa6",
+        "artifact_id": "panoramax-de-yolo26-classifier-5360aa6"
+      },
+      "runtime_included": false,
+      "acceptance_gate_eligible": false,
+      "required_phase": "evidence",
+      "taxonomy_adapter_requirement_id": "panoramax-taxonomy-adapter"
+    }
+  ]
+}

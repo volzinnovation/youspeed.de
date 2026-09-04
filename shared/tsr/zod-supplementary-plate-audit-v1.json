@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "audit_id": "zod-supplementary-plate-audit-v1",
+  "as_of_date": "2026-09-01",
+  "dataset": {
+    "source_id": "zod-frames-2.0.0",
+    "requested_version": "2.0.0",
+    "provider_access_status": "pending_snapshot_verification",
+    "homepage": "https://zod.zenseact.com/",
+    "annotation_documentation": "https://zod.zenseact.com/annotations/",
+    "license": {
+      "spdx": "CC-BY-SA-4.0",
+      "evidence_uri": "https://zod.zenseact.com/license/"
+    }
+  },
+  "devkit": {
+    "repository": "https://github.com/zenseact/zod",
+    "revision": "601a3ef5cfccad9cc545230362077d299acbf898",
+    "revision_uri": "https://github.com/zenseact/zod/tree/601a3ef5cfccad9cc545230362077d299acbf898",
+    "evidence_uris": [
+      "https://github.com/zenseact/zod/blob/601a3ef5cfccad9cc545230362077d299acbf898/zod/anno/tsr/traffic_sign.py",
+      "https://github.com/zenseact/zod/blob/601a3ef5cfccad9cc545230362077d299acbf898/zod/anno/tsr/class_map.py"
+    ]
+  },
+  "reviewed_contract": {
+    "annotation_type": "TrafficSignAnnotation",
+    "class_count": 156,
+    "class_registry": "CLASS_NAME_TO_CLASS_IDX",
+    "has_separate_supplementary_plate_class": false,
+    "has_parent_or_assembly_link": false,
+    "not_listed_class_can_map_to_supplementary_plate": false
+  },
+  "conclusion": "no_auditable_separate_supplementary_plate_labels",
+  "eligibility": {
+    "primary_scene_training": "eligible_after_mapping_review_and_frozen_byte_inventory",
+    "hard_negatives": "eligible_only_when_the_traffic_sign_annotation_task_is_present_and_complete",
+    "supplementary_plate_proposal_training": "ineligible",
+    "not_listed_policy": "do_not_map_to_supplementary_plate"
+  },
+  "blocking_requirement": "Freeze reviewed YouSpeed full-scene supplementary-plate boxes or reviewed synthetic full-scene assemblies before training the two-role proposal detector."
+}

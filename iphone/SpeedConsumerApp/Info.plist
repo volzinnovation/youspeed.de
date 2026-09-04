@@ -29,6 +29,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>The app needs your location to compare current speed against map speed limits.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>YouSpeed uses one rear-camera session for local Dashcam video, on-device traffic-sign recognition, and Panoramax pictures that you review and upload later.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>YouSpeed nutzt das Mikrofon nur lokal auf dem Geraet, um gesprochene Tempolimits zu erfassen.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

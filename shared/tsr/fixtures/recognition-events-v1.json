@@ -1,0 +1,83 @@
+[
+  {
+    "schema_version": 1,
+    "pack_id": "de-speed-signs-fixture-v1",
+    "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "preprocessing_version": "vision-scale-fit-rgb-v1",
+    "source": "live_frame",
+    "frame_timestamp_utc": "2026-01-01T12:00:00Z",
+    "state": "provisional",
+    "candidate": {
+      "raw_class_id": "speed_limit_30",
+      "raw_label": "Maximum speed 30",
+      "semantic_kind": "maximum_speed",
+      "value": 30,
+      "unit": "km/h",
+      "raw_score": 0.81,
+      "calibrated_confidence": 0.74,
+      "bounding_box": { "x": 0.7, "y": 0.15, "width": 0.08, "height": 0.12 },
+      "track_id": "fixture-track-1",
+      "evidence_frames": 1,
+      "assembly_id": "fixture-assembly-1",
+      "condition_state": "resolving",
+      "restrictions": []
+    },
+    "road_context": {
+      "way_id": "123456",
+      "latitude": 49.0069,
+      "longitude": 8.4037,
+      "heading_degrees": 82.0,
+      "travel_direction": "forward",
+      "source_signature": {
+        "osm_revision": "bundle:fixture-v1|way:123456|maxspeed:50",
+        "local_correction_revision": null
+      }
+    },
+    "latency_ms": 43.5,
+    "thermal_state": "nominal"
+  },
+  {
+    "schema_version": 1,
+    "pack_id": "de-speed-signs-fixture-v1",
+    "artifact_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "preprocessing_version": "vision-scale-fit-rgb-v1",
+    "source": "live_frame",
+    "frame_timestamp_utc": "2026-01-01T12:00:00.400Z",
+    "state": "confirmed",
+    "candidate": {
+      "raw_class_id": "speed_limit_30",
+      "raw_label": "Maximum speed 30",
+      "semantic_kind": "maximum_speed",
+      "value": 30,
+      "unit": "km/h",
+      "raw_score": 0.9,
+      "calibrated_confidence": 0.86,
+      "bounding_box": { "x": 0.69, "y": 0.14, "width": 0.09, "height": 0.13 },
+      "track_id": "fixture-track-1",
+      "evidence_frames": 3,
+      "assembly_id": "fixture-assembly-1",
+      "condition_state": "resolved",
+      "restrictions": [
+        {
+          "kind": "weather",
+          "normalized_value": "wet",
+          "raw_text": "bei Naesse",
+          "country_sign_code": "DE:1053-35"
+        }
+      ]
+    },
+    "road_context": {
+      "way_id": "123456",
+      "latitude": 49.00691,
+      "longitude": 8.40373,
+      "heading_degrees": 82.0,
+      "travel_direction": "forward",
+      "source_signature": {
+        "osm_revision": "bundle:fixture-v1|way:123456|maxspeed:50",
+        "local_correction_revision": null
+      }
+    },
+    "latency_ms": 41.2,
+    "thermal_state": "nominal"
+  }
+]

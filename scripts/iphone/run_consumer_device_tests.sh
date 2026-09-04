@@ -12,6 +12,9 @@ Options:
   --derived-data <path>              DerivedData path (default: iphone/.derived/SpeedConsumerDeviceTest)
   --project <path>                   Xcode project path (default: iphone/SpeedDBBench.xcodeproj)
   --scheme <name>                    Xcode scheme (default: SpeedConsumer)
+  --only-testing <test-identifier>   Run only this XCTest identifier (repeatable)
+  --result-bundle <path>             Write an .xcresult evidence bundle
+  --development-team <team-id>       Apply one signing team to app and test bundle
   --skip-project-gen                 Skip scripts/iphone/generate_xcode_project.sh
   --allow-provisioning-updates       Pass provisioning update flags to xcodebuild
   -h, --help                         Show this help text
@@ -26,6 +29,9 @@ project_path="${repo_root}/iphone/SpeedDBBench.xcodeproj"
 scheme="SpeedConsumer"
 skip_project_gen=0
 allow_provisioning_updates=0
+only_testing=()
+result_bundle=""
+development_team=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +49,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     --scheme)
       scheme="${2:-}"
+      shift 2
+      ;;
+    --only-testing)
+      only_testing+=("${2:-}")
+      shift 2
+      ;;
+    --result-bundle)
+      result_bundle="${2:-}"
+      shift 2
+      ;;
+    --development-team)
+      development_team="${2:-}"
       shift 2
       ;;
     --skip-project-gen)
@@ -80,6 +98,24 @@ build_cmd=(
   -derivedDataPath "${derived_data}"
   -hideShellScriptEnvironment
 )
+
+for test_identifier in "${only_testing[@]}"; do
+  if [[ -z "${test_identifier}" ]]; then
+    echo "Missing --only-testing value." >&2
+    exit 1
+  fi
+  build_cmd+=("-only-testing:${test_identifier}")
+done
+
+if [[ -n "${result_bundle}" ]]; then
+  build_cmd+=(
+    -resultBundlePath "${result_bundle}"
+  )
+fi
+
+if [[ -n "${development_team}" ]]; then
+  build_cmd+=("DEVELOPMENT_TEAM=${development_team}")
+fi
 
 if [[ "${allow_provisioning_updates}" == "1" ]]; then
   build_cmd+=(

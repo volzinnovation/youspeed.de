@@ -1,0 +1,63 @@
+{
+  "schema_version": 2,
+  "source_pack_id": "de-panoramax-bootstrap-shadow-v1",
+  "pack_id": "de-panoramax-bootstrap-shadow-adapter-v2",
+  "taxonomy_version": "tsr-semantic-v2",
+  "execution_policy": {
+    "mode": "shadow",
+    "override_eligible": false
+  },
+  "detector": {
+    "component_id": "sgblur-yolo11n-panoramax-169451970702aca0",
+    "artifact_id": "sgblur-yolo11n-panoramax-coreml-96c782af-v2",
+    "artifact_path": "yolo11n_panoramax.mlmodelc",
+    "artifact_sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+    "artifact_format": "coreml",
+    "preprocessing": {
+      "version": "vision-scale-fit-letterbox-rgb-1280-v2",
+      "input_width": 1280,
+      "input_height": 1280,
+      "color_space": "rgb",
+      "resize": "scale_fit_letterbox",
+      "orientation": "normalize_exif_and_mirroring"
+    },
+    "calibration": {
+      "id": "sgblur-detector-uncalibrated-v1",
+      "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+      "passed": false,
+      "runtime_output": "raw_score"
+    }
+  },
+  "classifier": {
+    "component_id": "panoramax-classify-de-road-signs-5360aa6f4ef6c7b1",
+    "artifact_id": "panoramax-de-road-sign-classifier-coreml-7a9b6d96-v2",
+    "artifact_path": "classify_de_road_signs.mlmodelc",
+    "artifact_sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
+    "artifact_format": "coreml",
+    "preprocessing": {
+      "version": "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2",
+      "input_width": 224,
+      "input_height": 224,
+      "color_space": "rgb",
+      "resize": "scale_fill",
+      "orientation": "normalize_exif_and_mirroring"
+    },
+    "calibration": {
+      "id": "panoramax-classifier-uncalibrated-v1",
+      "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+      "passed": false,
+      "runtime_output": "raw_score"
+    }
+  },
+  "thresholds": {
+    "classifier_confirmed": 0.70,
+    "confirmation_frames": 2,
+    "temporal_window_ms": 1500,
+    "minimum_track_iou": 0.20
+  },
+  "association": {
+    "policy": "stable_observation_hint_then_unique_semantic_road_direction",
+    "stable_observation_hint_can_override_iou": true,
+    "fallback_requires_unique_candidate": true
+  }
+}

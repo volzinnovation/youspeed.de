@@ -34,6 +34,9 @@ targets:
         buildPhase: resources
       - path: SpeedConsumerApp/Rules
         buildPhase: resources
+      - path: SpeedConsumerApp/TSRModelPacks
+        type: folder
+        buildPhase: resources
       - path: SpeedConsumerApp/legal.txt
         buildPhase: resources
       - path: SpeedConsumerApp/BundleTargets.top10.json
@@ -48,6 +51,7 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: F4CT29PZS5
         TARGETED_DEVICE_FAMILY: "1"
         OTHER_LDFLAGS:
           - "$(inherited)"

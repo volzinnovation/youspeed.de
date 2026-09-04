@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/m0-workflow-v1.json",
+  "title": "YouSpeed TSR M0 v2 offline workflow plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "mode",
+    "safety_policy",
+    "source_manifest",
+    "selection_registry",
+    "contracts",
+    "contract_mappings",
+    "source_artifact_requirements",
+    "data_requirements",
+    "components",
+    "candidate_compositions",
+    "controlled_comparison",
+    "external_references"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "workflow_id": { "$ref": "#/$defs/id" },
+    "mode": { "const": "offline_readiness_only" },
+    "safety_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "network_allowed",
+        "paid_compute_allowed",
+        "executes_training",
+        "executes_export",
+        "deserializes_models",
+        "generates_model_artifacts"
+      ],
+      "properties": {
+        "network_allowed": { "const": false },
+        "paid_compute_allowed": { "const": false },
+        "executes_training": { "const": false },
+        "executes_export": { "const": false },
+        "deserializes_models": { "const": false },
+        "generates_model_artifacts": { "const": false }
+      }
+    },
+    "source_manifest": { "$ref": "#/$defs/pinnedDocument" },
+    "selection_registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_id", "path", "sha256", "selected_candidate_id"],
+      "properties": {
+        "document_id": { "$ref": "#/$defs/id" },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "selected_candidate_id": { "type": "null" }
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/pinnedDocument" }
+    },
+    "contract_mappings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "registry_to_pack_roles",
+        "pack_to_evaluation_artifacts",
+        "serialization_to_evaluation_formats"
+      ],
+      "properties": {
+        "registry_to_pack_roles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["proposal_detector", "classifier"],
+          "properties": {
+            "proposal_detector": { "const": "proposal_detector" },
+            "classifier": { "const": "semantic_classifier" }
+          }
+        },
+        "pack_to_evaluation_artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["checkpoint", "onnx", "coreml", "litert"],
+          "properties": {
+            "checkpoint": { "const": "trained_checkpoint" },
+            "onnx": { "const": "reference_onnx" },
+            "coreml": { "const": "coreml" },
+            "litert": { "const": "litert" }
+          }
+        },
+        "serialization_to_evaluation_formats": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "safetensors",
+            "onnx",
+            "coreml_mlpackage_zip",
+            "tflite_flatbuffer"
+          ],
+          "properties": {
+            "safetensors": { "const": "safetensors" },
+            "onnx": { "const": "onnx" },
+            "coreml_mlpackage_zip": { "const": "coreml-compiled-model" },
+            "tflite_flatbuffer": { "const": "litert-flatbuffer" }
+          }
+        }
+      }
+    },
+    "source_artifact_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sourceArtifactRequirement" }
+    },
+    "data_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/dataRequirement" }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "candidate_compositions": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/candidateComposition" }
+    },
+    "controlled_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_candidate_id",
+        "challenger_candidate_id",
+        "shared_detector_component_id",
+        "only_controlled_variable"
+      ],
+      "properties": {
+        "target_candidate_id": { "$ref": "#/$defs/id" },
+        "challenger_candidate_id": { "$ref": "#/$defs/id" },
+        "shared_detector_component_id": { "$ref": "#/$defs/id" },
+        "only_controlled_variable": {
+          "const": "semantic_classifier_architecture_initialization_and_exports"
+        }
+      }
+    },
+    "external_references": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/externalReference" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^(?!0{64}$)[a-f0-9]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "pinnedDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_id", "path", "sha256"],
+      "properties": {
+        "document_id": { "$ref": "#/$defs/id" },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "fileState": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "sha256", "byte_length", "blocking_reason"],
+          "properties": {
+            "state": { "const": "pending" },
+            "sha256": { "type": "null" },
+            "byte_length": { "type": "null" },
+            "blocking_reason": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "sha256", "byte_length", "blocking_reason"],
+          "properties": {
+            "state": { "const": "available" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "byte_length": { "type": "integer", "minimum": 1 },
+            "blocking_reason": { "type": "null" }
+          }
+        }
+      ]
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "artifact_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/id" },
+        "artifact_id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "sourceArtifactRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirement_id", "phase", "source_ref"],
+      "properties": {
+        "requirement_id": { "$ref": "#/$defs/id" },
+        "phase": { "enum": ["training", "evidence"] },
+        "source_ref": { "$ref": "#/$defs/sourceRef" }
+      }
+    },
+    "dataRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement_id",
+        "kind",
+        "phase",
+        "path",
+        "source_ids",
+        "materialization"
+      ],
+      "properties": {
+        "requirement_id": { "$ref": "#/$defs/id" },
+        "kind": {
+          "enum": [
+            "full_scene_annotation_manifest_v2",
+            "group_split_manifest_v2",
+            "sha256_inventory",
+            "taxonomy_adapter",
+            "environment_lock",
+            "training_recipe",
+            "export_recipe",
+            "parity_corpus_inventory"
+          ]
+        },
+        "phase": { "enum": ["training", "export", "evidence"] },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "source_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "materialization": { "$ref": "#/$defs/fileState" }
+      }
+    },
+    "plannedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "artifact_family_id",
+        "role",
+        "format",
+        "serialization_format",
+        "platform",
+        "path",
+        "derived_from_artifact_id",
+        "materialization"
+      ],
+      "properties": {
+        "artifact_id": { "$ref": "#/$defs/id" },
+        "artifact_family_id": { "$ref": "#/$defs/id" },
+        "role": { "enum": ["checkpoint", "onnx", "coreml", "litert"] },
+        "format": { "enum": ["checkpoint", "onnx", "coreml", "litert"] },
+        "serialization_format": {
+          "enum": [
+            "safetensors",
+            "onnx",
+            "coreml_mlpackage_zip",
+            "tflite_flatbuffer"
+          ]
+        },
+        "platform": { "enum": ["training", "reference", "ios", "android"] },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "derived_from_artifact_id": {
+          "type": ["string", "null"],
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "materialization": { "$ref": "#/$defs/fileState" }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component_id",
+        "registry_role",
+        "pack_role",
+        "architecture",
+        "initialization",
+        "training_requirement_ids",
+        "artifact_family_id",
+        "artifacts"
+      ],
+      "properties": {
+        "component_id": { "$ref": "#/$defs/id" },
+        "registry_role": { "enum": ["proposal_detector", "classifier"] },
+        "pack_role": { "enum": ["proposal_detector", "semantic_classifier"] },
+        "architecture": { "type": "string", "minLength": 1 },
+        "initialization": { "$ref": "#/$defs/sourceRef" },
+        "training_requirement_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" }
+        },
+        "artifact_family_id": { "$ref": "#/$defs/id" },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["checkpoint", "onnx", "coreml", "litert"],
+          "properties": {
+            "checkpoint": { "$ref": "#/$defs/plannedArtifact" },
+            "onnx": { "$ref": "#/$defs/plannedArtifact" },
+            "coreml": { "$ref": "#/$defs/plannedArtifact" },
+            "litert": { "$ref": "#/$defs/plannedArtifact" }
+          }
+        }
+      }
+    },
+    "plannedDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "materialization"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativePath" },
+        "materialization": { "$ref": "#/$defs/fileState" }
+      }
+    },
+    "candidateComposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "expected_pack_id",
+        "lane",
+        "detector_component_id",
+        "classifier_component_id",
+        "training_manifest",
+        "model_pack",
+        "evaluation_report"
+      ],
+      "properties": {
+        "candidate_id": { "$ref": "#/$defs/id" },
+        "expected_pack_id": { "$ref": "#/$defs/id" },
+        "lane": { "enum": ["target", "controlled_challenger"] },
+        "detector_component_id": { "$ref": "#/$defs/id" },
+        "classifier_component_id": { "$ref": "#/$defs/id" },
+        "training_manifest": { "$ref": "#/$defs/plannedDocument" },
+        "model_pack": { "$ref": "#/$defs/plannedDocument" },
+        "evaluation_report": { "$ref": "#/$defs/plannedDocument" }
+      }
+    },
+    "externalReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_id",
+        "role",
+        "source_ref",
+        "runtime_included",
+        "acceptance_gate_eligible",
+        "required_phase",
+        "taxonomy_adapter_requirement_id"
+      ],
+      "properties": {
+        "reference_id": { "$ref": "#/$defs/id" },
+        "role": { "enum": ["offline_teacher", "offline_crop_benchmark"] },
+        "source_ref": { "$ref": "#/$defs/sourceRef" },
+        "runtime_included": { "const": false },
+        "acceptance_gate_eligible": { "const": false },
+        "required_phase": { "enum": ["training", "evidence"] },
+        "taxonomy_adapter_requirement_id": { "$ref": "#/$defs/id" }
+      }
+    }
+  }
+}
