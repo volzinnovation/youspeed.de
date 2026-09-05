@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://youspeed.de/schemas/traffic-sign-passage-event-v1.schema.json",
   "title": "YouSpeed finalized traffic-sign passage event v1",
-  "description": "An actionable, calibrated event emitted exactly once after an armed physical-sign track is no longer visible in eligible analyzed frames. Per-frame recognition events remain separate immutable evidence.",
+  "description": "An actionable event emitted exactly once after an armed physical-sign track is no longer visible in eligible analyzed frames. Confidence may be calibrated or may retain its declared raw-score basis during field testing. Per-frame recognition events remain separate immutable evidence.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -233,23 +233,8 @@
                 }
               }
             },
-            "activation": {
-              "properties": {
-                "travel_direction": {
-                  "enum": [
-                    "forward",
-                    "reverse"
-                  ]
-                }
-              }
-            },
-            "applicability_scope": {
-              "properties": {
-                "continuity_capable_bundle": {
-                  "const": true
-                }
-              }
-            }
+            "activation": {},
+            "applicability_scope": {}
           }
         },
         "then": {
@@ -353,7 +338,10 @@
           "const": true
         },
         "calibration_status": {
-          "const": "passed"
+          "enum": [
+            "passed",
+            "raw_score"
+          ]
         },
         "components": {
           "type": "array",
@@ -403,7 +391,6 @@
         "frames_seen",
         "peak_consecutive_frames_seen",
         "single_sighting_exception",
-        "final_calibrated_confidence",
         "final_accumulated_support",
         "accumulated_support_cap",
         "loss_reason",
@@ -443,6 +430,15 @@
         "final_calibrated_confidence": {
           "$ref": "#/$defs/confidence"
         },
+        "final_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "confidence_basis": {
+          "enum": [
+            "calibrated_confidence",
+            "raw_score"
+          ]
+        },
         "final_accumulated_support": {
           "$ref": "#/$defs/confidence"
         },
@@ -473,7 +469,20 @@
             "$ref": "#/$defs/lossFrameEvidence"
           }
         }
-      }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "final_calibrated_confidence"
+          ]
+        },
+        {
+          "required": [
+            "final_confidence",
+            "confidence_basis"
+          ]
+        }
+      ]
     },
     "seenFrameEvidence": {
       "type": "object",
@@ -483,11 +492,6 @@
         "timestamp_utc",
         "outcome",
         "analysis_eligible",
-        "proposal_raw_score",
-        "proposal_calibrated_confidence",
-        "classifier_raw_score",
-        "classifier_calibrated_confidence",
-        "assembly_confidence",
         "accumulated_support"
       ],
       "properties": {
@@ -502,6 +506,12 @@
         },
         "analysis_eligible": {
           "const": true
+        },
+        "raw_score": {
+          "$ref": "#/$defs/confidence"
+        },
+        "calibrated_confidence": {
+          "$ref": "#/$defs/confidence"
         },
         "proposal_raw_score": {
           "$ref": "#/$defs/confidence"
@@ -521,7 +531,20 @@
         "accumulated_support": {
           "$ref": "#/$defs/confidence"
         }
-      }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "raw_score"
+          ]
+        },
+        {
+          "required": [
+            "proposal_raw_score",
+            "classifier_raw_score"
+          ]
+        }
+      ]
     },
     "lossFrameEvidence": {
       "type": "object",

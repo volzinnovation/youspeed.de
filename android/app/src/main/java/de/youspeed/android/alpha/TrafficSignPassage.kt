@@ -29,6 +29,11 @@ internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
     }
 }
 
+internal object TrafficSignBundleContextPolicy {
+    fun enteredCity(previousInsideCity: Boolean?, currentInsideCity: Boolean?): Boolean =
+        previousInsideCity == false && currentInsideCity == true
+}
+
 /** A structural sign operation. Display values are deliberately kept separate. */
 enum class TrafficSignActionKind(val wireValue: String) {
     POSTED_MAXIMUM("posted_maximum"),
@@ -385,7 +390,7 @@ class TrafficSignPassageFinalizer(
                         component.calibrationId == calibrationId
                 }
         } ?: return null
-        val confidence = (candidate.calibratedConfidence ?: fusedScore ?: Double.NaN)
+        val confidence = candidate.calibratedConfidence ?: fusedScore ?: candidate.rawScore
         if (!confidence.isFinite() || confidence !in 0.0..1.0) return null
         val current = existing?.takeIf { it.id == trackId && it.candidate.semantic == candidate.semantic } ?: Track(
             id = trackId,
@@ -499,11 +504,9 @@ class TrafficSignPassageFinalizer(
             else -> configuration.repeatedTrackNegativeFrames
         }
         if (current.negativeFrames < requiredNegatives) return null
-        val finalCalibratedConfidence = current.candidate.calibratedConfidence ?: run {
-            track = null
-            queuedTrack = null
-            return null
-        }
+        val finalConfidence = current.evidence.maxOfOrNull {
+            it.calibratedConfidence ?: it.rawScore
+        } ?: return null
         val boundary = requireNotNull(current.boundary)
         val action = current.candidate.toAction(current.lastSeenContext?.countryCode ?: event.roadContext?.countryCode)
         val finalizedId = listOf(
@@ -551,7 +554,7 @@ class TrafficSignPassageFinalizer(
             evidence = current.evidence.toList(),
             lossEvidence = current.lossEvidence.toList(),
             framesSeen = current.framesSeen,
-            finalConfidence = finalCalibratedConfidence,
+            finalConfidence = finalConfidence,
             finalAccumulatedSupport = current.accumulatedSupport,
             peakConsecutiveFramesSeen = current.peakConsecutiveFramesSeen,
             lossReason = if (boundary.strongPassGeometry) "strong_pass_geometry" else "negative_debounce",
@@ -857,7 +860,7 @@ class TrafficSignRuntimeSourceResolver(
         val context = event.activationContext
         if (context == null || context.wayId.isNullOrBlank()) {
             val lastSeen = event.lastSeenContext
-            if (lastSeen != null && !lastSeen.wayId.isNullOrBlank() && lastSeen.continuityCapable) {
+            if (lastSeen != null && !lastSeen.wayId.isNullOrBlank()) {
                 pending = PendingPassage(event, lastSeen, event.passageBoundary.timestampUtc, 0.0)
             }
             return effective(base)
@@ -871,8 +874,7 @@ class TrafficSignRuntimeSourceResolver(
         ) {
             return effective(base)
         }
-        if (wayId.isEmpty() || context.travelDirection == TrafficSignTravelDirection.UNKNOWN ||
-            !context.continuityCapable || !context.matchedWayStable || !context.hasVerifiedBundle
+        if (wayId.isEmpty() || !context.matchedWayStable || !context.hasVerifiedBundle
         ) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
                 maskOrPreserveUnsafeEnd(event, base, "camera_end_unsafe_context")

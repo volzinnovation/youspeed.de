@@ -104,7 +104,6 @@ object TrafficSignSpeedOverridePolicy {
         if (event.source == TrafficSignInputSource.DIAGNOSTIC_IMPORT) return current
         if (current != null && !event.frameTimestampUtc.isAfter(current.detectedAtUtc)) return current
         val context = event.roadContext ?: return current
-        if (context.travelDirection == TrafficSignTravelDirection.UNKNOWN) return current
         if (context.sourceSignature != currentSourceSignature) return current
 
         // Any newer confirmed sign ends the older speed assertion. A numeric
@@ -138,8 +137,7 @@ object TrafficSignSpeedOverridePolicy {
     ): TrafficSignSpeedOverride? {
         if (!event.overrideEligible || event.action.isConditional || !event.action.isPermanentRuntimeAction) return current
         val context = event.activationContext ?: return current
-        if (context.wayId.isNullOrBlank() || context.travelDirection == TrafficSignTravelDirection.UNKNOWN) return current
-        if (!context.continuityCapable || !context.matchedWayStable || !context.hasVerifiedBundle) return current
+        if (context.wayId.isNullOrBlank() || !context.matchedWayStable || !context.hasVerifiedBundle) return current
         if (current != null && !event.passageBoundary.timestampUtc.isAfter(current.detectedAtUtc)) return current
         return when (event.resolution.kind) {
             TrafficSignResolvedLimitKind.NUMERIC -> TrafficSignSpeedOverride(

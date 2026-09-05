@@ -22,7 +22,7 @@ class TrafficSignSpeedOverridePolicyTests {
     }
 
     @Test
-    fun unknownTravelDirectionCannotCreateOrReplaceAnOverride() {
+    fun unknownTravelDirectionUsesWayWideOverride() {
         val source = signature("map-v1/local-v3")
         val knownContext = context("map-v1/local-v3")
         val existing = requireNotNull(
@@ -42,19 +42,20 @@ class TrafficSignSpeedOverridePolicyTests {
             context = unknownContext,
         )
 
-        val notCreated = TrafficSignSpeedOverridePolicy.applyRecognition(
+        val created = TrafficSignSpeedOverridePolicy.applyRecognition(
             current = null,
             event = unknownDirectionEvent,
             currentSourceSignature = source,
         )
-        val notReplaced = TrafficSignSpeedOverridePolicy.applyRecognition(
+        val replaced = TrafficSignSpeedOverridePolicy.applyRecognition(
             current = existing,
             event = unknownDirectionEvent,
             currentSourceSignature = source,
         )
 
-        assertNull(notCreated)
-        assertSame(existing, notReplaced)
+        assertEquals(50, created?.speedKmh)
+        assertEquals(50, replaced?.speedKmh)
+        assertEquals(TrafficSignTravelDirection.UNKNOWN, replaced?.context?.travelDirection)
     }
 
     @Test

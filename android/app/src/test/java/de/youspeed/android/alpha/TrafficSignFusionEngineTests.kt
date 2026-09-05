@@ -45,7 +45,7 @@ class TrafficSignFusionEngineTests {
     }
 
     @Test
-    fun staleAndSpatiallyUnrelatedEvidenceDoesNotConfirm() {
+    fun expiredEvidenceDoesNotConfirm() {
         val engine = engine()
         engine.observe(detection(box(0.10, 0.10)), observedAtMs = 0)
         engine.observe(detection(box(0.70, 0.10)), observedAtMs = 200)
@@ -53,6 +53,19 @@ class TrafficSignFusionEngineTests {
 
         assertEquals(TrafficSignRecognitionState.PROVISIONAL, third.state)
         assertEquals(1, third.candidate?.evidenceFrames)
+    }
+
+    @Test
+    fun displacedBoxesForTheSameSemanticShareOnePassageTrack() {
+        val engine = engine()
+
+        val first = engine.observe(detection(box(0.05, 0.15)), observedAtMs = 0)
+        engine.observe(detection(box(0.45, 0.30)), observedAtMs = 400)
+        val third = engine.observe(detection(box(0.82, 0.55)), observedAtMs = 800)
+
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, third.state)
+        assertEquals(first.candidate?.trackId, third.candidate?.trackId)
+        assertTrue(requireNotNull(third.candidate?.trackId).matches(Regex("[0-9a-f-]{36}")))
     }
 
     @Test
@@ -107,7 +120,7 @@ class TrafficSignFusionEngineTests {
     }
 
     @Test
-    fun fusionKeepsBestCropAndProgressiveAssemblyConditions() {
+    fun fusionKeepsBestCropButDropsSupplementaryConditions() {
         val engine = engine()
         val wet = TrafficSignRestriction(
             TrafficSignRestrictionKind.WEATHER,
@@ -142,8 +155,34 @@ class TrafficSignFusionEngineTests {
         assertEquals(firstResult.candidate?.trackId, result.candidate?.trackId)
         assertEquals(best.candidate.boundingBox, result.bestCropBoundingBox)
         assertEquals("frame-3-assembly-1", result.candidate?.assemblyId)
-        assertEquals(TrafficSignConditionState.RESOLVED, result.candidate?.conditionState)
-        assertEquals(listOf(wet), result.candidate?.restrictions)
+        assertEquals(TrafficSignConditionState.NONE, result.candidate?.conditionState)
+        assertTrue(result.candidate?.restrictions.orEmpty().isEmpty())
+    }
+
+    @Test
+    fun rawScorePackCanConfirmWithoutCalibratedConfidence() {
+        val engine = TrafficSignFusionEngine(
+            thresholds = TrafficSignThresholds(
+                provisional = 0.45,
+                confirmed = 0.70,
+                unknown = 0.25,
+                confirmationFrames = 3,
+                confirmationWindowMs = 1_500,
+                minimumTrackIou = 0.20,
+            ),
+            scoreSource = TrafficSignCalibrationOutput.RAW_SCORE,
+            classThresholds = mapOf("speed_limit_30" to 0.70),
+        )
+        val rawOnly = detection(box(0.2, 0.2), calibrated = 0.80).let { detection ->
+            detection.copy(candidate = detection.candidate.copy(rawScore = 0.90, calibratedConfidence = null))
+        }
+
+        engine.observe(rawOnly, 0)
+        engine.observe(rawOnly, 300)
+        val result = engine.observe(rawOnly, 600)
+
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, result.state)
+        assertEquals(3, result.candidate?.evidenceFrames)
     }
 
     private fun engine() = TrafficSignFusionEngine(

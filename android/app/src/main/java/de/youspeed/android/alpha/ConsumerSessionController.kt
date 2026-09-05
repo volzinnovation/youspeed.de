@@ -37,9 +37,12 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.InflaterInputStream
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import org.json.JSONArray
 import org.json.JSONObject
 import org.vosk.Model
@@ -153,7 +156,7 @@ internal fun trafficSignBaseForPersistedCorrection(
 ): TrafficSignBaseLimit? {
     val current = currentContext ?: return null
     if (current.wayId != correction.wayId) return null
-    if (correction.directionScope == TrafficSignTravelDirection.UNKNOWN ||
+    if (correction.directionScope != TrafficSignTravelDirection.UNKNOWN &&
         current.travelDirection != correction.directionScope
     ) {
         return null
@@ -178,6 +181,7 @@ private data class TrafficSignEvaluationOutcome(
     val persistablePassage: TrafficSignPassageEvent?,
     val generation: Long,
     val tsrWasEnabled: Boolean,
+    val invalidatedByCityEntry: Boolean = false,
 )
 
 private data class PendingStartupData(
@@ -297,6 +301,7 @@ enum class AppScreenshotState(val rawValue: String) {
     WARN_LEVEL_1("warn-level-1"),
     WARN_LEVEL_2("warn-level-2"),
     WARN_LEVEL_3("warn-level-3"),
+    CAMERA_LIMIT_ACTIVE("camera-limit-active"),
     PEDESTRIAN_ZONE("pedestrian-zone"),
     AUTOBAHN_UNLIMITED_ABOVE_130("autobahn-unlimited-above-130");
 
@@ -306,6 +311,7 @@ enum class AppScreenshotState(val rawValue: String) {
             WARN_LEVEL_1 -> AppScreenshotFixture(67.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-1", true, 49.0102, 8.4266, 6.0, 4)
             WARN_LEVEL_2 -> AppScreenshotFixture(73.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-2", true, 49.0102, 8.4266, 6.0, 4)
             WARN_LEVEL_3 -> AppScreenshotFixture(86.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-3", true, 49.0102, 8.4266, 6.0, 4)
+            CAMERA_LIMIT_ACTIVE -> AppScreenshotFixture(0.0, 30, null, false, "Lindenweg", "Bad Herrenalb", "bad-herrenalb-camera-limit-active", true, 48.7966, 8.4361, 5.0, 4)
             PEDESTRIAN_ZONE -> AppScreenshotFixture(5.0, null, "Schritt", false, "Im Kloster", "Bad Herrenalb", "bad-herrenalb-pedestrian-zone", true, 48.7966, 8.4361, 5.0, 4)
             AUTOBAHN_UNLIMITED_ABOVE_130 -> AppScreenshotFixture(142.0, null, null, true, "A 5", "Karlsruhe", "autobahn-unlimited-130-plus", false, 49.0180, 8.3501, 5.0, 4)
         }
@@ -405,6 +411,7 @@ class ConsumerSessionController(
     private var latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
     private var latestResolverLocation: Location? = null
     private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
+    private var latestTrafficSignInsideCity: Boolean? = null
     private var trafficSignTraversalEpoch = 1L
     private var lastAudioFeedbackAtMs = 0L
     private var lastAnnouncedSpeechText: String? = null
@@ -793,9 +800,7 @@ class ConsumerSessionController(
                         sourceRelationIds = context.sourceRelationIds.toSet(),
                     ),
                     generation = generation,
-                    runtimeActivationEligible = isDriving &&
-                        uiState.trafficSignRecognitionEnabled &&
-                        uiState.currentSpeedKmh >= TSR_MINIMUM_MOVING_SPEED_KMH,
+                    runtimeActivationEligible = isDriving && uiState.trafficSignRecognitionEnabled,
                     driveSessionId = trafficSignDriveSessionId,
                 )
             }
@@ -813,8 +818,7 @@ class ConsumerSessionController(
         }
         return submitBackgroundTask {
             if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
-                event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId ||
-                uiState.currentSpeedKmh < TSR_MINIMUM_MOVING_SPEED_KMH
+                event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId
             ) {
                 return@submitBackgroundTask
             }
@@ -825,7 +829,6 @@ class ConsumerSessionController(
                 if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
                     event.generation != trafficSignGeneration.get() ||
                     event.driveSessionId != trafficSignDriveSessionId ||
-                    uiState.currentSpeedKmh < TSR_MINIMUM_MOVING_SPEED_KMH ||
                     !trafficSignPassageContextIsCurrent(event, latestTrafficSignContext)
                 ) {
                     return@synchronized null
@@ -872,6 +875,7 @@ class ConsumerSessionController(
             latestTrafficSignContext = null
             latestResolverLocation = null
             latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
+            latestTrafficSignInsideCity = null
             trafficSignTraversalEpoch += 1L
             latestTrafficSignBase.effective()
         }
@@ -1664,6 +1668,17 @@ class ConsumerSessionController(
             hideWelcomeScreen = true,
             appScreenshotState = state,
             lastLookupInsideCity = fixture.insideCity,
+            effectiveSpeedLimitSource = if (state == AppScreenshotState.CAMERA_LIMIT_ACTIVE) {
+                EffectiveSpeedLimitSource.CAMERA
+            } else {
+                EffectiveSpeedLimitSource.BUNDLE
+            },
+            effectiveSpeedLimitReason = if (state == AppScreenshotState.CAMERA_LIMIT_ACTIVE) {
+                "screenshot_camera_limit_active"
+            } else {
+                "screenshot_fixture"
+            },
+            cameraSpeedLimitEvidence = state == AppScreenshotState.CAMERA_LIMIT_ACTIVE,
             localObservationStatus = "",
             germanSpeechModelState = GermanSpeechModelState.READY,
             germanSpeechModelStatus = "Screenshot-Modus verwendet kein Live-Audio.",
@@ -1825,6 +1840,18 @@ class ConsumerSessionController(
     }
 
     private fun consumeLocation(location: Location) {
+        val previousLocation = recentSpeedSampleLocations
+            .asReversed()
+            .firstOrNull { prior ->
+                location.time > prior.time && location.distanceTo(prior).toDouble() > 0.1
+            }
+        val trafficSignHeadingDegrees = trafficSignHeadingDegrees(
+            reportedBearingDegrees = location.bearing.toDouble().takeIf { location.hasBearing() },
+            previousLatitude = previousLocation?.latitude,
+            previousLongitude = previousLocation?.longitude,
+            currentLatitude = location.latitude,
+            currentLongitude = location.longitude,
+        )
         val filteredSpeedKmh = updateCurrentSpeed(location)
         val gpsFixCount = uiState.gpsFixCount + 1
         val gpsHorizontalAccuracyM = location.accuracy.toDouble().takeIf { it >= 0.0 }
@@ -1991,7 +2018,7 @@ class ConsumerSessionController(
                         lon = location.longitude,
                         radiusM = lookupRadiusForHorizontalAccuracy(location.accuracy.toDouble()),
                         maxCandidates = 1200,
-                        headingDeg = location.bearing.toDouble().takeIf { location.hasBearing() },
+                        headingDeg = trafficSignHeadingDegrees,
                         speedKmh = filteredSpeedKmh,
                         horizontalAccuracyM = gpsHorizontalAccuracyM,
                         gpsSignalBars = gpsSignalBars,
@@ -2019,7 +2046,19 @@ class ConsumerSessionController(
                     bundleSha256 = effectiveBundleSha256,
                     countryCode = effectiveCountryCode ?: effectivePenaltyRules.countryCode,
                     localCorrectionRevision = indexedCorrection?.observationId,
+                    headingDegrees = trafficSignHeadingDegrees,
                 ) ?: return@submitBackgroundTask
+                if (evaluation.invalidatedByCityEntry) {
+                    appendRuntimeDiagnosticEvent(
+                        event = "assertion_invalidated",
+                        details = mapOf(
+                            "reason" to "bundle_city_entry",
+                            "baseSource" to baseLimit.source.wireValue,
+                            "baseKmh" to baseLimit.resolution?.speedKmh,
+                            "wayId" to result.wayId,
+                        ),
+                    )
+                }
                 val effectiveSpeed = evaluation.effective.resolution?.speedKmh
                 val effectiveDisplayText = if (evaluation.effective.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null
                 val unlimitedActive = evaluation.effective.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED
@@ -2684,9 +2723,23 @@ class ConsumerSessionController(
         bundleSha256: String?,
         countryCode: String,
         localCorrectionRevision: String?,
+        headingDegrees: Double?,
     ): TrafficSignEvaluationOutcome? = lookupToken.mutateIfCurrent(expectedLookupToken) {
         synchronized(trafficSignStateLock) {
-        val (evaluationGeneration, writePermitActive) = trafficSignGeneration.snapshot()
+        var (evaluationGeneration, writePermitActive) = trafficSignGeneration.snapshot()
+        val enteredCity = TrafficSignBundleContextPolicy.enteredCity(
+            previousInsideCity = latestTrafficSignInsideCity,
+            currentInsideCity = result.insideCity,
+        )
+        if (enteredCity) {
+            evaluationGeneration = trafficSignGeneration.incrementAndGet(writePermitActive)
+            trafficSignResolver.clear()
+            latestTrafficSignContext = null
+            latestResolverLocation = null
+            latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
+            trafficSignTraversalEpoch += 1L
+        }
+        latestTrafficSignInsideCity = result.insideCity
         val tsrEnabledForEvaluation = writePermitActive && uiState.trafficSignRecognitionEnabled && isDriving
         val previousContext = latestTrafficSignContext
         val reversed = previousContext?.wayId != null && previousContext.wayId == result.wayId &&
@@ -2705,8 +2758,7 @@ class ConsumerSessionController(
             wayId = result.wayId,
             latitude = location.latitude,
             longitude = location.longitude,
-            headingDegrees = location.bearing.toDouble().takeIf { location.hasBearing() }
-                ?.let { ((it % 360.0) + 360.0) % 360.0 } ?: 0.0,
+            headingDegrees = headingDegrees ?: 0.0,
             travelDirection = result.travelDirection,
             sourceSignature = TrafficSignRuntimeSourceSignature(
                 osmRevision = "$bundleRevision|way:${result.wayId ?: "none"}|maxspeed:${result.speedLimitKmh ?: "none"}",
@@ -2751,6 +2803,7 @@ class ConsumerSessionController(
                 persistablePassage = trafficSignResolver.takeNewlyPersistableEvent(),
                 generation = evaluationGeneration,
                 tsrWasEnabled = tsrEnabledForEvaluation,
+                invalidatedByCityEntry = enteredCity,
             )
             outcome.persistablePassage?.let { passage ->
                 persistFinalizedTrafficSignPassage(
@@ -3469,7 +3522,6 @@ class ConsumerSessionController(
         private const val DERIVED_SPEED_COMPUTATION_MAX_WINDOW_MS = 4_500L
         private const val DERIVED_SPEED_COMPUTATION_MIN_WINDOW_SECONDS = 2.0
         private const val LOW_SPEED_DERIVED_FALLBACK_THRESHOLD_KMH = 7.0
-        private const val TSR_MINIMUM_MOVING_SPEED_KMH = 1.0
         private const val GPS_LOG_HEADER = "fix_id,timestamp_utc,lat,lon,speed_kmh,hacc_m,vacc_m,bearing_deg,status,way_id,street_name,city_name,inside_city,city_source,speed_limit_kmh,query_ms,candidate_count,speed_candidate_count,nearest_candidate_m,nearest_speed_candidate_m,error\n"
 
         internal fun resetDrivingLogFiles(gpsLogFile: File, matchLogFile: File) {
@@ -3557,6 +3609,34 @@ class ConsumerSessionController(
                 return normalizedFallbackDerivedSpeedKmh
             }
             return normalizedRawSpeedKmh
+        }
+
+        internal fun trafficSignHeadingDegrees(
+            reportedBearingDegrees: Double?,
+            previousLatitude: Double?,
+            previousLongitude: Double?,
+            currentLatitude: Double,
+            currentLongitude: Double,
+        ): Double? {
+            if (reportedBearingDegrees != null && reportedBearingDegrees.isFinite() &&
+                reportedBearingDegrees >= 0.0 && reportedBearingDegrees < 360.0
+            ) {
+                return reportedBearingDegrees
+            }
+            if (previousLatitude == null || previousLongitude == null ||
+                !previousLatitude.isFinite() || !previousLongitude.isFinite() ||
+                !currentLatitude.isFinite() || !currentLongitude.isFinite() ||
+                (previousLatitude == currentLatitude && previousLongitude == currentLongitude)
+            ) {
+                return null
+            }
+            val startLatitudeRadians = Math.toRadians(previousLatitude)
+            val endLatitudeRadians = Math.toRadians(currentLatitude)
+            val longitudeDeltaRadians = Math.toRadians(currentLongitude - previousLongitude)
+            val y = sin(longitudeDeltaRadians) * cos(endLatitudeRadians)
+            val x = cos(startLatitudeRadians) * sin(endLatitudeRadians) -
+                sin(startLatitudeRadians) * cos(endLatitudeRadians) * cos(longitudeDeltaRadians)
+            return (Math.toDegrees(atan2(y, x)) + 360.0) % 360.0
         }
     }
 }

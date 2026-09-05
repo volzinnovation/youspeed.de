@@ -281,7 +281,7 @@ class LocalObservationStoreInstrumentedTest {
     }
 
     @Test
-    fun newerUnknownDirectionCvEvidenceBlocksOlderApprovedTarget() {
+    fun newerUnknownDirectionCvEvidenceCreatesWayWideCorrection() {
         val store = createStore()
         val older = requireNotNull(
             store.recordComputerVisionPassageIfNeeded(
@@ -297,9 +297,37 @@ class LocalObservationStoreInstrumentedTest {
             ),
         )
 
-        assertEquals(LocalObservationState.NEEDS_REVIEW, unknown.state)
-        assertFalse(unknown.runtimeApplicable)
+        assertEquals(LocalObservationState.LOCAL_ONLY, unknown.state)
+        assertTrue(unknown.runtimeApplicable)
+        assertEquals("maxspeed", unknown.osmTagKey)
+        assertEquals(
+            "70",
+            store.latestRuntimeApplicableCorrection("5001", TrafficSignTravelDirection.FORWARD)?.canonicalValue,
+        )
         assertTrue(runCatching { store.exportProposalAsOscPackage(older.id) }.isFailure)
+    }
+
+    @Test
+    fun rawScorePassagePersistsAsRuntimeApplicableFieldEvidence() {
+        val store = createStore()
+        val observation = requireNotNull(
+            store.recordComputerVisionPassageIfNeeded(
+                passage(
+                    id = "cv-raw-score",
+                    value = "30",
+                    direction = TrafficSignTravelDirection.UNKNOWN,
+                    calibrated = false,
+                ),
+                captureContext = captureContext("5001", "B 10", "Karlsruhe"),
+            ),
+        )
+
+        assertEquals(LocalObservationState.LOCAL_ONLY, observation.state)
+        assertTrue(observation.runtimeApplicable)
+        val evidence = JSONObject(requireNotNull(observation.evidenceJson))
+        assertEquals("raw_score", evidence.getJSONObject("pack").getString("calibration_status"))
+        assertEquals("raw_score", evidence.getJSONObject("track").getString("confidence_basis"))
+        assertEquals(0.9, evidence.getJSONObject("track").getDouble("final_confidence"), 0.0)
     }
 
     @Test
@@ -613,6 +641,7 @@ class LocalObservationStoreInstrumentedTest {
         value: String,
         direction: TrafficSignTravelDirection,
         timestamp: Instant = Instant.parse("2026-03-12T10:15:30Z"),
+        calibrated: Boolean = true,
     ): TrafficSignPassageEvent {
         val context = TrafficSignDetectionContext(
             wayId = "5001",
@@ -635,14 +664,14 @@ class LocalObservationStoreInstrumentedTest {
             packId = "pack-v1",
             artifactSha256 = "b".repeat(64),
             preprocessingVersion = "rgb-v1",
-            calibrationId = "calibration-test",
+            calibrationId = if (calibrated) "calibration-test" else "raw-score",
             componentRole = "direct_detector",
             modelComponents = listOf(
                 TrafficSignModelComponentLineage(
                     role = "direct_detector",
                     artifactSha256 = "b".repeat(64),
                     preprocessingVersion = "rgb-v1",
-                    calibrationId = "calibration-test",
+                    calibrationId = if (calibrated) "calibration-test" else "raw-score",
                 ),
             ),
             physicalTrackId = "track-$id",
@@ -664,14 +693,14 @@ class LocalObservationStoreInstrumentedTest {
                     frameId = "frame-$id",
                     timestampUtc = timestamp.minusMillis(500),
                     rawScore = 0.9,
-                    calibratedConfidence = 0.88,
+                    calibratedConfidence = 0.88.takeIf { calibrated },
                     accumulatedSupport = 0.91,
                     boundingBox = NormalizedTrafficSignBoundingBox(0.7, 0.1, 0.1, 0.2),
                     proposalRawScore = 0.92,
-                    proposalCalibratedConfidence = 0.89,
+                    proposalCalibratedConfidence = 0.89.takeIf { calibrated },
                     classifierRawScore = 0.90,
-                    classifierCalibratedConfidence = 0.88,
-                    assemblyConfidence = 0.87,
+                    classifierCalibratedConfidence = 0.88.takeIf { calibrated },
+                    assemblyConfidence = 0.87.takeIf { calibrated },
                 ),
             ),
             lossEvidence = listOf(
@@ -682,7 +711,7 @@ class LocalObservationStoreInstrumentedTest {
                 ),
             ),
             framesSeen = 1,
-            finalConfidence = 0.88,
+            finalConfidence = if (calibrated) 0.88 else 0.9,
             finalAccumulatedSupport = 0.91,
             peakConsecutiveFramesSeen = 1,
             lossReason = "negative_debounce",

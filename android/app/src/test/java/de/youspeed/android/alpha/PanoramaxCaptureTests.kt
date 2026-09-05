@@ -6,6 +6,8 @@ import java.time.Instant
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -53,6 +55,36 @@ class PanoramaxCaptureTests {
     }
 
     @Test
+    fun confirmedZoneStartProjectsToGermanExifAnnotation() {
+        val event = recognitionEvent(TrafficSignSemanticKind.ZONE_START)
+
+        val draft = PanoramaxTrafficSignAnnotationDraft.from(event)
+        val annotation = draft?.projected(1_920, 1_080, t0)
+
+        assertNotNull(annotation)
+        assertEquals(listOf(192, 216, 768, 649), annotation?.shape)
+        assertEquals("DE:274.1", annotation?.semantics?.first { it.key == "osm|traffic_sign" }?.value)
+        assertEquals("track-one", annotation?.physicalSignTrackId)
+        assertEquals(TrafficSignTravelDirection.UNKNOWN, annotation?.travelDirection)
+    }
+
+    @Test
+    fun exifUserCommentRoundTripsWithoutInventingANullTrackId() {
+        val annotation = requireNotNull(
+            PanoramaxTrafficSignAnnotationDraft.from(
+                recognitionEvent(TrafficSignSemanticKind.MAXIMUM_SPEED, trackId = null),
+            )?.projected(1_920, 1_080, t0),
+        )
+
+        val encoded = requireNotNull(PanoramaxExifUserCommentCodec.encode(listOf(annotation)))
+        val decoded = PanoramaxExifUserCommentCodec.decode(encoded)
+
+        assertTrue(encoded.startsWith("YouSpeed.PanoramaxAnnotations/1 "))
+        assertEquals(listOf(annotation), decoded)
+        assertNull(decoded?.single()?.physicalSignTrackId)
+    }
+
+    @Test
     fun queuePersistsMetadataAndSeparatesOriginalsFromThumbnails() {
         val root = createTempDirectory("panoramax-queue").toFile()
         try {
@@ -69,6 +101,9 @@ class PanoramaxCaptureTests {
                 sha256 = PanoramaxQueueStore.sha256(jpeg),
                 byteSize = jpeg.length(),
                 software = "YouSpeed/test",
+                imageWidthPixels = 1_920,
+                imageHeightPixels = 1_080,
+                trafficSignAnnotations = listOf(annotation()),
             )
             store.addJpeg(batch.batchId, jpeg, thumbnail, metadata)
             val restored = requireNotNull(store.getBatch(batch.batchId))
@@ -76,6 +111,8 @@ class PanoramaxCaptureTests {
             val queueRoot = File(root, "no-backup/panoramax")
             assertTrue(File(queueRoot, restored.items.single().originalPath).exists())
             assertTrue(File(queueRoot, restored.items.single().thumbnailPath).exists())
+            assertEquals(1_920, restored.items.single().metadata.imageWidthPixels)
+            assertEquals(listOf(annotation()), restored.items.single().metadata.trafficSignAnnotations)
         } finally {
             root.deleteRecursively()
         }
@@ -143,5 +180,44 @@ class PanoramaxCaptureTests {
             root.deleteRecursively()
         }
     }
+
+    private fun recognitionEvent(
+        semanticKind: TrafficSignSemanticKind,
+        trackId: String? = "track-one",
+    ) = TrafficSignRecognitionEvent(
+        schemaVersion = 1,
+        packId = "de-field-pack",
+        artifactSha256 = "a".repeat(64),
+        preprocessingVersion = "test-v1",
+        source = TrafficSignInputSource.LIVE_FRAME,
+        frameTimestampUtc = t0,
+        state = TrafficSignRecognitionState.CONFIRMED,
+        candidate = TrafficSignCandidate(
+            rawClassId = "zone_start_30",
+            rawLabel = "Zone 30",
+            semantic = TrafficSignSemantic(semanticKind, 30, "km/h"),
+            rawScore = 0.91,
+            calibratedConfidence = null,
+            boundingBox = NormalizedTrafficSignBoundingBox(0.1, 0.2, 0.3, 0.4),
+            proposalRawScore = 0.88,
+            classifierRawScore = 0.91,
+            trackId = trackId,
+        ),
+        roadContext = TrafficSignDetectionContext(
+            wayId = "16620609",
+            latitude = 48.77456123700132,
+            longitude = 8.276953210799945,
+            headingDegrees = 62.0,
+            travelDirection = TrafficSignTravelDirection.UNKNOWN,
+            sourceSignature = TrafficSignRuntimeSourceSignature("bundle:test", null),
+        ),
+        latencyMs = 12.0,
+        thermalState = null,
+    )
+
+    private fun annotation() = requireNotNull(
+        PanoramaxTrafficSignAnnotationDraft.from(recognitionEvent(TrafficSignSemanticKind.ZONE_START))
+            ?.projected(1_920, 1_080, t0),
+    )
 
 }

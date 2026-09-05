@@ -1,8 +1,12 @@
 package de.youspeed.android.alpha
 
 import android.content.Context
+import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import java.io.FileInputStream
+import java.nio.file.Files
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
@@ -88,6 +92,74 @@ class PanoramaxQueueStore(private val appRoot: File) {
         return item
     }
 
+    /**
+     * Repairs EXIF Photo.UserComment from the durable queue sidecar immediately
+     * before upload. The staged JPEG and its hash/size are updated atomically.
+     */
+    @Synchronized
+    fun prepareOriginalForUpload(batchId: String, itemId: String): File {
+        val batch = requireNotNull(getBatch(batchId)) { "Unknown Panoramax batch" }
+        val index = batch.items.indexOfFirst { it.itemId == itemId }
+        require(index >= 0) { "Unknown Panoramax item" }
+        val item = batch.items[index]
+        val original = File(root, item.originalPath)
+        require(original.isFile && original.isJpeg()) { "Panoramax original is unavailable" }
+        val annotations = item.metadata.trafficSignAnnotations.orEmpty()
+        if (annotations.isEmpty()) return original
+        val expectedComment = requireNotNull(PanoramaxExifUserCommentCodec.encode(annotations)) {
+            "Panoramax annotation sidecar is invalid"
+        }
+        val existing = runCatching {
+            ExifInterface(original.absolutePath).getAttribute(ExifInterface.TAG_USER_COMMENT)
+        }.getOrNull()
+        if (PanoramaxExifUserCommentCodec.decode(existing) == annotations) return original
+
+        val temporary = File(original.parentFile, ".${original.name}.annotated.tmp")
+        temporary.delete()
+        original.copyTo(temporary, overwrite = false)
+        try {
+            val exif = ExifInterface(temporary.absolutePath)
+            exif.setAttribute(ExifInterface.TAG_USER_COMMENT, expectedComment)
+            exif.saveAttributes()
+            val verifiedExif = ExifInterface(temporary.absolutePath)
+            check(PanoramaxExifUserCommentCodec.decode(
+                verifiedExif.getAttribute(ExifInterface.TAG_USER_COMMENT),
+            ) == annotations) { "Unable to verify Panoramax EXIF annotation envelope" }
+            try {
+                Files.move(
+                    temporary.toPath(),
+                    original.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(
+                    temporary.toPath(),
+                    original.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
+            }
+            val refreshedExif = ExifInterface(original.absolutePath)
+            val refreshedMetadata = item.metadata.copy(
+                sha256 = sha256(original),
+                byteSize = original.length(),
+                imageWidthPixels = refreshedExif
+                    .getAttributeInt(ExifInterface.TAG_IMAGE_WIDTH, 0)
+                    .takeIf { it > 0 } ?: item.metadata.imageWidthPixels,
+                imageHeightPixels = refreshedExif
+                    .getAttributeInt(ExifInterface.TAG_IMAGE_LENGTH, 0)
+                    .takeIf { it > 0 } ?: item.metadata.imageHeightPixels,
+            )
+            val refreshedItems = batch.items.toMutableList().also {
+                it[index] = item.copy(metadata = refreshedMetadata)
+            }
+            write(batch.copy(items = refreshedItems))
+            return original
+        } finally {
+            temporary.delete()
+        }
+    }
+
     @Synchronized
     fun updateBatch(batch: PanoramaxBatchRecord) {
         require(batch.batchId.isNotBlank())
@@ -162,6 +234,13 @@ class PanoramaxQueueStore(private val appRoot: File) {
             put("sha256", item.metadata.sha256)
             put("byte_size", item.metadata.byteSize)
             put("software", item.metadata.software)
+            item.metadata.imageWidthPixels?.let { put("image_width_pixels", it) }
+            item.metadata.imageHeightPixels?.let { put("image_height_pixels", it) }
+            item.metadata.trafficSignAnnotations?.let { annotations ->
+                PanoramaxExifUserCommentCodec.encode(annotations)?.let {
+                    put("traffic_sign_user_comment", it)
+                }
+            }
             put("location", buildJsonObject {
                 put("latitude", item.metadata.location.latitude)
                 put("longitude", item.metadata.location.longitude)
@@ -203,6 +282,12 @@ class PanoramaxQueueStore(private val appRoot: File) {
                 sha256 = metadata.requiredString("sha256"),
                 byteSize = metadata.requiredLong("byte_size"),
                 software = metadata.requiredString("software"),
+                imageWidthPixels = metadata["image_width_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
+                imageHeightPixels = metadata["image_height_pixels"]?.jsonPrimitive?.longOrNull?.toInt(),
+                trafficSignAnnotations = metadata["traffic_sign_user_comment"]
+                    ?.jsonPrimitive
+                    ?.content
+                    ?.let(PanoramaxExifUserCommentCodec::decode),
                 location = PanoramaxLocationSample(
                     latitude = location.requiredDouble("latitude"),
                     longitude = location.requiredDouble("longitude"),

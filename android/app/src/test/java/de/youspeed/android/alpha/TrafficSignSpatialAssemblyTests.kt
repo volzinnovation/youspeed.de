@@ -7,7 +7,7 @@ import org.junit.Test
 
 class TrafficSignSpatialAssemblyTests {
     @Test
-    fun plateBelowPrimaryBecomesTypedRestrictionOnOneAssembly() {
+    fun supplementaryPlateBelowPrimaryIsIgnoredForLiveAssembly() {
         val pack = packWithWetPlate()
         val primary = detection("speed_limit_30", box(0.45, 0.20, 0.10, 0.12))
         val wetPlate = detection("plate_wet", box(0.44, 0.34, 0.12, 0.05))
@@ -20,17 +20,17 @@ class TrafficSignSpatialAssemblyTests {
 
         val assembly = result.assemblies.single()
         assertEquals("frame-42-assembly-1", assembly.assemblyId)
-        assertEquals(TrafficSignConditionState.RESOLVED, assembly.conditionState)
-        assertEquals("wet", assembly.restrictions.single().normalizedValue)
-        assertEquals("DE:1053-35", assembly.restrictions.single().countrySignCode)
+        assertEquals(TrafficSignConditionState.NONE, assembly.conditionState)
+        assertTrue(assembly.restrictions.isEmpty())
         assertEquals(assembly.assemblyId, assembly.primary.candidate.assemblyId)
-        assertEquals(assembly.restrictions, assembly.primary.candidate.restrictions)
-        assertEquals(assembly.assemblyId, assembly.supplementaryPlates.single().candidate.assemblyId)
+        assertEquals(TrafficSignConditionState.NONE, assembly.primary.candidate.conditionState)
+        assertTrue(assembly.primary.candidate.restrictions.isEmpty())
+        assertTrue(assembly.supplementaryPlates.isEmpty())
         assertTrue(result.unassignedSupplementaryPlates.isEmpty())
     }
 
     @Test
-    fun unassignedSidePlateConservativelyMarksPrimaryUnresolved() {
+    fun unassignedSidePlateDoesNotAffectPrimary() {
         val pack = packWithWetPlate()
         val primary = detection("speed_limit_30", box(0.70, 0.20, 0.10, 0.12))
         val sidePlate = detection("plate_wet", box(0.10, 0.34, 0.12, 0.05))
@@ -42,15 +42,15 @@ class TrafficSignSpatialAssemblyTests {
         )
 
         val assembly = result.assemblies.single()
-        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.conditionState)
-        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.primary.candidate.conditionState)
+        assertEquals(TrafficSignConditionState.NONE, assembly.conditionState)
+        assertEquals(TrafficSignConditionState.NONE, assembly.primary.candidate.conditionState)
         assertTrue(assembly.restrictions.isEmpty())
         assertTrue(assembly.primary.candidate.restrictions.isEmpty())
-        assertEquals(listOf(sidePlate), result.unassignedSupplementaryPlates)
+        assertTrue(result.unassignedSupplementaryPlates.isEmpty())
     }
 
     @Test
-    fun plateSelectsNearestPlausiblePrimaryWhenTwoAreVisible() {
+    fun twoPrimarySignsRemainSeparateAndPlateIsIgnored() {
         val pack = packWithWetPlate()
         val left = detection("speed_limit_30", box(0.25, 0.15, 0.10, 0.12))
         val right = detection("speed_limit_30", box(0.55, 0.18, 0.10, 0.12))
@@ -62,8 +62,11 @@ class TrafficSignSpatialAssemblyTests {
             assemblyIdPrefix = "frame-44",
         ).assemblies
 
+        assertEquals(2, assemblies.size)
         assertTrue(assemblies[0].restrictions.isEmpty())
-        assertEquals("wet", assemblies[1].restrictions.single().normalizedValue)
+        assertTrue(assemblies[1].restrictions.isEmpty())
+        assertEquals(TrafficSignConditionState.NONE, assemblies[0].conditionState)
+        assertEquals(TrafficSignConditionState.NONE, assemblies[1].conditionState)
     }
 
     private fun packWithWetPlate(): TrafficSignModelPack {

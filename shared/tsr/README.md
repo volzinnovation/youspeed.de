@@ -31,22 +31,22 @@ The runtime rules are deliberately strict:
   bundle switch, drive stop, or TSR disable. Refreshing the local store after
   persisting that same camera event is not new road evidence and must not clear
   the active camera assertion.
-- Primary signs and white supplementary plates are separate objects linked by
-  an assembly ID. `resolving`/`unresolved` plate state must not be collapsed
-  into an unconditional permanent speed correction.
+- Live mobile inference is primary-sign only. Supplementary-role detections are
+  ignored and emitted arrays remain empty; their interpretation belongs to
+  offline Panoramax/manual/VLM postprocessing.
 - Bounding boxes use the fully orientation-normalized image, top-left origin,
   and normalized `[0, 1]` coordinates.
 - `raw_score` is never presented as probability. `calibrated_confidence` is
-  present only when the pack declares a passing calibration.
+  present only when the pack declares calibration, while an uncalibrated
+  field-test pack may explicitly use `raw_score` for its thresholds.
 - Ordinary inference events contain no pixels or image path. Diagnostic image
   retention is a separate consented feature and storage root.
 - Downloaded packs require a trusted signature in addition to per-artifact
   hashes. Bundled/developer packs may be admitted by a separate explicit trust
   policy, but are still hash checked.
-- The current iOS integration therefore rejects Application Support packs in
-  production. An unsigned integrity-checked pack is admitted only from the
-  explicit `YOUSPEED_TSR_MODEL_PACK_DIR` environment override in a DEBUG build;
-  Android remains unavailable until its verified-pack boundary is implemented.
+- The current iOS integration admits the bundled field-test pack without a live
+  override allowlist. Android has the same pack validation/orchestration
+  boundary, but still lacks a checked-in LiteRT model and CameraX adapter.
 
 `fixtures/de-direct-pack-v1.json` and `fixtures/recognition-events-v1.json` are
 contract fixtures, not release manifests or benchmark ground truth. Their hash
@@ -65,7 +65,7 @@ The passage layer is additive. The frozen per-frame `taxonomy-v2.json` and
   a speed passage.
 - `traffic-sign-passage-event-v1.schema.json` is the only shared contract that
   can describe an actionable camera passage. It requires a live,
-  override-eligible, calibrated pack; a stable finalized-event id and TSR
+  override-eligible pack whose declared score mode meets its threshold; a stable finalized-event id and TSR
   generation; separate raw, calibrated, frame-fused, and accumulated track
   evidence; qualified analyzed-missing frames; and immutable first-missing
   boundary data separate from a later bounded same-scope activation/rematch.
@@ -88,10 +88,10 @@ The passage layer is additive. The frozen per-frame `taxonomy-v2.json` and
   bundle hashes are synthetic contract values, not release artifacts.
 
 Skipped, throttled, invalid, failed, interrupted, disabled, stopped, and
-thermal-paused frames are not visual negatives. Reappearance before calibrated
+thermal-paused frames are not visual negatives. Reappearance before the
 loss debounce completes returns a track to `armed` without emitting or
-persisting anything. Current shadow or uncalibrated packs cannot satisfy the
-passage schema and therefore cannot override a speed limit.
+persisting anything. Shadow evidence cannot override a speed limit; a live
+uncalibrated pack may do so using its declared raw-score thresholds.
 
 ## M0 two-stage shadow contracts
 

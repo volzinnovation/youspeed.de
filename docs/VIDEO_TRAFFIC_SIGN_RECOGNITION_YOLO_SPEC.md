@@ -47,7 +47,8 @@ Current architecture already reserves a computer-vision module feeding the obser
 Current implementation state:
 
 - iPhone already has `LocalObservationModality.computer_vision` and `temporary_restriction` in `iphone/SpeedConsumerApp/ConsumerModels.swift`.
-- Android local-observation enum/database parity for `computer_vision` and `temporary_restriction` remains a separate integration step.
+- Android includes local-observation/database parity for `computer_vision` and
+  `temporary_restriction`, plus the same passage resolver and precedence rules.
 - Both apps persist local observations with lat/lon, road candidates, confidence, source version, state, old speed, and new speed.
 - iPhone now uses `DriveCaptureCoordinator` as the neutral Drive Recorder camera
   owner for Dashcam, TSR, Panoramax still capture, and the display-only preview;
@@ -62,9 +63,9 @@ Current implementation state:
 - The iPhone field-test pack is active in the primary-sign lane. It has no live
   override allowlist, is not shadow-only, and missing calibration metadata is
   diagnostic rather than an activation rejection during testing.
-- Current iPhone/Android fusion confirms from a time window while a sign is still
-  visible, and the current transient policy is exact-way/source-signature based.
-  Neither behavior satisfies the passage-edge or relation-scope contract below.
+- Current iPhone/Android fusion confirms within a bounded time window and only
+  applies a sign after the visible-to-missing passage edge. Exact-way matching
+  remains usable when a bundle has no continuity groups.
 - The v3 builder can create route-continuity tables, but the checked-in Karlsruhe
   bundles do not contain them yet. Runtime relation scope therefore requires
   regenerated bundles and an exact-way compatibility fallback.
@@ -589,27 +590,19 @@ assertion cannot disappear and reappear much later on the same route relation.
 The v3 bundle builder already creates `route_relation_connected` continuity
 groups, but the matcher currently consumes them only internally and older
 checked-in bundles may not contain the tables. Expose the groups on the match
-result and regenerate release bundles. The runtime must retain the exact-way
-fallback for shadow/development behavior on bundles without this capability,
-but live camera override eligibility is gated on a continuity-capable bundle.
-Public-opt-in acceptance requires that capability rather than silently shipping
-the degraded exact-way behavior.
+result and regenerate release bundles. The runtime retains exact-way behavior
+on bundles without this capability; missing continuity metadata does not
+disable live field-test activation. Route groups, when present, additionally
+allow a camera assertion to survive a continuous way-ID split.
 
 Publish an explicit effective-source enum (`camera`, `local_correction`,
-`bundle`, `none`) beside the resolved value. The main traffic-sign number uses
-dark-red text whenever the effective source is `camera`; ordinary local/bundle
-numbers remain black. Define that dark red as the 50% encoded-sRGB component mix
-between black and the platform's existing standard sign-border red token. With
-the current colors this is iPhone `Color(red: 0.38, green: 0.035, blue: 0.055)`
-(`~#61090E`) from border `(0.76, 0.07, 0.11)`, and Android `Color(0xFF690E12)`
-from border `Color(0xFFD21B24)`. Derive it from the border token rather than an
-unrelated generic red if those colors are later changed. Apply the same
-provenance to camera-resolved city/default values and include it in the
-accessibility label. Bind color to the value that is actually rendered, not
-merely to the presence of a camera assertion, so a manual-capture `?` cannot
-become dark red accidentally. Camera-derived `walk`,
-`unlimited`, and unknown/end actions have no numeric glyph, so give them a
-  visible non-color source marker or camera-accented sign border as well. The TSR
+`bundle`, `none`) beside the resolved value. Keep the speed-sign number black.
+When the rendered value actually comes from camera TSR, draw a white sign border
+and white eye-shaped brackets whose tips align with the side-control centers and
+whose lines meet the sign circle. Apply the same provenance to camera-resolved
+city/default values and include it in the accessibility label. Camera-derived
+`walk`, `unlimited`, and unknown/end actions have no numeric glyph, so retain
+the same visible source treatment when those presentations are implemented. The TSR
   badge distinguishes `tracking`, `armed/waiting to pass`, and `active`; it may
   show the current accumulated support while tracking and the final calibrated
   confidence after commit, labeling which metric is shown without implying that
@@ -868,7 +861,8 @@ finalizer commits an armed visible-to-missing track. At that boundary:
 - the activation scope must contain either the boundary-time stabilized way or
   the explicitly captured first stabilized same-scope rematch after a bounded
   no-match boundary (including a same-relation way-ID split),
-- the semantic assembly must meet the calibrated activation threshold, and
+- the primary semantic must meet the pack's declared raw or calibrated
+  activation threshold, and
 - an unconditional, supported action may replace the live camera assertion.
 
 Nothing is applied or stored merely because a track is visible or armed. A newer
@@ -916,10 +910,10 @@ write must not invalidate the higher-priority camera source.
 
 Create a `local_only` observation when a committed numeric, `walk`, German
 city-entry `50`, or safely resolved end action has a concrete permanent value,
-a stable activation way, sufficient calibrated confidence, and is not already
+a stable activation way, sufficient declared-score confidence, and is not already
 the latest equivalent correction. Create exactly one `needs_review` observation
 at the same passage edge for a plausible but unresolved end/city/zone action,
-temporary or conditional restriction, unsafe direction scope, or conflicting
+temporary or conditional restriction or conflicting
 way association. Both paths use the same finalized-event idempotency and TSR
 generation check; new CV `needs_review` rows set `runtime_applicable = false`,
 while safe `local_only` rows and their later lifecycle states remain applicable.

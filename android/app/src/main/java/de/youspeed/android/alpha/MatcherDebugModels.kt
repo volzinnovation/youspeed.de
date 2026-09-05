@@ -3,6 +3,8 @@ package de.youspeed.android.alpha
 internal enum class LookupMatchingModel {
     CONNECTED_BASELINE,
     SIMPLE_SPEED_REF_HEURISTIC,
+    SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
+    SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
     SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
     SIMPLE_SPEED_REF_CONNECTED_HEURISTIC,
     CORRIDOR_HMM_RAW_MINI_HMM,
@@ -23,6 +25,8 @@ enum class MatcherDebugProfile(
     M3("m3", "M3", "M2 + connected-candidate gate", LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC),
     M4("m4", "M4", "Corridor raw mini-HMM", LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM),
     M5("m5", "M5", "Corridor-aware final", LookupMatchingModel.CORRIDOR_HMM),
+    M6("m6", "M6", "M2 + urban consecutive distance-gap release", LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC),
+    M7("m7", "M7", "M6 + 10m search window", LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC),
     M9("m9", "M9", "Guarded stale-ref suppression", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC),
     ;
 
@@ -30,8 +34,8 @@ enum class MatcherDebugProfile(
         get() = "$shortLabel $displayName"
 
     companion object {
-        const val forcedProfileVersion: Int = 2
-        val default: MatcherDebugProfile = M2
+        const val forcedProfileVersion: Int = 8
+        val default: MatcherDebugProfile = M7
 
         fun fromStored(raw: String?): MatcherDebugProfile {
             val normalized = raw?.trim()?.lowercase().orEmpty()

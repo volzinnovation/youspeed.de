@@ -13,6 +13,53 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class V3SpeedLimitLookupInstrumentedTest {
     @Test
+    fun m7ProvidesDirectionalHypothesisEvenAtLowSpeed() {
+        val dbFile = createFixtureDb("m7-tsr-${UUID.randomUUID()}.sqlite") { db ->
+            execSql(
+                db,
+                """
+                CREATE TABLE ways (
+                  way_id INTEGER PRIMARY KEY, highway TEXT, street_name TEXT, ref TEXT, maxspeed TEXT,
+                  maxspeed_type TEXT, source_maxspeed TEXT, approx_heading_deg REAL, service TEXT, tunnel TEXT,
+                  min_lon REAL NOT NULL, min_lat REAL NOT NULL, max_lon REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE ways_rtree (
+                  way_id INTEGER NOT NULL, min_lon REAL NOT NULL, max_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE way_geom (way_id INTEGER PRIMARY KEY, points_json TEXT NOT NULL);
+
+                INSERT INTO ways VALUES (4001, 'secondary', 'Direction Test', NULL, '30', NULL, NULL, 90.0, 'main', NULL, 13.0, 52.0, 13.004, 52.0);
+                INSERT INTO ways_rtree VALUES (4001, 13.0, 13.004, 52.0, 52.0);
+                INSERT INTO way_geom VALUES (4001, '[[52.0,13.0],[52.0,13.004]]');
+                """.trimIndent(),
+            )
+        }
+
+        V3SpeedLimitLookup(
+            dbFile.absolutePath,
+            matchingModel = LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+        ).use { lookup ->
+            val result = lookup.lookup(
+                lat = 52.0,
+                lon = 13.002,
+                radiusM = 100.0,
+                maxCandidates = 16,
+                headingDeg = 90.0,
+                speedKmh = 0.2,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+            )
+
+            assertEquals("4001", result.wayId)
+            assertEquals(TrafficSignTravelDirection.FORWARD, result.travelDirection)
+            val hypothesis = result.matchHypotheses.first { it.wayId == result.wayId }
+            assertEquals(13.0, hypothesis.startLon ?: 0.0, 0.0)
+            assertEquals(13.004, hypothesis.endLon ?: 0.0, 0.0)
+        }
+    }
+
+    @Test
     fun below50GermanLimitMarksLookupInsideCity() {
         val dbFile = createFixtureDb("low-speed-city-${UUID.randomUUID()}.sqlite") { db ->
             execSql(

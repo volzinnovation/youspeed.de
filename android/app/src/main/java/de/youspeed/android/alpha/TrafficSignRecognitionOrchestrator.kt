@@ -422,9 +422,10 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     fusedScore = created.fusedScore,
                     contextGeneration = active.accepted.contextGeneration,
                     qualifiedAnalyzedFrame = created.qualifiedAnalyzedFrame,
-                    overrideEligible = modelPack.calibration.calibrated &&
-                        modelPack.calibration.runtimeOutput == TrafficSignCalibrationOutput.CALIBRATED_CONFIDENCE &&
-                        active.accepted.runtimeActivationEligible,
+                    // Calibration remains provenance. During field testing a
+                    // raw-score pack uses its declared raw thresholds and is
+                    // just as eligible for passage evaluation.
+                    overrideEligible = active.accepted.runtimeActivationEligible,
                     strongPassGeometry = (backendResult as? TrafficSignBackendResult.Recognition)?.strongPassGeometry == true,
                 )
                 val previousOverride = currentOverride

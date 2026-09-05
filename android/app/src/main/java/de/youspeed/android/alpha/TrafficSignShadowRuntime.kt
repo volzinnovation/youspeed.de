@@ -2,6 +2,8 @@ package de.youspeed.android.alpha
 
 import java.time.Duration
 import java.time.Instant
+import java.util.Locale
+import java.util.UUID
 
 /**
  * Runtime-only view of the pack-v2 execution policy.
@@ -478,10 +480,10 @@ fun interface TrafficSignQAEventSinkV2 {
 /**
  * Pure M0 coordinator around a future detector/classifier backend.
  *
- * It binds stage identities from the validated pack, sanitizes uncalibrated or
- * unreadable plates, associates observations only within one road/direction
- * context, emits QA events, and optionally asks a separate consent-aware sink
- * for a diagnostic capture. It has no speed-source mutation API.
+ * It binds stage identities from the validated pack, retains primary-sign QA,
+ * emits events, and optionally asks a separate consent-aware sink for a
+ * diagnostic capture. Supplementary signs are intentionally excluded from
+ * the on-device lane. It has no speed-source mutation API.
  */
 class TrafficSignShadowRuntimeV2(
     private val configuration: TrafficSignShadowRuntimeConfigurationV2,
@@ -489,7 +491,6 @@ class TrafficSignShadowRuntimeV2(
     private val qaEventSink: TrafficSignQAEventSinkV2? = null,
 ) {
     private val tracks = mutableListOf<Track>()
-    private var nextTrackNumber = 1L
     private var lastFrameTimestamp: Instant? = null
 
     @Synchronized
@@ -519,7 +520,7 @@ class TrafficSignShadowRuntimeV2(
                 latencyMs = input.classifierLatencyMs,
             ),
         )
-        val reasons = diagnosticReasons(input, assemblies, state)
+        val reasons = diagnosticReasons(input, state)
         val capture = requestDiagnosticCapture(input, reasons)
         val event = TrafficSignRecognitionEventV2(
             schemaVersion = 2,
@@ -546,7 +547,6 @@ class TrafficSignShadowRuntimeV2(
     @Synchronized
     fun reset() {
         tracks.clear()
-        nextTrackNumber = 1L
         lastFrameTimestamp = null
     }
 
@@ -558,136 +558,48 @@ class TrafficSignShadowRuntimeV2(
         usedTrackIds: MutableSet<String>,
     ): TrafficSignAssemblyV2 {
         val primary = observation.primary.toEvidence()
-        val plates = observation.supplementaryPlates.map(::normalizePlate)
-        val conditionState = when {
-            plates.isEmpty() -> TrafficSignConditionState.NONE
-            plates.all { it.readability == TrafficSignPlateReadabilityV2.READABLE } -> {
-                TrafficSignConditionState.RESOLVED
-            }
-            else -> TrafficSignConditionState.UNRESOLVED
-        }
+        val conditionState = TrafficSignConditionState.NONE
         val roadKey = RoadKey(roadContext)
         val candidates = tracks
             .asSequence()
             .filter { it.id !in usedTrackIds }
             .filter { it.roadKey == roadKey && it.semantic == primary.semantic }
-            .filter { hintsAreCompatible(it.stableObservationHint, observation.stableObservationHint) }
             .toList()
-        val hinted = observation.stableObservationHint?.let { hint ->
-            candidates.firstOrNull { it.stableObservationHint == hint }
-        }
-        val overlapping = candidates
-            .map { it to it.boundingBox.intersectionOverUnion(primary.boundingBox) }
-            .filter { it.second >= configuration.minimumTrackIou }
-            .maxByOrNull { it.second }
-            ?.first
-        val uniqueFallback = candidates.singleOrNull()
-        val track = hinted
-            ?: overlapping
-            ?: uniqueFallback
+        val track = candidates.maxByOrNull { it.lastObservedAt }
             ?: Track(
-                id = "tsr-v2-track-${nextTrackNumber++}",
+                id = UUID.randomUUID().toString().lowercase(Locale.US),
                 roadKey = roadKey,
                 semantic = primary.semantic,
-                boundingBox = primary.boundingBox,
                 lastObservedAt = observedAt,
                 evidenceFrameCount = 0,
                 lastEventId = null,
-                lastConditionState = null,
-                stableObservationHint = observation.stableObservationHint,
             ).also(tracks::add)
         usedTrackIds += track.id
 
-        val transition = when {
-            track.lastConditionState == TrafficSignConditionState.UNRESOLVED &&
-                conditionState == TrafficSignConditionState.RESOLVED -> {
-                TrafficSignRestrictionTransitionV2.UPGRADED_FROM_LATER_READABLE_EVIDENCE
-            }
-            track.lastEventId != null && conditionState == TrafficSignConditionState.UNRESOLVED -> {
-                TrafficSignRestrictionTransitionV2.PRESERVED_UNREADABLE
-            }
-            else -> TrafficSignRestrictionTransitionV2.NONE
-        }
         val temporalEvidence = TrafficSignTemporalEvidenceV2(
             evidenceFrameCount = track.evidenceFrameCount + 1,
             priorEventId = track.lastEventId,
-            restrictionTransition = transition,
+            restrictionTransition = TrafficSignRestrictionTransitionV2.NONE,
         )
-        track.boundingBox = primary.boundingBox
         track.lastObservedAt = observedAt
         track.evidenceFrameCount = temporalEvidence.evidenceFrameCount
         track.lastEventId = eventId
-        track.lastConditionState = conditionState
-        if (track.stableObservationHint == null) {
-            track.stableObservationHint = observation.stableObservationHint
-        }
 
         return TrafficSignAssemblyV2(
             assemblyId = observation.assemblyId,
             physicalSignTrackId = track.id,
             primary = primary,
-            supplementaryPlates = plates,
+            supplementaryPlates = emptyList(),
             conditionState = conditionState,
             temporalEvidence = temporalEvidence,
         )
     }
 
-    private fun normalizePlate(
-        observation: TrafficSignTwoStagePlateObservationV2,
-    ): TrafficSignSupplementaryPlateEvidenceV2 {
-        val confidence = observation.classifierCalibratedConfidence
-        val readable = configuration.classifier.calibrationPassed &&
-            observation.readability == TrafficSignPlateReadabilityV2.READABLE &&
-            !observation.classId.isNullOrBlank() &&
-            observation.restriction != null &&
-            observation.classifierRawScore?.isFinite() == true &&
-            confidence != null &&
-            confidence.isFinite() &&
-            confidence >= observation.classifierThreshold
-        return TrafficSignSupplementaryPlateEvidenceV2(
-            objectId = observation.objectId,
-            boundingBox = observation.boundingBox,
-            detectorScore = TrafficSignStageScoreV2(
-                rawScore = observation.detectorScore,
-                calibratedConfidence = observation.detectorCalibratedConfidence,
-            ),
-            classifierScore = observation.classifierRawScore?.let { rawScore ->
-                TrafficSignStageScoreV2(
-                    rawScore = rawScore,
-                    calibratedConfidence = confidence,
-                )
-            },
-            classId = observation.classId.takeIf { readable },
-            readability = if (readable) {
-                TrafficSignPlateReadabilityV2.READABLE
-            } else {
-                TrafficSignPlateReadabilityV2.UNREADABLE
-            },
-            restriction = observation.restriction.takeIf { readable },
-        )
-    }
-
     private fun diagnosticReasons(
         input: TrafficSignShadowFrameInputV2,
-        assemblies: List<TrafficSignAssemblyV2>,
         state: TrafficSignRecognitionState,
     ): List<TrafficSignDiagnosticReasonV2> = buildList {
         addAll(input.diagnosticReasons)
-        if (assemblies.any { assembly ->
-                assembly.supplementaryPlates.any {
-                    it.readability == TrafficSignPlateReadabilityV2.UNREADABLE
-                }
-            }
-        ) {
-            add(TrafficSignDiagnosticReasonV2.UNREADABLE_SUPPLEMENTARY_PLATE)
-        }
-        if (assemblies.any {
-                it.temporalEvidence.restrictionTransition ==
-                    TrafficSignRestrictionTransitionV2.UPGRADED_FROM_LATER_READABLE_EVIDENCE
-            }
-        ) {
-            add(TrafficSignDiagnosticReasonV2.TEMPORAL_UPGRADE)
-        }
         if (state == TrafficSignRecognitionState.CONFIRMED) {
             add(TrafficSignDiagnosticReasonV2.SHADOW_CANDIDATE)
         }
@@ -705,13 +617,12 @@ class TrafficSignShadowRuntimeV2(
             }
         }
         if (
-            input.requestedState == TrafficSignRecognitionState.UNKNOWN ||
-            !configuration.classifier.calibrationPassed
+            input.requestedState == TrafficSignRecognitionState.UNKNOWN
         ) {
             return TrafficSignRecognitionState.UNKNOWN
         }
         val hasQualifiedPrimary = assemblies.any {
-            (it.primary.classifierScore.calibratedConfidence ?: Double.NaN) >=
+            (it.primary.classifierScore.calibratedConfidence ?: it.primary.classifierScore.rawScore) >=
                 configuration.classifierConfirmedThreshold
         }
         if (!hasQualifiedPrimary) return TrafficSignRecognitionState.UNKNOWN
@@ -783,16 +694,11 @@ class TrafficSignShadowRuntimeV2(
         val id: String,
         val roadKey: RoadKey,
         val semantic: TrafficSignPrimarySemanticV2,
-        var boundingBox: NormalizedTrafficSignBoundingBox,
         var lastObservedAt: Instant,
         var evidenceFrameCount: Int,
         var lastEventId: String?,
-        var lastConditionState: TrafficSignConditionState?,
-        var stableObservationHint: String?,
     )
 
-    private fun hintsAreCompatible(left: String?, right: String?): Boolean =
-        left == null || right == null || left == right
 }
 
 private fun TrafficSignShadowStageIdentityV2.run(

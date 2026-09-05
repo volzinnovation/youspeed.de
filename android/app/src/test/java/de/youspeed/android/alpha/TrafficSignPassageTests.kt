@@ -241,7 +241,7 @@ class TrafficSignPassageTests {
     }
 
     @Test
-    fun stillCaptureAndUncalibratedPackCannotArmOrCrash() {
+    fun stillCaptureCannotArmButRawScoreLiveFramesCan() {
         val finalizer = TrafficSignPassageFinalizer()
         finalizer.observe(
             event = recognition(t0, source = TrafficSignInputSource.CAMERA_STILL),
@@ -257,11 +257,50 @@ class TrafficSignPassageTests {
             fusedScore = 0.99,
             contextGeneration = 1,
             qualifiedAnalyzedFrame = true,
-            overrideEligible = false,
+            overrideEligible = true,
+        )
+        finalizer.observe(
+            event = recognition(t0.plusMillis(1_200)).copy(
+                candidate = recognition(t0.plusMillis(1_200)).candidate?.copy(calibratedConfidence = null),
+            ),
+            fusedScore = 0.99,
+            contextGeneration = 1,
+            qualifiedAnalyzedFrame = true,
+            overrideEligible = true,
         )
 
-        assertFalse(finalizer.hasActiveTrack())
+        assertTrue(finalizer.hasActiveTrack())
         assertNull(finalizer.observe(missing(t0.plusSeconds(2)), null, 1, true, true))
+        assertEquals(
+            30,
+            finalizer.observe(missing(t0.plusMillis(2_200)), null, 1, true, true)
+                ?.action?.valueKmh,
+        )
+    }
+
+    @Test
+    fun unknownDirectionAndMissingContinuityDoNotBlockSameWayActivation() {
+        val base = base(50, EffectiveSpeedLimitSource.BUNDLE)
+        val contexts = listOf(
+            context("100", emptySet()).copy(travelDirection = TrafficSignTravelDirection.UNKNOWN),
+            context("100", emptySet()).copy(continuityCapable = false),
+        )
+
+        contexts.forEachIndexed { index, activationContext ->
+            val resolver = TrafficSignRuntimeSourceResolver()
+            val effective = resolver.commit(
+                passage(
+                    action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, valueKmh = 30),
+                    context = activationContext,
+                    at = t0.plusSeconds(index.toLong()),
+                ),
+                base,
+            )
+
+            assertEquals(30, effective.resolution?.speedKmh)
+            assertEquals(EffectiveSpeedLimitSource.CAMERA, effective.source)
+            assertEquals(activationContext.travelDirection, resolver.activeAssertion()?.scope?.travelDirection)
+        }
     }
 
     @Test

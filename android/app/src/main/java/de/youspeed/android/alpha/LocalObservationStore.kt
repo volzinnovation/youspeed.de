@@ -187,17 +187,16 @@ internal class LocalObservationStore(
             activation.continuityCapable &&
                 event.eligibleRouteRelationGroupIds.intersect(activation.routeRelationGroupIds).isNotEmpty()
             )
-        val safe = direction != TrafficSignTravelDirection.UNKNOWN &&
-            activation.continuityCapable && activation.matchedWayStable && activation.hasVerifiedBundle &&
+        val safe = activation.matchedWayStable && activation.hasVerifiedBundle &&
             recognitionAssociationSafe && permanent && unconditional && concrete
         val tagKey = when (direction) {
             TrafficSignTravelDirection.FORWARD -> "maxspeed:forward"
             TrafficSignTravelDirection.REVERSE -> "maxspeed:backward"
-            // Review-only unknown-direction evidence blocks both generic and
-            // directional exports for this way without itself becoming runtime-applicable.
+            // Unknown direction is represented as a way-wide correction until
+            // later GPS evidence can resolve a directional scope.
             TrafficSignTravelDirection.UNKNOWN -> "maxspeed"
         }
-        val state = if (safe && tagKey != null) LocalObservationState.LOCAL_ONLY else LocalObservationState.NEEDS_REVIEW
+        val state = if (safe) LocalObservationState.LOCAL_ONLY else LocalObservationState.NEEDS_REVIEW
         val intentType = when {
             event.action.kind == TrafficSignActionKind.TEMPORARY_MAXIMUM ->
                 LocalObservationIntentType.TEMPORARY_RESTRICTION
@@ -267,15 +266,13 @@ internal class LocalObservationStore(
                     db.setTransactionSuccessful()
                     return@withDatabase null
                 }
-                if (primaryWayId != null && tagKey != null) {
-                    stalePendingExportsForIncomingTarget(
-                        db,
-                        primaryWayId,
-                        tagKey,
-                        direction,
-                        incomingEffectiveAtUtc = effectiveAtUtc,
-                    )
-                }
+                stalePendingExportsForIncomingTarget(
+                    db,
+                    primaryWayId,
+                    tagKey,
+                    direction,
+                    incomingEffectiveAtUtc = effectiveAtUtc,
+                )
                 db.execSQL(
                     """
                     INSERT INTO observations (
@@ -1570,8 +1567,6 @@ internal class LocalObservationStore(
         val rowResolutionKind = requireNotNull(observation.resolvedLimitKind).also {
             require(it != TrafficSignResolvedLimitKind.UNKNOWN)
         }
-        require(observation.directionScope != TrafficSignTravelDirection.UNKNOWN)
-
         val evidence = JSONObject(requireNotNull(observation.evidenceJson))
         require(evidence.getInt("schema_version") == 1)
         require(requiredString(evidence, "event_kind") == "traffic_sign_passage")
@@ -1585,7 +1580,7 @@ internal class LocalObservationStore(
         require(requiredString(pack, "taxonomy_version") == "tsr-structural-action-v1")
         require(requiredString(pack, "execution_mode") == "live")
         require(pack.getBoolean("override_eligible"))
-        require(requiredString(pack, "calibration_status") == "passed")
+        require(requiredString(pack, "calibration_status") in setOf("passed", "raw_score"))
         val components = requiredArray(pack, "components")
         require(components.length() > 0)
         val componentRoles = buildList {
@@ -1610,8 +1605,11 @@ internal class LocalObservationStore(
         require(requiredArray(track, "assembly_ids").length() > 0)
         require(track.getInt("frames_seen") > 0)
         require(track.getInt("peak_consecutive_frames_seen") in 1..track.getInt("frames_seen"))
-        val finalCalibratedConfidence = probability(track, "final_calibrated_confidence")
-        require(observation.confidenceCalibrated == finalCalibratedConfidence)
+        val finalConfidence = probability(
+            track,
+            if (track.has("final_confidence")) "final_confidence" else "final_calibrated_confidence",
+        )
+        require(observation.confidenceCalibrated == finalConfidence)
         probability(track, "final_accumulated_support")
         require(requiredArray(track, "frame_evidence").length() > 0)
         require(requiredArray(track, "loss_evidence").length() > 0)
@@ -1667,21 +1665,19 @@ internal class LocalObservationStore(
         val expectedOperationDirection = when (observation.directionScope) {
             TrafficSignTravelDirection.FORWARD -> "forward"
             TrafficSignTravelDirection.REVERSE -> "backward"
-            TrafficSignTravelDirection.UNKNOWN -> error("Unknown CV direction cannot be runtime-applicable")
+            TrafficSignTravelDirection.UNKNOWN -> "way"
         }
         val expectedActivationDirection = when (observation.directionScope) {
             TrafficSignTravelDirection.FORWARD -> "forward"
             TrafficSignTravelDirection.REVERSE -> "reverse"
-            TrafficSignTravelDirection.UNKNOWN -> error("Unknown CV direction cannot be runtime-applicable")
+            TrafficSignTravelDirection.UNKNOWN -> "unknown"
         }
         require(requiredString(operation, "direction_scope") == expectedOperationDirection)
-        require(
-            rowTagKey == if (observation.directionScope == TrafficSignTravelDirection.FORWARD) {
-                "maxspeed:forward"
-            } else {
-                "maxspeed:backward"
-            },
-        )
+        require(rowTagKey == when (observation.directionScope) {
+            TrafficSignTravelDirection.FORWARD -> "maxspeed:forward"
+            TrafficSignTravelDirection.REVERSE -> "maxspeed:backward"
+            TrafficSignTravelDirection.UNKNOWN -> "maxspeed"
+        })
 
         val boundary = requiredObject(evidence, "boundary")
         require(java.time.Instant.parse(requiredString(boundary, "timestamp_utc")).toString() == observation.effectiveAtUTC)
@@ -1703,7 +1699,7 @@ internal class LocalObservationStore(
         require(VERIFIED_SHA256.matches(requiredString(scope, "bundle_sha256")))
         requiredString(scope, "continuity_epoch_id")
         val originalWayId = requiredString(scope, "original_way_id").also { require(isPositiveOsmWayId(it)) }
-        require(scope.getBoolean("continuity_capable_bundle"))
+        scope.getBoolean("continuity_capable_bundle")
         positiveIds(requiredArray(scope, "initial_route_relation_group_ids"))
         val eligibleGroups = positiveIds(requiredArray(scope, "eligible_route_relation_group_ids"))
         positiveIds(requiredArray(scope, "source_relation_ids"))
@@ -1739,6 +1735,7 @@ internal class LocalObservationStore(
         val originalWayId = requireNotNull(original.wayId?.trim()?.takeIf(::isPositiveOsmWayId))
         val bundleSha256 = requireNotNull(activation.bundleSha256)
         val committedAtUtc = event.lossEvidence.last().timestampUtc
+        val calibratedConfidence = event.evidence.mapNotNull { it.calibratedConfidence }.maxOrNull()
         val unresolvedEnd = resolvedLimit.kind == TrafficSignResolvedLimitKind.UNKNOWN && event.action.kind in END_ACTION_KINDS
         val runtimeStatus = when {
             runtimeApplicable -> "resolved"
@@ -1835,7 +1832,7 @@ internal class LocalObservationStore(
                     .put("taxonomy_version", "tsr-structural-action-v1")
                     .put("execution_mode", "live")
                     .put("override_eligible", true)
-                    .put("calibration_status", "passed")
+                    .put("calibration_status", if (calibratedConfidence == null) "raw_score" else "passed")
                     .put(
                         "components",
                         JSONArray().apply {
@@ -1861,7 +1858,11 @@ internal class LocalObservationStore(
                     .put("frames_seen", event.framesSeen)
                     .put("peak_consecutive_frames_seen", event.peakConsecutiveFramesSeen)
                     .put("single_sighting_exception", event.framesSeen == 1)
-                    .put("final_calibrated_confidence", event.finalConfidence)
+                    .put("final_confidence", event.finalConfidence)
+                    .put("confidence_basis", if (calibratedConfidence == null) "raw_score" else "calibrated_confidence")
+                    .apply {
+                        calibratedConfidence?.let { put("final_calibrated_confidence", it) }
+                    }
                     .put("final_accumulated_support", event.finalAccumulatedSupport)
                     .put("accumulated_support_cap", 1.0)
                     .put("loss_reason", if (event.lossReason == "strong_pass_geometry") "strong_pass_geometry" else "negative_debounce")
@@ -1941,19 +1942,21 @@ internal class LocalObservationStore(
 
     private fun List<TrafficSignPassageFrameEvidence>.toSharedFrameEvidenceJson() = JSONArray().apply {
         this@toSharedFrameEvidenceJson.forEach { evidence ->
-            put(
-                JSONObject()
-                    .put("frame_id", evidence.frameId)
-                    .put("timestamp_utc", evidence.timestampUtc.toString())
-                    .put("outcome", "seen")
-                    .put("analysis_eligible", true)
-                    .put("proposal_raw_score", requireNotNull(evidence.proposalRawScore))
-                    .put("proposal_calibrated_confidence", requireNotNull(evidence.proposalCalibratedConfidence))
-                    .put("classifier_raw_score", requireNotNull(evidence.classifierRawScore))
-                    .put("classifier_calibrated_confidence", requireNotNull(evidence.classifierCalibratedConfidence))
-                    .put("assembly_confidence", requireNotNull(evidence.assemblyConfidence))
-                    .put("accumulated_support", evidence.accumulatedSupport),
-            )
+            put(JSONObject()
+                .put("frame_id", evidence.frameId)
+                .put("timestamp_utc", evidence.timestampUtc.toString())
+                .put("outcome", "seen")
+                .put("analysis_eligible", true)
+                .put("raw_score", evidence.rawScore)
+                .put("accumulated_support", evidence.accumulatedSupport)
+                .apply {
+                    evidence.calibratedConfidence?.let { put("calibrated_confidence", it) }
+                    evidence.proposalRawScore?.let { put("proposal_raw_score", it) }
+                    evidence.proposalCalibratedConfidence?.let { put("proposal_calibrated_confidence", it) }
+                    evidence.classifierRawScore?.let { put("classifier_raw_score", it) }
+                    evidence.classifierCalibratedConfidence?.let { put("classifier_calibrated_confidence", it) }
+                    evidence.assemblyConfidence?.let { put("assembly_confidence", it) }
+                })
         }
     }
 

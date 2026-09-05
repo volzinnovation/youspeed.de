@@ -170,6 +170,36 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
+    fun rawScorePackCanFinalizeWithoutCalibration() {
+        val basePack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode)
+        val rawPack = basePack.copy(
+            calibration = basePack.calibration.copy(
+                kind = TrafficSignCalibrationKind.NONE,
+                calibrated = false,
+                runtimeOutput = TrafficSignCalibrationOutput.RAW_SCORE,
+            ),
+        ).also(TrafficSignModelPackValidator::requireValid)
+        val harness = Harness(rawPack)
+        val rawOnly = detection().copy(
+            candidate = detection().candidate.copy(rawScore = 0.91, calibratedConfidence = null),
+        )
+
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            assertTrue(harness.orchestrator.submit(harness.frame("raw-$index", capturedAtNanos = harness.clockNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(rawOnly))
+        }
+        repeat(2) { index ->
+            harness.clockNanos += 500_000_000L
+            assertTrue(harness.orchestrator.submit(harness.frame("raw-miss-$index", capturedAtNanos = harness.clockNanos)))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        }
+
+        assertEquals(TrafficSignRecognitionState.NO_RECOGNITION, harness.observer.outputs.last().event.state)
+        assertEquals(30, harness.observer.outputs.last().passageEvent?.resolution?.speedKmh)
+    }
+
+    @Test
     fun stationaryContextCannotArmOrFinalizeAuthoritativePassage() {
         val harness = Harness()
         harness.runtimeActivationEligible = false
@@ -601,8 +631,9 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals(50, harness.orchestrator.effectiveSpeedKmh(50, 70))
     }
 
-    private class Harness {
-        val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode)
+    private class Harness(
+        val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode),
+    ) {
         val backend = FakeBackend()
         val observer = RecordingObserver()
         var clockNanos = 0L

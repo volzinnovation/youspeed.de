@@ -123,6 +123,8 @@ internal class V3SpeedLimitLookup(
         get() = when (matchingModel) {
             LookupMatchingModel.CONNECTED_BASELINE,
             LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> false
             LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM,
@@ -145,6 +147,13 @@ internal class V3SpeedLimitLookup(
     ): SpeedLookupResult {
         val startedAtNs = System.nanoTime()
         val normalizedMatchContext = matchContext ?: WayMatchContext()
+        val effectiveRadiusM = if (
+            matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC
+        ) {
+            min(radiusM.coerceAtLeast(0.0), SIMPLE_SPEED_REF_NARROW_WINDOW_RADIUS_M)
+        } else {
+            radiusM
+        }
         val observedHeadingDeg = headingDeg?.takeIf {
             speedKmh != null &&
                 speedKmh.isFinite() &&
@@ -191,7 +200,7 @@ internal class V3SpeedLimitLookup(
         val candidates = queryWayCandidates(
             lat = lat,
             lon = lon,
-            radiusM = radiusM,
+            radiusM = effectiveRadiusM,
             maxCandidates = maxCandidates,
             headingDeg = observedHeadingDeg,
             matchContext = normalizedMatchContext,
@@ -233,7 +242,7 @@ internal class V3SpeedLimitLookup(
 
         val selection = selectCandidate(
             candidates = candidates,
-            radiusM = radiusM,
+            radiusM = effectiveRadiusM,
             observedHeadingDeg = observedHeadingDeg,
             speedKmh = speedKmh,
             accuracyBufferM = accuracyBufferM,
@@ -311,7 +320,12 @@ internal class V3SpeedLimitLookup(
             matchHypotheses = selection.matchHypotheses,
             selectionTrace = selection.selectionTrace,
             speedSource = best?.speedSource ?: DerivedSpeedSource.NONE,
-            travelDirection = resolveTravelDirection(observedHeadingDeg, best?.localHeadingDeg),
+            // Matching may deliberately ignore heading at walking speed, but
+            // TSR direction can still use a valid sensor/displacement bearing.
+            travelDirection = resolveTravelDirection(
+                headingDeg?.takeIf { it.isFinite() && it >= 0.0 && it < 360.0 },
+                best?.localHeadingDeg,
+            ),
             routeRelationGroupIds = routeMembership.keys,
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
@@ -575,6 +589,8 @@ internal class V3SpeedLimitLookup(
                 }
 
                 LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> {
                     val simpleCandidates = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
@@ -587,7 +603,11 @@ internal class V3SpeedLimitLookup(
                         matchContext = matchContext,
                         speedKmh = speedKmh,
                         horizontalAccuracyM = horizontalAccuracyM,
-                        urbanSameRefReleaseEnabled = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                        urbanSameRefReleaseEnabled = matchingModel in setOf(
+                            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                        ),
                         useStreetNameFallbackContinuity = false,
                         useGuardedStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                         wayLinks = wayLinks,
@@ -603,6 +623,8 @@ internal class V3SpeedLimitLookup(
                         portalEligibleTunnelRefs = portalEligibleTunnelRefs,
                         modelTraceName = when (matchingModel) {
                             LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> "simple_speed_ref_connected"
+                            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC -> "simple_speed_ref_urban_release"
+                            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC -> "simple_speed_ref_urban_release_10m"
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC -> "simple_speed_ref_street_name_guard"
                             else -> "simple_speed_ref"
                         },
@@ -2271,6 +2293,32 @@ internal class V3SpeedLimitLookup(
                     isSelected = normalizedWayId(entry.candidate.wayId) == selectedWayId,
                 )
             }
+        val directionalHypotheses = traceRankedCandidates
+            .take(MINI_HMM_BEAM_WIDTH)
+            .mapNotNull { entry ->
+                wayMatchHypothesis(
+                    candidate = entry.candidate,
+                    cumulativeCost = entry.traceScore,
+                    emissionScore = entry.candidate.score,
+                )
+            }
+            .toMutableList()
+        val selectedHypothesis = finalSelected?.let { selected ->
+            val selectedWayId = normalizedWayId(selected.wayId)
+            if (selectedWayId != null && directionalHypotheses.none { it.wayId == selectedWayId }) {
+                wayMatchHypothesis(
+                    candidate = selected,
+                    cumulativeCost = selected.score,
+                    emissionScore = selected.score,
+                )
+            } else {
+                null
+            }
+        }
+        if (selectedHypothesis != null) {
+            directionalHypotheses.add(0, selectedHypothesis)
+            while (directionalHypotheses.size > MINI_HMM_BEAM_WIDTH) directionalHypotheses.removeLast()
+        }
         return CandidateSelection(
             selected = finalSelected,
             candidateTraces = candidateTraces,
@@ -2283,8 +2331,31 @@ internal class V3SpeedLimitLookup(
             usedWalkingTurnSwitch = false,
             usedMiniHMM = false,
             miniHMMCandidateCount = 0,
-            matchHypotheses = emptyList(),
+            matchHypotheses = directionalHypotheses,
             selectionTrace = finalSelectionTrace,
+        )
+    }
+
+    private fun wayMatchHypothesis(
+        candidate: WayCandidate,
+        cumulativeCost: Double,
+        emissionScore: Double,
+    ): WayMatchHypothesis? {
+        val wayId = normalizedWayId(candidate.wayId) ?: return null
+        val start = candidate.points.firstOrNull()
+        val end = candidate.points.lastOrNull()
+        return WayMatchHypothesis(
+            wayId = wayId,
+            streetRef = candidate.streetRef,
+            highway = candidate.highway,
+            cumulativeCost = cumulativeCost,
+            emissionScore = emissionScore,
+            endpointProximityM = candidate.endpointProximityM,
+            startLat = start?.lat,
+            startLon = start?.lon,
+            endLat = end?.lat,
+            endLon = end?.lon,
+            isTunnel = isTruthyOsmTag(candidate.tunnel),
         )
     }
 
@@ -5462,6 +5533,7 @@ internal class V3SpeedLimitLookup(
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_MAX_BEST_DISTANCE_M = 2.5
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_MIN_DISTANCE_GAP_M = 25.0
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK = 2
+        private const val SIMPLE_SPEED_REF_NARROW_WINDOW_RADIUS_M = 10.0
         private const val SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES = 2
         private const val RECENT_WAY_SCORE_SLACK_M = 6.0
         private const val RECENT_WAY_DISTANCE_MULTIPLIER = 1.35

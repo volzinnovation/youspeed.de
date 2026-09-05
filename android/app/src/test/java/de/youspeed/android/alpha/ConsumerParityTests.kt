@@ -51,6 +51,65 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun trafficSignDirectionUsesTheSecondGpsFixWithoutReportedBearing() {
+        assertEquals(
+            90.0,
+            ConsumerSessionController.trafficSignHeadingDegrees(
+                reportedBearingDegrees = null,
+                previousLatitude = 49.0,
+                previousLongitude = 8.0,
+                currentLatitude = 49.0,
+                currentLongitude = 8.001,
+            ) ?: -1.0,
+            0.01,
+        )
+        assertEquals(
+            271.0,
+            ConsumerSessionController.trafficSignHeadingDegrees(
+                reportedBearingDegrees = 271.0,
+                previousLatitude = 49.0,
+                previousLongitude = 8.0,
+                currentLatitude = 49.0,
+                currentLongitude = 8.001,
+            ) ?: -1.0,
+            0.0,
+        )
+    }
+
+    @Test
+    fun onlyAnExplicitOutsideToInsideTransitionInvalidatesTsr() {
+        assertTrue(TrafficSignBundleContextPolicy.enteredCity(false, true))
+        assertFalse(TrafficSignBundleContextPolicy.enteredCity(null, true))
+        assertFalse(TrafficSignBundleContextPolicy.enteredCity(true, true))
+        assertFalse(TrafficSignBundleContextPolicy.enteredCity(true, false))
+    }
+
+    @Test
+    fun cameraEyeAppearsOnlyForAnAppliedCameraLimit() {
+        assertTrue(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode = false,
+                source = EffectiveSpeedLimitSource.CAMERA,
+                hasResolvedValue = true,
+            ),
+        )
+        assertFalse(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode = false,
+                source = EffectiveSpeedLimitSource.BUNDLE,
+                hasResolvedValue = true,
+            ),
+        )
+        assertFalse(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode = true,
+                source = EffectiveSpeedLimitSource.CAMERA,
+                hasResolvedValue = true,
+            ),
+        )
+    }
+
+    @Test
     fun resetDrivingLogFilesRewritesCsvAndClearsMatcherLog() {
         val rootDir = createTempDirectory(prefix = "driving-logs-").toFile()
         try {
@@ -167,6 +226,14 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun cameraScreenshotFixtureExercisesTheEyeIndicator() {
+        val fixture = AppScreenshotState.CAMERA_LIMIT_ACTIVE.fixture
+        assertEquals(30, fixture.speedLimitKmh)
+        assertEquals("Lindenweg", fixture.streetName)
+        assertTrue(fixture.insideCity)
+    }
+
+    @Test
     fun pedestrianScreenshotFixtureMatchesWalkingSignSurface() {
         val fixture = AppScreenshotState.PEDESTRIAN_ZONE.fixture
         assertEquals(5.0, fixture.currentSpeedKmh, 0.0)
@@ -177,9 +244,9 @@ class ConsumerParityTests {
     }
 
     @Test
-    fun matcherStartupProfileMigratesLegacyDefaultToM2() {
-        assertEquals(MatcherDebugProfile.M2, MatcherDebugProfile.resolveInitialProfile("m1", forcedVersion = 0))
-        assertEquals(MatcherDebugProfile.M2, MatcherDebugProfile.resolveInitialProfile(null, forcedVersion = 0))
+    fun matcherStartupProfileMigratesLegacyDefaultToM7() {
+        assertEquals(MatcherDebugProfile.M7, MatcherDebugProfile.resolveInitialProfile("m1", forcedVersion = 0))
+        assertEquals(MatcherDebugProfile.M7, MatcherDebugProfile.resolveInitialProfile(null, forcedVersion = 0))
     }
 
     @Test
@@ -197,6 +264,11 @@ class ConsumerParityTests {
         assertEquals("M3 M2 + connected-candidate gate", MatcherDebugProfile.M3.debugLabel)
         assertEquals(LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM, MatcherDebugProfile.M4.lookupModel)
         assertEquals(LookupMatchingModel.CORRIDOR_HMM, MatcherDebugProfile.M5.lookupModel)
+        assertEquals(LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC, MatcherDebugProfile.M6.lookupModel)
+        assertEquals(
+            LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+            MatcherDebugProfile.M7.lookupModel,
+        )
         assertEquals("M9 Guarded stale-ref suppression", MatcherDebugProfile.M9.debugLabel)
         assertEquals(LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC, MatcherDebugProfile.M9.lookupModel)
     }

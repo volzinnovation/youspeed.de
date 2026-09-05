@@ -92,7 +92,7 @@ def test_all_golden_passage_events_match_the_v1_schema():
         validator.validate(event)
 
 
-def test_passage_schema_rejects_shadow_uncalibrated_and_non_speed_events():
+def test_passage_schema_rejects_shadow_and_non_speed_events_but_accepts_raw_scores():
     schema = load_json(TSR_ROOT / "traffic-sign-passage-event-v1.schema.json")
     validator = jsonschema.Draft202012Validator(schema)
     event = passage_events()[0]
@@ -103,10 +103,19 @@ def test_passage_schema_rejects_shadow_uncalibrated_and_non_speed_events():
     with pytest.raises(jsonschema.ValidationError):
         validator.validate(shadow)
 
-    uncalibrated = copy.deepcopy(event)
-    uncalibrated["pack"]["calibration_status"] = "uncalibrated"
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(uncalibrated)
+    raw_score = copy.deepcopy(event)
+    raw_score["pack"]["calibration_status"] = "raw_score"
+    raw_score["track"]["final_confidence"] = raw_score["track"].pop(
+        "final_calibrated_confidence"
+    )
+    raw_score["track"]["confidence_basis"] = "raw_score"
+    for frame in raw_score["track"]["frame_evidence"]:
+        frame["raw_score"] = max(
+            frame["proposal_raw_score"], frame["classifier_raw_score"]
+        )
+        frame.pop("proposal_calibrated_confidence")
+        frame.pop("classifier_calibrated_confidence")
+    validator.validate(raw_score)
 
     hard_negative = copy.deepcopy(event)
     hard_negative["action"]["kind"] = "non_speed_restriction_end"
@@ -156,7 +165,7 @@ def test_passage_schema_keeps_runtime_and_export_eligibility_fail_closed():
         validator.validate(preapproved_export)
 
 
-def test_resolved_passage_is_review_only_when_direction_or_continuity_is_unsafe():
+def test_resolved_same_way_passage_can_be_live_without_direction_or_continuity():
     schema = load_json(TSR_ROOT / "traffic-sign-passage-event-v1.schema.json")
     validator = jsonschema.Draft202012Validator(schema)
     safe = passage_events_by_id()["passage-city-entry-de-50"]
@@ -172,17 +181,9 @@ def test_resolved_passage_is_review_only_when_direction_or_continuity_is_unsafe(
             "continuity_capable_bundle", False
         ),
     ):
-        review_only = copy.deepcopy(safe)
-        mutate(review_only)
-        review_only["persistence"]["review_state"] = "needs_review"
-        review_only["persistence"]["runtime_applicable"] = False
-        validator.validate(review_only)
-
-        incorrectly_live = copy.deepcopy(review_only)
-        incorrectly_live["persistence"]["review_state"] = "local_only"
-        incorrectly_live["persistence"]["runtime_applicable"] = True
-        with pytest.raises(jsonschema.ValidationError):
-            validator.validate(incorrectly_live)
+        live = copy.deepcopy(safe)
+        mutate(live)
+        validator.validate(live)
 
 
 def test_passage_schema_rejects_non_analyzed_loss_as_negative_evidence():

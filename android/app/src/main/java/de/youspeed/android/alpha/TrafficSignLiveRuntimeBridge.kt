@@ -1,7 +1,7 @@
 package de.youspeed.android.alpha
 
 /**
- * Production seam between a future calibrated Android live-frame backend and
+ * Production seam between an Android live-frame backend and
  * the driving controller. It deliberately forwards only finalized passage
  * events; provisional/raw outputs and the orchestrator's legacy numeric
  * projection cannot mutate driver-facing state through this adapter.
@@ -18,9 +18,6 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     private val orchestrator: TrafficSignRecognitionOrchestrator<F>
 
     init {
-        require(modelPack.calibration.calibrated &&
-            modelPack.calibration.runtimeOutput == TrafficSignCalibrationOutput.CALIBRATED_CONFIDENCE
-        ) { "The live TSR bridge requires a calibrated runtime-authoritative model pack" }
         val detectorArtifact = modelPack.androidArtifact(modelPack.detector)
         require(detectorArtifact != null) {
             "The live TSR bridge requires Android detector lineage"

@@ -11,7 +11,7 @@ import org.junit.Test
 
 class TrafficSignShadowRuntimeTests {
     @Test
-    fun hardFrameKeepsVisiblePlateUnreadableAndEmitsCaptureEvidence() {
+    fun hardFrameIgnoresSupplementaryPlateAndKeepsPrimaryEvidence() {
         val captures = mutableListOf<TrafficSignDiagnosticCaptureRequestV2>()
         val qaEvents = mutableListOf<TrafficSignRecognitionEventV2>()
         val runtime = runtime(
@@ -42,10 +42,8 @@ class TrafficSignShadowRuntimeTests {
 
         val assembly = event.assemblies.single()
         assertEquals(70, assembly.primary.semantic.value)
-        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.conditionState)
-        assertEquals(TrafficSignPlateReadabilityV2.UNREADABLE, assembly.supplementaryPlates.single().readability)
-        assertEquals(0.18, assembly.supplementaryPlates.single().classifierScore?.rawScore ?: -1.0, 0.0001)
-        assertNull(assembly.supplementaryPlates.single().restriction)
+        assertEquals(TrafficSignConditionState.NONE, assembly.conditionState)
+        assertTrue(assembly.supplementaryPlates.isEmpty())
         assertEquals(
             TrafficSignRestrictionTransitionV2.NONE,
             assembly.temporalEvidence.restrictionTransition,
@@ -56,18 +54,15 @@ class TrafficSignShadowRuntimeTests {
         assertEquals("yolox-nano-detector", event.stageRuns.detector.componentId)
         assertEquals("mobilenetv3-large-classifier", event.stageRuns.classifier.componentId)
         assertNotEquals(event.stageRuns.detector.artifactSha256, event.stageRuns.classifier.artifactSha256)
-        assertEquals(TrafficSignDiagnosticCaptureStatusV2.PERSISTED, event.diagnosticCapture.status)
-        assertEquals("capture-hard-frame", event.diagnosticCapture.captureId)
-        assertTrue(
-            TrafficSignDiagnosticReasonV2.UNREADABLE_SUPPLEMENTARY_PLATE in
-                event.diagnosticCapture.reasons,
-        )
-        assertEquals(event.eventId, captures.single().eventId)
+        assertEquals(TrafficSignDiagnosticCaptureStatusV2.NOT_REQUESTED, event.diagnosticCapture.status)
+        assertNull(event.diagnosticCapture.captureId)
+        assertTrue(event.diagnosticCapture.reasons.isEmpty())
+        assertTrue(captures.isEmpty())
         assertEquals(event, qaEvents.single())
     }
 
     @Test
-    fun laterCalibratedReadableFrameUpgradesOnlyTheSamePhysicalSignTrack() {
+    fun laterDisplacedFrameContinuesTheSamePhysicalSignTrack() {
         val runtime = runtime()
         val hard = runtime.process(frameInput(eventId = "event-hard", readablePlate = false))
         val readable = runtime.process(
@@ -97,21 +92,18 @@ class TrafficSignShadowRuntimeTests {
         val upgraded = readable.assemblies.single()
         assertEquals(firstAssembly.physicalSignTrackId, upgraded.physicalSignTrackId)
         assertEquals(TrafficSignRecognitionState.CONFIRMED, readable.state)
-        assertEquals(TrafficSignConditionState.RESOLVED, upgraded.conditionState)
-        assertEquals(TrafficSignPlateReadabilityV2.READABLE, upgraded.supplementaryPlates.single().readability)
-        assertEquals("2000 m", upgraded.supplementaryPlates.single().restriction?.normalizedValue)
-        assertEquals(2000, upgraded.supplementaryPlates.single().restriction?.extentM)
-        assertEquals("↕ 2 km", upgraded.supplementaryPlates.single().restriction?.rawText)
+        assertEquals(TrafficSignConditionState.NONE, upgraded.conditionState)
+        assertTrue(upgraded.supplementaryPlates.isEmpty())
         assertEquals(2, upgraded.temporalEvidence.evidenceFrameCount)
         assertEquals("event-hard", upgraded.temporalEvidence.priorEventId)
         assertEquals(
-            TrafficSignRestrictionTransitionV2.UPGRADED_FROM_LATER_READABLE_EVIDENCE,
+            TrafficSignRestrictionTransitionV2.NONE,
             upgraded.temporalEvidence.restrictionTransition,
         )
     }
 
     @Test
-    fun readableLabelBelowCalibratedThresholdCannotInventTwoKilometres() {
+    fun lowConfidenceSupplementaryLabelCannotAffectPrimary() {
         val runtime = runtime()
         runtime.process(frameInput(eventId = "event-hard", readablePlate = false))
 
@@ -125,18 +117,17 @@ class TrafficSignShadowRuntimeTests {
         )
 
         val assembly = lowConfidence.assemblies.single()
-        assertEquals(TrafficSignConditionState.UNRESOLVED, assembly.conditionState)
-        assertEquals(TrafficSignPlateReadabilityV2.UNREADABLE, assembly.supplementaryPlates.single().readability)
-        assertEquals(0.69, assembly.supplementaryPlates.single().classifierScore?.calibratedConfidence ?: -1.0, 0.0001)
-        assertNull(assembly.supplementaryPlates.single().restriction)
+        assertEquals(TrafficSignRecognitionState.CONFIRMED, lowConfidence.state)
+        assertEquals(TrafficSignConditionState.NONE, assembly.conditionState)
+        assertTrue(assembly.supplementaryPlates.isEmpty())
         assertEquals(
-            TrafficSignRestrictionTransitionV2.PRESERVED_UNREADABLE,
+            TrafficSignRestrictionTransitionV2.NONE,
             assembly.temporalEvidence.restrictionTransition,
         )
     }
 
     @Test
-    fun laterReadableFrameWithAnotherStableHintStartsANewPhysicalSignTrack() {
+    fun stableHintDoesNotSplitOneSemanticPassageTrack() {
         val runtime = runtime()
         val hard = runtime.process(frameInput(eventId = "event-hard", readablePlate = false))
         val otherSign = runtime.process(
@@ -150,9 +141,9 @@ class TrafficSignShadowRuntimeTests {
 
         val firstAssembly = hard.assemblies.single()
         val otherAssembly = otherSign.assemblies.single()
-        assertNotEquals(firstAssembly.physicalSignTrackId, otherAssembly.physicalSignTrackId)
-        assertEquals(1, otherAssembly.temporalEvidence.evidenceFrameCount)
-        assertNull(otherAssembly.temporalEvidence.priorEventId)
+        assertEquals(firstAssembly.physicalSignTrackId, otherAssembly.physicalSignTrackId)
+        assertEquals(2, otherAssembly.temporalEvidence.evidenceFrameCount)
+        assertEquals("event-hard", otherAssembly.temporalEvidence.priorEventId)
         assertEquals(TrafficSignRestrictionTransitionV2.NONE, otherAssembly.temporalEvidence.restrictionTransition)
     }
 
