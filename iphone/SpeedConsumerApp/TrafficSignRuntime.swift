@@ -566,7 +566,9 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
             }
             return classifiedDetection(from: recognizedObject, label: rawLabel)
         }
-        return TrafficSignSpatialAssembly.assemble(classified)
+        return TrafficSignVisionTwoStageCoreMLBackend
+            .primarySignOnlyAssemblies(classified)
+            .map(\.detection)
     }
 
     private func classifiedDetection(
@@ -609,15 +611,9 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
 /// same source frame, preserving the detector box for temporal fusion and QA.
 final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBackendV2,
         @unchecked Sendable {
-    private static let minimumExtentOCRSignHeight: CGFloat = 0.02
-    private static let minimumExtentOCRConfidence: Float = 0.25
     /// Bounds per-frame Vision work on noisy detector output while retaining far
     /// more proposals than a normal road scene contains.
     private static let maximumProposalsPerRole = 12
-    private static let kilometerExtentRegex = try! NSRegularExpression(
-        pattern: #"([0-9]{1,2}(?:[.,][0-9]{1,2})?)\s*k\s*m"#,
-        options: [.caseInsensitive]
-    )
 
     private let inferenceLock = NSLock()
     private let detectorModel: VNCoreMLModel
@@ -735,19 +731,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
         .sorted { $0.confidence > $1.confidence }
         .prefix(Self.maximumProposalsPerRole))
-        let plateObjects = Array(objects.filter { object in
-            guard let label = object.labels.first,
-                  object.confidence.isFinite,
-                  Self.isValidNormalizedRegion(object.boundingBox) else { return false }
-            return Self.isPlateProposal(label.identifier)
-                && Double(object.confidence) >= unknownThreshold
-        }
-        .sorted { $0.confidence > $1.confidence }
-        .prefix(Self.maximumProposalsPerRole))
-
         var classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = []
-        classified.reserveCapacity((signObjects.count * 2) + plateObjects.count)
-        var synthesizedPlateBoxes: [TrafficSignNormalizedRect] = []
+        classified.reserveCapacity(signObjects.count)
         var classifierLatencyMs: Double = 0
         for object in signObjects {
             let classifierStartedAt = ProcessInfo.processInfo.systemUptime
@@ -762,52 +747,15 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             )
             guard let result else { continue }
             classified.append(result)
-            var restriction: TrafficSignSpatialAssembly.ClassifiedDetection?
-            if result.detection.semantic.kind == .maximumSpeed {
-                do {
-                    restriction = try recognizeExtentBelow(object, using: handler)
-                } catch {
-                    TrafficSignRuntimeLog.recoveredAuxiliaryFailure(
-                        stage: "supplementary_plate_ocr",
-                        error: error
-                    )
-                }
-                if restriction == nil {
-                    do {
-                        restriction = try detectUnreadablePlateBelow(object, using: handler)
-                    } catch {
-                        TrafficSignRuntimeLog.recoveredAuxiliaryFailure(
-                            stage: "supplementary_plate_rectangle",
-                            error: error
-                        )
-                    }
-                }
-            }
-            if let restriction {
-                classified.append(restriction)
-                synthesizedPlateBoxes.append(restriction.detection.boundingBox)
-            }
         }
 
-        // Keep a detected white supplementary plate in the QA assembly even
-        // though this bootstrap classifier cannot read its text yet. Marking
-        // it unresolved makes that limitation explicit and prevents future
-        // non-shadow use from treating the primary sign as unconditional.
-        let detectorPlates = plateObjects.compactMap(supplementaryPlateDetection)
-        let legacyClassified = classified + detectorPlates.filter { unresolved in
-                !synthesizedPlateBoxes.contains {
-                    Self.boxesOverlap($0, unresolved.detection.boundingBox)
-                }
-            }
-        // Preserve every actual detector proposal in raw v2 QA, even when a
-        // synthesized Vision observation overlaps it. The legacy consumer
-        // keeps its existing duplicate-box suppression.
-        let shadowClassified = classified + detectorPlates
-        let grouped = TrafficSignSpatialAssembly.assembleWithMembers(legacyClassified)
-        let shadowGrouped = TrafficSignSpatialAssembly.assembleWithMembers(shadowClassified)
+        // Live mobile TSR intentionally handles primary traffic signs only.
+        // Supplementary signs are a separate offline-first postprocessing
+        // concern based on Panoramax-linkable evidence and reviewed annotations.
+        let grouped = Self.primarySignOnlyAssemblies(classified)
         return TrafficSignTwoStageInferenceResultV2(
             legacyDetections: grouped.map(\.detection),
-            assemblies: shadowGrouped.compactMap(Self.shadowAssembly),
+            assemblies: grouped.compactMap(Self.shadowAssembly),
             detectorLatencyMs: detectorLatencyMs,
             classifierInvoked: !signObjects.isEmpty,
             classifierLatencyMs: classifierLatencyMs
@@ -859,149 +807,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
     }
 
-    private func supplementaryPlateDetection(
-        _ object: VNRecognizedObjectObservation
-    ) -> TrafficSignSpatialAssembly.ClassifiedDetection? {
-        guard object.labels.first != nil,
-              let contractBox = Self.contractBox(from: object.boundingBox) else { return nil }
-        let restriction = TrafficSignRestriction(
-            kind: .unknown,
-            normalizedValue: "detected-unread",
-            rawText: nil,
-            countrySignCode: nil
-        )
-        return TrafficSignSpatialAssembly.ClassifiedDetection(
-            detection: TrafficSignDetection(
-                rawClassId: "supplementary_plate_unread",
-                rawLabel: "Supplementary plate (unread)",
-                semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
-                rawScore: Double(object.confidence),
-                calibratedConfidence: nil,
-                boundingBox: contractBox,
-                classThreshold: unknownThreshold
-            ),
-            signRole: .supplementaryPlate,
-            restriction: restriction,
-            detectorRawScore: Double(object.confidence),
-            detectorCalibratedConfidence: nil
-        )
-    }
-
-    /// The bootstrap detector does not reliably propose the small white plate
-    /// in the field-test frames. For a readable, nearby speed sign, inspect one
-    /// sign-height directly below it with Apple's on-device OCR. This remains
-    /// auxiliary evidence and does not broaden inference to the scene.
-    private func recognizeExtentBelow(
-        _ object: VNRecognizedObjectObservation,
-        using handler: VNImageRequestHandler
-    ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
-        guard object.boundingBox.height >= Self.minimumExtentOCRSignHeight else { return nil }
-        let region = Self.supplementaryTextRegion(for: object.boundingBox)
-        guard region.width > 0, region.height > 0 else { return nil }
-
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = false
-        request.recognitionLanguages = ["de-DE", "en-US"]
-        request.regionOfInterest = region
-        try handler.perform([request])
-
-        var best: (
-            restriction: TrafficSignRestriction,
-            confidence: Float,
-            box: CGRect
-        )?
-        for observation in request.results ?? [] {
-            for candidate in observation.topCandidates(3) {
-                guard candidate.confidence >= Self.minimumExtentOCRConfidence,
-                      let restriction = Self.extentRestriction(from: candidate.string) else {
-                    continue
-                }
-                if best == nil || candidate.confidence > best!.confidence {
-                    best = (
-                        restriction,
-                        candidate.confidence,
-                        Self.fullImageRegion(observation.boundingBox, within: region)
-                    )
-                }
-            }
-        }
-
-        guard let best,
-              let contractBox = Self.contractBox(from: best.box) else { return nil }
-        return TrafficSignSpatialAssembly.ClassifiedDetection(
-            detection: TrafficSignDetection(
-                rawClassId: "supplementary_extent_ocr",
-                rawLabel: "Supplementary plate extent: \(best.restriction.normalizedValue)",
-                semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
-                rawScore: Double(best.confidence),
-                calibratedConfidence: nil,
-                boundingBox: contractBox,
-                classThreshold: Double(Self.minimumExtentOCRConfidence)
-            ),
-            signRole: .supplementaryPlate,
-            restriction: best.restriction,
-            auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2(
-                source: .appleVisionTextRecognition,
-                rawScore: Double(best.confidence),
-                rawText: best.restriction.rawText,
-                candidateRestriction: Self.shadowRestriction(best.restriction)
-            )]
-        )
-    }
-
-    /// A small plate can be visually present even when its glyphs are below
-    /// OCR resolution. Rectangle detection records that presence as unresolved
-    /// instead of inventing text from a neighboring frame.
-    private func detectUnreadablePlateBelow(
-        _ object: VNRecognizedObjectObservation,
-        using handler: VNImageRequestHandler
-    ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
-        let region = Self.supplementaryPlateSearchRegion(for: object.boundingBox)
-        guard region.width > 0, region.height > 0 else { return nil }
-
-        let request = VNDetectRectanglesRequest()
-        request.regionOfInterest = region
-        request.maximumObservations = 5
-        request.minimumAspectRatio = 0.3
-        request.maximumAspectRatio = 1
-        request.minimumSize = 0.05
-        request.minimumConfidence = 0.1
-        request.quadratureTolerance = 30
-        try handler.perform([request])
-
-        guard let plate = (request.results ?? [])
-            .filter({ Self.isLikelySupplementaryPlate($0.boundingBox, below: object.boundingBox) })
-            .max(by: { lhs, rhs in
-                lhs.boundingBox.width * lhs.boundingBox.height
-                    < rhs.boundingBox.width * rhs.boundingBox.height
-            }),
-              let contractBox = Self.contractBox(from: plate.boundingBox) else { return nil }
-        let restriction = TrafficSignRestriction(
-            kind: .unknown,
-            normalizedValue: "detected-unread",
-            rawText: nil,
-            countrySignCode: nil
-        )
-        return TrafficSignSpatialAssembly.ClassifiedDetection(
-            detection: TrafficSignDetection(
-                rawClassId: "supplementary_plate_vision_rectangle_unread",
-                rawLabel: "Supplementary plate (unread)",
-                semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
-                rawScore: Double(plate.confidence),
-                calibratedConfidence: nil,
-                boundingBox: contractBox,
-                classThreshold: unknownThreshold
-            ),
-            signRole: .supplementaryPlate,
-            restriction: restriction,
-            auxiliaryEvidence: [TrafficSignAuxiliaryEvidenceV2(
-                source: .appleVisionRectangleDetection,
-                rawScore: Double(plate.confidence)
-            )]
-        )
-    }
-
     static func shadowAssembly(
         _ grouped: TrafficSignSpatialAssembly.GroupedAssembly
     ) -> TrafficSignTwoStageAssemblyObservationV2? {
@@ -1014,27 +819,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
         let assemblyId = grouped.detection.assemblyId
             ?? UUID().uuidString.lowercased()
-        let plates = grouped.supplementaryPlates.enumerated().compactMap { index, plate
-            -> TrafficSignTwoStagePlateObservationV2? in
-            guard plate.detectorRawScore != nil || !plate.auxiliaryEvidence.isEmpty else {
-                return nil
-            }
-            let restriction = plate.restriction.flatMap(shadowRestriction)
-            let isOCR = plate.detection.rawClassId == "supplementary_extent_ocr"
-            return TrafficSignTwoStagePlateObservationV2(
-                objectId: "\(assemblyId)-plate-\(index + 1)-\(plate.detection.rawClassId)",
-                classId: isOCR && restriction != nil ? "supplementary_extent" : nil,
-                boundingBox: plate.detection.boundingBox,
-                detectorScore: plate.detectorRawScore,
-                detectorCalibratedConfidence: plate.detectorCalibratedConfidence,
-                classifierRawScore: nil,
-                classifierCalibratedConfidence: nil,
-                auxiliaryEvidence: plate.auxiliaryEvidence,
-                classifierThreshold: plate.detection.classThreshold,
-                readability: isOCR && restriction != nil ? .readable : .unreadable,
-                restriction: isOCR ? restriction : nil
-            )
-        }
         return TrafficSignTwoStageAssemblyObservationV2(
             assemblyId: assemblyId,
             stableObservationHint: nil,
@@ -1052,8 +836,44 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
                 classifierCalibratedConfidence: source.classifierCalibratedConfidence,
                 classifierThreshold: source.detection.classThreshold
             ),
-            supplementaryPlates: plates
+            supplementaryPlates: []
         )
+    }
+
+    /// The on-device camera lane intentionally emits only primary signs.
+    /// Supplementary-sign interpretation belongs to a separate offline
+    /// Panoramax/manual-review pipeline and must not affect live activation.
+    static func primarySignOnlyAssemblies(
+        _ classified: [TrafficSignSpatialAssembly.ClassifiedDetection],
+        assemblyIDPrefix: String = UUID().uuidString.lowercased()
+    ) -> [TrafficSignSpatialAssembly.GroupedAssembly] {
+        classified
+            .filter { $0.signRole == .primarySign }
+            .enumerated()
+            .map { index, primary in
+                let source = primary.detection
+                let detection = TrafficSignDetection(
+                    rawClassId: source.rawClassId,
+                    rawLabel: source.rawLabel,
+                    semantic: source.semantic,
+                    rawScore: source.rawScore,
+                    calibratedConfidence: source.calibratedConfidence,
+                    detectorRawScore: primary.detectorRawScore,
+                    detectorCalibratedConfidence: primary.detectorCalibratedConfidence,
+                    classifierRawScore: primary.classifierRawScore,
+                    classifierCalibratedConfidence: primary.classifierCalibratedConfidence,
+                    boundingBox: source.boundingBox,
+                    classThreshold: source.classThreshold,
+                    assemblyId: "\(assemblyIDPrefix)-assembly-\(index + 1)",
+                    conditionState: .none,
+                    restrictions: []
+                )
+                return TrafficSignSpatialAssembly.GroupedAssembly(
+                    detection: detection,
+                    primary: primary,
+                    supplementaryPlates: []
+                )
+            }
     }
 
     private static let shadowNumericSpeedValues: Set<Int> = [
@@ -1125,38 +945,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
     }
 
-    private static func shadowRestriction(
-        _ restriction: TrafficSignRestriction
-    ) -> TrafficSignRestrictionV2? {
-        let meters: Int?
-        switch restriction.kind {
-        case .distance, .extent:
-            meters = metricDistanceMeters(from: restriction.normalizedValue)
-        default:
-            meters = nil
-        }
-        return TrafficSignRestrictionV2(
-            kind: restriction.kind,
-            normalizedValue: restriction.normalizedValue,
-            distanceM: restriction.kind == .distance ? meters : nil,
-            extentM: restriction.kind == .extent ? meters : nil,
-            rawText: restriction.rawText,
-            countrySignCode: restriction.countrySignCode
-        )
-    }
-
-    private static func metricDistanceMeters(from value: String) -> Int? {
-        let normalized = value
-            .lowercased()
-            .replacingOccurrences(of: ",", with: ".")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let parts = normalized.split(whereSeparator: { $0.isWhitespace })
-        guard let first = parts.first, let amount = Double(first), amount > 0 else { return nil }
-        if normalized.contains("km") { return Int((amount * 1_000).rounded()) }
-        if normalized.contains("m") { return Int(amount.rounded()) }
-        return nil
-    }
-
     static func classifierRegion(for signBox: CGRect) -> CGRect {
         let horizontalPadding = signBox.width * 0.10
         let lowerExtension = signBox.height * 0.35
@@ -1186,104 +974,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             && region.maxY <= 1
     }
 
-    static func supplementaryTextRegion(for signBox: CGRect) -> CGRect {
-        let horizontalPadding = signBox.width * 0.18
-        let minX = max(0, signBox.minX - horizontalPadding)
-        let minY = max(0, signBox.minY - signBox.height)
-        let maxX = min(1, signBox.maxX + horizontalPadding)
-        let maxY = min(1, signBox.minY)
-        return CGRect(
-            x: minX,
-            y: minY,
-            width: max(0, maxX - minX),
-            height: max(0, maxY - minY)
-        )
-    }
-
-    static func supplementaryPlateSearchRegion(for signBox: CGRect) -> CGRect {
-        let horizontalPadding = signBox.width * 0.30
-        let minX = max(0, signBox.minX - horizontalPadding)
-        let minY = max(0, signBox.minY - signBox.height)
-        let maxX = min(1, signBox.maxX + horizontalPadding)
-        let maxY = min(1, signBox.minY)
-        return CGRect(
-            x: minX,
-            y: minY,
-            width: max(0, maxX - minX),
-            height: max(0, maxY - minY)
-        )
-    }
-
-    static func extentRestriction(from recognizedText: String) -> TrafficSignRestriction? {
-        let trimmed = recognizedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let fullRange = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
-        guard let match = kilometerExtentRegex.firstMatch(
-            in: trimmed,
-            options: [],
-            range: fullRange
-        ),
-              match.numberOfRanges > 1,
-              let valueRange = Range(match.range(at: 1), in: trimmed),
-              let kilometers = Double(
-                  trimmed[valueRange].replacingOccurrences(of: ",", with: ".")
-              ),
-              kilometers > 0,
-              kilometers <= 99 else { return nil }
-
-        var valueText = String(
-            format: "%.2f",
-            locale: Locale(identifier: "en_US_POSIX"),
-            kilometers
-        )
-        while valueText.last == "0" { valueText.removeLast() }
-        if valueText.last == "." { valueText.removeLast() }
-        return TrafficSignRestriction(
-            kind: .extent,
-            normalizedValue: "\(valueText) km",
-            rawText: trimmed,
-            countrySignCode: nil
-        )
-    }
-
-    static func fullImageRegion(_ roiRelativeBox: CGRect, within region: CGRect) -> CGRect {
-        CGRect(
-            x: region.minX + (roiRelativeBox.minX * region.width),
-            y: region.minY + (roiRelativeBox.minY * region.height),
-            width: roiRelativeBox.width * region.width,
-            height: roiRelativeBox.height * region.height
-        )
-    }
-
-    static func isLikelySupplementaryPlate(_ plate: CGRect, below sign: CGRect) -> Bool {
-        guard sign.width > 0, sign.height > 0, plate.width > 0, plate.height > 0 else {
-            return false
-        }
-        let widthRatio = plate.width / sign.width
-        let heightRatio = plate.height / sign.height
-        let verticalGap = sign.minY - plate.maxY
-        let horizontalOverlap = max(
-            0,
-            min(sign.maxX, plate.maxX) - max(sign.minX, plate.minX)
-        )
-        let overlapDenominator = min(sign.width, plate.width)
-        return (0.35...1.10).contains(widthRatio)
-            && (0.08...0.50).contains(heightRatio)
-            && verticalGap >= -(sign.height * 0.08)
-            && verticalGap <= sign.height * 0.35
-            && overlapDenominator > 0
-            && horizontalOverlap / overlapDenominator >= 0.60
-    }
-
-    private static func boxesOverlap(
-        _ lhs: TrafficSignNormalizedRect,
-        _ rhs: TrafficSignNormalizedRect
-    ) -> Bool {
-        let overlapWidth = min(lhs.x + lhs.width, rhs.x + rhs.width) - max(lhs.x, rhs.x)
-        let overlapHeight = min(lhs.y + lhs.height, rhs.y + rhs.height) - max(lhs.y, rhs.y)
-        return overlapWidth > 0 && overlapHeight > 0
-    }
-
     private static func contractBox(from visionBox: CGRect) -> TrafficSignNormalizedRect? {
         let box = TrafficSignNormalizedRect(
             x: min(1, max(0, Double(visionBox.minX))),
@@ -1296,10 +986,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
     private static func isSignProposal(_ identifier: String) -> Bool {
         identifier == "sign" || identifier == "class0" || identifier == "0"
-    }
-
-    private static func isPlateProposal(_ identifier: String) -> Bool {
-        identifier == "plate" || identifier == "class1" || identifier == "1"
     }
 
     private static func loadVisionModel(

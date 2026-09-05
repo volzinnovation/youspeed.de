@@ -135,7 +135,8 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
         guard event.source == .liveFrame,
               event.state == .confirmed,
               let candidate = event.candidate,
-              candidate.semanticKind == TrafficSignSemanticKind.maximumSpeed.rawValue,
+              let semanticKind = TrafficSignSemanticKind(rawValue: candidate.semanticKind),
+              semanticKind == .maximumSpeed || semanticKind == .zoneStart,
               let speedLimitKmh = candidate.value,
               speedLimitKmh > 0,
               candidate.boundingBox.isValid,
@@ -158,6 +159,7 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
         )
         let semanticValue = Self.trafficSignValue(
             speedLimitKmh: speedLimitKmh,
+            semanticKind: semanticKind,
             packID: event.packId
         )
         let qualifiedSemantic = "osm|traffic_sign=\(semanticValue)"
@@ -257,11 +259,22 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
         return Int(ceil(stable))
     }
 
-    private static func trafficSignValue(speedLimitKmh: Int, packID: String) -> String {
+    private static func trafficSignValue(
+        speedLimitKmh: Int,
+        semanticKind: TrafficSignSemanticKind,
+        packID: String
+    ) -> String {
         if packID.lowercased().hasPrefix("de-") {
-            return "DE:274-\(speedLimitKmh)"
+            switch semanticKind {
+            case .zoneStart:
+                return speedLimitKmh == 30 ? "DE:274.1" : "DE:274.1-\(speedLimitKmh)"
+            default:
+                return "DE:274-\(speedLimitKmh)"
+            }
         }
-        return "maxspeed:\(speedLimitKmh)"
+        return semanticKind == .zoneStart
+            ? "maxspeed:zone_start:\(speedLimitKmh)"
+            : "maxspeed:\(speedLimitKmh)"
     }
 }
 

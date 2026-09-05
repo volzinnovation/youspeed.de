@@ -835,66 +835,58 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
-    func testTrafficSignSupplementaryTextRegionStaysBelowSignAndClamps() {
-        let sign = CGRect(x: 0.70, y: 0.57, width: 0.06, height: 0.04)
-        let region = TrafficSignVisionTwoStageCoreMLBackend.supplementaryTextRegion(for: sign)
-        XCTAssertEqual(region.minX, 0.6892, accuracy: 0.000_001)
-        XCTAssertEqual(region.minY, 0.53, accuracy: 0.000_001)
-        XCTAssertEqual(region.maxX, 0.7708, accuracy: 0.000_001)
-        XCTAssertEqual(region.maxY, sign.minY, accuracy: 0.000_001)
-
-        let edge = TrafficSignVisionTwoStageCoreMLBackend.supplementaryTextRegion(
-            for: CGRect(x: 0.98, y: 0.01, width: 0.04, height: 0.03)
+    func testLiveTwoStageAdapterDiscardsSupplementarySignEvidence() throws {
+        let primary = makeTrafficSignDetection(
+            score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.45, y: 0.20, width: 0.12, height: 0.16)
         )
-        XCTAssertGreaterThanOrEqual(edge.minX, 0)
-        XCTAssertGreaterThanOrEqual(edge.minY, 0)
-        XCTAssertLessThanOrEqual(edge.maxX, 1)
-        XCTAssertLessThanOrEqual(edge.maxY, 1)
-    }
-
-    func testTrafficSignSupplementaryExtentOCRParser() throws {
-        let spaced = try XCTUnwrap(
-            TrafficSignVisionTwoStageCoreMLBackend.extentRestriction(from: "T 2 km T")
+        let restriction = TrafficSignRestriction(
+            kind: .unknown,
+            normalizedValue: "unreviewed",
+            rawText: nil,
+            countrySignCode: nil
         )
-        XCTAssertEqual(spaced.kind, .extent)
-        XCTAssertEqual(spaced.normalizedValue, "2 km")
-        XCTAssertEqual(spaced.rawText, "T 2 km T")
-
-        XCTAssertEqual(
-            TrafficSignVisionTwoStageCoreMLBackend
-                .extentRestriction(from: "↕ 2,5km ↕")?
-                .normalizedValue,
-            "2.5 km"
+        let supplementary = TrafficSignDetection(
+            rawClassId: "supplementary_unreviewed",
+            rawLabel: "Supplementary sign",
+            semantic: TrafficSignSemantic(kind: .unknown, value: nil, unit: nil),
+            rawScore: 0.95,
+            calibratedConfidence: nil,
+            boundingBox: TrafficSignNormalizedRect(
+                x: 0.46, y: 0.37, width: 0.10, height: 0.05
+            ),
+            classThreshold: 0.25,
+            conditionState: .unresolved,
+            restrictions: [restriction]
         )
-        XCTAssertNil(TrafficSignVisionTwoStageCoreMLBackend.extentRestriction(from: "70"))
-        XCTAssertNil(TrafficSignVisionTwoStageCoreMLBackend.extentRestriction(from: "2 kn"))
-    }
 
-    func testTrafficSignOCRBoxMapsFromROIToFullImage() {
-        let mapped = TrafficSignVisionTwoStageCoreMLBackend.fullImageRegion(
-            CGRect(x: 0.25, y: 0.50, width: 0.50, height: 0.25),
-            within: CGRect(x: 0.60, y: 0.40, width: 0.20, height: 0.10)
+        let assemblies = TrafficSignVisionTwoStageCoreMLBackend.primarySignOnlyAssemblies(
+            [
+                .init(
+                    detection: primary,
+                    signRole: .primarySign,
+                    restriction: nil,
+                    detectorRawScore: 0.9,
+                    classifierRawScore: 0.9
+                ),
+                .init(
+                    detection: supplementary,
+                    signRole: .supplementaryPlate,
+                    restriction: restriction,
+                    detectorRawScore: 0.95
+                ),
+            ],
+            assemblyIDPrefix: "live-primary-only"
         )
-        XCTAssertEqual(mapped.minX, 0.65, accuracy: 0.000_001)
-        XCTAssertEqual(mapped.minY, 0.45, accuracy: 0.000_001)
-        XCTAssertEqual(mapped.width, 0.10, accuracy: 0.000_001)
-        XCTAssertEqual(mapped.height, 0.025, accuracy: 0.000_001)
-    }
 
-    func testTrafficSignSupplementaryRectangleGeometry() {
-        let sign = CGRect(x: 0.49, y: 0.56, width: 0.02, height: 0.0125)
-        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.isLikelySupplementaryPlate(
-            CGRect(x: 0.493, y: 0.557, width: 0.014, height: 0.0021),
-            below: sign
-        ))
-        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isLikelySupplementaryPlate(
-            CGRect(x: 0.45, y: 0.50, width: 0.014, height: 0.0021),
-            below: sign
-        ))
-        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isLikelySupplementaryPlate(
-            CGRect(x: 0.493, y: 0.557, width: 0.002, height: 0.002),
-            below: sign
-        ))
+        let assembly = try XCTUnwrap(assemblies.first)
+        XCTAssertEqual(assemblies.count, 1)
+        XCTAssertTrue(assembly.supplementaryPlates.isEmpty)
+        XCTAssertEqual(assembly.detection.conditionState, .none)
+        XCTAssertTrue(assembly.detection.restrictions.isEmpty)
+        XCTAssertTrue(try XCTUnwrap(
+            TrafficSignVisionTwoStageCoreMLBackend.shadowAssembly(assembly)
+        ).supplementaryPlates.isEmpty)
     }
 
     func testTrafficSignV2AdapterUsesFrozenTaxonomyAndZoneClassIDs() {
@@ -1424,7 +1416,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(result.restrictions.isEmpty)
     }
 
-    func testTrafficSignFusionTransitionsFromProvisionalToConfirmed() throws {
+    func testTrafficSignFusionKeepsOneTrackWhileSignMovesAcrossFrame() throws {
         let thresholds = TrafficSignModelPackManifest.Thresholds(
             provisional: 0.45,
             confirmed: 0.7,
@@ -1444,15 +1436,15 @@ final class SpeedConsumerTests: XCTestCase {
         let detections = [
             makeTrafficSignDetection(
                 score: 0.80,
-                box: TrafficSignNormalizedRect(x: 0.70, y: 0.15, width: 0.08, height: 0.12)
+                box: TrafficSignNormalizedRect(x: 0.10, y: 0.15, width: 0.08, height: 0.12)
             ),
             makeTrafficSignDetection(
                 score: 0.84,
-                box: TrafficSignNormalizedRect(x: 0.705, y: 0.152, width: 0.08, height: 0.12)
+                box: TrafficSignNormalizedRect(x: 0.45, y: 0.20, width: 0.12, height: 0.18)
             ),
             makeTrafficSignDetection(
                 score: 0.90,
-                box: TrafficSignNormalizedRect(x: 0.71, y: 0.154, width: 0.08, height: 0.12)
+                box: TrafficSignNormalizedRect(x: 0.80, y: 0.10, width: 0.16, height: 0.24)
             ),
         ]
 
@@ -1493,6 +1485,49 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(third.candidate?.evidenceFrames, 3)
         XCTAssertEqual(third.candidate?.value, 30)
         XCTAssertEqual(third.candidate?.unit, "km/h")
+    }
+
+    func testTrafficSignFusionResetStartsANewRecordingTrack() throws {
+        let thresholds = TrafficSignModelPackManifest.Thresholds(
+            provisional: 0.45,
+            confirmed: 0.7,
+            unknown: 0.25,
+            confirmationFrames: 2,
+            confirmationWindowMs: 1_500,
+            minimumTrackIou: 0.2
+        )
+        var engine = TrafficSignFusionEngine(
+            packId: "de-speed-signs-fixture-v1",
+            artifactSha256: String(repeating: "2", count: 64),
+            preprocessingVersion: "vision-scale-fit-rgb-v1",
+            thresholds: thresholds
+        )
+        let detection = makeTrafficSignDetection(
+            score: 0.9,
+            box: TrafficSignNormalizedRect(x: 0.2, y: 0.2, width: 0.1, height: 0.1)
+        )
+        let context = makeTrafficSignDetectionContext()
+        let first = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: Date(timeIntervalSince1970: 1_100),
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+
+        engine.reset()
+
+        let nextRecording = engine.ingest(
+            detections: [detection],
+            source: .liveFrame,
+            timestamp: Date(timeIntervalSince1970: 1_101),
+            roadContext: context,
+            latencyMs: 10,
+            thermalState: .nominal
+        )
+        XCTAssertEqual(nextRecording.candidate?.evidenceFrames, 1)
+        XCTAssertNotEqual(nextRecording.candidate?.trackId, first.candidate?.trackId)
     }
 
     func testTrafficSignFusionPrefersSupportedSpeedOverHigherScoredUnknown() throws {
@@ -1537,7 +1572,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(event.candidate?.value, 30)
     }
 
-    func testTrafficSignFusionRetainsConditionalPlateEvidenceAcrossFrames() throws {
+    func testTrafficSignFusionDiscardsSupplementaryConditionEvidence() throws {
         let thresholds = TrafficSignModelPackManifest.Thresholds(
             provisional: 0.45,
             confirmed: 0.7,
@@ -1611,8 +1646,8 @@ final class SpeedConsumerTests: XCTestCase {
 
         XCTAssertEqual(confirmed.state, .confirmed)
         XCTAssertEqual(confirmed.candidate?.assemblyId, "frame-3-assembly-1")
-        XCTAssertEqual(confirmed.candidate?.conditionState, .resolved)
-        XCTAssertEqual(confirmed.candidate?.restrictions, [wet])
+        XCTAssertEqual(confirmed.candidate?.conditionState, TrafficSignConditionState.none)
+        XCTAssertTrue(confirmed.candidate?.restrictions.isEmpty == true)
     }
 
     func testTrafficSignFusionUsesTraversalEpochAndBundleRevisionForRoadIdentity() throws {
@@ -2957,6 +2992,80 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(annotation.shape, [100, 100, 400, 300])
         XCTAssertEqual(annotation.speedLimitKmh, 70)
         XCTAssertEqual(annotation.wayID, "123")
+    }
+
+    func testPanoramaxZoneStartRecognitionProducesGermanEXIFAnnotationDraft() throws {
+        let timestamp = Date(timeIntervalSince1970: 1_050)
+        let context = makeTrafficSignDetectionContext()
+        let candidate = TrafficSignRecognitionCandidate(
+            rawClassId: "zone:30",
+            rawLabel: "Start of 30 km/h zone",
+            semanticKind: TrafficSignSemanticKind.zoneStart.rawValue,
+            value: 30,
+            unit: "km/h",
+            rawScore: 0.91,
+            calibratedConfidence: nil,
+            boundingBox: TrafficSignNormalizedRect(
+                x: 0.2, y: 0.3, width: 0.2, height: 0.25
+            ),
+            trackId: "zone-track",
+            evidenceFrames: 2,
+            assemblyId: "zone-assembly"
+        )
+        let event = TrafficSignRecognitionEvent(
+            schemaVersion: 1,
+            packId: "de-panoramax-bootstrap-live-v1",
+            artifactSha256: String(repeating: "a", count: 64),
+            preprocessingVersion: "vision-scale-fit-rgb-v1",
+            frameId: "zone-frame",
+            driveSessionId: "zone-session",
+            analysisEligible: true,
+            source: .liveFrame,
+            frameTimestampUtc: timestamp,
+            state: .confirmed,
+            candidate: candidate,
+            roadContext: context,
+            latencyMs: 20,
+            thermalState: TrafficSignThermalState.nominal.rawValue
+        )
+        let emission = TrafficSignRuntimeEmission(
+            event: event,
+            frameContext: context,
+            frameSpeedKmh: 20,
+            captureSessionId: "zone-session"
+        )
+
+        let draft = try XCTUnwrap(PanoramaxTrafficSignAnnotationDraft(emission: emission))
+        XCTAssertEqual(draft.speedLimitKmh, 30)
+        XCTAssertEqual(draft.physicalSignTrackID, "zone-track")
+        XCTAssertEqual(
+            draft.semantics.first(where: { $0.key == "osm|traffic_sign" })?.value,
+            "DE:274.1"
+        )
+        let projected = try XCTUnwrap(draft.projected(
+            imageWidth: 1_000,
+            imageHeight: 500,
+            imageTimestamp: timestamp
+        ))
+        XCTAssertTrue(projected.isValid)
+
+        #if canImport(UIKit)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 100, height: 50))
+        let jpeg = try XCTUnwrap(renderer.jpegData(withCompressionQuality: 0.9) { context in
+            UIColor.gray.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 100, height: 50))
+        })
+        let annotatedJPEG = try XCTUnwrap(
+            PanoramaxJPEGMetadata.adding(to: jpeg, annotations: [projected])
+        )
+        let restored = try XCTUnwrap(
+            PanoramaxJPEGMetadata.trafficSignAnnotations(from: annotatedJPEG)?.first
+        )
+        XCTAssertEqual(
+            restored.semantics.first(where: { $0.key == "osm|traffic_sign" })?.value,
+            "DE:274.1"
+        )
+        #endif
     }
 
     func testPanoramaxQueueAttachesTrafficSignAnnotationToJPEGAndSidecar() throws {
@@ -17066,7 +17175,7 @@ private enum TrafficSignM0ReviewedDeviceContractFixture {
 }
 
 final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
-    func testAuxiliaryOCRAndRectangleEvidenceSurvivesWithoutModelStageAttribution() throws {
+    func testLiveAdapterDropsSupplementaryOCRAndRectangleEvidence() throws {
         let primaryBox = TrafficSignNormalizedRect(
             x: 0.4, y: 0.3, width: 0.12, height: 0.12
         )
@@ -17151,10 +17260,7 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
                 )
             )
         )
-        XCTAssertEqual(rawAssembly.supplementaryPlates.count, 2)
-        XCTAssertTrue(rawAssembly.supplementaryPlates.allSatisfy {
-            $0.detectorScore == nil && $0.classifierRawScore == nil
-        })
+        XCTAssertTrue(rawAssembly.supplementaryPlates.isEmpty)
 
         let base = makeFrameInput(eventID: "auxiliary-event", readablePlate: false)
         let runtime = try makeRuntime(calibrationPassed: false)
@@ -17174,27 +17280,8 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
 
         XCTAssertEqual(event.state, .provisional)
         let plates = try XCTUnwrap(event.assemblies.first?.supplementaryPlates)
-        XCTAssertEqual(plates.count, 2)
-        XCTAssertTrue(plates.allSatisfy {
-            $0.detectorScore == nil && $0.classifierScore == nil
-                && $0.readability == .unreadable && $0.restriction == nil
-        })
-        XCTAssertEqual(
-            plates[0].auxiliaryEvidence?.first?.source,
-            .appleVisionTextRecognition
-        )
-        XCTAssertEqual(plates[0].auxiliaryEvidence?.first?.rawScore, 0.78)
-        XCTAssertEqual(plates[0].auxiliaryEvidence?.first?.rawText, "T 2km T")
-        XCTAssertEqual(
-            plates[0].auxiliaryEvidence?.first?.candidateRestriction?.extentM,
-            2_000
-        )
-        XCTAssertEqual(
-            plates[1].auxiliaryEvidence?.first?.source,
-            .appleVisionRectangleDetection
-        )
-        XCTAssertEqual(plates[1].auxiliaryEvidence?.first?.rawScore, 0.63)
-        XCTAssertTrue(event.diagnosticCapture.reasons.contains(.unreadableSupplementaryPlate))
+        XCTAssertTrue(plates.isEmpty)
+        XCTAssertFalse(event.diagnosticCapture.reasons.contains(.unreadableSupplementaryPlate))
         let wire = try TrafficSignPackJSON.encoder().encode(event)
         XCTAssertEqual(
             try TrafficSignPackJSON.decoder().decode(

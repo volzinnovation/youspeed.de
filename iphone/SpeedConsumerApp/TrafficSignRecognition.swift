@@ -1482,6 +1482,7 @@ struct TrafficSignFusionEngine: Sendable {
         }
 
         let eligible = detections
+            .map(Self.livePrimaryOnlyDetection)
             .filter { detection in
                 detection.boundingBox.isValid
                     && effectiveScore(for: detection).map {
@@ -1495,9 +1496,8 @@ struct TrafficSignFusionEngine: Sendable {
                 return lhs.boundingBox.area > rhs.boundingBox.area
             }
 
-        // Supplementary plates and unsupported classifier labels are retained
-        // as QA evidence, but must not hide a supported speed sign from the
-        // same frame merely because their raw score is higher.
+        // Unsupported primary classifier labels must not hide a supported
+        // speed sign from the same frame merely because their score is higher.
         guard let detection = eligible.first(where: { $0.semantic.kind != .unknown })
                 ?? eligible.first else {
             return event(
@@ -1532,13 +1532,21 @@ struct TrafficSignFusionEngine: Sendable {
         }
 
         let roadKey = RoadKey(roadContext)
-        let matchingIndex = tracks.indices.first { index in
-            guard tracks[index].semanticKey == detection.semantic.stableKey,
-                  (tracks[index].roadKey == nil || roadKey == nil || tracks[index].roadKey == roadKey),
-                  let previous = tracks[index].evidence.last?.detection else { return false }
-            return previous.boundingBox.intersectionOverUnion(with: detection.boundingBox)
-                >= thresholds.minimumTrackIou
-        }
+        // A roadside sign can cross most of the camera frame between analyzed
+        // samples, especially at low cadence or through a turn. Keep one track
+        // UUID for the same semantic sign and traversal scope; bounding-box IoU
+        // is evidence geometry, not physical identity.
+        let matchingIndex = tracks.indices
+            .filter { index in
+                tracks[index].semanticKey == detection.semantic.stableKey
+                    && (tracks[index].roadKey == nil
+                        || roadKey == nil
+                        || tracks[index].roadKey == roadKey)
+            }
+            .max { lhs, rhs in
+                (tracks[lhs].evidence.last?.timestamp ?? .distantPast)
+                    < (tracks[rhs].evidence.last?.timestamp ?? .distantPast)
+            }
         let index: Int
         if let matchingIndex {
             index = matchingIndex
@@ -1569,21 +1577,6 @@ struct TrafficSignFusionEngine: Sendable {
             && score >= thresholds.provisional
             ? .confirmed
             : .provisional
-        var seenRestrictions = Set<TrafficSignRestriction>()
-        let fusedRestrictions = track.evidence
-            .flatMap(\.detection.restrictions)
-            .filter { seenRestrictions.insert($0).inserted }
-        let fusedConditionState: TrafficSignConditionState
-        let observedConditionStates = track.evidence.map(\.detection.conditionState)
-        if observedConditionStates.contains(.unresolved) {
-            fusedConditionState = .unresolved
-        } else if observedConditionStates.contains(.resolving) {
-            fusedConditionState = .resolving
-        } else if observedConditionStates.contains(.resolved) || !fusedRestrictions.isEmpty {
-            fusedConditionState = .resolved
-        } else {
-            fusedConditionState = .none
-        }
         let fusedAssemblyID = track.evidence.reversed().compactMap {
             $0.detection.assemblyId
         }.first
@@ -1596,8 +1589,8 @@ struct TrafficSignFusionEngine: Sendable {
                 trackID: track.id,
                 evidenceFrames: evidenceFrames,
                 assemblyId: fusedAssemblyID,
-                conditionState: fusedConditionState,
-                restrictions: fusedRestrictions
+                conditionState: TrafficSignConditionState.none,
+                restrictions: []
             ),
             roadContext: roadContext,
             latencyMs: latencyMs,
@@ -1637,6 +1630,27 @@ struct TrafficSignFusionEngine: Sendable {
             assemblyId: assemblyId ?? detection.assemblyId,
             conditionState: conditionState ?? detection.conditionState,
             restrictions: restrictions ?? detection.restrictions
+        )
+    }
+
+    private static func livePrimaryOnlyDetection(
+        _ detection: TrafficSignDetection
+    ) -> TrafficSignDetection {
+        TrafficSignDetection(
+            rawClassId: detection.rawClassId,
+            rawLabel: detection.rawLabel,
+            semantic: detection.semantic,
+            rawScore: detection.rawScore,
+            calibratedConfidence: detection.calibratedConfidence,
+            detectorRawScore: detection.detectorRawScore,
+            detectorCalibratedConfidence: detection.detectorCalibratedConfidence,
+            classifierRawScore: detection.classifierRawScore,
+            classifierCalibratedConfidence: detection.classifierCalibratedConfidence,
+            boundingBox: detection.boundingBox,
+            classThreshold: detection.classThreshold,
+            assemblyId: detection.assemblyId,
+            conditionState: .none,
+            restrictions: []
         )
     }
 

@@ -1877,23 +1877,45 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignPassageUpdate = emission.passageUpdate
         refreshTrafficSignFrameSnapshot()
 
-        guard case .committed(let passage) = emission.passageUpdate,
-              passage.sessionGeneration == trafficSignRecorderGeneration,
-              passage.contextGeneration == trafficSignContextGeneration,
-              let frameSpeedKmh = emission.frameSpeedKmh,
-              frameSpeedKmh.isFinite,
-              frameSpeedKmh >= 1,
-              passage.isCompatibleWithLatestRoadScope(
-                trafficSignFrameContextIsCurrent ? latestTrafficSignDetectionContext : nil,
-                coordinate: currentCoordinateForTrafficSignEvaluation,
+        guard case .committed(let passage) = emission.passageUpdate else { return }
+        guard passage.sessionGeneration == trafficSignRecorderGeneration,
+              passage.contextGeneration == trafficSignContextGeneration else {
+            appendTSRLog(
+                "passage_activation=rejected reason=generation_mismatch track=\(passage.physicalTrackID)",
                 timestamp: emission.event.frameTimestampUtc
-              ) else { return }
+            )
+            return
+        }
+        guard let frameSpeedKmh = emission.frameSpeedKmh,
+              frameSpeedKmh.isFinite,
+              frameSpeedKmh >= 1 else {
+            appendTSRLog(
+                "passage_activation=rejected reason=vehicle_not_moving track=\(passage.physicalTrackID)",
+                timestamp: emission.event.frameTimestampUtc
+            )
+            return
+        }
+        guard passage.isCompatibleWithLatestRoadScope(
+            trafficSignFrameContextIsCurrent ? latestTrafficSignDetectionContext : nil,
+            coordinate: currentCoordinateForTrafficSignEvaluation,
+            timestamp: emission.event.frameTimestampUtc
+        ) else {
+            appendTSRLog(
+                "passage_activation=rejected reason=latest_road_scope_incompatible track=\(passage.physicalTrackID)",
+                timestamp: emission.event.frameTimestampUtc
+            )
+            return
+        }
 
         let commit = trafficSignEffectiveLimitResolver.commit(
             passage,
             base: currentBaseEffectiveSpeedLimitState()
         )
         guard commit.applied else {
+            appendTSRLog(
+                "passage_activation=review_only reason=\(commit.persistence.reason) track=\(passage.physicalTrackID)",
+                timestamp: emission.event.frameTimestampUtc
+            )
             persistTrafficSignPassage(
                 passage,
                 decision: commit.persistence,
@@ -1917,6 +1939,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
         appendLookupEvent(
             "tsr-passage action=\(passage.action.stableKey) boundary_way=\(passage.passageBoundaryContext?.wayId ?? "unmatched") activation_way=\(passage.activationContext.wayId) effective_source=\(effective.source.rawValue) effective=\(effective.value.speedKmh.map(String.init) ?? "non_numeric")"
+        )
+        appendTSRLog(
+            "passage_activation=applied reason=\(commit.persistence.reason) track=\(passage.physicalTrackID) effective_source=\(effective.source.rawValue) effective_kmh=\(effective.value.speedKmh.map(String.init) ?? "non_numeric")",
+            timestamp: emission.event.frameTimestampUtc
         )
         maybeNotifyDrivingBanWarning()
         maybeSpeakOverspeedWarning()
@@ -2023,6 +2049,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } else {
             shadowComparison = "not_evaluable"
         }
+        let passageLog = Self.trafficSignPassageLogValue(emission.passageUpdate)
         let logSignature = [
             event.state.rawValue,
             event.candidate?.value.map(String.init) ?? "none",
@@ -2031,6 +2058,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             shadowSpeedKmh.map(String.init) ?? "none",
             shadowComparison,
             captureID ?? "none",
+            passageLog.signature,
         ].joined(separator: ":")
         let now = Date()
         let minimumInterval: TimeInterval = event.state == .noRecognition ? 30 : 2
@@ -2072,9 +2100,40 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let shadowState = shadowEvent?.state.rawValue ?? "none"
         let shadowSpeed = shadowSpeedKmh.map(String.init) ?? "none"
         let baseSpeed = baseSpeedKmh.map(String.init) ?? "none"
-        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) shadow_state=\(shadowState) shadow_speed_kmh=\(shadowSpeed) base_speed_kmh=\(baseSpeed) shadow_comparison=\(shadowComparison) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
+        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) passage=\(passageLog.value) shadow_state=\(shadowState) shadow_speed_kmh=\(shadowSpeed) base_speed_kmh=\(baseSpeed) shadow_comparison=\(shadowComparison) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
         Self.tsrLogger.info("\(line, privacy: .public)")
         appendTSRLogLine(line)
+    }
+
+    private static func trafficSignPassageLogValue(
+        _ update: TrafficSignPassageFinalizerUpdate
+    ) -> (value: String, signature: String) {
+        switch update {
+        case .idle:
+            return ("idle", "idle")
+        case .tracking(let support, let frames):
+            return (
+                "tracking,frames:\(frames),support:\(String(format: "%.4f", support))",
+                "tracking"
+            )
+        case .armed(let support, let frames):
+            return (
+                "armed,frames:\(frames),support:\(String(format: "%.4f", support))",
+                "armed"
+            )
+        case .lossPending(let timestamp, let negativeFrames):
+            return (
+                "loss_pending,negative_frames:\(negativeFrames),boundary:\(trafficSignTimestamp(timestamp))",
+                "loss_pending"
+            )
+        case .discarded(let reason):
+            return ("discarded,reason:\(reason)", "discarded:\(reason)")
+        case .committed(let passage):
+            return (
+                "committed,action:\(passage.action.stableKey),track:\(passage.physicalTrackID)",
+                "committed:\(passage.finalizedEventID)"
+            )
+        }
     }
 
     private static func trafficSignTimestamp(_ date: Date) -> String {

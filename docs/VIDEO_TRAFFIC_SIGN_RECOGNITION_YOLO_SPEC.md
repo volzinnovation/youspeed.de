@@ -1,6 +1,6 @@
 # Video Traffic Sign Recognition
 
-Date: `2026-09-04`
+Date: `2026-09-05`
 
 Status: draft implementation spec
 
@@ -27,11 +27,12 @@ the camera lane admits/enqueues no new TSR input and makes any unavoidable
 in-flight completion side-effect-free; continuous evaluation uses only the local
 correction and bundle layers.
 
-The first production slice is Germany-first and speed-sign focused:
+The first production slice is Germany-first and primary-speed-sign focused:
 
-- detect speed-relevant primary signs, including German city and distinct end
-  signs, plus qualifying white supplementary plates with a compact proposal
-  detector and mobile semantic classifier,
+- detect and classify speed-relevant primary signs, including German zones,
+  city signs, and distinct end signs,
+- ignore supplementary-sign proposals in live inference: the app performs no
+  supplementary OCR, rectangle search, grouping, or restriction inference,
 - run inference locally on Android and iPhone,
 - merge detections over time before creating an observation,
 - map detections into the existing local-observation state machine,
@@ -54,11 +55,10 @@ Current implementation state:
 - Shared v1 contracts, pure fusion/precedence policy, and the iPhone direct
   runtime adapter exist on this branch. The two-component pack/event v2 and
   trained artifacts are still missing. Android still needs camera permission
-  and the shared CameraX/LiteRT lifecycle. Absence of a verified pack must
-  remain visibly `unavailable` on either platform.
-- The iPhone numeric override seam is intentionally dormant: its code-owned
-  model-pack allowlist is empty, and the bundled pack is shadow-only. This spec
-  does not authorize enabling that pack.
+  and the shared CameraX/LiteRT lifecycle.
+- The iPhone field-test pack is active in the primary-sign lane. It has no live
+  override allowlist, is not shadow-only, and missing calibration metadata is
+  diagnostic rather than an activation rejection during testing.
 - Current iPhone/Android fusion confirms from a time window while a sign is still
   visible, and the current transient policy is exact-way/source-signature based.
   Neither behavior satisfies the passage-edge or relation-scope contract below.
@@ -73,18 +73,24 @@ Current implementation state:
 
 ### Is there already a usable model?
 
-Short answer: no ready-made public checkpoint cleanly covers real German road scenes, numeric speed limits, and the white supplementary plates that qualify them on both mobile runtimes.
+Short answer: the app uses the current field-test model for primary signs, but
+no ready-made public checkpoint is an independently validated release model for
+the complete German primary-sign taxonomy on both mobile runtimes.
 
-The first owned candidate architecture is therefore compositional:
+The live candidate architecture is intentionally primary-only:
 
-1. Bootstrap full-scene proposal detection from Zenseact Open Dataset (ZOD) plus consented YouSpeed scenes and hard negatives. Before training, audit and freeze the ZOD label mapping to determine whether it supplies separate supplementary-plate boxes; otherwise add reviewed YouSpeed or synthetic full-scene plate annotations. Crop-only sources cannot prove proposal coverage.
-2. Bootstrap German crop semantics from GTSIGN-220, use its pinned ViT only as a teacher/reference, and add Synset Signset Germany for rare primary/plate combinations and robustness augmentation.
-3. Detect `primary_sign` and `supplementary_plate` separately, link them into a sign assembly, and classify/parse the white plate as a typed restriction. Do not create a flat class for every speed/restriction combination.
-4. Use a two-role YOLOX-Nano-derived proposal detector at `640x640` and a
-   MobileNetV3-Large `224x224` union-label crop classifier as the target.
-   Compare MobileNetV3-Small as the latency challenger. A direct
-   YOLOX-Nano semantic detector remains an iPhone-only shadow baseline while
-   the current runtime supports direct detection only.
+1. Bootstrap full-scene primary-sign proposal detection from Zenseact Open
+   Dataset (ZOD), consented YouSpeed scenes, and hard negatives.
+2. Bootstrap German primary-crop semantics from GTSIGN-220, use its pinned ViT
+   only as a teacher/reference, and add Synset Signset Germany for rare primary
+   classes and robustness augmentation.
+3. Detect `primary_sign` proposals and classify them without inspecting nearby
+   rectangles or treating another detector class as a supplementary sign.
+4. Use a primary-only YOLOX-Nano-derived proposal detector at `640x640` and a
+   MobileNetV3-Large `224x224` primary-label crop classifier as the target.
+   Compare MobileNetV3-Small as the latency challenger. The current direct
+   semantic detector remains the active iPhone field-test implementation while
+   the two-component primary-only path is evaluated.
 5. Keep RF-DETR Nano and D-FINE-N as detector conversion challengers until
    their exact checkpoints and Core ML/LiteRT parity are pinned. Use the
    Panoramax German classifier and the separately pinned GTSIGN-220 ViT only as
@@ -95,9 +101,17 @@ The first owned candidate architecture is therefore compositional:
    is not release-approved until its weight license and training lineage are
    documented. The MobileNetV3 initializations have the same fail-closed
    weight/data-lineage and NOTICE review.
-7. Treat every public or transferred model output as untrusted until it passes
-   leakage-safe real-route validation, calibration, export parity, and
-   physical-device gates.
+7. Evaluate public or transferred model output with leakage-safe real-route
+   validation, export parity, and physical-device tests. During field testing,
+   missing calibration metadata remains observable but does not disable the
+   primary-sign lane.
+
+Supplementary signs are a separate offline postprocessing concern. Panoramax
+image links and EXIF annotations preserve the full-scene evidence; manual
+annotation and optional vision-language-model assistance may interpret that
+evidence later. No supplementary result gates live camera TSR. Existing shared
+schemas retain their supplementary fields for backward compatibility and that
+future offline ticket, but the live app emits those arrays empty.
 
 The exact source revisions, checksums, licenses, and training stages live in
 `TSR_TRAINING_ROUND_TRIP.md` and `shared/tsr/training-sources-v1.json`. The
@@ -115,7 +129,10 @@ This order follows the implementation that now exists in this branch:
 - CameraX `ImageAnalysis` still maps cleanly to the same latest-frame analyzer loop and stale-frame dropping strategy, and
 - Core ML and LiteRT exports must both come from one frozen, evaluated training result.
 
-Neither platform is the authority for labels, thresholds, or precedence. The shared signed pack and fixtures are. A runtime without a verified artifact must remain explicitly unavailable rather than substituting a demo model.
+Neither platform is the authority for labels, thresholds, or precedence. The
+shared pack and fixtures are. Release validation is stricter than field-test
+activation; an uncalibrated but structurally compatible local pack remains
+usable and visibly identified during testing.
 
 ### Separate app first or integrated into the current app?
 
@@ -126,9 +143,8 @@ also proves that Dashcam recording remains unaffected.
 
 Recommended sequence:
 
-1. Train and export the direct YOLOX-Nano iPhone shadow baseline, then measure
-   it through the existing Vision/Core ML consumer without activating camera
-   overrides.
+1. Measure the active direct YOLOX-Nano iPhone field-test lane through the
+   existing Vision/Core ML consumer and passage/override path.
 2. Evolve the shared pack/event contract so detector and classifier each carry
    their own preprocessing, calibration, and artifact identity; add the
    proposal-classification runtime to iPhone.
@@ -202,13 +218,12 @@ The first model should recognize sign classes that can be normalized into existi
 
 The class ontology must be versioned independently from the model binary. Adding country-specific sign types later should not change the meaning of existing labels.
 
-The bundled Panoramax bootstrap classifier is not sufficient for this target
-class set. It has generic numeric/zone/end labels but no city-entry or city-exit
-output, and its current model pack is explicitly uncalibrated and shadow-only.
-Do not alias an unrelated label to a city sign or enable this pack for live
-overrides. Introduce the missing city and distinct end classes in the next
-versioned taxonomy/model pack, calibrate them, and keep deployment controlled
-by the code-owned allowlist. A generic classifier output such as `no:end` is not
+The bundled Panoramax bootstrap classifier does not cover this full target class
+set: it has generic numeric/zone/end labels but no city-entry or city-exit
+output. Do not alias an unrelated label to a city sign. Introduce missing city
+and distinct end classes in a later versioned taxonomy/model pack. The current
+pack remains usable for its declared primary classes during field testing even
+when calibration metadata is absent. A generic classifier output such as `no:end` is not
 actionable until a speed-relevant subtype is proven. Use these reviewed
 Panoramax cases as named model regressions:
 
@@ -242,12 +257,11 @@ flowchart LR
   ROUTER --> CADENCE["Panoramax distance/time sampler"]
   CAM --> PREVIEW["Display-only confidence preview"]
   DASH --> VIDEO["Protected local encoded video"]
-  THROTTLE --> PROPOSALS["Two-role proposal detector"]
-  PROPOSALS --> CROPS["Primary-sign and plate crops"]
-  CROPS --> CLASSIFIER["Union-label crop classifier"]
-  CLASSIFIER --> ASSEMBLY["Geometry and sign assembly"]
-  ASSEMBLY --> NORMALIZE["Semantic normalization"]
-  THROTTLE -. "current iPhone shadow lane" .-> SHADOW["Direct semantic detector"]
+  THROTTLE --> PROPOSALS["Primary-sign proposal detector"]
+  PROPOSALS --> CROPS["Primary-sign crops"]
+  CROPS --> CLASSIFIER["Primary semantic classifier"]
+  CLASSIFIER --> NORMALIZE["Semantic normalization"]
+  THROTTLE -. "current iPhone field-test lane" .-> SHADOW["Direct semantic detector"]
   SHADOW -.-> NORMALIZE
   NORMALIZE --> FUSION["Consecutive-frame track fusion"]
   FUSION --> PASS["Visible-to-missing passage finalizer"]
@@ -315,7 +329,9 @@ flowchart LR
 - Uses a measured adaptive 2–10 Hz inference envelope based on vehicle speed,
   active tracks, latency, power, and thermal pressure; this is independent of
   the higher shared-camera capture rate.
-- Keeps one inference in flight, replaces the single pending frame with the newest frame, and retains only a bounded in-memory set of sharp/exposed full-resolution frames long enough to select primary-sign and supplementary-plate crops.
+- Keeps one inference in flight, replaces the single pending frame with the
+  newest frame, and retains only a bounded in-memory set of sharp/exposed
+  full-resolution frames long enough to select primary-sign crops.
 - Does not persist the input frame stream or trigger Dashcam/Panoramax capture.
 
 `PanoramaxStillCaptureConsumer`
@@ -327,29 +343,28 @@ flowchart LR
 
 `TrafficSignProposalDetector`
 
-- Loads the platform-native YOLOX-Nano-derived proposal export.
-- Emits only `primary_sign` and `supplementary_plate` boxes with scores, frame
-  timestamps, and detector lineage; it does not assign final road-sign meaning.
+- Loads the platform-native primary-sign proposal export.
+- Emits `primary_sign` boxes with scores, frame timestamps, and detector
+  lineage; any supplementary-role detector output is ignored.
 - Does not know about map matching or local observations.
 
 `TrafficSignCropClassifier`
 
-- Classifies the best retained primary and supplementary crops with the single
-  MobileNetV3 union-label component, using the proposal role to constrain the
-  permitted label subset.
-- Applies independently calibrated primary and supplementary thresholds and
-  preserves unsupported or unreadable white plates as `unresolved`.
+- Classifies retained primary crops with the MobileNetV3 primary-label
+  component.
+- Applies the primary class threshold. Missing device-local calibration may be
+  logged during field testing but does not reject otherwise valid inference.
 
 `TrafficSignAssemblyNormalizer`
 
-- Links compatible plates below/near a primary using deterministic geometry
-  and temporal tracks, with one-parent ownership.
-- Maps the assembled result into a structural action such as
+- Performs no supplementary-sign grouping, OCR, rectangle detection, or
+  restriction inference in the live app.
+- Maps each primary result into a structural action such as
   `posted_maximum(30)`, `pedestrian_zone_start`, `city_entry(DE)`, or a distinct
-  end action, plus explicit condition state. Presentation and OSM values are
+  end action with `condition_state = none`. Presentation and OSM values are
   resolved later and never used to reconstruct the structural action.
 - Applies country and speed-value allowlists from the active region when
-  available. The direct-detector iPhone shadow lane enters here through a
+  available. The direct-detector iPhone field-test lane enters here through a
   legacy single-component adapter and is never treated as two-stage evidence.
 
 `TrafficSignFusionEngine`
@@ -1016,29 +1031,28 @@ Shared files:
 
 iPhone artifact:
 
-- Sibling Core ML detector and classifier exports compiled into the app bundle
-  or downloaded as signed app-managed assets later.
+- Sibling primary-sign Core ML detector and classifier exports compiled into
+  the app bundle or downloaded as signed app-managed assets later.
 - Target runtime path: `DriveCaptureCoordinator` frame -> TSR latest-frame
-  consumer -> Core ML proposals -> retained primary/plate crops -> Core ML crop
-  semantics -> assembly normalization.
-- Until pack/event v2 exists, a trained direct semantic Core ML artifact may be
-  attached to the existing direct-detection runtime only as a clearly identified
-  shadow baseline through the legacy v1 adapter.
+  consumer -> Core ML primary proposals -> retained primary crops -> Core ML
+  primary semantics -> normalization.
+- Until pack/event v2 exists, the direct semantic Core ML field-test artifact
+  uses the existing direct-detection runtime through the legacy v1 adapter.
 - Prefer Neural Engine capable execution where available; fall back to CPU/GPU without blocking the main actor.
 
 Android artifact:
 
-- Sibling LiteRT detector and classifier exports bundled under app assets for
-  the first slice.
+- Sibling primary-sign LiteRT detector and classifier exports bundled under app
+  assets for the first slice.
 - Target runtime path: shared CameraX lifecycle -> TSR `ImageAnalysis`
-  consumer -> frame conversion -> proposal interpreter -> retained crops ->
-  classifier interpreter -> assembly normalization.
+  consumer -> frame conversion -> primary-proposal interpreter -> retained
+  crops -> classifier interpreter -> semantic normalization.
 - Use one analyzer executor and one in-flight inference at a time.
 
 ONNX can remain useful for desktop evaluation and reproducible test tooling, but mobile runtime should use platform-native Core ML and LiteRT artifacts first.
 
-The current pack/event v1 contracts are insufficient for the selected
-two-stage target: they expose one global preprocessing/calibration record and
+The current pack/event v1 contracts are insufficient for the two-component
+primary-sign target: they expose one global preprocessing/calibration record and
 one event artifact hash. A v2 revision must identify detector and classifier
 preprocessing, calibration, and artifact lineage independently before the
 proposal-classification candidate can become runtime-ready.
@@ -1061,12 +1075,12 @@ Already implemented on this branch:
 Remaining iPhone TSR work:
 
 - Implement the versioned two-component pack/event v2 contract with separate
-  detector/classifier preprocessing, calibration, and artifact hashes.
-- Attach the proposal, crop-classification, and assembly pipeline through the
+  primary detector/classifier preprocessing, calibration, and artifact hashes.
+- Attach the primary proposal and crop-classification pipeline through the
   existing `DriveVideoFrameConsumer` hook, preserving latest-frame backpressure
   and the measured adaptive cadence.
-- Export and parity-test the sibling Core ML artifacts; keep the direct semantic
-  detector explicitly shadow-only while the v1 adapter is in use.
+- Export and parity-test the sibling Core ML artifacts while keeping the direct
+  semantic detector available as the active field-test baseline.
 - Expose route-relation groups from `V3SpeedLimitService`, regenerate capable
   bundles, and replace the exact-way/source-signature override with the typed,
   relation-scoped resolver described above.
@@ -1082,7 +1096,7 @@ Remaining iPhone TSR work:
 - Harden runtime-correction selection and both OSC exporters with the typed
   state/value/direction/approval rules above.
 - Extend tests for component lineage, consumer independence, post-drive upload
-  gating, relation continuity, source precedence, class/assembly mapping,
+  gating, relation continuity, source precedence, primary-class mapping,
   fusion thresholds, idempotent persistence, OSC output, schema migration, and
   evidence decoding.
 
@@ -1101,7 +1115,8 @@ Add:
 - Camera permission handling in `ConsumerHost` and `MainActivity`.
 - CameraX dependencies and one feature-neutral camera lifecycle binding the enabled Dashcam, TSR `ImageAnalysis`, and Panoramax still-capture use cases together.
 - A `TrafficSignCameraAnalyzer` that consumes the shared `ImageAnalysis` output and never binds a second camera lifecycle.
-- LiteRT dependency, proposal/classifier wrappers, and assembly normalizer.
+- LiteRT dependency plus primary proposal/classifier wrappers and semantic
+  normalizer.
 - Android enum parity for `computer_vision` and `temporary_restriction`.
 - Route-relation scope parity, typed camera assertions, explicit effective
   provenance, and the specified border-derived dark-red camera number.
@@ -1245,15 +1260,16 @@ Required deterministic reducer/store/export fixtures include:
 
 ### Phase 0: Offline Model and Contract
 
-- Freeze the union-label ontology, source manifest, and two-component pack/event
+- Freeze the primary-label ontology, source manifest, and two-component pack/event
   v2 contract, then add the distinct finalized passage-event contract rather
   than overloading per-frame `confirmed`.
-- Train the two-role YOLOX-Nano-derived proposal detector and the single
-  MobileNetV3 union-label crop classifier.
+- Train the primary-sign YOLOX-Nano-derived proposal detector and the
+  MobileNetV3 primary-label crop classifier.
 - Export sibling reference ONNX, Core ML, and LiteRT artifacts for each frozen
   component and bind every hash to one training run.
 - Build leakage-safe desktop evaluation, cross-runtime parity, and golden-image
-  assembly tests; keep the direct YOLOX iPhone path as a shadow baseline only.
+  primary-semantic tests; keep the direct YOLOX iPhone path as a comparison
+  baseline.
 - Add shared proposal-classification evidence fixtures.
 
 Exit criteria:
@@ -1261,7 +1277,7 @@ Exit criteria:
 - pack/event v2 and labels are versioned with per-component lineage,
 - an internal model-scorecard report exists and remains distinct from product
   release approval,
-- app code can parse fixture assemblies into local observations.
+- app code can parse fixture primary results into local observations.
 
 ### Phase 1: App Integration With Fake Detector
 

@@ -1,25 +1,26 @@
 # Traffic-Sign Recognition Training Round Trip
 
-Date: `2026-09-01`
+Date: `2026-09-05`
 
 Status: implementation foundation; no model is approved for release yet
 
 ## Outcome
 
-YouSpeed trains traffic-sign recognition as a compositional perception system,
-not as one flat class list. One shared camera frame produces:
+YouSpeed's live mobile lane trains traffic-sign recognition for primary traffic
+signs. One shared camera frame produces:
 
-1. proposals for a `primary_sign` and zero or more
-   `supplementary_plate` objects,
+1. one or more `primary_sign` proposals,
 2. a primary semantic such as `maximum_speed = 30 km/h`,
-3. typed restrictions such as `weather = wet`, `vehicle = truck`, or a time
-   window, and
-4. an assembly that links every plate to its primary sign.
+3. temporal evidence for a physical-sign track, and
+4. a normalized primary action for the live passage state machine.
 
 That same contract is used for live inference, consented diagnostic capture,
-human review, training, replay, and mobile evaluation. A reviewed detection
-therefore makes a complete round trip instead of becoming an app-specific log
-that cannot improve the next model.
+human review, training, replay, and mobile evaluation. Supplementary signs are
+explicitly outside this live contract: the app does not detect, group, OCR, or
+interpret them. They will use a separate offline-first workflow over
+Panoramax-linkable full-scene evidence, manual annotation, and optionally a
+vision-language model. Shared schemas may retain supplementary fields for
+backward compatibility, but live events leave them empty.
 
 ## Reproducible source baseline
 
@@ -48,19 +49,18 @@ signals, not production evidence.
 
 [`model-selection-v1.json`](../shared/tsr/model-selection-v1.json) records the
 architecture decision without pretending that a trained model has passed. The
-target candidate architecture is a YOLOX-Nano-derived `640x640` two-role
-proposal detector (`primary_sign`, `supplementary_plate`) followed by a MobileNetV3-Large
-`224x224` union-label classifier and deterministic geometry/temporal assembly.
+target candidate architecture is a YOLOX-Nano-derived `640x640` primary-sign
+proposal detector followed by a MobileNetV3-Large `224x224` primary-label
+classifier and temporal primary-sign tracking.
 MobileNetV3-Small is the latency challenger. A direct semantic YOLOX-Nano
-detector is the immediate iPhone shadow baseline because the current iPhone
-runtime rejects two-stage packs.
+detector is the active iPhone field-test baseline while the two-component
+primary-only runtime is evaluated.
 
 This is an architecture target, not a claim that the detector training corpus
-is ready. ZOD's traffic-sign taxonomy still needs an audited mapping proving
-separate full-scene supplementary-plate boxes. If it does not provide them,
-reviewed YouSpeed annotations or reviewed synthetic full-scene assemblies must
-be frozen before proposal training. Crop datasets alone cannot establish plate
-proposal coverage or recall.
+is ready. ZOD's traffic-sign taxonomy still needs an audited primary-sign label
+mapping. Reviewed YouSpeed primary annotations and hard negatives must be
+frozen before proposal training. Crop datasets alone cannot establish
+full-scene primary-sign proposal coverage or recall.
 
 RF-DETR Nano and D-FINE-N remain conversion challengers, not selected models;
 their exact checkpoints and Core ML/LiteRT parity are not pinned. The pinned
@@ -181,12 +181,14 @@ for selection or acceptance.
 Ordinary TSR inference retains no pixels. Training and test material enters a
 separate diagnostic store only after explicit `tsr_diagnostic_dataset`
 consent. A bundle carries a retention expiry and a second export approval.
-Full frames need verified face/license-plate redaction before export. Expired
-bundles are rejected. Raw Dashcam video and direct device identifiers are never
-accepted.
+Expired bundles are rejected. Raw Dashcam video and direct device identifiers
+are never accepted. The live TSR lane does not run face or vehicle-number-plate
+detection. Any separate public-image privacy workflow belongs to the image
+publisher, not the TSR model.
 
 For a candidate, uncertainty sample, or hard negative, keep only the bounded
-high-resolution source frame/crops needed for review and record synchronized:
+high-resolution source frame/primary crops needed for review and record
+synchronized:
 
 - current OSM way ID,
 - latitude and longitude,
@@ -200,18 +202,15 @@ local correction during replay. It is evidence, not permission to persist an
 automatic map correction.
 
 Reviewers can accept, correct, reject, or mark a sample negative. For each
-positive assembly they correct:
+positive live-training sample they correct the primary bounding box and primary
+semantic. Low-confidence proposals, false confirmations, sign-like advertising,
+signs on adjacent roads, damaged signs, night glare, rain, and motion blur are
+valuable hard negatives.
 
-- the primary and plate bounding boxes,
-- the primary speed semantic,
-- every plate's typed restriction and optional country sign code,
-- plate-to-primary relationships, and
-- `condition_state` as `none`, `resolved`, or `unresolved`.
-
-A visible but unreadable plate must remain `unresolved`; it must not silently
-turn a conditional limit into an unconditional one. Low-confidence proposals,
-false confirmations, sign-like advertising, signs on adjacent roads, damaged
-signs, night glare, rain, and motion blur are valuable hard negatives.
+Supplementary-sign review is a separate offline dataset and ticket. It starts
+from the Panoramax image/link and full-scene evidence, then uses manual
+annotation or an optional vision-language model. Its output cannot alter the
+live TSR decision in this implementation phase.
 
 Validate and materialize only approved bundles:
 
@@ -242,7 +241,7 @@ implemented and passes, the leakage release gate remains blocked.
 
 The release evaluation set is geographically and temporally held out. It must
 include devices, focal lengths, seasons, lighting, weather, construction signs,
-and supplementary plates that are absent from threshold fitting. Synthetic
+and difficult primary-sign backgrounds that are absent from threshold fitting. Synthetic
 variants may augment training and robustness suites, but never inflate the
 reported real-route result. The frozen test set is not recycled for error
 mining; corrected field failures enter the next version's training or a new
@@ -253,40 +252,27 @@ regression set.
 1. **Freeze provenance.** Validate the source manifest, snapshot selected
    dataset files, create SHA-256 inventories, record label mappings, and approve
    the applicable license gates. A run with different bytes gets a new run ID.
-2. **Train the two-role proposal detector.** Initialize the license-gated
-   control from YOLOX Nano, replace COCO classes with `primary_sign` and
-   `supplementary_plate`, and train on ZOD plus reviewed YouSpeed full frames.
-   First audit and freeze the ZOD label mapping; do not assume its generic
-   traffic-sign annotations contain separate supplementary-plate boxes. If
-   that coverage is absent, add reviewed full-scene YouSpeed plate boxes or
-   reviewed synthetic assemblies and bind their inventories to the run.
+2. **Train the primary-sign proposal detector.** Initialize the license-gated
+   control from YOLOX Nano, replace COCO classes with `primary_sign`, and train
+   on ZOD plus reviewed YouSpeed full frames. First audit and freeze the ZOD
+   primary-sign label mapping. Bind reviewed full-scene YouSpeed primary boxes
+   and hard-negative inventories to the run.
    Preserve background-only frames only from ZOD frames for which the Traffic
    Signs annotation task is present and complete; an unannotated frame is not a
    negative. Benchmark a YOLO26n branch only as the license-gated challenger.
-3. **Train one role-aware union-label classifier.** Initialize the owned
+3. **Train the primary-label classifier.** Initialize the owned
    MobileNetV3 Large or Small student from its pinned safetensors checkpoint,
    optionally distill from the pinned GTSIGN teacher, and compare primary-crop
-   results against the pinned Panoramax classifier. Jointly train one
-   union-label head across two label subsets, then constrain its permitted
-   outputs by proposal role: primary semantics from
+   results against the pinned Panoramax classifier. Train primary semantics from
    leakage-regrouped Panoramax/GTSIGN crops, Synset speed classes, and reviewed
-   YouSpeed crops; supplementary semantics from Synset upper/lower metadata,
-   GTSIGN restriction crops, and reviewed device crops. Keep numeric speed,
-   zone, and end semantics distinct and calibrate each role separately. Predict
-   typed restrictions such as weather, time, vehicle, resident, school,
-   exception, distance, direction, extent, text, other, and unknown—not every
-   primary/plate combination as a new class. Common closed-set plates can
-   bootstrap v1, but arbitrary exact time, weight, distance, and free-text
-   conditions need a later structured decoder/OCR lane. Until that lane is
-   validated, an unsupported or unreadable visible plate remains `unresolved`
-   and can never create an unconditional camera limit.
-4. **Link the assembly.** Start with deterministic geometry: compatible plate
-   below/near a primary, same temporal track, and one-parent ownership. Train a
-   lightweight linker only if reviewed data demonstrates that geometry is not
-   sufficient. Keep unresolved plates observable.
-5. **Mine failures.** Run the candidate in shadow mode over new consented
-   drives. Prioritize uncertain predictions, model disagreement, false temporal
-   confirmations, rare speed values/restrictions, and route-held-out errors.
+   YouSpeed crops. Keep numeric speed, zone, and end semantics distinct.
+4. **Track physical primary signs.** Start a fresh tracker namespace with each
+   recording/camera-processing session. Reuse one physical-track UUID for
+   semantically compatible sightings across the frame instead of requiring
+   consecutive bounding-box IoU.
+5. **Mine failures.** Run the candidate over new consented drives. Prioritize
+   uncertain predictions, model disagreement, false temporal
+   confirmations, rare primary speed values, and route-held-out errors.
    Review them before they can re-enter training.
 6. **Fine-tune and distill.** Unfreeze progressively, use class-balanced
    sampling and realistic small-object/blur/exposure augmentation, and stop on
@@ -295,10 +281,11 @@ regression set.
 
 ## Calibration, export, and parity
 
-Fit calibration only after model selection, using a dedicated calibration
-partition. Calibrate primary semantics, plate presence, typed restrictions, and
-the temporal confirmation score separately. Thresholds are part of the model
-pack, not hard-coded in either app.
+Fit release calibration after model selection, using a dedicated calibration
+partition. Calibrate primary semantics and temporal confirmation separately.
+Thresholds belong in the model pack. During physical-device field testing,
+missing device-local calibration metadata is recorded but does not disable an
+otherwise compatible primary-sign pack.
 
 Export each frozen component checkpoint through a pinned conversion
 environment. The mobile formats are siblings of the reference export, not
@@ -337,14 +324,14 @@ release.
 | License posture | Every required model and actual training/calibration dataset lineage gate is explicitly asserted to the evaluator by the review process. This is an engineering blocker only, not a legal determination or proof embedded in the model evidence bundle. The YOLOX and MobileNetV3 initializations remain blocked until their pretrained-weight/data lineage and NOTICE obligations are documented; the Panoramax classifier additionally requires both CC BY-SA dataset treatment and an explicit Ultralytics AGPL-compliance or Enterprise-license decision. |
 | Leakage | The materializer's capture-group split passes, and a separate pre-split audit demonstrates zero physical-sign-cluster or near-duplicate overlap between train, calibration, validation, and test partitions. |
 | Primary semantics | On the real route holdout, the lower 95% confidence bound is at least 99% for confirmed numeric-limit precision and 90% for recall; dangerous speed substitutions are at most 0.1%. |
-| Restrictions | The lower 95% confidence bound is at least 98% for resolved-restriction precision and 80% for recall; a detected but unresolved plate never becomes an unconditional limit. |
+| Supplementary boundary | Live output contains no supplementary detections, restrictions, OCR results, or grouped members. Offline supplementary evaluation is tracked separately and cannot gate live activation. |
 | Temporal evidence | Replay produces at most one confirmed event per physical assembly and satisfies versioned duplicate-confirmation and wrong-way-confirmation thresholds. Those thresholds are currently pending, so this gate remains blocked. |
 | Calibration | Expected calibration error is at most 0.03 on the calibration audit set, with per-class reliability plots and no threshold fitted on the held-out test set. |
 | Cross-runtime parity | Every scorecard-case normalized semantic and assembly state agrees across ONNX/Core ML/LiteRT; matched boxes have IoU at least 0.995 and calibrated confidence differs by at most 0.02. |
 | Device performance | Exact approved tier profiles must be registry-pinned; they are currently unset, so this gate is pending. Each pinned tier records at least 3,600 coherent detector/end-to-end inferences over at least 30 minutes: the shared camera continues delivering at least 15 frames/s while TSR samples it at a sustained adaptive 2–10 Hz. Detector/end-to-end p95 stay under 250 ms, peak TSR memory under 256 MB, dropped frames at most 1%, backpressure events at most 0.1%, exactly one inference is in flight, and thermal downshift does not affect recording. |
 | Field regression | Required day/night/weather/construction/adjacent-road suites pass, and every previously accepted dangerous failure remains a named regression case. |
 
-Precision gates apply to the full confirmed assembly, not just a cropped sign
+Precision gates apply to the confirmed primary-sign passage, not just a cropped
 classifier. If the available holdout is too small for the confidence bound, the
 gate is not met; collecting more independent routes is the remedy.
 
