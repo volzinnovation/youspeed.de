@@ -48,6 +48,8 @@
 "drive_recorder.settings.dashcam_description" = "Speichert das Fahrtvideo lokal auf diesem iPhone.";
 "drive_recorder.settings.tsr" = "Tempolimitschilder erkennen";
 "drive_recorder.settings.tsr_description" = "Analysiert Kamerabilder lokal, sobald ein geprüftes Ländermodell installiert ist. Kameraschätzungen ersetzen Kartendaten nie unbemerkt.";
+"drive_recorder.settings.tsr_independent" = "Ohne Aufnahme erkennen";
+"drive_recorder.settings.tsr_independent_description" = "Hält die kamerabasierte Verkehrszeichenerkennung aktiv, auch wenn keine Dashcam-Fahrt aufgezeichnet wird.";
 "drive_recorder.settings.tsr_feedback" = "Erkannte Tempolimits";
 "drive_recorder.settings.tsr_feedback_description" = "Gibt für jedes bestätigte Tempolimitschild einmal die gewählte Rückmeldung.";
 "drive_recorder.settings.tsr_feedback_spoken" = "Ansagen";

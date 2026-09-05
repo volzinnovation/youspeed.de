@@ -252,7 +252,7 @@ final class SpeedConsumerTests: XCTestCase {
             let presentation = DriveRecorderMainControlPresentation.resolve(for: state)
             XCTAssertEqual(presentation.action, .start)
             XCTAssertEqual(presentation.systemImageName, "circle.fill")
-            XCTAssertFalse(presentation.usesRedIcon)
+            XCTAssertTrue(presentation.usesRedIcon)
             XCTAssertEqual(presentation.accessibilityLocalizationKey, "drive_recorder.start")
             XCTAssertTrue(presentation.isEnabled)
         }
@@ -272,6 +272,64 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(stopping.usesRedIcon)
         XCTAssertEqual(stopping.accessibilityLocalizationKey, "drive_recorder.stop")
         XCTAssertFalse(stopping.isEnabled)
+    }
+
+    func testStandaloneTSRPolicyRequiresExplicitOptionAndActiveRuntimeLifecycle() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+            recognitionEnabled: true,
+            independentRecognitionEnabled: true,
+            runtimeReady: true,
+            isDriving: true,
+            applicationIsActive: true
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+            recognitionEnabled: true,
+            independentRecognitionEnabled: false,
+            runtimeReady: true,
+            isDriving: true,
+            applicationIsActive: true
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+            recognitionEnabled: true,
+            independentRecognitionEnabled: true,
+            runtimeReady: false,
+            isDriving: true,
+            applicationIsActive: true
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+            recognitionEnabled: true,
+            independentRecognitionEnabled: true,
+            runtimeReady: true,
+            isDriving: true,
+            applicationIsActive: false
+        ))
+    }
+
+    func testStandaloneTSRCaptureDoesNotPresentAsDriveRecording() {
+        XCTAssertEqual(
+            DriveRecorderPolicy.presentedRecorderState(
+                captureState: .recording,
+                purpose: .standaloneTrafficSignRecognition,
+                driveStartPending: false
+            ),
+            .disabled
+        )
+        XCTAssertEqual(
+            DriveRecorderPolicy.presentedRecorderState(
+                captureState: .recording,
+                purpose: .standaloneTrafficSignRecognition,
+                driveStartPending: true
+            ),
+            .preparing
+        )
+        XCTAssertEqual(
+            DriveRecorderPolicy.presentedRecorderState(
+                captureState: .recording,
+                purpose: .driveRecording,
+                driveStartPending: false
+            ),
+            .recording
+        )
     }
 
     func testGalleryControlIsDisabledWhileRecorderOwnsCaptureSession() {
@@ -15528,6 +15586,25 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         )
         XCTAssertEqual(fallback.value, .numeric(50))
         XCTAssertEqual(fallback.source, .localCorrection)
+    }
+
+    func testOnlyOutsideToInsideBundleTransitionInvalidatesCameraContext() {
+        XCTAssertTrue(TrafficSignBundleContextPolicy.enteredCity(
+            previousInsideCity: false,
+            currentInsideCity: true
+        ))
+        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
+            previousInsideCity: true,
+            currentInsideCity: true
+        ))
+        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
+            previousInsideCity: nil,
+            currentInsideCity: true
+        ))
+        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
+            previousInsideCity: false,
+            currentInsideCity: false
+        ))
     }
 
     func testRecognitionTimeRelationSetIsNotPreNarrowed() {

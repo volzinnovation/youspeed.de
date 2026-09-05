@@ -52,6 +52,9 @@ Current implementation state:
 - iPhone now uses `DriveCaptureCoordinator` as the neutral Drive Recorder camera
   owner for Dashcam, TSR, Panoramax still capture, and the display-only preview;
   the earlier feature-owned Panoramax camera path has been folded into it.
+- An explicit iPhone setting may keep only the TSR consumer active without a
+  Dashcam/Panoramax recording. This reuses the same coordinator and capture
+  graph, retains no video, and does not present as an active drive recording.
 - Shared v1 contracts, pure fusion/precedence policy, and the iPhone direct
   runtime adapter exist on this branch. The two-component pack/event v2 and
   trained artifacts are still missing. Android still needs camera permission
@@ -185,7 +188,7 @@ Practical expectations:
 4. Resolve the active runtime value as `committed applicable TSR > local correction > bundled OSM`, while keeping the camera source visibly identified and scoped to the continuously matched road relation.
 5. Preserve battery, thermal, and latency budgets so speed-limit display and warning logic remain responsive.
 6. Establish a shared model artifact contract so Android and iPhone can ship equivalent class labels and calibration thresholds even with different mobile inference backends.
-7. Use one camera owner and one explicit drive start/stop lifecycle while keeping Dashcam, TSR, Panoramax capture, and the display-only preview separately failure-isolated. Preview display may depend on Dashcam being active, but it must not control recording or another consumer.
+7. Use one camera owner while keeping Dashcam, TSR, Panoramax capture, and the display-only preview separately failure-isolated. TSR may optionally own a camera-only lifecycle outside a drive recording; it must never open a second camera session or imply that video is being retained. Preview display may depend on Dashcam being active, but it must not control recording or another consumer.
 
 ## Non-Goals
 
@@ -445,9 +448,10 @@ flowchart LR
   bundled speed value on another member way cannot outrank an applicable camera
   assertion, and persisting that camera assertion locally must not clear it.
   A bundle switch, drive/session stop, definite relation exit, matcher-detected
-  reversal anywhere in the scope, or disabling TSR does clear it. A bundle
-  switch also advances the context generation so a result admitted against the
-  old bundle cannot publish or persist under the new one.
+  reversal anywhere in the scope, bundle-detected entry into a built-up area,
+  or disabling TSR does clear it. Bundle switch and built-up-area entry also
+  advance the context generation so a result admitted against the prior base
+  context cannot publish or persist under the new one.
 - Represents camera assertions as structural typed actions
   (`posted_maximum(value)`, `zone_start(value)`, `city_entry(country)`,
   `pedestrian_zone_start`, `temporary_maximum(value, condition)`, and the
@@ -528,6 +532,7 @@ The camera assertion state transitions are:
 | Different way, continuous matcher transition, shared still-eligible original route group | Retain and intersect the eligible groups | Camera |
 | Bounded temporary no-match | Retain the active assertion; hold a newly passed sign pending coherent context | Existing source |
 | Stabilized unrelated way, relation-gap bound exceeded, or traversal reversal | Clear active assertion and discard any incompatible pending passage | Local correction, then bundle |
+| Bundle matcher transitions from outside to inside a built-up area | Invalidate active and in-flight camera evidence at the statutory boundary | Local correction, then bundle |
 | Committed applicable end sign with resolved baseline | Replace/resolve the ended rule; do not treat it as `nil` camera evidence | Camera |
 | Committed end sign with no safe baseline | Terminate the older camera restriction and mask a potentially stale base limit for this scope | None/unknown, with visible camera-end evidence |
 | TSR switched off, drive stopped, or bundle changed | Invalidate the generation; cancel tracks/pending work; clear | Local correction, then bundle |
@@ -612,7 +617,7 @@ become dark red accidentally. Camera-derived `walk`,
 
 ### Shared lifecycle and module independence
 
-Drive start creates one drive-session identity, opens the shared camera, and activates only the consumers the user has enabled. Drive stop first invalidates the TSR generation and stops new frame delivery, then gives each active consumer a bounded finalization step: Dashcam closes its local segment, any already-running TSR compute may finish but its result is dropped, and Panoramax closes its batch as `awaiting_review`. The camera is released after local finalization.
+Drive start creates one drive-session identity, opens the shared camera, and activates only the consumers the user has enabled. Drive stop first invalidates the TSR generation and stops new frame delivery, then gives each active consumer a bounded finalization step: Dashcam closes its local segment, any already-running TSR compute may finish but its result is dropped, and Panoramax closes its batch as `awaiting_review`. The camera is released after local finalization. When the independent-TSR option is enabled, the same coordinator then opens a fresh TSR-only capture identity without Dashcam video or a Panoramax batch; starting a recorded drive closes that session before opening the full recording configuration.
 
 Feature state remains independent inside that shared lifecycle. A denied Panoramax queue write must not stop TSR or corrupt Dashcam output; a TSR thermal downshift must not change Panoramax cadence; Dashcam storage exhaustion must not start an upload or disable map lookup. Consumer errors are surfaced separately, while a fatal shared-camera error is reported once to all enabled consumers.
 

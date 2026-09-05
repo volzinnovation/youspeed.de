@@ -48,6 +48,8 @@
 "drive_recorder.settings.dashcam_description" = "Slaat de ritvideo lokaal op deze iPhone op.";
 "drive_recorder.settings.tsr" = "Snelheidsborden herkennen";
 "drive_recorder.settings.tsr_description" = "Analyseert camerabeelden lokaal zodra een gevalideerd landenmodel is geïnstalleerd. Een cameraschatting vervangt nooit stilzwijgend kaartgegevens.";
+"drive_recorder.settings.tsr_independent" = "Herkennen zonder opname";
+"drive_recorder.settings.tsr_independent_description" = "Houdt verkeersbordherkenning via de camera actief zonder een Dashcam-rit op te nemen.";
 "drive_recorder.settings.tsr_feedback" = "Herkende snelheidslimieten";
 "drive_recorder.settings.tsr_feedback_description" = "Geeft de gekozen melding eenmaal voor elk bevestigd snelheidsbord.";
 "drive_recorder.settings.tsr_feedback_spoken" = "Uitspreken";

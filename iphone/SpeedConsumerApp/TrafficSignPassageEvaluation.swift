@@ -1674,6 +1674,14 @@ struct TrafficSignCoordinate: Codable, Equatable, Sendable {
     let longitude: Double
 }
 
+enum TrafficSignBundleContextPolicy {
+    /// A bundle-confirmed entry into a built-up area starts a new statutory
+    /// speed context. Camera evidence captured outside that area ends there.
+    static func enteredCity(previousInsideCity: Bool?, currentInsideCity: Bool?) -> Bool {
+        previousInsideCity == false && currentInsideCity == true
+    }
+}
+
 private struct TrafficSignRuleState: Equatable, Sendable {
     var enclosingBase: EffectiveSpeedLimitState?
     var city: EffectiveSpeedLimitValue?

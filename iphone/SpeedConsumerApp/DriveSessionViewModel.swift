@@ -592,6 +592,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             handleTrafficSignRecognitionSettingChange()
         }
     }
+    @Published var trafficSignRecognitionIndependentEnabled: Bool {
+        didSet {
+            guard trafficSignRecognitionIndependentEnabled != oldValue else { return }
+            UserDefaults.standard.set(
+                trafficSignRecognitionIndependentEnabled,
+                forKey: Self.trafficSignRecognitionIndependentEnabledDefaultsKey
+            )
+            reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+        }
+    }
     @Published var trafficSignFeedbackMode: TrafficSignFeedbackMode {
         didSet {
             guard trafficSignFeedbackMode != oldValue else { return }
@@ -752,6 +762,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var panoramaxQueueStore: PanoramaxQueueStore?
     private var speedLimitService: V3SpeedLimitService?
     private var driveCaptureCoordinator: DriveCaptureCoordinator?
+    private var driveRecorderStartPending = false
+    private var previousDriveCaptureState: DriveRecorderState = .disabled
     private let trafficSignFrameState = TrafficSignAtomicFrameState()
     private var trafficSignRuntime: TrafficSignRuntime?
     private var trafficSignRuntimeLoadTask: Task<Void, Never>?
@@ -851,6 +863,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
     private static let dashcamRecordingEnabledDefaultsKey = "youspeed.drive_recorder.dashcam_enabled"
     private static let trafficSignRecognitionEnabledDefaultsKey = "youspeed.drive_recorder.tsr_enabled"
+    private static let trafficSignRecognitionIndependentEnabledDefaultsKey =
+        "youspeed.drive_recorder.tsr_independent_enabled"
     private static let trafficSignFeedbackModeDefaultsKey = "youspeed.drive_recorder.tsr_feedback_mode"
     // The legacy key represented whether the old Panoramax-only recorder was
     // running and was written back to false whenever recording stopped. It is
@@ -1288,6 +1302,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
         let storedDashcamEnabled = UserDefaults.standard.object(forKey: Self.dashcamRecordingEnabledDefaultsKey) as? Bool
         let storedTSREnabled = UserDefaults.standard.object(forKey: Self.trafficSignRecognitionEnabledDefaultsKey) as? Bool
+        let storedTSRIndependentEnabled = UserDefaults.standard.object(
+            forKey: Self.trafficSignRecognitionIndependentEnabledDefaultsKey
+        ) as? Bool
         let storedTSRFeedbackMode = UserDefaults.standard
             .string(forKey: Self.trafficSignFeedbackModeDefaultsKey)
             .flatMap(TrafficSignFeedbackMode.init(rawValue:))
@@ -1316,6 +1333,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // Keep on-device TSR opt-in; its German bootstrap model ships with the
         // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
+        trafficSignRecognitionIndependentEnabled = storedTSRIndependentEnabled ?? false
         trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
         panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
         panoramaxTriggerMode = storedTriggerMode
@@ -1401,7 +1419,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var canProcessPanoramaxUploads: Bool {
-        DriveRecorderPolicy.canProcessPanoramaxUploads(for: driveRecorderState)
+        DriveRecorderPolicy.canProcessPanoramaxUploads(
+            for: driveCaptureCoordinator?.state ?? driveRecorderState
+        )
     }
 
     var canToggleDriveRecorderModules: Bool {
@@ -1409,11 +1429,29 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func toggleDriveRecorder() {
+        if driveRecorderStartPending {
+            driveRecorderStartPending = false
+            syncDriveRecorderState()
+            return
+        }
+        if let driveCaptureCoordinator,
+           driveCaptureCoordinator.isStandaloneTrafficSignRecognitionSession,
+           driveCaptureCoordinator.state == .preparing
+                || driveCaptureCoordinator.state == .recording {
+            driveRecorderStartPending = true
+            syncDriveRecorderState()
+            driveCaptureCoordinator.stop()
+            return
+        }
         if isDriveRecorderActive {
             guard driveRecorderState != .stopping else { return }
             driveCaptureCoordinator?.stop()
             return
         }
+        startDriveRecorder()
+    }
+
+    private func startDriveRecorder() {
         guard !(panoramaxCaptureEnabled && panoramaxQueueMaintenanceInProgress) else {
             panoramaxLastCaptureDetail = "Panoramax-Speicher wird vorbereitet"
             return
@@ -1433,7 +1471,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveCaptureCoordinator?.start(
             dashcamEnabled: configuration.dashcamEnabled,
             trafficSignRecognitionEnabled: configuration.trafficSignRecognitionEnabled,
-            panoramaxEnabled: configuration.panoramaxEnabled
+            panoramaxEnabled: configuration.panoramaxEnabled,
+            purpose: .driveRecording
         )
     }
 
@@ -1474,6 +1513,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignApplicationIsActive = isActive
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
+        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: isActive)
     }
 
     private var trafficSignProcessingIsEnabled: Bool {
@@ -1484,7 +1524,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignMutationIsEnabled: Bool {
         trafficSignRecognitionEnabled
             && isDriving
-            && driveRecorderState == .recording
+            && driveCaptureCoordinator?.state == .recording
             && driveRecorderTrafficSignRecognitionActive
     }
 
@@ -1507,12 +1547,66 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignContextGeneration &+= 1
         trafficSignFeedbackGate.reset()
         trafficSignPassageUpdate = .idle
-        trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
+        _ = trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
         trafficSignTraversalTracker.reset()
         trafficSignRecognitionActiveOverride = nil
         updateTrafficSignWriteGate()
         publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
         refreshTrafficSignFrameSnapshot()
+        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
+    }
+
+    private func reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: Bool = false) {
+        guard let driveCaptureCoordinator else { return }
+        let shouldRun = DriveRecorderPolicy.shouldRunStandaloneTrafficSignRecognition(
+            recognitionEnabled: trafficSignRecognitionEnabled,
+            independentRecognitionEnabled: trafficSignRecognitionIndependentEnabled,
+            runtimeReady: trafficSignRuntime != nil,
+            isDriving: isDriving,
+            applicationIsActive: trafficSignApplicationIsActive
+        )
+
+        if driveCaptureCoordinator.isStandaloneTrafficSignRecognitionSession {
+            if shouldRun {
+                if driveCaptureCoordinator.state == .recording,
+                   !driveCaptureCoordinator.isTrafficSignRecognitionModuleActive {
+                    _ = driveCaptureCoordinator
+                        .setTrafficSignRecognitionEnabledDuringRecording(true)
+                } else if allowTerminalRetry,
+                          driveCaptureCoordinator.state == .denied
+                            || driveCaptureCoordinator.state == .unavailable
+                            || driveCaptureCoordinator.state == .failed {
+                    driveCaptureCoordinator.start(
+                        dashcamEnabled: false,
+                        trafficSignRecognitionEnabled: true,
+                        panoramaxEnabled: false,
+                        purpose: .standaloneTrafficSignRecognition
+                    )
+                }
+            } else if driveCaptureCoordinator.state == .preparing
+                        || driveCaptureCoordinator.state == .recording {
+                driveCaptureCoordinator.stop()
+            }
+            return
+        }
+
+        guard shouldRun, !driveRecorderStartPending else { return }
+        let canStart: Bool
+        switch driveCaptureCoordinator.state {
+        case .disabled:
+            canStart = true
+        case .denied, .unavailable, .failed:
+            canStart = allowTerminalRetry
+        case .preparing, .recording, .stopping:
+            canStart = false
+        }
+        guard canStart else { return }
+        driveCaptureCoordinator.start(
+            dashcamEnabled: false,
+            trafficSignRecognitionEnabled: true,
+            panoramaxEnabled: false,
+            purpose: .standaloneTrafficSignRecognition
+        )
     }
 
     private func currentBaseEffectiveSpeedLimitState() -> EffectiveSpeedLimitState {
@@ -1670,6 +1764,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.trafficSignRecognitionState = .noRecognition
                 }
                 self.syncDriveRecorderState()
+                self.reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
             case .unavailable(let reason):
                 self.handleTrafficSignRuntimeUnavailability(reason)
             }
@@ -1831,6 +1926,33 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } else {
             trafficSignRecognitionState = .noRecognition
         }
+    }
+
+    private func invalidateTrafficSignStateForBundledCityEntry(timestamp: Date) {
+        let base = currentBaseEffectiveSpeedLimitState()
+        trafficSignContextGeneration &+= 1
+        trafficSignFrameContextIsCurrent = false
+        latestTrafficSignDetectionContext = nil
+        trafficSignFrameState.update(nil)
+        trafficSignOverridePolicy.clear()
+        trafficSignTraversalTracker.reset()
+        _ = trafficSignEffectiveLimitResolver.clear(base: base)
+        trafficSignPassageUpdate = .idle
+        trafficSignRecognitionActiveOverride = nil
+        trafficSignRecognitionLastEvent = nil
+        trafficSignFeedbackGate.reset()
+        updateTrafficSignWriteGate()
+        if !trafficSignRecognitionEnabled {
+            trafficSignRecognitionState = .disabled
+        } else if trafficSignRuntime == nil {
+            trafficSignRecognitionState = .unavailable
+        } else {
+            trafficSignRecognitionState = .noRecognition
+        }
+        appendTSRLog(
+            "assertion_invalidated reason=bundle_city_entry base_source=\(base.source.rawValue) base_kmh=\(base.value.speedKmh.map(String.init) ?? "non_numeric")",
+            timestamp: timestamp
+        )
     }
 
     private func invalidateTrafficSignOverrideIfBundleWillChange(
@@ -2284,11 +2406,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func syncDriveRecorderState() {
         let previousState = driveRecorderState
+        let previousCaptureState = previousDriveCaptureState
         let previousDashcamURL = dashcamFileURL
         let previousDashcamActive = driveRecorderDashcamActive
         let previousTrafficSignActive = driveRecorderTrafficSignRecognitionActive
-        driveRecorderState = driveCaptureCoordinator?.state ?? .failed
-        driveRecorderStartedAt = driveCaptureCoordinator?.startedAt
+        let captureState = driveCaptureCoordinator?.state ?? .failed
+        let capturePurpose = driveCaptureCoordinator?.sessionPurpose
+        previousDriveCaptureState = captureState
+        driveRecorderState = DriveRecorderPolicy.presentedRecorderState(
+            captureState: captureState,
+            purpose: capturePurpose,
+            driveStartPending: driveRecorderStartPending
+        )
+        driveRecorderStartedAt = capturePurpose == .driveRecording
+            ? driveCaptureCoordinator?.startedAt
+            : nil
         dashcamFileURL = driveCaptureCoordinator?.dashcamFileURL
         driveRecorderDashcamActive = driveCaptureCoordinator?.isDashcamModuleActive ?? false
         driveRecorderDashcamTransitioning = driveCaptureCoordinator?.dashcamTransitionInFlight ?? false
@@ -2299,7 +2431,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // The model may finish loading while camera permission/session setup is
         // still in progress. Honor the persisted chip selection as soon as the
         // coordinator reaches recording instead of requiring a second tap.
-        if driveRecorderState == .recording,
+        if captureState == .recording,
            trafficSignRecognitionEnabled,
            trafficSignRuntime != nil,
            !driveRecorderTrafficSignRecognitionActive,
@@ -2310,7 +2442,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
         if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
-            || (previousState == .recording) != (driveRecorderState == .recording) {
+            || (previousCaptureState == .recording) != (captureState == .recording) {
             trafficSignRecorderGeneration &+= 1
             trafficSignFeedbackGate.reset()
             lastTrafficSignConsoleLogSignature = nil
@@ -2329,7 +2461,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             trafficSignRecognitionState = .noRecognition
         } else if trafficSignRuntime == nil {
             trafficSignRecognitionState = .unavailable
-        } else if driveRecorderState == .recording,
+        } else if captureState == .recording,
                   !driveRecorderTrafficSignRecognitionActive {
             trafficSignRecognitionState = .unavailable
             if trafficSignRecognitionUnavailableDetail.isEmpty {
@@ -2347,8 +2479,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if previousState != driveRecorderState, canProcessPanoramaxUploads {
             refreshPanoramaxBatches()
         }
-        let trafficSignSessionEnded = previousState == .recording
-            && driveRecorderState != .recording
+        let trafficSignSessionEnded = previousCaptureState == .recording
+            && captureState != .recording
         let trafficSignModuleBecameInactive = previousTrafficSignActive
             && !driveRecorderTrafficSignRecognitionActive
         if trafficSignSessionEnded
@@ -2366,7 +2498,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 trafficSignRecognitionState = .disabled
             } else if trafficSignRuntime == nil {
                 trafficSignRecognitionState = .unavailable
-            } else if driveRecorderState == .recording,
+            } else if captureState == .recording,
                       !driveRecorderTrafficSignRecognitionActive {
                 // A selected runtime can still be rejected by the concrete
                 // multi-output capture graph. Do not present that as an active
@@ -2381,6 +2513,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             || previousDashcamActive != driveRecorderDashcamActive {
             refreshDashcamRecordings()
         }
+        if driveRecorderStartPending,
+           captureState != .preparing,
+           captureState != .recording,
+           captureState != .stopping {
+            driveRecorderStartPending = false
+            startDriveRecorder()
+            return
+        }
+        reconcileStandaloneTrafficSignRecognition()
     }
 
     private func restoreBaseSpeedLimitPresentation() {
@@ -4009,6 +4150,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             driveStatus = "location_denied"
             lastError = "Location permission denied"
         }
+        reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
     }
 
     func stopDriving() {
@@ -5628,7 +5770,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         localOverrideValue: localOverrideValue,
                         travelDirection: travelDirection
                     )
-                    self.currentTrafficSignSourceSignature = sourceSignature
                     self.currentBundledSpeedLimitKmh = result.speedLimitKmh
                     self.currentLocalCorrectionSpeedKmh = localOverride
                     self.currentLocalCorrectionValue = localOverrideValue
@@ -5644,6 +5785,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.currentBaseSpeedLimitDisplayText = baseSpeedLimitDisplayText
                     self.currentBundledUnlimitedSpeedLimitActive = bundledUnlimitedMatch
                     self.currentBaseUnlimitedSpeedLimitActive = baseUnlimitedMatch
+                    if TrafficSignBundleContextPolicy.enteredCity(
+                        previousInsideCity: self.lastLookupInsideCity,
+                        currentInsideCity: result.insideCity
+                    ) {
+                        self.invalidateTrafficSignStateForBundledCityEntry(
+                            timestamp: location.timestamp
+                        )
+                    }
+                    self.currentTrafficSignSourceSignature = sourceSignature
                     let nextTrafficSignContext: TrafficSignDetectionContext?
                     if let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines),
                        !wayID.isEmpty {

@@ -93,7 +93,7 @@ struct DriveRecorderMainControlPresentation: Equatable {
     }
 
     var usesRedIcon: Bool {
-        action == .stop
+        true
     }
 
     var accessibilityLocalizationKey: String {
@@ -140,6 +140,7 @@ struct MainView: View {
     @State private var showingLocalRecordings = false
     @State private var showingPanoramaxGallery = false
     @State private var showingTrafficSignDetails = false
+    @AppStorage("youspeed.debug.show_tsr_badge") private var showsTrafficSignRecognitionDebugBadge = false
     // Keep the user's selection independent from transient recorder
     // availability. Published recorder fields arrive one after another; if a
     // short unavailable state overwrites this preference, the preview flashes
@@ -336,7 +337,9 @@ struct MainView: View {
 
             Spacer()
 
-            trafficSignRecognitionBadge
+            if showsTrafficSignRecognitionDebugBadge {
+                trafficSignRecognitionBadge
+            }
         }
         .foregroundStyle(primaryForegroundColor)
     }
@@ -2755,6 +2758,15 @@ private struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
+                Toggle(
+                    NSLocalizedString("drive_recorder.settings.tsr_independent", comment: ""),
+                    isOn: $viewModel.trafficSignRecognitionIndependentEnabled
+                )
+                .disabled(!viewModel.trafficSignRecognitionEnabled)
+                Text(NSLocalizedString("drive_recorder.settings.tsr_independent_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
                 Picker(
                     NSLocalizedString("drive_recorder.settings.tsr_feedback", comment: ""),
                     selection: $viewModel.trafficSignFeedbackMode
@@ -3214,6 +3226,7 @@ private struct DebugInformationView: View {
     @State private var showingOSMBrowser = false
     @State private var shareItem: LocalDebugShareItem?
     @State private var showingClearDrivingLogConfirm = false
+    @AppStorage("youspeed.debug.show_tsr_badge") private var showsTrafficSignRecognitionDebugBadge = false
 
     private struct LocalDebugShareItem: Identifiable {
         let id = UUID()
@@ -3222,6 +3235,10 @@ private struct DebugInformationView: View {
 
     var body: some View {
         List {
+            Section("Anzeige") {
+                Toggle("TSR-Kamerabox anzeigen", isOn: $showsTrafficSignRecognitionDebugBadge)
+            }
+
             Section("Letzter Fix") {
                 if hasUsableFix {
                     DebugKeyValueTable(rows: fixRows)

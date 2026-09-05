@@ -16,6 +16,11 @@ enum DriveRecorderState: Equatable {
     case failed
 }
 
+enum DriveCaptureSessionPurpose: Equatable {
+    case driveRecording
+    case standaloneTrafficSignRecognition
+}
+
 enum TrafficSignRecognitionState: Equatable {
     case disabled
     case unavailable
@@ -44,6 +49,34 @@ enum DriveRecorderPolicy {
             trafficSignRecognitionEnabled: trafficSignRecognitionEnabled,
             panoramaxEnabled: panoramaxEnabled
         )
+    }
+
+    static func shouldRunStandaloneTrafficSignRecognition(
+        recognitionEnabled: Bool,
+        independentRecognitionEnabled: Bool,
+        runtimeReady: Bool,
+        isDriving: Bool,
+        applicationIsActive: Bool
+    ) -> Bool {
+        recognitionEnabled
+            && independentRecognitionEnabled
+            && runtimeReady
+            && isDriving
+            && applicationIsActive
+    }
+
+    static func presentedRecorderState(
+        captureState: DriveRecorderState,
+        purpose: DriveCaptureSessionPurpose?,
+        driveStartPending: Bool
+    ) -> DriveRecorderState {
+        if driveStartPending {
+            return .preparing
+        }
+        if purpose == .standaloneTrafficSignRecognition {
+            return .disabled
+        }
+        return captureState
     }
 
     static func shouldEnablePanoramaxFallback(
@@ -234,6 +267,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     nonisolated(unsafe) let session = AVCaptureSession()
 
     @Published private(set) var state: DriveRecorderState = .disabled
+    @Published private(set) var sessionPurpose: DriveCaptureSessionPurpose? = nil
     @Published private(set) var startedAt: Date?
     @Published private(set) var dashcamFileURL: URL?
     @Published private(set) var dashcamTransitionInFlight = false
@@ -282,6 +316,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
     var isTrafficSignRecognitionModuleActive: Bool { activeTSREnabled }
+    var isStandaloneTrafficSignRecognitionSession: Bool {
+        sessionPurpose == .standaloneTrafficSignRecognition
+    }
     var activeCaptureSessionID: String? { captureSessionID }
     var hasTrafficSignRecognitionConsumer: Bool { frameDispatcher.hasConsumer }
     var isDashcamOutputAvailable: Bool { movieOutputAvailable }
@@ -361,7 +398,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     func start(
         dashcamEnabled: Bool,
         trafficSignRecognitionEnabled: Bool,
-        panoramaxEnabled: Bool
+        panoramaxEnabled: Bool,
+        purpose: DriveCaptureSessionPurpose = .driveRecording
     ) {
         guard state != .preparing, state != .recording, state != .stopping else {
             return
@@ -381,6 +419,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         let requestedGeneration = generation
         let captureSessionID = UUID().uuidString
         self.captureSessionID = captureSessionID
+        sessionPurpose = purpose
         state = .preparing
         startedAt = nil
         dashcamFileURL = nil
@@ -403,8 +442,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             guard let self else { return }
             guard await AVCaptureDevice.requestAccess(for: .video) else {
                 guard generation == requestedGeneration else { return }
+                resetActiveModulesAfterFailure()
                 state = .denied
-                self.captureSessionID = nil
                 lastCaptureDetail = "Kamerazugriff verweigert"
                 notifyChange()
                 return
@@ -1015,6 +1054,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
         captureSessionID = nil
+        sessionPurpose = nil
         latestTrafficSignAnnotationDraft = nil
         lastCaptureDetail = stopResultDetail ?? (capturedImageCount > 0
             ? "\(capturedImageCount) Panoramax-Bilder fuer spaeter gespeichert"
