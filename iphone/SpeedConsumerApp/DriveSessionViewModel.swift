@@ -202,6 +202,7 @@ enum AppScreenshotState: String {
     case warnLevel1 = "warn-level-1"
     case warnLevel2 = "warn-level-2"
     case warnLevel3 = "warn-level-3"
+    case cameraLimitActive = "camera-limit-active"
     case pedestrianZone = "pedestrian-zone"
     case autobahnUnlimitedAbove130 = "autobahn-unlimited-above-130"
 
@@ -290,6 +291,21 @@ enum AppScreenshotState: String {
                 latitude: 49.0102,
                 longitude: 8.4266,
                 gpsHorizontalAccuracyM: 6,
+                gpsSignalBars: 4
+            )
+        case .cameraLimitActive:
+            return Fixture(
+                currentSpeedKmh: 0,
+                speedLimitKmh: 30,
+                speedLimitDisplayText: nil,
+                isUnlimitedSpeedLimitActive: false,
+                streetName: "Lindenweg",
+                cityName: "Bad Herrenalb",
+                wayID: "bad-herrenalb-camera-limit-active",
+                insideCity: true,
+                latitude: 48.7966,
+                longitude: 8.4361,
+                gpsHorizontalAccuracyM: 5,
                 gpsSignalBars: 4
             )
         case .pedestrianZone:
@@ -395,8 +411,8 @@ enum MatcherDebugProfile: String, CaseIterable, Identifiable {
         }
     }
 
-    static let defaultProfile: MatcherDebugProfile = .m2
-    static let forcedProfileVersion: Int = 7
+    static let defaultProfile: MatcherDebugProfile = .m7
+    static let forcedProfileVersion: Int = 8
 
     static func resolveInitialProfile(storedRawValue: String?, forcedVersion: Int) -> MatcherDebugProfile {
         if forcedVersion < forcedProfileVersion {
@@ -1516,8 +1532,19 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func publishEffectiveSpeedLimitState(_ state: EffectiveSpeedLimitState) {
-        effectiveSpeedLimitState = state
-        switch state.value {
+        let presentationState: EffectiveSpeedLimitState
+        if appScreenshotState == .cameraLimitActive {
+            presentationState = EffectiveSpeedLimitState(
+                value: .numeric(30),
+                source: .camera,
+                presentationReason: "screenshot_camera_limit_active",
+                hasCameraEvidenceMarker: true
+            )
+        } else {
+            presentationState = state
+        }
+        effectiveSpeedLimitState = presentationState
+        switch presentationState.value {
         case .numeric(let speed):
             speedLimitKmh = speed
             speedLimitDisplayText = nil
@@ -1850,9 +1877,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignPassageUpdate = emission.passageUpdate
         refreshTrafficSignFrameSnapshot()
 
-        // The checked-in bootstrap pack remains a fully inert shadow lane.
-        guard !TrafficSignRuntimeDeploymentPolicy.isShadowOnly(packId: emission.event.packId),
-              case .committed(let passage) = emission.passageUpdate,
+        guard case .committed(let passage) = emission.passageUpdate,
               passage.sessionGeneration == trafficSignRecorderGeneration,
               passage.contextGeneration == trafficSignContextGeneration,
               let frameSpeedKmh = emission.frameSpeedKmh,
@@ -1978,11 +2003,33 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
         let event = emission.event
         let context = event.roadContext
-        let captureID = emission.shadowEventV2?.diagnosticCapture.captureId
+        let shadowEvent = emission.shadowEventV2
+        let captureID = shadowEvent?.diagnosticCapture.captureId
+        let shadowSpeedKmh = shadowEvent?.assemblies.lazy.compactMap { assembly in
+            switch assembly.primary.semantic.kind {
+            case .maximumSpeed, .zoneStart:
+                return assembly.primary.semantic.value
+            case .maximumSpeedEnd, .zoneEnd, .restrictionEnd, .unknown:
+                return nil
+            }
+        }.first
+        let baseSpeedKmh = currentBaseEffectiveSpeedLimitState().value.speedKmh
+        let shadowComparison: String
+        if shadowEvent?.state == .confirmed,
+           shadowEvent?.roadContext?.travelDirection != .unknown,
+           let shadowSpeedKmh,
+           let baseSpeedKmh {
+            shadowComparison = shadowSpeedKmh == baseSpeedKmh ? "match" : "differs"
+        } else {
+            shadowComparison = "not_evaluable"
+        }
         let logSignature = [
             event.state.rawValue,
             event.candidate?.value.map(String.init) ?? "none",
             event.candidate?.trackId ?? "none",
+            shadowEvent?.state.rawValue ?? "none",
+            shadowSpeedKmh.map(String.init) ?? "none",
+            shadowComparison,
             captureID ?? "none",
         ].joined(separator: ":")
         let now = Date()
@@ -2022,7 +2069,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             imageReference = "none"
         }
         let latency = String(format: "%.1f", event.latencyMs)
-        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
+        let shadowState = shadowEvent?.state.rawValue ?? "none"
+        let shadowSpeed = shadowSpeedKmh.map(String.init) ?? "none"
+        let baseSpeed = baseSpeedKmh.map(String.init) ?? "none"
+        let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) shadow_state=\(shadowState) shadow_speed_kmh=\(shadowSpeed) base_speed_kmh=\(baseSpeed) shadow_comparison=\(shadowComparison) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
         Self.tsrLogger.info("\(line, privacy: .public)")
         appendTSRLogLine(line)
     }
@@ -3724,6 +3774,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         limitCityName = fixture.cityName
         limitCityPlaceName = fixture.cityName
         limitCityDistrictName = nil
+        if screenshotState == .cameraLimitActive {
+            limitCityDistrictName = "Landkreis Calw"
+        }
         lastError = ""
         currentLatitude = fixture.latitude
         currentLongitude = fixture.longitude
@@ -3746,6 +3799,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         downloadedBundleCountByRegion = [:]
         downloadedBundleLatestVersionByRegion = [:]
         expectedBundleBytesByRegion = [:]
+        if screenshotState == .cameraLimitActive {
+            publishEffectiveSpeedLimitState(
+                EffectiveSpeedLimitState(
+                    value: .numeric(30),
+                    source: .camera,
+                    presentationReason: "screenshot_camera_limit_active",
+                    hasCameraEvidenceMarker: true
+                )
+            )
+        }
     }
 
     private func beginSyncBackgroundTask() {
@@ -5136,7 +5199,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    nonisolated private static func trafficSignTravelDirection(
+    nonisolated static func trafficSignTravelDirection(
         for result: SpeedLimitResult,
         headingDegrees: Double?
     ) -> TrafficSignTravelDirection {
@@ -5144,8 +5207,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               headingDegrees.isFinite,
               headingDegrees >= 0,
               headingDegrees < 360,
-              let wayID = result.wayID,
-              let hypothesis = result.matchHypotheses.first(where: { $0.wayID == wayID }),
+              let rawWayID = result.wayID,
+              !rawWayID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let hypothesis = result.matchHypotheses.first(where: {
+                  $0.wayID == rawWayID.trimmingCharacters(in: .whitespacesAndNewlines)
+              }),
               let startLat = hypothesis.startLat,
               let startLon = hypothesis.startLon,
               let endLat = hypothesis.endLat,
@@ -5161,6 +5227,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let clockwise = (headingDegrees - wayHeading + 360).truncatingRemainder(dividingBy: 360)
         let difference = min(clockwise, 360 - clockwise)
         return difference <= 90 ? .forward : .reverse
+    }
+
+    nonisolated static func trafficSignHeading(
+        reportedCourseDegrees: Double?,
+        previousCoordinate: CLLocationCoordinate2D?,
+        currentCoordinate: CLLocationCoordinate2D
+    ) -> Double? {
+        if let reportedCourseDegrees,
+           reportedCourseDegrees.isFinite,
+           reportedCourseDegrees >= 0,
+           reportedCourseDegrees < 360 {
+            return reportedCourseDegrees
+        }
+        guard let previousCoordinate else { return nil }
+        return initialBearingDegrees(
+            startLatitude: previousCoordinate.latitude,
+            startLongitude: previousCoordinate.longitude,
+            endLatitude: currentCoordinate.latitude,
+            endLongitude: currentCoordinate.longitude
+        )
     }
 
     nonisolated private static func initialBearingDegrees(
@@ -5362,7 +5448,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func updateSpeedLimit(for location: CLLocation, fixID: Int, speedKmh: Double) async {
+    private func updateSpeedLimit(
+        for location: CLLocation,
+        fixID: Int,
+        speedKmh: Double,
+        headingDegrees: Double?,
+        headingAccuracyDegrees: Double?
+    ) async {
         let fixTimestamp = Self.lookupTimestampFormatter.string(from: location.timestamp)
         let fixTimestampISO = Self.isoFormatter.string(from: location.timestamp)
         let lat = location.coordinate.latitude
@@ -5372,9 +5464,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         gpsHorizontalAccuracyM = hAcc >= 0 ? hAcc : nil
         gpsSignalBars = Self.gpsSignalBars(horizontalAccuracyM: hAcc)
         let rawCourse = location.course
-        let course = (0.0 ... 360.0).contains(rawCourse) ? rawCourse : nil
-        let rawCourseAccuracy = location.courseAccuracy
-        let courseAccuracy = rawCourseAccuracy >= 0.0 ? rawCourseAccuracy : nil
+        let course = headingDegrees
+        let courseAccuracy = headingAccuracyDegrees
 
         await routeDatabaseForCoordinate(lat: lat, lon: lon, fixTimestamp: fixTimestamp, fixID: fixID)
 
@@ -6389,6 +6480,19 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
         }
         for location in locations {
             let displaySpeedKmh = updateCurrentSpeed(from: location)
+            let previousLocation = recentSpeedSampleLocations.dropLast().last(where: {
+                location.timestamp > $0.timestamp && location.distance(from: $0) > 0.1
+            })
+            let headingDegrees = Self.trafficSignHeading(
+                reportedCourseDegrees: location.course,
+                previousCoordinate: previousLocation?.coordinate,
+                currentCoordinate: location.coordinate
+            )
+            let headingAccuracyDegrees = location.course >= 0
+                && location.course < 360
+                && location.courseAccuracy >= 0
+                ? location.courseAccuracy
+                : nil
             currentLatitude = location.coordinate.latitude
             currentLongitude = location.coordinate.longitude
             driveCaptureCoordinator?.ingest(location: location)
@@ -6400,7 +6504,13 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
                 guard let self else {
                     return
                 }
-                await updateSpeedLimit(for: location, fixID: fixID, speedKmh: displaySpeedKmh)
+                await updateSpeedLimit(
+                    for: location,
+                    fixID: fixID,
+                    speedKmh: displaySpeedKmh,
+                    headingDegrees: headingDegrees,
+                    headingAccuracyDegrees: headingAccuracyDegrees
+                )
             }
         }
     }

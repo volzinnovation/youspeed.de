@@ -850,10 +850,9 @@ struct TrafficSignPassageFinalizer: Sendable {
         negativeForQueuedTrack: Bool = true
     ) -> TrafficSignPassageFinalizerUpdate {
         guard event.source == .liveFrame else { return .idle }
-        // This eligibility bit is frozen with the analyzed frame and combines
-        // verified calibrated-pack output with active-drive motion. Ineligible
-        // frames may still feed shadow/UI inference, but can neither arm a
-        // passage nor count as disappearance evidence.
+        // This legacy-named eligibility bit is frozen with the analyzed frame
+        // and represents active-drive motion. Calibration remains evidence in
+        // the event, but does not disable live testing with a raw-score pack.
         guard calibratedActivationEligible else { return currentStateUpdate }
         pruneCommittedSignSuppression(at: event.frameTimestampUtc)
 
@@ -867,17 +866,20 @@ struct TrafficSignPassageFinalizer: Sendable {
                 // supported adjacent speed action advances passage loss.
                 return currentStateUpdate
             }
-            guard let calibratedConfidence = candidate.calibratedConfidence,
-                  calibratedConfidence.isFinite else { return currentStateUpdate }
+            let activationConfidence = candidate.calibratedConfidence ?? candidate.rawScore
+            guard activationConfidence.isFinite,
+                  (0...1).contains(activationConfidence) else {
+                return currentStateUpdate
+            }
             guard !event.modelComponents.isEmpty,
                   event.modelComponents.allSatisfy(\.isValid) else {
                 return currentStateUpdate
             }
-            guard Self.validConfidence(candidate.detectorRawScore),
-                  Self.validConfidence(candidate.detectorCalibratedConfidence),
-                  Self.validConfidence(candidate.classifierRawScore),
-                  Self.validConfidence(candidate.classifierCalibratedConfidence),
-                  Self.validConfidence(candidate.assemblyConfidence),
+            guard Self.validOptionalConfidence(candidate.detectorRawScore),
+                  Self.validOptionalConfidence(candidate.detectorCalibratedConfidence),
+                  Self.validOptionalConfidence(candidate.classifierRawScore),
+                  Self.validOptionalConfidence(candidate.classifierCalibratedConfidence),
+                  Self.validOptionalConfidence(candidate.assemblyConfidence),
                   Self.nonempty(candidate.assemblyId) != nil else {
                 return currentStateUpdate
             }
@@ -902,7 +904,7 @@ struct TrafficSignPassageFinalizer: Sendable {
                 }
                 return .idle
             }
-            let confidence = min(max(calibratedConfidence, 0), 1)
+            let confidence = activationConfidence
             if var current = track,
                current.id == trackID,
                current.action == action,
@@ -1375,9 +1377,8 @@ struct TrafficSignPassageFinalizer: Sendable {
         return normalized.isEmpty ? nil : normalized
     }
 
-    private static func validConfidence(_ value: Double?) -> Bool {
-        guard let value else { return false }
-        return value.isFinite && (0...1).contains(value)
+    private static func validOptionalConfidence(_ value: Double?) -> Bool {
+        value.map { $0.isFinite && (0...1).contains($0) } ?? true
     }
 
     private func pendingBoundsExceeded(
@@ -1756,17 +1757,6 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             resolution = action.isSpeedEnd
                 ? maskOrPreserveUnsafeEnd(action, reason: "camera_end_unverified_bundle")
                 : (false, .unknown, "camera_unverified_bundle_review_only")
-        } else if context.travelDirection == .unknown {
-            resolution = action.isSpeedEnd
-                ? maskOrPreserveUnsafeEnd(action, reason: "camera_end_unknown_direction")
-                : (false, .unknown, "camera_unknown_direction_review_only")
-        } else if !context.routeContinuityAvailable {
-            // Live packs are opt-in only on continuity-capable bundles. Older
-            // exact-way bundles remain useful for shadow QA but cannot make a
-            // driver-facing assertion.
-            resolution = action.isSpeedEnd
-                ? maskOrPreserveUnsafeEnd(action, reason: "camera_end_continuity_unavailable")
-                : (false, .unknown, "camera_route_continuity_unavailable")
         } else {
             resolution = reduce(action: action, base: base, conditional: conditional)
         }
@@ -1774,7 +1764,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         switch context.travelDirection {
         case .forward: directionScope = .forward
         case .reverse: directionScope = .backward
-        case .unknown: directionScope = .unknown
+        case .unknown: directionScope = .wayWide
         }
         let exportTagKey: String?
         switch directionScope {
@@ -1785,7 +1775,6 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         }
         let runtimeApplicable = resolution.applied
             && resolution.value != .unknown
-            && directionScope != .unknown
             && !conditional
             && !action.isTemporary
         let normalizedValue: String?

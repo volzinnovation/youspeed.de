@@ -243,14 +243,6 @@ enum TrafficSignModelPackDirectoryLoader {
         } else {
             shadowRuntimeConfigurationV2 = nil
         }
-        if manifest.packId == TrafficSignRuntimeDeploymentPolicy.bundledBootstrapShadowPackId,
-           shadowRuntimeConfigurationV2 == nil {
-            throw TrafficSignRuntimeUnavailability(
-                code: .manifestInvalid,
-                detail: "The bundled two-stage TSR pack is missing its v2 shadow runtime contract."
-            )
-        }
-
         return TrafficSignVerifiedModelPack(
             directoryURL: rootURL,
             manifest: manifest,
@@ -635,6 +627,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
     private let runtimeOutput: TrafficSignModelPackManifest.Calibration.RuntimeOutput
+    private let detectorOutputIsCalibrated: Bool
+    private let classifierOutputIsCalibrated: Bool
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
@@ -676,6 +670,10 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
         runtimeOutput = verifiedPack.manifest.calibration.runtimeOutput
+        detectorOutputIsCalibrated = verifiedPack.shadowRuntimeConfigurationV2?
+            .detector.calibrationPassed == true
+        classifierOutputIsCalibrated = verifiedPack.shadowRuntimeConfigurationV2?
+            .classifier.calibrationPassed == true
     }
 
     func detections(
@@ -865,9 +863,11 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             signRole: mapping?.signRole ?? .primarySign,
             restriction: mapping?.restriction,
             detectorRawScore: detectorConfidence,
-            detectorCalibratedConfidence: nil,
+            detectorCalibratedConfidence: detectorOutputIsCalibrated
+                ? detectorConfidence
+                : nil,
             classifierRawScore: Double(classification.confidence),
-            classifierCalibratedConfidence: runtimeOutput == .calibratedConfidence
+            classifierCalibratedConfidence: classifierOutputIsCalibrated
                 ? Double(classification.confidence)
                 : nil
         )
@@ -903,8 +903,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
     /// The bootstrap detector does not reliably propose the small white plate
     /// in the field-test frames. For a readable, nearby speed sign, inspect one
-    /// sign-height directly below it with Apple's on-device OCR. This stays a
-    /// shadow-only evidence path and does not broaden inference to the scene.
+    /// sign-height directly below it with Apple's on-device OCR. This remains
+    /// auxiliary evidence and does not broaden inference to the scene.
     private func recognizeExtentBelow(
         _ object: VNRecognizedObjectObservation,
         using handler: VNImageRequestHandler
@@ -1832,9 +1832,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         contextGeneration: item.snapshot.contextGeneration,
                         frameCoordinate: item.snapshot.coordinate,
                         frameSpeedKmh: item.snapshot.conditions.speedKmh,
-                        calibratedActivationEligible: self.verifiedPack.manifest.calibration.calibrated
-                            && self.verifiedPack.manifest.calibration.runtimeOutput == .calibratedConfidence
-                            && item.snapshot.conditions.speedKmh.map { $0.isFinite && $0 >= 1 } == true
+                        calibratedActivationEligible: item.snapshot.conditions.speedKmh.map {
+                            $0.isFinite && $0 >= 1
+                        } == true
                     )
                     // Shadow QA must never disable the existing recognition
                     // UI. The admission gate covers staging/JPEG/event sinks,
@@ -1892,16 +1892,16 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
               let shadowRuntimeV2,
               let roadContext = item.snapshot.context else { return nil }
         let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
-        let calibrationPassed = shadowRuntimeV2.configuration.classifier.calibrationPassed
         var diagnosticReasons: [TrafficSignDiagnosticReasonV2] = []
         if !result.assemblies.isEmpty {
             diagnosticReasons.append(.shadowCandidate)
             let hasQualifiedConfidence = result.assemblies.contains { assembly in
-                assembly.primary.classifierCalibratedConfidence.map {
-                    $0 >= shadowRuntimeV2.configuration.classifierConfirmedThreshold
-                } == true
+                let score = assembly.primary.classifierCalibratedConfidence
+                    ?? assembly.primary.classifierRawScore
+                return score.isFinite
+                    && score >= shadowRuntimeV2.configuration.classifierConfirmedThreshold
             }
-            if !calibrationPassed || !hasQualifiedConfidence {
+            if !hasQualifiedConfidence {
                 diagnosticReasons.append(.uncertainPrimary)
             }
         }

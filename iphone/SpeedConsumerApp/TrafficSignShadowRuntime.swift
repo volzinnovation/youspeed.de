@@ -189,6 +189,22 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
         let datasetSha256: String
         let passed: Bool
         let runtimeOutput: String
+        let expectedCalibrationError: Double?
+        let maximumExpectedCalibrationError: Double?
+        let evidencePath: String?
+        let evidenceSha256: String?
+
+        var isValid: Bool {
+            guard !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  datasetSha256.range(
+                    of: "^[a-f0-9]{64}$",
+                    options: .regularExpression
+                  ) != nil,
+                  ["raw_score", "calibrated_confidence"].contains(runtimeOutput) else {
+                return false
+            }
+            return true
+        }
     }
 
     struct Stage: Codable, Equatable, Sendable {
@@ -303,9 +319,7 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
             && stage.preprocessing.orientation == "normalize_exif_and_mirroring"
             && !stage.preprocessing.version.isEmpty
             && stage.calibration.datasetSha256 == artifact.calibrationDatasetSha256
-            && !stage.calibration.id.isEmpty
-            && stage.calibration.runtimeOutput == "raw_score"
-            && !stage.calibration.passed
+            && stage.calibration.isValid
     }
 
     private func identity(for stage: Stage) -> TrafficSignShadowStageIdentityV2 {
@@ -1419,11 +1433,11 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
             let evidenceCount = assemblies.map(\.temporalEvidence.evidenceFrameCount).max() ?? 0
             return evidenceCount >= configuration.confirmationFrames ? .confirmed : .provisional
         }
-        guard configuration.classifier.calibrationPassed else { return .unknown }
         let hasQualifiedPrimary = input.assemblies.contains {
-            $0.primary.classifierCalibratedConfidence.map {
-                $0 >= configuration.classifierConfirmedThreshold
-            } == true
+            let score = $0.primary.classifierCalibratedConfidence
+                ?? $0.primary.classifierRawScore
+            return score.isFinite
+                && score >= configuration.classifierConfirmedThreshold
         }
         guard hasQualifiedPrimary else { return .unknown }
         let evidenceCount = assemblies.map(\.temporalEvidence.evidenceFrameCount).max() ?? 0
@@ -1435,6 +1449,7 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
         evidenceOrigin: TrafficSignEvidenceOriginV2
     ) -> TrafficSignSupplementaryPlateEvidenceV2 {
         let confidence = observation.classifierCalibratedConfidence
+            ?? observation.classifierRawScore
         let reviewedExpectation = evidenceOrigin == .reviewedExpectation
         let readableEvidenceIsComplete = observation.readability == .readable
             && observation.classId.map {
@@ -1443,8 +1458,7 @@ final class TrafficSignShadowRuntimeV2: @unchecked Sendable {
             && observation.restriction?.isValid == true
         let readable = reviewedExpectation
             ? readableEvidenceIsComplete
-            : configuration.classifier.calibrationPassed
-            && readableEvidenceIsComplete
+            : readableEvidenceIsComplete
             && observation.classifierRawScore?.isFinite == true
             && confidence.map { $0.isFinite && $0 >= observation.classifierThreshold } == true
         let includeScores = evidenceOrigin == .runtimeInference

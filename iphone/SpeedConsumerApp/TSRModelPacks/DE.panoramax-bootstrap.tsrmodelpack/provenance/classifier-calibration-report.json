@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "calibration_id": "panoramax-classifier-native-softmax-heldout-v1",
+  "stage": "classifier",
+  "artifact_sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
+  "method": "native_softmax_reliability_validation",
+  "runtime_output": "calibrated_confidence",
+  "dataset": {
+    "repository": "Panoramax/classified_de_road_signs",
+    "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "split": "validation",
+    "archive": "val.zip",
+    "archive_sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea",
+    "inventory_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+    "sample_count": 6944,
+    "class_count": 134
+  },
+  "evaluation": {
+    "preprocessing": "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2",
+    "top1_correct_count": 6832,
+    "top1_accuracy": 0.9838709677419355,
+    "negative_log_likelihood": 0.09685476439206915,
+    "expected_calibration_error": 0.009358911470334103,
+    "maximum_expected_calibration_error": 0.03,
+    "inference_failure_count": 0,
+    "bins": [
+      {"lower_bound": 0.0, "upper_bound": 0.1, "sample_count": 0, "correct_count": 0, "confidence_sum": 0.0},
+      {"lower_bound": 0.1, "upper_bound": 0.2, "sample_count": 0, "correct_count": 0, "confidence_sum": 0.0},
+      {"lower_bound": 0.2, "upper_bound": 0.3, "sample_count": 2, "correct_count": 1, "confidence_sum": 0.480712890625},
+      {"lower_bound": 0.3, "upper_bound": 0.4, "sample_count": 3, "correct_count": 1, "confidence_sum": 1.1083984375},
+      {"lower_bound": 0.4, "upper_bound": 0.5, "sample_count": 15, "correct_count": 5, "confidence_sum": 6.953369140625},
+      {"lower_bound": 0.5, "upper_bound": 0.6, "sample_count": 16, "correct_count": 7, "confidence_sum": 8.904296875},
+      {"lower_bound": 0.6, "upper_bound": 0.7, "sample_count": 17, "correct_count": 11, "confidence_sum": 11.2890625},
+      {"lower_bound": 0.7, "upper_bound": 0.8, "sample_count": 32, "correct_count": 20, "confidence_sum": 23.8125},
+      {"lower_bound": 0.8, "upper_bound": 0.9, "sample_count": 51, "correct_count": 37, "confidence_sum": 43.2744140625},
+      {"lower_bound": 0.9, "upper_bound": 1.0, "sample_count": 6808, "correct_count": 6750, "confidence_sum": 6800.126953125}
+    ]
+  },
+  "result": "passed",
+  "scope_limitations": [
+    "This calibration applies only to the classifier crop stage.",
+    "The proposal detector remains explicitly uncalibrated.",
+    "This report is informational during field testing and does not gate live pack activation."
+  ]
+}

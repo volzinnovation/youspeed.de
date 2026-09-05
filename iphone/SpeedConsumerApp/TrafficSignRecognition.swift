@@ -1258,17 +1258,6 @@ struct TrafficSignTransientSpeedOverride: Codable, Equatable, Sendable {
     let context: TrafficSignDetectionContext
 }
 
-enum TrafficSignRuntimeDeploymentPolicy {
-    static let bundledBootstrapShadowPackId = "de-panoramax-bootstrap-shadow-v1"
-    /// Live override activation is an explicit code-owned allowlist. Shipping
-    /// or renaming a model pack can never enable speed overrides by accident.
-    private static let speedOverrideEnabledPackIDs: Set<String> = []
-
-    static func isShadowOnly(packId: String) -> Bool {
-        !speedOverrideEnabledPackIDs.contains(packId)
-    }
-}
-
 /// Keeps a confirmed camera value above the local-correction and OSM display
 /// layers without mutating either durable source. The exact frame context is
 /// retained as provenance; a new way, travel direction, or map/local source
@@ -1276,9 +1265,9 @@ enum TrafficSignRuntimeDeploymentPolicy {
 struct TrafficSignTransientOverridePolicy: Sendable {
     private(set) var activeOverride: TrafficSignTransientSpeedOverride?
 
-    /// Pack/event v2 is shadow-only in M0. Even a confirmed numeric event is
-    /// QA evidence and cannot create, replace, or clear the effective speed.
-    /// Gate metadata in a pack is never interpreted as runtime authorization.
+    /// The auxiliary v2 event remains a parallel QA signal. The same model
+    /// pack's primary event is evaluated live by the passage finalizer; v2
+    /// cannot create a second, competing transient override.
     @discardableResult
     mutating func ingestConfirmedDetection(
         _ event: TrafficSignRecognitionEventV2,

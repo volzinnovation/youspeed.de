@@ -938,18 +938,6 @@ final class SpeedConsumerTests: XCTestCase {
         )
     }
 
-    func testUnapprovedTrafficSignPacksRemainShadowOnly() {
-        XCTAssertTrue(TrafficSignRuntimeDeploymentPolicy.isShadowOnly(
-            packId: TrafficSignRuntimeDeploymentPolicy.bundledBootstrapShadowPackId
-        ))
-        XCTAssertTrue(TrafficSignRuntimeDeploymentPolicy.isShadowOnly(
-            packId: "de-speed-signs-test-v1"
-        ))
-        XCTAssertTrue(TrafficSignRuntimeDeploymentPolicy.isShadowOnly(
-            packId: "downloaded-shadow-lookalike"
-        ))
-    }
-
     @MainActor
     func testBundledTrafficSignPackResolvesAndLoadsBothModels() throws {
         let directoryURL = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(
@@ -958,13 +946,13 @@ final class SpeedConsumerTests: XCTestCase {
         let pack = try TrafficSignModelPackDirectoryLoader.load(
             from: directoryURL,
             runtimeVersion: "18.6",
-            appVersion: "1.0.1",
+            appVersion: "1.1",
             countryCode: "DE"
         )
 
         XCTAssertEqual(
             pack.manifest.packId,
-            TrafficSignRuntimeDeploymentPolicy.bundledBootstrapShadowPackId
+            "de-panoramax-bootstrap-live-v1"
         )
         XCTAssertEqual(pack.manifest.pipeline, .proposalClassification)
         XCTAssertEqual(pack.detectorArtifact.path, "yolo11n_panoramax.mlmodelc")
@@ -987,7 +975,46 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertNotEqual(shadow.detector.calibrationId, shadow.classifier.calibrationId)
         XCTAssertFalse(shadow.detector.calibrationPassed)
-        XCTAssertFalse(shadow.classifier.calibrationPassed)
+        XCTAssertTrue(shadow.classifier.calibrationPassed)
+        XCTAssertFalse(pack.manifest.calibration.calibrated)
+    }
+
+    func testShadowCalibrationEvidenceIsMetadataNotAnActivationGate() {
+        let valid = TrafficSignShadowPackProjectionV2.Calibration(
+            id: "classifier-heldout-v1",
+            datasetSha256: String(repeating: "a", count: 64),
+            passed: true,
+            runtimeOutput: "calibrated_confidence",
+            expectedCalibrationError: 0.009,
+            maximumExpectedCalibrationError: 0.03,
+            evidencePath: "provenance/classifier-calibration-report.json",
+            evidenceSha256: String(repeating: "b", count: 64)
+        )
+        XCTAssertTrue(valid.isValid)
+
+        let missingEvidence = TrafficSignShadowPackProjectionV2.Calibration(
+            id: "classifier-heldout-v1",
+            datasetSha256: String(repeating: "a", count: 64),
+            passed: true,
+            runtimeOutput: "calibrated_confidence",
+            expectedCalibrationError: 0.009,
+            maximumExpectedCalibrationError: 0.03,
+            evidencePath: nil,
+            evidenceSha256: nil
+        )
+        XCTAssertTrue(missingEvidence.isValid)
+
+        let failedGate = TrafficSignShadowPackProjectionV2.Calibration(
+            id: "classifier-heldout-v1",
+            datasetSha256: String(repeating: "a", count: 64),
+            passed: true,
+            runtimeOutput: "calibrated_confidence",
+            expectedCalibrationError: 0.031,
+            maximumExpectedCalibrationError: 0.03,
+            evidencePath: "provenance/classifier-calibration-report.json",
+            evidenceSha256: String(repeating: "b", count: 64)
+        )
+        XCTAssertTrue(failedGate.isValid)
     }
 
     func testModelPackLoaderDoesNotRehashPackagedModelsAtRuntime() throws {
@@ -4524,9 +4551,9 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(fixture.cityName, "Bad Herrenalb")
     }
 
-    func testMatcherStartupProfileMigratesLegacyDefaultToM2() {
-        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: "m1", forcedVersion: 0), .m2)
-        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: nil, forcedVersion: 0), .m2)
+    func testMatcherStartupProfileMigratesLegacyDefaultToM7() {
+        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: "m1", forcedVersion: 0), .m7)
+        XCTAssertEqual(MatcherDebugProfile.resolveInitialProfile(storedRawValue: nil, forcedVersion: 0), .m7)
     }
 
     func testMatcherStartupProfilePreservesExplicitProfileAfterMigration() {
@@ -8548,7 +8575,7 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
-    func testLookupSwitchesWayWhenHeadingConflictsWithPreferredWay() throws {
+    func testM7LookupProvidesDirectionalHypothesesForCameraTSR() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-heading-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -8558,7 +8585,10 @@ final class SpeedConsumerTests: XCTestCase {
 
         let dbURL = tempDir.appendingPathComponent("heading_fixture.sqlite")
         try createHeadingDisambiguationFixtureDB(at: dbURL)
-        let service = V3SpeedLimitService(dbPath: dbURL.path)
+        let service = V3SpeedLimitService(
+            dbPath: dbURL.path,
+            matchingModel: .simpleSpeedRefUrbanReleaseNarrowWindowHeuristic
+        )
 
         let turnedResult = try service.lookupSpeedLimit(
             lat: 52.0,
@@ -8574,6 +8604,42 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(turnedResult.wayID, "1002")
         XCTAssertEqual(turnedResult.speedLimitKmh, 50)
         XCTAssertEqual(turnedResult.service, "main")
+        let directionalHypothesis = try XCTUnwrap(
+            turnedResult.matchHypotheses.first { $0.wayID == turnedResult.wayID }
+        )
+        XCTAssertNotNil(directionalHypothesis.startLat)
+        XCTAssertNotNil(directionalHypothesis.startLon)
+        XCTAssertNotNil(directionalHypothesis.endLat)
+        XCTAssertNotNil(directionalHypothesis.endLon)
+        XCTAssertEqual(
+            DriveSessionViewModel.trafficSignTravelDirection(
+                for: turnedResult,
+                headingDegrees: 0
+            ),
+            .forward
+        )
+        XCTAssertEqual(
+            DriveSessionViewModel.trafficSignTravelDirection(
+                for: turnedResult,
+                headingDegrees: 180
+            ),
+            .reverse
+        )
+        let secondFixHeading = try XCTUnwrap(
+            DriveSessionViewModel.trafficSignHeading(
+                reportedCourseDegrees: -1,
+                previousCoordinate: CLLocationCoordinate2D(latitude: 51.999, longitude: 13.005),
+                currentCoordinate: CLLocationCoordinate2D(latitude: 52.0, longitude: 13.005)
+            )
+        )
+        XCTAssertEqual(secondFixHeading, 0, accuracy: 0.001)
+        XCTAssertEqual(
+            DriveSessionViewModel.trafficSignTravelDirection(
+                for: turnedResult,
+                headingDegrees: secondFixHeading
+            ),
+            .forward
+        )
 
         let lowSpeedResult = try service.lookupSpeedLimit(
             lat: 52.0,
@@ -15182,7 +15248,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         }
     }
 
-    func testCalibrationAndTaxonomyHardGatesCannotArm() {
+    func testInactiveDriveStillCannotArmButRawScoreMayTrack() {
         var finalizer = TrafficSignPassageFinalizer()
         let context = makeContext()
         let disabled = finalizer.ingest(
@@ -15192,13 +15258,22 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             calibratedActivationEligible: false
         )
         XCTAssertEqual(disabled, .idle)
-        let missingCalibration = finalizer.ingest(
-            makeSeen(offset: 0.1, context: context, confidence: nil),
+        let rawScoreOnly = finalizer.ingest(
+            makeSeen(
+                offset: 0.1,
+                context: context,
+                confidence: nil,
+                includeCalibratedScores: false
+            ),
             sessionGeneration: 1,
             contextGeneration: 1,
             calibratedActivationEligible: true
         )
-        XCTAssertEqual(missingCalibration, .idle)
+        guard case .tracking(let support, let evidenceFrames) = rawScoreOnly else {
+            return XCTFail("raw-score evidence should track during live testing")
+        }
+        XCTAssertEqual(support, 0.84, accuracy: 0.0001)
+        XCTAssertEqual(evidenceFrames, 1)
         let parkingEnd = makeCandidate(
             value: nil,
             trackID: "parking-end",
@@ -15212,7 +15287,57 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             contextGeneration: 1,
             calibratedActivationEligible: true
         )
-        XCTAssertEqual(excluded, .idle)
+        guard case .tracking(let retainedSupport, let retainedFrames) = excluded else {
+            return XCTFail("an unsupported sign should leave the raw-score track unchanged")
+        }
+        XCTAssertEqual(retainedSupport, 0.84, accuracy: 0.0001)
+        XCTAssertEqual(retainedFrames, 1)
+    }
+
+    func testRawScoreTrackCanCommitDuringLiveTesting() {
+        var finalizer = TrafficSignPassageFinalizer()
+        let context = makeContext()
+        _ = finalizer.ingest(
+            makeSeen(
+                offset: 0,
+                context: context,
+                includeCalibratedScores: false
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let armed = finalizer.ingest(
+            makeSeen(
+                offset: 0.1,
+                context: context,
+                state: .confirmed,
+                includeCalibratedScores: false
+            ),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .armed = armed else {
+            return XCTFail("raw-score evidence should arm during live testing")
+        }
+        _ = finalizer.ingest(
+            makeMissing(offset: 0.2, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        let committed = finalizer.ingest(
+            makeMissing(offset: 0.3, context: context),
+            sessionGeneration: 1,
+            contextGeneration: 1,
+            calibratedActivationEligible: true
+        )
+        guard case .committed(let passage) = committed else {
+            return XCTFail("raw-score evidence should commit during live testing")
+        }
+        XCTAssertEqual(passage.action, .postedMaximum(30))
+        XCTAssertNil(passage.finalCalibratedConfidence)
     }
 
     func testResolverKeepsCameraAcrossRelatedWayAndBaseRefreshThenClearsOnScopeLoss() {
@@ -15531,7 +15656,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         }
     }
 
-    func testUnsafeEndMasksDatabaseButUnknownDirectionCannotApplyNumericSign() {
+    func testUnsafeEndMasksDatabaseAndUnknownDirectionAppliesWayWide() {
         let unstable = makeContext(stable: false)
         var resolver = TrafficSignEffectiveLimitResolver()
         let end = resolver.commit(
@@ -15548,9 +15673,11 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             makePassage(action: .postedMaximum(30), context: unknownDirection),
             base: makeBase(90)
         )
-        XCTAssertFalse(numeric.applied)
-        XCTAssertEqual(numeric.effectiveState.value, .numeric(90))
-        XCTAssertFalse(numeric.persistence.runtimeApplicable)
+        XCTAssertTrue(numeric.applied)
+        XCTAssertEqual(numeric.effectiveState.value, .numeric(30))
+        XCTAssertTrue(numeric.persistence.runtimeApplicable)
+        XCTAssertEqual(numeric.persistence.directionScope, .wayWide)
+        XCTAssertEqual(numeric.persistence.exportTagKey, "maxspeed")
     }
 
     func testResolverRequiresVerifiedBundleAndSupportsGermanCityEntryAndUnlimitedBase() {
@@ -16343,10 +16470,38 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertFalse(osc.contains("v=\"50\""))
     }
 
-    func testSpeedLimitCameraColorIsExactlyHalfBorderColor() {
-        XCTAssertEqual(SpeedLimitSignPalette.cameraRed, SpeedLimitSignPalette.borderRed / 2)
-        XCTAssertEqual(SpeedLimitSignPalette.cameraGreen, SpeedLimitSignPalette.borderGreen / 2)
-        XCTAssertEqual(SpeedLimitSignPalette.cameraBlue, SpeedLimitSignPalette.borderBlue / 2)
+    func testCameraLimitIndicatorOnlyShowsWhenCameraLimitIsActive() {
+        let cameraState = EffectiveSpeedLimitState(
+            value: .numeric(30),
+            source: .camera,
+            presentationReason: "camera_numeric",
+            hasCameraEvidenceMarker: true
+        )
+        XCTAssertTrue(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode: false,
+                effectiveState: cameraState
+            )
+        )
+        XCTAssertFalse(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode: true,
+                effectiveState: cameraState
+            )
+        )
+
+        let evidenceOnlyState = EffectiveSpeedLimitState(
+            value: .numeric(30),
+            source: .bundle,
+            presentationReason: "camera_evidence_did_not_override",
+            hasCameraEvidenceMarker: true
+        )
+        XCTAssertFalse(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode: false,
+                effectiveState: evidenceOnlyState
+            )
+        )
     }
 
     private func executeStoreMutation(
@@ -16434,7 +16589,8 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         trackID: String = "track-30",
         confidence: Double? = 0.86,
         semanticKind: String = TrafficSignSemanticKind.maximumSpeed.rawValue,
-        rawClassID: String = "speed_limit_30"
+        rawClassID: String = "speed_limit_30",
+        includeCalibratedScores: Bool = true
     ) -> TrafficSignRecognitionCandidate {
         TrafficSignRecognitionCandidate(
             rawClassId: rawClassID,
@@ -16443,12 +16599,12 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             value: value,
             unit: value == nil ? nil : "km/h",
             rawScore: 0.84,
-            calibratedConfidence: confidence,
+            calibratedConfidence: includeCalibratedScores ? confidence : nil,
             detectorRawScore: 0.71,
-            detectorCalibratedConfidence: 0.73,
+            detectorCalibratedConfidence: includeCalibratedScores ? 0.73 : nil,
             classifierRawScore: 0.81,
-            classifierCalibratedConfidence: 0.83,
-            assemblyConfidence: 0.82,
+            classifierCalibratedConfidence: includeCalibratedScores ? 0.83 : nil,
+            assemblyConfidence: includeCalibratedScores ? 0.82 : nil,
             boundingBox: .init(x: 0.4, y: 0.2, width: 0.1, height: 0.1),
             trackId: trackID,
             evidenceFrames: 1,
@@ -16462,12 +16618,18 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         trackID: String = "track-30",
         context: TrafficSignDetectionContext?,
         confidence: Double? = 0.86,
-        state: TrafficSignRecognitionResultState = .provisional
+        state: TrafficSignRecognitionResultState = .provisional,
+        includeCalibratedScores: Bool = true
     ) -> TrafficSignRecognitionEvent {
         makeEvent(
             offset: offset,
             state: state,
-            candidate: makeCandidate(value: value, trackID: trackID, confidence: confidence),
+            candidate: makeCandidate(
+                value: value,
+                trackID: trackID,
+                confidence: confidence,
+                includeCalibratedScores: includeCalibratedScores
+            ),
             context: context
         )
     }
@@ -16964,7 +17126,7 @@ final class TrafficSignShadowRuntimeV2Tests: XCTestCase {
             thermalState: base.thermalState
         ))
 
-        XCTAssertEqual(event.state, .unknown)
+        XCTAssertEqual(event.state, .provisional)
         let plates = try XCTUnwrap(event.assemblies.first?.supplementaryPlates)
         XCTAssertEqual(plates.count, 2)
         XCTAssertTrue(plates.allSatisfy {

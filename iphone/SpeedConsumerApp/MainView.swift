@@ -14,13 +14,22 @@ enum SpeedLimitSignPalette {
     static let borderRed = 0.76
     static let borderGreen = 0.07
     static let borderBlue = 0.11
-    // Exactly halfway between black and the sign-border red.
-    static let cameraRed = borderRed / 2
-    static let cameraGreen = borderGreen / 2
-    static let cameraBlue = borderBlue / 2
 
     static let borderColor = Color(red: borderRed, green: borderGreen, blue: borderBlue)
-    static let cameraColor = Color(red: cameraRed, green: cameraGreen, blue: cameraBlue)
+}
+
+enum CameraSpeedLimitUsePresentation {
+    static func isVisible(
+        isInSpeedCaptureMode: Bool,
+        effectiveState: EffectiveSpeedLimitState
+    ) -> Bool {
+        guard !isInSpeedCaptureMode,
+              effectiveState.source == .camera,
+              effectiveState.value != .unknown else {
+            return false
+        }
+        return true
+    }
 }
 
 enum DriveRecorderWorkspaceSelection: Equatable {
@@ -179,17 +188,36 @@ struct MainView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: sectionGap) {
-                    SpeedLimitSignView(
-                        limitText: limitText,
-                        numberFontSize: primaryMetricFontSize,
-                        showsTunnelIcon: shouldShowTunnelSignIcon,
-                        showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
-                        showsPedestrianZoneIcon: showsPedestrianZoneSign,
-                        numberColor: usesCameraNumberColor ? SpeedLimitSignPalette.cameraColor : .black,
-                        showsCameraSourceMarker: showsCameraSourceMarker,
-                        accessibilityDescription: speedLimitAccessibilityDescription
-                    )
-                    .frame(width: signSize, height: signSize)
+                    ZStack {
+                        if showsActiveCameraLimitIndicator {
+                            ActiveCameraSpeedLimitEye(
+                                signDiameter: signSize,
+                                tipInset: controlDiameter / 2
+                            )
+                            .stroke(
+                                .white,
+                                style: StrokeStyle(
+                                    lineWidth: max(4, signSize * 0.016),
+                                    lineCap: .round,
+                                    lineJoin: .miter,
+                                    miterLimit: 3
+                                )
+                            )
+                            .accessibilityHidden(true)
+                        }
+
+                        SpeedLimitSignView(
+                            limitText: limitText,
+                            numberFontSize: primaryMetricFontSize,
+                            showsTunnelIcon: shouldShowTunnelSignIcon,
+                            showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
+                            showsPedestrianZoneIcon: showsPedestrianZoneSign,
+                            showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
+                            accessibilityDescription: speedLimitAccessibilityDescription
+                        )
+                        .frame(width: signSize, height: signSize)
+                    }
+                    .frame(height: signSize)
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, screenInset)
                     .contentShape(Rectangle())
@@ -295,16 +323,11 @@ struct MainView: View {
         !viewModel.isInSpeedCaptureMode && viewModel.speedLimitDisplayText == "Schritt"
     }
 
-    private var usesCameraNumberColor: Bool {
-        guard !viewModel.isInSpeedCaptureMode,
-              viewModel.effectiveSpeedLimitState.source == .camera,
-              case .numeric = viewModel.effectiveSpeedLimitState.value else { return false }
-        return true
-    }
-
-    private var showsCameraSourceMarker: Bool {
-        !viewModel.isInSpeedCaptureMode
-            && viewModel.effectiveSpeedLimitState.hasCameraEvidenceMarker
+    private var showsActiveCameraLimitIndicator: Bool {
+        CameraSpeedLimitUsePresentation.isVisible(
+            isInSpeedCaptureMode: viewModel.isInSpeedCaptureMode,
+            effectiveState: viewModel.effectiveSpeedLimitState
+        )
     }
 
     private var topCornerButtons: some View {
@@ -646,7 +669,7 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionValueText: String {
-        switch viewModel.trafficSignRecognitionState {
+        switch trafficSignRecognitionPresentationState {
         case .disabled, .noRecognition:
             return "—"
         case .unavailable:
@@ -659,7 +682,7 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionStatusText: String {
-        switch viewModel.trafficSignRecognitionState {
+        switch trafficSignRecognitionPresentationState {
         case .disabled:
             return NSLocalizedString("tsr.state.disabled", comment: "")
         case .unavailable:
@@ -676,7 +699,7 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionAccentColor: Color {
-        switch viewModel.trafficSignRecognitionState {
+        switch trafficSignRecognitionPresentationState {
         case .confirmed:
             return .green
         case .provisional, .unknown:
@@ -697,7 +720,7 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionModuleSymbol: String {
-        switch viewModel.trafficSignRecognitionState {
+        switch trafficSignRecognitionPresentationState {
         case .confirmed:
             return "checkmark.circle.fill"
         case .provisional:
@@ -709,6 +732,13 @@ struct MainView: View {
         case .disabled, .noRecognition:
             return "camera.viewfinder"
         }
+    }
+
+    private var trafficSignRecognitionPresentationState: TrafficSignRecognitionState {
+        if viewModel.appScreenshotState == .cameraLimitActive {
+            return .noRecognition
+        }
+        return viewModel.trafficSignRecognitionState
     }
 
     private var canShowDriveRecorderPreview: Bool {
@@ -1443,8 +1473,7 @@ private struct SpeedLimitSignView: View {
     let showsTunnelIcon: Bool
     let showsUnlimitedIcon: Bool
     let showsPedestrianZoneIcon: Bool
-    let numberColor: Color
-    let showsCameraSourceMarker: Bool
+    let showsActiveCameraLimitIndicator: Bool
     let accessibilityDescription: String
 
     var body: some View {
@@ -1461,7 +1490,10 @@ private struct SpeedLimitSignView: View {
                         .fill(Color.white)
 
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.82), lineWidth: unlimitedBorderWidth)
+                        .strokeBorder(
+                            showsActiveCameraLimitIndicator ? Color.white : Color.black.opacity(0.82),
+                            lineWidth: unlimitedBorderWidth
+                        )
 
                     ZStack {
                         ForEach(0..<5, id: \.self) { index in
@@ -1488,7 +1520,10 @@ private struct SpeedLimitSignView: View {
                         .fill(Color.white)
 
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.75), lineWidth: standardBlackBorderWidth)
+                        .strokeBorder(
+                            showsActiveCameraLimitIndicator ? Color.white : Color.black.opacity(0.75),
+                            lineWidth: standardBlackBorderWidth
+                        )
 
                     Circle()
                         .inset(by: standardBlackBorderWidth)
@@ -1504,19 +1539,9 @@ private struct SpeedLimitSignView: View {
                             .frame(width: standardInnerDiameter * 0.86, height: standardInnerDiameter * 0.66, alignment: .center)
                             .minimumScaleFactor(0.28)
                             .allowsTightening(true)
-                            .foregroundStyle(numberColor)
+                            .foregroundStyle(.black)
                             .lineLimit(1)
                     }
-                }
-                if showsCameraSourceMarker {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: max(10, size * 0.075), weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(max(5, size * 0.026))
-                        .background(SpeedLimitSignPalette.cameraColor, in: Circle())
-                        .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: 1))
-                        .offset(x: size * 0.31, y: size * 0.31)
-                        .accessibilityHidden(true)
                 }
             }
             .frame(width: size, height: size)
@@ -1525,10 +1550,39 @@ private struct SpeedLimitSignView: View {
         .aspectRatio(1, contentMode: .fit)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
-            showsCameraSourceMarker
-                ? "\(accessibilityDescription), von der Kamera erkannt"
+            showsActiveCameraLimitIndicator
+                ? "\(accessibilityDescription), von der Kamera übernommen"
                 : accessibilityDescription
         )
+    }
+}
+
+private struct ActiveCameraSpeedLimitEye: Shape {
+    let signDiameter: CGFloat
+    let tipInset: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let radius = signDiameter / 2
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let attachmentYOffset = radius * 0.58
+        let attachmentXOffset = max(
+            0,
+            ((radius * radius) - (attachmentYOffset * attachmentYOffset)).squareRoot()
+        )
+        let leftSignX = center.x - attachmentXOffset
+        let rightSignX = center.x + attachmentXOffset
+        let leftTipX = min(tipInset, center.x - radius)
+        let rightTipX = max(rect.width - tipInset, center.x + radius)
+
+        var path = Path()
+        path.move(to: CGPoint(x: leftSignX, y: center.y - attachmentYOffset))
+        path.addLine(to: CGPoint(x: leftTipX, y: center.y))
+        path.addLine(to: CGPoint(x: leftSignX, y: center.y + attachmentYOffset))
+
+        path.move(to: CGPoint(x: rightSignX, y: center.y - attachmentYOffset))
+        path.addLine(to: CGPoint(x: rightTipX, y: center.y))
+        path.addLine(to: CGPoint(x: rightSignX, y: center.y + attachmentYOffset))
+        return path
     }
 }
 

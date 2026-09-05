@@ -1078,6 +1078,33 @@ final class V3SpeedLimitService {
             selectionTrace: [MatchSelectionTrace],
             matchHypotheses: [WayMatchHypothesis] = []
         ) -> SpeedLimitResult {
+            var directionalHypotheses = matchHypotheses
+            if directionalHypotheses.isEmpty {
+                directionalHypotheses = traceRankedCandidates
+                    .prefix(Self.miniHMMBeamWidth)
+                    .compactMap { entry in
+                        wayMatchHypothesis(
+                            from: entry.candidate,
+                            cumulativeCost: entry.traceScore,
+                            emissionScore: entry.candidate.score
+                        )
+                    }
+            }
+            if let finalSelected,
+               let selectedWayID = normalizedWayID(finalSelected.wayID),
+               !directionalHypotheses.contains(where: { $0.wayID == selectedWayID }),
+               let selectedHypothesis = wayMatchHypothesis(
+                   from: finalSelected,
+                   cumulativeCost: finalSelected.score,
+                   emissionScore: finalSelected.score
+               ) {
+                directionalHypotheses.insert(selectedHypothesis, at: 0)
+                if directionalHypotheses.count > Self.miniHMMBeamWidth {
+                    directionalHypotheses.removeLast(
+                        directionalHypotheses.count - Self.miniHMMBeamWidth
+                    )
+                }
+            }
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
             let insideCityDecision: (insideCity: Bool?, source: String?)
             let residentialContext: ResidentialContext
@@ -1194,7 +1221,7 @@ final class V3SpeedLimitService {
                 nearbyTunnelCandidateRefs: Array(nearbyTunnelCandidateRefs).sorted(),
                 usedMiniHMM: false,
                 miniHMMCandidateCount: 0,
-                matchHypotheses: matchHypotheses,
+                matchHypotheses: directionalHypotheses,
                 candidateTraces: candidateTraces,
                 selectionTrace: selectionTrace,
                 activeCorridorState: nil,

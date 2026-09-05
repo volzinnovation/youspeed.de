@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "source_pack_id": "de-panoramax-bootstrap-shadow-v1",
+  "source_pack_id": "de-panoramax-bootstrap-live-v1",
   "pack_id": "de-panoramax-bootstrap-shadow-adapter-v2",
   "taxonomy_version": "tsr-semantic-v2",
   "execution_policy": {
@@ -43,10 +43,14 @@
       "orientation": "normalize_exif_and_mirroring"
     },
     "calibration": {
-      "id": "panoramax-classifier-uncalibrated-v1",
+      "id": "panoramax-classifier-native-softmax-heldout-v1",
       "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
-      "passed": false,
-      "runtime_output": "raw_score"
+      "passed": true,
+      "runtime_output": "calibrated_confidence",
+      "expected_calibration_error": 0.009358911470334103,
+      "maximum_expected_calibration_error": 0.03,
+      "evidence_path": "provenance/classifier-calibration-report.json",
+      "evidence_sha256": "d5dcb27c5b298a7aa8eea5e4f6bcfc04b1f0c79b949d5b78f8344b265d8e790c"
     }
   },
   "thresholds": {
