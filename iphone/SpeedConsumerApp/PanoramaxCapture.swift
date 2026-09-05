@@ -368,6 +368,37 @@ enum PanoramaxJPEGMetadata {
         return (rawWidth.intValue, rawHeight.intValue)
     }
 
+    /// Reads the YouSpeed annotation envelope back from the JPEG. Upload code
+    /// uses this to verify that the durable sidecar and the bytes about to be
+    /// sent to Panoramax still agree.
+    static func trafficSignAnnotations(from data: Data) -> [PanoramaxTrafficSignAnnotation]? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any],
+              let exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any],
+              let rawComment = exif[kCGImagePropertyExifUserComment as String] else {
+            return nil
+        }
+        let comment: String?
+        if let value = rawComment as? String {
+            comment = value
+        } else if let value = rawComment as? Data {
+            comment = String(data: value, encoding: .utf8)
+        } else {
+            comment = nil
+        }
+        guard let comment,
+              comment.hasPrefix(userCommentPrefix),
+              let payload = comment.dropFirst(userCommentPrefix.count).data(using: .utf8),
+              let envelope = try? JSONDecoder.panoramaxAnnotationDecoder.decode(
+                  AnnotationEnvelope.self,
+                  from: payload
+              ),
+              envelope.schemaVersion == 1 else {
+            return nil
+        }
+        return envelope.annotations
+    }
+
     static func adding(
         to data: Data,
         location: PanoramaxLocationSample? = nil,
@@ -432,6 +463,14 @@ private extension JSONEncoder {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return encoder
+    }
+}
+
+private extension JSONDecoder {
+    static var panoramaxAnnotationDecoder: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 }
 

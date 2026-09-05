@@ -3009,6 +3009,73 @@ final class SpeedConsumerTests: XCTestCase {
         let comment = try XCTUnwrap(exif[kCGImagePropertyExifUserComment as String] as? String)
         XCTAssertTrue(comment.contains("YouSpeed.PanoramaxAnnotations/1"))
         XCTAssertTrue(comment.contains("DE:274-70"))
+        XCTAssertEqual(
+            PanoramaxJPEGMetadata.trafficSignAnnotations(from: updatedJPEG),
+            restored.metadata.trafficSignAnnotations
+        )
+        #endif
+    }
+
+    func testPanoramaxUploadPreparationRepairsMissingAnnotationEnvelope() throws {
+        #if canImport(UIKit)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let batch = try store.createBatch(captureSessionID: "session-upload-repair", createdAt: timestamp)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100))
+        let jpeg = try XCTUnwrap(renderer.jpegData(withCompressionQuality: 0.9) { context in
+            UIColor.gray.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        })
+        let draft = PanoramaxTrafficSignAnnotationDraft(
+            annotationID: "annotation-upload-repair",
+            sourceEventID: "event-upload-repair",
+            frameTimestampUTC: timestamp,
+            normalizedShape: TrafficSignNormalizedRect(x: 0.25, y: 0.1, width: 0.2, height: 0.4),
+            semantics: [PanoramaxSemanticTag(key: "osm|traffic_sign", value: "DE:274-70")],
+            speedLimitKmh: 70,
+            physicalSignTrackID: "track-upload-repair",
+            detectionConfidence: 0.919,
+            classificationConfidence: 0.88,
+            context: makeTrafficSignDetectionContext()
+        )
+        let annotation = try XCTUnwrap(draft.projected(
+            imageWidth: 200,
+            imageHeight: 100,
+            imageTimestamp: timestamp
+        ))
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "capture-upload-repair",
+            captureSessionID: batch.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(
+                latitude: 49,
+                longitude: 8,
+                capturedAt: timestamp,
+                accuracyMeters: 5,
+                altitudeMeters: nil,
+                headingDegrees: 82
+            ),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test",
+            imageWidthPixels: 200,
+            imageHeightPixels: 100,
+            trafficSignAnnotations: [annotation]
+        )
+        let item = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
+        XCTAssertNil(PanoramaxJPEGMetadata.trafficSignAnnotations(from: jpeg))
+
+        let uploadURL = try store.prepareOriginalForUpload(batchID: batch.batchID, itemID: item.itemID)
+        let repairedJPEG = try Data(contentsOf: uploadURL)
+        XCTAssertEqual(PanoramaxJPEGMetadata.trafficSignAnnotations(from: repairedJPEG), [annotation])
+        let repairedItem = try XCTUnwrap(store.getBatch(batch.batchID)?.items.first)
+        XCTAssertEqual(repairedItem.metadata.sha256, PanoramaxQueueStore.sha256(repairedJPEG))
+        XCTAssertEqual(repairedItem.metadata.byteSize, Int64(repairedJPEG.count))
+
+        let secondURL = try store.prepareOriginalForUpload(batchID: batch.batchID, itemID: item.itemID)
+        XCTAssertEqual(try Data(contentsOf: secondURL), repairedJPEG)
         #endif
     }
 

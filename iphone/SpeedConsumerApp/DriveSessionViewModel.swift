@@ -2879,8 +2879,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                   !localDeletionIntents.contains(batchID: batchID, itemID: item.itemID),
                   durableItem.state == .queued
                     || durableItem.state == .included
-                    || durableItem.state == .retryableError,
-                  let fileURL = panoramaxOriginalURL(for: durableItem) else {
+                    || durableItem.state == .retryableError else {
                 total = max(uploaded, total - 1)
                 panoramaxUploadProgressByBatch[batchID] = PanoramaxUploadProgress(
                     completedItems: uploaded,
@@ -2889,6 +2888,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
                 continue
             }
+            let fileURL = try store.prepareOriginalForUpload(
+                batchID: batchID,
+                itemID: durableItem.itemID
+            )
 
             panoramaxInFlightItemIDByBatch[batchID] = item.itemID
             do {

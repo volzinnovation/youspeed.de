@@ -217,6 +217,68 @@ final class PanoramaxQueueStore: @unchecked Sendable {
         }
     }
 
+    /// Returns an upload-ready original and repairs it from the authoritative
+    /// queue sidecar when an annotation envelope is missing or stale. This is
+    /// deliberately performed at the last local boundary before multipart
+    /// upload so the server receives the same annotations shown in the queue.
+    func prepareOriginalForUpload(batchID: String, itemID: String) throws -> URL {
+        try lock.withLock {
+            guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
+            guard let index = batch.items.firstIndex(where: { $0.itemID == itemID }) else {
+                throw QueueError.unknownItem
+            }
+            var item = batch.items[index]
+            guard let originalURL = originalURL(for: item) else { throw QueueError.invalidMetadata }
+            let originalJPEG = try Data(contentsOf: originalURL)
+            guard Self.isJPEG(originalJPEG) else { throw QueueError.invalidImage }
+            guard let annotations = item.metadata.trafficSignAnnotations,
+                  !annotations.isEmpty else {
+                return originalURL
+            }
+
+            let uploadJPEG: Data
+            if PanoramaxJPEGMetadata.trafficSignAnnotations(from: originalJPEG) == annotations {
+                uploadJPEG = originalJPEG
+            } else {
+                guard let repairedJPEG = PanoramaxJPEGMetadata.adding(
+                    to: originalJPEG,
+                    location: item.metadata.location,
+                    annotations: annotations
+                ),
+                      PanoramaxJPEGMetadata.trafficSignAnnotations(from: repairedJPEG) == annotations else {
+                    throw QueueError.invalidImage
+                }
+                uploadJPEG = repairedJPEG
+            }
+            guard let dimensions = PanoramaxJPEGMetadata.pixelDimensions(from: uploadJPEG) else {
+                throw QueueError.invalidImage
+            }
+            let sha256 = Self.sha256(uploadJPEG)
+            let byteSize = Int64(uploadJPEG.count)
+            let metadataMatches = item.metadata.sha256.lowercased() == sha256
+                && item.metadata.byteSize == byteSize
+                && item.metadata.imageWidthPixels == dimensions.width
+                && item.metadata.imageHeightPixels == dimensions.height
+                && item.metadata.trafficSignAnnotations == annotations
+            if uploadJPEG != originalJPEG {
+                try uploadJPEG.write(to: originalURL, options: .atomic)
+                protect(originalURL)
+            }
+            if !metadataMatches {
+                item.metadata = item.metadata.replacingImageMetadata(
+                    sha256: sha256,
+                    byteSize: byteSize,
+                    imageWidthPixels: dimensions.width,
+                    imageHeightPixels: dimensions.height,
+                    trafficSignAnnotations: annotations
+                )
+                batch.items[index] = item
+                try commit(batch)
+            }
+            return originalURL
+        }
+    }
+
     @discardableResult
     func addJPEG(batchID: String, jpeg: Data, thumbnail: Data, metadata: PanoramaxCaptureMetadata) throws -> PanoramaxItemRecord {
         guard Self.isJPEG(jpeg), !thumbnail.isEmpty else { throw QueueError.invalidImage }
