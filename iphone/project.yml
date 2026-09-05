@@ -7,7 +7,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10003
+    CURRENT_PROJECT_VERSION: 10004
     MARKETING_VERSION: "1.1"
 targets:
   SpeedConsumer:

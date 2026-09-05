@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "calibration_id": "panoramax-classifier-native-softmax-heldout-v1",
+  "calibration_id": "informational-benchmark-only",
   "stage": "classifier",
   "artifact_sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
-  "method": "native_softmax_reliability_validation",
-  "runtime_output": "calibrated_confidence",
+  "method": "native_softmax_reliability_benchmark",
+  "runtime_output": "raw_score",
   "dataset": {
     "repository": "Panoramax/classified_de_road_signs",
     "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
@@ -38,8 +38,8 @@
   },
   "result": "passed",
   "scope_limitations": [
-    "This calibration applies only to the classifier crop stage.",
+    "This benchmark does not calibrate runtime scores.",
     "The proposal detector remains explicitly uncalibrated.",
-    "This report is informational during field testing and does not gate live pack activation."
+    "The measurements are informational during field testing and do not gate live pack activation."
   ]
 }

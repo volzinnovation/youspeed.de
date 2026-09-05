@@ -454,7 +454,6 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
     private let cropAndScaleOption: VNImageCropAndScaleOption
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
-    private let runtimeOutput: TrafficSignModelPackManifest.Calibration.RuntimeOutput
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
@@ -520,7 +519,6 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
             uniqueKeysWithValues: verifiedPack.manifest.classMapping.map { ($0.classId, $0) }
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
-        runtimeOutput = verifiedPack.manifest.calibration.runtimeOutput
     }
 
     func detections(
@@ -596,7 +594,7 @@ final class TrafficSignVisionCoreMLBackend: TrafficSignInferenceBackend, @unchec
                     unit: nil
                 ),
                 rawScore: score,
-                calibratedConfidence: runtimeOutput == .calibratedConfidence ? score : nil,
+                calibratedConfidence: nil,
                 boundingBox: contractBox,
                 classThreshold: mapping?.threshold ?? unknownThreshold
             ),
@@ -626,9 +624,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let classifierModel: VNCoreMLModel
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
-    private let runtimeOutput: TrafficSignModelPackManifest.Calibration.RuntimeOutput
-    private let detectorOutputIsCalibrated: Bool
-    private let classifierOutputIsCalibrated: Bool
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
@@ -669,11 +664,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             uniqueKeysWithValues: verifiedPack.manifest.classMapping.map { ($0.classId, $0) }
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
-        runtimeOutput = verifiedPack.manifest.calibration.runtimeOutput
-        detectorOutputIsCalibrated = verifiedPack.shadowRuntimeConfigurationV2?
-            .detector.calibrationPassed == true
-        classifierOutputIsCalibrated = verifiedPack.shadowRuntimeConfigurationV2?
-            .classifier.calibrationPassed == true
     }
 
     func detections(
@@ -856,20 +846,16 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
                     unit: nil
                 ),
                 rawScore: score,
-                calibratedConfidence: runtimeOutput == .calibratedConfidence ? score : nil,
+                calibratedConfidence: nil,
                 boundingBox: contractBox,
                 classThreshold: mapping?.threshold ?? unknownThreshold
             ),
             signRole: mapping?.signRole ?? .primarySign,
             restriction: mapping?.restriction,
             detectorRawScore: detectorConfidence,
-            detectorCalibratedConfidence: detectorOutputIsCalibrated
-                ? detectorConfidence
-                : nil,
+            detectorCalibratedConfidence: nil,
             classifierRawScore: Double(classification.confidence),
-            classifierCalibratedConfidence: classifierOutputIsCalibrated
-                ? Double(classification.confidence)
-                : nil
+            classifierCalibratedConfidence: nil
         )
     }
 

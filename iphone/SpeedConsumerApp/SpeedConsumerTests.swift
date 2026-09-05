@@ -975,46 +975,22 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertNotEqual(shadow.detector.calibrationId, shadow.classifier.calibrationId)
         XCTAssertFalse(shadow.detector.calibrationPassed)
-        XCTAssertTrue(shadow.classifier.calibrationPassed)
+        XCTAssertFalse(shadow.classifier.calibrationPassed)
         XCTAssertFalse(pack.manifest.calibration.calibrated)
     }
 
-    func testShadowCalibrationEvidenceIsMetadataNotAnActivationGate() {
-        let valid = TrafficSignShadowPackProjectionV2.Calibration(
-            id: "classifier-heldout-v1",
+    func testRawScoreStageMetadataNeedsNoCalibrationEvidence() {
+        let rawScoreStage = TrafficSignShadowPackProjectionV2.Calibration(
+            id: "classifier-uncalibrated-v1",
             datasetSha256: String(repeating: "a", count: 64),
-            passed: true,
-            runtimeOutput: "calibrated_confidence",
-            expectedCalibrationError: 0.009,
-            maximumExpectedCalibrationError: 0.03,
-            evidencePath: "provenance/classifier-calibration-report.json",
-            evidenceSha256: String(repeating: "b", count: 64)
-        )
-        XCTAssertTrue(valid.isValid)
-
-        let missingEvidence = TrafficSignShadowPackProjectionV2.Calibration(
-            id: "classifier-heldout-v1",
-            datasetSha256: String(repeating: "a", count: 64),
-            passed: true,
-            runtimeOutput: "calibrated_confidence",
-            expectedCalibrationError: 0.009,
-            maximumExpectedCalibrationError: 0.03,
+            passed: false,
+            runtimeOutput: "raw_score",
+            expectedCalibrationError: nil,
+            maximumExpectedCalibrationError: nil,
             evidencePath: nil,
             evidenceSha256: nil
         )
-        XCTAssertTrue(missingEvidence.isValid)
-
-        let failedGate = TrafficSignShadowPackProjectionV2.Calibration(
-            id: "classifier-heldout-v1",
-            datasetSha256: String(repeating: "a", count: 64),
-            passed: true,
-            runtimeOutput: "calibrated_confidence",
-            expectedCalibrationError: 0.031,
-            maximumExpectedCalibrationError: 0.03,
-            evidencePath: "provenance/classifier-calibration-report.json",
-            evidenceSha256: String(repeating: "b", count: 64)
-        )
-        XCTAssertTrue(failedGate.isValid)
+        XCTAssertTrue(rawScoreStage.isValid)
     }
 
     func testModelPackLoaderDoesNotRehashPackagedModelsAtRuntime() throws {
@@ -1062,7 +1038,7 @@ final class SpeedConsumerTests: XCTestCase {
         let pack = try TrafficSignModelPackDirectoryLoader.load(
             from: directoryURL,
             runtimeVersion: UIDevice.current.systemVersion,
-            appVersion: "1.0.1",
+            appVersion: "1.1",
             countryCode: "DE"
         )
         let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack)
@@ -1084,6 +1060,9 @@ final class SpeedConsumerTests: XCTestCase {
             }
 
             XCTAssertNotNil(speed70, "Expected a 70 km/h sign in \(fixture.name)")
+            XCTAssertNil(speed70?.calibratedConfidence)
+            XCTAssertNil(speed70?.detectorCalibratedConfidence)
+            XCTAssertNil(speed70?.classifierCalibratedConfidence)
             XCTAssertGreaterThanOrEqual(
                 speed70?.rawScore ?? 0,
                 0.70,
