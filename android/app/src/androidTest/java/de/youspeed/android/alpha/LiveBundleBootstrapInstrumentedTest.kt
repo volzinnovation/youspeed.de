@@ -3,6 +3,8 @@ package de.youspeed.android.alpha
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
+import java.security.MessageDigest
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -51,7 +53,36 @@ class LiveBundleBootstrapInstrumentedTest {
             assertNotNull(active)
             assertEquals(manifest.bundleVersion, active?.bundleVersion)
             assertEquals("baden-wuerttemberg", active?.region)
-            assertEquals(manifest.db.bytes, File(requireNotNull(active).dbPath).length())
+            val installed = requireNotNull(active)
+            val compression = manifest.db.compression?.trim()?.lowercase(Locale.US).orEmpty()
+            val isCompressed = compression.isNotEmpty() && compression != "none"
+            val expectedBytes = if (isCompressed) {
+                requireNotNull(manifest.db.uncompressedBytes) { "Compressed manifest must specify uncompressed_bytes" }
+            } else {
+                manifest.db.bytes
+            }
+            val expectedSha256 = (if (isCompressed) {
+                requireNotNull(manifest.db.uncompressedSha256) { "Compressed manifest must specify uncompressed_sha256" }
+            } else {
+                manifest.db.sha256
+            }).trim().lowercase(Locale.US)
+            val installedFile = File(installed.dbPath)
+            assertEquals(expectedBytes, installedFile.length())
+            assertEquals(expectedBytes, installed.dbBytes)
+            assertEquals(expectedSha256, installed.dbSha256)
+
+            // Check the installed bytes independently of the persisted activation state.
+            val digest = MessageDigest.getInstance("SHA-256")
+            installedFile.inputStream().buffered().use { input ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+            }
+            val installedSha256 = digest.digest().joinToString("") { "%02x".format(it) }
+            assertEquals(expectedSha256, installedSha256)
         } finally {
             rootDir.deleteRecursively()
         }

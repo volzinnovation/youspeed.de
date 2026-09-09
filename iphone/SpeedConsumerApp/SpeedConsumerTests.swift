@@ -8549,6 +8549,11 @@ final class SpeedConsumerTests: XCTestCase {
 
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        defer {
+            if !autoTapSyncEnabled {
+                try? fm.removeItem(at: supportDir)
+            }
+        }
         let manager: V3BundleManager
         if autoTapSyncEnabled {
             manager = V3BundleManager(fileManager: fm)
@@ -8562,10 +8567,6 @@ final class SpeedConsumerTests: XCTestCase {
             if fm.fileExists(atPath: supportDir.path) {
                 try fm.removeItem(at: supportDir)
             }
-            defer {
-                try? fm.removeItem(at: supportDir)
-            }
-
             let config = URLSessionConfiguration.ephemeral
             config.timeoutIntervalForRequest = 300
             config.timeoutIntervalForResource = 14_400
@@ -8591,12 +8592,13 @@ final class SpeedConsumerTests: XCTestCase {
         let activatedManifestData = try Data(contentsOf: activatedManifestURL)
         let activatedManifest = try JSONDecoder().decode(V3BundleManifest.self, from: activatedManifestData)
         let assembledSize = try fileSize(dbURL)
-        XCTAssertEqual(assembledSize, activatedManifest.db.bytes, "Assembled DB size mismatch after sync")
-        print("REAL_RELEASE_ASSEMBLED db=\(dbURL.lastPathComponent) size=\(assembledSize) expected=\(activatedManifest.db.bytes)")
+        let expectedDBBytes = activatedManifest.db.uncompressedBytes ?? activatedManifest.db.bytes
+        XCTAssertEqual(assembledSize, expectedDBBytes, "Assembled DB size mismatch after sync")
+        print("REAL_RELEASE_ASSEMBLED db=\(dbURL.lastPathComponent) size=\(assembledSize) expected=\(expectedDBBytes)")
 
         try assertDBIntegrity(dbURL)
         let first = try readFirstWayRow(dbURL)
-        print(String(format: "REAL_RELEASE_FIRST_ROW row_id=%lld way_id=%@ min_lat=%.6f min_lon=%.6f", first.rowID, first.wayID, first.minLat, first.minLon))
+        print(String(format: "REAL_RELEASE_FIRST_ROW way_id=%@ min_lat=%.6f min_lon=%.6f", first.wayID, first.minLat, first.minLon))
 
         let service = V3SpeedLimitService(dbPath: dbURL.path)
         let result = try service.lookupSpeedLimit(lat: lat, lon: lon, radiusM: 1500.0, maxCandidates: 2048)
@@ -13925,7 +13927,7 @@ final class SpeedConsumerTests: XCTestCase {
         }
         defer { sqlite3_close(db) }
 
-        let sql = "SELECT row_id, way_id, min_lat, min_lon FROM ways ORDER BY row_id LIMIT 1"
+        let sql = "SELECT way_id, min_lat, min_lon FROM ways ORDER BY way_id LIMIT 1"
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else {
             throw NSError(domain: "SpeedConsumerTests", code: 24, userInfo: [NSLocalizedDescriptionKey: "prepare first row query failed"])
@@ -13935,11 +13937,10 @@ final class SpeedConsumerTests: XCTestCase {
         guard sqlite3_step(stmt) == SQLITE_ROW else {
             throw NSError(domain: "SpeedConsumerTests", code: 25, userInfo: [NSLocalizedDescriptionKey: "ways table is empty"])
         }
-        let rowID = sqlite3_column_int64(stmt, 0)
-        let wayID = String(cString: sqlite3_column_text(stmt, 1))
-        let minLat = sqlite3_column_double(stmt, 2)
-        let minLon = sqlite3_column_double(stmt, 3)
-        return WayRow(rowID: rowID, wayID: wayID, minLat: minLat, minLon: minLon)
+        let wayID = String(cString: sqlite3_column_text(stmt, 0))
+        let minLat = sqlite3_column_double(stmt, 1)
+        let minLon = sqlite3_column_double(stmt, 2)
+        return WayRow(wayID: wayID, minLat: minLat, minLon: minLon)
     }
 
     private func fixtureURL(named name: String) throws -> URL {
@@ -17085,7 +17086,6 @@ private struct ReplayExpectation: Codable {
 }
 
 private struct WayRow {
-    let rowID: Int64
     let wayID: String
     let minLat: Double
     let minLon: Double

@@ -161,7 +161,7 @@ internal data class AndroidYoloProposal(
     val box: NormalizedTrafficSignBoundingBox,
 )
 
-/** Decodes only detector channel 0 (`sign`); channels 1 (`plate`) and 2 (`face`) are out of scope. */
+/** Decodes normalized LiteRT xywh boxes for channel 0 (`sign`); `plate` and `face` are out of scope. */
 internal object AndroidYoloSignDecoder {
     const val OUTPUT_CHANNELS = 7
     const val OUTPUT_ELEMENTS = 33_600
@@ -187,10 +187,12 @@ internal object AndroidYoloSignDecoder {
             for (index in 0 until OUTPUT_ELEMENTS) {
                 val score = output[SIGN_SCORE_CHANNEL * OUTPUT_ELEMENTS + index]
                 if (!score.isFinite() || score < minimumScore) continue
-                val centerX = output[index].toDouble()
-                val centerY = output[OUTPUT_ELEMENTS + index].toDouble()
-                val width = output[2 * OUTPUT_ELEMENTS + index].toDouble()
-                val height = output[3 * OUTPUT_ELEMENTS + index].toDouble()
+                // The pinned Ultralytics LiteRT export normalizes xywh by its input dimensions.
+                // Restore input pixels before removing letterbox padding and scaling to the source.
+                val centerX = output[index].toDouble() * inputSize
+                val centerY = output[OUTPUT_ELEMENTS + index].toDouble() * inputSize
+                val width = output[2 * OUTPUT_ELEMENTS + index].toDouble() * inputSize
+                val height = output[3 * OUTPUT_ELEMENTS + index].toDouble() * inputSize
                 if (!centerX.isFinite() || !centerY.isFinite() || !width.isFinite() || !height.isFinite() ||
                     width <= 0.0 || height <= 0.0
                 ) continue

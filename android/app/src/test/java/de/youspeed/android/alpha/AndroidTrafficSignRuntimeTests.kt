@@ -36,11 +36,11 @@ class AndroidTrafficSignRuntimeTests {
     @Test
     fun detectorDecoderUsesOnlySignChannelAndAppliesNms() {
         val output = FloatArray(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
-        putBox(output, index = 0, x = 640f, y = 640f, width = 320f, height = 320f)
+        putBox(output, index = 0, x = 0.5f, y = 0.5f, width = 0.25f, height = 0.25f)
         output[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS] = 0.80f
-        putBox(output, index = 1, x = 645f, y = 645f, width = 320f, height = 320f)
+        putBox(output, index = 1, x = 645f / 1280f, y = 645f / 1280f, width = 0.25f, height = 0.25f)
         output[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + 1] = 0.70f
-        putBox(output, index = 2, x = 300f, y = 300f, width = 200f, height = 200f)
+        putBox(output, index = 2, x = 300f / 1280f, y = 300f / 1280f, width = 200f / 1280f, height = 200f / 1280f)
         // A high plate score must not become a live proposal.
         output[5 * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + 2] = 0.99f
 
@@ -58,6 +58,39 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals(0.2777777778, proposals.single().box.y, 1e-8)
         assertEquals(0.25, proposals.single().box.width, 1e-9)
         assertEquals(0.4444444444, proposals.single().box.height, 1e-8)
+    }
+
+    @Test
+    fun detectorDecoderMapsNormalizedBoxesThroughPortraitLetterboxing() {
+        val output = FloatArray(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
+        putBox(output, index = 0, x = 0.5f, y = 0.5f, width = 0.25f, height = 0.125f)
+        output[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS] = 0.90f
+        // A proposal crossing the left padding must be clipped to the source image.
+        putBox(output, index = 1, x = 0.25f, y = 0.25f, width = 0.25f, height = 0.125f)
+        output[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + 1] = 0.80f
+        // A proposal entirely inside the left padding has no source-image area.
+        putBox(output, index = 2, x = 0.125f, y = 0.75f, width = 0.0625f, height = 0.125f)
+        output[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + 2] = 0.70f
+
+        val proposals = AndroidYoloSignDecoder.decode(
+            output = output,
+            sourceWidth = 2376,
+            sourceHeight = 4224,
+            inputSize = 1280,
+            minimumScore = 0.25,
+        )
+
+        assertEquals(2, proposals.size)
+        val centeredBox = proposals[0].box
+        assertEquals(200.0 / 720.0, centeredBox.x, 1e-9)
+        assertEquals(0.4375, centeredBox.y, 1e-9)
+        assertEquals(320.0 / 720.0, centeredBox.width, 1e-9)
+        assertEquals(0.125, centeredBox.height, 1e-9)
+        val clippedBox = proposals[1].box
+        assertEquals(0.0, clippedBox.x, 1e-9)
+        assertEquals(0.1875, clippedBox.y, 1e-9)
+        assertEquals(200.0 / 720.0, clippedBox.width, 1e-9)
+        assertEquals(0.125, clippedBox.height, 1e-9)
     }
 
     @Test

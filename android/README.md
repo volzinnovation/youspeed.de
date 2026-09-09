@@ -65,22 +65,27 @@ From `android/gradlew`:
 
 ```bash
 cd android
-./gradlew --offline test
-./gradlew --offline assembleDebug
+./gradlew --offline :app:test :app:assembleDebug :app:assembleRelease :app:lintDebug
 ```
 
 The Android instrumented suite includes
 `AndroidLiteRtTrafficSignInstrumentedTest`, which loads the packaged models and
-expects the pinned Panoramax fixture to resolve to `maxspeed:70`. Run it on a
-connected Android device with:
+expects the pinned Panoramax fixture to resolve to `maxspeed:70`, and
+`VoskNativeRuntimeInstrumentedTest`, which checks JNA initialization and both
+speech recognizer paths using synthetic silence. Run these on an Android
+emulator or connected device with:
 
 ```bash
 cd android
 ./gradlew :app:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.AndroidLiteRtTrafficSignInstrumentedTest
+  -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.AndroidLiteRtTrafficSignInstrumentedTest,de.youspeed.android.alpha.VoskNativeRuntimeInstrumentedTest
 ```
 
 The wrapper targets Gradle `8.7`, which is already present in the local cache on this machine.
+
+The default connected suite also checks replay lookup correctness and latency
+against a synthetic SQLite fixture. Optional field-trace and external-database
+benchmarks skip when their inputs are absent.
 
 For replay regressions against the Karlsruhe seed subset on a connected emulator/device:
 
