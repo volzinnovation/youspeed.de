@@ -77,6 +77,10 @@ android {
         }
     }
 
+    androidResources {
+        noCompress += "tflite"
+    }
+
     sourceSets {
         getByName("main") {
             assets.srcDirs("src/main/assets", "../../shared")
@@ -86,11 +90,17 @@ android {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    // CameraX 1.5+ requires AGP 8.6; 1.4.2 is the latest release compatible
+    // with this app's AGP 8.5 / compileSdk 35 baseline.
+    val cameraXVersion = "1.4.2"
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation("androidx.camera:camera-core:$cameraXVersion")
+    implementation("androidx.camera:camera-camera2:$cameraXVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
     implementation(composeBom)
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
@@ -100,6 +110,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("com.alphacephei:vosk-android:0.3.75")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    // 1.4.2 is the newest LiteRT line compatible with this module's Kotlin 1.9 ABI.
+    implementation("com.google.ai.edge.litert:litert:1.4.2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

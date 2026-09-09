@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "generation": 1,
+  "environment": "production",
+  "expires_at": 1893456000,
+  "packs": [
+    {
+      "pack_id": "de-national-tsr",
+      "version": 1,
+      "countries": [
+        "DE"
+      ],
+      "rollout": "shadow",
+      "manifest": null,
+      "compatibility": {
+        "minimum_app_version": "1.1.0",
+        "maximum_app_version": "1.99.99",
+        "taxonomy_version": "tsr-semantic-v1",
+        "preprocessing_version": "vision-scale-fit-rgb-v1",
+        "platforms": [
+          {
+            "platform": "ios",
+            "minimum_runtime": "17.0.0"
+          },
+          {
+            "platform": "android",
+            "minimum_runtime": "34.0.0"
+          }
+        ]
+      },
+      "calibrated": false,
+      "reason": "German bootstrap: independent leakage-safe evaluation, export parity, calibration and license review pending.",
+      "supersedes": [],
+      "rollback_version": null
+    },
+    {
+      "pack_id": "fr-national-tsr",
+      "version": 1,
+      "countries": [
+        "FR"
+      ],
+      "rollout": "evaluation",
+      "manifest": null,
+      "compatibility": {
+        "minimum_app_version": "1.1.0",
+        "maximum_app_version": "1.99.99",
+        "taxonomy_version": "tsr-semantic-v1",
+        "preprocessing_version": "vision-scale-fit-rgb-v1",
+        "platforms": [
+          {
+            "platform": "ios",
+            "minimum_runtime": "17.0.0"
+          },
+          {
+            "platform": "android",
+            "minimum_runtime": "34.0.0"
+          }
+        ]
+      },
+      "calibrated": false,
+      "reason": "French mappings, reviewed mobile exports, independent evaluation, calibration and notices pending.",
+      "supersedes": [],
+      "rollback_version": null
+    },
+    {
+      "pack_id": "be-national-tsr",
+      "version": 1,
+      "countries": [
+        "BE"
+      ],
+      "rollout": "evaluation",
+      "manifest": null,
+      "compatibility": {
+        "minimum_app_version": "1.1.0",
+        "maximum_app_version": "1.99.99",
+        "taxonomy_version": "tsr-semantic-v1",
+        "preprocessing_version": "vision-scale-fit-rgb-v1",
+        "platforms": [
+          {
+            "platform": "ios",
+            "minimum_runtime": "17.0.0"
+          },
+          {
+            "platform": "android",
+            "minimum_runtime": "34.0.0"
+          }
+        ]
+      },
+      "calibrated": false,
+      "reason": "Follow-on country: no reviewed runtime artifacts.",
+      "supersedes": [],
+      "rollback_version": null
+    },
+    {
+      "pack_id": "nl-national-tsr",
+      "version": 1,
+      "countries": [
+        "NL"
+      ],
+      "rollout": "evaluation",
+      "manifest": null,
+      "compatibility": {
+        "minimum_app_version": "1.1.0",
+        "maximum_app_version": "1.99.99",
+        "taxonomy_version": "tsr-semantic-v1",
+        "preprocessing_version": "vision-scale-fit-rgb-v1",
+        "platforms": [
+          {
+            "platform": "ios",
+            "minimum_runtime": "17.0.0"
+          },
+          {
+            "platform": "android",
+            "minimum_runtime": "34.0.0"
+          }
+        ]
+      },
+      "calibrated": false,
+      "reason": "Follow-on country: no reviewed runtime artifacts.",
+      "supersedes": [],
+      "rollback_version": null
+    }
+  ]
+}

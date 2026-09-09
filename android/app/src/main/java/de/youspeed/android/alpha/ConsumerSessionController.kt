@@ -1,5 +1,10 @@
 package de.youspeed.android.alpha
 
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import java.net.HttpURLConnection
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
@@ -237,6 +242,9 @@ data class ConsumerUiState(
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
     val bundleDownloadSections: List<BundleDownloadCountrySection> = emptyList(),
+    val firstLocationPackStatus: String = "Kartenauswahl wartet auf den ersten GPS-Standort.",
+    val countryModelPackStatus: String = "Verkehrszeichen-Modell: Land noch nicht bestimmt.",
+    val firstLocationAllowsCellular: Boolean = false,
     val downloadedBundleCountByRegion: Map<String, Int> = emptyMap(),
     val downloadedBundleLatestVersionByRegion: Map<String, String> = emptyMap(),
     val configuredManifestEndpointCount: Int = 0,
@@ -255,6 +263,8 @@ data class ConsumerUiState(
     val isLowSpeedMatchingRuleActive: Boolean = false,
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
     val trafficSignRecognitionEnabled: Boolean = false,
+    val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
+    val trafficSignCameraRuntimeDetail: String = "Kamera-Erkennung ist ausgeschaltet.",
     val trafficSignGeneration: Long = 0L,
     val effectiveSpeedLimitSource: EffectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE,
     val effectiveSpeedLimitReason: String = "no_limit",
@@ -375,6 +385,27 @@ class ConsumerSessionController(
         ContractJson.decodeBundleTargets(assetReader.readText("BundleTargets.top10.json"))
     }.getOrNull()
     private val manifestEndpoints = targetsConfig?.manifestEndpoints(preferredCountryCode = "DEU").orEmpty()
+    private val regionalPackCatalog = runCatching {
+        RegionalPackCatalog.decode(assetReader.readText("RegionalCoverage/catalog-v1.json").toByteArray())
+    }.getOrNull()
+    private val countryPackRegistry = runCatching {
+        TrafficSignCountryPackRegistry.decodeBundled(assetReader.readText("tsr/country-pack-registry-v1.json").toByteArray())
+    }.getOrNull()
+    private val countryPackSelection = TrafficSignCountrySelection()
+    private val connectivityManager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private var firstLocationRegion: RegionalPackCatalog.Region? = null
+    private var firstLocationAttempts = 0
+    private var firstLocationRetryAfter = 0L
+    private var firstLocationRequested = false
+    private var firstLocationNetworkRegistered = false
+    private val firstLocationNetworkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            mainHandler.post { continueFirstLocationSetup() }
+        }
+    }
+    private val firstLocationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) { discoverPacks(location) }
+    }
     private val lookupToken = TrafficSignLookupMutationGate()
     private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
@@ -466,6 +497,7 @@ class ConsumerSessionController(
             audioAlertsEnabled = preferences.getBoolean(KEY_AUDIO_ALERTS_ENABLED, true),
             audioAlertThresholdKmh = preferences.getInt(KEY_AUDIO_ALERT_THRESHOLD, 8).coerceIn(0, 80),
             hideWelcomeScreen = preferences.getBoolean(KEY_HIDE_WELCOME, false),
+            firstLocationAllowsCellular = preferences.getBoolean("youspeed.first_location_cellular", false),
             gpsLogPath = gpsLogFile().absolutePath,
             matchLogPath = matchLogFile().absolutePath,
             runtimeDiagnosticsLogPath = runtimeDiagnosticsLogFile().absolutePath,
@@ -512,6 +544,8 @@ class ConsumerSessionController(
 
     fun bindHost(host: ConsumerHost) {
         this.host = host
+        reconcileTrafficSignCamera()
+        beginFirstLocationSetup()
     }
 
     fun dispose() {
@@ -519,6 +553,8 @@ class ConsumerSessionController(
             return
         }
         stopDriving()
+        runCatching { locationManager.removeUpdates(firstLocationListener) }
+        if (firstLocationNetworkRegistered) runCatching { connectivityManager.unregisterNetworkCallback(firstLocationNetworkCallback) }
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
         appendRuntimeDiagnosticEvent(
@@ -636,6 +672,112 @@ class ConsumerSessionController(
         return ConsumerAppLogic.requiresWelcome(uiState.activeBundleVersion, now)
     }
 
+    private fun beginFirstLocationSetup() {
+        if (isDisposed.get() || host == null || uiState.appScreenshotState != null || firstLocationRequested ||
+            uiState.startupDataState != StartupDataState.READY) return
+        firstLocationRequested = true
+        if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
+            preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
+        }
+        if (!firstLocationNetworkRegistered) {
+            runCatching { connectivityManager.registerDefaultNetworkCallback(firstLocationNetworkCallback) }
+                .onSuccess { firstLocationNetworkRegistered = true }
+        }
+        if (preferences.getBoolean("youspeed.first_location_map_complete", false)) {
+            updateState { copy(firstLocationPackStatus = "Erste Karteneinrichtung abgeschlossen.") }
+            return
+        }
+        if (hasLocationPermission()) requestFirstLocation() else host?.requestLocationPermission()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun requestFirstLocation() {
+        if (!hasLocationPermission() || isDisposed.get() || uiState.appScreenshotState != null ||
+            preferences.getBoolean("youspeed.first_location_map_complete", false)) return
+        runCatching { locationManager.removeUpdates(firstLocationListener) }
+        locationManager.getProviders(true).filter { it != LocationManager.PASSIVE_PROVIDER }.forEach { provider ->
+            runCatching { locationManager.requestLocationUpdates(provider, 1000L, 0f, firstLocationListener, Looper.getMainLooper()) }
+        }
+        mainHandler.postDelayed({
+            runCatching { locationManager.removeUpdates(firstLocationListener) }
+        }, 60_000)
+    }
+
+    fun retryFirstLocationSetup() {
+        firstLocationAttempts = 0
+        firstLocationRetryAfter = 0
+        firstLocationRegion = null
+        firstLocationRequested = false
+        beginFirstLocationSetup()
+    }
+
+    fun setFirstLocationAllowsCellular(allowed: Boolean) {
+        preferences.edit().putBoolean("youspeed.first_location_cellular", allowed).apply()
+        updateState { copy(firstLocationAllowsCellular = allowed) }
+        continueFirstLocationSetup()
+    }
+
+    private fun discoverPacks(location: Location) {
+        if (!location.hasAccuracy() || !FirstLocationPackPolicy.acceptsFix(location.latitude, location.longitude,
+                location.accuracy.toDouble(), location.time / 1000.0, clock.millis() / 1000.0)) return
+        val catalog = regionalPackCatalog ?: run {
+            updateState { copy(firstLocationPackStatus = "Regionenkatalog fehlt oder ist ungültig. Karte bitte manuell auswählen.") }
+            return
+        }
+        val matches = catalog.matches(location.longitude, location.latitude)
+        val country = countryPackSelection.update(matches.map { it.country }.toSet(), location.time / 1000.0)
+        val state = countryPackRegistry?.decision(country, "android", BuildConfig.VERSION_NAME.removeSuffix("-debug"),
+            android.os.Build.VERSION.SDK_INT.toString(), now = clock.millis() / 1000)?.state
+        val prefix = country?.let { "Verkehrszeichen-Modell $it: " } ?: "Verkehrszeichen-Modell: "
+        updateState { copy(countryModelPackStatus = prefix + if (state == "country_unresolved")
+            "Land im Grenzbereich noch unklar." else "Noch kein freigegebenes Download-Paket verfügbar.") }
+        if (preferences.getBoolean("youspeed.first_location_map_complete", false)) return
+        if (firstLocationRegion == null) firstLocationRegion = matches.firstOrNull()
+        if (firstLocationRegion == null) {
+            updateState { copy(firstLocationPackStatus = "Für diesen Standort ist keine passende Karte im Katalog verfügbar.") }
+        } else {
+            runCatching { locationManager.removeUpdates(firstLocationListener) }
+        }
+        continueFirstLocationSetup()
+    }
+
+    private fun continueFirstLocationSetup() {
+        if (isDisposed.get() || uiState.appScreenshotState != null ||
+            preferences.getBoolean("youspeed.first_location_map_complete", false) ||
+            uiState.startupDataState != StartupDataState.READY || isSyncingNow()) return
+        val region = firstLocationRegion ?: return
+        val option = uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == region.id } ?: run {
+            updateState { copy(firstLocationPackStatus = "Kein Download-Endpunkt für die passende Region verfügbar.") }
+            return
+        }
+        if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
+            preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
+            updateState { copy(firstLocationPackStatus = "Vorhandene Karten bleiben ausgewählt.") }
+            return
+        }
+        val network = connectivityManager.activeNetwork
+        val capabilities = network?.let { connectivityManager.getNetworkCapabilities(it) }
+        val allowed = uiState.firstLocationAllowsCellular
+        if (network == null || capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) != true ||
+            (!allowed && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED))) {
+            updateState { copy(firstLocationPackStatus = "Passende Karte: ${option.displayName}. Warte auf WLAN oder Freigabe mobiler Daten.") }
+            return
+        }
+        if (firstLocationAttempts >= 3 || clock.millis() < firstLocationRetryAfter) return
+        firstLocationAttempts++
+        firstLocationRetryAfter = clock.millis() + 60_000
+        // Bind all artifact requests to this network, so a Wi-Fi loss cannot
+        // silently move a large initial download onto the mobile connection.
+        val downloader = BundleBootstrapper(rootDir, HttpUrlFetcher { url ->
+            val current = connectivityManager.getNetworkCapabilities(network)
+            check(current != null && (allowed || current.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)))
+            network.openConnection(url) as HttpURLConnection
+        }, clock, assetReader)
+        updateState { copy(firstLocationPackStatus = "Lade die passende Karte: ${option.displayName}.") }
+        downloadSelectedBundle(option, downloader)
+        mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
+    }
+
     fun startDriving() {
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY) {
             return
@@ -647,6 +789,7 @@ class ConsumerSessionController(
             reason = "drive_started",
             permitWrites = uiState.trafficSignRecognitionEnabled,
         )
+        reconcileTrafficSignCamera()
         ensureTextToSpeech()
         if (!hasLocationPermission()) {
             updateState {
@@ -663,6 +806,7 @@ class ConsumerSessionController(
 
     fun stopDriving() {
         isDriving = false
+        host?.stopTrafficSignCamera()
         lookupToken.advance()
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "drive_stopped", permitWrites = false)
         trafficSignDriveSessionId = null
@@ -676,7 +820,14 @@ class ConsumerSessionController(
         lastAudioFeedbackAtMs = 0L
         lastDrivingBanWarningAtMs = 0L
         if (uiState.appScreenshotState == null) {
-            updateState { copy(driveStatus = "stopped", currentSpeedKmh = 0.0) }
+            updateState {
+                copy(
+                    driveStatus = "stopped",
+                    currentSpeedKmh = 0.0,
+                    trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
+                    trafficSignCameraRuntimeDetail = "Kamera-Erkennung ist ausgeschaltet.",
+                )
+            }
         }
     }
 
@@ -684,6 +835,7 @@ class ConsumerSessionController(
         if (!granted) {
             updateState {
                 copy(
+                    firstLocationPackStatus = "Für die automatische Kartenauswahl ist die Standortfreigabe erforderlich.",
                     driveStatus = "location_denied",
                     lastError = "Standortberechtigung wurde nicht erteilt.",
                 )
@@ -692,6 +844,8 @@ class ConsumerSessionController(
         }
         if (isDriving) {
             startLocationUpdates()
+        } else {
+            requestFirstLocation()
         }
     }
 
@@ -782,12 +936,83 @@ class ConsumerSessionController(
         updateState {
             copy(
                 trafficSignRecognitionEnabled = enabled,
+                trafficSignCameraRuntimeState = if (enabled) {
+                    trafficSignCameraRuntimeState
+                } else {
+                    TrafficSignCameraRuntimeState.DISABLED
+                },
+                trafficSignCameraRuntimeDetail = if (enabled) {
+                    trafficSignCameraRuntimeDetail
+                } else {
+                    "Kamera-Erkennung ist ausgeschaltet."
+                },
                 trafficSignGeneration = this@ConsumerSessionController.trafficSignGeneration.get(),
             )
         }
+        reconcileTrafficSignCamera()
     }
 
-    /** Snapshot ingress for a future verified CameraX/model adapter. No detector is instantiated here. */
+    fun onCameraPermissionResult(granted: Boolean) {
+        if (!granted) {
+            onTrafficSignCameraRuntimeStateChanged(
+                TrafficSignCameraRuntimeState.DENIED,
+                "Kameraberechtigung wurde nicht erteilt.",
+            )
+            return
+        }
+        if (uiState.trafficSignRecognitionEnabled && isDriving) {
+            host?.startTrafficSignCamera()
+        }
+    }
+
+    fun onTrafficSignCameraRuntimeStateChanged(
+        state: TrafficSignCameraRuntimeState,
+        detail: String,
+    ) {
+        postState {
+            copy(
+                trafficSignCameraRuntimeState = state,
+                trafficSignCameraRuntimeDetail = detail,
+            )
+        }
+        appendRuntimeDiagnosticEvent(
+            event = "traffic_sign_camera_runtime",
+            details = mapOf(
+                "state" to state.name.lowercase(Locale.US),
+                "detail" to detail,
+            ),
+        )
+    }
+
+    fun currentSpeedMetersPerSecondForTrafficSignAnalysis(): Double =
+        (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+
+    private fun reconcileTrafficSignCamera() {
+        val shouldRun = uiState.trafficSignRecognitionEnabled && isDriving && uiState.appScreenshotState == null
+        if (!shouldRun) {
+            host?.stopTrafficSignCamera()
+            updateState {
+                copy(
+                    trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
+                    trafficSignCameraRuntimeDetail = "Kamera-Erkennung ist ausgeschaltet.",
+                )
+            }
+            return
+        }
+        if (hasCameraPermission()) {
+            host?.startTrafficSignCamera()
+        } else if (uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.REQUESTING_PERMISSION) {
+            updateState {
+                copy(
+                    trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.REQUESTING_PERMISSION,
+                    trafficSignCameraRuntimeDetail = "Kameraberechtigung wird angefragt.",
+                )
+            }
+            host?.requestCameraPermission()
+        }
+    }
+
+    /** Coherent road-context snapshot captured by the live CameraX/LiteRT lane for each accepted frame. */
     fun currentTrafficSignDetectionContext(): TrafficSignDetectionContextSnapshotValue? =
         synchronized(trafficSignStateLock) {
             val (generation, writePermitted) = trafficSignGeneration.snapshot()
@@ -1123,7 +1348,7 @@ class ConsumerSessionController(
         }
     }
 
-    fun downloadSelectedBundle(option: BundleDownloadOption) {
+    fun downloadSelectedBundle(option: BundleDownloadOption, initialDownloader: BundleBootstrapper? = null) {
         if (isSyncingNow()) {
             setError("Download blockiert: Es laeuft bereits eine Synchronisierung.")
             return
@@ -1141,7 +1366,7 @@ class ConsumerSessionController(
         }
         submitBackgroundTask {
             try {
-                val sync = bootstrapper.syncFromManifestUrl(
+                val sync = (initialDownloader ?: bootstrapper).syncFromManifestUrl(
                     manifestUrl = option.endpoint.manifestUrl,
                     onProgress = ::applyBundleSyncProgress,
                 )
@@ -1152,8 +1377,10 @@ class ConsumerSessionController(
                     preferredCountryCode = active?.countryCode ?: option.countryCode,
                     reason = "download_selected_bundle",
                 )
+                if (initialDownloader != null) preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
                 postState {
                     copy(
+                        firstLocationPackStatus = if (initialDownloader != null) "Passende Karte ist offline bereit: ${option.displayName}." else firstLocationPackStatus,
                         syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
                         syncProgressDetail = "Bundle geladen: ${option.displayName}",
                         syncProgressCompletedBytes = 0L,
@@ -1167,6 +1394,9 @@ class ConsumerSessionController(
                     )
                 }
             } catch (error: Exception) {
+                if (initialDownloader != null) postState {
+                    copy(firstLocationPackStatus = "Karten-Download fehlgeschlagen. Erneut versuchen oder eine Karte auswählen.")
+                }
                 setError(error.message ?: error.javaClass.simpleName)
             }
         }
@@ -1840,6 +2070,7 @@ class ConsumerSessionController(
     }
 
     private fun consumeLocation(location: Location) {
+        discoverPacks(location)
         val previousLocation = recentSpeedSampleLocations
             .asReversed()
             .firstOrNull { prior ->
@@ -2590,6 +2821,10 @@ class ConsumerSessionController(
                 lastError = "",
             )
         }
+        mainHandler.post {
+            beginFirstLocationSetup()
+            continueFirstLocationSetup()
+        }
     }
 
     private fun failStartupForSpeechModel(message: String) {
@@ -2825,6 +3060,10 @@ class ConsumerSessionController(
 
     private fun hasMicrophonePermission(): Boolean {
         return appContext.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun hasCameraPermission(): Boolean {
+        return appContext.checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun resolveLookupCountryCode(

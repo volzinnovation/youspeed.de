@@ -22,14 +22,19 @@ The Android app uses the same bundled target configuration and v3 map-bundle con
   to inside a built-up area
 - preserve confirmed TSR annotations, including German Zone 30 (`DE:274.1`),
   in the Panoramax sidecar and repair `Exif.Photo.UserComment` before upload
+- request camera permission only when TSR is enabled, bind one rear-camera
+  CameraX `ImageAnalysis` stream, and run the pinned two-stage model locally
+  through LiteRT
+- verify both bundled `.tflite` files against their manifest SHA-256 before
+  opening the interpreters; only detector class `sign` enters live inference,
+  while `plate` and `face` are explicitly ignored
 
-The normalized-frame orchestration and live-controller bridge are implemented,
-but the repository still contains no Android LiteRT traffic-sign model or
-CameraX frame producer. Consequently these policies are testable and ready for
-that adapter, but a debug APK cannot yet perform real camera inference on an
-Android phone. Android also has no Dashcam/Panoramax recorder lifecycle today,
-so iPhone's independent-TSR-versus-recording toggle has no Android recording
-module to control yet.
+The normalized-frame orchestration and live-controller bridge now have a real
+CameraX/LiteRT producer. The bundled detector and classifier are pinned sibling
+exports of the iPhone field-test checkpoints, with fixture parity recorded in
+the pack's provenance report. Android still has no Dashcam/Panoramax recorder
+lifecycle today; TSR therefore owns its CameraX analysis stream directly and is
+already independent of any recording state.
 
 ## Local verification
 
@@ -39,6 +44,17 @@ From `android/gradlew`:
 cd android
 ./gradlew --offline test
 ./gradlew --offline assembleDebug
+```
+
+The Android instrumented suite includes
+`AndroidLiteRtTrafficSignInstrumentedTest`, which loads the packaged models and
+expects the pinned Panoramax fixture to resolve to `maxspeed:70`. Run it on a
+connected Android device with:
+
+```bash
+cd android
+./gradlew :app:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=de.youspeed.android.alpha.AndroidLiteRtTrafficSignInstrumentedTest
 ```
 
 The wrapper targets Gradle `8.7`, which is already present in the local cache on this machine.

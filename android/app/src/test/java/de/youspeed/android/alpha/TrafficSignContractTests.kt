@@ -34,7 +34,7 @@ class TrafficSignContractTests {
         assertEquals(listOf("6666666666666666666666666666666666666666666666666666666666666666"), pack.lineage.datasetInventorySha256s)
         assertEquals("fixture-training-run-v1", pack.lineage.trainingRunId)
         assertTrue(TrafficSignModelPackValidator.validate(pack).isEmpty())
-        assertTrue(TrafficSignRuntimeFoundation.state is TrafficSignRuntimeState.Unavailable)
+        assertTrue(TrafficSignRuntimeFoundation.state is TrafficSignRuntimeState.Available)
     }
 
     @Test

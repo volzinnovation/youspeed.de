@@ -1,0 +1,203 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generation",
+    "environment",
+    "expires_at",
+    "packs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "environment": {
+      "enum": [
+        "fixture",
+        "production"
+      ]
+    },
+    "expires_at": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4102444800
+    },
+    "packs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pack_id",
+          "version",
+          "countries",
+          "rollout",
+          "manifest",
+          "compatibility",
+          "calibrated",
+          "reason",
+          "supersedes",
+          "rollback_version"
+        ],
+        "properties": {
+          "pack_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,95}$"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            "minItems": 1,
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "rollout": {
+            "enum": [
+              "evaluation",
+              "shadow",
+              "canary",
+              "available",
+              "withdrawn"
+            ]
+          },
+          "manifest": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "url",
+                  "sha256",
+                  "size_bytes"
+                ],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+                    "maxLength": 2048
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  },
+                  "size_bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1048576
+                  }
+                }
+              }
+            ]
+          },
+          "compatibility": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "minimum_app_version",
+              "maximum_app_version",
+              "taxonomy_version",
+              "preprocessing_version",
+              "platforms"
+            ],
+            "properties": {
+              "minimum_app_version": {
+                "type": "string",
+                "pattern": "^[0-9]{1,6}\\.[0-9]{1,6}\\.[0-9]{1,6}$"
+              },
+              "maximum_app_version": {
+                "type": "string",
+                "pattern": "^[0-9]{1,6}\\.[0-9]{1,6}\\.[0-9]{1,6}$"
+              },
+              "taxonomy_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "preprocessing_version": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "platforms": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "platform",
+                    "minimum_runtime"
+                  ],
+                  "properties": {
+                    "platform": {
+                      "enum": [
+                        "ios",
+                        "android"
+                      ]
+                    },
+                    "minimum_runtime": {
+                      "type": "string",
+                      "pattern": "^[0-9]{1,6}\\.[0-9]{1,6}\\.[0-9]{1,6}$"
+                    }
+                  }
+                },
+                "minItems": 1,
+                "maxItems": 2,
+                "uniqueItems": true
+              }
+            }
+          },
+          "calibrated": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "uniqueItems": true
+          },
+          "rollback_version": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2147483647
+              }
+            ]
+          }
+        }
+      },
+      "maxItems": 256
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/country-pack-registry-v1.json",
+  "title": "Country pack discovery index (exact bytes require an out-of-band SHA-256 trust pin)"
+}

@@ -1,5 +1,11 @@
 # YouSpeed traffic-sign recognition contracts
 
+National pack discovery and first-location map setup are documented in
+[`TSR_COUNTRY_PACK_DELIVERY.md`](../../docs/TSR_COUNTRY_PACK_DELIVERY.md).
+The new country registry and delivery-envelope schemas are additive; the bundled
+inventory advertises no reviewed model downloads yet. DE/FR discovery fixtures
+are synthetic and BE/NL remain unavailable.
+
 This directory defines the portable boundary between the YouSpeed training and
 release pipeline and the iOS/Android runtimes. Model binaries do not belong in
 the normal source tree. A released country pack is a directory containing a

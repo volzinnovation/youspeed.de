@@ -56,10 +56,10 @@ Current implementation state:
 - An explicit iPhone setting may keep only the TSR consumer active without a
   Dashcam/Panoramax recording. This reuses the same coordinator and capture
   graph, retains no video, and does not present as an active drive recording.
-- Shared v1 contracts, pure fusion/precedence policy, and the iPhone direct
-  runtime adapter exist on this branch. The two-component pack/event v2 and
-  trained artifacts are still missing. Android still needs camera permission
-  and the shared CameraX/LiteRT lifecycle.
+- Shared contracts, pure fusion/precedence policy, and component-level event
+  lineage exist on this branch. Android now includes camera permission, a
+  CameraX analysis producer, and SHA-verified LiteRT detector/classifier
+  artifacts exported from the same pinned checkpoints as the iPhone pack.
 - The iPhone field-test pack is active in the primary-sign lane. It has no live
   override allowlist, is not shadow-only, and missing calibration metadata is
   diagnostic rather than an activation rejection during testing.
@@ -1041,9 +1041,9 @@ iPhone artifact:
 
 Android artifact:
 
-- Sibling primary-sign LiteRT detector and classifier exports bundled under app
-  assets for the first slice.
-- Target runtime path: shared CameraX lifecycle -> TSR `ImageAnalysis`
+- Sibling primary-sign LiteRT detector and classifier exports are bundled under
+  app assets and verified against the pack manifest before interpreter startup.
+- Runtime path: CameraX lifecycle -> TSR `ImageAnalysis`
   consumer -> frame conversion -> primary-proposal interpreter -> retained
   crops -> classifier interpreter -> semantic normalization.
 - Use one analyzer executor and one in-flight inference at a time.

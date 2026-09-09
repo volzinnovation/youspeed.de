@@ -5,6 +5,12 @@ interface ConsumerHost {
 
     fun requestMicrophonePermission()
 
+    fun requestCameraPermission()
+
+    fun startTrafficSignCamera()
+
+    fun stopTrafficSignCamera()
+
     fun showTransientMessage(message: String)
 
     fun openExternalUrl(url: String)

@@ -2,6 +2,8 @@
 
 package de.youspeed.android.alpha
 
+import androidx.compose.material3.Checkbox
+
 import android.content.Context
 import android.graphics.Paint as AndroidPaint
 import android.graphics.Typeface
@@ -1176,7 +1178,7 @@ private fun SettingsSheet(
                     }
                     Text(
                         if (ui.trafficSignRecognitionEnabled) {
-                            "Erkannte Schilder werden erst nach dem Vorbeifahren wirksam. Ein verifiziertes Android-Modell muss separat bereitgestellt sein."
+                            ui.trafficSignCameraRuntimeDetail
                         } else {
                             "Die Kamera-Erkennung ist ausgeschaltet; TSR-Ereignisse werden nicht verarbeitet."
                         },
@@ -1242,6 +1244,13 @@ private fun SettingsSheet(
             }
             item {
                 SectionCard("Kartendaten-Download") {
+                    Text(ui.firstLocationPackStatus, fontSize = 13.sp)
+                    Text(ui.countryModelPackStatus, fontSize = 13.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = ui.firstLocationAllowsCellular, onCheckedChange = controller::setFirstLocationAllowsCellular)
+                        Text("Erste Karte auch über mobile Daten laden", fontSize = 13.sp)
+                    }
+                    OutlinedButton(onClick = controller::retryFirstLocationSetup) { Text("Standortauswahl erneut versuchen") }
                     DebugLabel("Status", controller.formattedSyncStatus())
                     DebugLabel("Bundle", ui.activeBundleVersion)
                     syncMessageLine(ui)?.let { (text, color) ->

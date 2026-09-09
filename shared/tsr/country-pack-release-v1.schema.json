@@ -1,0 +1,278 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pack_id",
+    "version",
+    "countries",
+    "runtime_manifest",
+    "files",
+    "osm_mappings",
+    "provenance",
+    "acceptance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "pack_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,95}$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "countries": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$"
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "runtime_manifest": {
+      "$ref": "https://youspeed.de/schemas/tsr/model-pack-v1.json"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "artifact",
+          "platform"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"
+          },
+          "artifact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "url",
+              "sha256",
+              "size_bytes"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+                "maxLength": 2048
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 536870912
+              }
+            }
+          },
+          "platform": {
+            "enum": [
+              "ios",
+              "android",
+              "all"
+            ]
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 4096
+    },
+    "osm_mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "class_id",
+          "country",
+          "osm_sign_code"
+        ],
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "country": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}$"
+          },
+          "osm_sign_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "name",
+          "revision",
+          "sha256",
+          "license",
+          "source",
+          "notice_path"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "model",
+              "dataset",
+              "architecture",
+              "conversion_tool",
+              "notice"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40,64}$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "source": {
+            "type": "string",
+            "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+            "maxLength": 2048
+          },
+          "notice_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        }
+      },
+      "minItems": 5
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_report",
+        "parity_report",
+        "leakage_report",
+        "untouched_field_set_sha256",
+        "review_revision"
+      ],
+      "properties": {
+        "evaluation_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "sha256",
+            "size_bytes"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+              "maxLength": 2048
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 536870912
+            }
+          }
+        },
+        "parity_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "sha256",
+            "size_bytes"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+              "maxLength": 2048
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 536870912
+            }
+          }
+        },
+        "leakage_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "url",
+            "sha256",
+            "size_bytes"
+          ],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://[a-z0-9.-]+/[A-Za-z0-9/_.-]+$",
+              "maxLength": 2048
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "size_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 536870912
+            }
+          }
+        },
+        "untouched_field_set_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "review_revision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40,64}$"
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/country-pack-release-v1.json",
+  "title": "Country pack delivery envelope; synthetic fixtures never authorize release"
+}

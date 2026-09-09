@@ -15,6 +15,7 @@ import java.io.File
 import java.time.Clock
 
 class MainActivity : ComponentActivity(), ConsumerHost {
+    private var trafficSignCameraRuntime: AndroidTrafficSignCameraRuntime? = null
     private val sessionController by lazy {
         ConsumerSessionController(
             context = this,
@@ -33,6 +34,11 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         sessionController.onMicrophonePermissionResult(granted)
+    }
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        sessionController.onCameraPermissionResult(granted)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +67,25 @@ class MainActivity : ComponentActivity(), ConsumerHost {
 
     override fun requestMicrophonePermission() {
         microphonePermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
+
+    override fun requestCameraPermission() {
+        cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    override fun startTrafficSignCamera() {
+        if (trafficSignCameraRuntime != null || isFinishing || isDestroyed) return
+        trafficSignCameraRuntime = AndroidTrafficSignCameraRuntime(
+            context = applicationContext,
+            lifecycleOwner = this,
+            controller = sessionController,
+            onStateChanged = sessionController::onTrafficSignCameraRuntimeStateChanged,
+        ).also(AndroidTrafficSignCameraRuntime::start)
+    }
+
+    override fun stopTrafficSignCamera() {
+        trafficSignCameraRuntime?.close()
+        trafficSignCameraRuntime = null
     }
 
     override fun showTransientMessage(message: String) {

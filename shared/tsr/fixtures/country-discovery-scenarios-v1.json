@@ -1,0 +1,285 @@
+{
+  "regions": [
+    {
+      "name": "Karlsruhe",
+      "longitude": 8.4037,
+      "latitude": 49.0069,
+      "first": "germany|baden-wuerttemberg"
+    },
+    {
+      "name": "Paris",
+      "longitude": 2.3522,
+      "latitude": 48.8566,
+      "first": "france|ile-de-france"
+    },
+    {
+      "name": "Brussels",
+      "longitude": 4.3517,
+      "latitude": 50.8503,
+      "first": "belgium|belgium"
+    },
+    {
+      "name": "Amsterdam",
+      "longitude": 4.9041,
+      "latitude": 52.3676,
+      "first": "netherlands|netherlands"
+    },
+    {
+      "name": "Lyon",
+      "longitude": 4.8357,
+      "latitude": 45.764,
+      "first": "france|rhone-alpes"
+    },
+    {
+      "name": "Reunion",
+      "longitude": 55.4481,
+      "latitude": -20.8823,
+      "first": "france|reunion"
+    },
+    {
+      "name": "Atlantic",
+      "longitude": -30.0,
+      "latitude": 30.0,
+      "first": null
+    }
+  ],
+  "country_transitions": [
+    {
+      "countries": [
+        "DE"
+      ],
+      "timestamp": 100,
+      "expected": "DE"
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 101,
+      "expected": null
+    },
+    {
+      "countries": [
+        "DE",
+        "FR"
+      ],
+      "timestamp": 102,
+      "expected": null
+    },
+    {
+      "countries": [
+        "DE"
+      ],
+      "timestamp": 103,
+      "expected": "DE"
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 110,
+      "expected": null
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 115,
+      "expected": null
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 125,
+      "expected": "FR"
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 124,
+      "expected": null
+    },
+    {
+      "countries": [],
+      "timestamp": 130,
+      "expected": null
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 131,
+      "override": "NL",
+      "expected": "NL"
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 132,
+      "expected": null
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 140,
+      "expected": null
+    },
+    {
+      "countries": [
+        "FR"
+      ],
+      "timestamp": 147,
+      "expected": "FR"
+    },
+    {
+      "countries": [
+        "AT"
+      ],
+      "timestamp": 150,
+      "expected": null
+    },
+    {
+      "countries": [
+        "AT"
+      ],
+      "timestamp": 160,
+      "expected": null
+    },
+    {
+      "countries": [
+        "AT"
+      ],
+      "timestamp": 165,
+      "expected": "AT"
+    }
+  ],
+  "registry_decisions": [
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "fixture_only"
+    },
+    {
+      "country": "FR",
+      "app_version": "1.1.0",
+      "runtime_version_ios": "17.0.0",
+      "runtime_version_android": "34.0.0",
+      "expected": "fixture_only"
+    },
+    {
+      "country": "BE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "unavailable"
+    },
+    {
+      "country": "NL",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "unavailable"
+    },
+    {
+      "country": "AT",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "unavailable"
+    },
+    {
+      "country": null,
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "country_unresolved"
+    },
+    {
+      "country": "DE",
+      "app_version": "2.0",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "incompatible"
+    },
+    {
+      "country": "FR",
+      "app_version": "1.1",
+      "runtime_version_ios": "16.9",
+      "runtime_version_android": "33",
+      "expected": "incompatible"
+    },
+    {
+      "country": "FR",
+      "app_version": "1.1-broken",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "expected": "incompatible"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "available",
+      "calibrated": false,
+      "expected": "shadow"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "withdrawn",
+      "calibrated": true,
+      "expected": "withdrawn"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "canary",
+      "calibrated": true,
+      "expected": "canary_not_enrolled"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "evaluation",
+      "calibrated": true,
+      "expected": "shadow"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "shadow",
+      "calibrated": true,
+      "expected": "shadow"
+    },
+    {
+      "country": "DE",
+      "app_version": "1.1",
+      "runtime_version_ios": "17",
+      "runtime_version_android": "34",
+      "environment": "production",
+      "rollout": "available",
+      "calibrated": true,
+      "expected": "downloadable"
+    }
+  ]
+}

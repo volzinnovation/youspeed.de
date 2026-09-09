@@ -417,14 +417,14 @@ data class TrafficSignRecognitionEvent(
     val modelComponents: List<TrafficSignModelComponentLineage> = emptyList(),
 )
 
-/** No Android inference backend is enabled by this foundation-only slice. */
 sealed interface TrafficSignRuntimeState {
+    data class Available(val modelPackAssetPath: String) : TrafficSignRuntimeState
     data class Unavailable(val reason: String) : TrafficSignRuntimeState
 }
 
 object TrafficSignRuntimeFoundation {
-    val state: TrafficSignRuntimeState = TrafficSignRuntimeState.Unavailable(
-        reason = "No verified Android traffic-sign model artifact is installed",
+    val state: TrafficSignRuntimeState = TrafficSignRuntimeState.Available(
+        modelPackAssetPath = "tsr/DE.panoramax-bootstrap.tsrmodelpack/manifest.json",
     )
 }
 

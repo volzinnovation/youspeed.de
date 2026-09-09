@@ -2910,6 +2910,10 @@ private struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
+                    Text(viewModel.firstLocationPackStatus).font(.footnote)
+                    Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
+                    Toggle("Erste Karte auch über mobile Daten laden", isOn: $viewModel.firstLocationAllowsCellular)
+                    Button("Standortauswahl erneut versuchen") { viewModel.retryFirstLocationSetup() }
                     ForEach(viewModel.bundleDownloadSections) { country in
                         if country.options.count == 1, let option = country.options.first {
                             bundleOptionRow(option, title: country.countryName)

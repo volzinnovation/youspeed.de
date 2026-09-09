@@ -2317,7 +2317,9 @@ internal class V3SpeedLimitLookup(
         }
         if (selectedHypothesis != null) {
             directionalHypotheses.add(0, selectedHypothesis)
-            while (directionalHypotheses.size > MINI_HMM_BEAM_WIDTH) directionalHypotheses.removeLast()
+            while (directionalHypotheses.size > MINI_HMM_BEAM_WIDTH) {
+                directionalHypotheses.removeAt(directionalHypotheses.lastIndex)
+            }
         }
         return CandidateSelection(
             selected = finalSelected,

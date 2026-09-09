@@ -43,6 +43,11 @@ targets:
         buildPhase: resources
       - path: ../shared/CoveragePolys
         buildPhase: resources
+      - path: ../shared/RegionalCoverage
+        type: folder
+        buildPhase: resources
+      - path: ../shared/tsr/country-pack-registry-v1.json
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer

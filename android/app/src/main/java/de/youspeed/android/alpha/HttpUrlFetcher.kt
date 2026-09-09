@@ -12,7 +12,9 @@ data class GitHubReleaseAssetPath(
     val assetName: String,
 )
 
-class HttpUrlFetcher : HttpFetcher {
+class HttpUrlFetcher(
+    private val connectionFactory: (URL) -> HttpURLConnection = { it.openConnection() as HttpURLConnection },
+) : HttpFetcher {
     override fun fetch(url: String): ByteArray {
         val requestUrl = url
         val connection = openConnection(requestUrl)
@@ -55,7 +57,7 @@ class HttpUrlFetcher : HttpFetcher {
     }
 
     private fun openConnection(requestUrl: String): HttpURLConnection {
-        val connection = URL(requestUrl).openConnection() as HttpURLConnection
+        val connection = connectionFactory(URL(requestUrl))
         connection.instanceFollowRedirects = true
         connection.connectTimeout = 15_000
         connection.readTimeout = 60_000

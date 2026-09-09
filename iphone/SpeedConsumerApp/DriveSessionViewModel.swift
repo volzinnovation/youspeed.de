@@ -1,6 +1,7 @@
 import CoreLocation
 import AVFoundation
 import Foundation
+import Network
 import OSLog
 import Speech
 import UIKit
@@ -528,6 +529,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var syncProgressETASeconds: Double?
     @Published var syncPartDownloads: [PartDownloadProgress] = []
     @Published var maintenanceMessage: String = ""
+    @Published private(set) var firstLocationPackStatus = "Kartenauswahl wartet auf den ersten GPS-Standort."
+    @Published private(set) var countryModelPackStatus = "Verkehrszeichen-Modell: Land noch nicht bestimmt."
+    @Published var firstLocationAllowsCellular = UserDefaults.standard.bool(forKey: "youspeed.first_location_cellular") {
+        didSet {
+            UserDefaults.standard.set(firstLocationAllowsCellular, forKey: "youspeed.first_location_cellular")
+            continueFirstLocationSetup()
+        }
+    }
+    private let regionalPackCatalog = RegionalPackCatalog.bundled()
+    private let countryPackRegistry = TrafficSignCountryPackRegistry.bundled()
+    private var countryPackSelection = TrafficSignCountrySelection()
+    private var firstLocationRegion: RegionalPackCatalog.Region?
+    private var firstLocationAttempts = 0
+    private var firstLocationRetryAfter = Date.distantPast
+    private var firstLocationNetworkReady = false
+    private var firstLocationNetworkMetered = true
+    private let firstLocationNetworkMonitor = NWPathMonitor()
+    private var firstLocationNetworkStarted = false
+
+    deinit {
+        firstLocationNetworkMonitor.cancel()
+    }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
     @Published var activeDBPath: String = ""
@@ -3453,7 +3476,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return ""
     }
 
-    func downloadSelectedBundle(_ option: BundleDownloadOption) {
+    func downloadSelectedBundle(_ option: BundleDownloadOption, firstLocationSetup: Bool = false) {
         guard startupTask == nil else {
             let message = "Download blockiert: Startup-Datenvorbereitung laeuft noch."
             syncProgressDetail = message
@@ -3496,7 +3519,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncStatus = "syncing"
 
                 let sync: BundleSyncResult
-                sync = try await bundleManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
+                let downloadManager: V3BundleManager
+                if firstLocationSetup {
+                    let configuration = URLSessionConfiguration.default
+                    configuration.allowsCellularAccess = firstLocationAllowsCellular
+                    configuration.allowsExpensiveNetworkAccess = firstLocationAllowsCellular
+                    configuration.allowsConstrainedNetworkAccess = firstLocationAllowsCellular
+                    downloadManager = V3BundleManager(session: URLSession(configuration: configuration))
+                } else {
+                    downloadManager = bundleManager
+                }
+                sync = try await downloadManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
                     Task { @MainActor [weak self] in
                         self?.applySyncProgress(progress)
                     }
@@ -3522,7 +3555,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncPartDownloads = []
                 maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
                 await refreshDownloadedBundleInventory()
+                if firstLocationSetup {
+                    UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
+                    firstLocationPackStatus = "Passende Karte ist offline bereit: \(option.displayName)."
+                }
             } catch {
+                if firstLocationSetup {
+                    firstLocationPackStatus = "Karten-Download fehlgeschlagen. Erneut versuchen oder eine Karte auswählen."
+                }
                 syncStatus = "sync_failed"
                 syncProgressStage = "failed"
                 syncProgressETASeconds = nil
@@ -3881,7 +3921,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             guard let self else {
                 return
             }
-            defer { startupTask = nil }
+            defer {
+                startupTask = nil
+                if startupDataState == .ready { beginFirstLocationSetup() }
+                continueFirstLocationSetup()
+            }
 
             startupDataState = .loading
             startupProgress = 0.02
@@ -4116,6 +4160,96 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         let remainingBytes = total - completed
         syncProgressETASeconds = Double(remainingBytes) / syncProgressBytesPerSecond
+    }
+
+    private func beginFirstLocationSetup() {
+        guard AppScreenshotState.current() == nil else { return }
+        if !downloadedBundleCountByRegion.isEmpty {
+            UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
+        }
+        if !firstLocationNetworkStarted {
+            firstLocationNetworkStarted = true
+            firstLocationNetworkMonitor.pathUpdateHandler = { [weak self] path in
+                Task { @MainActor [weak self] in
+                    self?.firstLocationNetworkReady = path.status == .satisfied
+                    self?.firstLocationNetworkMetered = path.isExpensive || path.isConstrained
+                    self?.continueFirstLocationSetup()
+                }
+            }
+            firstLocationNetworkMonitor.start(queue: DispatchQueue(label: "de.youspeed.first-location-network"))
+        }
+        guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else {
+            firstLocationPackStatus = "Erste Karteneinrichtung abgeschlossen."
+            return
+        }
+        switch locationManager.authorizationStatus {
+        case .notDetermined: locationManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways: locationManager.requestLocation()
+        default: firstLocationPackStatus = "Für die automatische Kartenauswahl ist die Standortfreigabe erforderlich."
+        }
+    }
+
+    func retryFirstLocationSetup() {
+        firstLocationAttempts = 0
+        firstLocationRetryAfter = .distantPast
+        firstLocationRegion = nil
+        beginFirstLocationSetup()
+    }
+
+    private func discoverPacks(for location: CLLocation) {
+        guard FirstLocationPackPolicy.acceptsFix(
+            latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
+            accuracy: location.horizontalAccuracy, timestamp: location.timestamp.timeIntervalSince1970,
+            now: Date().timeIntervalSince1970
+        ) else { return }
+        guard let regionalPackCatalog else {
+            firstLocationPackStatus = "Regionenkatalog fehlt oder ist ungültig. Karte bitte manuell auswählen."
+            return
+        }
+        let matches = regionalPackCatalog.matches(longitude: location.coordinate.longitude, latitude: location.coordinate.latitude)
+        let country = countryPackSelection.update(countries: Set(matches.map(\.country)), timestamp: location.timestamp.timeIntervalSince1970)
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        let state = countryPackRegistry?.decision(
+            country: country, platform: "ios", appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
+            runtimeVersion: "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)", now: Int(Date().timeIntervalSince1970)
+        ).state
+        countryModelPackStatus = country.map { "Verkehrszeichen-Modell \($0): " } ?? "Verkehrszeichen-Modell: "
+        countryModelPackStatus += state == "country_unresolved" ? "Land im Grenzbereich noch unklar." : "Noch kein freigegebenes Download-Paket verfügbar."
+        guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else { return }
+        // The first valid containing region is retained while waiting for Wi-Fi.
+        if firstLocationRegion == nil { firstLocationRegion = matches.first }
+        if firstLocationRegion == nil {
+            firstLocationPackStatus = "Für diesen Standort ist keine passende Karte im Katalog verfügbar."
+        }
+        continueFirstLocationSetup()
+    }
+
+    private func continueFirstLocationSetup() {
+        guard AppScreenshotState.current() == nil,
+              !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete"),
+              startupDataState == .ready, startupTask == nil, syncTask == nil,
+              let region = firstLocationRegion else { return }
+        guard let option = bundleDownloadSections.flatMap(\.options).first(where: { $0.id == region.id }) else {
+            firstLocationPackStatus = "Kein Download-Endpunkt für die passende Region verfügbar."
+            return
+        }
+        if !downloadedBundleCountByRegion.isEmpty {
+            UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
+            firstLocationPackStatus = "Vorhandene Karten bleiben ausgewählt."
+            return
+        }
+        guard firstLocationNetworkReady && (!firstLocationNetworkMetered || firstLocationAllowsCellular) else {
+            firstLocationPackStatus = "Passende Karte: \(option.displayName). Warte auf WLAN oder Freigabe mobiler Daten."
+            return
+        }
+        guard firstLocationAttempts < 3, Date() >= firstLocationRetryAfter else { return }
+        firstLocationAttempts += 1
+        firstLocationRetryAfter = Date().addingTimeInterval(60)
+        firstLocationPackStatus = "Lade die passende Karte: \(option.displayName)."
+        downloadSelectedBundle(option, firstLocationSetup: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+            self?.continueFirstLocationSetup()
+        }
     }
 
     func startDriving() {
@@ -6673,6 +6807,10 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
 extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         guard isDriving else {
+            if !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete"),
+               manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
+                manager.requestLocation()
+            }
             return
         }
         let auth = manager.authorizationStatus
@@ -6691,6 +6829,8 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
             return
         }
         for location in locations {
+            discoverPacks(for: location)
+            guard isDriving else { continue }
             let displaySpeedKmh = updateCurrentSpeed(from: location)
             let previousLocation = recentSpeedSampleLocations.dropLast().last(where: {
                 location.timestamp > $0.timestamp && location.distance(from: $0) > 0.1
@@ -6728,6 +6868,10 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        if !isDriving {
+            firstLocationPackStatus = "Standort konnte nicht bestimmt werden. Standortauswahl erneut versuchen."
+            return
+        }
         driveStatus = "location_error"
         lastError = error.localizedDescription
     }
