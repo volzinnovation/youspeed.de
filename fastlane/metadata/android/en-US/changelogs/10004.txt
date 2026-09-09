@@ -1,0 +1,2 @@
+- Enable optimized R8 release shrinking.
+- Keep the German offline speech model and ABI-specific APKs.

@@ -8,17 +8,43 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
+val releaseBaseVersionCode = 10006
+val releaseVersionName = "1.1"
+val releaseAbiCodes = linkedMapOf(
+    "armeabi-v7a" to 1,
+    "arm64-v8a" to 2,
+    "x86" to 3,
+    "x86_64" to 4,
+)
+val releaseAbi = providers.gradleProperty("youspeedAbi").orNull
+require(releaseAbi == null || releaseAbi in releaseAbiCodes) {
+    "Unsupported youspeedAbi '$releaseAbi'. Expected one of: ${releaseAbiCodes.keys.joinToString()}"
+}
+
 android {
     namespace = "de.youspeed.android.alpha"
     compileSdk = 35
+
+    dependenciesInfo {
+        // F-Droid rejects AGP's Google-encrypted dependency metadata block.
+        includeInApk = false
+        includeInBundle = false
+    }
 
     defaultConfig {
         applicationId = "de.youspeed.android"
         minSdk = 34
         targetSdk = 35
-        versionCode = 10006
-        versionName = "1.1"
+        versionCode = releaseAbi?.let { releaseBaseVersionCode * 10 + releaseAbiCodes.getValue(it) }
+            ?: releaseBaseVersionCode
+        versionName = releaseVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            // Vosk only supplies these four ABIs. Exclude obsolete JNA-only ABIs so
+            // every APK advertised as supported contains the speech recognizer.
+            abiFilters += releaseAbi?.let(::setOf) ?: releaseAbiCodes.keys
+        }
     }
 
     signingConfigs {
@@ -42,7 +68,8 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfigs.findByName("releaseUpload")?.let {
                 signingConfig = it
             }
