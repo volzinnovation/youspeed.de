@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Règles : %1$s</string>
     <string name="ui_country_rules_pending">Règles du pays indisponibles</string>
     <string name="ui_penalty_estimate">Estimation GPS ; aucune marge de contrôle déduite.</string>
+    <string name="ui_show_other_signs">Afficher les autres panneaux</string>
+    <string name="ui_other_signs_detail">Affiche le dernier panneau reconnu en haut à droite lorsque la caméra est active. Un nouveau panneau le remplace ; les limitations restent dans l’affichage de vitesse.</string>
+    <string name="ui_last_recognized_sign">Dernier panneau reconnu : %1$s</string>
 </resources>

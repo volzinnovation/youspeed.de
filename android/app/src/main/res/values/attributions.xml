@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Sources and credits</string>
+    <string name="credits_intro">Source details and full notices are available offline. Attribution and license wording is retained in its original language. External links require internet access.</string>
+    <string name="credits_reviewed">Reviewed: %1$s</string>
+    <string name="credits_load_error">The bundled notices could not be loaded.</string>
+    <string name="credits_show_details">Show details</string>
+    <string name="credits_hide_details">Hide details</string>
+    <string name="credits_attribution">Attribution: %1$s</string>
+    <string name="credits_changes">Changes: %1$s</string>
+    <string name="credits_source_link">Open source</string>
+    <string name="credits_license_link">Open license</string>
+    <string name="credits_link_error">No application is available to open this link.</string>
+    <string name="credits_full_notices">Full source and software notices</string>
+    <string name="credits_model_notices">Traffic-sign model notices</string>
+    <string name="credits_speech_notices">Speech model license</string>
+    <string name="credits_category_data">Map data</string>
+    <string name="credits_category_software">Software</string>
+    <string name="credits_category_model">Recognition models</string>
+    <string name="credits_category_sign">Traffic-sign pictograms</string>
+    <string name="credits_category_reference">References</string>
+</resources>

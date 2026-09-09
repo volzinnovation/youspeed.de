@@ -1,0 +1,2206 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-10",
+  "entries": [
+    {
+      "id": "youspeed",
+      "title": "YouSpeed source code",
+      "attribution": "YouSpeed contributors",
+      "license": "AGPL-3.0",
+      "source_url": "https://github.com/volzinnovation/youspeed.de",
+      "license_url": "https://github.com/volzinnovation/youspeed.de/blob/main/LICENSE",
+      "changes": "Source code, build scripts and modifications are maintained in this repository. Component licences remain separate.",
+      "category": "software"
+    },
+    {
+      "id": "osm",
+      "title": "OpenStreetMap road data",
+      "attribution": "© OpenStreetMap contributors",
+      "license": "ODbL-1.0",
+      "source_url": "https://www.openstreetmap.org/copyright",
+      "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "changes": "Road and speed data extracted and processed into offline databases. Downloads: https://github.com/volzinnovation/youspeed.de/releases",
+      "category": "data"
+    },
+    {
+      "id": "geofabrik",
+      "title": "Geofabrik regional extracts and boundaries",
+      "attribution": "Geofabrik GmbH and OpenStreetMap contributors",
+      "license": "ODbL-1.0",
+      "source_url": "https://download.geofabrik.de/index-v1.json",
+      "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "changes": "Extract boundaries converted into the offline region catalog; source URLs and hashes are retained in the regional coverage metadata.",
+      "category": "data"
+    },
+    {
+      "id": "sign-plate",
+      "title": "German traffic-sign image selection",
+      "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",
+      "license": "Individual images: public domain as declared on their Commons pages",
+      "source_url": "https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "The table was used to select sign artwork. Article text is not copied. Each bundled pictogram has its own credit below.",
+      "category": "reference"
+    },
+    {
+      "id": "legacy-pedestrian",
+      "title": "DE:242.1 · existing pedestrian-zone indicator",
+      "attribution": "Mediatus; German official traffic-sign artwork",
+      "license": "Public domain (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 104 shared TSR pictograms.",
+      "category": "sign"
+    },
+    {
+      "id": "detector",
+      "title": "Panoramax sgblur traffic-sign detector",
+      "attribution": "Copyright (c) 2022 Adrien Pavie; Panoramax contributors",
+      "license": "MIT (upstream repository declaration)",
+      "source_url": "https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8",
+      "license_url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/LICENSE",
+      "changes": "yolo11n_panoramax.pt converted for Core ML and LiteRT. See offline model notices for exact revisions and conversion-stack licences.",
+      "category": "model"
+    },
+    {
+      "id": "classifier",
+      "title": "Panoramax/classify_de_road_signs",
+      "attribution": "Panoramax; source last modified 2026-06-13",
+      "license": "Etalab Open Licence 2.0 (model-card declaration)",
+      "source_url": "https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "Checkpoint converted into mobile Core ML and LiteRT artifacts. Ultralytics model lineage and training-data terms remain separate.",
+      "category": "model"
+    },
+    {
+      "id": "training-data",
+      "title": "Panoramax/classified_de_road_signs",
+      "attribution": "Panoramax and contributing photographers; source last modified 2026-03-29",
+      "license": "CC BY-SA 4.0",
+      "source_url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Training provenance of the classifier. The training dataset is not copied into the production app.",
+      "category": "data"
+    },
+    {
+      "id": "mapping",
+      "title": "Panoramax cross-country road-sign mapping",
+      "attribution": "Panoramax; source last modified 2026-03-01",
+      "license": "Etalab Open Licence 2.0 (repository-card declaration)",
+      "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "German mapping column reviewed via the deployed Prolix reference; corrections and excluded ambiguous mappings documented in the YouSpeed catalog.",
+      "category": "data"
+    },
+    {
+      "id": "prolix",
+      "title": "Panoramax Prolix reference implementation",
+      "attribution": "Copyright (c) 2022-2025 Panoramax team",
+      "license": "MIT (Prolix code)",
+      "source_url": "https://gitlab.com/panoramax/clients/prolix/-/tree/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f",
+      "license_url": "https://gitlab.com/panoramax/clients/prolix/-/blob/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f/LICENSE",
+      "changes": "Reference for class mapping and recognition behavior. The deployed mapping is generated from a separate Panoramax CSV, not this repository licence.",
+      "category": "reference"
+    },
+    {
+      "id": "ultralytics",
+      "title": "Ultralytics 8.4.56",
+      "attribution": "Ultralytics and contributors",
+      "license": "AGPL-3.0",
+      "source_url": "https://github.com/ultralytics/ultralytics/tree/v8.4.56",
+      "license_url": "https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE",
+      "changes": "YOLO architecture and model export tooling used to produce mobile models. Full text is included in offline model notices.",
+      "category": "software"
+    },
+    {
+      "id": "coremltools",
+      "title": "Core ML Tools 9.0",
+      "attribution": "Copyright © 2020–2023 Apple Inc.",
+      "license": "BSD-3-Clause",
+      "source_url": "https://github.com/apple/coremltools/tree/9.0",
+      "license_url": "https://github.com/apple/coremltools/blob/9.0/LICENSE.txt",
+      "changes": "Build-time model conversion; Python package not embedded in app.",
+      "category": "software"
+    },
+    {
+      "id": "pytorch",
+      "title": "PyTorch 2.13.0",
+      "attribution": "PyTorch contributors; individual notices in offline model licences",
+      "license": "BSD-3-Clause and included component notices",
+      "source_url": "https://github.com/pytorch/pytorch/tree/v2.13.0",
+      "license_url": "https://github.com/pytorch/pytorch/blob/v2.13.0/LICENSE",
+      "changes": "Build-time checkpoint loading and conversion; Python package not embedded in app.",
+      "category": "software"
+    },
+    {
+      "id": "sqlite",
+      "title": "SQLite system library",
+      "attribution": "SQLite authors",
+      "license": "Public domain",
+      "source_url": "https://sqlite.org/",
+      "license_url": "https://sqlite.org/copyright.html",
+      "changes": "Uses the platform-provided SQLite library.",
+      "category": "software"
+    },
+    {
+      "id": "android-font",
+      "title": "Android · u_DIN 1451 Mittelschrift Regular",
+      "attribution": "Copyright (c) 2016 usr_share; Copyright (c) 2009–2016 Peter Wiegel. Foundry credit in font metadata: Ludwig Goller.",
+      "license": "SIL Open Font License 1.1",
+      "source_url": "https://fontlibrary.org/en/font/u-din-1451-mittelschrift",
+      "license_url": "https://fontlibrary.org/en/font/u-din-1451-mittelschrift",
+      "changes": "Bundled font bytes unchanged. Full original copyright, reserved font name and OFL text extracted from the font are included offline.",
+      "category": "software"
+    },
+    {
+      "id": "vosk-model",
+      "title": "Android · vosk-model-small-de-0.15",
+      "attribution": "Copyright © 2020 Alpha Cephei Inc.",
+      "license": "Apache-2.0",
+      "source_url": "https://alphacephei.com/vosk/models",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled German speech-recognition model, version 0.15.",
+      "category": "model"
+    },
+    {
+      "id": "photo-city310",
+      "title": "Test reference · Bernbach town-entry photograph",
+      "attribution": "admin via panoramax.woladen.de",
+      "license": "CC-BY-SA-4.0",
+      "source_url": "https://panoramax.woladen.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/a458609a-bbf1-413a-a039-5e0f685e9923",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "None: unchanged downloaded HD image. Crops are created in memory during the diagnostic test. Included only in diagnostic test fixtures, not in the production app.",
+      "category": "reference"
+    },
+    {
+      "id": "photo-0906fc23-7175-430e-acc0-106e7d45eca7",
+      "title": "Test reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7",
+      "attribution": "youspeed DOT de - mapping speed limits",
+      "license": "CC BY-SA 4.0",
+      "source_url": "https://panoramax.openstreetmap.fr/?pic=0906fc23-7175-430e-acc0-106e7d45eca7",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.",
+      "category": "reference"
+    },
+    {
+      "id": "photo-49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "title": "Test reference · Panoramax 49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "attribution": "youspeed DOT de - mapping speed limits",
+      "license": "CC BY-SA 4.0",
+      "source_url": "https://panoramax.openstreetmap.fr/?pic=49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-de-law",
+      "title": "German StVO",
+      "attribution": "www.gesetze-im-internet.de",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://www.gesetze-im-internet.de/stvo_2013/",
+      "license_url": "https://www.gesetze-im-internet.de/stvo_2013/",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-de-penalty-law",
+      "title": "German BKatV Annex",
+      "attribution": "www.gesetze-im-internet.de",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://www.gesetze-im-internet.de/bkatv_2013/anlage.html",
+      "license_url": "https://www.gesetze-im-internet.de/bkatv_2013/anlage.html",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-fr-law",
+      "title": "France Code de la route L413-1",
+      "attribution": "www.legifrance.gouv.fr",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074228/LEGISCTA000006159544",
+      "license_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074228/LEGISCTA000006159544",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-nl-tariffs",
+      "title": "Netherlands Feitenboekje 2026",
+      "attribution": "www.om.nl",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf",
+      "license_url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-be-tariffs",
+      "title": "Belgium settlement tariffs from 1 July 2026",
+      "attribution": "mobilit.belgium.be",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://mobilit.belgium.be/nl/news/onmiddellijke-inningen-verhoging-van-de-bedragen-op-1-juli-2026",
+      "license_url": "https://mobilit.belgium.be/nl/news/onmiddellijke-inningen-verhoging-van-de-bedragen-op-1-juli-2026",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "reference-be-context",
+      "title": "Belgium excessive-speed contexts",
+      "attribution": "mobilit.belgium.be",
+      "license": "Reference citation; original publisher rights retained",
+      "source_url": "https://mobilit.belgium.be/fr/faq/quelles-sont-les-infractions-en-matiere-de-vitesse-qui-sont-visees",
+      "license_url": "https://mobilit.belgium.be/fr/faq/quelles-sont-les-infractions-en-matiere-de-vitesse-qui-sont-visees",
+      "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+      "category": "reference"
+    },
+    {
+      "id": "vosk-native-openblas",
+      "title": "Android · OpenBLAS 0.3.20",
+      "attribution": "Copyright (c) 2011-2014, The OpenBLAS Project",
+      "license": "BSD-3-Clause",
+      "source_url": "https://github.com/OpenMathLib/OpenBLAS/tree/v0.3.20",
+      "license_url": "https://github.com/OpenMathLib/OpenBLAS/blob/v0.3.20/LICENSE",
+      "changes": "Native math library used by Vosk Android; version follows the upstream 0.3.75 build recipe.",
+      "category": "software"
+    },
+    {
+      "id": "vosk-native-clapack",
+      "title": "Android · CLAPACK 3.2.1",
+      "attribution": "Copyright (c) 1992-2008 The University of Tennessee",
+      "license": "BSD-3-Clause",
+      "source_url": "https://github.com/alphacep/clapack/tree/v3.2.1",
+      "license_url": "https://github.com/alphacep/clapack/blob/v3.2.1/COPYING",
+      "changes": "Native linear algebra library used by Vosk Android.",
+      "category": "software"
+    },
+    {
+      "id": "vosk-native-f2c",
+      "title": "Android · CLAPACK libf2c",
+      "attribution": "Copyright 1990-1997 AT&T, Lucent Technologies and Bellcore",
+      "license": "f2c permissive licence",
+      "source_url": "https://github.com/alphacep/clapack/tree/v3.2.1/F2CLIBS/libf2c",
+      "license_url": "https://github.com/alphacep/clapack/blob/v3.2.1/F2CLIBS/libf2c/Notice",
+      "changes": "Native Fortran compatibility routines built with CLAPACK for Vosk Android.",
+      "category": "software"
+    },
+    {
+      "id": "vosk-native-openfst",
+      "title": "Android · OpenFst (Vosk fork)",
+      "attribution": "Copyright 2005-2020 Google LLC",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/alphacep/openfst/tree/18e94e63870ebcf79ebb42b7035cd3cb626ec090",
+      "license_url": "https://github.com/alphacep/openfst/blob/18e94e63870ebcf79ebb42b7035cd3cb626ec090/COPYING",
+      "changes": "Native finite-state transducer code used by Vosk Android. Source notice reviewed at the linked revision; the upstream build recipe clones this branch without a commit pin.",
+      "category": "software"
+    },
+    {
+      "id": "vosk-native-kaldi",
+      "title": "Android · Kaldi (Vosk Android fork)",
+      "attribution": "Kaldi contributors; individual authors and source material listed in COPYING",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/alphacep/kaldi/tree/8b7fecf92b329b7253d9d1cd97898c8b13f9aef3",
+      "license_url": "https://github.com/alphacep/kaldi/blob/8b7fecf92b329b7253d9d1cd97898c8b13f9aef3/COPYING",
+      "changes": "Native speech processing code used by Vosk Android. Source notice reviewed at the linked revision; the upstream build recipe clones vosk-android without a commit pin.",
+      "category": "software"
+    },
+    {
+      "id": "android-converter-onnx",
+      "title": "Android · ONNX 1.17.0",
+      "attribution": "ONNX authors and contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/onnx/onnx/tree/v1.17.0",
+      "license_url": "https://github.com/onnx/onnx/blob/v1.17.0/LICENSE",
+      "changes": "Intermediate model representation and export tooling used to create the Android model artifacts.",
+      "category": "software"
+    },
+    {
+      "id": "android-converter-onnx2tf",
+      "title": "Android · onnx2tf 1.28.8",
+      "attribution": "Copyright (c) 2022 Katsuya Hyodo",
+      "license": "MIT",
+      "source_url": "https://github.com/PINTO0309/onnx2tf/tree/1.28.8",
+      "license_url": "https://github.com/PINTO0309/onnx2tf/blob/1.28.8/LICENSE",
+      "changes": "ONNX to TensorFlow conversion used to create the Android model artifacts.",
+      "category": "software"
+    },
+    {
+      "id": "android-converter-tensorflow",
+      "title": "Android · TensorFlow 2.19.0 conversion tooling",
+      "attribution": "TensorFlow authors and contributors; additional Caffe credits retained in the full licence file",
+      "license": "Apache-2.0; additional BSD notice included upstream",
+      "source_url": "https://github.com/tensorflow/tensorflow/tree/v2.19.0",
+      "license_url": "https://github.com/tensorflow/tensorflow/blob/v2.19.0/LICENSE",
+      "changes": "TensorFlow Lite conversion used to create the Android model artifacts. Its Python package is not embedded in the app.",
+      "category": "software"
+    },
+    {
+      "id": "android-converter-litert",
+      "title": "Android · AI Edge LiteRT 1.3.0 export validation",
+      "attribution": "Google AI Edge LiteRT authors and contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/google-ai-edge/LiteRT/tree/v1.3.0",
+      "license_url": "https://github.com/google-ai-edge/LiteRT/blob/v1.3.0/LICENSE",
+      "changes": "Python ai_edge_litert 1.3.0 recorded in the Android export report. The separately bundled Android runtime is LiteRT 1.4.2.",
+      "category": "software"
+    },
+    {
+      "id": "android-androidx.activity:activity-compose:1.9.1",
+      "title": "Android · androidx.activity:activity-compose:1.9.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.activity:activity-ktx:1.9.1",
+      "title": "Android · androidx.activity:activity-ktx:1.9.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.activity:activity:1.9.1",
+      "title": "Android · androidx.activity:activity:1.9.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.annotation:annotation-experimental:1.4.1",
+      "title": "Android · androidx.annotation:annotation-experimental:1.4.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.annotation:annotation-jvm:1.8.0",
+      "title": "Android · androidx.annotation:annotation-jvm:1.8.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.arch.core:core-common:2.2.0",
+      "title": "Android · androidx.arch.core:core-common:2.2.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.arch.core:core-runtime:2.2.0",
+      "title": "Android · androidx.arch.core:core-runtime:2.2.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.autofill:autofill:1.0.0",
+      "title": "Android · androidx.autofill:autofill:1.0.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.camera:camera-camera2:1.4.2",
+      "title": "Android · androidx.camera:camera-camera2:1.4.2",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.camera:camera-core:1.4.2",
+      "title": "Android · androidx.camera:camera-core:1.4.2",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.camera:camera-lifecycle:1.4.2",
+      "title": "Android · androidx.camera:camera-lifecycle:1.4.2",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.collection:collection-jvm:1.4.0",
+      "title": "Android · androidx.collection:collection-jvm:1.4.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.collection:collection-ktx:1.4.0",
+      "title": "Android · androidx.collection:collection-ktx:1.4.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.animation:animation-android:1.6.8",
+      "title": "Android · androidx.compose.animation:animation-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.animation:animation-core-android:1.6.8",
+      "title": "Android · androidx.compose.animation:animation-core-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.foundation:foundation-android:1.6.8",
+      "title": "Android · androidx.compose.foundation:foundation-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.foundation:foundation-layout-android:1.6.8",
+      "title": "Android · androidx.compose.foundation:foundation-layout-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.material3:material3-android:1.2.1",
+      "title": "Android · androidx.compose.material3:material3-android:1.2.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.material:material-icons-core-android:1.6.8",
+      "title": "Android · androidx.compose.material:material-icons-core-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.material:material-icons-extended-android:1.6.8",
+      "title": "Android · androidx.compose.material:material-icons-extended-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.material:material-ripple-android:1.6.8",
+      "title": "Android · androidx.compose.material:material-ripple-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.runtime:runtime-android:1.6.8",
+      "title": "Android · androidx.compose.runtime:runtime-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.runtime:runtime-saveable-android:1.6.8",
+      "title": "Android · androidx.compose.runtime:runtime-saveable-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-geometry-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-geometry-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-graphics-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-graphics-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-text-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-text-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-tooling-preview-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-tooling-preview-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-unit-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-unit-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.compose.ui:ui-util-android:1.6.8",
+      "title": "Android · androidx.compose.ui:ui-util-android:1.6.8",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.concurrent:concurrent-futures-ktx:1.1.0",
+      "title": "Android · androidx.concurrent:concurrent-futures-ktx:1.1.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.concurrent:concurrent-futures:1.1.0",
+      "title": "Android · androidx.concurrent:concurrent-futures:1.1.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.core:core-ktx:1.13.1",
+      "title": "Android · androidx.core:core-ktx:1.13.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.core:core:1.13.1",
+      "title": "Android · androidx.core:core:1.13.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.customview:customview-poolingcontainer:1.0.0",
+      "title": "Android · androidx.customview:customview-poolingcontainer:1.0.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.emoji2:emoji2:1.3.0",
+      "title": "Android · androidx.emoji2:emoji2:1.3.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.exifinterface:exifinterface:1.3.7",
+      "title": "Android · androidx.exifinterface:exifinterface:1.3.7",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.interpolator:interpolator:1.0.0",
+      "title": "Android · androidx.interpolator:interpolator:1.0.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-common-java8:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-common-java8:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-common-jvm:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-common-jvm:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-livedata-core-ktx:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-livedata-core-ktx:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-livedata-core:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-livedata-core:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-livedata:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-livedata:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-process:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-process:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-runtime-android:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-runtime-android:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-runtime-ktx-android:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-runtime-ktx-android:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-viewmodel-android:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-viewmodel-android:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.4",
+      "title": "Android · androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.4",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.profileinstaller:profileinstaller:1.3.1",
+      "title": "Android · androidx.profileinstaller:profileinstaller:1.3.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.savedstate:savedstate-ktx:1.2.1",
+      "title": "Android · androidx.savedstate:savedstate-ktx:1.2.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.savedstate:savedstate:1.2.1",
+      "title": "Android · androidx.savedstate:savedstate:1.2.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.startup:startup-runtime:1.1.1",
+      "title": "Android · androidx.startup:startup-runtime:1.1.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.tracing:tracing-ktx:1.2.0",
+      "title": "Android · androidx.tracing:tracing-ktx:1.2.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.tracing:tracing:1.2.0",
+      "title": "Android · androidx.tracing:tracing:1.2.0",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-androidx.versionedparcelable:versionedparcelable:1.1.1",
+      "title": "Android · androidx.versionedparcelable:versionedparcelable:1.1.1",
+      "category": "software",
+      "attribution": "The Android Open Source Project contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://android.googlesource.com/platform/frameworks/support/",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-com.alphacephei:vosk-android:0.3.75",
+      "title": "Android · com.alphacephei:vosk-android:0.3.75",
+      "category": "software",
+      "attribution": "Alpha Cephei Inc. and Vosk contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/alphacep/vosk-api",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-com.google.ai.edge.litert:litert-api:1.4.2",
+      "title": "Android · com.google.ai.edge.litert:litert-api:1.4.2",
+      "category": "software",
+      "attribution": "Google and TensorFlow/LiteRT contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/google-ai-edge/LiteRT",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-com.google.ai.edge.litert:litert:1.4.2",
+      "title": "Android · com.google.ai.edge.litert:litert:1.4.2",
+      "category": "software",
+      "attribution": "Google and TensorFlow/LiteRT contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/google-ai-edge/LiteRT",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-com.google.auto.value:auto-value-annotations:1.6.3",
+      "title": "Android · com.google.auto.value:auto-value-annotations:1.6.3",
+      "category": "software",
+      "attribution": "Google and AutoValue contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/google/auto/tree/auto-value-1.6.3",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-com.google.guava:listenablefuture:1.0",
+      "title": "Android · com.google.guava:listenablefuture:1.0",
+      "category": "software",
+      "attribution": "Google and Guava contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/google/guava",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-net.java.dev.jna:jna:5.18.1",
+      "title": "Android · net.java.dev.jna:jna:5.18.1",
+      "category": "software",
+      "attribution": "Timothy Wall and JNA contributors",
+      "license": "Apache-2.0 (chosen from Apache-2.0 OR LGPL-2.1-or-later)",
+      "source_url": "https://github.com/java-native-access/jna/tree/5.18.1",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20",
+      "title": "Android · org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.20",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and Kotlin contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/JetBrains/kotlin",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20",
+      "title": "Android · org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and Kotlin contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/JetBrains/kotlin",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlin:kotlin-stdlib:2.0.20",
+      "title": "Android · org.jetbrains.kotlin:kotlin-stdlib:2.0.20",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and Kotlin contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/JetBrains/kotlin",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3",
+      "title": "Android · org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and respective contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/Kotlin/kotlinx.coroutines",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3",
+      "title": "Android · org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and respective contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/Kotlin/kotlinx.coroutines",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
+      "title": "Android · org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and respective contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
+      "title": "Android · org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and respective contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/Kotlin/kotlinx.serialization",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "android-org.jetbrains:annotations:23.0.0",
+      "title": "Android · org.jetbrains:annotations:23.0.0",
+      "category": "software",
+      "attribution": "JetBrains s.r.o. and Java annotations contributors",
+      "license": "Apache-2.0",
+      "source_url": "https://github.com/JetBrains/java-annotations",
+      "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "changes": "Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text."
+    },
+    {
+      "id": "rules-BEL-rules",
+      "title": "Traffic-rule reference · Belgium",
+      "category": "reference",
+      "attribution": "www.police.be",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
+      "license_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+    },
+    {
+      "id": "rules-CHE-rules",
+      "title": "Traffic-rule reference · Switzerland",
+      "category": "reference",
+      "attribution": "www.ch.ch",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
+      "license_url": "https://www.ch.ch/de/fahrzeuge-und-verkehr/verhalten-im-strassenverkehr/verkehrsregeln/geschwindigkeitsuberschreitung/",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-07-04. The original website is not bundled."
+    },
+    {
+      "id": "rules-DEU-rules",
+      "title": "Traffic-rule reference · Deutschland",
+      "category": "reference",
+      "attribution": "www.runtervomgas.de",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.runtervomgas.de/ratgeber-und-service/bussgeldkatalog/",
+      "license_url": "https://www.runtervomgas.de/ratgeber-und-service/bussgeldkatalog/",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-04-11. The original website is not bundled."
+    },
+    {
+      "id": "rules-FRA-rules",
+      "title": "Traffic-rule reference · France",
+      "category": "reference",
+      "attribution": "www.service-public.gouv.fr",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
+      "license_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+    },
+    {
+      "id": "rules-GBR-rules",
+      "title": "Traffic-rule reference · United Kingdom",
+      "category": "reference",
+      "attribution": "www.gov.uk",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.gov.uk/speeding-penalties",
+      "license_url": "https://www.gov.uk/speeding-penalties",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-ISL-rules",
+      "title": "Traffic-rule reference · Iceland",
+      "category": "reference",
+      "attribution": "www.samgongustofa.is",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.samgongustofa.is/umferd/oryggi/sektir/",
+      "license_url": "https://www.samgongustofa.is/umferd/oryggi/sektir/",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-LIE-rules",
+      "title": "Traffic-rule reference · Liechtenstein",
+      "category": "reference",
+      "attribution": "www.llv.li",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.llv.li/inhalt/11327/amtsstellen/landespolizei",
+      "license_url": "https://www.llv.li/inhalt/11327/amtsstellen/landespolizei",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-LUX-rules",
+      "title": "Traffic-rule reference · Luxembourg",
+      "category": "reference",
+      "attribution": "police.public.lu",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://police.public.lu/fr/prevention/securite-routiere/code-route/exces-vitesse.html",
+      "license_url": "https://police.public.lu/fr/prevention/securite-routiere/code-route/exces-vitesse.html",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-MCO-rules",
+      "title": "Traffic-rule reference · Monaco",
+      "category": "reference",
+      "attribution": "speedingeurope.com",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://speedingeurope.com/monaco/",
+      "license_url": "https://speedingeurope.com/monaco/",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-NLD-rules",
+      "title": "Traffic-rule reference · Netherlands",
+      "category": "reference",
+      "attribution": "www.om.nl",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
+      "license_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+    },
+    {
+      "id": "rules-ROU-rules",
+      "title": "Traffic-rule reference · Romania",
+      "category": "reference",
+      "attribution": "www.politiaromana.ro",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.politiaromana.ro/ro/utile/intrebari-frecvente/circulatie/radare-si-viteza",
+      "license_url": "https://www.politiaromana.ro/ro/utile/intrebari-frecvente/circulatie/radare-si-viteza",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "rules-SWE-rules",
+      "title": "Traffic-rule reference · Sweden",
+      "category": "reference",
+      "attribution": "www.transportstyrelsen.se",
+      "license": "Reference citation; original website rights remain with its publisher",
+      "source_url": "https://www.transportstyrelsen.se/sv/vagtrafik/Trafikregler/Hastighet/",
+      "license_url": "https://www.transportstyrelsen.se/sv/vagtrafik/Trafikregler/Hastighet/",
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-03-02. The original website is not bundled."
+    },
+    {
+      "id": "sign-DE:222-10",
+      "title": "DE:222-10 · Zeichen 222-10 - Vorgeschriebene Vorbeifahrt, Links vorbei, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Vectorization:  Mediatus (Nach den amtlichen Vorgaben digital umgesetzt); Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61866647&oldid=1135266746",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:211",
+      "title": "DE:211 · Zeichen 211 - Vorgeschriebene Fahrtrichtung, hier rechts, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61838130&oldid=906770541",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:222",
+      "title": "DE:222 · Zeichen 222 - Vorgeschriebene Vorbeifahrt, Rechts vorbei, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61866326&oldid=922668242",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:209-30",
+      "title": "DE:209-30 · Zeichen 209-30 - Vorgeschriebene Fahrtrichtung, Geradeaus, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61865068&oldid=1127870844",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:209-10",
+      "title": "DE:209-10 · Zeichen 209-10 - Vorgeschriebene Fahrtrichtung, links, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61837947&oldid=950872703",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:214-30",
+      "title": "DE:214-30 · Zeichen 214-30 - Vorgeschriebene Fahrtrichtung, Rechts oder links, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61864976&oldid=1030041465",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:214-10",
+      "title": "DE:214-10 · Zeichen 214-10 - Vorgeschriebene Fahrtrichtung, Geradeaus oder links, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61864741&oldid=906770512",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:209",
+      "title": "DE:209 · Zeichen 209 - Vorgeschriebene Fahrtrichtung, rechts, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61837526&oldid=1002986755",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:214",
+      "title": "DE:214 · Zeichen 214 - Vorgeschriebene Fahrtrichtung, Geradeaus oder rechts, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61864563&oldid=906770557",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:237",
+      "title": "DE:237 · Zeichen 237 - Sonderweg Radfahrer, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla}, Mediatus; Self-drawn using Inkscape and gedit, based on Image:Zeichen 237.svg",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=783807&oldid=902584595",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:245",
+      "title": "DE:245 · Zeichen 245 - Bussonderfahrstreifen, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62055638&oldid=1198547820",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:205",
+      "title": "DE:205 · Zeichen 205 - Vorfahrt gewähren! StVO 1970.svg",
+      "category": "sign",
+      "attribution": "first sign: Andreas 06; new datas: Mediatus; Redesigned by hand",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995523&oldid=878350372",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:101",
+      "title": "DE:101 · Zeichen 101 - Gefahrstelle, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "nach den historischen Vorgaben digital umgesetzt durch Mediatus; siehe oben, DIN-Normen",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=982688&oldid=887460225",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:125",
+      "title": "DE:125 · Zeichen 125 - Gegenverkehr, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla}, Mediatus; Redesigned by hand; Self-drawn using Inkscape and gedit, based on Image:Zeichen_125.png",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=775392&oldid=1121078286",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:112",
+      "title": "DE:112 · Zeichen 112 – Unebene Fahrbahn, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "MarianSigler, Fry1989; komplett neue Datei am 1. Mai 2017 nach den historischen Vorgaben digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=764786&oldid=877357751",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:102",
+      "title": "DE:102 · Zeichen 102 - Kreuzung oder Einmündung mit Vorfahrt von rechts, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "Interpretiert und digital gezeichnet durch MarianSigler and Mediatus; Siehe oben. Der korrekte RAL-Farbton Verkehrsrot (Farbcode: #C1121C) wird wiedergegeben.",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=775371&oldid=884769801",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:101-52",
+      "title": "DE:101-52 · Zeichen 101-52 - Splitt, Schotter, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61809209&oldid=1037061092",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:101-51",
+      "title": "DE:101-51 · Zeichen 101-51 - Schnee- oder Eisglätte, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61808949&oldid=894805377",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:301",
+      "title": "DE:301 · Zeichen 301 - Vorfahrt, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den historischen Vorgaben korrekt interpretiert und digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004378&oldid=1003251958",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:103-10",
+      "title": "DE:103-10 · Zeichen 103-10 - Kurve (links), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "first version: Andreas 06; nach den authentischen Vorgaben 2017 komplett neu gezeichnet durch Mediatus; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=982694&oldid=888083201",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:101-55",
+      "title": "DE:101-55 · Zeichen 101-55 - Bewegliche Brücke, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61810407&oldid=1047745376",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:120",
+      "title": "DE:120 · Zeichen 120 - Verengte Fahrbahn, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "nach den historischen Vorgaben digital umgesetzt durch Mediatus; Own work",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995345&oldid=890029257",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:121-20",
+      "title": "DE:121-20 · Zeichen 121-20 - einseitig (links) verengte Fahrbahn, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Erste, nur grob korrekte Datei: Andreas 06. Nach den amtlichen Vorgaben 2017 digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995359&oldid=906770410",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:121-10",
+      "title": "DE:121-10 · Zeichen 121-10 - einseitig (rechts) verengte Fahrbahn, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Erste, nur grob korrekte Datei: Andreas 06. Nach den amtlichen Vorgaben 2016 digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995355&oldid=1196296803",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:103-20",
+      "title": "DE:103-20 · Zeichen 103-20 - Kurve (rechts), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "first version: Andreas 06; nach den authentischen Vorgaben 2017 komplett neu gezeichnet durch Mediatus; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=982690&oldid=906770007",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:123",
+      "title": "DE:123 · Zeichen 123 - Arbeitsstelle, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben 2017 digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62073891&oldid=878338797",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:114",
+      "title": "DE:114 · Zeichen 114 - Schleuder- oder Rutschgefahr, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "nach den Vorgaben digital umgesetzt durch Mediatus; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=58525634&oldid=876917125",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:124",
+      "title": "DE:124 · Zeichen 124 - Stau, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995370&oldid=877638309",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:131",
+      "title": "DE:131 · Zeichen 131 - Lichtzeichenanlage, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "first upload: Cfaerber; new upload with original datas by Mediatus; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=320591&oldid=906770545",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:151",
+      "title": "DE:151 · Zeichen 151 - Bahnübergang, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung 1992, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=60647608&oldid=885108010",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:105-20",
+      "title": "DE:105-20 · Zeichen 105-20 - Doppelkurve (zunächst rechts), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den historischen Vorgaben korrekt interpretiert und digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=982697&oldid=906770073",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:105-10",
+      "title": "DE:105-10 · Zeichen 105-10 - Doppelkurve (zunächst links), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den historischen Vorgaben korrekt interpretiert und digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=982698&oldid=955358619",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:238",
+      "title": "DE:238 · Zeichen 238 - Sonderweg Reiter, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "first datas: Andreas 06. Nach den amtlichen Vorgaben 2017 komplett neu digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995762&oldid=1099352865",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-10",
+      "title": "DE:274-10 · Zeichen 274-10 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110758269&oldid=1247397510",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-100",
+      "title": "DE:274-100 · Zeichen 274-100 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110757740&oldid=932893591",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-120",
+      "title": "DE:274-120 · Zeichen 274-120 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110757135&oldid=906770476",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-130",
+      "title": "DE:274-130 · Zeichen 274-130 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110757035&oldid=906770486",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-20",
+      "title": "DE:274-20 · Zeichen 274-20 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110758185&oldid=949624096",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-30",
+      "title": "DE:274-30 · Zeichen 274-30 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110758111&oldid=1152892850",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-40",
+      "title": "DE:274-40 · Zeichen 274-40 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110758039&oldid=906770482",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-5",
+      "title": "DE:274-5 · Zeichen 274-5 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=111143124&oldid=906770493",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-50",
+      "title": "DE:274-50 · Zeichen 274-50 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=63468668&oldid=906770481",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-60",
+      "title": "DE:274-60 · Zeichen 274-60 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61811095&oldid=906770552",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-70",
+      "title": "DE:274-70 · Zeichen 274-70 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61993626&oldid=1176322113",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-80",
+      "title": "DE:274-80 · Zeichen 274-80 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110756864&oldid=1053556987",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:330.2",
+      "title": "DE:330.2 · Zeichen 330.2 - Ende der Autobahn, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62036360&oldid=1216652965",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:330.1",
+      "title": "DE:330.1 · Zeichen 330.1 - Autobahn, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62017365&oldid=977861799",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:282",
+      "title": "DE:282 · Zeichen 282 - Ende sämtlicher Streckenverbote, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "D0ktorz (ursprüngliche Datei); nach Vorgaben interpretiert und digital neu gezeichnet 2017 durch Mediatus; Straßenverkehrs-Ordnung 1970, ebenso Straßenverkehrsordnung 2013, Verkehrsblatt sowie dazugehörige DIN-Normen",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=950591&oldid=1143391483",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:254",
+      "title": "DE:254 · Zeichen 254 - Verbot für Radfahrer, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla}, Mediatus\n\nImage taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at [1].; Self-drawn using Inkscape and gedit",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=786287&oldid=874834738",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:257-54",
+      "title": "DE:257-54 · Zeichen 257-54 - Verbot für Kraftomnibusse, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61812115&oldid=875188949",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:251",
+      "title": "DE:251 · Zeichen 251 - Verbot für Kraftwagen und sonstige mehrspurige Kraftfahrzeuge, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla}, Mediatus; This vector image includes elements that have been taken or adapted from this file:",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=786516&oldid=1192911880",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:260",
+      "title": "DE:260 · Zeichen 260 - Verbot für Krafträder und Mofas und sonstige mehrspurige Kraftfahrzeuge, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995785&oldid=1125553317",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:261",
+      "title": "DE:261 · Zeichen 261 - Verbot für kennzeichnungspflichtige Kraftfahrzeuge mit gefährlichen Gütern, StVO 1988.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Image taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at [1]",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995806&oldid=881650262",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:269",
+      "title": "DE:269 · Zeichen 269 - Verbot für Fahrzeuge mit wassergefährdender Ladung, StVO 1988.svg",
+      "category": "sign",
+      "attribution": "Andreas06; Own work",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004325&oldid=1142299562",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:267",
+      "title": "DE:267 · Zeichen 267 - Verbot der Einfahrt, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "Hochladen der ursprünglichen Version: MarianSigler; nach den historischen Vorgaben digital neu umgesetzt durch: Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=766270&oldid=1185868683",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:357",
+      "title": "DE:357 · Zeichen 357 - Sackgasse, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1005409&oldid=906770045",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:253",
+      "title": "DE:253 · Zeichen 253 - Verbot für Kraftfahrzeuge mit einem zulässigen Gesamtgewicht, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla}; Self-drawn using Inkscape and gedit, based on Image:Zeichen 251.svg. Image taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at http://bmvbw.de (wayback).",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=890671&oldid=875193606",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:257-51",
+      "title": "DE:257-51 · Zeichen 257-51 - Verbot für Reiter, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61799191&oldid=897440322",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:255",
+      "title": "DE:255 · Zeichen 255 - Verbot für Krafträder, auch mit Beiwagen, Kleinkrafträder und Mofas, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Bundesministerium für Verkehr, Bau- und Wohnungswesen; Taken from the Straßenverkehrs-Ordnung (German Road Regulations) as published by the Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at http://bmvbw.de (wayback)",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995780&oldid=1219296209",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:276",
+      "title": "DE:276 · Zeichen 276 - Überholverbot für Kraftfahrzeuge aller Art, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den historischen Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004351&oldid=875658985",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:280",
+      "title": "DE:280 · Zeichen 280 - Ende des Überholverbotes für Kraftfahrzeuge aller Art, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Ursprungsdatei: Andreas 06; nach den amtlichen Vorgaben interpretiert und digital korrekt umgesetzt von Mediatus; Straßenverkehrs-Ordnung 1992, Verkehrsblatt sowie dazugehörige DIN-Normen",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004364&oldid=1018940106",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:277",
+      "title": "DE:277 · Zeichen 277 - Überholverbot für Kraftfahrzeuge mit einem zulässigen Gesamtgewicht über 2,8 t, einschließlich ihrer Anhänger, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch Mediatus; Image taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at [1].",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004355&oldid=1138461591",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:286",
+      "title": "DE:286 · Zeichen 286 - Eingeschränktes Halteverbot, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "MarianSigler and Mediatus; Straßenverkehrs-Ordnung, RAL-Farbfächer, Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=768981&oldid=1045851922",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:259",
+      "title": "DE:259 · Zeichen 259 - Verbot für Fußgänger, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "MarianSigler {bla} & Mediatus; Self-drawn using Inkscape and gedit, based on Image:Zeichen 259.png",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=786289&oldid=881365865",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:283",
+      "title": "DE:283 · Zeichen 283 - Absolutes Haltverbot, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61892018&oldid=875524632",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:272",
+      "title": "DE:272 · Zeichen 272, Verbot des Wendens, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Andreas 06 (ursprüngliche Datei); komplett neu erstellt durch Mediatus; Own work",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004334&oldid=1065740646",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:250",
+      "title": "DE:250 · Zeichen 250 - Verbot für Fahrzeuge aller Art, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "nach den Vorgaben digital umgesetzt durch Mediatus; Siehe oben.",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48300272&oldid=1136345286",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Commons PNG rendition resized to fit 256 × 256 pixels with aspect ratio preserved and metadata stripped. Commons renderer used because ImageMagick SVG renderer loses sign lettering or ring."
+    },
+    {
+      "id": "sign-DE:316",
+      "title": "DE:316 · Zeichen 316 - Parken und Reisen, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1005224&oldid=903956918",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:314",
+      "title": "DE:314 · Zeichen 314 - Parken, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61950153&oldid=1227441868",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:314-50",
+      "title": "DE:314-50 · Zeichen 314-50 - Parkhaus, Parkgarage, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61817725&oldid=1227449085",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:317",
+      "title": "DE:317 · Zeichen 317 - Wandererparkplatz, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1005248&oldid=906769936",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:239",
+      "title": "DE:239 · Zeichen 239 - Sonderweg Fußgänger, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "first datas: Andreas 06. Nach den amtlichen Vorgaben 2017 komplett neu digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995763&oldid=1088340731",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:240",
+      "title": "DE:240 · Zeichen 240 - Gemeinsamer Fuß- und Radweg, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch Andreas 06; nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch Mediatus; Image taken from the de:Straßenverkehrsordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at [1].",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995768&oldid=939608356",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:208",
+      "title": "DE:208 · Zeichen 208 - Dem Gegenverkehr Vorrang gewähren! 600x600, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Andreas 06 (ursprüngliche Datei); komplett neu erstellt durch Mediatus; Straßenverkehrs-Ordnung (StVO)",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995544&oldid=1185128972",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:307",
+      "title": "DE:307 · Zeichen 307 - Ende der Vorfahrtstraße, StVO 1981.svg",
+      "category": "sign",
+      "attribution": "2006: ursprüngliche Datei: Andreas 06; 2017: komplett neue und authentisch gestaltete Datei: nach den historischen Vorgaben digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004393&oldid=1002985306",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:308",
+      "title": "DE:308 · Zeichen 308 - Vorrang vor dem Gegenverkehr, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Hochladen einer ersten Datei: Andreas06; 2017 nach den offiziellen Vorgaben komplett neu umgezeichnet durch Mediatus; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1005167&oldid=878585712",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:306",
+      "title": "DE:306 · Zeichen 306 - Vorfahrtstraße, StVO 1970.svg",
+      "category": "sign",
+      "attribution": "2006: ursprüngliche Datei: Andreas 06; 2017: komplett neue und authentisch gestaltete Datei: nach den historischen Vorgaben digital umgesetzt durch Mediatus; siehe oben",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004390&oldid=879181152",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:215",
+      "title": "DE:215 · Zeichen 215 - Kreisverkehr, StVO 2000.svg",
+      "category": "sign",
+      "attribution": "Erstes Hochladen: Andreas06. Neue erstellt nach den amtlichen Vorgaben durch: Mediatus; Own work",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995697&oldid=1238865780",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:206",
+      "title": "DE:206 · Zeichen 206 - Halt! Vorfahrt gewähren! StVO 2017.svg",
+      "category": "sign",
+      "attribution": "nach den historischen Vorgaben digital gezeichnet und interpretiert von Mediatus.; siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=36093938&oldid=1084544804",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Commons PNG rendition resized to fit 256 × 256 pixels with aspect ratio preserved and metadata stripped. Commons renderer used because ImageMagick SVG renderer loses sign lettering or ring."
+    },
+    {
+      "id": "sign-DE:331.2",
+      "title": "DE:331.2 · Zeichen 331.2 - Ende der Kraftfahrstraße, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62036568&oldid=900472620",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:331.1",
+      "title": "DE:331.1 · Zeichen 331.1 - Kraftfahrstraße, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62036584&oldid=900363264",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:327",
+      "title": "DE:327 · Zeichen 327 - Tunnel, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61813624&oldid=1262658556",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274.1-20",
+      "title": "DE:274.1-20 · Zeichen 274.1-20 - Beginn einer Tempo 20-Zone in verkehrsberuhigten Geschäftsbereichen (einseitig), StVO 2013.svg",
+      "category": "sign",
+      "attribution": "nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62292404&oldid=906770473",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274.1",
+      "title": "DE:274.1 · Zeichen 274.1 - Beginn einer Tempo 30-Zone, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "erstes Hochladen einer Datei durch D0ktorz; nach den Vorgaben 2017 korrekt interpretiert und digital umgesetzt durch Mediatus; Image taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at [1].",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=950539&oldid=906770479",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274.2",
+      "title": "DE:274.2 · Zeichen 274.2 - Ende einer Tempo 30-Zone (einseitig), StVO 2013.svg",
+      "category": "sign",
+      "attribution": "nach den Vorgaben korrekt interpretiert und digital umgesetzt durch Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62292745&oldid=906770500",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:290.1",
+      "title": "DE:290.1 · Zeichen 290.1 - Beginn eines eingeschränkten Haltverbotes für eine Zone, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "Bundesministerium für Verkehr, Bau- und Wohnungswesen; Image taken from the Straßenverkehrsordnung (German Road Regulations) as published by the Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing) at Straßenverkehrsordnung.\n\n2006-07-31 file made by Andreas 06\n2014-05-18 uploaded by MaxxL\n2017-09-12 uploaded by Mediatus",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004374&oldid=1150574020",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:242.1",
+      "title": "DE:242.1 · Zeichen 242.1 - Beginn einer Fußgängerzone, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen, Verkehrsblatt sowie: siehe oben!",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-5",
+      "title": "DE:278-5 · Zeichen 278-5 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=111143504&oldid=1102650751",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-10",
+      "title": "DE:278-10 · Zeichen 278-10 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110724558&oldid=906770350",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-20",
+      "title": "DE:278-20 · Zeichen 278-20 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110725507&oldid=906770349",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-30",
+      "title": "DE:278-30 · Zeichen 278-30 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110725715&oldid=906770331",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-40",
+      "title": "DE:278-40 · Zeichen 278-40 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110725844&oldid=993391034",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-50",
+      "title": "DE:278-50 · Zeichen 278-50 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=83127715&oldid=1166961040",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-60",
+      "title": "DE:278-60 · Zeichen 278-60 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61811261&oldid=906770436",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-70",
+      "title": "DE:278-70 · Zeichen 278-70 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=83127656&oldid=906770297",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-80",
+      "title": "DE:278-80 · Zeichen 278-80 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110726276&oldid=1145828533",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-90",
+      "title": "DE:278-90 · Zeichen 278-90 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110726455&oldid=1116298689",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-100",
+      "title": "DE:278-100 · Zeichen 278-100 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110726930&oldid=916146849",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-110",
+      "title": "DE:278-110 · Zeichen 278-110 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110727208&oldid=906770310",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-120",
+      "title": "DE:278-120 · Zeichen 278-120 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110727616&oldid=906770316",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:278-130",
+      "title": "DE:278-130 · Zeichen 278-130 - Ende der zulässigen Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110727900&oldid=906770285",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:281",
+      "title": "DE:281 · Zeichen 281 - Ende des Überholverbots für Kraftfahrzeuge mit einem zulässigen Gesamtgewicht über 3,5 t, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Ursprungsdatei: Andreas 06; nach den amtlichen Vorgaben von 1972 und 1992 im Jahr 2017 interpretiert und digital korrekt umgesetzt von Mediatus; Straßenverkehrs-Ordnung 1992, Verkehrsblatt sowie dazugehörige DIN-Normen",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1004367&oldid=1145616591",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:310",
+      "title": "DE:310 · Zeichen 310 - Ortstafel Vorderseite, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61817186&oldid=972995612",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:311",
+      "title": "DE:311 · Zeichen 311 - Ortstafel Rückseite, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61817370&oldid=906770477",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    }
+  ]
+}

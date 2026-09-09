@@ -199,6 +199,7 @@ struct TrafficSignFeedbackGate {
 }
 
 enum AppScreenshotState: String {
+    case trafficSignPictogram = "traffic-sign-pictogram"
     case countryPenalty = "country-penalty"
     case warnLevel0 = "warn-level-0"
     case warnLevel1 = "warn-level-1"
@@ -235,6 +236,8 @@ enum AppScreenshotState: String {
 
     var fixture: Fixture {
         switch self {
+        case .trafficSignPictogram:
+            return AppScreenshotState.warnLevel0.fixture
         case .countryPenalty:
             let input = CountryPenaltyScreenshotInput.current()
             let place: (String, String, Double, Double)
@@ -660,6 +663,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: true)
         }
+    }
+    @Published var trafficSignPictogramEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(trafficSignPictogramEnabled, forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
+            if !trafficSignPictogramEnabled { resetTrafficSignPictogram() }
+        }
+    }
+    @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
+    private let trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
+    private var trafficSignDisplayState = TrafficSignDisplayState()
+    var trafficSignCityEntryRecognitionAvailable: Bool {
+        ["city:start", "city_entry", "DE:310"].contains { trafficSignPresentationCatalog?.canRecognize($0) == true }
     }
     @Published var trafficSignFeedbackMode: TrafficSignFeedbackMode {
         didSet {
@@ -1432,6 +1447,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
         trafficSignRecognitionIndependentEnabled = storedTSRIndependentEnabled ?? false
+        trafficSignPictogramEnabled = UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
         trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
         panoramaxCaptureEnabled = storedPanoramaxEnabled ?? true
         panoramaxTriggerMode = storedTriggerMode
@@ -1641,6 +1657,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func handleTrafficSignRecognitionSettingChange() {
+        resetTrafficSignPictogram()
         trafficSignRecorderGeneration &+= 1
         trafficSignContextGeneration &+= 1
         trafficSignFeedbackGate.reset()
@@ -1989,6 +2006,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// under the previous OSM/local snapshot immediately. The next completed
     /// map match publishes a fresh coherent context.
     private func invalidateTrafficSignInferenceContext() {
+        resetTrafficSignPictogram()
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignDetectionContext = nil
@@ -2027,6 +2045,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func invalidateTrafficSignStateForBundledCityEntry(timestamp: Date) {
+        resetTrafficSignPictogram()
         let base = currentBaseEffectiveSpeedLimitState()
         trafficSignContextGeneration &+= 1
         trafficSignFrameContextIsCurrent = false
@@ -2092,6 +2111,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               emission.sessionGeneration == trafficSignRecorderGeneration,
               emission.contextGeneration == trafficSignContextGeneration else { return }
         logTrafficSignRuntimeEmission(emission)
+        if trafficSignPictogramEnabled {
+            trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
+            trafficSignPictogram = trafficSignDisplayState.sign
+        }
         driveCaptureCoordinator?.recordTrafficSignRecognition(emission)
         publishTrafficSignRecognitionState(for: emission.event)
         trafficSignPassageUpdate = emission.passageUpdate
@@ -2413,6 +2436,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    private func resetTrafficSignPictogram() {
+        trafficSignDisplayState.reset()
+        trafficSignPictogram = nil
+    }
+
     /// Changes only the Dashcam consumer. The shared camera session, elapsed
     /// drive time, TSR, and Panoramax capture stay untouched.
     @discardableResult
@@ -2541,6 +2569,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         if previousTrafficSignActive != driveRecorderTrafficSignRecognitionActive
             || (previousCaptureState == .recording) != (captureState == .recording) {
+            resetTrafficSignPictogram()
             trafficSignRecorderGeneration &+= 1
             trafficSignFeedbackGate.reset()
             lastTrafficSignConsoleLogSignature = nil
@@ -4132,6 +4161,35 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
             )
         }
+        if screenshotState == .trafficSignPictogram {
+            currentBundledSpeedLimitKmh = fixture.speedLimitKmh
+            publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+            trafficSignPictogramEnabled = true
+            let classes = (ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SIGNS"] ?? "give_way")
+                .split(separator: ",").map(String.init)
+            let directory = try? Self.trafficSignModelPackDirectoryURL(bundle: .main)
+            let manifest = directory.flatMap { try? Data(contentsOf: $0.appendingPathComponent("manifest.json")) }
+                .flatMap { try? TrafficSignPackJSON.decoder().decode(TrafficSignModelPackManifest.self, from: $0) }
+            for (index, classID) in classes.enumerated() {
+                let mapping = manifest?.classMapping.first { $0.classId == classID }
+                let detection = TrafficSignDetection(rawClassId: classID, rawLabel: classID,
+                    semantic: mapping?.semantic ?? .init(kind: .unknown, value: nil, unit: nil),
+                    rawScore: 0.95, calibratedConfidence: nil, detectorRawScore: 0.95, classifierRawScore: 0.95,
+                    boundingBox: .init(x: 0.2, y: 0.2, width: 0.1, height: 0.1), classThreshold: 0.7)
+                trafficSignDisplayState.consume(TrafficSignDisplayObservation.accepted(
+                    from: [detection], timestamp: Date(timeIntervalSince1970: Double(index + 1)),
+                    classifierCheckpointSHA256: manifest?.classifier?.sourceCheckpoint.sha256
+                ), catalog: trafficSignPresentationCatalog)
+            }
+            trafficSignPictogram = trafficSignDisplayState.sign
+            let report: [String: Any] = ["kind": "synthetic classifier-output replay; not model inference",
+                "input_classes": classes, "displayed_class": trafficSignPictogram?.classID as Any? ?? NSNull(),
+                "posted_limit_kmh": speedLimitKmh as Any? ?? NSNull(), "city_entry_model_available": trafficSignCityEntryRecognitionAvailable]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
+               let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                try? data.write(to: documents.appendingPathComponent("sign-review.json"), options: .atomic)
+            }
+        }
         if screenshotState == .countryPenalty {
             currentBundledSpeedLimitKmh = fixture.speedLimitKmh
             currentBaseUnlimitedSpeedLimitActive = false
@@ -4357,6 +4415,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func startDriving() {
+        resetTrafficSignPictogram()
         if speedLimitService == nil && startupDataState != .ready {
             ensureSeedBootstrapIfNeeded()
         }
@@ -4392,6 +4451,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        resetTrafficSignPictogram()
         isDriving = false
         driveCaptureCoordinator?.stop()
         locationManager.stopUpdatingLocation()

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-10",
+  "prolix_repository": "https://gitlab.com/panoramax/clients/prolix",
+  "prolix_commit": "36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f",
+  "source_path": "class_maps/DE.json",
+  "source_file_sha256": "76b65eb1d35a4ad5dcb1e25e920b07d7f45fedbbdba08048315bc6075b9b7238",
+  "snapshot_path": "prolix-de-class-map.json",
+  "snapshot_sha256": "24c111074bbd1be40c49ffec55627e066137cf16cfcee1be0e995361c9eea917",
+  "note": "The source-file hash identifies deployed class_maps/DE.json bytes, not a file in the upstream Prolix repository. The snapshot is parsed JSON reformatted for review and has its own hash. Its entries are derived from the separately attributed Panoramax CSV, not licensed by the Prolix repository MIT notice. It is not the pinned mobile model output vocabulary.",
+  "prolix_license": "MIT",
+  "prolix_license_source": "https://gitlab.com/panoramax/clients/prolix/-/blob/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f/LICENSE",
+  "prolix_license_path": "PROLIX_LICENSE.txt",
+  "prolix_license_sha256": "98ea23f579b1eac24de643154c4ab788788071f39c40948b96f2abec9df0cdf6",
+  "mapping_source": {
+    "repository": "https://huggingface.co/Panoramax/classify_nl_road_signs",
+    "revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+    "path": "road_signs_mapping.csv",
+    "column": "DE",
+    "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "original_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/resolve/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "sha256": "f97697266e717c6cf10bbc6465adfb6f7bc603ab688b7c5fc68462a807fcf416",
+    "publisher": "Panoramax",
+    "last_updated": "2026-03-01T12:06:15Z",
+    "declared_license": "etalab-2.0",
+    "license_declaration_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/README.md",
+    "license_declaration_sha256": "259068db40ea1521f0e7349c3253d95529f28a462074437e2597d51f23bdf02c",
+    "verification": "All 142 snapshot mappings match non-empty CSV DE values after the recorded DE-123 to DE:123 normalization."
+  }
+}

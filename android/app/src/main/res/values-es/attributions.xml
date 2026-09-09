@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Fuentes y créditos</string>
+    <string name="credits_intro">Las fuentes y los avisos completos están disponibles sin conexión. Las atribuciones y licencias conservan su idioma original. Los enlaces externos requieren Internet.</string>
+    <string name="credits_reviewed">Revisado: %1$s</string>
+    <string name="credits_load_error">No se pudieron cargar los avisos incluidos.</string>
+    <string name="credits_show_details">Mostrar detalles</string>
+    <string name="credits_hide_details">Ocultar detalles</string>
+    <string name="credits_attribution">Atribución: %1$s</string>
+    <string name="credits_changes">Cambios: %1$s</string>
+    <string name="credits_source_link">Abrir fuente</string>
+    <string name="credits_license_link">Abrir licencia</string>
+    <string name="credits_link_error">No hay una aplicación disponible para abrir este enlace.</string>
+    <string name="credits_full_notices">Avisos completos de fuentes y software</string>
+    <string name="credits_model_notices">Avisos de modelos de señales</string>
+    <string name="credits_speech_notices">Licencia del modelo de voz</string>
+    <string name="credits_category_data">Datos cartográficos</string>
+    <string name="credits_category_software">Software</string>
+    <string name="credits_category_model">Modelos de reconocimiento</string>
+    <string name="credits_category_sign">Pictogramas de señales</string>
+    <string name="credits_category_reference">Referencias</string>
+</resources>

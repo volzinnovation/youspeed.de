@@ -947,6 +947,100 @@ final class SpeedConsumerTests: XCTestCase {
         ).supplementaryPlates.isEmpty)
     }
 
+    @MainActor
+    func testProlixPresentationCatalogMatchesActualClassifierVocabulary() throws {
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
+        let metadata = try JSONSerialization.jsonObject(with: Data(contentsOf: directory.appendingPathComponent("classify_de_road_signs.mlmodelc/metadata.json"))) as! [[String: Any]]
+        XCTAssertEqual(catalog.classLabels, metadata[0]["classLabels"] as? [String])
+        XCTAssertEqual(catalog.classLabels.count, 134)
+        for alias in ["DE:278-50", "DE:281", "DE:310", "DE:311", "city:start"] {
+            XCTAssertFalse(catalog.canRecognize(alias), "Reference aliases must not claim recognition capability")
+        }
+        for sign in catalog.signs where sign.displayEligible {
+            XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
+            XCTAssertEqual(Set(sign.label.keys), ["de", "en", "fr", "nl"])
+        }
+    }
+
+    func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        let now = Date(timeIntervalSince1970: 1_500)
+        let speed = makeTrafficSignDetection(score: 0.8, box: .init(x: 0.2, y: 0.2, width: 0.1, height: 0.1))
+        func general(_ label: String, classifier: Double, detector: Double = 0.4) -> TrafficSignDetection {
+            TrafficSignDetection(rawClassId: label, rawLabel: label,
+                semantic: .init(kind: .unknown, value: nil, unit: nil), rawScore: min(classifier, detector),
+                calibratedConfidence: nil, detectorRawScore: detector, classifierRawScore: classifier,
+                boundingBox: .init(x: 0.4, y: 0.2, width: 0.1, height: 0.1), classThreshold: 0.25)
+        }
+        let sign = general("give_way", classifier: 0.95)
+        let selected = TrafficSignDisplayObservation.accepted(from: [speed, sign], timestamp: now, classifierCheckpointSHA256: catalog.classifierCheckpointSHA256)
+        XCTAssertEqual(selected?.classID, "give_way")
+        XCTAssertEqual(selected?.affectsSpeed, false)
+        var fusion = TrafficSignFusionEngine(packId: "fixture", artifactSha256: String(repeating: "a", count: 64), preprocessingVersion: "fixture",
+            thresholds: .init(provisional: 0.45, confirmed: 0.7, unknown: 0.25, confirmationFrames: 2, confirmationWindowMs: 1500, minimumTrackIou: 0.2))
+        let event = fusion.ingest(detections: [sign, speed], source: .liveFrame, timestamp: now,
+            roadContext: makeTrafficSignDetectionContext(), latencyMs: 10, thermalState: .nominal)
+        XCTAssertEqual(event.candidate?.value, 30, "Display selection must not change speed fusion priority")
+        for rejected in [general("give_way", classifier: 0.899), general("give_way", classifier: .nan),
+                         general("give_way", classifier: 0.95, detector: 0.249), general("give_way", classifier: 0.95, detector: .nan),
+                         general("bad", classifier: 1), general("bad:windows", classifier: 1)] {
+            XCTAssertNil(TrafficSignDisplayObservation.accepted(from: [rejected], timestamp: now, classifierCheckpointSHA256: catalog.classifierCheckpointSHA256))
+        }
+    }
+
+    func testAdditionalSignDisplayRetainsReplacesClearsAndRejectsWrongModel() throws {
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        var display = TrafficSignDisplayState()
+        func observation(_ classID: String, _ timestamp: Double, affectsSpeed: Bool = false, sha: String? = nil) -> TrafficSignDisplayObservation {
+            .init(classID: classID, classifierScore: 0.95, timestamp: Date(timeIntervalSince1970: timestamp),
+                  affectsSpeed: affectsSpeed, classifierCheckpointSHA256: sha ?? catalog.classifierCheckpointSHA256)
+        }
+        display.consume(observation("give_way", 1), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "give_way")
+        display.consume(nil, catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "give_way", "Empty/rejected frames retain the accepted sign")
+        display.consume(observation("stop", 2), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "stop")
+        display.consume(observation("give_way", 1), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "stop", "Late frames must not resurrect an older sign")
+        display.consume(observation("maxspeed:30", 3, affectsSpeed: true), catalog: catalog)
+        XCTAssertNil(display.sign)
+        display.consume(observation("give_way", 4), catalog: catalog)
+        display.consume(observation("other", 5), catalog: catalog)
+        XCTAssertNil(display.sign, "A newly accepted class without a faithful pictogram clears the previous one")
+        display.consume(observation("give_way", 6, sha: String(repeating: "b", count: 64)), catalog: catalog)
+        XCTAssertNil(display.sign, "Another classifier cannot borrow this German catalog by class name")
+        display.consume(observation("DE:310", 7), catalog: catalog)
+        XCTAssertNil(display.sign, "Reference artwork is not a real model class")
+        display.reset()
+        display.consume(observation("give_way", 1), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "give_way", "A reset begins a new timestamp scope")
+    }
+
+    func testProlixStructuralAliasesDistinguishSpeedEndsAndCityEntry() {
+        func action(_ raw: String, country: String = "DE") -> TrafficSignStructuralAction {
+            let candidate = TrafficSignRecognitionCandidate(rawClassId: raw, rawLabel: raw,
+                semanticKind: "unknown", value: nil, unit: nil, rawScore: 0.99, calibratedConfidence: nil,
+                boundingBox: .init(x: 0.2, y: 0.2, width: 0.1, height: 0.1), trackId: nil, evidenceFrames: 1)
+            return TrafficSignStructuralAction.normalized(from: candidate, countryCode: country)
+        }
+        XCTAssertEqual(action("DE:278-50"), .maximumSpeedEnd(50))
+        XCTAssertEqual(action("DE:278-70"), .maximumSpeedEnd(70))
+        XCTAssertEqual(action("DE:278-999"), .unresolved("DE:278-999"))
+        XCTAssertEqual(action("DE:282"), .allRestrictionsEnd)
+        XCTAssertEqual(action("no:end"), .allRestrictionsEnd)
+        XCTAssertEqual(action("DE:281"), .nonSpeedRestrictionEnd)
+        XCTAssertEqual(action("no_overtaking:end:hgv"), .nonSpeedRestrictionEnd)
+        XCTAssertFalse(action("DE:281").passageEventEligible)
+        XCTAssertEqual(action("DE:310", country: "FR"), .cityEntry("DE"))
+        XCTAssertEqual(action("city:start", country: "FR"), .cityEntry("FR"))
+        XCTAssertEqual(action("city_limit:start", country: "FR"), .cityEntry("FR"))
+        XCTAssertEqual(action("DE:311"), .cityExit)
+        XCTAssertEqual(action("motorway:end"), .motorwayExit)
+        XCTAssertEqual(action("trunk:end"), .motorroadExit)
+    }
+
     func testTrafficSignV2AdapterUsesFrozenTaxonomyAndZoneClassIDs() {
         let unsupported25 = TrafficSignVisionTwoStageCoreMLBackend.shadowSemantic(
             rawClassId: "speed_limit_25",
@@ -4820,11 +4914,49 @@ final class SpeedConsumerTests: XCTestCase {
         let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
         let text = TrafficSignThirdPartyNoticesLoader.load(bundle: bundle)
 
+        let commonNoticesURL = try XCTUnwrap(bundle.url(
+            forResource: "THIRD_PARTY_NOTICES", withExtension: "txt", subdirectory: "attributions"
+        ))
+        let commonNotices = try String(contentsOf: commonNoticesURL, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        XCTAssertFalse(commonNotices.isEmpty)
+        XCTAssertTrue(text.contains(commonNotices), "Info must include every bundled common license notice")
+
         XCTAssertTrue(text.contains("Copyright (c) 2022 Adrien Pavie"))
         XCTAssertTrue(text.contains("LICENCE OUVERTE 2.0/OPEN LICENCE 2.0"))
         XCTAssertTrue(text.contains("Attribution-ShareAlike 4.0 International"))
         XCTAssertTrue(text.contains("GNU AFFERO GENERAL PUBLIC LICENSE"))
         XCTAssertTrue(text.contains("How to Apply These Terms to Your New Programs"))
+    }
+
+    func testSourceCreditsCoverEveryBundledSignAndHaveUsableLinks() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let catalog = try XCTUnwrap(SourceAttributionCatalog.load(bundle: bundle))
+        XCTAssertEqual(catalog.schemaVersion, 1)
+        XCTAssertFalse(catalog.reviewedAt.isEmpty)
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, catalog.entries.count)
+
+        for entry in catalog.entries {
+            XCTAssertFalse(entry.title.isEmpty, entry.id)
+            XCTAssertFalse(entry.attribution.isEmpty, entry.id)
+            XCTAssertFalse(entry.license.isEmpty, entry.id)
+            XCTAssertFalse(entry.changes.isEmpty, entry.id)
+            XCTAssertNotNil(SourceAttribution.webURL(entry.sourceURL), entry.id)
+            XCTAssertNotNil(SourceAttribution.webURL(entry.licenseURL), entry.id)
+            XCTAssertTrue(["data", "sign", "model", "software", "reference"].contains(entry.category), entry.id)
+        }
+
+        let manifestURL = try XCTUnwrap(bundle.url(
+            forResource: "manifest", withExtension: "json", subdirectory: "sign-pictograms"
+        ))
+        let manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        let artworks = try XCTUnwrap(manifest["artworks"] as? [[String: Any]])
+        let signSources = Set(catalog.entries.filter { $0.category == "sign" }.map(\.sourceURL))
+        for artwork in artworks {
+            let source = try XCTUnwrap(artwork["source_page_url"] as? String)
+            let permanentSource = try XCTUnwrap(artwork["source_page_permanent_url"] as? String)
+            XCTAssertTrue(signSources.contains(source) || signSources.contains(permanentSource), source)
+        }
     }
 
     func testPedestrianZoneSignAssetIsBundled() throws {
@@ -16011,6 +16143,25 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertTrue(city.applied)
         XCTAssertEqual(city.effectiveState.value, .numeric(50))
         XCTAssertEqual(city.effectiveState.source, .camera)
+        XCTAssertTrue(resolver.commit(
+            makePassage(action: .postedMaximum(30), context: verified, eventID: "posted-in-city"),
+            base: makeBase(80)
+        ).applied)
+        let truckOvertakingEnd = resolver.commit(
+            makePassage(action: .nonSpeedRestrictionEnd, context: verified, eventID: "sign-281"),
+            base: makeBase(80)
+        )
+        XCTAssertFalse(truckOvertakingEnd.applied)
+        XCTAssertEqual(truckOvertakingEnd.effectiveState.value, .numeric(30), "Sign 281 must not end the posted speed")
+        let matchingSpeedEnd = resolver.commit(
+            makePassage(action: .maximumSpeedEnd(30), context: verified, eventID: "sign-278-30"),
+            base: makeBase(80)
+        )
+        XCTAssertEqual(matchingSpeedEnd.effectiveState.value, .numeric(50), "City entry survives the end of a posted speed")
+        XCTAssertFalse(resolver.commit(
+            makePassage(action: .cityEntry("FR"), context: verified, eventID: "unsupported-city-default"),
+            base: makeBase(80)
+        ).applied)
         XCTAssertEqual(
             EffectiveSpeedLimitState.base(
                 localValue: "none",

@@ -282,3 +282,19 @@
 "limit.accessibility.unlimited" = "No speed limit";
 "limit.accessibility.end_unknown" = "End detected, speed limit unknown";
 "limit.accessibility.unknown" = "Speed limit unknown";
+
+/* Recognized road-sign display */
+"drive_recorder.settings.tsr_pictogram" = "Show recognized sign";
+"drive_recorder.settings.tsr_pictogram_description" = "Shows the latest confidently recognized additional road sign at the top right. The next recognized sign replaces it.";
+"drive_recorder.settings.tsr_city_unavailable" = "City entry (sign 310) is not included in the current recognition model.";
+"about.sources.title" = "Sources & credits";
+"about.sources.intro" = "Authors, source files, licenses and changes are listed here offline. Original names and license terms are kept in their source language. Source and license links open in your browser.";
+"about.sources.source" = "Original source";
+"about.sources.changes" = "Changes";
+"about.sources.search" = "Search sources";
+"about.sources.unavailable" = "The bundled sources could not be loaded.";
+"about.sources.category.data" = "Map data and boundaries";
+"about.sources.category.sign" = "Traffic-sign artwork";
+"about.sources.category.model" = "Recognition models and training data";
+"about.sources.category.software" = "Software and conversion tools";
+"about.sources.category.reference" = "References";

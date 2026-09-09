@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Źródła i autorzy</string>
+    <string name="credits_intro">Źródła i pełne informacje są dostępne offline. Informacje o autorach i licencjach pozostają w języku oryginalnym. Linki zewnętrzne wymagają Internetu.</string>
+    <string name="credits_reviewed">Sprawdzono: %1$s</string>
+    <string name="credits_load_error">Nie udało się wczytać dołączonych informacji.</string>
+    <string name="credits_show_details">Pokaż szczegóły</string>
+    <string name="credits_hide_details">Ukryj szczegóły</string>
+    <string name="credits_attribution">Autorstwo: %1$s</string>
+    <string name="credits_changes">Zmiany: %1$s</string>
+    <string name="credits_source_link">Otwórz źródło</string>
+    <string name="credits_license_link">Otwórz licencję</string>
+    <string name="credits_link_error">Brak aplikacji do otwarcia tego linku.</string>
+    <string name="credits_full_notices">Pełne informacje o źródłach i oprogramowaniu</string>
+    <string name="credits_model_notices">Informacje o modelach znaków drogowych</string>
+    <string name="credits_speech_notices">Licencja modelu mowy</string>
+    <string name="credits_category_data">Dane mapowe</string>
+    <string name="credits_category_software">Oprogramowanie</string>
+    <string name="credits_category_model">Modele rozpoznawania</string>
+    <string name="credits_category_sign">Piktogramy znaków drogowych</string>
+    <string name="credits_category_reference">Materiały źródłowe</string>
+</resources>

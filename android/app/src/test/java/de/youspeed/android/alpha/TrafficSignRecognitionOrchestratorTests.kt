@@ -631,6 +631,42 @@ class TrafficSignRecognitionOrchestratorTests {
         assertEquals(50, harness.orchestrator.effectiveSpeedKmh(50, 70))
     }
 
+    @Test
+    fun displayStreamUsesOtherProposalWithoutChangingSpeedAndRejectsStaleGeneration() {
+        val harness = Harness()
+        val speed = detection()
+        val stop = speed.copy(candidate = speed.candidate.copy(rawClassId = "stop", rawLabel = "Stop",
+            semantic = TrafficSignSemantic(TrafficSignSemanticKind.UNKNOWN), rawScore = 0.60,
+            proposalRawScore = 0.60, classifierRawScore = 0.99))
+        harness.orchestrator.submit(harness.frame("both", capturedAtNanos = 0L))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(speed, displayDetections = listOf(speed, stop)))
+        val output = harness.observer.outputs.single()
+        assertEquals("speed_limit_30", output.event.candidate?.rawClassId)
+        assertEquals("stop", output.displayObservation?.candidate?.rawClassId)
+        assertEquals("drive-test", output.displayObservation?.driveSessionId)
+        assertNull(output.passageEvent)
+        assertNull(harness.orchestrator.speedOverride())
+
+        harness.clockNanos = 500_000_000L
+        harness.orchestrator.submit(harness.frame("stale", capturedAtNanos = harness.clockNanos))
+        harness.orchestrator.reconcileContext(harness.context, contextGeneration = 1L)
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(stop))
+        assertNull(harness.observer.outputs.last().displayObservation)
+        assertNull(harness.observer.outputs.last().passageEvent)
+    }
+
+    @Test
+    fun stillAndInactiveFramesCannotPublishLivePictograms() {
+        for (still in listOf(true, false)) {
+            val harness = Harness()
+            harness.runtimeActivationEligible = still
+            harness.orchestrator.submit(harness.frame("not-live", source = if (still) TrafficSignInputSource.CAMERA_STILL else TrafficSignInputSource.LIVE_FRAME,
+                capturedAtNanos = 0L))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+            assertNull(harness.observer.outputs.single().displayObservation)
+        }
+    }
+
     private class Harness(
         val pack: TrafficSignModelPack = fixture("de-direct-pack-v1.json").readText().let(TrafficSignModelPackJson::decode),
     ) {

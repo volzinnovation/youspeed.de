@@ -1,0 +1,2098 @@
+{
+  "schema_version": 1,
+  "country": "DE",
+  "classifier_checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+  "class_labels": [
+    "arrow:red",
+    "arrow_left_down",
+    "arrow_right",
+    "arrow_right_down",
+    "arrow_through",
+    "arrow_turn_left",
+    "arrow_turn_left_right",
+    "arrow_turn_left_through",
+    "arrow_turn_right",
+    "arrow_turn_right_through",
+    "arrow_u_turn",
+    "bad",
+    "bad:back",
+    "bad:buildings",
+    "bad:round",
+    "bad:windows",
+    "bicycle:priority",
+    "bicycle:start",
+    "bus:start",
+    "exit",
+    "give_way",
+    "hazard",
+    "hazard:airport",
+    "hazard:animals",
+    "hazard:bicycle",
+    "hazard:bothways",
+    "hazard:bumps",
+    "hazard:crossing",
+    "hazard:gravel",
+    "hazard:horse",
+    "hazard:ice",
+    "hazard:incline",
+    "hazard:intersection",
+    "hazard:left_turn",
+    "hazard:level_crossing",
+    "hazard:moving_bridge",
+    "hazard:narrow_both",
+    "hazard:narrow_left",
+    "hazard:narrow_right",
+    "hazard:other",
+    "hazard:pedestrian_crossing",
+    "hazard:right_turn",
+    "hazard:road_works",
+    "hazard:rocks",
+    "hazard:school",
+    "hazard:slippery",
+    "hazard:traffic_jam",
+    "hazard:traffic_signal",
+    "hazard:train",
+    "hazard:train2",
+    "hazard:wild_animals",
+    "hazard:wind",
+    "hazard:zigzag",
+    "hazard:zigzag:left",
+    "horse:start",
+    "lanes",
+    "maxaxleweight",
+    "maxheight",
+    "maxlength",
+    "maxspeed:10",
+    "maxspeed:100",
+    "maxspeed:120",
+    "maxspeed:130",
+    "maxspeed:20",
+    "maxspeed:25",
+    "maxspeed:30",
+    "maxspeed:40",
+    "maxspeed:5",
+    "maxspeed:50",
+    "maxspeed:60",
+    "maxspeed:70",
+    "maxspeed:80",
+    "maxspeed:end",
+    "maxweight",
+    "maxwidth",
+    "min_distance",
+    "motorway:end",
+    "motorway:start",
+    "no:end",
+    "no:other",
+    "no:other:dog",
+    "no_bicycle",
+    "no_bus",
+    "no_car",
+    "no_car_bicycle",
+    "no_car_motorcycle",
+    "no_dangerous",
+    "no_dangerous_liquid",
+    "no_entry",
+    "no_exit",
+    "no_exit:car",
+    "no_hgv",
+    "no_horse",
+    "no_motorcycle",
+    "no_overtaking",
+    "no_overtaking:end",
+    "no_overtaking:hgv",
+    "no_parking",
+    "no_pedestrian",
+    "no_stop",
+    "no_u_turn",
+    "no_way",
+    "oneway",
+    "other",
+    "other:charging",
+    "other:motorhome",
+    "other:multi",
+    "park_ride",
+    "parking",
+    "parking:covered",
+    "parking:disabled",
+    "parking:pedestrian",
+    "parking:perpendicular",
+    "parking:sidewalk",
+    "pedestrian:start",
+    "pedestrian_bicycle:designated",
+    "pedestrian_bicycle:start",
+    "pedestrian_crossing",
+    "priority:backward",
+    "priority:end",
+    "priority:forward",
+    "priority:start",
+    "roundabout",
+    "stop",
+    "traffic_signal",
+    "trunk:end",
+    "trunk:start",
+    "tunnel:start",
+    "zone:20",
+    "zone:30",
+    "zone:30:end",
+    "zone:end",
+    "zone:no_parking",
+    "zone:pedestrian"
+  ],
+  "signs": [
+    {
+      "class_id": "arrow:red",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Roter Richtungspfeil",
+        "en": "Red direction arrow",
+        "fr": "Flèche directionnelle rouge",
+        "nl": "Rode richtingspijl"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "arrow_left_down",
+      "sign_code": "DE:222-10",
+      "image_path": "tsr/sign-pictograms/png/de-222-10.png",
+      "label": {
+        "de": "Links vorbeifahren",
+        "en": "Pass on the left",
+        "fr": "Passage par la gauche",
+        "nl": "Links passeren"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_right",
+      "sign_code": "DE:211",
+      "image_path": "tsr/sign-pictograms/png/de-211.png",
+      "label": {
+        "de": "Hier rechts",
+        "en": "Turn right here",
+        "fr": "Tourner ici à droite",
+        "nl": "Hier rechtsaf"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_right_down",
+      "sign_code": "DE:222",
+      "image_path": "tsr/sign-pictograms/png/de-222.png",
+      "label": {
+        "de": "Rechts vorbeifahren",
+        "en": "Pass on the right",
+        "fr": "Passage par la droite",
+        "nl": "Rechts passeren"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_through",
+      "sign_code": "DE:209-30",
+      "image_path": "tsr/sign-pictograms/png/de-209-30.png",
+      "label": {
+        "de": "Geradeaus",
+        "en": "Ahead only",
+        "fr": "Tout droit",
+        "nl": "Rechtdoor"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_turn_left",
+      "sign_code": "DE:209-10",
+      "image_path": "tsr/sign-pictograms/png/de-209-10.png",
+      "label": {
+        "de": "Links abbiegen",
+        "en": "Turn left ahead",
+        "fr": "Tourner à gauche",
+        "nl": "Linksaf"
+      },
+      "display_eligible": true,
+      "notes": "Reviewed display mapping: upstream DE:209 → DE:209-10; German StVO/current sign plate. This is not an added classifier class."
+    },
+    {
+      "class_id": "arrow_turn_left_right",
+      "sign_code": "DE:214-30",
+      "image_path": "tsr/sign-pictograms/png/de-214-30.png",
+      "label": {
+        "de": "Links oder rechts",
+        "en": "Turn left or right",
+        "fr": "À gauche ou à droite",
+        "nl": "Linksaf of rechtsaf"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_turn_left_through",
+      "sign_code": "DE:214-10",
+      "image_path": "tsr/sign-pictograms/png/de-214-10.png",
+      "label": {
+        "de": "Geradeaus oder links",
+        "en": "Ahead or left",
+        "fr": "Tout droit ou à gauche",
+        "nl": "Rechtdoor of linksaf"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_turn_right",
+      "sign_code": "DE:209",
+      "image_path": "tsr/sign-pictograms/png/de-209.png",
+      "label": {
+        "de": "Rechts abbiegen",
+        "en": "Turn right ahead",
+        "fr": "Tourner à droite",
+        "nl": "Rechtsaf"
+      },
+      "display_eligible": true,
+      "notes": "Reviewed display mapping: upstream DE:209-10 → DE:209; German StVO/current sign plate. This is not an added classifier class."
+    },
+    {
+      "class_id": "arrow_turn_right_through",
+      "sign_code": "DE:214",
+      "image_path": "tsr/sign-pictograms/png/de-214.png",
+      "label": {
+        "de": "Geradeaus oder rechts",
+        "en": "Ahead or right",
+        "fr": "Tout droit ou à droite",
+        "nl": "Rechtdoor of rechtsaf"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "arrow_u_turn",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Wendepfeil",
+        "en": "U-turn arrow",
+        "fr": "Flèche de demi-tour",
+        "nl": "Keerpijl"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "bad",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Keine gültige Schilderkennung",
+        "en": "Invalid sign recognition",
+        "fr": "Reconnaissance de panneau invalide",
+        "nl": "Ongeldige bordherkenning"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "bad:back",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Schildrückseite",
+        "en": "Back of sign",
+        "fr": "Dos d’un panneau",
+        "nl": "Achterkant van een bord"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "bad:buildings",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Gebäude statt Schild",
+        "en": "Building, not a sign",
+        "fr": "Bâtiment sans panneau",
+        "nl": "Gebouw zonder bord"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "bad:round",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Rundes Objekt",
+        "en": "Round object",
+        "fr": "Objet rond",
+        "nl": "Rond object"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "bad:windows",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Fenster statt Schild",
+        "en": "Window, not a sign",
+        "fr": "Fenêtre sans panneau",
+        "nl": "Raam zonder bord"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "bicycle:priority",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Fahrradvorrang",
+        "en": "Bicycle priority",
+        "fr": "Priorité aux vélos",
+        "nl": "Voorrang voor fietsers"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "bicycle:start",
+      "sign_code": "DE:237",
+      "image_path": "tsr/sign-pictograms/png/de-237.png",
+      "label": {
+        "de": "Radweg",
+        "en": "Cycle path",
+        "fr": "Piste cyclable",
+        "nl": "Fietspad"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "bus:start",
+      "sign_code": "DE:245",
+      "image_path": "tsr/sign-pictograms/png/de-245.png",
+      "label": {
+        "de": "Bussonderfahrstreifen",
+        "en": "Bus lane",
+        "fr": "Voie réservée aux bus",
+        "nl": "Busstrook"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "exit",
+      "sign_code": "DE:460",
+      "image_path": null,
+      "label": {
+        "de": "Ausfahrthinweis",
+        "en": "Exit indication",
+        "fr": "Indication de sortie",
+        "nl": "Aanduiding van een afrit"
+      },
+      "display_eligible": false,
+      "notes": "Deployed map gives DE:460 (numbered motorway detour), which does not establish an exit pictogram; unresolved mapping."
+    },
+    {
+      "class_id": "give_way",
+      "sign_code": "DE:205",
+      "image_path": "tsr/sign-pictograms/png/de-205.png",
+      "label": {
+        "de": "Vorfahrt gewähren",
+        "en": "Give way",
+        "fr": "Cédez le passage",
+        "nl": "Voorrang verlenen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard",
+      "sign_code": "DE:101",
+      "image_path": "tsr/sign-pictograms/png/de-101.png",
+      "label": {
+        "de": "Gefahrstelle",
+        "en": "Danger",
+        "fr": "Danger",
+        "nl": "Gevaar"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:airport",
+      "sign_code": "DE:101-x0",
+      "image_path": null,
+      "label": {
+        "de": "Flugbetrieb",
+        "en": "Low-flying aircraft",
+        "fr": "Avions à basse altitude",
+        "nl": "Laagvliegende vliegtuigen"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "hazard:animals",
+      "sign_code": "DE:101-x2",
+      "image_path": null,
+      "label": {
+        "de": "Viehtrieb",
+        "en": "Livestock",
+        "fr": "Passage d’animaux domestiques",
+        "nl": "Overstekend vee"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "hazard:bicycle",
+      "sign_code": "DE:138",
+      "image_path": null,
+      "label": {
+        "de": "Radverkehr",
+        "en": "Cyclists",
+        "fr": "Cyclistes",
+        "nl": "Fietsers"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "hazard:bothways",
+      "sign_code": "DE:125",
+      "image_path": "tsr/sign-pictograms/png/de-125.png",
+      "label": {
+        "de": "Gegenverkehr",
+        "en": "Two-way traffic",
+        "fr": "Circulation dans les deux sens",
+        "nl": "Tweerichtingsverkeer"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:bumps",
+      "sign_code": "DE:112",
+      "image_path": "tsr/sign-pictograms/png/de-112.png",
+      "label": {
+        "de": "Unebene Fahrbahn",
+        "en": "Uneven road",
+        "fr": "Chaussée déformée",
+        "nl": "Slecht wegdek"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:crossing",
+      "sign_code": "DE:102",
+      "image_path": "tsr/sign-pictograms/png/de-102.png",
+      "label": {
+        "de": "Kreuzung oder Einmündung",
+        "en": "Junction",
+        "fr": "Intersection",
+        "nl": "Kruispunt"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:gravel",
+      "sign_code": "DE:101-52",
+      "image_path": "tsr/sign-pictograms/png/de-101-52.png",
+      "label": {
+        "de": "Splitt oder Schotter",
+        "en": "Loose gravel",
+        "fr": "Gravillons",
+        "nl": "Losliggende stenen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:horse",
+      "sign_code": "DE:101-x3",
+      "image_path": null,
+      "label": {
+        "de": "Reiter",
+        "en": "Horse riders",
+        "fr": "Cavaliers",
+        "nl": "Ruiters"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "hazard:ice",
+      "sign_code": "DE:101-51",
+      "image_path": "tsr/sign-pictograms/png/de-101-51.png",
+      "label": {
+        "de": "Schnee- oder Eisglätte",
+        "en": "Snow or ice",
+        "fr": "Neige ou verglas",
+        "nl": "Sneeuw of ijzel"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:incline",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Gefälle oder Steigung",
+        "en": "Descent or ascent",
+        "fr": "Descente ou montée",
+        "nl": "Daling of stijging"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "hazard:intersection",
+      "sign_code": "DE:301",
+      "image_path": "tsr/sign-pictograms/png/de-301.png",
+      "label": {
+        "de": "Vorfahrt an der nächsten Kreuzung",
+        "en": "Priority at next junction",
+        "fr": "Priorité à la prochaine intersection",
+        "nl": "Voorrang op het volgende kruispunt"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:left_turn",
+      "sign_code": "DE:103-10",
+      "image_path": "tsr/sign-pictograms/png/de-103-10.png",
+      "label": {
+        "de": "Kurve links",
+        "en": "Left bend",
+        "fr": "Virage à gauche",
+        "nl": "Bocht naar links"
+      },
+      "display_eligible": true,
+      "notes": "Reviewed display mapping: upstream missing → DE:103-10; German StVO/current sign plate. This is not an added classifier class."
+    },
+    {
+      "class_id": "hazard:level_crossing",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Bahnübergang",
+        "en": "Level crossing",
+        "fr": "Passage à niveau",
+        "nl": "Overweg"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "hazard:moving_bridge",
+      "sign_code": "DE:101-55",
+      "image_path": "tsr/sign-pictograms/png/de-101-55.png",
+      "label": {
+        "de": "Bewegliche Brücke",
+        "en": "Opening bridge",
+        "fr": "Pont mobile",
+        "nl": "Beweegbare brug"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:narrow_both",
+      "sign_code": "DE:120",
+      "image_path": "tsr/sign-pictograms/png/de-120.png",
+      "label": {
+        "de": "Verengte Fahrbahn",
+        "en": "Road narrows",
+        "fr": "Chaussée rétrécie",
+        "nl": "Wegversmalling"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:narrow_left",
+      "sign_code": "DE:121-20",
+      "image_path": "tsr/sign-pictograms/png/de-121-20.png",
+      "label": {
+        "de": "Verengung links",
+        "en": "Road narrows on left",
+        "fr": "Chaussée rétrécie à gauche",
+        "nl": "Wegversmalling links"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:narrow_right",
+      "sign_code": "DE:121-10",
+      "image_path": "tsr/sign-pictograms/png/de-121-10.png",
+      "label": {
+        "de": "Verengung rechts",
+        "en": "Road narrows on right",
+        "fr": "Chaussée rétrécie à droite",
+        "nl": "Wegversmalling rechts"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:other",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Unbestimmte Gefahr",
+        "en": "Unspecified hazard",
+        "fr": "Danger non précisé",
+        "nl": "Niet nader bepaald gevaar"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "hazard:pedestrian_crossing",
+      "sign_code": "DE:101-x1",
+      "image_path": null,
+      "label": {
+        "de": "Fußgängerüberweg voraus",
+        "en": "Pedestrian crossing ahead",
+        "fr": "Passage piéton annoncé",
+        "nl": "Voetgangersoversteekplaats vooruit"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "hazard:right_turn",
+      "sign_code": "DE:103-20",
+      "image_path": "tsr/sign-pictograms/png/de-103-20.png",
+      "label": {
+        "de": "Kurve rechts",
+        "en": "Right bend",
+        "fr": "Virage à droite",
+        "nl": "Bocht naar rechts"
+      },
+      "display_eligible": true,
+      "notes": "Reviewed display mapping: upstream missing → DE:103-20; German StVO/current sign plate. This is not an added classifier class."
+    },
+    {
+      "class_id": "hazard:road_works",
+      "sign_code": "DE:123",
+      "image_path": "tsr/sign-pictograms/png/de-123.png",
+      "label": {
+        "de": "Arbeitsstelle",
+        "en": "Road works",
+        "fr": "Travaux",
+        "nl": "Werk in uitvoering"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:rocks",
+      "sign_code": "DE:101-x5",
+      "image_path": null,
+      "label": {
+        "de": "Steinschlag",
+        "en": "Falling rocks",
+        "fr": "Chutes de pierres",
+        "nl": "Vallende stenen"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "hazard:school",
+      "sign_code": "DE:136",
+      "image_path": null,
+      "label": {
+        "de": "Kinder",
+        "en": "Children",
+        "fr": "Enfants",
+        "nl": "Kinderen"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "hazard:slippery",
+      "sign_code": "DE:114",
+      "image_path": "tsr/sign-pictograms/png/de-114.png",
+      "label": {
+        "de": "Schleuder- oder Rutschgefahr",
+        "en": "Slippery road",
+        "fr": "Chaussée glissante",
+        "nl": "Slipgevaar"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:traffic_jam",
+      "sign_code": "DE:124",
+      "image_path": "tsr/sign-pictograms/png/de-124.png",
+      "label": {
+        "de": "Stau",
+        "en": "Traffic queues",
+        "fr": "Bouchons",
+        "nl": "Filevorming"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:traffic_signal",
+      "sign_code": "DE:131",
+      "image_path": "tsr/sign-pictograms/png/de-131.png",
+      "label": {
+        "de": "Lichtzeichenanlage voraus",
+        "en": "Traffic lights ahead",
+        "fr": "Feux de circulation annoncés",
+        "nl": "Verkeerslichten vooruit"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:train",
+      "sign_code": "DE:151",
+      "image_path": "tsr/sign-pictograms/png/de-151.png",
+      "label": {
+        "de": "Bahnübergang",
+        "en": "Level crossing",
+        "fr": "Passage à niveau",
+        "nl": "Overweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:train2",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Bahnübergang, unbestimmte Ausführung",
+        "en": "Level crossing, unspecified type",
+        "fr": "Passage à niveau, type non précisé",
+        "nl": "Overweg, onbepaald type"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "hazard:wild_animals",
+      "sign_code": "DE:142",
+      "image_path": null,
+      "label": {
+        "de": "Wildwechsel",
+        "en": "Wild animals",
+        "fr": "Passage d’animaux sauvages",
+        "nl": "Overstekend wild"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "hazard:wind",
+      "sign_code": "DE:117",
+      "image_path": null,
+      "label": {
+        "de": "Seitenwind",
+        "en": "Crosswinds",
+        "fr": "Vent latéral",
+        "nl": "Zijwind"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "hazard:zigzag",
+      "sign_code": "DE:105-20",
+      "image_path": "tsr/sign-pictograms/png/de-105-20.png",
+      "label": {
+        "de": "Doppelkurve, zuerst rechts",
+        "en": "Double bend, first right",
+        "fr": "Succession de virages, premier à droite",
+        "nl": "S-bocht, eerst rechts"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "hazard:zigzag:left",
+      "sign_code": "DE:105-10",
+      "image_path": "tsr/sign-pictograms/png/de-105-10.png",
+      "label": {
+        "de": "Doppelkurve, zuerst links",
+        "en": "Double bend, first left",
+        "fr": "Succession de virages, premier à gauche",
+        "nl": "S-bocht, eerst links"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "horse:start",
+      "sign_code": "DE:238",
+      "image_path": "tsr/sign-pictograms/png/de-238.png",
+      "label": {
+        "de": "Reitweg",
+        "en": "Bridleway",
+        "fr": "Chemin pour cavaliers",
+        "nl": "Ruiterpad"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "lanes",
+      "sign_code": "DE:223",
+      "image_path": null,
+      "label": {
+        "de": "Fahrstreifenregelung",
+        "en": "Lane arrangement",
+        "fr": "Organisation des voies",
+        "nl": "Rijstrookindeling"
+      },
+      "display_eligible": false,
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+    },
+    {
+      "class_id": "maxaxleweight",
+      "sign_code": "DE:263",
+      "image_path": null,
+      "label": {
+        "de": "Achslastbeschränkung",
+        "en": "Axle weight limit",
+        "fr": "Limitation de charge par essieu",
+        "nl": "Maximumaslast"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "maxheight",
+      "sign_code": "DE:265",
+      "image_path": null,
+      "label": {
+        "de": "Höhenbeschränkung",
+        "en": "Height limit",
+        "fr": "Limitation de hauteur",
+        "nl": "Maximumhoogte"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "maxlength",
+      "sign_code": "DE:266",
+      "image_path": null,
+      "label": {
+        "de": "Längenbeschränkung",
+        "en": "Length limit",
+        "fr": "Limitation de longueur",
+        "nl": "Maximumlengte"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "maxspeed:10",
+      "sign_code": "DE:274-10",
+      "image_path": "tsr/sign-pictograms/png/de-274-10.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 10 km/h",
+        "en": "Maximum speed 10 km/h",
+        "fr": "Vitesse maximale 10 km/h",
+        "nl": "Maximumsnelheid 10 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:100",
+      "sign_code": "DE:274-100",
+      "image_path": "tsr/sign-pictograms/png/de-274-100.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 100 km/h",
+        "en": "Maximum speed 100 km/h",
+        "fr": "Vitesse maximale 100 km/h",
+        "nl": "Maximumsnelheid 100 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:120",
+      "sign_code": "DE:274-120",
+      "image_path": "tsr/sign-pictograms/png/de-274-120.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 120 km/h",
+        "en": "Maximum speed 120 km/h",
+        "fr": "Vitesse maximale 120 km/h",
+        "nl": "Maximumsnelheid 120 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:130",
+      "sign_code": "DE:274-130",
+      "image_path": "tsr/sign-pictograms/png/de-274-130.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 130 km/h",
+        "en": "Maximum speed 130 km/h",
+        "fr": "Vitesse maximale 130 km/h",
+        "nl": "Maximumsnelheid 130 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:20",
+      "sign_code": "DE:274-20",
+      "image_path": "tsr/sign-pictograms/png/de-274-20.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 20 km/h",
+        "en": "Maximum speed 20 km/h",
+        "fr": "Vitesse maximale 20 km/h",
+        "nl": "Maximumsnelheid 20 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:25",
+      "sign_code": "DE:274-25",
+      "image_path": null,
+      "label": {
+        "de": "Höchstgeschwindigkeit 25 km/h",
+        "en": "Maximum speed 25 km/h",
+        "fr": "Vitesse maximale 25 km/h",
+        "nl": "Maximumsnelheid 25 km/u"
+      },
+      "display_eligible": false,
+      "notes": "No exact original pictogram in the user-supplied current German plate; model value retained without substituting another number."
+    },
+    {
+      "class_id": "maxspeed:30",
+      "sign_code": "DE:274-30",
+      "image_path": "tsr/sign-pictograms/png/de-274-30.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 30 km/h",
+        "en": "Maximum speed 30 km/h",
+        "fr": "Vitesse maximale 30 km/h",
+        "nl": "Maximumsnelheid 30 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:40",
+      "sign_code": "DE:274-40",
+      "image_path": "tsr/sign-pictograms/png/de-274-40.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 40 km/h",
+        "en": "Maximum speed 40 km/h",
+        "fr": "Vitesse maximale 40 km/h",
+        "nl": "Maximumsnelheid 40 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:5",
+      "sign_code": "DE:274-5",
+      "image_path": "tsr/sign-pictograms/png/de-274-5.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 5 km/h",
+        "en": "Maximum speed 5 km/h",
+        "fr": "Vitesse maximale 5 km/h",
+        "nl": "Maximumsnelheid 5 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:50",
+      "sign_code": "DE:274-50",
+      "image_path": "tsr/sign-pictograms/png/de-274-50.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 50 km/h",
+        "en": "Maximum speed 50 km/h",
+        "fr": "Vitesse maximale 50 km/h",
+        "nl": "Maximumsnelheid 50 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:60",
+      "sign_code": "DE:274-60",
+      "image_path": "tsr/sign-pictograms/png/de-274-60.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 60 km/h",
+        "en": "Maximum speed 60 km/h",
+        "fr": "Vitesse maximale 60 km/h",
+        "nl": "Maximumsnelheid 60 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:70",
+      "sign_code": "DE:274-70",
+      "image_path": "tsr/sign-pictograms/png/de-274-70.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 70 km/h",
+        "en": "Maximum speed 70 km/h",
+        "fr": "Vitesse maximale 70 km/h",
+        "nl": "Maximumsnelheid 70 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:80",
+      "sign_code": "DE:274-80",
+      "image_path": "tsr/sign-pictograms/png/de-274-80.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 80 km/h",
+        "en": "Maximum speed 80 km/h",
+        "fr": "Vitesse maximale 80 km/h",
+        "nl": "Maximumsnelheid 80 km/u"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "maxspeed:end",
+      "sign_code": "DE:278",
+      "image_path": null,
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit",
+        "en": "End of maximum speed restriction",
+        "fr": "Fin de limitation de vitesse",
+        "nl": "Einde maximumsnelheid"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "maxweight",
+      "sign_code": "DE:262",
+      "image_path": null,
+      "label": {
+        "de": "Gewichtsbeschränkung",
+        "en": "Weight limit",
+        "fr": "Limitation de poids",
+        "nl": "Maximumgewicht"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "maxwidth",
+      "sign_code": "DE:264",
+      "image_path": null,
+      "label": {
+        "de": "Breitenbeschränkung",
+        "en": "Width limit",
+        "fr": "Limitation de largeur",
+        "nl": "Maximumbreedte"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "min_distance",
+      "sign_code": "DE:273",
+      "image_path": null,
+      "label": {
+        "de": "Mindestabstand",
+        "en": "Minimum distance",
+        "fr": "Distance minimale",
+        "nl": "Minimumafstand"
+      },
+      "display_eligible": false,
+      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+    },
+    {
+      "class_id": "motorway:end",
+      "sign_code": "DE:330.2",
+      "image_path": "tsr/sign-pictograms/png/de-330.2.png",
+      "label": {
+        "de": "Ende der Autobahn",
+        "en": "End of motorway",
+        "fr": "Fin d’autoroute",
+        "nl": "Einde autosnelweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "motorway:start",
+      "sign_code": "DE:330.1",
+      "image_path": "tsr/sign-pictograms/png/de-330.1.png",
+      "label": {
+        "de": "Autobahn",
+        "en": "Motorway",
+        "fr": "Autoroute",
+        "nl": "Autosnelweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no:end",
+      "sign_code": "DE:282",
+      "image_path": "tsr/sign-pictograms/png/de-282.png",
+      "label": {
+        "de": "Ende der Streckenbeschränkungen",
+        "en": "End of route restrictions",
+        "fr": "Fin des restrictions de section",
+        "nl": "Einde trajectbeperkingen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no:other",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Unbestimmtes Verbot",
+        "en": "Unspecified prohibition",
+        "fr": "Interdiction non précisée",
+        "nl": "Niet nader bepaald verbod"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "no:other:dog",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Hundeverbot",
+        "en": "Dogs prohibited",
+        "fr": "Chiens interdits",
+        "nl": "Honden verboden"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "no_bicycle",
+      "sign_code": "DE:254",
+      "image_path": "tsr/sign-pictograms/png/de-254.png",
+      "label": {
+        "de": "Verbot für Radverkehr",
+        "en": "No cycling",
+        "fr": "Accès interdit aux cycles",
+        "nl": "Verboden voor fietsers"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_bus",
+      "sign_code": "DE:257-54",
+      "image_path": "tsr/sign-pictograms/png/de-257-54.png",
+      "label": {
+        "de": "Verbot für Kraftomnibusse",
+        "en": "No buses",
+        "fr": "Accès interdit aux autobus",
+        "nl": "Verboden voor autobussen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_car",
+      "sign_code": "DE:251",
+      "image_path": "tsr/sign-pictograms/png/de-251.png",
+      "label": {
+        "de": "Verbot für Kraftwagen",
+        "en": "No multi-track motor vehicles",
+        "fr": "Accès interdit aux véhicules à moteur à plusieurs roues de front",
+        "nl": "Verboden voor motorvoertuigen op meer dan twee wielen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_car_bicycle",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Verbot für Autos und Fahrräder",
+        "en": "No cars or bicycles",
+        "fr": "Accès interdit aux voitures et vélos",
+        "nl": "Verboden voor auto’s en fietsers"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "no_car_motorcycle",
+      "sign_code": "DE:260",
+      "image_path": "tsr/sign-pictograms/png/de-260.png",
+      "label": {
+        "de": "Verbot für Kraftfahrzeuge",
+        "en": "No motor vehicles",
+        "fr": "Accès interdit aux véhicules à moteur",
+        "nl": "Verboden voor motorvoertuigen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_dangerous",
+      "sign_code": "DE:261",
+      "image_path": "tsr/sign-pictograms/png/de-261.png",
+      "label": {
+        "de": "Verbot für kennzeichnungspflichtige Gefahrguttransporte",
+        "en": "No marked dangerous-goods vehicles",
+        "fr": "Accès interdit aux transports de matières dangereuses signalés",
+        "nl": "Verboden voor gemarkeerd vervoer van gevaarlijke stoffen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_dangerous_liquid",
+      "sign_code": "DE:269",
+      "image_path": "tsr/sign-pictograms/png/de-269.png",
+      "label": {
+        "de": "Verbot für wassergefährdende Ladung",
+        "en": "No water-polluting loads",
+        "fr": "Accès interdit aux chargements polluant l’eau",
+        "nl": "Verboden voor waterverontreinigende lading"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_entry",
+      "sign_code": "DE:267",
+      "image_path": "tsr/sign-pictograms/png/de-267.png",
+      "label": {
+        "de": "Verbot der Einfahrt",
+        "en": "No entry",
+        "fr": "Sens interdit",
+        "nl": "Verboden in te rijden"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_exit",
+      "sign_code": "DE:357",
+      "image_path": "tsr/sign-pictograms/png/de-357.png",
+      "label": {
+        "de": "Sackgasse",
+        "en": "No through road",
+        "fr": "Impasse",
+        "nl": "Doodlopende weg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_exit:car",
+      "sign_code": "DE:357-5x",
+      "image_path": null,
+      "label": {
+        "de": "Für Autos undurchlässige Sackgasse",
+        "en": "No through road for cars",
+        "fr": "Impasse pour les voitures",
+        "nl": "Doodlopende weg voor auto’s"
+      },
+      "display_eligible": false,
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+    },
+    {
+      "class_id": "no_hgv",
+      "sign_code": "DE:253",
+      "image_path": "tsr/sign-pictograms/png/de-253.png",
+      "label": {
+        "de": "Verbot für Kraftfahrzeuge über 3,5 t",
+        "en": "No heavy vehicles over 3.5 t",
+        "fr": "Accès interdit aux véhicules lourds de plus de 3,5 t",
+        "nl": "Verboden voor zware voertuigen boven 3,5 t"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_horse",
+      "sign_code": "DE:257-51",
+      "image_path": "tsr/sign-pictograms/png/de-257-51.png",
+      "label": {
+        "de": "Verbot für Reiter",
+        "en": "No horse riders",
+        "fr": "Accès interdit aux cavaliers",
+        "nl": "Verboden voor ruiters"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_motorcycle",
+      "sign_code": "DE:255",
+      "image_path": "tsr/sign-pictograms/png/de-255.png",
+      "label": {
+        "de": "Verbot für Krafträder",
+        "en": "No motorcycles",
+        "fr": "Accès interdit aux motos",
+        "nl": "Verboden voor motorfietsen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_overtaking",
+      "sign_code": "DE:276",
+      "image_path": "tsr/sign-pictograms/png/de-276.png",
+      "label": {
+        "de": "Überholverbot",
+        "en": "No overtaking",
+        "fr": "Interdiction de dépasser",
+        "nl": "Inhaalverbod"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_overtaking:end",
+      "sign_code": "DE:280",
+      "image_path": "tsr/sign-pictograms/png/de-280.png",
+      "label": {
+        "de": "Ende des Überholverbots",
+        "en": "End of overtaking ban",
+        "fr": "Fin d’interdiction de dépasser",
+        "nl": "Einde inhaalverbod"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_overtaking:hgv",
+      "sign_code": "DE:277",
+      "image_path": "tsr/sign-pictograms/png/de-277.png",
+      "label": {
+        "de": "Überholverbot für Kraftfahrzeuge über 3,5 t",
+        "en": "No overtaking by heavy vehicles over 3.5 t",
+        "fr": "Dépassement interdit aux véhicules lourds de plus de 3,5 t",
+        "nl": "Inhaalverbod voor zware voertuigen boven 3,5 t"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_parking",
+      "sign_code": "DE:286",
+      "image_path": "tsr/sign-pictograms/png/de-286.png",
+      "label": {
+        "de": "Eingeschränktes Haltverbot",
+        "en": "No parking",
+        "fr": "Stationnement interdit",
+        "nl": "Parkeerverbod"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_pedestrian",
+      "sign_code": "DE:259",
+      "image_path": "tsr/sign-pictograms/png/de-259.png",
+      "label": {
+        "de": "Verbot für Fußgänger",
+        "en": "No pedestrians",
+        "fr": "Accès interdit aux piétons",
+        "nl": "Verboden voor voetgangers"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_stop",
+      "sign_code": "DE:283",
+      "image_path": "tsr/sign-pictograms/png/de-283.png",
+      "label": {
+        "de": "Absolutes Haltverbot",
+        "en": "No stopping",
+        "fr": "Arrêt interdit",
+        "nl": "Stopverbod"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_u_turn",
+      "sign_code": "DE:272",
+      "image_path": "tsr/sign-pictograms/png/de-272.png",
+      "label": {
+        "de": "Wenden verboten",
+        "en": "No U-turn",
+        "fr": "Demi-tour interdit",
+        "nl": "Verboden te keren"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "no_way",
+      "sign_code": "DE:250",
+      "image_path": "tsr/sign-pictograms/png/de-250.png",
+      "label": {
+        "de": "Verbot für Fahrzeuge aller Art",
+        "en": "No vehicles",
+        "fr": "Accès interdit à tous véhicules",
+        "nl": "Verboden voor alle voertuigen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "oneway",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Einbahnstraße",
+        "en": "One-way street",
+        "fr": "Sens unique",
+        "nl": "Eenrichtingsweg"
+      },
+      "display_eligible": false,
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+    },
+    {
+      "class_id": "other",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Unbestimmtes Objekt",
+        "en": "Unspecified object",
+        "fr": "Objet non précisé",
+        "nl": "Onbepaald object"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "other:charging",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Ladeeinrichtung",
+        "en": "Charging facility",
+        "fr": "Installation de recharge",
+        "nl": "Laadvoorziening"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "other:motorhome",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Wohnmobilhinweis",
+        "en": "Motorhome indication",
+        "fr": "Indication pour camping-cars",
+        "nl": "Aanduiding voor campers"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "other:multi",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Mehrere oder unbestimmte Zeichen",
+        "en": "Multiple or unspecified signs",
+        "fr": "Panneaux multiples ou non précisés",
+        "nl": "Meerdere of onbepaalde borden"
+      },
+      "display_eligible": false,
+      "notes": "Non-sign, invalid, or unknown classifier category; never displayed as a recognized traffic sign."
+    },
+    {
+      "class_id": "park_ride",
+      "sign_code": "DE:316",
+      "image_path": "tsr/sign-pictograms/png/de-316.png",
+      "label": {
+        "de": "Parken und Reisen",
+        "en": "Park and ride",
+        "fr": "Parc relais",
+        "nl": "Parkeren en reizen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "parking",
+      "sign_code": "DE:314",
+      "image_path": "tsr/sign-pictograms/png/de-314.png",
+      "label": {
+        "de": "Parken",
+        "en": "Parking",
+        "fr": "Stationnement",
+        "nl": "Parkeren"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "parking:covered",
+      "sign_code": "DE:314-50",
+      "image_path": "tsr/sign-pictograms/png/de-314-50.png",
+      "label": {
+        "de": "Parkhaus oder Tiefgarage",
+        "en": "Covered parking",
+        "fr": "Parking couvert",
+        "nl": "Parkeergarage"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "parking:disabled",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Behindertenparkplatz",
+        "en": "Accessible parking",
+        "fr": "Stationnement réservé aux personnes handicapées",
+        "nl": "Gehandicaptenparkeerplaats"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "parking:pedestrian",
+      "sign_code": "DE:317",
+      "image_path": "tsr/sign-pictograms/png/de-317.png",
+      "label": {
+        "de": "Wanderparkplatz",
+        "en": "Hikers’ parking",
+        "fr": "Parking de randonnée",
+        "nl": "Wandelparkeerplaats"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "parking:perpendicular",
+      "sign_code": "DE:315",
+      "image_path": null,
+      "label": {
+        "de": "Querparken",
+        "en": "Perpendicular parking",
+        "fr": "Stationnement perpendiculaire",
+        "nl": "Haaks parkeren"
+      },
+      "display_eligible": false,
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+    },
+    {
+      "class_id": "parking:sidewalk",
+      "sign_code": "DE:315",
+      "image_path": null,
+      "label": {
+        "de": "Parken auf Gehwegen",
+        "en": "Parking on the pavement",
+        "fr": "Stationnement sur le trottoir",
+        "nl": "Parkeren op de stoep"
+      },
+      "display_eligible": false,
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+    },
+    {
+      "class_id": "pedestrian:start",
+      "sign_code": "DE:239",
+      "image_path": "tsr/sign-pictograms/png/de-239.png",
+      "label": {
+        "de": "Gehweg",
+        "en": "Footpath",
+        "fr": "Chemin pour piétons",
+        "nl": "Voetpad"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "pedestrian_bicycle:designated",
+      "sign_code": "DE:241",
+      "image_path": null,
+      "label": {
+        "de": "Getrennter Rad- und Gehweg",
+        "en": "Separate cycle and footpath",
+        "fr": "Pistes séparées pour cycles et piétons",
+        "nl": "Gescheiden fiets- en voetpad"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "pedestrian_bicycle:start",
+      "sign_code": "DE:240",
+      "image_path": "tsr/sign-pictograms/png/de-240.png",
+      "label": {
+        "de": "Gemeinsamer Geh- und Radweg",
+        "en": "Shared cycle and footpath",
+        "fr": "Voie partagée pour cycles et piétons",
+        "nl": "Gedeeld fiets- en voetpad"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "pedestrian_crossing",
+      "sign_code": "DE:350",
+      "image_path": null,
+      "label": {
+        "de": "Fußgängerüberweg",
+        "en": "Pedestrian crossing",
+        "fr": "Passage piéton",
+        "nl": "Voetgangersoversteekplaats"
+      },
+      "display_eligible": false,
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+    },
+    {
+      "class_id": "priority:backward",
+      "sign_code": "DE:208",
+      "image_path": "tsr/sign-pictograms/png/de-208.png",
+      "label": {
+        "de": "Vorrang des Gegenverkehrs",
+        "en": "Give priority to oncoming traffic",
+        "fr": "Priorité à la circulation en sens inverse",
+        "nl": "Tegenliggers hebben voorrang"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "priority:end",
+      "sign_code": "DE:307",
+      "image_path": "tsr/sign-pictograms/png/de-307.png",
+      "label": {
+        "de": "Ende der Vorfahrtstraße",
+        "en": "End of priority road",
+        "fr": "Fin de route prioritaire",
+        "nl": "Einde voorrangsweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "priority:forward",
+      "sign_code": "DE:308",
+      "image_path": "tsr/sign-pictograms/png/de-308.png",
+      "label": {
+        "de": "Vorrang vor Gegenverkehr",
+        "en": "Priority over oncoming traffic",
+        "fr": "Priorité sur la circulation en sens inverse",
+        "nl": "Voorrang op tegenliggers"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "priority:start",
+      "sign_code": "DE:306",
+      "image_path": "tsr/sign-pictograms/png/de-306.png",
+      "label": {
+        "de": "Vorfahrtstraße",
+        "en": "Priority road",
+        "fr": "Route prioritaire",
+        "nl": "Voorrangsweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "roundabout",
+      "sign_code": "DE:215",
+      "image_path": "tsr/sign-pictograms/png/de-215.png",
+      "label": {
+        "de": "Kreisverkehr",
+        "en": "Roundabout",
+        "fr": "Carrefour giratoire",
+        "nl": "Rotonde"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "stop",
+      "sign_code": "DE:206",
+      "image_path": "tsr/sign-pictograms/png/de-206.png",
+      "label": {
+        "de": "Halt. Vorfahrt gewähren",
+        "en": "Stop. Give way",
+        "fr": "Stop. Cédez le passage",
+        "nl": "Stop. Voorrang verlenen"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "traffic_signal",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Lichtsignal",
+        "en": "Traffic signal",
+        "fr": "Signal lumineux",
+        "nl": "Verkeerslicht"
+      },
+      "display_eligible": false,
+      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+    },
+    {
+      "class_id": "trunk:end",
+      "sign_code": "DE:331.2",
+      "image_path": "tsr/sign-pictograms/png/de-331.2.png",
+      "label": {
+        "de": "Ende der Kraftfahrstraße",
+        "en": "End of motor road",
+        "fr": "Fin de route pour automobiles",
+        "nl": "Einde autoweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "trunk:start",
+      "sign_code": "DE:331.1",
+      "image_path": "tsr/sign-pictograms/png/de-331.1.png",
+      "label": {
+        "de": "Kraftfahrstraße",
+        "en": "Motor road",
+        "fr": "Route pour automobiles",
+        "nl": "Autoweg"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "tunnel:start",
+      "sign_code": "DE:327",
+      "image_path": "tsr/sign-pictograms/png/de-327.png",
+      "label": {
+        "de": "Tunnel",
+        "en": "Tunnel",
+        "fr": "Tunnel",
+        "nl": "Tunnel"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "zone:20",
+      "sign_code": "DE:274.1-20",
+      "image_path": "tsr/sign-pictograms/png/de-274.1-20.png",
+      "label": {
+        "de": "Beginn einer Tempo-20-Zone",
+        "en": "Start of 20 km/h zone",
+        "fr": "Début de zone 20",
+        "nl": "Begin 20-km/u-zone"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "zone:30",
+      "sign_code": "DE:274.1",
+      "image_path": "tsr/sign-pictograms/png/de-274.1.png",
+      "label": {
+        "de": "Beginn einer Tempo-30-Zone",
+        "en": "Start of 30 km/h zone",
+        "fr": "Début de zone 30",
+        "nl": "Begin 30-km/u-zone"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "zone:30:end",
+      "sign_code": "DE:274.2",
+      "image_path": "tsr/sign-pictograms/png/de-274.2.png",
+      "label": {
+        "de": "Ende einer Tempo-30-Zone",
+        "en": "End of 30 km/h zone",
+        "fr": "Fin de zone 30",
+        "nl": "Einde 30-km/u-zone"
+      },
+      "display_eligible": true,
+      "notes": "Reviewed display mapping: upstream missing → DE:274.2; German StVO/current sign plate. This is not an added classifier class."
+    },
+    {
+      "class_id": "zone:end",
+      "sign_code": "DE:274.2",
+      "image_path": null,
+      "label": {
+        "de": "Ende einer Geschwindigkeitszone",
+        "en": "End of speed zone",
+        "fr": "Fin de zone de vitesse",
+        "nl": "Einde snelheidszone"
+      },
+      "display_eligible": false,
+      "notes": "Generic zone-end label does not determine the speed-zone number; distinct zone:30:end is supported separately."
+    },
+    {
+      "class_id": "zone:no_parking",
+      "sign_code": "DE:290.1",
+      "image_path": "tsr/sign-pictograms/png/de-290.1.png",
+      "label": {
+        "de": "Beginn einer Haltverbotszone",
+        "en": "Start of no-parking zone",
+        "fr": "Début de zone de stationnement interdit",
+        "nl": "Begin parkeerverbodszone"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "zone:pedestrian",
+      "sign_code": "DE:242.1",
+      "image_path": "tsr/sign-pictograms/png/de-242.1.png",
+      "label": {
+        "de": "Beginn einer Fußgängerzone",
+        "en": "Start of pedestrian zone",
+        "fr": "Début de zone piétonne",
+        "nl": "Begin voetgangerszone"
+      },
+      "display_eligible": true
+    },
+    {
+      "class_id": "DE:278-5",
+      "sign_code": "DE:278-5",
+      "image_path": "tsr/sign-pictograms/png/de-278-5.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 5 km/h",
+        "en": "End of 5 km/h speed restriction",
+        "fr": "Fin de limitation à 5 km/h",
+        "nl": "Einde maximumsnelheid 5 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-10",
+      "sign_code": "DE:278-10",
+      "image_path": "tsr/sign-pictograms/png/de-278-10.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 10 km/h",
+        "en": "End of 10 km/h speed restriction",
+        "fr": "Fin de limitation à 10 km/h",
+        "nl": "Einde maximumsnelheid 10 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-20",
+      "sign_code": "DE:278-20",
+      "image_path": "tsr/sign-pictograms/png/de-278-20.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 20 km/h",
+        "en": "End of 20 km/h speed restriction",
+        "fr": "Fin de limitation à 20 km/h",
+        "nl": "Einde maximumsnelheid 20 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-30",
+      "sign_code": "DE:278-30",
+      "image_path": "tsr/sign-pictograms/png/de-278-30.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 30 km/h",
+        "en": "End of 30 km/h speed restriction",
+        "fr": "Fin de limitation à 30 km/h",
+        "nl": "Einde maximumsnelheid 30 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-40",
+      "sign_code": "DE:278-40",
+      "image_path": "tsr/sign-pictograms/png/de-278-40.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 40 km/h",
+        "en": "End of 40 km/h speed restriction",
+        "fr": "Fin de limitation à 40 km/h",
+        "nl": "Einde maximumsnelheid 40 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-50",
+      "sign_code": "DE:278-50",
+      "image_path": "tsr/sign-pictograms/png/de-278-50.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 50 km/h",
+        "en": "End of 50 km/h speed restriction",
+        "fr": "Fin de limitation à 50 km/h",
+        "nl": "Einde maximumsnelheid 50 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-60",
+      "sign_code": "DE:278-60",
+      "image_path": "tsr/sign-pictograms/png/de-278-60.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 60 km/h",
+        "en": "End of 60 km/h speed restriction",
+        "fr": "Fin de limitation à 60 km/h",
+        "nl": "Einde maximumsnelheid 60 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-70",
+      "sign_code": "DE:278-70",
+      "image_path": "tsr/sign-pictograms/png/de-278-70.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 70 km/h",
+        "en": "End of 70 km/h speed restriction",
+        "fr": "Fin de limitation à 70 km/h",
+        "nl": "Einde maximumsnelheid 70 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-80",
+      "sign_code": "DE:278-80",
+      "image_path": "tsr/sign-pictograms/png/de-278-80.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 80 km/h",
+        "en": "End of 80 km/h speed restriction",
+        "fr": "Fin de limitation à 80 km/h",
+        "nl": "Einde maximumsnelheid 80 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-90",
+      "sign_code": "DE:278-90",
+      "image_path": "tsr/sign-pictograms/png/de-278-90.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 90 km/h",
+        "en": "End of 90 km/h speed restriction",
+        "fr": "Fin de limitation à 90 km/h",
+        "nl": "Einde maximumsnelheid 90 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-100",
+      "sign_code": "DE:278-100",
+      "image_path": "tsr/sign-pictograms/png/de-278-100.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 100 km/h",
+        "en": "End of 100 km/h speed restriction",
+        "fr": "Fin de limitation à 100 km/h",
+        "nl": "Einde maximumsnelheid 100 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-110",
+      "sign_code": "DE:278-110",
+      "image_path": "tsr/sign-pictograms/png/de-278-110.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 110 km/h",
+        "en": "End of 110 km/h speed restriction",
+        "fr": "Fin de limitation à 110 km/h",
+        "nl": "Einde maximumsnelheid 110 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-120",
+      "sign_code": "DE:278-120",
+      "image_path": "tsr/sign-pictograms/png/de-278-120.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 120 km/h",
+        "en": "End of 120 km/h speed restriction",
+        "fr": "Fin de limitation à 120 km/h",
+        "nl": "Einde maximumsnelheid 120 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:278-130",
+      "sign_code": "DE:278-130",
+      "image_path": "tsr/sign-pictograms/png/de-278-130.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit 130 km/h",
+        "en": "End of 130 km/h speed restriction",
+        "fr": "Fin de limitation à 130 km/h",
+        "nl": "Einde maximumsnelheid 130 km/u"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+    },
+    {
+      "class_id": "DE:281",
+      "sign_code": "DE:281",
+      "image_path": "tsr/sign-pictograms/png/de-281.png",
+      "label": {
+        "de": "Ende des Überholverbots für Kraftfahrzeuge über 3,5 t",
+        "en": "End of overtaking ban for heavy vehicles over 3.5 t",
+        "fr": "Fin d’interdiction de dépasser pour véhicules lourds de plus de 3,5 t",
+        "nl": "Einde inhaalverbod voor zware voertuigen boven 3,5 t"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Artwork availability does not add recognition capability."
+    },
+    {
+      "class_id": "DE:282",
+      "sign_code": "DE:282",
+      "image_path": "tsr/sign-pictograms/png/de-282.png",
+      "label": {
+        "de": "Ende der Streckenbeschränkungen",
+        "en": "End of route restrictions",
+        "fr": "Fin des restrictions de section",
+        "nl": "Einde trajectbeperkingen"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Artwork availability does not add recognition capability."
+    },
+    {
+      "class_id": "DE:310",
+      "sign_code": "DE:310",
+      "image_path": "tsr/sign-pictograms/png/de-310.png",
+      "label": {
+        "de": "Beginn einer geschlossenen Ortschaft",
+        "en": "Start of built-up area",
+        "fr": "Entrée d’agglomération",
+        "nl": "Begin bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Artwork availability does not add recognition capability."
+    },
+    {
+      "class_id": "DE:311",
+      "sign_code": "DE:311",
+      "image_path": "tsr/sign-pictograms/png/de-311.png",
+      "label": {
+        "de": "Ende einer geschlossenen Ortschaft",
+        "en": "End of built-up area",
+        "fr": "Sortie d’agglomération",
+        "nl": "Einde bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Artwork availability does not add recognition capability."
+    },
+    {
+      "class_id": "city:start",
+      "sign_code": "DE:310",
+      "image_path": "tsr/sign-pictograms/png/de-310.png",
+      "label": {
+        "de": "Beginn einer geschlossenen Ortschaft",
+        "en": "Start of built-up area",
+        "fr": "Entrée d’agglomération",
+        "nl": "Begin bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
+    },
+    {
+      "class_id": "city:end",
+      "sign_code": "DE:311",
+      "image_path": "tsr/sign-pictograms/png/de-311.png",
+      "label": {
+        "de": "Ende einer geschlossenen Ortschaft",
+        "en": "End of built-up area",
+        "fr": "Sortie d’agglomération",
+        "nl": "Einde bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
+    },
+    {
+      "class_id": "no_overtaking:end:hgv",
+      "sign_code": "DE:281",
+      "image_path": "tsr/sign-pictograms/png/de-281.png",
+      "label": {
+        "de": "Ende des Überholverbots für Kraftfahrzeuge über 3,5 t",
+        "en": "End of overtaking ban for heavy vehicles over 3.5 t",
+        "fr": "Fin d’interdiction de dépasser pour véhicules lourds de plus de 3,5 t",
+        "nl": "Einde inhaalverbod voor zware voertuigen boven 3,5 t"
+      },
+      "display_eligible": true,
+      "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
+    }
+  ],
+  "provenance": {
+    "reviewed_at": "2026-09-10",
+    "class_labels_source": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs.mlmodelc/metadata.json",
+    "class_labels_source_sha256": "ddd6abfe4a2036fca7f282d34026a17c611cdba74be2cae045beaecbcb4c0889",
+    "prolix_commit": "36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f",
+    "prolix_class_map_sha256": "76b65eb1d35a4ad5dcb1e25e920b07d7f45fedbbdba08048315bc6075b9b7238",
+    "prolix_class_map_revision": "panoramax-road-signs-7a81105",
+    "classifier_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "plate_url": "https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017",
+    "law_urls": [
+      "https://www.gesetze-im-internet.de/stvo_2013/anlage_1.html",
+      "https://www.gesetze-im-internet.de/stvo_2013/anlage_2.html",
+      "https://www.gesetze-im-internet.de/stvo_2013/anlage_3.html",
+      "https://www.gesetze-im-internet.de/stvo_2013/__3.html"
+    ]
+  },
+  "policy": {
+    "class_labels_are_the_only_pinned_model_outputs": true,
+    "reference_aliases_do_not_add_model_capability": true,
+    "display_catalog_does_not_authorize_speed_override": true,
+    "missing_numeric_or_subtype_values_are_not_invented": true
+  }
+}

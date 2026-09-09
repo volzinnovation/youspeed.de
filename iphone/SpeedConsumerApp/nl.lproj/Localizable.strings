@@ -282,3 +282,19 @@
 "limit.accessibility.unlimited" = "Geen snelheidslimiet";
 "limit.accessibility.end_unknown" = "Einde gedetecteerd, snelheidslimiet onbekend";
 "limit.accessibility.unknown" = "Snelheidslimiet onbekend";
+
+/* Recognized road-sign display */
+"drive_recorder.settings.tsr_pictogram" = "Herkend verkeersbord tonen";
+"drive_recorder.settings.tsr_pictogram_description" = "Toont rechtsboven het laatst met zekerheid herkende overige verkeersbord. Het volgende herkende bord vervangt het.";
+"drive_recorder.settings.tsr_city_unavailable" = "Begin bebouwde kom (bord 310) ontbreekt in het huidige herkenningsmodel.";
+"about.sources.title" = "Bronnen en makers";
+"about.sources.intro" = "Makers, bronbestanden, licenties en wijzigingen zijn hier offline beschikbaar. Oorspronkelijke namen en licentieteksten blijven in de brontaal. Bron- en licentielinks openen in de browser.";
+"about.sources.source" = "Oorspronkelijke bron";
+"about.sources.changes" = "Wijzigingen";
+"about.sources.search" = "Bronnen zoeken";
+"about.sources.unavailable" = "De meegeleverde bronnen konden niet worden geladen.";
+"about.sources.category.data" = "Kaartgegevens en grenzen";
+"about.sources.category.sign" = "Verkeersbordafbeeldingen";
+"about.sources.category.model" = "Herkenningsmodellen en trainingsgegevens";
+"about.sources.category.software" = "Software en conversiehulpmiddelen";
+"about.sources.category.reference" = "Referenties";

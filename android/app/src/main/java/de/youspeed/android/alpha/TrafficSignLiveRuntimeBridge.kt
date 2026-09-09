@@ -2,9 +2,8 @@ package de.youspeed.android.alpha
 
 /**
  * Production seam between an Android live-frame backend and
- * the driving controller. It deliberately forwards only finalized passage
- * events; provisional/raw outputs and the orchestrator's legacy numeric
- * projection cannot mutate driver-facing state through this adapter.
+ * the driving controller. Only finalized passages can mutate the speed state.
+ * Accepted raw detections use a separate pictogram callback and cannot reach the speed resolver.
  */
 class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     controller: ConsumerSessionController,
@@ -14,7 +13,10 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     conditionsSnapshot: () -> TrafficSignAnalysisConditions,
     monotonicClockNanos: () -> Long = System::nanoTime,
 ) : AutoCloseable {
-    private val forwarder = TrafficSignFinalizedPassageForwarder(controller::submitFinalizedTrafficSignPassage)
+    private val forwarder = TrafficSignFinalizedPassageForwarder(
+        submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
+        submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
+    )
     private val orchestrator: TrafficSignRecognitionOrchestrator<F>
 
     init {
@@ -47,10 +49,12 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 }
 
 internal class TrafficSignFinalizedPassageForwarder(
+    private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
         output.passageEvent?.let(submitFinalizedPassage)
+        output.displayObservation?.let(submitDisplayObservation)
     }
 
     override fun onSpeedOverrideChanged(current: TrafficSignSpeedOverride?) {

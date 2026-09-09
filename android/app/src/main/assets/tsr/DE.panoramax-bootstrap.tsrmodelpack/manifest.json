@@ -169,6 +169,30 @@
       "threshold": 0.70
     },
     {
+      "class_id": "no:end",
+      "label": "End of route-specific speed and overtaking restrictions",
+      "semantic": {
+        "kind": "restriction_end"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "motorway:end",
+      "label": "End of motorway",
+      "semantic": {
+        "kind": "restriction_end"
+      },
+      "threshold": 0.70
+    },
+    {
+      "class_id": "trunk:end",
+      "label": "End of motorroad",
+      "semantic": {
+        "kind": "restriction_end"
+      },
+      "threshold": 0.70
+    },
+    {
       "class_id": "zone:20",
       "label": "Start of 20 km/h zone",
       "semantic": {

@@ -262,6 +262,8 @@ data class ConsumerUiState(
     val isLowSpeedMatchingRuleActive: Boolean = false,
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
     val trafficSignRecognitionEnabled: Boolean = false,
+    val otherTrafficSignDisplayEnabled: Boolean = false,
+    val lastTrafficSignPictogram: TrafficSignPictogram? = null,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
     val trafficSignGeneration: Long = 0L,
@@ -311,6 +313,9 @@ enum class AppScreenshotState(val rawValue: String) {
     WARN_LEVEL_2("warn-level-2"),
     WARN_LEVEL_3("warn-level-3"),
     CAMERA_LIMIT_ACTIVE("camera-limit-active"),
+    OTHER_SIGN_GIVE_WAY("other-sign-give-way"),
+    OTHER_SIGN_STOP("other-sign-stop"),
+    OTHER_SIGN_CLEARED("other-sign-cleared"),
     PEDESTRIAN_ZONE("pedestrian-zone"),
     AUTOBAHN_UNLIMITED_ABOVE_130("autobahn-unlimited-above-130");
 
@@ -320,7 +325,7 @@ enum class AppScreenshotState(val rawValue: String) {
             WARN_LEVEL_1 -> AppScreenshotFixture(67.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-1", true, 49.0102, 8.4266, 6.0, 4)
             WARN_LEVEL_2 -> AppScreenshotFixture(73.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-2", true, 49.0102, 8.4266, 6.0, 4)
             WARN_LEVEL_3 -> AppScreenshotFixture(86.0, 50, null, false, "Durlacher Allee", "Karlsruhe", "karlsruhe-warn-3", true, 49.0102, 8.4266, 6.0, 4)
-            CAMERA_LIMIT_ACTIVE -> AppScreenshotFixture(0.0, 30, null, false, "Lindenweg", "Bad Herrenalb", "bad-herrenalb-camera-limit-active", true, 48.7966, 8.4361, 5.0, 4)
+            CAMERA_LIMIT_ACTIVE, OTHER_SIGN_GIVE_WAY, OTHER_SIGN_STOP, OTHER_SIGN_CLEARED -> AppScreenshotFixture(0.0, 30, null, false, "Lindenweg", "Bad Herrenalb", "bad-herrenalb-camera-limit-active", true, 48.7966, 8.4361, 5.0, 4)
             PEDESTRIAN_ZONE -> AppScreenshotFixture(5.0, null, "Schritt", false, "Im Kloster", "Bad Herrenalb", "bad-herrenalb-pedestrian-zone", true, 48.7966, 8.4361, 5.0, 4)
             AUTOBAHN_UNLIMITED_ABOVE_130 -> AppScreenshotFixture(142.0, null, null, true, "A 5", "Karlsruhe", "autobahn-unlimited-130-plus", false, 49.0180, 8.3501, 5.0, 4)
         }
@@ -374,6 +379,11 @@ class ConsumerSessionController(
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val isDisposed = AtomicBoolean(false)
     private val assetReader = AndroidAssetReader(appContext)
+    private val trafficSignDisplayCatalog by lazy {
+        appContext.assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
+            TrafficSignDisplayCatalog.decode(it.readText())
+        }
+    }
     private val bootstrapper = BundleBootstrapper(
         rootDir = rootDir,
         httpFetcher = HttpUrlFetcher(),
@@ -510,6 +520,7 @@ class ConsumerSessionController(
             appScreenshotState = launchScreenshotState,
             matcherDebugProfile = initialMatcherDebugProfile,
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
+            otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
             trafficSignGeneration = trafficSignGeneration.get(),
         ),
     )
@@ -963,6 +974,24 @@ class ConsumerSessionController(
         reconcileTrafficSignCamera()
     }
 
+    fun setOtherTrafficSignDisplayEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, enabled).apply()
+        updateState { copy(otherTrafficSignDisplayEnabled = enabled, lastTrafficSignPictogram = null) }
+    }
+
+    /** Presentation-only callback. This path never invokes the speed resolver or passage persistence. */
+    fun submitTrafficSignDisplayObservation(observation: TrafficSignDisplayObservation) {
+        if (TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(observation.candidate))) == null) return
+        postState {
+            if (!otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving ||
+                observation.generation != this@ConsumerSessionController.trafficSignGeneration.get() ||
+                observation.driveSessionId != trafficSignDriveSessionId
+            ) this else copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
+                lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
+            ))
+        }
+    }
+
     fun onCameraPermissionResult(granted: Boolean) {
         if (!granted) {
             onTrafficSignCameraRuntimeStateChanged(
@@ -1118,6 +1147,7 @@ class ConsumerSessionController(
         updateState {
             copy(
                 trafficSignGeneration = generation,
+                lastTrafficSignPictogram = null,
                 speedLimitKmh = base.resolution?.speedKmh,
                 speedLimitDisplayText = if (base.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null,
                 isUnlimitedSpeedLimitActive = base.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED,
@@ -1906,7 +1936,16 @@ class ConsumerSessionController(
         val selectedCountry = penaltyCountrySelection.update(regionalPackCatalog, fixture.latitude, fixture.longitude,
             fixture.gpsHorizontalAccuracyM, clock.millis() / 1000.0, clock.millis() / 1000.0)
         check(scenario == null || selectedCountry == scenario.countryCode) { "Screenshot GPS country did not resolve" }
+        val cameraFixture = state in setOf(AppScreenshotState.CAMERA_LIMIT_ACTIVE, AppScreenshotState.OTHER_SIGN_GIVE_WAY,
+            AppScreenshotState.OTHER_SIGN_STOP, AppScreenshotState.OTHER_SIGN_CLEARED)
         uiState = uiState.copy(
+            otherTrafficSignDisplayEnabled = cameraFixture,
+            trafficSignRecognitionEnabled = cameraFixture,
+            lastTrafficSignPictogram = when (state) {
+                AppScreenshotState.OTHER_SIGN_GIVE_WAY -> trafficSignDisplayCatalog.pictogram("give_way")
+                AppScreenshotState.OTHER_SIGN_STOP -> trafficSignDisplayCatalog.pictogram("stop")
+                else -> null
+            },
             activePenaltyRules = selectedCountry?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable(),
             startupDataState = StartupDataState.READY,
             startupProgress = 1.0,
@@ -1934,17 +1973,17 @@ class ConsumerSessionController(
             hideWelcomeScreen = true,
             appScreenshotState = state,
             lastLookupInsideCity = fixture.insideCity,
-            effectiveSpeedLimitSource = if (state == AppScreenshotState.CAMERA_LIMIT_ACTIVE) {
+            effectiveSpeedLimitSource = if (cameraFixture) {
                 EffectiveSpeedLimitSource.CAMERA
             } else {
                 EffectiveSpeedLimitSource.BUNDLE
             },
-            effectiveSpeedLimitReason = if (state == AppScreenshotState.CAMERA_LIMIT_ACTIVE) {
+            effectiveSpeedLimitReason = if (cameraFixture) {
                 "screenshot_camera_limit_active"
             } else {
                 "screenshot_fixture"
             },
-            cameraSpeedLimitEvidence = state == AppScreenshotState.CAMERA_LIMIT_ACTIVE,
+            cameraSpeedLimitEvidence = cameraFixture,
             localObservationStatus = "",
             germanSpeechModelState = GermanSpeechModelState.READY,
             germanSpeechModelStatus = ConsumerRuntimeText.SCREENSHOT_NO_AUDIO.text(),
@@ -3734,7 +3773,9 @@ class ConsumerSessionController(
         if (isDisposed.get()) {
             return
         }
-        uiState = uiState.transform()
+        uiState = uiState.transform().withCurrentTrafficSignDisplayGeneration(
+            previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
+        )
     }
 
     private fun postState(transform: ConsumerUiState.() -> ConsumerUiState) {
@@ -3745,7 +3786,9 @@ class ConsumerSessionController(
             if (isDisposed.get()) {
                 return@post
             }
-            uiState = uiState.transform()
+            uiState = uiState.transform().withCurrentTrafficSignDisplayGeneration(
+                previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
+            )
         }
     }
 
@@ -3769,6 +3812,7 @@ class ConsumerSessionController(
         @Volatile private var crashObserverInstalled = false
         private const val KEY_AUDIO_ALERT_THRESHOLD = "youspeed.audio_alert_threshold_kmh"
         private const val KEY_AUDIO_ALERTS_ENABLED = "youspeed.audio_alerts_enabled"
+        private const val KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED = "youspeed.other_traffic_sign_display_enabled"
         private const val KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED = "youspeed.traffic_sign_recognition_enabled"
         private const val KEY_BUNDLED_SEED_ASSET_SHA256 = "youspeed.bundled_seed_asset_sha256"
         private val VERIFIED_SHA256 = Regex("^[a-f0-9]{64}$")

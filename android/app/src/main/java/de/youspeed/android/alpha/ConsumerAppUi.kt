@@ -5,6 +5,7 @@ package de.youspeed.android.alpha
 import androidx.compose.material3.Checkbox
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.Paint as AndroidPaint
 import android.graphics.Typeface
 import android.text.format.Formatter
@@ -91,6 +92,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
@@ -598,6 +600,7 @@ private fun MainScreen(
                 foreground = foreground,
                 buttonBg = buttonBg,
                 buttonBorder = buttonBorder,
+                pictogram = ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
                 gpsSignalBars = ui.gpsSignalBars,
                 gpsHorizontalAccuracyM = ui.gpsHorizontalAccuracyM,
                 onOpenLocalRecordings = onOpenLocalRecordings,
@@ -754,6 +757,7 @@ private fun TopCornerButtons(
     foreground: Color,
     buttonBg: Color,
     buttonBorder: Color,
+    pictogram: TrafficSignPictogram?,
     gpsSignalBars: Int,
     gpsHorizontalAccuracyM: Double?,
     onOpenLocalRecordings: () -> Unit,
@@ -771,10 +775,25 @@ private fun TopCornerButtons(
             buttonBorder = buttonBorder,
         )
         Spacer(modifier = Modifier.weight(1f))
-        GpsSignalBadge(
-            bars = gpsSignalBars,
-            accuracyM = gpsHorizontalAccuracyM,
-            foreground = foreground,
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            GpsSignalBadge(bars = gpsSignalBars, accuracyM = gpsHorizontalAccuracyM, foreground = foreground)
+            pictogram?.let { RecognizedTrafficSignPictogram(it) }
+        }
+    }
+}
+
+@Composable
+private fun RecognizedTrafficSignPictogram(pictogram: TrafficSignPictogram) {
+    val context = LocalContext.current
+    val bitmap = remember(pictogram.imagePath) {
+        runCatching { context.assets.open(pictogram.imagePath).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
+    }
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
+            modifier = Modifier.size(72.dp)
+                .padding(5.dp).testTag("last-traffic-sign-pictogram"),
         )
     }
 }
@@ -1249,6 +1268,15 @@ private fun SettingsSheet(
                             modifier = Modifier.testTag("traffic-sign-recognition-toggle"),
                         )
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.ui_show_other_signs), modifier = Modifier.weight(1f), color = Color.Black)
+                        Switch(
+                            checked = ui.otherTrafficSignDisplayEnabled,
+                            onCheckedChange = controller::setOtherTrafficSignDisplayEnabled,
+                            modifier = Modifier.testTag("other-traffic-sign-display-toggle"),
+                        )
+                    }
+                    Text(stringResource(R.string.ui_other_signs_detail), color = Color(0xFF555555), fontSize = 13.sp)
                     Text(
                         if (ui.trafficSignRecognitionEnabled) {
                             ui.trafficSignCameraRuntimeDetail
@@ -1731,6 +1759,7 @@ private fun LegalSheet(
     ui: ConsumerUiState,
     onDismiss: () -> Unit,
 ) {
+    var openAttributions by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_legal_title), onDismiss = onDismiss, testTag = "legal-sheet") {
         Column(
             modifier = Modifier
@@ -1738,12 +1767,16 @@ private fun LegalSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            OutlinedButton(onClick = { openAttributions = true }, modifier = Modifier.fillMaxWidth().testTag("attribution-button")) {
+                Text(stringResource(R.string.credits_title))
+            }
             SectionCard(stringResource(R.string.ui_legal_notice)) {
                 Text(stringResource(R.string.legal_disclaimer_long), color = Color.Black)
             }
             Text(ui.legalText.ifBlank { stringResource(R.string.ui_legal_missing) }, color = Color.Black, lineHeight = 22.sp)
         }
     }
+    if (openAttributions) AttributionSheet(onDismiss = { openAttributions = false })
 }
 
 private data class RuntimeBanner(
@@ -1828,7 +1861,7 @@ private fun speechModelStateLabel(state: GermanSpeechModelState): String = when 
 }
 
 @Composable
-private fun SheetScaffold(
+internal fun SheetScaffold(
     title: String,
     onDismiss: () -> Unit,
     testTag: String,

@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Regeln: %1$s</string>
     <string name="ui_country_rules_pending">Länderregeln nicht verfügbar</string>
     <string name="ui_penalty_estimate">GPS-Schätzung; keine Messtoleranz abgezogen.</string>
+    <string name="ui_show_other_signs">Weitere Verkehrszeichen anzeigen</string>
+    <string name="ui_other_signs_detail">Zeigt bei aktiver Kamera das zuletzt erkannte Zeichen oben rechts. Ein neues Zeichen ersetzt es; Tempolimits bleiben in der Geschwindigkeitsanzeige.</string>
+    <string name="ui_last_recognized_sign">Zuletzt erkanntes Zeichen: %1$s</string>
 </resources>

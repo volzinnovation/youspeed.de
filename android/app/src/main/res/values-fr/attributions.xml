@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Sources et crédits</string>
+    <string name="credits_intro">Les sources et mentions complètes sont disponibles hors ligne. Les attributions et licences conservent leur langue originale. Les liens externes nécessitent un accès à Internet.</string>
+    <string name="credits_reviewed">Vérifié le : %1$s</string>
+    <string name="credits_load_error">Impossible de charger les mentions incluses.</string>
+    <string name="credits_show_details">Afficher les détails</string>
+    <string name="credits_hide_details">Masquer les détails</string>
+    <string name="credits_attribution">Attribution : %1$s</string>
+    <string name="credits_changes">Modifications : %1$s</string>
+    <string name="credits_source_link">Ouvrir la source</string>
+    <string name="credits_license_link">Ouvrir la licence</string>
+    <string name="credits_link_error">Aucune application ne permet d’ouvrir ce lien.</string>
+    <string name="credits_full_notices">Mentions complètes des sources et logiciels</string>
+    <string name="credits_model_notices">Mentions des modèles de panneaux</string>
+    <string name="credits_speech_notices">Licence du modèle vocal</string>
+    <string name="credits_category_data">Données cartographiques</string>
+    <string name="credits_category_software">Logiciels</string>
+    <string name="credits_category_model">Modèles de reconnaissance</string>
+    <string name="credits_category_sign">Pictogrammes de signalisation</string>
+    <string name="credits_category_reference">Références</string>
+</resources>

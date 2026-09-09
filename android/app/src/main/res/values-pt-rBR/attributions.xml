@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Fontes e créditos</string>
+    <string name="credits_intro">As fontes e os avisos completos estão disponíveis offline. As atribuições e licenças mantêm o idioma original. Links externos exigem acesso à Internet.</string>
+    <string name="credits_reviewed">Revisado: %1$s</string>
+    <string name="credits_load_error">Não foi possível carregar os avisos incluídos.</string>
+    <string name="credits_show_details">Mostrar detalhes</string>
+    <string name="credits_hide_details">Ocultar detalhes</string>
+    <string name="credits_attribution">Atribuição: %1$s</string>
+    <string name="credits_changes">Alterações: %1$s</string>
+    <string name="credits_source_link">Abrir fonte</string>
+    <string name="credits_license_link">Abrir licença</string>
+    <string name="credits_link_error">Nenhum aplicativo disponível para abrir este link.</string>
+    <string name="credits_full_notices">Avisos completos de fontes e software</string>
+    <string name="credits_model_notices">Avisos dos modelos de placas</string>
+    <string name="credits_speech_notices">Licença do modelo de voz</string>
+    <string name="credits_category_data">Dados de mapas</string>
+    <string name="credits_category_software">Software</string>
+    <string name="credits_category_model">Modelos de reconhecimento</string>
+    <string name="credits_category_sign">Pictogramas de placas</string>
+    <string name="credits_category_reference">Referências</string>
+</resources>

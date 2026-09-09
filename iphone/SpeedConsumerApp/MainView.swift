@@ -337,7 +337,16 @@ struct MainView: View {
 
             Spacer()
 
-            if showsTrafficSignRecognitionDebugBadge {
+            if viewModel.trafficSignPictogramEnabled,
+               let sign = viewModel.trafficSignPictogram,
+               let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 76, height: 76)
+                    .padding(5)
+                    .accessibilityLabel(sign.localizedLabel())
+            } else if showsTrafficSignRecognitionDebugBadge {
                 trafficSignRecognitionBadge
             }
         }
@@ -1681,6 +1690,15 @@ private struct LegalInformationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                NavigationLink {
+                    SourceAttributionsView()
+                } label: {
+                    Label(NSLocalizedString("about.sources.title", comment: ""), systemImage: "books.vertical")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                }
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text(NSLocalizedString("welcome.legal_heading", comment: ""))
                         .font(.system(size: 16, weight: .bold, design: .default))
@@ -1756,19 +1774,39 @@ private struct LegalInformationView: View {
     }
 }
 
-private struct TrafficSignThirdPartyNoticesView: View {
+struct TrafficSignThirdPartyNoticesView: View {
     let text: String
 
     var body: some View {
-        ScrollView {
-            Text(text)
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-                .padding(16)
-        }
+        LicenseNoticesTextView(text: text)
         .navigationTitle(NSLocalizedString("about.tsr_attribution.licenses", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct LicenseNoticesTextView: UIViewRepresentable {
+    let text: String
+
+    func makeUIView(context: Context) -> UITextView {
+        // UITextView lays out long license documents while scrolling; one very
+        // tall SwiftUI Text can exceed the drawable surface and appear blank.
+        let view = UITextView()
+        view.isEditable = false
+        view.isSelectable = true
+        view.alwaysBounceVertical = true
+        view.adjustsFontForContentSizeCategory = true
+        view.font = UIFontMetrics.default.scaledFont(for: .monospacedSystemFont(ofSize: 13, weight: .regular))
+        view.textColor = .label
+        view.backgroundColor = .systemBackground
+        view.textContainerInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        view.dataDetectorTypes = .link
+        return view
+    }
+
+    func updateUIView(_ uiView: UITextView, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
     }
 }
 
@@ -1813,15 +1851,21 @@ enum TrafficSignThirdPartyNoticesLoader {
 
     static func load(bundle: Bundle = .main) -> String {
         let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
-        for candidateBundle in bundles {
-            guard let url = candidateBundle.url(
-                forResource: "THIRD_PARTY_NOTICES",
-                withExtension: "txt",
-                subdirectory: packSubdirectory
-            ), let text = try? String(contentsOf: url, encoding: .utf8) else {
-                continue
+        let notices = ["attributions", packSubdirectory].compactMap { subdirectory in
+            for candidateBundle in bundles {
+                guard let url = candidateBundle.url(
+                    forResource: "THIRD_PARTY_NOTICES",
+                    withExtension: "txt",
+                    subdirectory: subdirectory
+                ), let text = try? String(contentsOf: url, encoding: .utf8) else {
+                    continue
+                }
+                return text.trimmingCharacters(in: .whitespacesAndNewlines)
             }
-            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return nil as String?
+        }
+        if !notices.isEmpty {
+            return notices.joined(separator: "\n\n────────────────────────\n\n")
         }
         return NSLocalizedString("about.tsr_attribution.licenses_unavailable", comment: "")
     }
@@ -2795,6 +2839,16 @@ private struct SettingsView: View {
                 Text(NSLocalizedString("drive_recorder.settings.tsr_description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+
+                Toggle(NSLocalizedString("drive_recorder.settings.tsr_pictogram", comment: ""), isOn: $viewModel.trafficSignPictogramEnabled)
+                Text(NSLocalizedString("drive_recorder.settings.tsr_pictogram_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if !viewModel.trafficSignCityEntryRecognitionAvailable {
+                    Text(NSLocalizedString("drive_recorder.settings.tsr_city_unavailable", comment: ""))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
 
                 Toggle(
                     NSLocalizedString("drive_recorder.settings.tsr_independent", comment: ""),

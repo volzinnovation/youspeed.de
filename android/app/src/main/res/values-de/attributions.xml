@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Quellen und Danksagungen</string>
+    <string name="credits_intro">Quellenangaben und vollständige Hinweise sind offline verfügbar. Urheber- und Lizenzangaben bleiben in der Originalsprache. Externe Links benötigen Internetzugang.</string>
+    <string name="credits_reviewed">Geprüft: %1$s</string>
+    <string name="credits_load_error">Die mitgelieferten Hinweise konnten nicht geladen werden.</string>
+    <string name="credits_show_details">Details anzeigen</string>
+    <string name="credits_hide_details">Details ausblenden</string>
+    <string name="credits_attribution">Urheberangabe: %1$s</string>
+    <string name="credits_changes">Änderungen: %1$s</string>
+    <string name="credits_source_link">Quelle öffnen</string>
+    <string name="credits_license_link">Lizenz öffnen</string>
+    <string name="credits_link_error">Keine Anwendung zum Öffnen dieses Links verfügbar.</string>
+    <string name="credits_full_notices">Vollständige Quellen- und Softwarehinweise</string>
+    <string name="credits_model_notices">Hinweise zu Verkehrszeichenmodellen</string>
+    <string name="credits_speech_notices">Lizenz des Sprachmodells</string>
+    <string name="credits_category_data">Kartendaten</string>
+    <string name="credits_category_software">Software</string>
+    <string name="credits_category_model">Erkennungsmodelle</string>
+    <string name="credits_category_sign">Verkehrszeichen-Piktogramme</string>
+    <string name="credits_category_reference">Referenzen</string>
+</resources>

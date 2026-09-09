@@ -62,6 +62,7 @@ class TrafficSignFusionEngine(
         if (detection == null) return noRecognition()
         val primaryDetection = detection.copy(
             candidate = detection.candidate.copy(
+                semantic = detection.candidate.normalizedPrimarySemantic(),
                 conditionState = TrafficSignConditionState.NONE,
                 restrictions = emptyList(),
             ),

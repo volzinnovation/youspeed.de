@@ -51,6 +51,7 @@ internal data class AndroidTrafficSignVerifiedPack(
     val classifierArtifact: TrafficSignArtifact,
     val detectorModel: MappedByteBuffer,
     val classifierModel: MappedByteBuffer,
+    val displayCatalog: TrafficSignDisplayCatalog,
 )
 
 internal object AndroidTrafficSignModelPackLoader {
@@ -82,6 +83,12 @@ internal object AndroidTrafficSignModelPackLoader {
         require(detectorArtifact.outputSchema == "yolo_raw_xywh_class_scores_v1")
         require(classifierArtifact.outputSchema == "classification_probabilities_v1")
 
+        val displayCatalog = assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
+            TrafficSignDisplayCatalog.decode(it.readText())
+        }
+        require(displayCatalog.checkpointSha256 == classifierComponent.sourceCheckpoint.sha256) {
+            "TSR class catalog does not match the classifier checkpoint"
+        }
         val detectorModel = mapAndVerify(context, detectorArtifact)
         val classifierModel = mapAndVerify(context, classifierArtifact)
         return AndroidTrafficSignVerifiedPack(
@@ -90,6 +97,7 @@ internal object AndroidTrafficSignModelPackLoader {
             classifierArtifact = classifierArtifact,
             detectorModel = detectorModel,
             classifierModel = classifierModel,
+            displayCatalog = displayCatalog,
         )
     }
 
@@ -226,31 +234,10 @@ internal object AndroidYoloSignDecoder {
     }
 }
 
-internal object PanoramaxGermanRoadSignClasses {
-    private val classIdByIndex = mapOf(
-        59 to "maxspeed:10",
-        60 to "maxspeed:100",
-        61 to "maxspeed:120",
-        62 to "maxspeed:130",
-        63 to "maxspeed:20",
-        64 to "maxspeed:25",
-        65 to "maxspeed:30",
-        66 to "maxspeed:40",
-        67 to "maxspeed:5",
-        68 to "maxspeed:50",
-        69 to "maxspeed:60",
-        70 to "maxspeed:70",
-        71 to "maxspeed:80",
-        72 to "maxspeed:end",
-        128 to "zone:20",
-        129 to "zone:30",
-        130 to "zone:30:end",
-        131 to "zone:end",
-        133 to "zone:pedestrian",
-    )
-
-    fun classId(index: Int): String = classIdByIndex[index] ?: "classifier:$index"
-}
+internal fun primaryDetection(detections: List<TrafficSignDetection>): TrafficSignDetection? = detections
+    .filter { it.candidate.normalizedPrimarySemantic().kind !in setOf(TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END) }
+    .maxByOrNull { it.candidate.rawScore }
+    ?: detections.maxByOrNull { it.candidate.rawScore }
 
 internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val verifiedPack: AndroidTrafficSignVerifiedPack,
@@ -284,7 +271,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         require(classifier.getOutputTensor(0).dataType() == DataType.FLOAT32)
     }
 
-    fun recognize(source: Bitmap): TrafficSignDetection? {
+    fun recognize(source: Bitmap): TrafficSignDetection? = primaryDetection(recognizeAll(source))
+
+    fun recognizeAll(source: Bitmap): List<TrafficSignDetection> {
         prepareDetectorInput(source)
         detectorOutput.clear()
         detector.run(detectorInput, detectorOutput)
@@ -298,11 +287,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             minimumScore = verifiedPack.modelPack.thresholds.unknown,
         )
 
-        val detections = proposals.mapNotNull { proposal -> classify(source, proposal) }
-        return detections
-            .filter { it.candidate.semantic.kind != TrafficSignSemanticKind.UNKNOWN }
-            .maxByOrNull { it.candidate.rawScore }
-            ?: detections.maxByOrNull { it.candidate.rawScore }
+        return proposals.mapNotNull { proposal -> classify(source, proposal) }
     }
 
     private fun prepareDetectorInput(source: Bitmap) {
@@ -319,7 +304,12 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         writeRgbFloats(detectorInput, detectorPixels)
     }
 
-    private fun classify(source: Bitmap, proposal: AndroidYoloProposal): TrafficSignDetection? {
+    /** Runs the pinned classifier on an explicitly supplied crop; used for reproducible capability probes. */
+    internal fun classifyCropForDiagnostic(source: Bitmap): TrafficSignDetection? = classify(
+        source, AndroidYoloProposal(1f, NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)), minimumScore = 0.0,
+    )
+
+    private fun classify(source: Bitmap, proposal: AndroidYoloProposal, minimumScore: Double = verifiedPack.modelPack.thresholds.unknown): TrafficSignDetection? {
         val box = proposal.box
         val left = ((box.x - box.width * HORIZONTAL_CROP_PADDING) * source.width).coerceAtLeast(0.0)
         val top = ((box.y - box.height * TOP_CROP_PADDING) * source.height).coerceAtLeast(0.0)
@@ -366,8 +356,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 bestScore = score
             }
         }
-        if (bestIndex < 0 || bestScore < verifiedPack.modelPack.thresholds.unknown) return null
-        val classId = PanoramaxGermanRoadSignClasses.classId(bestIndex)
+        if (bestIndex < 0 || bestScore < minimumScore) return null
+        val classId = verifiedPack.displayCatalog.classId(bestIndex)
         val mapping = mappingsByClassId[classId]
         val combinedScore = min(proposal.score.toDouble(), bestScore.toDouble())
         return TrafficSignDetection(
@@ -440,8 +430,10 @@ internal class AndroidLiteRtTrafficSignBackend(
             val result = runCatching {
                 val bitmap = frame.orientedBitmap()
                 try {
+                    val detections = engine.recognizeAll(bitmap)
                     TrafficSignBackendResult.Recognition(
-                        detection = engine.recognize(bitmap),
+                        detection = primaryDetection(detections),
+                        displayDetections = detections,
                         thermalState = thermalState(),
                         strongPassGeometry = false,
                     )

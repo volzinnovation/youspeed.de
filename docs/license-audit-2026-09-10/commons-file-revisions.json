@@ -1,0 +1,1561 @@
+[
+  {
+    "sign_code": "DE:222-10",
+    "pageid": 61866647,
+    "source_revision": 1135266746,
+    "received_revision": 1135266746,
+    "timestamp": "2025-12-23T00:01:51Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "1971ac9a9682ab2609013aed6a2d8494ad41ddd871020873e8ff73b5d987085f",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:211",
+    "pageid": 61838130,
+    "source_revision": 906770541,
+    "received_revision": 906770541,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "f04c248c3ec43975f86ee0ca79fda29cd409c3482033e4ba8790f4d9f4638d1a",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:222",
+    "pageid": 61866326,
+    "source_revision": 922668242,
+    "received_revision": 922668242,
+    "timestamp": "2024-09-11T00:42:10Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "764ffd530324a871e68610d96d3c1c40070da89f00fa31acefaeb6d1b7c31be7",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:209-30",
+    "pageid": 61865068,
+    "source_revision": 1127870844,
+    "received_revision": 1127870844,
+    "timestamp": "2025-12-08T20:15:35Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "ee54efb86040f8e14c219ab5fa975c88adf8f1779316856de8effa98b46dc385",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:209-10",
+    "pageid": 61837947,
+    "source_revision": 950872703,
+    "received_revision": 950872703,
+    "timestamp": "2024-10-30T05:54:51Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "205aeb1c678823c15c5bea91d12a7aabde4a9bde3228ed62ece92748f7098a7e",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:214-30",
+    "pageid": 61864976,
+    "source_revision": 1030041465,
+    "received_revision": 1030041465,
+    "timestamp": "2025-05-09T15:08:11Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "797577b1c74c32ff071ffe24c8e4d94eb7dd96c437d42044ba54b6eb3dcfab93",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:214-10",
+    "pageid": 61864741,
+    "source_revision": 906770512,
+    "received_revision": 906770512,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "ec5caacff0308bf4624539593971543a09e309b4c4764355abae1a0e7531717d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:209",
+    "pageid": 61837526,
+    "source_revision": 1002986755,
+    "received_revision": 1002986755,
+    "timestamp": "2025-02-26T23:30:42Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "f0583b53723107e0845f835f4866c8cbec69ba1bcf05f1c7f6c993f751dc7f55",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:214",
+    "pageid": 61864563,
+    "source_revision": 906770557,
+    "received_revision": 906770557,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "63a472d76181bae2cb3c10133cf566295cdff7a92d553d615fd495c1303415a4",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:237",
+    "pageid": 783807,
+    "source_revision": 902584595,
+    "received_revision": 902584595,
+    "timestamp": "2024-07-23T20:14:59Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "5df676144b689fc2e5c1461f511d40785ccae8be985d431f046fa99c9d103142",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:245",
+    "pageid": 62055638,
+    "source_revision": 1198547820,
+    "received_revision": 1198547820,
+    "timestamp": "2026-04-16T18:37:31Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "0500d4f94df37b7fc9c14f1d9b6c7c61e12a815dad06e10df6d7615cba6a732c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:205",
+    "pageid": 995523,
+    "source_revision": 878350372,
+    "received_revision": 878350372,
+    "timestamp": "2024-05-21T22:25:02Z",
+    "copyright_templates": [
+      "PD-Vz historisch",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "62a4bed754a48eb5f93c826037e9d74f774a58b8af9f355b8ec64bc02d8723d4",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:101",
+    "pageid": 982688,
+    "source_revision": 887460225,
+    "received_revision": 887460225,
+    "timestamp": "2024-06-24T15:04:35Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "f2482dc804e4fb262ce59992972afb7c833a6cbcee9d94f4332656ea9686019d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:125",
+    "pageid": 775392,
+    "source_revision": 1121078286,
+    "received_revision": 1121078286,
+    "timestamp": "2025-11-25T03:23:20Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "8dbee703aedd1dbc9ec1f81f185cb8a52bf92c1a0ca619fd6677053a1eadf2d9",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:112",
+    "pageid": 764786,
+    "source_revision": 877357751,
+    "received_revision": 877357751,
+    "timestamp": "2024-05-18T19:09:55Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "fc8ab4c55725e2d276180e6c510becdc323b68427c0a9929503e304e41727d30",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:102",
+    "pageid": 775371,
+    "source_revision": 884769801,
+    "received_revision": 884769801,
+    "timestamp": "2024-06-17T15:38:07Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "542708ba569275a2dbde74a30b417fe17be239f3e098f050b77bbdc45220a61c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:101-52",
+    "pageid": 61809209,
+    "source_revision": 1037061092,
+    "received_revision": 1037061092,
+    "timestamp": "2025-05-28T11:12:32Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "0930281e9ec49394c4eb7318df1b947138c0398f7d5d85ffbb75a4de657842ae",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:101-51",
+    "pageid": 61808949,
+    "source_revision": 894805377,
+    "received_revision": 894805377,
+    "timestamp": "2024-07-08T18:15:14Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "9ea18e2d00b19c317d3003b638e1bd3359bcaa4320ca8bb5bafb2b57c6bbc535",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:301",
+    "pageid": 1004378,
+    "source_revision": 1003251958,
+    "received_revision": 1003251958,
+    "timestamp": "2025-02-27T15:35:55Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "e378f1fb1c4d1b0cad3d3b6c2d46b7dd63ae5490a55112ad072ae6223198fde2",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:103-10",
+    "pageid": 982694,
+    "source_revision": 888083201,
+    "received_revision": 888083201,
+    "timestamp": "2024-06-25T15:05:58Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "6036b1378465ae5c0e942378438487f33366d994a806b1e96db288bd7cd5e24e",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:101-55",
+    "pageid": 61810407,
+    "source_revision": 1047745376,
+    "received_revision": 1047745376,
+    "timestamp": "2025-06-22T20:05:00Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "f798712519900ab67c176bd96cef81a2b17fcde34123ac38b9d13631741bbcdc",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:120",
+    "pageid": 995345,
+    "source_revision": 890029257,
+    "received_revision": 890029257,
+    "timestamp": "2024-06-29T18:20:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "7e64c3d7c98b4cf64966e0a5294098d27fc34c78161afebf2a564ae12ce5ab23",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:121-20",
+    "pageid": 995359,
+    "source_revision": 906770410,
+    "received_revision": 906770410,
+    "timestamp": "2024-08-05T18:29:28Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "8d1358a509179c55ad924a9b91eac253acf1b9d79e88450331baaede86ff1927",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:121-10",
+    "pageid": 995355,
+    "source_revision": 1196296803,
+    "received_revision": 1196296803,
+    "timestamp": "2026-04-12T18:44:57Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "b0d7d4f258f460240c6fb644623c4b3137c1448fdc8397af81aaffb3cb1b2214",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:103-20",
+    "pageid": 982690,
+    "source_revision": 906770007,
+    "received_revision": 906770007,
+    "timestamp": "2024-08-05T18:29:25Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "b0642ce51572c8c6e78aa6318a9ab50ed31bdf1e5bea1719bfc8e2d2f947a777",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:123",
+    "pageid": 62073891,
+    "source_revision": 878338797,
+    "received_revision": 878338797,
+    "timestamp": "2024-05-21T21:04:31Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "fde843d6848de8de32f2c1806c6e01be8d2cc9158a6526b2d5cf13ca9c28ce97",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:114",
+    "pageid": 58525634,
+    "source_revision": 876917125,
+    "received_revision": 876917125,
+    "timestamp": "2024-05-16T21:44:51Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "edfe5e75cc888fc5afb3c68da41da16ee7aa632bbef4c51d85334cea4702f439",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:124",
+    "pageid": 995370,
+    "source_revision": 877638309,
+    "received_revision": 877638309,
+    "timestamp": "2024-05-19T20:49:46Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "45037bd9f06f6228d96c0198eb954241486e3a28b2d822a33b4738469ffb8ab0",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:131",
+    "pageid": 320591,
+    "source_revision": 906770545,
+    "received_revision": 906770545,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "3cc296a4ea14df16a184b778096fc5ddc897528017e55a05748bcf903be29bd8",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:151",
+    "pageid": 60647608,
+    "source_revision": 885108010,
+    "received_revision": 885108010,
+    "timestamp": "2024-06-18T16:59:19Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "5ded934183e5969707a459d7e1a009654776459d6e9e015b659d7b4f9b9771e9",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:105-20",
+    "pageid": 982697,
+    "source_revision": 906770073,
+    "received_revision": 906770073,
+    "timestamp": "2024-08-05T18:29:25Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "c1031cae00d91e1d77d32a676f9076c3cd72734182ae46627c22f7e927e4a5a8",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:105-10",
+    "pageid": 982698,
+    "source_revision": 955358619,
+    "received_revision": 955358619,
+    "timestamp": "2024-11-11T01:11:47Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "9fbc506fdac4a3eade2e66e592a02f73dedb9fd8b87d74b66ad28ef40f7fe9f2",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:238",
+    "pageid": 995762,
+    "source_revision": 1099352865,
+    "received_revision": 1099352865,
+    "timestamp": "2025-10-14T13:43:08Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "2e2b45a11fbc5bfc5ffab647e59574fc9a332e60a389d12a069f86ce00fd7acd",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-10",
+    "pageid": 110758269,
+    "source_revision": 1247397510,
+    "received_revision": 1247397510,
+    "timestamp": "2026-07-13T16:31:01Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "3c63186730d4bc18e1d93e4de817318bca539af49b97f1abcb0a36946a0944f0",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-100",
+    "pageid": 110757740,
+    "source_revision": 932893591,
+    "received_revision": 932893591,
+    "timestamp": "2024-10-05T02:30:43Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "a870cd1f619b16d7fd8caace2b582fa70b73b6f3d346035bc01779bc25a7c522",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-120",
+    "pageid": 110757135,
+    "source_revision": 906770476,
+    "received_revision": 906770476,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "306d0d06f814d9ac0c42466fcf06701ffd9a0da04a2aae3313b89445104a75de",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-130",
+    "pageid": 110757035,
+    "source_revision": 906770486,
+    "received_revision": 906770486,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "9c0bd278415f0564234f45bfbd4284783e9d467aed637330b2871f7e7f52186c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-20",
+    "pageid": 110758185,
+    "source_revision": 949624096,
+    "received_revision": 949624096,
+    "timestamp": "2024-10-26T21:34:34Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "c7d0c391cd6c2bb7a7e485b8eb198dec3c55ad18d43553ad3515fad430d429ff",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-30",
+    "pageid": 110758111,
+    "source_revision": 1152892850,
+    "received_revision": 1152892850,
+    "timestamp": "2026-01-25T02:04:32Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "3936b27f628d80175dfa30493248ff3f6fad8b7ff7104111b0bd9800c0a7b239",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-40",
+    "pageid": 110758039,
+    "source_revision": 906770482,
+    "received_revision": 906770482,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "1f6ab0e124688038ac79c5998b1633373f6870c82206347104fc6bdf1a8c0c58",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-5",
+    "pageid": 111143124,
+    "source_revision": 906770493,
+    "received_revision": 906770493,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "e51750e73cc58cc99c8976b6eb056b0ace60cc3466a9988c8caa39e18bf77d40",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-50",
+    "pageid": 63468668,
+    "source_revision": 906770481,
+    "received_revision": 906770481,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "a3833b82f23acb0d4cfd5bdbb74d129871a615c5fbc1aaba39ce21429a8a66bb",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-60",
+    "pageid": 61811095,
+    "source_revision": 906770552,
+    "received_revision": 906770552,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "6f28b5aa4dff6e67943b9761507fdf400776a095b93808cf1743e0960ec35943",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-70",
+    "pageid": 61993626,
+    "source_revision": 1176322113,
+    "received_revision": 1176322113,
+    "timestamp": "2026-03-05T14:24:07Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "66563bfc952f3d19e39372a93a407bcd27b4a056dc5d14a5013f8ab423762a36",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274-80",
+    "pageid": 110756864,
+    "source_revision": 1053556987,
+    "received_revision": 1053556987,
+    "timestamp": "2025-07-07T10:58:20Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "c741d068109d5b3f12562aa6eb09f5301c8884a73d777afaff27d35c3021af0c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:330.2",
+    "pageid": 62036360,
+    "source_revision": 1216652965,
+    "received_revision": 1216652965,
+    "timestamp": "2026-05-19T09:16:14Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "81d7b6d2ba248e114ba455f571d68e49486f99041d9a23ca34e4111f66dbb756",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:330.1",
+    "pageid": 62017365,
+    "source_revision": 977861799,
+    "received_revision": 977861799,
+    "timestamp": "2024-12-31T19:25:31Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "c010ffc78c6f7f28273d2da80ef946fd56e77e1a6d062baecdda5d11d9b56adb",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:282",
+    "pageid": 950591,
+    "source_revision": 1143391483,
+    "received_revision": 1143391483,
+    "timestamp": "2026-01-07T02:49:59Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "f9ead8114e46e0f557138b8b8d7e94508b4d4e40d189617b65f4ea2b39b1eb1f",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:254",
+    "pageid": 786287,
+    "source_revision": 874834738,
+    "received_revision": 874834738,
+    "timestamp": "2024-05-07T15:32:21Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "1eb420fdcb07faf6070fa5d584eb43b6eb18a69cb764d55109794f4528bf200d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:257-54",
+    "pageid": 61812115,
+    "source_revision": 875188949,
+    "received_revision": 875188949,
+    "timestamp": "2024-05-08T21:07:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "d8344219e084cfdceca62f654571328ab613b910024cab2f9c328965f0c6bc81",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:251",
+    "pageid": 786516,
+    "source_revision": 1192911880,
+    "received_revision": 1192911880,
+    "timestamp": "2026-04-07T00:54:54Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "4196d552ce9a085e39442aeadc0027dd6e2199453b1e02f8be139fa933c65ed5",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:260",
+    "pageid": 995785,
+    "source_revision": 1125553317,
+    "received_revision": 1125553317,
+    "timestamp": "2025-12-04T15:40:23Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "7b6ea97338ae6ac176f6c85de31f8a0fc344516917f46d33abf0c97fabb60dce",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:261",
+    "pageid": 995806,
+    "source_revision": 881650262,
+    "received_revision": 881650262,
+    "timestamp": "2024-06-05T22:15:50Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "90074371a89016ba3260617dbc83261d2731a38268d190dad160d959618e2cf0",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:269",
+    "pageid": 1004325,
+    "source_revision": 1142299562,
+    "received_revision": 1142299562,
+    "timestamp": "2026-01-05T11:51:20Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "8ac702bbcec27ff7f6447d9dd0c6e1948743f9c7390940b5365d7c8d01e6f091",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:267",
+    "pageid": 766270,
+    "source_revision": 1185868683,
+    "received_revision": 1185868683,
+    "timestamp": "2026-03-23T21:53:52Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "5d6ee0669761075b8ec51c855ed96ad5a40f1a61f6939675d52b3743b896ef39",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:357",
+    "pageid": 1005409,
+    "source_revision": 906770045,
+    "received_revision": 906770045,
+    "timestamp": "2024-08-05T18:29:25Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "a5f9a7fe940d057fec75dbc4e88eb2f527015e0c5f814e50edf635098040354a",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:253",
+    "pageid": 890671,
+    "source_revision": 875193606,
+    "received_revision": 875193606,
+    "timestamp": "2024-05-08T21:55:24Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "a4c50ba80136181c9384a25937616de1fae3aba2360592991ef72ec0480d4cd3",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:257-51",
+    "pageid": 61799191,
+    "source_revision": 897440322,
+    "received_revision": 897440322,
+    "timestamp": "2024-07-12T14:12:26Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "0e8ebab9c14e4cddea3147ae6c51184461420f1563412c245650d4a2eb2212c8",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:255",
+    "pageid": 995780,
+    "source_revision": 1219296209,
+    "received_revision": 1219296209,
+    "timestamp": "2026-05-24T05:36:34Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "d4eb4d1e75233579c5635232b29228e5e75278af4ffae242ba04623510b293b9",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:276",
+    "pageid": 1004351,
+    "source_revision": 875658985,
+    "received_revision": 875658985,
+    "timestamp": "2024-05-10T17:17:45Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "f4560b73a17f134f446ef750fda95e163221d5c9ce3c8ee03af4b0a5d5a52792",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:280",
+    "pageid": 1004364,
+    "source_revision": 1018940106,
+    "received_revision": 1018940106,
+    "timestamp": "2025-04-08T13:49:16Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "969826fdc32cce7dbebf5fb911eda6e4fb81bf364c387eaf2749575d8917f207",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:277",
+    "pageid": 1004355,
+    "source_revision": 1138461591,
+    "received_revision": 1138461591,
+    "timestamp": "2025-12-29T05:07:53Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "10cce16190ac88ef60a12986dbc2f6e218cee1d4f759dbd49ff19964ee662cf2",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:286",
+    "pageid": 768981,
+    "source_revision": 1045851922,
+    "received_revision": 1045851922,
+    "timestamp": "2025-06-19T15:13:15Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "f87716d6c8d6fe6806d4db72e8fb4260ee210f1ce5d23372d749da41762a771f",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:259",
+    "pageid": 786289,
+    "source_revision": 881365865,
+    "received_revision": 881365865,
+    "timestamp": "2024-06-04T23:01:43Z",
+    "copyright_templates": [
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "ec561de2441cde8db1e455b7a9392d1d8ab20463416b2829fa4f75a5829b7eb9",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:283",
+    "pageid": 61892018,
+    "source_revision": 875524632,
+    "received_revision": 875524632,
+    "timestamp": "2024-05-09T22:28:12Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "84ce5870986124bc9abba93aa06865ea3c50181b0fdf652b3e80cae84fa2174d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:272",
+    "pageid": 1004334,
+    "source_revision": 1065740646,
+    "received_revision": 1065740646,
+    "timestamp": "2025-08-03T18:04:06Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "16779219079dbf9762b62edbb87bd0c27a8c45b2ab7796a808d28c66b0cab443",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:250",
+    "pageid": 48300272,
+    "source_revision": 1136345286,
+    "received_revision": 1136345286,
+    "timestamp": "2025-12-25T07:19:26Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "a6e89de2ea6a638a194ed0b678ef136dfe55645ad495cfbe7ac23d70d9da9dcc",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:316",
+    "pageid": 1005224,
+    "source_revision": 903956918,
+    "received_revision": 903956918,
+    "timestamp": "2024-07-27T16:23:19Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "c83971282174f92837cf2629c2fa670a44ec7680d2c532c3510b29b3d1de7eca",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:314",
+    "pageid": 61950153,
+    "source_revision": 1227441868,
+    "received_revision": 1227441868,
+    "timestamp": "2026-06-07T18:09:14Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "00efd2b78f2930e3b95ed1d906a77cc5195c47a561830e3f5905128f9a286297",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:314-50",
+    "pageid": 61817725,
+    "source_revision": 1227449085,
+    "received_revision": 1227449085,
+    "timestamp": "2026-06-07T18:26:47Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "6ffc66a913d7d337bf8ef1d81bf2cbc2cde74279fe2eed2f957ba242bd906944",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:317",
+    "pageid": 1005248,
+    "source_revision": 906769936,
+    "received_revision": 906769936,
+    "timestamp": "2024-08-05T18:29:24Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "22bfc30f9706f9829b8737061649546eb231a9ccefa8967ef6190d3e55c1e8c4",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:239",
+    "pageid": 995763,
+    "source_revision": 1088340731,
+    "received_revision": 1088340731,
+    "timestamp": "2025-09-20T15:02:26Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "186de5e075b0800b08577bcefdf73738f3cc582f7ed8a675003203703f209ca8",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:240",
+    "pageid": 995768,
+    "source_revision": 939608356,
+    "received_revision": 939608356,
+    "timestamp": "2024-10-12T09:48:07Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "5080a6085ecd570cab55975e56201b0b8f16dc295e7100441400cf99aa99b3af",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:208",
+    "pageid": 995544,
+    "source_revision": 1185128972,
+    "received_revision": 1185128972,
+    "timestamp": "2026-03-22T15:00:50Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "b17773f4126675b29d9d41345d2d07c2ac674b91b81c54f8c5d7160a408c906f",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:307",
+    "pageid": 1004393,
+    "source_revision": 1002985306,
+    "received_revision": 1002985306,
+    "timestamp": "2025-02-26T23:27:23Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "c052d1ffb38a8d41f58e2b89c579f4ef829b004954713de24481e3176cb6541a",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:308",
+    "pageid": 1005167,
+    "source_revision": 878585712,
+    "received_revision": 878585712,
+    "timestamp": "2024-05-22T19:38:36Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "6eab7587ac797c4905c8ed9d8c4db6f7be3be08bf5fa0d64d2ae7acc6099adb5",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:306",
+    "pageid": 1004390,
+    "source_revision": 879181152,
+    "received_revision": 879181152,
+    "timestamp": "2024-05-24T22:02:28Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "945155b63aee678de133e16c9829547754d541393b33e9056718a85b77e1bc80",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:215",
+    "pageid": 995697,
+    "source_revision": 1238865780,
+    "received_revision": 1238865780,
+    "timestamp": "2026-06-26T17:03:39Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "377dc354fdef8ad1aa616e31056f88c69b4418ae99a45b0db90ec0e8a92bd8a7",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:206",
+    "pageid": 36093938,
+    "source_revision": 1084544804,
+    "received_revision": 1084544804,
+    "timestamp": "2025-09-12T11:11:46Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-Vz historisch"
+    ],
+    "wikitext_sha256": "b3c5a8afba58db5de78fffa8d6f1cd2935c05d6bacc7c9ad67e6030caca76378",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:331.2",
+    "pageid": 62036568,
+    "source_revision": 900472620,
+    "received_revision": 900472620,
+    "timestamp": "2024-07-18T20:41:20Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "fd9450324495f4d66e3bc96f127ce1badf7f969b0cf70d9c307c89cb3a652c86",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:331.1",
+    "pageid": 62036584,
+    "source_revision": 900363264,
+    "received_revision": 900363264,
+    "timestamp": "2024-07-18T13:21:19Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "e8b8285acb926a2ba7ea32389c1e49152acd35cafdafcff301904fde6e15039c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:327",
+    "pageid": 61813624,
+    "source_revision": 1262658556,
+    "received_revision": 1262658556,
+    "timestamp": "2026-08-17T11:20:54Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "0394a9490a3c31496b71ba93f613f1c59388ef582811a3efda19321326c90d37",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274.1-20",
+    "pageid": 62292404,
+    "source_revision": 906770473,
+    "received_revision": 906770473,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "47f286f38696210e53ac399f70cc15cdb88fbc7819b089b0de5befc18a78f274",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274.1",
+    "pageid": 950539,
+    "source_revision": 906770479,
+    "received_revision": 906770479,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "6875ea64c98c084268e58eda73a835323a6baff7155f39cded73a24b7f4532ff",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:274.2",
+    "pageid": 62292745,
+    "source_revision": 906770500,
+    "received_revision": 906770500,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "89e06f0ddb6dea006f430b49ae0504a717dc97d90fea351eac797f8d9046ef94",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:290.1",
+    "pageid": 1004374,
+    "source_revision": 1150574020,
+    "received_revision": 1150574020,
+    "timestamp": "2026-01-21T08:21:43Z",
+    "copyright_templates": [
+      "PD-VzKat",
+      "PD-GermanGov"
+    ],
+    "wikitext_sha256": "b9b07fcb1a9267c9841b565fce60e1a5173cfb2a552a86fe5b36d53dd7d9ae97",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:242.1",
+    "pageid": 61869818,
+    "source_revision": 1165662360,
+    "received_revision": 1165662360,
+    "timestamp": "2026-02-14T17:27:03Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "e277b3bd9fa3c1aefe1134d81ea21c7eb3e102cc425369b9ada71c6c5c07e852",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-5",
+    "pageid": 111143504,
+    "source_revision": 1102650751,
+    "received_revision": 1102650751,
+    "timestamp": "2025-10-20T18:50:42Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "03528956cdde9257b4da280178760a67f706b50fbb515314efe4e7e7bbcf0f6d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-10",
+    "pageid": 110724558,
+    "source_revision": 906770350,
+    "received_revision": 906770350,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "65ef439d84089a3b88b64e938eaeb314a73f797f37d029fc041b2b678a406163",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-20",
+    "pageid": 110725507,
+    "source_revision": 906770349,
+    "received_revision": 906770349,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "ebd6ce71f9e677c8794bee874a438d61e986e4b51a0c802a19939a9964c8ea40",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-30",
+    "pageid": 110725715,
+    "source_revision": 906770331,
+    "received_revision": 906770331,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "e7dc83c24b192f76d453a8f46c7cbe6fda28bb8953ea21adda8778ec2c965b0d",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-40",
+    "pageid": 110725844,
+    "source_revision": 993391034,
+    "received_revision": 993391034,
+    "timestamp": "2025-02-04T10:01:11Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "fc7749848b7a0bbdf5e208f06109ad37991892d4972dbb1e1ab13cf5499eb1d8",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-50",
+    "pageid": 83127715,
+    "source_revision": 1166961040,
+    "received_revision": 1166961040,
+    "timestamp": "2026-02-16T12:59:02Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "dccc732f7c2a707982e54e4ced9c14695d9108648e2562c1a289bc777670fefc",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-60",
+    "pageid": 61811261,
+    "source_revision": 906770436,
+    "received_revision": 906770436,
+    "timestamp": "2024-08-05T18:29:28Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "b12691f6b5c95f72ae35e60719198e54afaa927176b2691efcc63ee29d3c2716",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-70",
+    "pageid": 83127656,
+    "source_revision": 906770297,
+    "received_revision": 906770297,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "244a0dd60f4effd9af9b76c180cf71809e1def71a5554c72153efaab4e0a7b7a",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-80",
+    "pageid": 110726276,
+    "source_revision": 1145828533,
+    "received_revision": 1145828533,
+    "timestamp": "2026-01-11T03:10:46Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "ea5c95f726f048a9634d15c6d77499168485301ebb783dc44c0dacf6eb1632b6",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-90",
+    "pageid": 110726455,
+    "source_revision": 1116298689,
+    "received_revision": 1116298689,
+    "timestamp": "2025-11-15T20:01:34Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "c11ee59218be26a3735837869fd4624fb4fdf31b2cb9d18b5b2af5e288bf99f5",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-100",
+    "pageid": 110726930,
+    "source_revision": 916146849,
+    "received_revision": 916146849,
+    "timestamp": "2024-08-26T20:46:43Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "29344f333552bb7189774710cc2659c8a3abaf70b5f606246067b1ad2ecf678a",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-110",
+    "pageid": 110727208,
+    "source_revision": 906770310,
+    "received_revision": 906770310,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "838ac78174f543686ff75cc9a968e90cadb64650b855f53383d4ef5c0c7e9eec",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-120",
+    "pageid": 110727616,
+    "source_revision": 906770316,
+    "received_revision": 906770316,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "3a5232dc4ca147b231aac13d22c128a90f7ce5fbd529e9bdbb7291f7d762428c",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:278-130",
+    "pageid": 110727900,
+    "source_revision": 906770285,
+    "received_revision": 906770285,
+    "timestamp": "2024-08-05T18:29:27Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "8ecd02e1781ba0599a2465899b1ffde2d96e98859608127099ba702c5c9e581f",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:281",
+    "pageid": 1004367,
+    "source_revision": 1145616591,
+    "received_revision": 1145616591,
+    "timestamp": "2026-01-10T19:43:20Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "1721c6ad68f66890d7c67605f0f5c525ade47e351e87febccf155a2fd467d591",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:310",
+    "pageid": 61817186,
+    "source_revision": 972995612,
+    "received_revision": 972995612,
+    "timestamp": "2024-12-20T12:44:48Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "261322b88b85294c7aead15443ca853c860895193c595650db26fe982e8ec089",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  },
+  {
+    "sign_code": "DE:311",
+    "pageid": 61817370,
+    "source_revision": 906770477,
+    "received_revision": 906770477,
+    "timestamp": "2024-08-05T18:29:29Z",
+    "copyright_templates": [
+      "PD-GermanGov",
+      "PD-VzKat"
+    ],
+    "wikitext_sha256": "2f78afb6c34a0c8fd99c6358187149a0e4f2d449b189d374721ac464a96cba96",
+    "declared_license": "Public domain",
+    "attribution_required": "false",
+    "copyrighted": "False"
+  }
+]

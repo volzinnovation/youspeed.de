@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Källor och erkännanden</string>
+    <string name="credits_intro">Källor och fullständiga meddelanden finns offline. Upphovs- och licenstexter behåller sitt originalspråk. Externa länkar kräver internetåtkomst.</string>
+    <string name="credits_reviewed">Granskat: %1$s</string>
+    <string name="credits_load_error">De medföljande meddelandena kunde inte läsas in.</string>
+    <string name="credits_show_details">Visa detaljer</string>
+    <string name="credits_hide_details">Dölj detaljer</string>
+    <string name="credits_attribution">Upphov: %1$s</string>
+    <string name="credits_changes">Ändringar: %1$s</string>
+    <string name="credits_source_link">Öppna källa</string>
+    <string name="credits_license_link">Öppna licens</string>
+    <string name="credits_link_error">Ingen app kan öppna den här länken.</string>
+    <string name="credits_full_notices">Fullständiga käll- och programvarumeddelanden</string>
+    <string name="credits_model_notices">Meddelanden för vägmärkesmodeller</string>
+    <string name="credits_speech_notices">Talmodellens licens</string>
+    <string name="credits_category_data">Kartdata</string>
+    <string name="credits_category_software">Programvara</string>
+    <string name="credits_category_model">Igenkänningsmodeller</string>
+    <string name="credits_category_sign">Vägmärkespiktogram</string>
+    <string name="credits_category_reference">Referenser</string>
+</resources>

@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Regole: %1$s</string>
     <string name="ui_country_rules_pending">Regole del paese non disponibili</string>
     <string name="ui_penalty_estimate">Eccesso indicativo da GPS; nessuna tolleranza di controllo sottratta.</string>
+    <string name="ui_show_other_signs">Mostra altri segnali stradali</string>
+    <string name="ui_other_signs_detail">Mostra l’ultimo segnale riconosciuto in alto a destra con la fotocamera attiva. Ogni nuovo segnale lo sostituisce; i limiti restano nel display della velocità.</string>
+    <string name="ui_last_recognized_sign">Ultimo segnale riconosciuto: %1$s</string>
 </resources>

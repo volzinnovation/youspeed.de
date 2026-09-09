@@ -1,0 +1,54 @@
+{
+  "reviewed_at": "2026-09-10",
+  "scope": "Mobile sign artwork, deployed sign mapping, classifier/detector license declarations, and city-entry photo fixture. This is a source and notice audit, not legal clearance of the entire application.",
+  "commons": {
+    "count": 104,
+    "current_public_domain_count": 104,
+    "current_attribution_not_required_count": 104,
+    "exact_pinned_revision_count": 104,
+    "pinned_PD_GermanGov_count": 104,
+    "evidence_files": [
+      "commons-file-revisions.json"
+    ]
+  },
+  "panoramax_mapping": {
+    "repository": "https://huggingface.co/Panoramax/classify_nl_road_signs",
+    "revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+    "path": "road_signs_mapping.csv",
+    "column": "DE",
+    "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "original_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/resolve/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "sha256": "f97697266e717c6cf10bbc6465adfb6f7bc603ab688b7c5fc68462a807fcf416",
+    "publisher": "Panoramax",
+    "last_updated": "2026-03-01T12:06:15Z",
+    "declared_license": "etalab-2.0",
+    "license_declaration_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/README.md",
+    "license_declaration_sha256": "259068db40ea1521f0e7349c3253d95529f28a462074437e2597d51f23bdf02c",
+    "verification": "All 142 snapshot mappings match non-empty CSV DE values after the recorded DE-123 to DE:123 normalization."
+  },
+  "city_photo": {
+    "source_item_url": "https://panoramax.woladen.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/a458609a-bbf1-413a-a039-5e0f685e9923",
+    "author": "admin",
+    "captured_at": "2026-09-09T16:35:55.479000+00:00",
+    "updated_at": "2026-09-09T18:23:56.429180+00:00",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://spdx.org/licenses/CC-BY-SA-4.0.html",
+    "fixture_sha256": "11c4eb3729167234ec35474192e301b0e74b9f4fd68582d4ccc959e80b43e9ae"
+  },
+  "pedestrian_zone_legacy_asset": {
+    "path": "iphone/SpeedConsumerApp/Assets.xcassets/PedestrianZoneSign.imageset/pedestrian-zone-sign.svg",
+    "source_page": "https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360",
+    "artist": "Mediatus",
+    "declared_status": "Public domain (PD-GermanGov and PD-VzKat)",
+    "changes": "Original SVG plus a trailing newline; Android vector rendering is a converted rendition."
+  },
+  "known_model_review_items": [
+    "Existing repository release documents require a documented review of Panoramax CC-BY-SA training-data treatment and Ultralytics AGPL/source obligations. Root app LICENSE is already AGPL-3.0, so no license incompatibility is inferred merely from AGPL.",
+    "Upstream sgblur repository declares MIT; Panoramax DE model card declares Etalab-2.0; architecture lineage is separately noticed as Ultralytics AGPL. These upstream declarations do not establish third-party rights clearance by themselves."
+  ],
+  "validation": [
+    "All 104 original SVG/PNG asset pairs pass the offline provenance verifier.",
+    "All 104 pinned Commons page revisions retain German official-work public-domain templates.",
+    "All 142 deployed mapping entries match the pinned CSV DE column after normalization."
+  ]
+}

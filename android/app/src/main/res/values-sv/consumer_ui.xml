@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Regler: %1$s</string>
     <string name="ui_country_rules_pending">Landets regler är inte tillgängliga</string>
     <string name="ui_penalty_estimate">Ungefärlig överhastighet enligt GPS; ingen mättolerans avdragen.</string>
+    <string name="ui_show_other_signs">Visa andra vägmärken</string>
+    <string name="ui_other_signs_detail">Visar det senast identifierade vägmärket uppe till höger när kameran är på. Ett nytt märke ersätter det; hastighetsgränser visas i hastighetsvisningen.</string>
+    <string name="ui_last_recognized_sign">Senast identifierade vägmärke: %1$s</string>
 </resources>

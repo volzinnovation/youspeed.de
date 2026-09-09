@@ -2,6 +2,9 @@ package de.youspeed.android.alpha
 
 import android.content.Intent
 import android.os.SystemClock
+import java.io.File
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -61,6 +64,38 @@ class ConsumerSmokeTest {
         waitByRes("speed-sign", 10_000)
         clickByRes("settings-button")
         waitByRes("settings-sheet", 10_000)
+    }
+
+    @Test
+    fun otherSignFixturesAndDisplayToggleKeepCameraSpeedIndependent() {
+        val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
+        for (state in listOf("other-sign-give-way", "other-sign-stop", "other-sign-cleared")) {
+            launchApp(state)
+            waitByRes("main-root", 20_000)
+            assertTrue(waitByRes("speed-sign", 10_000).contentDescription.contains("30"))
+            waitByRes("camera-speed-source-marker", 10_000)
+            if (state == "other-sign-cleared") {
+                assertFalse(device.hasObject(By.res("last-traffic-sign-pictogram")))
+            } else {
+                waitByRes("last-traffic-sign-pictogram", 10_000)
+            }
+            // Accessibility can expose the new tree one frame before the GPU paints its text.
+            device.waitForIdle()
+            SystemClock.sleep(500)
+            val file = File(targetContext.getExternalFilesDir(null), "$state.png")
+            assertTrue(device.takeScreenshot(file))
+        }
+        launchApp("other-sign-stop")
+        waitByRes("last-traffic-sign-pictogram", 10_000)
+        clickByRes("settings-button")
+        val master = waitByRes("traffic-sign-recognition-toggle", 10_000)
+        assertTrue(master.isChecked)
+        clickByRes("other-traffic-sign-display-toggle")
+        assertTrue(waitByRes("traffic-sign-recognition-toggle", 10_000).isChecked)
+        device.pressBack()
+        assertTrue(waitByRes("speed-sign", 10_000).contentDescription.contains("30"))
+        waitByRes("camera-speed-source-marker", 10_000)
+        assertFalse(device.hasObject(By.res("last-traffic-sign-pictogram")))
     }
 
     @Test

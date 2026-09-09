@@ -24,3 +24,12 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 - Speed lookup uses an RTree bbox prefilter with polyline distance refinement, optional heading-aware scoring, and continuity hysteresis for preferred way IDs.
 - Release assets are public. The app does not accept or embed a repository credential.
 - Manifest discovery comes from bundled targets by default; `YouSpeedV3ManifestURL` is only a build-time development override.
+
+## Sources and license notices
+
+The Info screen links to a searchable, offline Sources & credits list. The shared
+`shared/attributions/sources.json` catalog supplies author credits, source and
+license links, and modification notes for data, sign artwork, models, software,
+and references. The full offline notices viewer includes both the shared notices
+and the bundled model-pack notices. XcodeGen packages the `attributions` folder
+directly; edit the shared source files rather than copies inside build products.

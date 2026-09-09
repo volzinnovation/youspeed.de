@@ -1,0 +1,342 @@
+[
+  {
+    "id": "youspeed",
+    "title": "YouSpeed source code",
+    "attribution": "YouSpeed contributors",
+    "license": "AGPL-3.0",
+    "source_url": "https://github.com/volzinnovation/youspeed.de",
+    "license_url": "https://github.com/volzinnovation/youspeed.de/blob/main/LICENSE",
+    "changes": "Source code, build scripts and modifications are maintained in this repository. Component licences remain separate.",
+    "category": "software"
+  },
+  {
+    "id": "osm",
+    "title": "OpenStreetMap road data",
+    "attribution": "© OpenStreetMap contributors",
+    "license": "ODbL-1.0",
+    "source_url": "https://www.openstreetmap.org/copyright",
+    "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "changes": "Road and speed data extracted and processed into offline databases. Downloads: https://github.com/volzinnovation/youspeed.de/releases",
+    "category": "data"
+  },
+  {
+    "id": "geofabrik",
+    "title": "Geofabrik regional extracts and boundaries",
+    "attribution": "Geofabrik GmbH and OpenStreetMap contributors",
+    "license": "ODbL-1.0",
+    "source_url": "https://download.geofabrik.de/index-v1.json",
+    "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "changes": "Extract boundaries converted into the offline region catalog; source URLs and hashes are retained in the regional coverage metadata.",
+    "category": "data"
+  },
+  {
+    "id": "sign-plate",
+    "title": "German traffic-sign image selection",
+    "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",
+    "license": "Individual images: public domain as declared on their Commons pages",
+    "source_url": "https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017",
+    "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+    "changes": "The table was used to select sign artwork. Article text is not copied. Each bundled pictogram has its own credit below.",
+    "category": "reference"
+  },
+  {
+    "id": "legacy-pedestrian",
+    "title": "DE:242.1 · existing pedestrian-zone indicator",
+    "attribution": "Mediatus; German official traffic-sign artwork",
+    "license": "Public domain (Commons PD-GermanGov / PD-VzKat)",
+    "source_url": "https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360",
+    "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+    "changes": "Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 104 shared TSR pictograms.",
+    "category": "sign"
+  },
+  {
+    "id": "detector",
+    "title": "Panoramax sgblur traffic-sign detector",
+    "attribution": "Copyright (c) 2022 Adrien Pavie; Panoramax contributors",
+    "license": "MIT (upstream repository declaration)",
+    "source_url": "https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8",
+    "license_url": "https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/LICENSE",
+    "changes": "yolo11n_panoramax.pt converted for Core ML and LiteRT. See offline model notices for exact revisions and conversion-stack licences.",
+    "category": "model"
+  },
+  {
+    "id": "classifier",
+    "title": "Panoramax/classify_de_road_signs",
+    "attribution": "Panoramax; source last modified 2026-06-13",
+    "license": "Etalab Open Licence 2.0 (model-card declaration)",
+    "source_url": "https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+    "changes": "Checkpoint converted into mobile Core ML and LiteRT artifacts. Ultralytics model lineage and training-data terms remain separate.",
+    "category": "model"
+  },
+  {
+    "id": "training-data",
+    "title": "Panoramax/classified_de_road_signs",
+    "attribution": "Panoramax and contributing photographers; source last modified 2026-03-29",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Training provenance of the classifier. The training dataset is not copied into the production app.",
+    "category": "data"
+  },
+  {
+    "id": "mapping",
+    "title": "Panoramax cross-country road-sign mapping",
+    "attribution": "Panoramax; source last modified 2026-03-01",
+    "license": "Etalab Open Licence 2.0 (repository-card declaration)",
+    "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+    "changes": "German mapping column reviewed via the deployed Prolix reference; corrections and excluded ambiguous mappings documented in the YouSpeed catalog.",
+    "category": "data"
+  },
+  {
+    "id": "prolix",
+    "title": "Panoramax Prolix reference implementation",
+    "attribution": "Copyright (c) 2022-2025 Panoramax team",
+    "license": "MIT (Prolix code)",
+    "source_url": "https://gitlab.com/panoramax/clients/prolix/-/tree/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f",
+    "license_url": "https://gitlab.com/panoramax/clients/prolix/-/blob/36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f/LICENSE",
+    "changes": "Reference for class mapping and recognition behavior. The deployed mapping is generated from a separate Panoramax CSV, not this repository licence.",
+    "category": "reference"
+  },
+  {
+    "id": "ultralytics",
+    "title": "Ultralytics 8.4.56",
+    "attribution": "Ultralytics and contributors",
+    "license": "AGPL-3.0",
+    "source_url": "https://github.com/ultralytics/ultralytics/tree/v8.4.56",
+    "license_url": "https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE",
+    "changes": "YOLO architecture and model export tooling used to produce mobile models. Full text is included in offline model notices.",
+    "category": "software"
+  },
+  {
+    "id": "coremltools",
+    "title": "Core ML Tools 9.0",
+    "attribution": "Copyright © 2020–2023 Apple Inc.",
+    "license": "BSD-3-Clause",
+    "source_url": "https://github.com/apple/coremltools/tree/9.0",
+    "license_url": "https://github.com/apple/coremltools/blob/9.0/LICENSE.txt",
+    "changes": "Build-time model conversion; Python package not embedded in app.",
+    "category": "software"
+  },
+  {
+    "id": "pytorch",
+    "title": "PyTorch 2.13.0",
+    "attribution": "PyTorch contributors; individual notices in offline model licences",
+    "license": "BSD-3-Clause and included component notices",
+    "source_url": "https://github.com/pytorch/pytorch/tree/v2.13.0",
+    "license_url": "https://github.com/pytorch/pytorch/blob/v2.13.0/LICENSE",
+    "changes": "Build-time checkpoint loading and conversion; Python package not embedded in app.",
+    "category": "software"
+  },
+  {
+    "id": "sqlite",
+    "title": "SQLite system library",
+    "attribution": "SQLite authors",
+    "license": "Public domain",
+    "source_url": "https://sqlite.org/",
+    "license_url": "https://sqlite.org/copyright.html",
+    "changes": "Uses the platform-provided SQLite library.",
+    "category": "software"
+  },
+  {
+    "id": "android-font",
+    "title": "Android · u_DIN 1451 Mittelschrift Regular",
+    "attribution": "Copyright (c) 2016 usr_share; Copyright (c) 2009–2016 Peter Wiegel. Foundry credit in font metadata: Ludwig Goller.",
+    "license": "SIL Open Font License 1.1",
+    "source_url": "https://fontlibrary.org/en/font/u-din-1451-mittelschrift",
+    "license_url": "https://fontlibrary.org/en/font/u-din-1451-mittelschrift",
+    "changes": "Bundled font bytes unchanged. Full original copyright, reserved font name and OFL text extracted from the font are included offline.",
+    "category": "software"
+  },
+  {
+    "id": "vosk-model",
+    "title": "Android · vosk-model-small-de-0.15",
+    "attribution": "Copyright © 2020 Alpha Cephei Inc.",
+    "license": "Apache-2.0",
+    "source_url": "https://alphacephei.com/vosk/models",
+    "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
+    "changes": "Bundled German speech-recognition model, version 0.15.",
+    "category": "model"
+  },
+  {
+    "id": "photo-city310",
+    "title": "Test reference · Bernbach town-entry photograph",
+    "attribution": "admin via panoramax.woladen.de",
+    "license": "CC-BY-SA-4.0",
+    "source_url": "https://panoramax.woladen.de/api/collections/5a7cc6bf-3fa4-474a-be4d-6d08cdd2abc8/items/a458609a-bbf1-413a-a039-5e0f685e9923",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "None: unchanged downloaded HD image. Crops are created in memory during the diagnostic test. Included only in diagnostic test fixtures, not in the production app.",
+    "category": "reference"
+  },
+  {
+    "id": "photo-0906fc23-7175-430e-acc0-106e7d45eca7",
+    "title": "Test reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7",
+    "attribution": "youspeed DOT de - mapping speed limits",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://panoramax.openstreetmap.fr/?pic=0906fc23-7175-430e-acc0-106e7d45eca7",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.",
+    "category": "reference"
+  },
+  {
+    "id": "photo-49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+    "title": "Test reference · Panoramax 49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+    "attribution": "youspeed DOT de - mapping speed limits",
+    "license": "CC BY-SA 4.0",
+    "source_url": "https://panoramax.openstreetmap.fr/?pic=49e25e66-1614-44c0-96bb-d7fb6faa74b1",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-de-law",
+    "title": "German StVO",
+    "attribution": "www.gesetze-im-internet.de",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://www.gesetze-im-internet.de/stvo_2013/",
+    "license_url": "https://www.gesetze-im-internet.de/stvo_2013/",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-de-penalty-law",
+    "title": "German BKatV Annex",
+    "attribution": "www.gesetze-im-internet.de",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://www.gesetze-im-internet.de/bkatv_2013/anlage.html",
+    "license_url": "https://www.gesetze-im-internet.de/bkatv_2013/anlage.html",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-fr-law",
+    "title": "France Code de la route L413-1",
+    "attribution": "www.legifrance.gouv.fr",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074228/LEGISCTA000006159544",
+    "license_url": "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000006074228/LEGISCTA000006159544",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-nl-tariffs",
+    "title": "Netherlands Feitenboekje 2026",
+    "attribution": "www.om.nl",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf",
+    "license_url": "https://www.om.nl/site/binaries/site-content/collections/documents/mulderbundel/map/map/mulderbundel-2026/Feitenboekje%2B2026.pdf",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-be-tariffs",
+    "title": "Belgium settlement tariffs from 1 July 2026",
+    "attribution": "mobilit.belgium.be",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://mobilit.belgium.be/nl/news/onmiddellijke-inningen-verhoging-van-de-bedragen-op-1-juli-2026",
+    "license_url": "https://mobilit.belgium.be/nl/news/onmiddellijke-inningen-verhoging-van-de-bedragen-op-1-juli-2026",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "reference-be-context",
+    "title": "Belgium excessive-speed contexts",
+    "attribution": "mobilit.belgium.be",
+    "license": "Reference citation; original publisher rights retained",
+    "source_url": "https://mobilit.belgium.be/fr/faq/quelles-sont-les-infractions-en-matiere-de-vitesse-qui-sont-visees",
+    "license_url": "https://mobilit.belgium.be/fr/faq/quelles-sont-les-infractions-en-matiere-de-vitesse-qui-sont-visees",
+    "changes": "Reference for rule semantics and summaries; original publication is not bundled.",
+    "category": "reference"
+  },
+  {
+    "id": "vosk-native-openblas",
+    "title": "Android · OpenBLAS 0.3.20",
+    "attribution": "Copyright (c) 2011-2014, The OpenBLAS Project",
+    "license": "BSD-3-Clause",
+    "source_url": "https://github.com/OpenMathLib/OpenBLAS/tree/v0.3.20",
+    "license_url": "https://github.com/OpenMathLib/OpenBLAS/blob/v0.3.20/LICENSE",
+    "changes": "Native math library used by Vosk Android; version follows the upstream 0.3.75 build recipe.",
+    "category": "software"
+  },
+  {
+    "id": "vosk-native-clapack",
+    "title": "Android · CLAPACK 3.2.1",
+    "attribution": "Copyright (c) 1992-2008 The University of Tennessee",
+    "license": "BSD-3-Clause",
+    "source_url": "https://github.com/alphacep/clapack/tree/v3.2.1",
+    "license_url": "https://github.com/alphacep/clapack/blob/v3.2.1/COPYING",
+    "changes": "Native linear algebra library used by Vosk Android.",
+    "category": "software"
+  },
+  {
+    "id": "vosk-native-f2c",
+    "title": "Android · CLAPACK libf2c",
+    "attribution": "Copyright 1990-1997 AT&T, Lucent Technologies and Bellcore",
+    "license": "f2c permissive licence",
+    "source_url": "https://github.com/alphacep/clapack/tree/v3.2.1/F2CLIBS/libf2c",
+    "license_url": "https://github.com/alphacep/clapack/blob/v3.2.1/F2CLIBS/libf2c/Notice",
+    "changes": "Native Fortran compatibility routines built with CLAPACK for Vosk Android.",
+    "category": "software"
+  },
+  {
+    "id": "vosk-native-openfst",
+    "title": "Android · OpenFst (Vosk fork)",
+    "attribution": "Copyright 2005-2020 Google LLC",
+    "license": "Apache-2.0",
+    "source_url": "https://github.com/alphacep/openfst/tree/18e94e63870ebcf79ebb42b7035cd3cb626ec090",
+    "license_url": "https://github.com/alphacep/openfst/blob/18e94e63870ebcf79ebb42b7035cd3cb626ec090/COPYING",
+    "changes": "Native finite-state transducer code used by Vosk Android. Source notice reviewed at the linked revision; the upstream build recipe clones this branch without a commit pin.",
+    "category": "software"
+  },
+  {
+    "id": "vosk-native-kaldi",
+    "title": "Android · Kaldi (Vosk Android fork)",
+    "attribution": "Kaldi contributors; individual authors and source material listed in COPYING",
+    "license": "Apache-2.0",
+    "source_url": "https://github.com/alphacep/kaldi/tree/8b7fecf92b329b7253d9d1cd97898c8b13f9aef3",
+    "license_url": "https://github.com/alphacep/kaldi/blob/8b7fecf92b329b7253d9d1cd97898c8b13f9aef3/COPYING",
+    "changes": "Native speech processing code used by Vosk Android. Source notice reviewed at the linked revision; the upstream build recipe clones vosk-android without a commit pin.",
+    "category": "software"
+  },
+  {
+    "id": "android-converter-onnx",
+    "title": "Android · ONNX 1.17.0",
+    "attribution": "ONNX authors and contributors",
+    "license": "Apache-2.0",
+    "source_url": "https://github.com/onnx/onnx/tree/v1.17.0",
+    "license_url": "https://github.com/onnx/onnx/blob/v1.17.0/LICENSE",
+    "changes": "Intermediate model representation and export tooling used to create the Android model artifacts.",
+    "category": "software"
+  },
+  {
+    "id": "android-converter-onnx2tf",
+    "title": "Android · onnx2tf 1.28.8",
+    "attribution": "Copyright (c) 2022 Katsuya Hyodo",
+    "license": "MIT",
+    "source_url": "https://github.com/PINTO0309/onnx2tf/tree/1.28.8",
+    "license_url": "https://github.com/PINTO0309/onnx2tf/blob/1.28.8/LICENSE",
+    "changes": "ONNX to TensorFlow conversion used to create the Android model artifacts.",
+    "category": "software"
+  },
+  {
+    "id": "android-converter-tensorflow",
+    "title": "Android · TensorFlow 2.19.0 conversion tooling",
+    "attribution": "TensorFlow authors and contributors; additional Caffe credits retained in the full licence file",
+    "license": "Apache-2.0; additional BSD notice included upstream",
+    "source_url": "https://github.com/tensorflow/tensorflow/tree/v2.19.0",
+    "license_url": "https://github.com/tensorflow/tensorflow/blob/v2.19.0/LICENSE",
+    "changes": "TensorFlow Lite conversion used to create the Android model artifacts. Its Python package is not embedded in the app.",
+    "category": "software"
+  },
+  {
+    "id": "android-converter-litert",
+    "title": "Android · AI Edge LiteRT 1.3.0 export validation",
+    "attribution": "Google AI Edge LiteRT authors and contributors",
+    "license": "Apache-2.0",
+    "source_url": "https://github.com/google-ai-edge/LiteRT/tree/v1.3.0",
+    "license_url": "https://github.com/google-ai-edge/LiteRT/blob/v1.3.0/LICENSE",
+    "changes": "Python ai_edge_litert 1.3.0 recorded in the Android export report. The separately bundled Android runtime is LiteRT 1.4.2.",
+    "category": "software"
+  }
+]

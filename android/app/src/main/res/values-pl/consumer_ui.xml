@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Zasady: %1$s</string>
     <string name="ui_country_rules_pending">Zasady kraju niedostępne</string>
     <string name="ui_penalty_estimate">Orientacyjne przekroczenie według GPS; bez odjęcia tolerancji pomiaru.</string>
+    <string name="ui_show_other_signs">Pokaż inne znaki drogowe</string>
+    <string name="ui_other_signs_detail">Pokazuje ostatnio rozpoznany znak w prawym górnym rogu przy włączonej kamerze. Nowy znak go zastępuje; ograniczenia pozostają na wyświetlaczu prędkości.</string>
+    <string name="ui_last_recognized_sign">Ostatnio rozpoznany znak: %1$s</string>
 </resources>

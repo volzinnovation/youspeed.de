@@ -168,6 +168,27 @@ enum TrafficSignStructuralAction: Codable, Equatable, Hashable, Sendable {
         countryCode: String = "DE"
     ) -> TrafficSignStructuralAction {
         let rawClass = candidate.rawClassId.lowercased()
+        // Reviewed reference aliases support future classifier packs and
+        // diagnostic replay; they do not add classes to the bundled model.
+        if rawClass.hasPrefix("de:278-") {
+            guard let value = Int(rawClass.dropFirst("de:278-".count)), (5...200).contains(value) else {
+                return .unresolved(candidate.rawClassId)
+            }
+            return .maximumSpeedEnd(value)
+        }
+        switch rawClass {
+        case "de:278":
+            guard candidate.value.map({ (5...200).contains($0) }) ?? true else { return .unresolved(candidate.rawClassId) }
+            return .maximumSpeedEnd(candidate.value)
+        case "de:282", "no:end": return .allRestrictionsEnd
+        case "de:280", "de:281", "no_overtaking:end", "no_overtaking:hgv:end", "no_overtaking:end:hgv": return .nonSpeedRestrictionEnd
+        case "de:310": return .cityEntry("DE")
+        case "city:start", "city_limit:start": return .cityEntry(countryCode)
+        case "de:311", "city:end", "city_limit:end": return .cityExit
+        case "motorway:end": return .motorwayExit
+        case "trunk:end": return .motorroadExit
+        default: break
+        }
         switch candidate.semanticKind {
         case TrafficSignSemanticKind.maximumSpeed.rawValue:
             guard let value = candidate.value,

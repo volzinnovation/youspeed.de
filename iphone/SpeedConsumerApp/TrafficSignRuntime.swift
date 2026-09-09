@@ -1093,6 +1093,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let captureSessionId: String?
     let shadowEventV2: TrafficSignRecognitionEventV2?
     let passageUpdate: TrafficSignPassageFinalizerUpdate
+    let displayObservation: TrafficSignDisplayObservation?
 
     init(
         event: TrafficSignRecognitionEvent,
@@ -1102,7 +1103,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         contextGeneration: UInt64 = 0,
         captureSessionId: String? = nil,
         shadowEventV2: TrafficSignRecognitionEventV2? = nil,
-        passageUpdate: TrafficSignPassageFinalizerUpdate = .idle
+        passageUpdate: TrafficSignPassageFinalizerUpdate = .idle,
+        displayObservation: TrafficSignDisplayObservation? = nil
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1116,6 +1118,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.captureSessionId = captureSessionId
         self.shadowEventV2 = shadowEventV2
         self.passageUpdate = passageUpdate
+        self.displayObservation = displayObservation
     }
 }
 
@@ -1548,7 +1551,11 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     item: item,
                     event: processed.event,
                     shadowEventV2: processed.shadowEventV2,
-                    passageUpdate: processed.passageUpdate
+                    passageUpdate: processed.passageUpdate,
+                    displayObservation: TrafficSignDisplayObservation.accepted(
+                        from: detections, timestamp: item.timestampUTC,
+                        classifierCheckpointSHA256: self.verifiedPack.manifest.classifier?.sourceCheckpoint.sha256
+                    )
                 )
             } catch {
                 self.handleInferenceFailure(item: item, error: error)
@@ -1723,7 +1730,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         item: WorkItem,
         event: TrafficSignRecognitionEvent,
         shadowEventV2: TrafficSignRecognitionEventV2?,
-        passageUpdate: TrafficSignPassageFinalizerUpdate
+        passageUpdate: TrafficSignPassageFinalizerUpdate,
+        displayObservation: TrafficSignDisplayObservation?
     ) {
         let now = ProcessInfo.processInfo.systemUptime
         var next: WorkItem?
@@ -1768,7 +1776,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 contextGeneration: item.snapshot.contextGeneration,
                 captureSessionId: item.snapshot.captureSessionId,
                 shadowEventV2: shadowEventV2,
-                passageUpdate: passageUpdate
+                passageUpdate: passageUpdate,
+                displayObservation: displayObservation
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }

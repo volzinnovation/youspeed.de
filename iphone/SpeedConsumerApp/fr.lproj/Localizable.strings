@@ -282,3 +282,19 @@
 "limit.accessibility.unlimited" = "Pas de limitation de vitesse";
 "limit.accessibility.end_unknown" = "Fin détectée, limitation inconnue";
 "limit.accessibility.unknown" = "Limitation de vitesse inconnue";
+
+/* Recognized road-sign display */
+"drive_recorder.settings.tsr_pictogram" = "Afficher le panneau reconnu";
+"drive_recorder.settings.tsr_pictogram_description" = "Affiche en haut à droite le dernier autre panneau reconnu avec confiance. Le panneau suivant le remplace.";
+"drive_recorder.settings.tsr_city_unavailable" = "L’entrée d’agglomération (panneau 310) n’est pas incluse dans le modèle actuel.";
+"about.sources.title" = "Sources et crédits";
+"about.sources.intro" = "Les auteurs, fichiers sources, licences et modifications sont disponibles ici hors ligne. Les noms originaux et les textes des licences restent dans leur langue d’origine. Les liens vers les sources et licences s’ouvrent dans le navigateur.";
+"about.sources.source" = "Source originale";
+"about.sources.changes" = "Modifications";
+"about.sources.search" = "Rechercher une source";
+"about.sources.unavailable" = "Les sources incluses n’ont pas pu être chargées.";
+"about.sources.category.data" = "Données cartographiques et frontières";
+"about.sources.category.sign" = "Illustrations des panneaux";
+"about.sources.category.model" = "Modèles de reconnaissance et données d’entraînement";
+"about.sources.category.software" = "Logiciels et outils de conversion";
+"about.sources.category.reference" = "Références";

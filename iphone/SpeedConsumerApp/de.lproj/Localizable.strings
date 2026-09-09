@@ -282,3 +282,19 @@
 "limit.accessibility.unlimited" = "Keine Geschwindigkeitsbegrenzung";
 "limit.accessibility.end_unknown" = "Ende erkannt, Tempolimit unbekannt";
 "limit.accessibility.unknown" = "Tempolimit unbekannt";
+
+/* Recognized road-sign display */
+"drive_recorder.settings.tsr_pictogram" = "Erkanntes Schild anzeigen";
+"drive_recorder.settings.tsr_pictogram_description" = "Zeigt das zuletzt sicher erkannte weitere Verkehrszeichen oben rechts. Das nächste erkannte Schild ersetzt es.";
+"drive_recorder.settings.tsr_city_unavailable" = "Ortseingang (Zeichen 310) ist im aktuellen Erkennungsmodell noch nicht enthalten.";
+"about.sources.title" = "Quellen & Urheber";
+"about.sources.intro" = "Urheber, Quelldateien, Lizenzen und Änderungen stehen hier offline bereit. Originalnamen und Lizenztexte bleiben in ihrer Ausgangssprache. Quellen- und Lizenzlinks öffnen sich im Browser.";
+"about.sources.source" = "Originalquelle";
+"about.sources.changes" = "Änderungen";
+"about.sources.search" = "Quellen durchsuchen";
+"about.sources.unavailable" = "Die mitgelieferten Quellen konnten nicht geladen werden.";
+"about.sources.category.data" = "Kartendaten und Grenzen";
+"about.sources.category.sign" = "Verkehrszeichen-Grafiken";
+"about.sources.category.model" = "Erkennungsmodelle und Trainingsdaten";
+"about.sources.category.software" = "Software und Konvertierungswerkzeuge";
+"about.sources.category.reference" = "Referenzen";

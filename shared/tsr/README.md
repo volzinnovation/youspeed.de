@@ -1,5 +1,9 @@
 # YouSpeed traffic-sign recognition contracts
 
+The [2026-09-10 Prolix alignment review](../../docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md)
+documents the shared 134-class German label catalog, Commons pictograms,
+end-sign mappings and the real-image Zeichen 310 capability experiment.
+
 National pack discovery and first-location map setup are documented in
 [`TSR_COUNTRY_PACK_DELIVERY.md`](../../docs/TSR_COUNTRY_PACK_DELIVERY.md).
 The new country registry and delivery-envelope schemas are additive; the bundled
@@ -50,9 +54,10 @@ The runtime rules are deliberately strict:
 - Downloaded packs require a trusted signature in addition to per-artifact
   hashes. Bundled/developer packs may be admitted by a separate explicit trust
   policy, but are still hash checked.
-- The current iOS integration admits the bundled field-test pack without a live
-  override allowlist. Android has the same pack validation/orchestration
-  boundary, but still lacks a checked-in LiteRT model and CameraX adapter.
+- Both mobile integrations admit the bundled field-test pack through their
+  validation/orchestration boundary. iOS uses Core ML and Android uses LiteRT
+  with CameraX. The optional other-sign pictogram stream is presentation only;
+  it does not bypass finalized-passage requirements for speed changes.
 
 `fixtures/de-direct-pack-v1.json` and `fixtures/recognition-events-v1.json` are
 contract fixtures, not release manifests or benchmark ground truth. Their hash

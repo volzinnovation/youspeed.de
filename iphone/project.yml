@@ -48,6 +48,14 @@ targets:
         buildPhase: resources
       - path: ../shared/tsr/country-pack-registry-v1.json
         buildPhase: resources
+      - path: ../shared/tsr/prolix-de-class-catalog-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/sign-pictograms
+        type: folder
+        buildPhase: resources
+      - path: ../shared/attributions
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer

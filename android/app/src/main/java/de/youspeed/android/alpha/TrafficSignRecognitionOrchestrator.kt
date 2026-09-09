@@ -43,6 +43,7 @@ sealed interface TrafficSignBackendResult {
         val detection: TrafficSignDetection?,
         val thermalState: String? = null,
         val strongPassGeometry: Boolean = false,
+        val displayDetections: List<TrafficSignDetection> = listOfNotNull(detection),
     ) : TrafficSignBackendResult
 
     data class Unavailable(
@@ -68,6 +69,7 @@ data class TrafficSignOrchestrationOutput(
     val speedOverride: TrafficSignSpeedOverride?,
     val passageEvent: TrafficSignPassageEvent? = null,
     val backendFailureReason: String? = null,
+    val displayObservation: TrafficSignDisplayObservation? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -453,6 +455,13 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     event = event,
                     speedOverride = currentOverride,
                     passageEvent = passage,
+                    displayObservation = if (created.qualifiedAnalyzedFrame && active.accepted.runtimeActivationEligible &&
+                        !active.accepted.driveSessionId.isNullOrBlank() && backendResult is TrafficSignBackendResult.Recognition
+                    ) {
+                        TrafficSignDisplayPolicy.accepted(backendResult.displayDetections)?.let {
+                            TrafficSignDisplayObservation(it, active.accepted.contextGeneration, requireNotNull(active.accepted.driveSessionId))
+                        }
+                    } else null,
                     backendFailureReason = (backendResult as? TrafficSignBackendResult.Unavailable)?.reason,
                 )
                 dispatch = takeDispatchLocked()

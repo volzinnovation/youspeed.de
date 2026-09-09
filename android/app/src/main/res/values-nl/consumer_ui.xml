@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Regels: %1$s</string>
     <string name="ui_country_rules_pending">Landregels niet beschikbaar</string>
     <string name="ui_penalty_estimate">GPS-indicatie; geen meetcorrectie afgetrokken.</string>
+    <string name="ui_show_other_signs">Andere verkeersborden tonen</string>
+    <string name="ui_other_signs_detail">Toont het laatst herkende bord rechtsboven terwijl de camera aan staat. Een nieuw bord vervangt het; snelheidslimieten blijven in de snelheidsweergave.</string>
+    <string name="ui_last_recognized_sign">Laatst herkend bord: %1$s</string>
 </resources>

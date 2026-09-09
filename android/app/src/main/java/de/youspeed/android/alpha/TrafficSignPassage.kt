@@ -276,7 +276,7 @@ class TrafficSignPassageFinalizer(
         }
         expireSuppression(event.frameTimestampUtc)
 
-        if (event.candidate?.semantic?.value?.let(::isSharedTrafficSignSpeedKmh) == false) return null
+        if (event.candidate?.normalizedPrimarySemantic()?.value?.let(::isSharedTrafficSignSpeedKmh) == false) return null
         val hardNegativeCandidate = event.candidate?.toAction(event.roadContext?.countryCode)?.kind in setOf(
             TrafficSignActionKind.NON_SPEED_RESTRICTION_END,
             TrafficSignActionKind.UNKNOWN,
@@ -708,7 +708,8 @@ private fun TrafficSignCandidate.normalizedActionKey(countryCode: String?): Stri
     ).joinToString("|")
 }
 
-private fun TrafficSignCandidate.toAction(countryCode: String?): TrafficSignAction {
+internal fun TrafficSignCandidate.toAction(countryCode: String?): TrafficSignAction {
+    val semantic = normalizedPrimarySemantic()
     val kind = when (semantic.kind) {
         TrafficSignSemanticKind.MAXIMUM_SPEED -> TrafficSignActionKind.POSTED_MAXIMUM
         TrafficSignSemanticKind.MAXIMUM_SPEED_END -> TrafficSignActionKind.MAXIMUM_SPEED_END

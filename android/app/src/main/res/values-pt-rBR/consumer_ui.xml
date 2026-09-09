@@ -101,4 +101,7 @@
     <string name="ui_active_country_rules">Regras: %1$s</string>
     <string name="ui_country_rules_pending">Regras do país indisponíveis</string>
     <string name="ui_penalty_estimate">Excesso indicativo pelo GPS; sem desconto de tolerância de fiscalização.</string>
+    <string name="ui_show_other_signs">Mostrar outras placas de trânsito</string>
+    <string name="ui_other_signs_detail">Mostra a última placa reconhecida no canto superior direito com a câmera ativa. Uma nova placa a substitui; os limites permanecem no indicador de velocidade.</string>
+    <string name="ui_last_recognized_sign">Última placa reconhecida: %1$s</string>
 </resources>

@@ -94,19 +94,31 @@ class AndroidTrafficSignRuntimeTests {
     }
 
     @Test
-    fun classifierIndicesMapOnlySupportedPrimarySigns() {
-        assertEquals("maxspeed:30", PanoramaxGermanRoadSignClasses.classId(65))
-        assertEquals("maxspeed:70", PanoramaxGermanRoadSignClasses.classId(70))
-        assertEquals("zone:30", PanoramaxGermanRoadSignClasses.classId(129))
-        assertEquals("zone:30:end", PanoramaxGermanRoadSignClasses.classId(130))
-        assertEquals("classifier:0", PanoramaxGermanRoadSignClasses.classId(0))
+    fun classifierIndicesMatchAllPinnedModelClassesWithoutInventingCityEntry() {
+        val catalog = displayCatalog()
+        assertEquals("maxspeed:30", catalog.classId(65))
+        assertEquals("maxspeed:70", catalog.classId(70))
+        assertEquals("zone:30", catalog.classId(129))
+        assertEquals("zone:30:end", catalog.classId(130))
+        assertEquals("arrow:red", catalog.classId(0))
+        assertEquals("maxspeed:end", catalog.classId(72))
+        assertEquals("no:end", catalog.classId(78))
 
         val root = assetPackRoot()
         assertEquals("sign", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["0"])
         assertEquals("plate", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["1"])
         assertEquals("face", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["2"])
+        val names = embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))
+        assertEquals((0 until 134).map { names.getValue(it.toString()) }, catalog.classLabels)
+        assertTrue(catalog.classLabels.none { it.contains("310") || it.contains("city") || it.contains("town") })
         assertEquals("maxspeed:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["65"])
         assertEquals("zone:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["129"])
+    }
+
+    private fun displayCatalog(): TrafficSignDisplayCatalog {
+        val file = listOf(File("../../shared"), File("../shared"), File("shared"))
+            .map { File(it, TrafficSignDisplayCatalog.ASSET_PATH) }.first(File::isFile)
+        return TrafficSignDisplayCatalog.decode(file.readText())
     }
 
     private fun putBox(

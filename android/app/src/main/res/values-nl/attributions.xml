@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="credits_title">Bronnen en credits</string>
+    <string name="credits_intro">Brongegevens en volledige vermeldingen zijn offline beschikbaar. Naamsvermeldingen en licenties blijven in hun oorspronkelijke taal. Externe links vereisen internettoegang.</string>
+    <string name="credits_reviewed">Gecontroleerd: %1$s</string>
+    <string name="credits_load_error">De meegeleverde vermeldingen konden niet worden geladen.</string>
+    <string name="credits_show_details">Details tonen</string>
+    <string name="credits_hide_details">Details verbergen</string>
+    <string name="credits_attribution">Naamsvermelding: %1$s</string>
+    <string name="credits_changes">Wijzigingen: %1$s</string>
+    <string name="credits_source_link">Bron openen</string>
+    <string name="credits_license_link">Licentie openen</string>
+    <string name="credits_link_error">Er is geen app beschikbaar om deze link te openen.</string>
+    <string name="credits_full_notices">Volledige bron- en softwarevermeldingen</string>
+    <string name="credits_model_notices">Vermeldingen van verkeersbordmodellen</string>
+    <string name="credits_speech_notices">Licentie van het spraakmodel</string>
+    <string name="credits_category_data">Kaartgegevens</string>
+    <string name="credits_category_software">Software</string>
+    <string name="credits_category_model">Herkenningsmodellen</string>
+    <string name="credits_category_sign">Verkeersbordpictogrammen</string>
+    <string name="credits_category_reference">Referenties</string>
+</resources>
