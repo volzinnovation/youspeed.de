@@ -13,7 +13,7 @@
     <string name="welcome_scope_seed">Nenhum dado rodoviario offline fica disponivel ate voce baixar um pacote de mapas em Configuracoes.</string>
     <string name="welcome_coverage_active">Os dados de mapa baixados estao prontos</string>
     <string name="welcome_coverage_none">Download necessario</string>
-    <string name="welcome_scope_active">Conjunto de dados da Alemanha ativo: %1$s</string>
+    <string name="welcome_scope_active">Dados cartográficos ativos: %1$s</string>
     <string name="welcome_legal_heading">Aviso legal</string>
     <string name="welcome_osm_credit">Dados de mapa: copyright colaboradores do OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
     <string name="welcome_open_settings">Baixar dados / configurar app</string>

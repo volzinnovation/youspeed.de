@@ -13,12 +13,12 @@
     <string name="welcome_scope_seed">Er zijn geen offline weggegevens beschikbaar totdat je in de instellingen een kaartbundel downloadt.</string>
     <string name="welcome_coverage_active">Gedownloade kaartgegevens zijn gereed</string>
     <string name="welcome_coverage_none">Download vereist</string>
-    <string name="welcome_scope_active">Duitsland-dataset actief: %1$s</string>
+    <string name="welcome_scope_active">Actieve kaartgegevens: %1$s</string>
     <string name="welcome_legal_heading">Juridische opmerking</string>
     <string name="welcome_osm_credit">Kaartgegevens: copyright OpenStreetMap-bijdragers, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
     <string name="welcome_open_settings">Gegevens downloaden / app instellen</string>
     <string name="welcome_continue">Doorgaan met bestaande gegevens</string>
     <string name="welcome_hide">Niet meer tonen</string>
-    <string name="legal_disclaimer_short">Opmerking: getoonde boetes, punten en rijverboden zijn alleen indicatief en geen juridisch advies. Officiele besluiten en de geldende wet zijn bepalend.</string>
-    <string name="legal_disclaimer_long">De in YouSpeed getoonde waarden voor boetes, punten en rijverboden zijn alleen indicatief. Ze vormen geen juridisch advies en geen bindende juridische informatie. Alleen officiele besluiten en de wet die op dat moment geldt zijn bepalend; extra kosten kunnen van toepassing zijn.</string>
+    <string name="legal_disclaimer_short">Opmerking: getoonde boetes, punten en rijverboden zijn alleen indicatief en geen juridisch advies. Officiële besluiten en de geldende wet zijn bepalend.</string>
+    <string name="legal_disclaimer_long">De in YouSpeed getoonde waarden voor boetes, punten en rijverboden zijn alleen indicatief. Ze vormen geen juridisch advies en geen bindende juridische informatie. Alleen officiële besluiten en de wet die op dat moment geldt zijn bepalend; extra kosten kunnen van toepassing zijn.</string>
 </resources>

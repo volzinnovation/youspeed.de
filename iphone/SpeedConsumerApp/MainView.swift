@@ -880,6 +880,7 @@ struct MainView: View {
     ) -> some View {
         let valueUnitSpacing: CGFloat = 0
         let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
+        let metricScale: CGFloat = finePresentation == nil ? 1 : 0.68
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
@@ -890,16 +891,38 @@ struct MainView: View {
                         .font(.system(size: secondaryFont, weight: .bold, design: .default))
                 } else {
                     Text(primaryMetricText)
-                        .font(primaryMetricFont(size: primaryFont))
+                        .font(primaryMetricFont(size: primaryFont * metricScale))
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.45)
                         .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
                     Text(secondaryMetricText.isEmpty ? " " : secondaryMetricText)
-                        .font(.system(size: secondaryFont, weight: .bold, design: .default))
+                        .font(.system(size: secondaryFont * metricScale, weight: .bold, design: .default))
                         .minimumScaleFactor(0.45)
                         .padding(.top, -primaryFont * 0.06)
                         .opacity(secondaryMetricText.isEmpty ? 0 : 1)
                 }
+            }
+            if let notice = finePresentation {
+                Text("\(viewModel.penaltyCountryDisplayName) · \(notice.title)")
+                    .font(.system(size: 16, weight: .bold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 5)
+                Text(notice.details)
+                    .font(.system(size: 12, weight: .medium))
+                    .lineLimit(5)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 15)
+                    .padding(.top, 3)
+                Text(NSLocalizedString("penalty.indicative", comment: ""))
+                    .font(.system(size: 10, weight: .regular))
+                    .lineLimit(2)
+                    .padding(.horizontal, 15)
+                    .padding(.top, 4)
+            } else if !viewModel.penaltyRulesAreApplicable {
+                Text(NSLocalizedString("penalty.country_unresolved", comment: ""))
+                    .font(.footnote)
+                    .padding(.horizontal)
             }
         }
         .frame(maxWidth: .infinity, minHeight: metricSlotMinHeight, alignment: .center)
@@ -955,7 +978,7 @@ struct MainView: View {
 
     private var primaryMetricText: String {
         if viewModel.isInSpeedCaptureMode {
-            return viewModel.speedCapturePrimaryMetricText ?? "Jetzt"
+            return viewModel.speedCapturePrimaryMetricText ?? NSLocalizedString("speed_capture.prompt.primary", comment: "")
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return "\(drivingBanMonths)"
@@ -963,7 +986,7 @@ struct MainView: View {
         switch finePresentation?.severity {
         case .moneyOnly:
             guard let fineEUR = finePresentation?.moneyFineEUR else {
-                return "?"
+                return "!"
             }
             return "\(fineEUR)"
         case .pointsAndFine:
@@ -981,13 +1004,16 @@ struct MainView: View {
 
     private var secondaryMetricText: String {
         if viewModel.isInSpeedCaptureMode {
-            return viewModel.speedCaptureSecondaryMetricText ?? "sprechen"
+            return viewModel.speedCaptureSecondaryMetricText ?? NSLocalizedString("speed_capture.prompt.secondary", comment: "")
         }
         if let drivingBanMonths = finePresentation?.drivingBanMonths, drivingBanMonths > 0 {
             return NSLocalizedString(drivingBanMonths == 1 ? "penalty.driving_ban.month.one" : "penalty.driving_ban.month.many", comment: "")
         }
         switch finePresentation?.severity {
         case .moneyOnly:
+            if finePresentation?.moneyFineEUR == nil {
+                return NSLocalizedString("penalty.review", comment: "")
+            }
             return viewModel.activePenaltyRules.currencyCode
         case .pointsAndFine:
             if let points = finePresentation?.penaltyPoints {
@@ -1010,7 +1036,7 @@ struct MainView: View {
             return street
         }
         guard let latitude = viewModel.currentLatitude, let longitude = viewModel.currentLongitude else {
-            return "Suche..."
+            return NSLocalizedString("metric.searching", comment: "")
         }
         return "\(iso6709Coordinate(latitude: latitude, longitude: longitude, fractionalDigits: 3))"
     }
@@ -1022,7 +1048,7 @@ struct MainView: View {
         if let city = normalizedPlaceText(viewModel.limitCityName ?? viewModel.limitCityPlaceName) {
             return city
         }
-        return hasUsableGPSFix ? "Stadt unbekannt" : "Suche..."
+        return hasUsableGPSFix ? NSLocalizedString("metric.city_unknown", comment: "") : NSLocalizedString("metric.searching", comment: "")
     }
 
     private var limitText: String {
@@ -1040,23 +1066,23 @@ struct MainView: View {
 
     private var speedLimitAccessibilityDescription: String {
         if viewModel.isInSpeedCaptureMode {
-            return "Tempolimit \(limitText)"
+            return String(format: NSLocalizedString("limit.accessibility.value", comment: ""), limitText)
         }
         let state = viewModel.effectiveSpeedLimitState
         switch state.value {
         case .numeric(let value):
-            return "Tempolimit \(value) Kilometer pro Stunde"
+            return String(format: NSLocalizedString("limit.accessibility.numeric", comment: ""), value)
         case .walk:
-            return "Fussgaengerzone, Schrittgeschwindigkeit"
+            return NSLocalizedString("limit.accessibility.walk", comment: "")
         case .unlimited:
-            return "Keine Geschwindigkeitsbegrenzung"
+            return NSLocalizedString("limit.accessibility.unlimited", comment: "")
         case .unknown:
             let reason = state.presentationReason.lowercased()
             if state.hasCameraEvidenceMarker
                 && (reason.contains("end") || reason.contains("exit")) {
-                return "Ende erkannt, Tempolimit unbekannt"
+                return NSLocalizedString("limit.accessibility.end_unknown", comment: "")
             }
-            return hasUsableGPSFix ? "Tempolimit unbekannt" : "GPS-Signal wird gesucht"
+            return NSLocalizedString(hasUsableGPSFix ? "limit.accessibility.unknown" : "metric.searching_signal", comment: "")
         }
     }
 
@@ -1164,7 +1190,7 @@ struct MainView: View {
     }
 
     private var overspeedBackgroundProgress: Double? {
-        guard hasUsableGPSFix else {
+        guard hasUsableGPSFix, viewModel.penaltyRulesAreApplicable else {
             return nil
         }
         let overspeed = viewModel.currentOverspeedKmh
@@ -1174,6 +1200,8 @@ struct MainView: View {
         if isDrivingBanWarningActive {
             return 1
         }
+        if finePresentation?.enforcementClass == "criminal" { return 0.96 }
+        if finePresentation?.enforcementClass == "context_dependent" { return 0.78 }
         let pointsThreshold = Double(max(minOverspeedForPoints, 1))
         let drivingBanThreshold = Double(max(minOverspeedForDrivingBan, minOverspeedForPoints + 1))
         if finePresentation?.severity == .pointsAndFine {
@@ -1208,10 +1236,20 @@ struct MainView: View {
         guard let progress = overspeedBackgroundProgress else {
             return false
         }
-        return progress < 0.45
+        let rgb = backgroundComponents(for: progress)
+        func linear(_ component: Double) -> Double {
+            component <= 0.04045 ? component / 12.92 : pow((component + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(rgb.r) + 0.7152 * linear(rgb.g) + 0.0722 * linear(rgb.b)
+        return luminance > 0.179
     }
 
     private func backgroundColor(for progress: Double) -> Color {
+        let mixed = backgroundComponents(for: progress)
+        return Color(red: mixed.r, green: mixed.g, blue: mixed.b)
+    }
+
+    private func backgroundComponents(for progress: Double) -> (r: Double, g: Double, b: Double) {
         let t = min(1, max(0, progress))
         let yellow = (r: 0.98, g: 0.87, b: 0.20)
         let orange = (r: 0.95, g: 0.48, b: 0.12)
@@ -1232,7 +1270,7 @@ struct MainView: View {
                 b: orange.b + (red.b - orange.b) * a
             )
         }
-        return Color(red: mixed.r, green: mixed.g, blue: mixed.b)
+        return mixed
     }
 
     private func drivingBanPulseBackgroundColor(at date: Date) -> Color {
@@ -1516,7 +1554,7 @@ private struct SpeedLimitSignView: View {
                         .resizable()
                         .interpolation(.high)
                         .antialiased(true)
-                        .accessibilityLabel("Fussgaengerzone")
+                        .accessibilityLabel(NSLocalizedString("metric.pedestrian_zone", comment: ""))
                 } else {
                     // Based on Zeichen 274 geometry: black border 7.875 / 450, red band 60.301 / 450.
                     Circle()
@@ -1644,7 +1682,7 @@ private struct LegalInformationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Rechtlicher Hinweis")
+                    Text(NSLocalizedString("welcome.legal_heading", comment: ""))
                         .font(.system(size: 16, weight: .bold, design: .default))
                     Text(LegalDisclaimerText.long)
                         .font(.system(size: 14, weight: .regular, design: .default))
@@ -1705,11 +1743,11 @@ private struct LegalInformationView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Rechtliche Hinweise")
+        .navigationTitle(NSLocalizedString("legal.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Fertig") {
+                Button(NSLocalizedString("common.done", comment: "")) {
                     dismiss()
                 }
             }
@@ -2912,8 +2950,8 @@ private struct SettingsView: View {
                 } else {
                     Text(viewModel.firstLocationPackStatus).font(.footnote)
                     Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
-                    Toggle("Erste Karte auch über mobile Daten laden", isOn: $viewModel.firstLocationAllowsCellular)
-                    Button("Standortauswahl erneut versuchen") { viewModel.retryFirstLocationSetup() }
+                    Toggle(NSLocalizedString("first_location.cellular", comment: ""), isOn: $viewModel.firstLocationAllowsCellular)
+                    Button(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
                     ForEach(viewModel.bundleDownloadSections) { country in
                         if country.options.count == 1, let option = country.options.first {
                             bundleOptionRow(option, title: country.countryName)
@@ -2995,37 +3033,37 @@ private struct SettingsView: View {
                 }
             }
 
-            Section("Bussgeldregeln") {
-                LabeledContent("Aktive Datei", value: viewModel.activePenaltyRulesFile)
-                LabeledContent("Land", value: "\(viewModel.activePenaltyRules.countryName) (\(viewModel.activePenaltyRules.countryCode))")
-                LabeledContent("Stufen", value: "\(viewModel.activePenaltyRules.bands.count)")
+            Section(NSLocalizedString("settings.penalty.section", comment: "")) {
+                LabeledContent(NSLocalizedString("settings.penalty.file", comment: ""), value: viewModel.activePenaltyRulesFile)
+                LabeledContent(NSLocalizedString("settings.penalty.country", comment: ""), value: viewModel.penaltyCountryDisplayName)
+                LabeledContent(NSLocalizedString("settings.penalty.bands", comment: ""), value: "\(viewModel.activePenaltyRules.bands.count)")
             }
 
-            Section("Startbildschirm") {
-                Toggle("Nicht mehr anzeigen", isOn: $viewModel.hideWelcomeScreen)
+            Section(NSLocalizedString("settings.welcome.section", comment: "")) {
+                Toggle(NSLocalizedString("welcome.hide", comment: ""), isOn: $viewModel.hideWelcomeScreen)
 
                 Text(viewModel.hideWelcomeScreen
-                     ? "Der Startbildschirm wird nicht mehr automatisch angezeigt."
-                     : "Der Startbildschirm wird bei Seed-Daten oder veralteten Deutschland-Daten angezeigt.")
+                     ? NSLocalizedString("settings.welcome.hidden", comment: "")
+                     : NSLocalizedString("settings.welcome.visible", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
             Section("Debug") {
-                NavigationLink("Debug-Informationen oeffnen") {
+                NavigationLink(NSLocalizedString("settings.debug.open", comment: "")) {
                     DebugInformationView(viewModel: viewModel)
                 }
             }
         }
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Heruntergeladene Datenbanken loeschen?", isPresented: $showingDeleteDownloadedBundlesConfirm) {
-            Button("Abbrechen", role: .cancel) {}
-            Button("Loeschen", role: .destructive) {
+        .alert(NSLocalizedString("settings.maps.delete_title", comment: ""), isPresented: $showingDeleteDownloadedBundlesConfirm) {
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
                 viewModel.deleteDownloadedBundlesKeepingSeed()
             }
         } message: {
-            Text("Alle heruntergeladenen Bundle-Daten werden entfernt. Der Seed-Datensatz bleibt erhalten.")
+            Text(NSLocalizedString("settings.maps.delete_confirm", comment: ""))
         }
     }
 
@@ -3362,7 +3400,7 @@ private struct DebugInformationView: View {
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Fahrlog leeren?", isPresented: $showingClearDrivingLogConfirm) {
-            Button("Abbrechen", role: .cancel) {}
+            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
             Button("Leeren", role: .destructive) {
                 viewModel.clearDrivingLogs()
             }

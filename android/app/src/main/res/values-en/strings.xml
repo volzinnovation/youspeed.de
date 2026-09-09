@@ -13,7 +13,7 @@
     <string name="welcome_scope_seed">No offline road data is available until you download a map bundle in Settings.</string>
     <string name="welcome_coverage_active">Downloaded map data is ready</string>
     <string name="welcome_coverage_none">Download required</string>
-    <string name="welcome_scope_active">Germany data set active: %1$s</string>
+    <string name="welcome_scope_active">Active map data: %1$s</string>
     <string name="welcome_legal_heading">Legal notice</string>
     <string name="welcome_osm_credit">Map data: Copyright OpenStreetMap contributors, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
     <string name="welcome_open_settings">Download data / configure app</string>

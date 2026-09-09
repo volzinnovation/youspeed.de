@@ -22,6 +22,12 @@ class MainActivity : ComponentActivity(), ConsumerHost {
             rootDir = File(filesDir, "bundle"),
             preferences = getSharedPreferences("youspeed", Context.MODE_PRIVATE),
             clock = Clock.systemUTC(),
+            countryScreenshotScenario = if (BuildConfig.DEBUG && intent?.hasExtra("screenshot_country") == true) runCatching {
+                CountryPenaltyScreenshotScenario(
+                    PenaltyCountryCodes.normalize(intent.getStringExtra("screenshot_country")) ?: error("Unsupported screenshot country"),
+                    intent.getIntExtra("screenshot_delta", 0), intent.getIntExtra("screenshot_limit", 50),
+                )
+            }.getOrNull() else null,
             launchScreenshotState = AppScreenshotState.fromRaw(intent?.getStringExtra("screenshot_state") ?: System.getenv("YOUSPEED_SCREENSHOT_STATE")),
         )
     }

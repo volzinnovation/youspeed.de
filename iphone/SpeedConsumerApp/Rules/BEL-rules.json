@@ -5,14 +5,137 @@
   "country_name": "Belgium",
   "currency_code": "EUR",
   "default_language": "en",
-  "source_url": "https://roadpolice.be/new/index.php/en/how-to-pay-your-fine",
-  "source_checked_at": "2026-03-02",
-  "note": "Indicative warning bands for passenger cars; Belgium applies graduated formulas by road context.",
+  "source_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
+  "source_checked_at": "2026-09-09",
+  "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding. Immediate-settlement rates changed on 2026-07-01: EUR 58 for the first 10 km/h, then EUR 12 per additional km/h in protected road contexts or EUR 7 elsewhere, plus the 2026 EUR 10.67 administrative fee. Formula text describes an available settlement, not a guaranteed court fine. Legal bands refer to officially retained excess after correction; raw GPS excess is only illustrative. The app does not have every zone, procedural or driver-status input, so higher bands have no invented scalar fine, points or ban duration. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
-    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely base fine from about 53 {currency}", "money_fine_eur": 53 },
-    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely graduated fine from about 93 {currency}", "money_fine_eur": 93 },
-    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely graduated fine from about 173 {currency}", "money_fine_eur": 173 },
-    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Likely graduated fine from about 253 {currency}", "money_fine_eur": 253 },
-    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely prosecutor/court handling and possible suspension", "money_fine_eur": 400, "penalty_points": 0, "conditional_driving_ban_months": 3, "driving_ban_condition": "prosecutor_or_court" }
+    {
+      "min_delta_kmh": 1,
+      "max_delta_kmh": 10,
+      "severity": "money_only",
+      "title_template": "Fine possible",
+      "detail_template": "Standard immediate settlement: 58 {currency}, plus a 10.67 {currency} administrative fee (2026).",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße möglich",
+          "detail_template": "Regelbetrag im vereinfachten Verfahren: 58 {currency} zuzüglich 10,67 {currency} Verwaltungsgebühr (2026)."
+        },
+        "en": {
+          "title_template": "Fine possible",
+          "detail_template": "Standard immediate settlement: 58 {currency}, plus a 10.67 {currency} administrative fee (2026)."
+        },
+        "fr": {
+          "title_template": "Amende possible",
+          "detail_template": "Perception immédiate ordinaire : 58 {currency}, plus 10,67 {currency} de redevance administrative (2026)."
+        },
+        "nl": {
+          "title_template": "Boete mogelijk",
+          "detail_template": "Gewone onmiddellijke inning: 58 {currency}, plus 10,67 {currency} administratiekosten (2026)."
+        }
+      },
+      "money_fine_eur": 58
+    },
+    {
+      "min_delta_kmh": 11,
+      "max_delta_kmh": 20,
+      "severity": "money_only",
+      "title_template": "Fine depends on road area",
+      "detail_template": "Immediate settlement: 58 {currency} plus 12 {currency} per km/h beyond +10 in built-up, school, 30 km/h, residential or shared zones; otherwise 7 {currency}. Add a 10.67 {currency} fee.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße nach Straßenbereich",
+          "detail_template": "Vereinfachtes Verfahren: 58 {currency} plus je km/h über +10 weitere 12 {currency} innerorts, an Schulen, in Tempo-30-, Wohn- und Begegnungszonen; sonst 7 {currency}. Dazu 10,67 {currency} Gebühr."
+        },
+        "en": {
+          "title_template": "Fine depends on road area",
+          "detail_template": "Immediate settlement: 58 {currency} plus 12 {currency} per km/h beyond +10 in built-up, school, 30 km/h, residential or shared zones; otherwise 7 {currency}. Add a 10.67 {currency} fee."
+        },
+        "fr": {
+          "title_template": "Amende selon la zone",
+          "detail_template": "Perception immédiate : 58 {currency}, puis 12 {currency} par km/h au-delà de +10 en agglomération, aux abords d’écoles, en zone 30, résidentielle ou de rencontre ; sinon 7 {currency}. Frais : 10,67 {currency}."
+        },
+        "nl": {
+          "title_template": "Boete hangt af van de zone",
+          "detail_template": "Onmiddellijke inning: 58 {currency} plus 12 {currency} per km/u boven +10 binnen de bebouwde kom, bij scholen, in zone 30, woonerf of erf; anders 7 {currency}. Daarbij 10,67 {currency} kosten."
+        }
+      }
+    },
+    {
+      "min_delta_kmh": 21,
+      "max_delta_kmh": 30,
+      "severity": "money_only",
+      "title_template": "Fine depends on road area",
+      "detail_template": "Immediate settlement: 58 {currency} plus 12 {currency} per km/h beyond +10 in built-up, school, 30 km/h, residential or shared zones; otherwise 7 {currency}. Add a 10.67 {currency} fee.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße nach Straßenbereich",
+          "detail_template": "Vereinfachtes Verfahren: 58 {currency} plus je km/h über +10 weitere 12 {currency} innerorts, an Schulen, in Tempo-30-, Wohn- und Begegnungszonen; sonst 7 {currency}. Dazu 10,67 {currency} Gebühr."
+        },
+        "en": {
+          "title_template": "Fine depends on road area",
+          "detail_template": "Immediate settlement: 58 {currency} plus 12 {currency} per km/h beyond +10 in built-up, school, 30 km/h, residential or shared zones; otherwise 7 {currency}. Add a 10.67 {currency} fee."
+        },
+        "fr": {
+          "title_template": "Amende selon la zone",
+          "detail_template": "Perception immédiate : 58 {currency}, puis 12 {currency} par km/h au-delà de +10 en agglomération, aux abords d’écoles, en zone 30, résidentielle ou de rencontre ; sinon 7 {currency}. Frais : 10,67 {currency}."
+        },
+        "nl": {
+          "title_template": "Boete hangt af van de zone",
+          "detail_template": "Onmiddellijke inning: 58 {currency} plus 12 {currency} per km/u boven +10 binnen de bebouwde kom, bij scholen, in zone 30, woonerf of erf; anders 7 {currency}. Daarbij 10,67 {currency} kosten."
+        }
+      }
+    },
+    {
+      "min_delta_kmh": 31,
+      "max_delta_kmh": 40,
+      "severity": "money_only",
+      "title_template": "Court risk depends on area",
+      "detail_template": "Above +30 km/h, court referral can apply in built-up and special zones; on other roads the threshold is above +40. No single fine is assumed.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Gerichtsverfahren je nach Zone",
+          "detail_template": "Über +30 km/h droht innerorts und in besonderen Zonen ein Gerichtsverfahren; auf anderen Straßen liegt die Schwelle über +40. Kein pauschaler Betrag."
+        },
+        "en": {
+          "title_template": "Court risk depends on area",
+          "detail_template": "Above +30 km/h, court referral can apply in built-up and special zones; on other roads the threshold is above +40. No single fine is assumed."
+        },
+        "fr": {
+          "title_template": "Risque de tribunal selon la zone",
+          "detail_template": "Au-delà de +30 km/h, renvoi au tribunal possible en agglomération et dans les zones spéciales ; ailleurs, le seuil est au-delà de +40. Aucun montant unique."
+        },
+        "nl": {
+          "title_template": "Rechtbankrisico hangt af van zone",
+          "detail_template": "Boven +30 km/u kan de zaak naar de rechtbank gaan binnen de bebouwde kom en in bijzondere zones; elders ligt de grens boven +40. Geen vast bedrag."
+        }
+      },
+      "enforcement_class": "context_dependent"
+    },
+    {
+      "min_delta_kmh": 41,
+      "max_delta_kmh": null,
+      "severity": "money_only",
+      "title_template": "Court proceedings risk",
+      "detail_template": "Above +40 km/h, court handling generally applies. The fine and possible licence sanctions depend on the individual case.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Gerichtsverfahren möglich",
+          "detail_template": "Über +40 km/h ist grundsätzlich mit gerichtlicher Behandlung zu rechnen. Geldstrafe und mögliche Führerscheinsanktionen hängen vom Einzelfall ab."
+        },
+        "en": {
+          "title_template": "Court proceedings risk",
+          "detail_template": "Above +40 km/h, court handling generally applies. The fine and possible licence sanctions depend on the individual case."
+        },
+        "fr": {
+          "title_template": "Risque de poursuites au tribunal",
+          "detail_template": "Au-delà de +40 km/h, le dossier relève en principe du tribunal. L’amende et les éventuelles sanctions sur le permis dépendent du cas."
+        },
+        "nl": {
+          "title_template": "Risico op behandeling door rechter",
+          "detail_template": "Boven +40 km/u wordt de zaak in beginsel door de rechtbank behandeld. De boete en mogelijke rijbewijssancties hangen af van de zaak."
+        }
+      },
+      "enforcement_class": "criminal"
+    }
   ]
 }

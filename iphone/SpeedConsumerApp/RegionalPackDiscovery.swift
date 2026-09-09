@@ -99,6 +99,11 @@ struct TrafficSignCountrySelection {
     private var pendingFixes = 0
     private var lastTimestamp: Double = -.infinity
 
+    mutating func suspendPendingTransition() {
+        pendingCountry = nil
+        pendingFixes = 0
+    }
+
     mutating func update(countries: Set<String>, timestamp: Double, override: String? = nil) -> String? {
         guard timestamp.isFinite, timestamp > lastTimestamp else { return nil }
         lastTimestamp = timestamp

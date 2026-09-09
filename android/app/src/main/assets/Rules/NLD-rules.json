@@ -5,14 +5,137 @@
   "country_name": "Netherlands",
   "currency_code": "EUR",
   "default_language": "en",
-  "source_url": "https://www.om.nl/onderwerpen/verkeer/handhaving-in-het-verkeer/boetebedragen-verkeer",
-  "source_checked_at": "2026-03-02",
-  "note": "Indicative consumer warning bands for passenger cars; verify against current official enforcement tables.",
+  "source_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
+  "source_checked_at": "2026-09-09",
+  "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding using OM guidance and Feitenboekje 2026. Legal bands use officially corrected excess, not raw GPS excess; no enforcement correction is automatically applied by these rules. At limits up to 120 km/h the ordinary threshold is corrected +4; at 130 km/h it is +1. Criminal handling generally starts above +30 off motorways and at +40 on motorways; works and vehicle-specific contexts can differ. Precise tariffs require more road context than this warning provides. No general penalty-point score or fixed driving-ban duration is inferred. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
-    { "min_delta_kmh": 1, "max_delta_kmh": 10, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 50 {currency}", "money_fine_eur": 50 },
-    { "min_delta_kmh": 11, "max_delta_kmh": 20, "severity": "money_only", "title_template": "Likely fine", "detail_template": "Likely fine from about 120 {currency}", "money_fine_eur": 120 },
-    { "min_delta_kmh": 21, "max_delta_kmh": 30, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Indicative fine around 240 {currency}", "money_fine_eur": 240 },
-    { "min_delta_kmh": 31, "max_delta_kmh": 40, "severity": "money_only", "title_template": "High overspeed", "detail_template": "Indicative fine around 350 {currency}", "money_fine_eur": 350 },
-    { "min_delta_kmh": 41, "max_delta_kmh": null, "severity": "points_and_fine", "title_template": "Severe overspeed", "detail_template": "Likely court-level handling; indicative fine from 480 {currency}", "money_fine_eur": 480, "penalty_points": 0, "conditional_driving_ban_months": 2, "driving_ban_condition": "court_discretion" }
+    {
+      "min_delta_kmh": 1,
+      "max_delta_kmh": 3,
+      "severity": "money_only",
+      "title_template": "Above the speed limit",
+      "detail_template": "After measurement correction, fines start at +4 km/h for limits up to 120 km/h. At a 130 km/h limit, enforcement starts at +1 km/h.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Tempolimit überschritten",
+          "detail_template": "Nach Messkorrektur gilt bei Tempolimits bis 120 km/h eine Bußgeldschwelle von +4 km/h. Bei Tempo 130 kann bereits +1 km/h geahndet werden."
+        },
+        "en": {
+          "title_template": "Above the speed limit",
+          "detail_template": "After measurement correction, fines start at +4 km/h for limits up to 120 km/h. At a 130 km/h limit, enforcement starts at +1 km/h."
+        },
+        "fr": {
+          "title_template": "Limite de vitesse dépassée",
+          "detail_template": "Après correction de mesure, le seuil de verbalisation est de +4 km/h pour les limites jusqu’à 120 km/h. À 130 km/h, il est de +1 km/h."
+        },
+        "nl": {
+          "title_template": "Maximumsnelheid overschreden",
+          "detail_template": "Na meetcorrectie geldt bij limieten tot en met 120 km/u een boetegrens van +4 km/u. Bij een limiet van 130 km/u geldt die al vanaf +1 km/u."
+        }
+      }
+    },
+    {
+      "min_delta_kmh": 4,
+      "max_delta_kmh": 30,
+      "severity": "money_only",
+      "title_template": "Fine possible",
+      "detail_template": "The amount depends on corrected excess, road type and roadworks. Fees are additional; no single amount applies to this whole band.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße möglich",
+          "detail_template": "Der Betrag hängt von der korrigierten Überschreitung, Straßenart und Baustellen ab. Gebühren kommen hinzu; deshalb kein pauschaler Betrag."
+        },
+        "en": {
+          "title_template": "Fine possible",
+          "detail_template": "The amount depends on corrected excess, road type and roadworks. Fees are additional; no single amount applies to this whole band."
+        },
+        "fr": {
+          "title_template": "Amende possible",
+          "detail_template": "Le montant dépend de l’excès corrigé, du type de route et des travaux. Des frais s’ajoutent ; aucun montant unique ne couvre cette tranche."
+        },
+        "nl": {
+          "title_template": "Boete mogelijk",
+          "detail_template": "Het bedrag hangt af van de gecorrigeerde overschrijding, het wegtype en wegwerkzaamheden. Kosten komen erbij; er is geen vast bedrag voor deze hele band."
+        }
+      }
+    },
+    {
+      "min_delta_kmh": 31,
+      "max_delta_kmh": 39,
+      "severity": "money_only",
+      "title_template": "Road-dependent criminal risk",
+      "detail_template": "Above +30 km/h, criminal handling generally applies. On motorways, that threshold is +40 km/h. The amount and further sanctions depend on the case.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Strafrecht je nach Straße",
+          "detail_template": "Über +30 km/h gilt grundsätzlich Strafrecht. Auf Autobahnen liegt diese Schwelle bei +40 km/h. Betrag und weitere Sanktionen hängen vom Einzelfall ab."
+        },
+        "en": {
+          "title_template": "Road-dependent criminal risk",
+          "detail_template": "Above +30 km/h, criminal handling generally applies. On motorways, that threshold is +40 km/h. The amount and further sanctions depend on the case."
+        },
+        "fr": {
+          "title_template": "Risque pénal selon la route",
+          "detail_template": "Au-delà de +30 km/h, le traitement est en principe pénal. Sur autoroute, ce seuil est de +40 km/h. Le montant et les autres sanctions dépendent du dossier."
+        },
+        "nl": {
+          "title_template": "Strafrecht hangt af van wegtype",
+          "detail_template": "Boven +30 km/u geldt in beginsel strafrecht; op autosnelwegen vanaf +40 km/u. Het bedrag en eventuele verdere sancties hangen af van de zaak."
+        }
+      },
+      "enforcement_class": "context_dependent"
+    },
+    {
+      "min_delta_kmh": 40,
+      "max_delta_kmh": 49,
+      "severity": "money_only",
+      "title_template": "Criminal proceedings risk",
+      "detail_template": "From +40 km/h, criminal handling also applies on motorways. The fine and possible licence sanctions are determined case by case.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Strafverfahren möglich",
+          "detail_template": "Ab +40 km/h gilt auch auf Autobahnen Strafrecht. Geldstrafe und mögliche Führerscheinsanktionen werden im Einzelfall bestimmt."
+        },
+        "en": {
+          "title_template": "Criminal proceedings risk",
+          "detail_template": "From +40 km/h, criminal handling also applies on motorways. The fine and possible licence sanctions are determined case by case."
+        },
+        "fr": {
+          "title_template": "Risque de procédure pénale",
+          "detail_template": "Dès +40 km/h, le traitement pénal s’applique aussi sur autoroute. L’amende et les éventuelles sanctions sur le permis dépendent du dossier."
+        },
+        "nl": {
+          "title_template": "Risico op strafrechtelijke afdoening",
+          "detail_template": "Vanaf +40 km/u geldt ook op autosnelwegen strafrecht. De boete en mogelijke rijbewijssancties worden per zaak bepaald."
+        }
+      },
+      "enforcement_class": "criminal"
+    },
+    {
+      "min_delta_kmh": 50,
+      "max_delta_kmh": null,
+      "severity": "money_only",
+      "title_template": "Licence seizure risk",
+      "detail_template": "At +50 km/h or more, police seize the licence when stopping the driver. The prosecutor or court decides how long it is held; no fixed fine is assumed.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Führerschein gefährdet",
+          "detail_template": "Ab +50 km/h fordert die Polizei bei einer Kontrolle den Führerschein ein. Staatsanwaltschaft oder Gericht entscheiden über die Dauer; keine pauschale Geldstrafe."
+        },
+        "en": {
+          "title_template": "Licence seizure risk",
+          "detail_template": "At +50 km/h or more, police seize the licence when stopping the driver. The prosecutor or court decides how long it is held; no fixed fine is assumed."
+        },
+        "fr": {
+          "title_template": "Risque de rétention du permis",
+          "detail_template": "À partir de +50 km/h, la police retient le permis si le conducteur est intercepté. Le parquet ou le juge décide de la durée ; aucun montant forfaitaire n’est présumé."
+        },
+        "nl": {
+          "title_template": "Risico op invordering rijbewijs",
+          "detail_template": "Vanaf +50 km/u vordert de politie bij staandehouding het rijbewijs in. Het OM of de rechter bepaalt de duur; er wordt geen vast boetebedrag aangenomen."
+        }
+      },
+      "enforcement_class": "criminal"
+    }
   ]
 }

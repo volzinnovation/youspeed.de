@@ -4579,6 +4579,84 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(rules.bands.last?.penaltyPoints, 2)
     }
 
+    func testPenaltyCountrySelectionNormalizesAndDebouncesBorderChanges() {
+        for (short, long) in [("DE", "DEU"), ("fr", "FRA"), (" NL ", "NLD"), ("BE", "BEL")] {
+            XCTAssertEqual(PenaltyCountryCode.normalized(short), long)
+            XCTAssertEqual(PenaltyCountryCode.normalized(long), long)
+        }
+        XCTAssertNil(PenaltyCountryCode.normalized("BAD"))
+        var selection = PenaltyCountrySelection()
+        XCTAssertEqual(selection.update(countries: ["DE"], timestamp: 100), "DEU")
+        XCTAssertNil(selection.update(countries: ["DE", "FR"], timestamp: 101))
+        XCTAssertNil(selection.update(countries: ["FR"], timestamp: 102))
+        XCTAssertEqual(selection.update(countries: ["DE"], timestamp: 103), "DEU")
+        var timestamp = 110.0
+        for country in ["FRA", "BE", "NLD", "BEL", "FR", "DEU"] {
+            XCTAssertNil(selection.update(countries: [country], timestamp: timestamp))
+            XCTAssertNil(selection.update(countries: [country], timestamp: timestamp + 7))
+            XCTAssertEqual(selection.update(countries: [country], timestamp: timestamp + 15), PenaltyCountryCode.normalized(country))
+            timestamp += 20
+        }
+        XCTAssertEqual(selection.update(countries: ["FR"], timestamp: 100), "DEU", "An old fix must not flap the active country")
+        XCTAssertNil(selection.update(countries: [], timestamp: timestamp))
+        XCTAssertNil(selection.countryCode, "Unknown coverage must not retain German penalty eligibility")
+    }
+
+    @MainActor
+    func testPenaltyCountryFollowsFreshLocationWithoutDownloadedMap() {
+        let model = DriveSessionViewModel()
+        model.activeDBPath = ""
+        model.speedLimitKmh = 50
+        model.currentSpeedKmh = 75
+        model.updatePenaltyCountry(latitude: 48.8566, longitude: 2.3522, accuracy: 200, timestamp: 90, now: 90)
+        XCTAssertFalse(model.penaltyRulesAreApplicable)
+        XCTAssertNil(model.currentPenaltyNotice, "An inaccurate first fix must never activate default German fines")
+        var timestamp = 100.0
+        for (country, latitude, longitude) in [("DEU", 49.0102, 8.4266), ("FRA", 48.8566, 2.3522), ("BEL", 50.8466, 4.3528), ("NLD", 52.3676, 4.9041), ("DEU", 49.0102, 8.4266)] {
+            for offset in [0.0, 7.0, 15.0] {
+                model.updatePenaltyCountry(latitude: latitude, longitude: longitude, accuracy: 5, timestamp: timestamp + offset, now: timestamp + offset)
+            }
+            XCTAssertEqual(model.activePenaltyRules.countryCode, country)
+            XCTAssertTrue(model.penaltyRulesAreApplicable)
+            XCTAssertTrue(model.activeDBPath.isEmpty)
+            timestamp += 20
+        }
+        model.updatePenaltyCountry(latitude: 48.8566, longitude: 2.3522, accuracy: 200, timestamp: timestamp, now: timestamp)
+        XCTAssertEqual(model.activePenaltyRules.countryCode, "DEU")
+        XCTAssertFalse(model.penaltyRulesAreApplicable, "An inaccurate later fix must suspend warnings immediately")
+        model.updatePenaltyCountry(latitude: 48.8566, longitude: 2.3522, accuracy: 5, timestamp: timestamp + 1000, now: timestamp)
+        XCTAssertFalse(model.penaltyRulesAreApplicable)
+        model.updatePenaltyCountry(latitude: 49.0102, longitude: 8.4266, accuracy: 5, timestamp: timestamp - 5, now: timestamp)
+        XCTAssertFalse(model.penaltyRulesAreApplicable, "A duplicate fix cannot restore suspended country eligibility")
+        model.updatePenaltyCountry(latitude: 49.0102, longitude: 8.4266, accuracy: 5, timestamp: timestamp + 1, now: timestamp + 1)
+        XCTAssertTrue(model.penaltyRulesAreApplicable, "A rejected future timestamp must not poison the next valid location")
+        model.expirePenaltyCountry(at: timestamp + 32)
+        XCTAssertFalse(model.penaltyRulesAreApplicable, "A GPS silence must expire country evidence without another fix")
+        model.updatePenaltyCountry(latitude: 0, longitude: 0, accuracy: 5, timestamp: timestamp + 33, now: timestamp + 33)
+        XCTAssertFalse(model.penaltyRulesAreApplicable)
+        XCTAssertNil(model.currentPenaltyNotice)
+    }
+
+    func testCountryPenaltyBandsUseDeviceLanguageAndDoNotInventPoints() throws {
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        for country in ["FRA", "BEL", "NLD"] {
+            let rules = try SpeedPenaltyRuleSet.loadBundled(named: "\(country)-rules", bundle: bundle)
+            XCTAssertNil(SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 0, rules: rules))
+            for band in rules.bands {
+                for language in ["de", "en", "fr", "nl"] {
+                    let notice = try XCTUnwrap(SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: band.minDeltaKmh, rules: rules, insideCity: true, postedLimitKmh: 50, languageCode: language))
+                    XCTAssertEqual(notice.title, band.localizedTemplates?[language]?.titleTemplate)
+                    XCTAssertFalse(notice.details.isEmpty)
+                    if country != "FRA" {
+                        XCTAssertNil(notice.penaltyPoints)
+                        XCTAssertNil(notice.drivingBanMonths)
+                        XCTAssertEqual(notice.severity, .moneyOnly)
+                    }
+                }
+            }
+        }
+    }
+
     func testLoadBundledFranceAndSwitzerlandRules() throws {
         let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
         let france = try SpeedPenaltyRuleSet.loadBundled(named: "FRA-rules", bundle: bundle)
@@ -4591,12 +4669,14 @@ final class SpeedConsumerTests: XCTestCase {
         let franceUrbanLow = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 4,
             rules: france,
-            insideCity: true
+            insideCity: false,
+            postedLimitKmh: 50
         )
         let franceRuralLow = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 4,
             rules: france,
-            insideCity: false
+            insideCity: true,
+            postedLimitKmh: 70
         )
         let franceOffence = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: 55,
@@ -4608,8 +4688,10 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(franceUrbanLow?.penaltyPoints, 0)
         XCTAssertEqual(franceRuralLow?.moneyFineEUR, 68)
         XCTAssertEqual(franceOffence?.penaltyPoints, 6)
-        XCTAssertEqual(franceOffence?.moneyFineEUR, 300)
-        XCTAssertEqual(franceOffence?.conditionalDrivingBanMonths, 36)
+        XCTAssertNil(franceOffence?.moneyFineEUR)
+        XCTAssertNil(franceOffence?.conditionalDrivingBanMonths)
+        XCTAssertEqual(franceOffence?.enforcementClass, "criminal")
+        XCTAssertNil(SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 4, rules: france, insideCity: false)?.moneyFineEUR)
 
         XCTAssertEqual(switzerland.countryCode, "CHE")
         XCTAssertEqual(switzerland.currencyCode, "CHF")

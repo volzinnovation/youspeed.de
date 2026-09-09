@@ -9,6 +9,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.zip.GZIPOutputStream
 import kotlin.io.path.createTempDirectory
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -79,24 +80,28 @@ class BundleContractTests {
             overspeedKmh = 4,
             rules = france,
             insideCity = true,
+            postedSpeedLimitKmh = 50,
         )
         val franceRuralLow = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 4,
             rules = france,
             insideCity = false,
+            postedSpeedLimitKmh = 80,
         )
         val franceOffence = SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = 55,
             rules = france,
             insideCity = true,
+            postedSpeedLimitKmh = 50,
         )
 
         assertEquals(135, franceUrbanLow?.moneyFineEUR)
         assertEquals(0, franceUrbanLow?.penaltyPoints)
         assertEquals(68, franceRuralLow?.moneyFineEUR)
         assertEquals(6, franceOffence?.penaltyPoints)
-        assertEquals(300, franceOffence?.moneyFineEUR)
-        assertEquals(36, franceOffence?.conditionalDrivingBanMonths)
+        assertNull(franceOffence?.moneyFineEUR)
+        assertNull(franceOffence?.conditionalDrivingBanMonths)
+        assertEquals("criminal", franceOffence?.enforcementClass)
 
         assertEquals("CHE", switzerland.countryCode)
         assertEquals("CHF", switzerland.currencyCode)

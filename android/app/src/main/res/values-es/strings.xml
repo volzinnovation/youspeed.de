@@ -13,7 +13,7 @@
     <string name="welcome_scope_seed">No hay datos de carretera sin conexion hasta que descargues un paquete de mapas en Ajustes.</string>
     <string name="welcome_coverage_active">Los datos de mapa descargados estan listos</string>
     <string name="welcome_coverage_none">Descarga necesaria</string>
-    <string name="welcome_scope_active">Conjunto de datos de Alemania activo: %1$s</string>
+    <string name="welcome_scope_active">Datos cartográficos activos: %1$s</string>
     <string name="welcome_legal_heading">Aviso legal</string>
     <string name="welcome_osm_credit">Datos de mapa: copyright colaboradores de OpenStreetMap, ODbL 1.0. https://www.openstreetmap.org/copyright</string>
     <string name="welcome_open_settings">Descargar datos / configurar app</string>

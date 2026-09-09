@@ -485,7 +485,7 @@ internal class AndroidTrafficSignCameraRuntime(
     fun start() {
         if (closed.get()) return
         val startGeneration = generation.incrementAndGet()
-        onStateChanged(TrafficSignCameraRuntimeState.STARTING, "Android-TSR-Modell wird geprüft und geladen.")
+        onStateChanged(TrafficSignCameraRuntimeState.STARTING, ConsumerRuntimeText.CAMERA_MODEL_LOADING.text())
         startupExecutor.execute {
             val loaded = runCatching {
                 val pack = AndroidTrafficSignModelPackLoader.load(context)
@@ -551,12 +551,12 @@ internal class AndroidTrafficSignCameraRuntime(
                 bridge = null
                 onStateChanged(
                     TrafficSignCameraRuntimeState.UNAVAILABLE,
-                    failure.message?.takeIf(String::isNotBlank) ?: "Rückkamera ist nicht verfügbar.",
+                    failure.message?.takeIf(String::isNotBlank) ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text(),
                 )
             }.onSuccess {
                 onStateChanged(
                     TrafficSignCameraRuntimeState.ACTIVE,
-                    "CameraX und der verifizierte Android-LiteRT-Modellpack sind aktiv.",
+                    ConsumerRuntimeText.CAMERA_ACTIVE.text(),
                 )
             }
         }, mainExecutor)

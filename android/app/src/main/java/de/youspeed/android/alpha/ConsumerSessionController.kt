@@ -99,7 +99,7 @@ data class LocalObservation(
     val supersededForExport: Boolean = false,
 ) {
     val streetName: String
-        get() = streetContext?.trim().orEmpty().ifBlank { "Strassenname n/a" }
+        get() = streetContext?.trim().orEmpty().ifBlank { ConsumerRuntimeText.STREET_UNKNOWN.text() }
 
     val wayId: String?
         get() = primaryWayId?.trim()?.ifBlank { null }
@@ -193,7 +193,6 @@ private data class PendingStartupData(
     val startupDetail: String,
     val activeBundleVersion: String,
     val activeDBPath: String,
-    val activePenaltyRules: ActivePenaltyRules,
     val syncStatus: String,
     val localObservations: List<LocalObservation>,
 )
@@ -201,7 +200,7 @@ private data class PendingStartupData(
 data class ConsumerUiState(
     val startupDataState: StartupDataState = StartupDataState.LOADING,
     val startupProgress: Double = 0.0,
-    val startupDetail: String = "Lokale Daten werden vorbereitet",
+    val startupDetail: String = ConsumerRuntimeText.STARTUP_PREPARING.text(),
     val syncStatus: String = "not_synced",
     val syncProgressDetail: String = "",
     val syncProgressCompletedBytes: Long = 0L,
@@ -242,20 +241,20 @@ data class ConsumerUiState(
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
     val bundleDownloadSections: List<BundleDownloadCountrySection> = emptyList(),
-    val firstLocationPackStatus: String = "Kartenauswahl wartet auf den ersten GPS-Standort.",
-    val countryModelPackStatus: String = "Verkehrszeichen-Modell: Land noch nicht bestimmt.",
+    val firstLocationPackStatus: String = ConsumerRuntimeText.FIRST_LOCATION_WAITING.text(),
+    val countryModelPackStatus: String = ConsumerRuntimeText.MODEL_COUNTRY_PENDING.text(),
     val firstLocationAllowsCellular: Boolean = false,
     val downloadedBundleCountByRegion: Map<String, Int> = emptyMap(),
     val downloadedBundleLatestVersionByRegion: Map<String, String> = emptyMap(),
     val configuredManifestEndpointCount: Int = 0,
     val configuredManifestCountryCodes: String = "n/a",
-    val activePenaltyRules: ActivePenaltyRules = ActivePenaltyRules.fallback(),
+    val activePenaltyRules: ActivePenaltyRules = ActivePenaltyRules.unavailable(),
     val localObservations: List<LocalObservation> = emptyList(),
     val localObservationStatus: String = "",
     val speedCaptureMode: SpeedCaptureModeState = SpeedCaptureModeState.IDLE,
     val speedCaptureTranscript: String = "",
     val germanSpeechModelState: GermanSpeechModelState = GermanSpeechModelState.CHECKING,
-    val germanSpeechModelStatus: String = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet.",
+    val germanSpeechModelStatus: String = ConsumerRuntimeText.SPEECH_MODEL_PREPARING.text(),
     val lastExportDirectoryPath: String = "",
     val appScreenshotState: AppScreenshotState? = null,
     val lastLookupInsideCity: Boolean? = null,
@@ -264,7 +263,7 @@ data class ConsumerUiState(
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
     val trafficSignRecognitionEnabled: Boolean = false,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
-    val trafficSignCameraRuntimeDetail: String = "Kamera-Erkennung ist ausgeschaltet.",
+    val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
     val trafficSignGeneration: Long = 0L,
     val effectiveSpeedLimitSource: EffectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE,
     val effectiveSpeedLimitReason: String = "no_limit",
@@ -368,6 +367,7 @@ class ConsumerSessionController(
     private val preferences: SharedPreferences,
     private val clock: Clock,
     launchScreenshotState: AppScreenshotState?,
+    private val countryScreenshotScenario: CountryPenaltyScreenshotScenario? = null,
 ) {
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -392,6 +392,8 @@ class ConsumerSessionController(
         TrafficSignCountryPackRegistry.decodeBundled(assetReader.readText("tsr/country-pack-registry-v1.json").toByteArray())
     }.getOrNull()
     private val countryPackSelection = TrafficSignCountrySelection()
+    private val penaltyCountrySelection = PenaltyCountrySelection()
+    private val penaltyCountryExpiry = Runnable { updateState { copy(activePenaltyRules = ActivePenaltyRules.unavailable()) } }
     private val connectivityManager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private var firstLocationRegion: RegionalPackCatalog.Region? = null
     private var firstLocationAttempts = 0
@@ -504,7 +506,7 @@ class ConsumerSessionController(
             bundleDownloadSections = buildBundleDownloadSections(),
             configuredManifestEndpointCount = manifestEndpoints.size,
             configuredManifestCountryCodes = manifestCountryCodes(),
-            activePenaltyRules = loadPenaltyRules("DEU"),
+            activePenaltyRules = ActivePenaltyRules.unavailable(),
             appScreenshotState = launchScreenshotState,
             matcherDebugProfile = initialMatcherDebugProfile,
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
@@ -549,6 +551,7 @@ class ConsumerSessionController(
     }
 
     fun dispose() {
+        mainHandler.removeCallbacks(penaltyCountryExpiry)
         if (!isDisposed.compareAndSet(false, true)) {
             return
         }
@@ -588,7 +591,7 @@ class ConsumerSessionController(
             copy(
                 startupDataState = StartupDataState.LOADING,
                 startupProgress = 0.08,
-                startupDetail = "Lokale Daten werden vorbereitet",
+                startupDetail = ConsumerRuntimeText.STARTUP_PREPARING.text(),
                 lastError = "",
                 speedCaptureMode = SpeedCaptureModeState.IDLE,
                 speedCaptureTranscript = "",
@@ -608,16 +611,15 @@ class ConsumerSessionController(
                     preferredCountryCode = active?.countryCode,
                     reason = "startup_prepare",
                 )
-                val nextRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(active?.dbPath) ?: "DEU")
                 pendingStartupData = PendingStartupData(
                     startupDetail = when {
-                        active?.bundleVersion == "seed" -> "Karlsruhe-Seed und Offline-Spracherkennung sind bereit"
-                        active?.dbPath?.isNotBlank() == true -> "Lokale Daten und Offline-Spracherkennung sind bereit"
-                        else -> "Noch kein lokales Bundle aktiv"
+                        active?.bundleVersion == "seed" -> ConsumerRuntimeText.STARTUP_SEED_READY.text()
+                        active?.dbPath?.isNotBlank() == true -> ConsumerRuntimeText.STARTUP_READY.text()
+                        else -> ConsumerRuntimeText.STARTUP_NO_MAP.text()
                     },
                     activeBundleVersion = active?.bundleVersion ?: "none",
                     activeDBPath = active?.dbPath ?: "",
-                    activePenaltyRules = nextRules,
+
                     syncStatus = when {
                         active?.bundleVersion == "seed" -> "seed_only"
                         active?.dbPath?.isNotBlank() == true -> "ready_fullDownload"
@@ -630,10 +632,10 @@ class ConsumerSessionController(
                     copy(
                         startupDataState = StartupDataState.LOADING,
                         startupProgress = 0.62,
-                        startupDetail = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet",
+                        startupDetail = ConsumerRuntimeText.SPEECH_MODEL_PREPARING_SHORT.text(),
                         activeBundleVersion = active?.bundleVersion ?: "none",
                         activeDBPath = active?.dbPath ?: "",
-                        activePenaltyRules = nextRules,
+
                         syncStatus = when {
                             active?.bundleVersion == "seed" -> "seed_only"
                             active?.dbPath?.isNotBlank() == true -> "ready_fullDownload"
@@ -653,7 +655,7 @@ class ConsumerSessionController(
                     copy(
                         startupDataState = StartupDataState.FAILED,
                         startupProgress = 1.0,
-                        startupDetail = "Lokale Daten konnten nicht vorbereitet werden",
+                        startupDetail = ConsumerRuntimeText.STARTUP_FAILED.text(),
                         lastError = error.message ?: error.javaClass.simpleName,
                     )
                 }
@@ -684,7 +686,7 @@ class ConsumerSessionController(
                 .onSuccess { firstLocationNetworkRegistered = true }
         }
         if (preferences.getBoolean("youspeed.first_location_map_complete", false)) {
-            updateState { copy(firstLocationPackStatus = "Erste Karteneinrichtung abgeschlossen.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.FIRST_MAP_COMPLETE.text()) }
             return
         }
         if (hasLocationPermission()) requestFirstLocation() else host?.requestLocationPermission()
@@ -718,23 +720,32 @@ class ConsumerSessionController(
     }
 
     private fun discoverPacks(location: Location) {
+        val countryCode = penaltyCountrySelection.update(regionalPackCatalog, location.latitude, location.longitude,
+            if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
+            location.time / 1000.0, clock.millis() / 1000.0)
+        mainHandler.removeCallbacks(penaltyCountryExpiry)
+        updateState { copy(activePenaltyRules = countryCode?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable()) }
+        if (countryCode != null) {
+            val remainingValidityMs = (location.time + 30_000L - clock.millis()).coerceAtLeast(0L)
+            mainHandler.postDelayed(penaltyCountryExpiry, remainingValidityMs)
+        }
         if (!location.hasAccuracy() || !FirstLocationPackPolicy.acceptsFix(location.latitude, location.longitude,
                 location.accuracy.toDouble(), location.time / 1000.0, clock.millis() / 1000.0)) return
         val catalog = regionalPackCatalog ?: run {
-            updateState { copy(firstLocationPackStatus = "Regionenkatalog fehlt oder ist ungültig. Karte bitte manuell auswählen.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.REGION_CATALOG_MISSING.text()) }
             return
         }
         val matches = catalog.matches(location.longitude, location.latitude)
         val country = countryPackSelection.update(matches.map { it.country }.toSet(), location.time / 1000.0)
         val state = countryPackRegistry?.decision(country, "android", BuildConfig.VERSION_NAME.removeSuffix("-debug"),
             android.os.Build.VERSION.SDK_INT.toString(), now = clock.millis() / 1000)?.state
-        val prefix = country?.let { "Verkehrszeichen-Modell $it: " } ?: "Verkehrszeichen-Modell: "
+        val prefix = country?.let { ConsumerRuntimeText.MODEL_COUNTRY_PREFIX.text(it) } ?: ConsumerRuntimeText.MODEL_PREFIX.text()
         updateState { copy(countryModelPackStatus = prefix + if (state == "country_unresolved")
-            "Land im Grenzbereich noch unklar." else "Noch kein freigegebenes Download-Paket verfügbar.") }
+            ConsumerRuntimeText.MODEL_COUNTRY_UNCLEAR.text() else ConsumerRuntimeText.MODEL_DOWNLOAD_UNAVAILABLE.text()) }
         if (preferences.getBoolean("youspeed.first_location_map_complete", false)) return
         if (firstLocationRegion == null) firstLocationRegion = matches.firstOrNull()
         if (firstLocationRegion == null) {
-            updateState { copy(firstLocationPackStatus = "Für diesen Standort ist keine passende Karte im Katalog verfügbar.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.LOCATION_MAP_UNAVAILABLE.text()) }
         } else {
             runCatching { locationManager.removeUpdates(firstLocationListener) }
         }
@@ -747,12 +758,12 @@ class ConsumerSessionController(
             uiState.startupDataState != StartupDataState.READY || isSyncingNow()) return
         val region = firstLocationRegion ?: return
         val option = uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == region.id } ?: run {
-            updateState { copy(firstLocationPackStatus = "Kein Download-Endpunkt für die passende Region verfügbar.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.REGION_DOWNLOAD_UNAVAILABLE.text()) }
             return
         }
         if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
             preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
-            updateState { copy(firstLocationPackStatus = "Vorhandene Karten bleiben ausgewählt.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.KEEP_EXISTING_MAPS.text()) }
             return
         }
         val network = connectivityManager.activeNetwork
@@ -760,7 +771,7 @@ class ConsumerSessionController(
         val allowed = uiState.firstLocationAllowsCellular
         if (network == null || capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) != true ||
             (!allowed && !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED))) {
-            updateState { copy(firstLocationPackStatus = "Passende Karte: ${option.displayName}. Warte auf WLAN oder Freigabe mobiler Daten.") }
+            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.MATCHING_MAP_WAITING.text(option.displayName)) }
             return
         }
         if (firstLocationAttempts >= 3 || clock.millis() < firstLocationRetryAfter) return
@@ -773,7 +784,7 @@ class ConsumerSessionController(
             check(current != null && (allowed || current.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)))
             network.openConnection(url) as HttpURLConnection
         }, clock, assetReader)
-        updateState { copy(firstLocationPackStatus = "Lade die passende Karte: ${option.displayName}.") }
+        updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.MATCHING_MAP_LOADING.text(option.displayName)) }
         downloadSelectedBundle(option, downloader)
         mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
     }
@@ -825,7 +836,7 @@ class ConsumerSessionController(
                     driveStatus = "stopped",
                     currentSpeedKmh = 0.0,
                     trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
-                    trafficSignCameraRuntimeDetail = "Kamera-Erkennung ist ausgeschaltet.",
+                    trafficSignCameraRuntimeDetail = ConsumerRuntimeText.CAMERA_DISABLED.text(),
                 )
             }
         }
@@ -835,9 +846,9 @@ class ConsumerSessionController(
         if (!granted) {
             updateState {
                 copy(
-                    firstLocationPackStatus = "Für die automatische Kartenauswahl ist die Standortfreigabe erforderlich.",
+                    firstLocationPackStatus = ConsumerRuntimeText.LOCATION_REQUIRED_FOR_MAP.text(),
                     driveStatus = "location_denied",
-                    lastError = "Standortberechtigung wurde nicht erteilt.",
+                    lastError = ConsumerRuntimeText.LOCATION_DENIED.text(),
                 )
             }
             return
@@ -854,13 +865,13 @@ class ConsumerSessionController(
             return
         }
         if (uiState.appScreenshotState != null) {
-            host?.showTransientMessage("Spracherkennung ist im Screenshot-Modus deaktiviert.")
+            host?.showTransientMessage(ConsumerRuntimeText.SCREENSHOT_SPEECH_DISABLED.text())
             return
         }
         if (uiState.germanSpeechModelState != GermanSpeechModelState.READY) {
             host?.showTransientMessage(
                 uiState.germanSpeechModelStatus.ifBlank {
-                    "Gebuendeltes deutsches Offline-Sprachmodell ist nicht bereit."
+                    ConsumerRuntimeText.SPEECH_MODEL_NOT_READY.text()
                 },
             )
             return
@@ -870,7 +881,7 @@ class ConsumerSessionController(
                 copy(
                     speedCaptureMode = SpeedCaptureModeState.REQUESTING_MIC_PERMISSION,
                     speedCaptureTranscript = "",
-                    localObservationStatus = "Mikrofonberechtigung wird angefragt.",
+                    localObservationStatus = ConsumerRuntimeText.MIC_PERMISSION_REQUESTED.text(),
                 )
             }
             host?.requestMicrophonePermission()
@@ -882,7 +893,7 @@ class ConsumerSessionController(
     fun onMicrophonePermissionResult(granted: Boolean) {
         if (!granted) {
             shouldResumeSpeedCaptureAfterSpeechModelReady = false
-            host?.showTransientMessage("Mikrofonberechtigung wurde nicht erteilt.")
+            host?.showTransientMessage(ConsumerRuntimeText.MIC_PERMISSION_DENIED.text())
             cancelSpeedCapture(reason = null)
             return
         }
@@ -944,7 +955,7 @@ class ConsumerSessionController(
                 trafficSignCameraRuntimeDetail = if (enabled) {
                     trafficSignCameraRuntimeDetail
                 } else {
-                    "Kamera-Erkennung ist ausgeschaltet."
+                    ConsumerRuntimeText.CAMERA_DISABLED.text()
                 },
                 trafficSignGeneration = this@ConsumerSessionController.trafficSignGeneration.get(),
             )
@@ -956,7 +967,7 @@ class ConsumerSessionController(
         if (!granted) {
             onTrafficSignCameraRuntimeStateChanged(
                 TrafficSignCameraRuntimeState.DENIED,
-                "Kameraberechtigung wurde nicht erteilt.",
+                ConsumerRuntimeText.CAMERA_PERMISSION_DENIED.text(),
             )
             return
         }
@@ -994,7 +1005,7 @@ class ConsumerSessionController(
             updateState {
                 copy(
                     trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
-                    trafficSignCameraRuntimeDetail = "Kamera-Erkennung ist ausgeschaltet.",
+                    trafficSignCameraRuntimeDetail = ConsumerRuntimeText.CAMERA_DISABLED.text(),
                 )
             }
             return
@@ -1005,7 +1016,7 @@ class ConsumerSessionController(
             updateState {
                 copy(
                     trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.REQUESTING_PERMISSION,
-                    trafficSignCameraRuntimeDetail = "Kameraberechtigung wird angefragt.",
+                    trafficSignCameraRuntimeDetail = ConsumerRuntimeText.CAMERA_PERMISSION_REQUESTED.text(),
                 )
             }
             host?.requestCameraPermission()
@@ -1230,13 +1241,13 @@ class ConsumerSessionController(
 
     fun fetchFirstGermanyManifest() {
         val endpoint = manifestEndpoints.firstOrNull { it.countryCode.uppercase(Locale.US) == "DEU" }
-            ?: return setError("Keine Deutschland-Endpunkte in BundleTargets.top10.json gefunden.")
-        runSyncTask(status = "syncing", detail = "Lade Manifest") {
+            ?: return setError(ConsumerRuntimeText.GERMANY_ENDPOINTS_MISSING.text())
+        runSyncTask(status = "syncing", detail = ConsumerRuntimeText.LOADING_MANIFEST.text()) {
             val manifest = bootstrapper.fetchManifest(endpoint.manifestUrl)
             copy(
                 syncStatus = "ready_manifest",
-                syncProgressDetail = "Manifest geladen: ${manifest.region} ${manifest.bundleVersion}",
-                maintenanceMessage = "Manifest geladen: ${manifest.region}",
+                syncProgressDetail = ConsumerRuntimeText.MANIFEST_LOADED.text("${manifest.region} ${manifest.bundleVersion}"),
+                maintenanceMessage = ConsumerRuntimeText.MANIFEST_LOADED.text(manifest.region),
                 lastError = "",
             )
         }
@@ -1244,18 +1255,18 @@ class ConsumerSessionController(
 
     fun bootstrapAndSync() {
         if (manifestEndpoints.isEmpty()) {
-            setError("Keine Manifest-Endpunkte konfiguriert.")
+            setError(ConsumerRuntimeText.ENDPOINTS_MISSING.text())
             return
         }
         if (isSyncingNow()) {
-            setError("Es laeuft bereits eine Synchronisierung.")
+            setError(ConsumerRuntimeText.SYNC_ALREADY_RUNNING.text())
             return
         }
         var lastFailure: Exception? = null
         updateState {
             copy(
                 syncStatus = "syncing",
-                syncProgressDetail = "Synchronisierung startet",
+                syncProgressDetail = ConsumerRuntimeText.SYNC_STARTING.text(),
                 syncProgressCompletedBytes = 0L,
                 syncProgressTotalBytes = 0L,
                 maintenanceMessage = "",
@@ -1271,7 +1282,7 @@ class ConsumerSessionController(
                     postState {
                         copy(
                             syncStatus = "syncing",
-                            syncProgressDetail = "Lade ${endpoint.manifestRegion}",
+                            syncProgressDetail = ConsumerRuntimeText.DOWNLOADING_NAME.text(endpoint.manifestRegion),
                             syncProgressCompletedBytes = 0L,
                             syncProgressTotalBytes = 0L,
                             maintenanceMessage = "",
@@ -1293,14 +1304,14 @@ class ConsumerSessionController(
                     postState {
                         copy(
                             syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
-                            syncProgressDetail = "Synchronisierung abgeschlossen",
+                            syncProgressDetail = ConsumerRuntimeText.SYNC_COMPLETE.text(),
                             syncProgressCompletedBytes = 0L,
                             syncProgressTotalBytes = 0L,
                             maintenanceMessage = sync.details,
                             activeDownloadOptionId = null,
                             activeBundleVersion = sync.bundleVersion,
                             activeDBPath = sync.dbPath,
-                            activePenaltyRules = loadPenaltyRules(active?.countryCode ?: inferCountryCodeFromDBPath(sync.dbPath) ?: "DEU"),
+
                             lastError = "",
                         )
                     }
@@ -1309,7 +1320,7 @@ class ConsumerSessionController(
                     lastFailure = error
                 }
             }
-            setError(lastFailure?.message ?: "Kein Manifest-Endpunkt konnte synchronisiert werden.")
+            setError(lastFailure?.message ?: ConsumerRuntimeText.NO_ENDPOINT_SYNCED.text())
         }
     }
 
@@ -1335,31 +1346,31 @@ class ConsumerSessionController(
                             else -> "not_synced"
                         },
                         maintenanceMessage = if (removed > 0) {
-                            "Heruntergeladene Datenbanken geloescht ($removed)."
+                            ConsumerRuntimeText.MAPS_DELETED.text(removed)
                         } else {
-                            "Keine heruntergeladenen Datenbanken gefunden."
+                            ConsumerRuntimeText.NO_DOWNLOADED_MAPS.text()
                         },
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Heruntergeladene Datenbanken konnten nicht geloescht werden: ${error.message}")
+                setError(ConsumerRuntimeText.MAPS_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
 
     fun downloadSelectedBundle(option: BundleDownloadOption, initialDownloader: BundleBootstrapper? = null) {
         if (isSyncingNow()) {
-            setError("Download blockiert: Es laeuft bereits eine Synchronisierung.")
+            setError(ConsumerRuntimeText.DOWNLOAD_BUSY.text())
             return
         }
         updateState {
             copy(
                 syncStatus = "syncing",
-                syncProgressDetail = "Lade ${option.displayName}",
+                syncProgressDetail = ConsumerRuntimeText.DOWNLOADING_NAME.text(option.displayName),
                 syncProgressCompletedBytes = 0L,
                 syncProgressTotalBytes = 0L,
-                maintenanceMessage = "Download gestartet: ${option.displayName}",
+                maintenanceMessage = ConsumerRuntimeText.DOWNLOAD_STARTED.text(option.displayName),
                 activeDownloadOptionId = option.id,
                 lastError = "",
             )
@@ -1380,22 +1391,22 @@ class ConsumerSessionController(
                 if (initialDownloader != null) preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
                 postState {
                     copy(
-                        firstLocationPackStatus = if (initialDownloader != null) "Passende Karte ist offline bereit: ${option.displayName}." else firstLocationPackStatus,
+                        firstLocationPackStatus = if (initialDownloader != null) ConsumerRuntimeText.MATCHING_MAP_READY.text(option.displayName) else firstLocationPackStatus,
                         syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
-                        syncProgressDetail = "Bundle geladen: ${option.displayName}",
+                        syncProgressDetail = ConsumerRuntimeText.MAP_LOADED.text(option.displayName),
                         syncProgressCompletedBytes = 0L,
                         syncProgressTotalBytes = 0L,
-                        maintenanceMessage = "Bundle geladen: ${option.displayName}",
+                        maintenanceMessage = ConsumerRuntimeText.MAP_LOADED.text(option.displayName),
                         activeDownloadOptionId = null,
                         activeBundleVersion = sync.bundleVersion,
                         activeDBPath = sync.dbPath,
-                        activePenaltyRules = loadPenaltyRules(active?.countryCode ?: option.countryCode),
+
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
                 if (initialDownloader != null) postState {
-                    copy(firstLocationPackStatus = "Karten-Download fehlgeschlagen. Erneut versuchen oder eine Karte auswählen.")
+                    copy(firstLocationPackStatus = ConsumerRuntimeText.MAP_DOWNLOAD_FAILED.text())
                 }
                 setError(error.message ?: error.javaClass.simpleName)
             }
@@ -1417,12 +1428,12 @@ class ConsumerSessionController(
                     copy(
                         activeBundleVersion = active?.bundleVersion ?: "none",
                         activeDBPath = active?.dbPath ?: "",
-                        maintenanceMessage = if (removed > 0) "Bundle geloescht: ${option.displayName}" else "Kein Bundle geloescht: ${option.displayName}",
+                        maintenanceMessage = if (removed > 0) ConsumerRuntimeText.MAP_DELETED.text(option.displayName) else ConsumerRuntimeText.MAP_NOT_DELETED.text(option.displayName),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Bundle konnte nicht geloescht werden: ${error.message}")
+                setError(ConsumerRuntimeText.MAP_DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1454,7 +1465,7 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = updated,
-                        localObservationStatus = "Erfasst: way ${wayId ?: "n/a"}, alt ${uiState.speedLimitKmh ?: "n/a"}, neu ${selection.displayLabel}.",
+                        localObservationStatus = ConsumerRuntimeText.OBSERVATION_SAVED.text(wayId ?: "–", uiState.speedLimitKmh ?: "–", if (selection.value == "walk") ConsumerRuntimeText.PEDESTRIAN_ZONE.text() else selection.displayLabel),
                         speedCaptureMode = SpeedCaptureModeState.IDLE,
                         speedCaptureTranscript = "",
                         maintenanceMessage = "",
@@ -1470,7 +1481,7 @@ class ConsumerSessionController(
                 }
                 playSpeedCaptureConfirmationTone()
             } catch (error: Exception) {
-                showSpeedCaptureFailure(reason = "Lokale Erfassung konnte nicht gespeichert werden: ${error.message}")
+                showSpeedCaptureFailure(reason = ConsumerRuntimeText.OBSERVATION_SAVE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1486,12 +1497,12 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = updated,
-                        localObservationStatus = "Eintrag geloescht.",
+                        localObservationStatus = ConsumerRuntimeText.OBSERVATION_DELETED.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Loeschen fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.DELETE_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1506,12 +1517,12 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = emptyList(),
-                        localObservationStatus = if (removed > 0) "$removed lokale Erfassungen geloescht." else "Keine lokalen Erfassungen vorhanden.",
+                        localObservationStatus = if (removed > 0) ConsumerRuntimeText.OBSERVATIONS_DELETED.text(removed) else ConsumerRuntimeText.NO_OBSERVATIONS.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Alle Eintraege loeschen fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.DELETE_ALL_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1525,14 +1536,14 @@ class ConsumerSessionController(
                 localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(updated)
                 postState {
                     copy(
-                        localObservationStatus = "Export erstellt (${result.includedCount} Wege): changes.osc",
+                        localObservationStatus = ConsumerRuntimeText.EXPORT_CREATED_COUNT.text(result.includedCount),
                         localObservations = updated,
                         lastExportDirectoryPath = result.packageDirectory.absolutePath,
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Export fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.EXPORT_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1547,12 +1558,12 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = updated,
-                        localObservationStatus = "Beobachtung freigegeben fuer Export.",
+                        localObservationStatus = ConsumerRuntimeText.OBSERVATION_APPROVED.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Freigabe fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.APPROVAL_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1567,12 +1578,12 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = updated,
-                        localObservationStatus = "Beobachtung verworfen.",
+                        localObservationStatus = ConsumerRuntimeText.OBSERVATION_DISCARDED.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Verwerfen fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.DISCARD_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1587,30 +1598,30 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         localObservations = updated,
-                        localObservationStatus = "Export erstellt: ${result.packageDirectory.name}",
+                        localObservationStatus = ConsumerRuntimeText.EXPORT_CREATED.text(result.packageDirectory.name),
                         lastExportDirectoryPath = result.packageDirectory.absolutePath,
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Einzelexport fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.SINGLE_EXPORT_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
 
     fun shareGpsLog() {
-        val path = uiState.gpsLogPath.takeIf { it.isNotBlank() } ?: return setError("Noch keine GPS-Logdatei vorhanden.")
+        val path = uiState.gpsLogPath.takeIf { it.isNotBlank() } ?: return setError(ConsumerRuntimeText.GPS_LOG_MISSING.text())
         host?.shareFile(path, "text/csv")
     }
 
     fun shareMatchLog() {
-        val path = uiState.matchLogPath.takeIf { it.isNotBlank() } ?: return setError("Noch keine Matcher-Logdatei vorhanden.")
+        val path = uiState.matchLogPath.takeIf { it.isNotBlank() } ?: return setError(ConsumerRuntimeText.MATCH_LOG_MISSING.text())
         host?.shareFile(path, "application/x-ndjson")
     }
 
     fun shareRuntimeDiagnosticsLog() {
         val path = uiState.runtimeDiagnosticsLogPath.takeIf { it.isNotBlank() }
-            ?: return setError("Noch keine Diagnose-Logdatei vorhanden.")
+            ?: return setError(ConsumerRuntimeText.DIAGNOSTIC_LOG_MISSING.text())
         host?.shareFile(path, "application/x-ndjson")
     }
 
@@ -1622,12 +1633,12 @@ class ConsumerSessionController(
                     copy(
                         gpsLogPath = gpsLogFile().absolutePath,
                         matchLogPath = matchLogFile().absolutePath,
-                        maintenanceMessage = "Fahrlog geleert.",
+                        maintenanceMessage = ConsumerRuntimeText.DRIVING_LOG_CLEARED.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Fahrlog leeren fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.CLEAR_DRIVING_LOG_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
@@ -1644,18 +1655,18 @@ class ConsumerSessionController(
                 postState {
                     copy(
                         runtimeDiagnosticsLogPath = runtimeDiagnosticsLogFile().absolutePath,
-                        maintenanceMessage = "Diagnose-Log geleert.",
+                        maintenanceMessage = ConsumerRuntimeText.DIAGNOSTIC_LOG_CLEARED.text(),
                         lastError = "",
                     )
                 }
             } catch (error: Exception) {
-                setError("Diagnose-Log leeren fehlgeschlagen: ${error.message}")
+                setError(ConsumerRuntimeText.CLEAR_DIAGNOSTIC_LOG_FAILED.text(error.message ?: error.javaClass.simpleName))
             }
         }
     }
 
     fun openCurrentOsmUrl() {
-        val url = currentOsmUrl() ?: return setError("Keine OSM-Position verfuegbar.")
+        val url = currentOsmUrl() ?: return setError(ConsumerRuntimeText.OSM_LOCATION_MISSING.text())
         host?.openExternalUrl(url)
     }
 
@@ -1663,44 +1674,52 @@ class ConsumerSessionController(
         val state = uiState
         fun text(value: String?): String = value?.trim().takeUnless { it.isNullOrEmpty() } ?: "n/a"
         return listOf(
-            "Koordinate" to coordinateText(),
-            "Geschwindigkeit" to String.format(Locale.US, "%.1f km/h", state.currentSpeedKmh),
-            "Tempolimit" to (state.speedLimitDisplayText ?: state.speedLimitKmh?.toString()?.plus(" km/h") ?: if (state.isUnlimitedSpeedLimitActive) "unbegrenzt" else "n/a"),
-            "Delta" to "${ConsumerMainScreenLogic.currentOverspeedKmh(state)} km/h",
-            "Drive-Status" to state.driveStatus,
-            "GPS-Fixes" to state.gpsFixCount.toString(),
-            "Aktives Bundle" to state.activeBundleVersion,
-            "Aktive DB" to if (state.activeDBPath.isBlank()) "n/a" else File(state.activeDBPath).name,
-            "DB-Pfad" to if (state.activeDBPath.isBlank()) "n/a" else state.activeDBPath,
-            "Way-ID" to text(state.limitWayId),
-            "Strasse" to text(state.limitStreetName),
-            "Stadt" to text(state.limitCityName),
-            "Ort" to text(state.limitCityPlaceName),
-            "Kreis" to text(state.limitCityDistrictName),
-            "GPS-Signal" to "${state.gpsSignalBars}/4",
-            "Horizontal" to (state.gpsHorizontalAccuracyM?.run { String.format(Locale.US, "%.1f m", this) } ?: "n/a"),
-            "Matcher" to state.matcherDebugProfile.debugLabel,
-            "Tunnel-Modus" to when (state.tunnelModeState) {
-                TunnelModeState.INACTIVE -> "inactive"
-                TunnelModeState.ACTIVE -> "active"
+            ConsumerRuntimeText.COORDINATES.text() to coordinateText(),
+            ConsumerRuntimeText.SPEED.text() to String.format(Locale.US, "%.1f km/h", state.currentSpeedKmh),
+            ConsumerRuntimeText.SPEED_LIMIT.text() to (state.speedLimitDisplayText?.let {
+                if (it == "Schritt") ConsumerRuntimeText.PEDESTRIAN_ZONE.text() else it
+            } ?: state.speedLimitKmh?.toString()?.plus(" km/h") ?: if (state.isUnlimitedSpeedLimitActive) ConsumerRuntimeText.UNLIMITED.text() else "n/a"),
+            ConsumerRuntimeText.OVERSPEED.text() to "${ConsumerMainScreenLogic.currentOverspeedKmh(state)} km/h",
+            ConsumerRuntimeText.DRIVE_STATUS.text() to when (state.driveStatus) {
+                "running" -> ConsumerRuntimeText.DRIVING_RUNNING.text()
+                "stopped" -> ConsumerRuntimeText.DRIVING_STOPPED.text()
+                "requesting_location" -> ConsumerRuntimeText.LOCATION_REQUIRED_FOR_MAP.text()
+                "location_denied" -> ConsumerRuntimeText.LOCATION_DENIED.text()
+                else -> state.driveStatus
             },
-            "Innerorts" to when (state.lastLookupInsideCity) {
-                true -> "ja"
-                false -> "nein"
+            ConsumerRuntimeText.GPS_FIXES.text() to state.gpsFixCount.toString(),
+            ConsumerRuntimeText.ACTIVE_BUNDLE.text() to state.activeBundleVersion,
+            ConsumerRuntimeText.ACTIVE_DATABASE.text() to if (state.activeDBPath.isBlank()) "n/a" else File(state.activeDBPath).name,
+            ConsumerRuntimeText.DATABASE_PATH.text() to if (state.activeDBPath.isBlank()) "n/a" else state.activeDBPath,
+            ConsumerRuntimeText.WAY_ID.text() to text(state.limitWayId),
+            ConsumerRuntimeText.STREET.text() to text(state.limitStreetName),
+            ConsumerRuntimeText.CITY.text() to text(state.limitCityName),
+            ConsumerRuntimeText.LOCALITY.text() to text(state.limitCityPlaceName),
+            ConsumerRuntimeText.DISTRICT.text() to text(state.limitCityDistrictName),
+            ConsumerRuntimeText.GPS_SIGNAL.text() to "${state.gpsSignalBars}/4",
+            ConsumerRuntimeText.GPS_ACCURACY.text() to (state.gpsHorizontalAccuracyM?.run { String.format(Locale.US, "%.1f m", this) } ?: "n/a"),
+            ConsumerRuntimeText.MATCHER.text() to state.matcherDebugProfile.debugLabel,
+            ConsumerRuntimeText.TUNNEL_MODE.text() to when (state.tunnelModeState) {
+                TunnelModeState.INACTIVE -> ConsumerRuntimeText.INACTIVE.text()
+                TunnelModeState.ACTIVE -> ConsumerRuntimeText.ACTIVE.text()
+            },
+            ConsumerRuntimeText.BUILT_UP_AREA.text() to when (state.lastLookupInsideCity) {
+                true -> ConsumerRuntimeText.YES.text()
+                false -> ConsumerRuntimeText.NO.text()
                 null -> "n/a"
             },
-            "Lookup Query" to String.format(Locale.US, "%.2f ms", state.lastLookupQueryMs),
-            "Kandidaten" to state.lastLookupCandidateCount.toString(),
-            "Mit Limit" to state.lastLookupSpeedCandidateCount.toString(),
-            "Naechster Weg" to (state.lastLookupNearestCandidateM?.let { String.format(Locale.US, "%.1f m", it) } ?: "n/a"),
-            "Naechstes Limit" to (state.lastLookupNearestSpeedCandidateM?.let { String.format(Locale.US, "%.1f m", it) } ?: "n/a"),
-            "Stadtquelle" to state.lastLookupCitySource,
-            "GPS-Log" to if (state.gpsLogPath.isBlank()) "n/a" else state.gpsLogPath,
-            "Matcher-Log" to if (state.matchLogPath.isBlank()) "n/a" else state.matchLogPath,
-            "Diagnose-Log" to if (state.runtimeDiagnosticsLogPath.isBlank()) "n/a" else state.runtimeDiagnosticsLogPath,
-            "Lookup" to state.syncStatus,
-            "Manifest-Endpunkte" to state.configuredManifestEndpointCount.toString(),
-            "Manifest-Laender" to state.configuredManifestCountryCodes,
+            ConsumerRuntimeText.QUERY_TIME.text() to String.format(Locale.US, "%.2f ms", state.lastLookupQueryMs),
+            ConsumerRuntimeText.CANDIDATES.text() to state.lastLookupCandidateCount.toString(),
+            ConsumerRuntimeText.WITH_LIMIT.text() to state.lastLookupSpeedCandidateCount.toString(),
+            ConsumerRuntimeText.NEAREST_ROAD.text() to (state.lastLookupNearestCandidateM?.let { String.format(Locale.US, "%.1f m", it) } ?: "n/a"),
+            ConsumerRuntimeText.NEAREST_LIMIT.text() to (state.lastLookupNearestSpeedCandidateM?.let { String.format(Locale.US, "%.1f m", it) } ?: "n/a"),
+            ConsumerRuntimeText.CITY_SOURCE.text() to state.lastLookupCitySource,
+            ConsumerRuntimeText.GPS_LOG.text() to if (state.gpsLogPath.isBlank()) "n/a" else state.gpsLogPath,
+            ConsumerRuntimeText.MATCH_LOG.text() to if (state.matchLogPath.isBlank()) "n/a" else state.matchLogPath,
+            ConsumerRuntimeText.DIAGNOSTIC_LOG.text() to if (state.runtimeDiagnosticsLogPath.isBlank()) "n/a" else state.runtimeDiagnosticsLogPath,
+            ConsumerRuntimeText.LOOKUP.text() to formattedSyncStatus(),
+            ConsumerRuntimeText.MANIFEST_SOURCES.text() to state.configuredManifestEndpointCount.toString(),
+            ConsumerRuntimeText.MANIFEST_COUNTRIES.text() to state.configuredManifestCountryCodes,
         )
     }
 
@@ -1714,11 +1733,15 @@ class ConsumerSessionController(
     }
 
     fun formattedSyncStatus(): String = when (uiState.syncStatus) {
-        "not_synced" -> "Nicht synchronisiert"
-        "syncing" -> "Synchronisiert..."
-        "bootstrapping" -> "Vorbereitung..."
-        "sync_failed" -> "Synchronisierung fehlgeschlagen"
-        "seed_only" -> "Seed aktiv"
+        "not_synced" -> ConsumerRuntimeText.SYNC_NOT_STARTED.text()
+        "syncing" -> ConsumerRuntimeText.SYNC_RUNNING.text()
+        "bootstrapping" -> ConsumerRuntimeText.PREPARING.text()
+        "sync_failed" -> ConsumerRuntimeText.SYNC_FAILED.text()
+        "seed_only" -> ConsumerRuntimeText.STARTER_ACTIVE.text()
+        "ready_upToDate", "ready_up_to_date" -> ConsumerRuntimeText.SYNC_CURRENT.text()
+        "ready_fullDownload", "ready_full_download", "ready_deltaPatch" -> ConsumerRuntimeText.SYNC_COMPLETE.text()
+        "ready_bootstrap" -> ConsumerRuntimeText.STARTER_ACTIVE.text()
+        "ready_manifest" -> ConsumerRuntimeText.MANIFEST_READY.text()
         else -> uiState.syncStatus.replace("_", " ")
     }
 
@@ -1757,7 +1780,7 @@ class ConsumerSessionController(
             return ""
         }
         val latest = uiState.downloadedBundleLatestVersionByRegion[key]
-        return if (latest != null) "geladen ($latest)" else "geladen"
+        return if (latest != null) ConsumerRuntimeText.DOWNLOADED_VERSION.text(latest) else ConsumerRuntimeText.DOWNLOADED.text()
     }
 
     private fun coordinateText(): String {
@@ -1769,7 +1792,12 @@ class ConsumerSessionController(
     private fun applyBundleSyncProgress(progress: BundleSyncProgress) {
         postState {
             copy(
-                syncProgressDetail = progress.detail,
+                syncProgressDetail = when (progress.stage) {
+                    BundleSyncStage.PREPARING -> ConsumerRuntimeText.DOWNLOAD_PREPARING.text()
+                    BundleSyncStage.DOWNLOADING -> ConsumerRuntimeText.DOWNLOAD_RUNNING.text()
+                    BundleSyncStage.ASSEMBLING -> ConsumerRuntimeText.DOWNLOAD_ASSEMBLING.text()
+                    BundleSyncStage.COMPLETED -> ConsumerRuntimeText.SYNC_COMPLETE.text()
+                },
                 syncProgressCompletedBytes = progress.completedBytes.coerceAtLeast(0L),
                 syncProgressTotalBytes = progress.totalBytes.coerceAtLeast(0L),
             )
@@ -1837,7 +1865,7 @@ class ConsumerSessionController(
 
     private fun buildBundleDownloadSections(): List<BundleDownloadCountrySection> {
         val config = targetsConfig ?: return emptyList()
-        val locale = Locale.GERMANY
+        val locale = Locale.getDefault()
         return config.countries.map { country ->
             val countryName = locale.getDisplayCountryForCode(country.iso2 ?: country.countryCode.take(2)).ifBlank {
                 country.countryId.replace('-', ' ').replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
@@ -1870,11 +1898,19 @@ class ConsumerSessionController(
     }
 
     private fun configureForScreenshotMode(state: AppScreenshotState) {
-        val fixture = state.fixture
+        val scenario = countryScreenshotScenario
+        val fixture = scenario?.let {
+            state.fixture.copy(currentSpeedKmh = (it.limitKmh + it.deltaKmh).toDouble(), speedLimitKmh = it.limitKmh,
+                streetName = it.street, cityName = it.city, latitude = it.latitude, longitude = it.longitude, insideCity = true)
+        } ?: state.fixture
+        val selectedCountry = penaltyCountrySelection.update(regionalPackCatalog, fixture.latitude, fixture.longitude,
+            fixture.gpsHorizontalAccuracyM, clock.millis() / 1000.0, clock.millis() / 1000.0)
+        check(scenario == null || selectedCountry == scenario.countryCode) { "Screenshot GPS country did not resolve" }
         uiState = uiState.copy(
+            activePenaltyRules = selectedCountry?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable(),
             startupDataState = StartupDataState.READY,
             startupProgress = 1.0,
-            startupDetail = "Screenshot fixture loaded",
+            startupDetail = ConsumerRuntimeText.SCREENSHOT_READY.text(),
             syncStatus = "ready_fixture",
             activeBundleVersion = "screenshot-fixture",
             activeDBPath = "/tmp/screenshot-fixture.sqlite",
@@ -1911,33 +1947,21 @@ class ConsumerSessionController(
             cameraSpeedLimitEvidence = state == AppScreenshotState.CAMERA_LIMIT_ACTIVE,
             localObservationStatus = "",
             germanSpeechModelState = GermanSpeechModelState.READY,
-            germanSpeechModelStatus = "Screenshot-Modus verwendet kein Live-Audio.",
+            germanSpeechModelStatus = ConsumerRuntimeText.SCREENSHOT_NO_AUDIO.text(),
             gpsLogPath = gpsLogFile().absolutePath,
             matchLogPath = matchLogFile().absolutePath,
         )
     }
 
     private fun loadPenaltyRules(countryCode: String): ActivePenaltyRules {
-        val assetName = "${countryCode.trim().uppercase(Locale.US)}-rules.json"
-        val fileName: String
-        val raw = when {
-            assetReader.readTextOrNull("Rules/$assetName") != null -> {
-                fileName = assetName
-                assetReader.readText("Rules/$assetName")
-            }
-            assetReader.readTextOrNull(assetName) != null -> {
-                fileName = assetName
-                assetReader.readText(assetName)
-            }
-            else -> {
-                fileName = "DEU-rules.json"
-                assetReader.readTextOrNull("Rules/DEU-rules.json")
-                    ?: assetReader.readTextOrNull("DEU-rules.json")
-                    ?: return ActivePenaltyRules.fallback()
-            }
-        }
-        val parsed = runCatching { PenaltyRulesParser.parse(raw) }.getOrElse { return ActivePenaltyRules.fallback() }
-        return ActivePenaltyRules(fileName = fileName, ruleSet = parsed)
+        val code = PenaltyCountryCodes.normalize(countryCode) ?: return ActivePenaltyRules.unavailable()
+        val assetName = "$code-rules.json"
+        val raw = assetReader.readTextOrNull("Rules/$assetName") ?: assetReader.readTextOrNull(assetName)
+            ?: return ActivePenaltyRules.unavailable(code)
+        val parsed = runCatching { PenaltyRulesParser.parse(raw) }.getOrNull()
+            ?.takeIf { PenaltyCountryCodes.normalize(it.countryCode) == code && it.bands.isNotEmpty() }
+            ?: return ActivePenaltyRules.unavailable(code)
+        return ActivePenaltyRules(fileName = assetName, ruleSet = parsed)
     }
 
     private fun tokenize(raw: String): String {
@@ -1976,7 +2000,7 @@ class ConsumerSessionController(
             updateState {
                 copy(
                     driveStatus = "location_denied",
-                    lastError = "Standortberechtigung wurde nicht erteilt.",
+                    lastError = ConsumerRuntimeText.LOCATION_DENIED.text(),
                 )
             }
             return
@@ -1990,7 +2014,7 @@ class ConsumerSessionController(
             updateState {
                 copy(
                     driveStatus = "location_error",
-                    lastError = "Keine aktiven Standortanbieter verfuegbar.",
+                    lastError = ConsumerRuntimeText.LOCATION_PROVIDERS_MISSING.text(),
                 )
             }
             return
@@ -2002,7 +2026,7 @@ class ConsumerSessionController(
                 updateState {
                     copy(
                         driveStatus = "location_error",
-                        lastError = it.message ?: "Standortupdates konnten nicht gestartet werden.",
+                        lastError = it.message ?: ConsumerRuntimeText.LOCATION_UPDATES_FAILED.text(),
                     )
                 }
             }
@@ -2105,7 +2129,6 @@ class ConsumerSessionController(
         val token = lookupToken.advance()
         val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
         val fallbackBundleVersion = uiState.activeBundleVersion
-        val fallbackPenaltyRules = uiState.activePenaltyRules
 
         submitBackgroundTask {
             val route = runCatching {
@@ -2128,7 +2151,8 @@ class ConsumerSessionController(
             }.getOrNull()
             val routedDBPath = route?.dbPath?.takeIf { it.isNotBlank() && File(it).exists() }
             val effectiveDBPath = routedDBPath ?: fallbackDBPath
-            val fallbackCountryCode = normalizedCountryCode(fallbackPenaltyRules.countryCode)
+            val fallbackCountryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
+                ?: inferCountryCodeFromDBPath(fallbackDBPath)
             val effectiveCountryCode = normalizedCountryCode(route?.countryCode)
                 ?: fallbackCountryCode
                 ?: inferCountryCodeFromDBPath(effectiveDBPath)
@@ -2139,11 +2163,6 @@ class ConsumerSessionController(
                 ?.takeIf { VERIFIED_SHA256.matches(it) }
             val previousTrafficSignBundleSha256 = synchronized(trafficSignStateLock) {
                 latestTrafficSignContext?.bundleSha256
-            }
-            val effectivePenaltyRules = if (effectiveCountryCode == fallbackCountryCode) {
-                fallbackPenaltyRules
-            } else {
-                loadPenaltyRules(effectiveCountryCode ?: "DEU")
             }
             val routeChanged = route != null && (
                     routedDBPath != fallbackDBPath ||
@@ -2181,7 +2200,7 @@ class ConsumerSessionController(
                         if (!lookupToken.isCurrent(token)) this else copy(
                             activeBundleVersion = effectiveBundleVersion,
                             activeDBPath = effectiveDBPath,
-                            activePenaltyRules = effectivePenaltyRules,
+
                             trafficSignGeneration = nextTrafficSignGeneration,
                             cameraSpeedLimitEvidence = false,
                             trafficSignFinalConfidence = null,
@@ -2266,7 +2285,7 @@ class ConsumerSessionController(
                     localOverrideValue = localOverrideValue,
                     localCorrectionId = indexedCorrection?.observationId,
                     result = result,
-                    countryCode = effectivePenaltyRules.countryCode,
+                    countryCode = effectiveCountryCode ?: "ZZZ",
                 )
                 val evaluation = evaluateTrafficSignSources(
                     expectedLookupToken = token,
@@ -2275,7 +2294,7 @@ class ConsumerSessionController(
                     base = baseLimit,
                     bundleVersion = effectiveBundleVersion,
                     bundleSha256 = effectiveBundleSha256,
-                    countryCode = effectiveCountryCode ?: effectivePenaltyRules.countryCode,
+                    countryCode = effectiveCountryCode ?: "ZZZ",
                     localCorrectionRevision = indexedCorrection?.observationId,
                     headingDegrees = trafficSignHeadingDegrees,
                 ) ?: return@submitBackgroundTask
@@ -2369,7 +2388,7 @@ class ConsumerSessionController(
                         lastLookupNearestSpeedCandidateM = result.nearestSpeedCandidateDistanceM,
                         activeBundleVersion = effectiveBundleVersion,
                         activeDBPath = effectiveDBPath,
-                        activePenaltyRules = effectivePenaltyRules,
+
                         tunnelModeState = if (result.isTunnelSegment) TunnelModeState.ACTIVE else TunnelModeState.INACTIVE,
                         isLowSpeedMatchingRuleActive = result.usedWalkingTurnSwitch,
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -2416,7 +2435,7 @@ class ConsumerSessionController(
                     copy(
                         activeBundleVersion = effectiveBundleVersion,
                         activeDBPath = effectiveDBPath,
-                        activePenaltyRules = effectivePenaltyRules,
+
                         driveStatus = "location_error",
                         lastError = error.message ?: error.javaClass.simpleName,
                         gpsLogPath = gpsLogFile().absolutePath,
@@ -2440,8 +2459,8 @@ class ConsumerSessionController(
             return
         }
         val speechText = when (notice.severity) {
-            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.let { "$it ${uiState.activePenaltyRules.currencyCode}" } ?: uiState.activePenaltyRules.currencyCode
-            PenaltySeverity.POINTS_AND_FINE -> notice.penaltyPoints?.let { if (it == 1) "ein Punkt" else "$it Punkte" } ?: "Punkte"
+            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.let { "$it ${uiState.activePenaltyRules.currencyCode}" } ?: notice.title
+            PenaltySeverity.POINTS_AND_FINE -> "${notice.penaltyPoints ?: ""} ${ConsumerMainScreenLogic.secondaryMetricText(uiState)}"
         }
         val now = System.currentTimeMillis()
         val changedSignificantly = speechText != lastAnnouncedSpeechText
@@ -2470,9 +2489,9 @@ class ConsumerSessionController(
             return
         }
         val speechText = if (drivingBanMonths == 1) {
-            "Achtung. Ein Monat Fahrverbot moeglich."
+            ConsumerRuntimeText.DRIVING_BAN_ONE.text()
         } else {
-            "Achtung. $drivingBanMonths Monate Fahrverbot moeglich."
+            ConsumerRuntimeText.DRIVING_BAN_MONTHS.text(drivingBanMonths)
         }
         if (uiState.audioAlertsEnabled) {
             speakText(speechText)
@@ -2488,7 +2507,7 @@ class ConsumerSessionController(
         textToSpeech = TextToSpeech(appContext) { status ->
             textToSpeechReady = status == TextToSpeech.SUCCESS
             if (textToSpeechReady) {
-                textToSpeech?.language = Locale.GERMANY
+                textToSpeech?.language = Locale.getDefault()
                 textToSpeech?.setSpeechRate(0.9f)
                 textToSpeech?.setOnUtteranceProgressListener(
                     object : UtteranceProgressListener() {
@@ -2527,6 +2546,7 @@ class ConsumerSessionController(
         if (!textToSpeechReady) {
             return
         }
+        textToSpeech?.language = Locale.getDefault()
         textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "youspeed-${System.currentTimeMillis()}")
     }
 
@@ -2535,7 +2555,7 @@ class ConsumerSessionController(
             copy(
                 speedCaptureMode = SpeedCaptureModeState.PREPARING,
                 speedCaptureTranscript = "",
-                localObservationStatus = "Offline-Spracherkennung wird vorbereitet.",
+                localObservationStatus = ConsumerRuntimeText.SPEECH_PREPARING.text(),
             )
         }
         if (uiState.germanSpeechModelState != GermanSpeechModelState.READY) {
@@ -2544,7 +2564,7 @@ class ConsumerSessionController(
             return
         }
         if (bundledVoskModel == null) {
-            showSpeedCaptureFailure(reason = "Gebuendeltes Offline-Sprachmodell ist noch nicht bereit.")
+            showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_NOT_READY.text())
             return
         }
         startSpeedCapturePromptSpeech()
@@ -2556,7 +2576,7 @@ class ConsumerSessionController(
             copy(
                 speedCaptureMode = SpeedCaptureModeState.SPEAKING_PROMPT,
                 speedCaptureTranscript = "",
-                localObservationStatus = "Korrektur.",
+                localObservationStatus = ConsumerRuntimeText.CORRECTION_PROMPT.text(),
             )
         }
         if (!textToSpeechReady) {
@@ -2568,6 +2588,7 @@ class ConsumerSessionController(
         speedCapturePromptUtteranceId = "speed-capture-prompt-${System.currentTimeMillis()}"
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.postDelayed(speedCapturePromptFallbackRunnable, SpeedCaptureSpeech.promptFallbackDelayMs)
+        textToSpeech?.language = Locale.GERMANY
         textToSpeech?.speak(
             SpeedCaptureSpeech.promptText,
             TextToSpeech.QUEUE_FLUSH,
@@ -2586,20 +2607,20 @@ class ConsumerSessionController(
         if (isSpeedCaptureResolved) {
             return
         }
-        val model = bundledVoskModel ?: return showSpeedCaptureFailure(reason = "Offline-Sprachmodell ist nicht geladen.")
+        val model = bundledVoskModel ?: return showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_NOT_LOADED.text())
         stopActiveSpeedCaptureRecognition(clearStatus = false)
         isSpeedCaptureResolved = false
         updateState {
             copy(
                 speedCaptureMode = SpeedCaptureModeState.LISTENING,
                 speedCaptureTranscript = "",
-                localObservationStatus = "Jetzt sprechen: 10 bis 130 oder Fussgaengerzone.",
+                localObservationStatus = ConsumerRuntimeText.SPEECH_LISTENING.text(),
             )
         }
         val session = runCatching {
             VoskSpeedCaptureSession(model, SpeedCaptureSpeech.voskGrammarJson)
         }.getOrElse {
-            showSpeedCaptureFailure(reason = "Offline-Spracherkennung konnte nicht initialisiert werden: ${it.message ?: it.javaClass.simpleName}")
+            showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_INIT_FAILED.text(it.message ?: it.javaClass.simpleName))
             return
         }
         activeVoskSpeedCaptureSession = session
@@ -2621,16 +2642,16 @@ class ConsumerSessionController(
                     }
 
                     override fun onError(message: String) {
-                        showSpeedCaptureFailure(reason = "Offline-Spracherkennung fehlgeschlagen: $message")
+                        showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_FAILED.text(message))
                     }
                 },
             )
         }.getOrElse {
-            showSpeedCaptureFailure(reason = "Spracherkennung konnte nicht gestartet werden: ${it.message ?: it.javaClass.simpleName}")
+            showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_START_FAILED.text(it.message ?: it.javaClass.simpleName))
             return
         }
         if (!started) {
-            showSpeedCaptureFailure(reason = "Spracherkennung ist bereits aktiv.")
+            showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_ALREADY_ACTIVE.text())
         }
     }
 
@@ -2707,20 +2728,20 @@ class ConsumerSessionController(
         isGermanSpeechModelCheckInFlight = true
         setGermanSpeechModelState(
             state = GermanSpeechModelState.DOWNLOADING,
-            status = "Gebuendeltes deutsches Offline-Sprachmodell wird vorbereitet.",
+            status = ConsumerRuntimeText.SPEECH_MODEL_PREPARING.text(),
             updateCaptureStatus = userInitiated || uiState.speedCaptureMode == SpeedCaptureModeState.PREPARING,
         )
         val submitted = submitBackgroundTask {
             runCatching { bundledVoskModelStore.prepareModel() }
                 .onSuccess { handle ->
                     replaceBundledVoskModel(handle)
-                    markGermanSpeechModelReady("Gebuendeltes deutsches Offline-Sprachmodell ist bereit.")
+                    markGermanSpeechModelReady(ConsumerRuntimeText.SPEECH_MODEL_READY.text())
                     if (shouldResumeSpeedCaptureAfterSpeechModelReady) {
                         mainHandler.post { continuePendingSpeedCaptureIfPossible() }
                     }
                 }
                 .onFailure { error ->
-                    val message = "Gebuendeltes Offline-Sprachmodell konnte nicht vorbereitet werden: ${error.message ?: error.javaClass.simpleName}"
+                    val message = ConsumerRuntimeText.SPEECH_MODEL_PREPARATION_FAILED.text(error.message ?: error.javaClass.simpleName)
                     isGermanSpeechModelCheckInFlight = false
                     setGermanSpeechModelState(
                         state = GermanSpeechModelState.UNAVAILABLE,
@@ -2762,7 +2783,7 @@ class ConsumerSessionController(
                 copy(
                     speedCaptureMode = SpeedCaptureModeState.REQUESTING_MIC_PERMISSION,
                     speedCaptureTranscript = "",
-                    localObservationStatus = "Mikrofonberechtigung wird angefragt.",
+                    localObservationStatus = ConsumerRuntimeText.MIC_PERMISSION_REQUESTED.text(),
                 )
             }
             host?.requestMicrophonePermission()
@@ -2811,7 +2832,7 @@ class ConsumerSessionController(
                 startupDetail = prepared.startupDetail,
                 activeBundleVersion = prepared.activeBundleVersion,
                 activeDBPath = prepared.activeDBPath,
-                activePenaltyRules = prepared.activePenaltyRules,
+
                 syncStatus = prepared.syncStatus,
                 localObservations = prepared.localObservations,
                 driveStatus = "stopped",
@@ -2835,7 +2856,7 @@ class ConsumerSessionController(
             copy(
                 startupDataState = StartupDataState.FAILED,
                 startupProgress = 1.0,
-                startupDetail = "Deutsches Sprachmodell konnte nicht vorbereitet werden",
+                startupDetail = ConsumerRuntimeText.SPEECH_PREPARATION_FAILED.text(),
                 speedCaptureMode = SpeedCaptureModeState.IDLE,
                 speedCaptureTranscript = "",
                 localObservationStatus = "",
@@ -3679,8 +3700,7 @@ class ConsumerSessionController(
     }
 
     private fun normalizedCountryCode(raw: String?): String? {
-        val code = raw?.trim()?.uppercase(Locale.US) ?: return null
-        return code.takeIf { it.length == 3 }
+        return PenaltyCountryCodes.normalize(raw)
     }
 
     private fun sha256Hex(file: File): String {

@@ -37,7 +37,7 @@ for locale in "${locales[@]}"; do
   output_dir="$ROOT_DIR/store/android/listing/$locale/phone-screenshots"
   mkdir -p "$output_dir"
 
-  "$ADB" shell cmd locale set-app-locales "$PACKAGE_ID" "$locale" >/dev/null 2>&1 || true
+  "$ADB" shell cmd locale set-app-locales "$PACKAGE_ID" --locales "$locale" >/dev/null
 
   for capture in "${captures[@]}"; do
     file_name="${capture%%:*}"

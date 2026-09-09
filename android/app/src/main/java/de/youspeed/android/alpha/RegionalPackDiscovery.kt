@@ -91,6 +91,11 @@ class TrafficSignCountrySelection {
     private var pendingFixes = 0
     private var lastTimestamp = Double.NEGATIVE_INFINITY
 
+    fun suspendPendingTransition() {
+        pendingCountry = null
+        pendingFixes = 0
+    }
+
     fun update(countries: Set<String>, timestamp: Double, override: String? = null): String? {
         if (!timestamp.isFinite() || timestamp <= lastTimestamp) return null
         lastTimestamp = timestamp

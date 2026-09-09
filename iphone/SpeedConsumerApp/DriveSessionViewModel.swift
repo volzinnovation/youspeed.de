@@ -199,6 +199,7 @@ struct TrafficSignFeedbackGate {
 }
 
 enum AppScreenshotState: String {
+    case countryPenalty = "country-penalty"
     case warnLevel0 = "warn-level-0"
     case warnLevel1 = "warn-level-1"
     case warnLevel2 = "warn-level-2"
@@ -234,6 +235,19 @@ enum AppScreenshotState: String {
 
     var fixture: Fixture {
         switch self {
+        case .countryPenalty:
+            let input = CountryPenaltyScreenshotInput.current()
+            let place: (String, String, Double, Double)
+            switch input.countryCode {
+            case "FRA": place = ("Avenue de la République", "Paris", 48.8566, 2.3522)
+            case "BEL": place = ("Rue de la Loi / Wetstraat", "Bruxelles / Brussel", 50.8466, 4.3528)
+            case "NLD": place = ("Damrak", "Amsterdam", 52.3676, 4.9041)
+            default: place = ("Durlacher Allee", "Karlsruhe", 49.0102, 8.4266)
+            }
+            return Fixture(currentSpeedKmh: Double(input.postedLimitKmh + input.deltaKmh), speedLimitKmh: input.postedLimitKmh,
+                           speedLimitDisplayText: nil, isUnlimitedSpeedLimitActive: false,
+                           streetName: place.0, cityName: place.1, wayID: "country-review-\(input.countryCode)",
+                           insideCity: input.insideCity, latitude: place.2, longitude: place.3, gpsHorizontalAccuracyM: 5, gpsSignalBars: 4)
         case .warnLevel0:
             return Fixture(
                 currentSpeedKmh: 47,
@@ -340,6 +354,20 @@ enum AppScreenshotState: String {
                 gpsSignalBars: 4
             )
         }
+    }
+}
+
+struct CountryPenaltyScreenshotInput {
+    let countryCode: String
+    let deltaKmh: Int
+    let postedLimitKmh: Int
+    let insideCity: Bool
+
+    static func current(environment: [String: String] = ProcessInfo.processInfo.environment) -> Self {
+        Self(countryCode: PenaltyCountryCode.normalized(environment["YOUSPEED_SCREENSHOT_COUNTRY"]) ?? "FRA",
+             deltaKmh: min(200, max(0, Int(environment["YOUSPEED_SCREENSHOT_DELTA"] ?? "0") ?? 0)),
+             postedLimitKmh: min(200, max(1, Int(environment["YOUSPEED_SCREENSHOT_LIMIT"] ?? "50") ?? 50)),
+             insideCity: environment["YOUSPEED_SCREENSHOT_INSIDE_CITY"] != "0")
     }
 }
 
@@ -529,8 +557,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var syncProgressETASeconds: Double?
     @Published var syncPartDownloads: [PartDownloadProgress] = []
     @Published var maintenanceMessage: String = ""
-    @Published private(set) var firstLocationPackStatus = "Kartenauswahl wartet auf den ersten GPS-Standort."
-    @Published private(set) var countryModelPackStatus = "Verkehrszeichen-Modell: Land noch nicht bestimmt."
+    @Published private(set) var firstLocationPackStatus = NSLocalizedString("first_location.waiting", comment: "")
+    @Published private(set) var countryModelPackStatus = NSLocalizedString("first_location.model_waiting", comment: "")
     @Published var firstLocationAllowsCellular = UserDefaults.standard.bool(forKey: "youspeed.first_location_cellular") {
         didSet {
             UserDefaults.standard.set(firstLocationAllowsCellular, forKey: "youspeed.first_location_cellular")
@@ -540,6 +568,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let regionalPackCatalog = RegionalPackCatalog.bundled()
     private let countryPackRegistry = TrafficSignCountryPackRegistry.bundled()
     private var countryPackSelection = TrafficSignCountrySelection()
+    private var penaltyCountrySelection = PenaltyCountrySelection()
+    @Published private(set) var penaltyRulesAreApplicable = false
+    private var lastPenaltyFixTimestamp: Double?
+    private var latestPenaltyFixIsValid = false
+    private var penaltyCountryExpiryTask: Task<Void, Never>?
+    private var activeMapCountryCode: String?
+    private var penaltyRulesUseBundledSource = false
     private var firstLocationRegion: RegionalPackCatalog.Region?
     private var firstLocationAttempts = 0
     private var firstLocationRetryAfter = Date.distantPast
@@ -550,6 +585,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     deinit {
         firstLocationNetworkMonitor.cancel()
+        penaltyCountryExpiryTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
     @Published var activeBundleVersion: String = "none"
@@ -1242,20 +1278,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func normalizedCountryCode(_ raw: String?) -> String? {
-        guard let raw else {
-            return nil
-        }
-        let code = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard code.count == 3 else {
-            return nil
-        }
-        return code
+        PenaltyCountryCode.normalized(raw)
     }
 
     private func isGermanAutobahnUnlimitedMatch(result: SpeedLimitResult, localOverrideValue: String?) -> Bool {
         guard localOverrideValue == nil,
               result.isUnlimitedSpeedLimit == true,
-              normalizedCountryCode(activePenaltyRules.countryCode) == "DEU" else {
+              activeMapCountryCode == "DEU" else {
             return false
         }
         return result.highway?.lowercased() == "motorway"
@@ -1276,47 +1305,93 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         V3SpeedLimitService(
             dbPath: dbPath,
             countryCode: normalizedCountryCode(preferredCountryCode)
-                ?? normalizedCountryCode(activePenaltyRules.countryCode)
-                ?? inferCountryCodeFromDBPath(dbPath),
+                ?? activeMapCountryCode
+                ?? normalizedCountryCode(inferCountryCodeFromDBPath(dbPath)),
             matchingModel: matcherDebugProfile.matchingModel
         )
     }
 
     private func applyPenaltyRulesForActiveBundle(preferredCountryCode: String? = nil) async {
         var context: PenaltyRuleContext?
+        let requestedDBPath = activeDBPath
         if !activeDBPath.isEmpty {
             context = try? await bundleManager.resolvePenaltyRuleContext(forDBPath: activeDBPath)
         }
+        guard activeDBPath == requestedDBPath else { return }
+        activeMapCountryCode = normalizedCountryCode(preferredCountryCode)
+            ?? normalizedCountryCode(context?.countryCode)
+            ?? normalizedCountryCode(inferCountryCodeFromDBPath(activeDBPath))
 
-        if let rulesPath = context?.rulesPath {
-            do {
-                let fileURL = URL(fileURLWithPath: rulesPath)
-                let rules = try SpeedPenaltyRuleSet.loadFile(at: fileURL)
-                activePenaltyRules = rules
-                activePenaltyRulesFile = fileURL.lastPathComponent
+        // Location evidence outranks an installed map, including when the
+        // driver has crossed into a country whose map has not been downloaded.
+        if penaltyCountrySelection.hasLocationEvidence {
+            guard let country = penaltyCountrySelection.countryCode,
+                  latestPenaltyFixIsValid,
+                  let timestamp = lastPenaltyFixTimestamp,
+                  Date().timeIntervalSince1970 - timestamp <= 30 else {
+                penaltyRulesAreApplicable = false
                 return
-            } catch {
-                Self.logger.warning("rules load from local bundle failed: \(error.localizedDescription, privacy: .public)")
             }
+            applyBundledPenaltyRules(countryCode: country)
+            return
         }
 
-        let countryCode = normalizedCountryCode(preferredCountryCode)
-            ?? normalizedCountryCode(context?.countryCode)
-            ?? inferCountryCodeFromDBPath(activeDBPath)
-            ?? "DEU"
+        // A downloaded map supplies map metadata, never proof of location or
+        // a newer tariff than the reviewed rules shipped with this app.
+        penaltyRulesAreApplicable = false
+    }
+
+    private func applyBundledPenaltyRules(countryCode: String) {
         let bundledStem = "\(countryCode)-rules"
         if let rules = try? SpeedPenaltyRuleSet.loadBundled(named: bundledStem) {
             activePenaltyRules = rules
             activePenaltyRulesFile = "\(bundledStem).json"
+            penaltyRulesUseBundledSource = true
+            penaltyRulesAreApplicable = true
             return
         }
-        if let fallbackBundled = try? SpeedPenaltyRuleSet.loadBundled(named: "DEU-rules") {
-            activePenaltyRules = fallbackBundled
-            activePenaltyRulesFile = "DEU-rules.json"
+        penaltyRulesAreApplicable = false
+    }
+
+    func updatePenaltyCountry(latitude: Double, longitude: Double, accuracy: Double, timestamp: Double, now: Double) {
+        expirePenaltyCountry(at: now)
+        guard FirstLocationPackPolicy.acceptsFix(latitude: latitude, longitude: longitude, accuracy: accuracy, timestamp: timestamp, now: now),
+              let regionalPackCatalog else {
+            latestPenaltyFixIsValid = false
+            penaltyRulesAreApplicable = false
+            penaltyCountrySelection.suspend()
             return
         }
-        activePenaltyRules = SpeedPenaltyRuleSet.fallbackDEU()
-        activePenaltyRulesFile = "DEU-rules.json"
+        if let lastPenaltyFixTimestamp, timestamp <= lastPenaltyFixTimestamp { return }
+        latestPenaltyFixIsValid = true
+        lastPenaltyFixTimestamp = timestamp
+        penaltyCountryExpiryTask?.cancel()
+        let delay = max(0, 30.05 - (now - timestamp))
+        penaltyCountryExpiryTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .seconds(delay)) } catch { return }
+            self?.expirePenaltyCountry(at: Date().timeIntervalSince1970)
+        }
+        let countries = Set(regionalPackCatalog.matches(longitude: longitude, latitude: latitude).map(\.country))
+        guard let country = penaltyCountrySelection.update(countries: countries, timestamp: timestamp) else {
+            penaltyRulesAreApplicable = false
+            return
+        }
+        if !penaltyRulesAreApplicable || !penaltyRulesUseBundledSource || normalizedCountryCode(activePenaltyRules.countryCode) != country {
+            applyBundledPenaltyRules(countryCode: country)
+        }
+    }
+
+    func expirePenaltyCountry(at now: Double) {
+        guard let timestamp = lastPenaltyFixTimestamp, now - timestamp > 30 else { return }
+        latestPenaltyFixIsValid = false
+        penaltyCountrySelection.suspend()
+        penaltyRulesAreApplicable = false
+    }
+
+    var penaltyCountryDisplayName: String {
+        guard penaltyRulesAreApplicable else { return NSLocalizedString("penalty.country_unresolved", comment: "") }
+        let code = PenaltyCountryCode.alpha2(activePenaltyRules.countryCode) ?? activePenaltyRules.countryCode
+        return Locale.current.localizedString(forRegionCode: code) ?? activePenaltyRules.countryName
     }
 
     override init() {
@@ -3557,11 +3632,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 await refreshDownloadedBundleInventory()
                 if firstLocationSetup {
                     UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
-                    firstLocationPackStatus = "Passende Karte ist offline bereit: \(option.displayName)."
+                    firstLocationPackStatus = String(format: NSLocalizedString("first_location.ready", comment: ""), option.displayName)
                 }
             } catch {
                 if firstLocationSetup {
-                    firstLocationPackStatus = "Karten-Download fehlgeschlagen. Erneut versuchen oder eine Karte auswählen."
+                    firstLocationPackStatus = NSLocalizedString("first_location.failed", comment: "")
                 }
                 syncStatus = "sync_failed"
                 syncProgressStage = "failed"
@@ -3742,7 +3817,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 }
 
                 syncStatus = "syncing"
-                let preferredCountryCode = normalizedCountryCode(activePenaltyRules.countryCode)
+                let preferredCountryCode = activeMapCountryCode
                     ?? inferCountryCodeFromDBPath(activeDBPath)
                     ?? "DEU"
                 Self.logger.notice(
@@ -4003,6 +4078,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func configureForScreenshotMode(_ screenshotState: AppScreenshotState) {
         let fixture = screenshotState.fixture
+        if screenshotState != .countryPenalty { applyBundledPenaltyRules(countryCode: "DEU") }
         appScreenshotState = screenshotState
         driveStatus = "running"
         invalidateTrafficSignOverrideIfBundleWillChange(
@@ -4055,6 +4131,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     hasCameraEvidenceMarker: true
                 )
             )
+        }
+        if screenshotState == .countryPenalty {
+            currentBundledSpeedLimitKmh = fixture.speedLimitKmh
+            currentBaseUnlimitedSpeedLimitActive = false
+            currentLocalCorrectionValue = nil
+            publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
+            let input = CountryPenaltyScreenshotInput.current()
+            let timestamp = Date().timeIntervalSince1970
+            updatePenaltyCountry(latitude: fixture.latitude, longitude: fixture.longitude, accuracy: 5, timestamp: timestamp, now: timestamp)
+            let notice = currentPenaltyNotice
+            let report: [String: Any] = [
+                "country": activePenaltyRules.countryCode, "requested_country": input.countryCode,
+                "country_resolved": penaltyRulesAreApplicable, "locale": Bundle.main.preferredLocalizations.first ?? "en",
+                "delta_kmh": input.deltaKmh, "posted_limit_kmh": input.postedLimitKmh, "inside_city": input.insideCity,
+                "rules_file": activePenaltyRulesFile, "penalty_present": notice != nil,
+                "title": notice?.title ?? "", "details": notice?.details ?? "",
+                "money_fine_eur": notice?.moneyFineEUR as Any? ?? NSNull(),
+                "penalty_points": notice?.penaltyPoints as Any? ?? NSNull(),
+                "driving_ban_months": notice?.drivingBanMonths as Any? ?? NSNull(),
+                "enforcement_class": notice?.enforcementClass as Any? ?? NSNull()
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
+               let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+                try? data.write(to: documents.appendingPathComponent("country-review.json"), options: .atomic)
+            }
         }
     }
 
@@ -4179,13 +4280,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             firstLocationNetworkMonitor.start(queue: DispatchQueue(label: "de.youspeed.first-location-network"))
         }
         guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else {
-            firstLocationPackStatus = "Erste Karteneinrichtung abgeschlossen."
+            firstLocationPackStatus = NSLocalizedString("first_location.complete", comment: "")
             return
         }
         switch locationManager.authorizationStatus {
         case .notDetermined: locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways: locationManager.requestLocation()
-        default: firstLocationPackStatus = "Für die automatische Kartenauswahl ist die Standortfreigabe erforderlich."
+        default: firstLocationPackStatus = NSLocalizedString("first_location.permission", comment: "")
         }
     }
 
@@ -4197,13 +4298,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func discoverPacks(for location: CLLocation) {
+        updatePenaltyCountry(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
+                             accuracy: location.horizontalAccuracy, timestamp: location.timestamp.timeIntervalSince1970,
+                             now: Date().timeIntervalSince1970)
         guard FirstLocationPackPolicy.acceptsFix(
             latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
             accuracy: location.horizontalAccuracy, timestamp: location.timestamp.timeIntervalSince1970,
             now: Date().timeIntervalSince1970
         ) else { return }
         guard let regionalPackCatalog else {
-            firstLocationPackStatus = "Regionenkatalog fehlt oder ist ungültig. Karte bitte manuell auswählen."
+            firstLocationPackStatus = NSLocalizedString("first_location.catalog_missing", comment: "")
             return
         }
         let matches = regionalPackCatalog.matches(longitude: location.coordinate.longitude, latitude: location.coordinate.latitude)
@@ -4213,13 +4317,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             country: country, platform: "ios", appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
             runtimeVersion: "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)", now: Int(Date().timeIntervalSince1970)
         ).state
-        countryModelPackStatus = country.map { "Verkehrszeichen-Modell \($0): " } ?? "Verkehrszeichen-Modell: "
-        countryModelPackStatus += state == "country_unresolved" ? "Land im Grenzbereich noch unklar." : "Noch kein freigegebenes Download-Paket verfügbar."
+        countryModelPackStatus = String(format: NSLocalizedString("first_location.model_country", comment: ""), country ?? "—",
+                                       NSLocalizedString(state == "country_unresolved" ? "first_location.model_unresolved" : "first_location.model_unavailable", comment: ""))
         guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else { return }
         // The first valid containing region is retained while waiting for Wi-Fi.
         if firstLocationRegion == nil { firstLocationRegion = matches.first }
         if firstLocationRegion == nil {
-            firstLocationPackStatus = "Für diesen Standort ist keine passende Karte im Katalog verfügbar."
+            firstLocationPackStatus = NSLocalizedString("first_location.no_coverage", comment: "")
         }
         continueFirstLocationSetup()
     }
@@ -4230,22 +4334,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               startupDataState == .ready, startupTask == nil, syncTask == nil,
               let region = firstLocationRegion else { return }
         guard let option = bundleDownloadSections.flatMap(\.options).first(where: { $0.id == region.id }) else {
-            firstLocationPackStatus = "Kein Download-Endpunkt für die passende Region verfügbar."
+            firstLocationPackStatus = NSLocalizedString("first_location.no_endpoint", comment: "")
             return
         }
         if !downloadedBundleCountByRegion.isEmpty {
             UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
-            firstLocationPackStatus = "Vorhandene Karten bleiben ausgewählt."
+            firstLocationPackStatus = NSLocalizedString("first_location.existing", comment: "")
             return
         }
         guard firstLocationNetworkReady && (!firstLocationNetworkMetered || firstLocationAllowsCellular) else {
-            firstLocationPackStatus = "Passende Karte: \(option.displayName). Warte auf WLAN oder Freigabe mobiler Daten."
+            firstLocationPackStatus = String(format: NSLocalizedString("first_location.wifi", comment: ""), option.displayName)
             return
         }
         guard firstLocationAttempts < 3, Date() >= firstLocationRetryAfter else { return }
         firstLocationAttempts += 1
         firstLocationRetryAfter = Date().addingTimeInterval(60)
-        firstLocationPackStatus = "Lade die passende Karte: \(option.displayName)."
+        firstLocationPackStatus = String(format: NSLocalizedString("first_location.downloading", comment: ""), option.displayName)
         downloadSelectedBundle(option, firstLocationSetup: true)
         DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
             self?.continueFirstLocationSetup()
@@ -6484,13 +6588,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var currentPenaltyNotice: SpeedPenaltyNotice? {
-        guard !isTunnelModeActive, !isUnlimitedSpeedLimitActive else {
+        guard penaltyRulesAreApplicable, !isTunnelModeActive, !isUnlimitedSpeedLimitActive else {
             return nil
         }
         return SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: currentOverspeedKmh,
             rules: activePenaltyRules,
-            insideCity: lastLookupInsideCity
+            insideCity: lastLookupInsideCity,
+            postedLimitKmh: speedLimitKmh
         )
     }
 
@@ -6529,9 +6634,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         case .pointsAndFine:
             if let points = notice.penaltyPoints {
-                speechText = points == 1 ? "ein Punkt" : "\(points) Punkte"
+                speechText = points == 1 ? NSLocalizedString("penalty.speech.point.one", comment: "") : String(format: NSLocalizedString("penalty.speech.points", comment: ""), points)
             } else {
-                speechText = "Punkte"
+                speechText = NSLocalizedString("penalty.points.many", comment: "")
             }
         }
 
@@ -6869,7 +6974,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         if !isDriving {
-            firstLocationPackStatus = "Standort konnte nicht bestimmt werden. Standortauswahl erneut versuchen."
+            firstLocationPackStatus = NSLocalizedString("first_location.location_failed", comment: "")
             return
         }
         driveStatus = "location_error"

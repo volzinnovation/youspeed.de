@@ -6,41 +6,105 @@
   "currency_code": "EUR",
   "default_language": "en",
   "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
-  "source_checked_at": "2026-07-04",
-  "note": "Indicative warning bands for standard passenger-car speeding violations in France. Bands use retained overspeed after any enforcement tolerance. Sources checked include Service-Public, Code de la route R413-14 and the 2025-12-29 change making 50 km/h or more over the limit an offence.",
+  "source_checked_at": "2026-09-09",
+  "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding. Legal bands refer to officially retained excess after enforcement correction; raw GPS excess is only an illustrative warning and does not establish a fine. Below +20, the posted limit (at most 50 versus above 50 km/h), not an urban/rural flag, selects the standard fine. Points describe the French deduction system. At +50 and above, criminal classification has applied since 2025-12-29; the EUR 300 fixed criminal settlement is conditional, not a guaranteed fine. Court sanctions are not mandatory ban durations. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
     {
       "min_delta_kmh": 1,
       "max_delta_kmh": 4,
       "severity": "money_only",
-      "title_template": "Likely fine",
-      "detail_template": "Fixed fine: 68 {currency} when the posted limit is above 50 km/h, otherwise 135 {currency}; no point loss.",
-      "money_fine_eur": 135,
+      "title_template": "Fine possible",
+      "detail_template": "Standard fine: 135 {currency} at limits up to 50 km/h, otherwise 68 {currency}. No French licence point deduction.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße möglich",
+          "detail_template": "Regelbetrag: 135 {currency} bei Tempolimit bis 50 km/h, sonst 68 {currency}. Kein Punkteabzug im französischen System."
+        },
+        "en": {
+          "title_template": "Fine possible",
+          "detail_template": "Standard fine: 135 {currency} at limits up to 50 km/h, otherwise 68 {currency}. No French licence point deduction."
+        },
+        "fr": {
+          "title_template": "Amende possible",
+          "detail_template": "Amende forfaitaire : 135 {currency} si la limite est de 50 km/h ou moins, sinon 68 {currency}. Aucun retrait de point au barème français."
+        },
+        "nl": {
+          "title_template": "Boete mogelijk",
+          "detail_template": "Standaardboete: 135 {currency} bij een limiet tot 50 km/u, anders 68 {currency}. Geen puntenaftrek in het Franse stelsel."
+        }
+      },
       "penalty_points": 0,
-      "locality_variants": {
-        "urban": { "money_fine_eur": 135, "penalty_points": 0 },
-        "rural": { "money_fine_eur": 68, "penalty_points": 0 }
+      "posted_limit_variants": {
+        "at_most_50": {
+          "money_fine_eur": 135,
+          "penalty_points": 0
+        },
+        "above_50": {
+          "money_fine_eur": 68,
+          "penalty_points": 0
+        }
       }
     },
     {
       "min_delta_kmh": 5,
       "max_delta_kmh": 19,
       "severity": "points_and_fine",
-      "title_template": "Point and fine risk",
-      "detail_template": "Fixed fine: 68 {currency} when the posted limit is above 50 km/h, otherwise 135 {currency}; likely 1 point.",
-      "money_fine_eur": 135,
+      "title_template": "Fine and point deduction",
+      "detail_template": "Standard fine: 135 {currency} at limits up to 50 km/h, otherwise 68 {currency}. 1 French licence point deducted.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße und Punkteabzug",
+          "detail_template": "Regelbetrag: 135 {currency} bei Tempolimit bis 50 km/h, sonst 68 {currency}. 1 Punkt Abzug im französischen System."
+        },
+        "en": {
+          "title_template": "Fine and point deduction",
+          "detail_template": "Standard fine: 135 {currency} at limits up to 50 km/h, otherwise 68 {currency}. 1 French licence point deducted."
+        },
+        "fr": {
+          "title_template": "Amende et retrait de point",
+          "detail_template": "Amende forfaitaire : 135 {currency} si la limite est de 50 km/h ou moins, sinon 68 {currency}. Retrait de 1 point au barème français."
+        },
+        "nl": {
+          "title_template": "Boete en puntenaftrek",
+          "detail_template": "Standaardboete: 135 {currency} bij een limiet tot 50 km/u, anders 68 {currency}. 1 punt aftrek in het Franse stelsel."
+        }
+      },
       "penalty_points": 1,
-      "locality_variants": {
-        "urban": { "money_fine_eur": 135, "penalty_points": 1 },
-        "rural": { "money_fine_eur": 68, "penalty_points": 1 }
+      "posted_limit_variants": {
+        "at_most_50": {
+          "money_fine_eur": 135,
+          "penalty_points": 1
+        },
+        "above_50": {
+          "money_fine_eur": 68,
+          "penalty_points": 1
+        }
       }
     },
     {
       "min_delta_kmh": 20,
       "max_delta_kmh": 29,
       "severity": "points_and_fine",
-      "title_template": "Point and fine risk",
-      "detail_template": "Likely fixed fine 135 {currency} and 2 points.",
+      "title_template": "Fine and point deduction",
+      "detail_template": "Standard fine: 135 {currency}; 2 French licence points deducted.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Geldbuße und Punkteabzug",
+          "detail_template": "Regelbetrag: 135 {currency}; 2 Punkte Abzug im französischen System."
+        },
+        "en": {
+          "title_template": "Fine and point deduction",
+          "detail_template": "Standard fine: 135 {currency}; 2 French licence points deducted."
+        },
+        "fr": {
+          "title_template": "Amende et retrait de points",
+          "detail_template": "Amende forfaitaire : 135 {currency} ; retrait de 2 points au barème français."
+        },
+        "nl": {
+          "title_template": "Boete en puntenaftrek",
+          "detail_template": "Standaardboete: 135 {currency}; 2 punten aftrek in het Franse stelsel."
+        }
+      },
       "money_fine_eur": 135,
       "penalty_points": 2
     },
@@ -49,33 +113,81 @@
       "max_delta_kmh": 39,
       "severity": "points_and_fine",
       "title_template": "High overspeed",
-      "detail_template": "Likely fixed fine 135 {currency}, 3 points, and possible licence suspension up to 3 years.",
+      "detail_template": "Standard fine: 135 {currency}; 3 French licence points deducted. Court-ordered licence suspension of up to 3 years is possible.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Hohe Überschreitung",
+          "detail_template": "Regelbetrag: 135 {currency}; 3 Punkte Abzug im französischen System. Gerichtliche Aussetzung der Fahrerlaubnis bis zu 3 Jahren möglich."
+        },
+        "en": {
+          "title_template": "High overspeed",
+          "detail_template": "Standard fine: 135 {currency}; 3 French licence points deducted. Court-ordered licence suspension of up to 3 years is possible."
+        },
+        "fr": {
+          "title_template": "Excès de vitesse important",
+          "detail_template": "Amende forfaitaire : 135 {currency} ; retrait de 3 points au barème français. Suspension judiciaire du permis possible, jusqu’à 3 ans."
+        },
+        "nl": {
+          "title_template": "Hoge overschrijding",
+          "detail_template": "Standaardboete: 135 {currency}; 3 punten aftrek in het Franse stelsel. De rechter kan het rijbewijs tot 3 jaar schorsen."
+        }
+      },
       "money_fine_eur": 135,
-      "penalty_points": 3,
-      "conditional_driving_ban_months": 36,
-      "driving_ban_condition": "court_discretion"
+      "penalty_points": 3
     },
     {
       "min_delta_kmh": 40,
       "max_delta_kmh": 49,
       "severity": "points_and_fine",
-      "title_template": "Severe overspeed",
-      "detail_template": "Likely fixed fine 135 {currency}, 4 points, and possible licence suspension up to 3 years.",
+      "title_template": "High overspeed",
+      "detail_template": "Standard fine: 135 {currency}; 4 French licence points deducted. Court-ordered licence suspension of up to 3 years is possible.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Hohe Überschreitung",
+          "detail_template": "Regelbetrag: 135 {currency}; 4 Punkte Abzug im französischen System. Gerichtliche Aussetzung der Fahrerlaubnis bis zu 3 Jahren möglich."
+        },
+        "en": {
+          "title_template": "High overspeed",
+          "detail_template": "Standard fine: 135 {currency}; 4 French licence points deducted. Court-ordered licence suspension of up to 3 years is possible."
+        },
+        "fr": {
+          "title_template": "Excès de vitesse important",
+          "detail_template": "Amende forfaitaire : 135 {currency} ; retrait de 4 points au barème français. Suspension judiciaire du permis possible, jusqu’à 3 ans."
+        },
+        "nl": {
+          "title_template": "Hoge overschrijding",
+          "detail_template": "Standaardboete: 135 {currency}; 4 punten aftrek in het Franse stelsel. De rechter kan het rijbewijs tot 3 jaar schorsen."
+        }
+      },
       "money_fine_eur": 135,
-      "penalty_points": 4,
-      "conditional_driving_ban_months": 36,
-      "driving_ban_condition": "court_discretion"
+      "penalty_points": 4
     },
     {
       "min_delta_kmh": 50,
       "max_delta_kmh": null,
       "severity": "points_and_fine",
-      "title_template": "Offence-level overspeed",
-      "detail_template": "50 km/h or more over the limit is offence-level: 6 points, possible 300 {currency} fixed delict fine, court exposure up to 3750 {currency}, and possible licence sanctions.",
-      "money_fine_eur": 300,
+      "title_template": "Criminal offence risk",
+      "detail_template": "French criminal offence; 6 points deducted. A 300 {currency} fixed settlement may apply; court fine up to 3750 {currency}. Licence sanctions are possible.",
+      "localized_templates": {
+        "de": {
+          "title_template": "Straftat möglich",
+          "detail_template": "Französisches Strafrecht; 6 Punkte Abzug. 300 {currency} bei zulässigem Pauschalverfahren, vor Gericht bis 3750 {currency}. Weitere Führerscheinsanktionen möglich."
+        },
+        "en": {
+          "title_template": "Criminal offence risk",
+          "detail_template": "French criminal offence; 6 points deducted. A 300 {currency} fixed settlement may apply; court fine up to 3750 {currency}. Licence sanctions are possible."
+        },
+        "fr": {
+          "title_template": "Délit de grand excès de vitesse",
+          "detail_template": "Délit ; retrait de 6 points. Amende forfaitaire délictuelle de 300 {currency} si cette procédure s’applique ; au tribunal, jusqu’à 3750 {currency}. Sanctions sur le permis possibles."
+        },
+        "nl": {
+          "title_template": "Strafrechtelijk risico",
+          "detail_template": "Frans strafrecht; 6 punten aftrek. Een forfaitaire afdoening van 300 {currency} kan gelden; bij de rechter tot 3750 {currency}. Rijbewijssancties zijn mogelijk."
+        }
+      },
       "penalty_points": 6,
-      "conditional_driving_ban_months": 36,
-      "driving_ban_condition": "offence_or_court_discretion"
+      "enforcement_class": "criminal"
     }
   ]
 }

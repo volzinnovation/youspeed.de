@@ -92,6 +92,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.nativeCanvas
@@ -410,7 +411,7 @@ private fun WelcomeScreen(
 
 @Composable
 private fun CoverageCard(activeBundleVersion: String) {
-    val hasGermanyDataset = activeBundleVersion != "seed" && activeBundleVersion != "none"
+    val hasActiveDataset = activeBundleVersion != "seed" && activeBundleVersion != "none"
     Card(colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Canvas(
@@ -420,15 +421,15 @@ private fun CoverageCard(activeBundleVersion: String) {
                     .clip(RoundedCornerShape(14.dp))
                     .background(Color.White.copy(alpha = 0.06f)),
             ) {
-                val germanyColor = if (hasGermanyDataset) Color(0xFF2F66CC) else Color.White.copy(alpha = 0.92f)
-                val outline = if (hasGermanyDataset) Color.White else Color.Black.copy(alpha = 0.75f)
+                val countryColor = if (hasActiveDataset) Color(0xFF2F66CC) else Color.White.copy(alpha = 0.92f)
+                val outline = if (hasActiveDataset) Color.White else Color.Black.copy(alpha = 0.75f)
                 drawRoundRect(
-                    color = germanyColor,
+                    color = countryColor,
                     topLeft = Offset(size.width * 0.24f, size.height * 0.10f),
                     size = Size(size.width * 0.44f, size.height * 0.78f),
                     cornerRadius = CornerRadius(26f, 26f),
                 )
-                if (hasGermanyDataset) {
+                if (hasActiveDataset) {
                     val badgePath = Path().apply {
                         addRoundRect(
                             androidx.compose.ui.geometry.RoundRect(
@@ -451,15 +452,15 @@ private fun CoverageCard(activeBundleVersion: String) {
                 )
             }
             Text(
-                "Deutschland",
+                stringResource(R.string.ui_map_bundle),
                 color = Color.White.copy(alpha = 0.84f),
                 style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
             )
             Text(
                 stringResource(
-                    if (hasGermanyDataset) R.string.welcome_coverage_active else R.string.welcome_coverage_none,
+                    if (hasActiveDataset) R.string.welcome_coverage_active else R.string.welcome_coverage_none,
                 ),
-                color = if (hasGermanyDataset) Color(0xFF6FB0FF) else Color.White.copy(alpha = 0.72f),
+                color = if (hasActiveDataset) Color(0xFF6FB0FF) else Color.White.copy(alpha = 0.72f),
                 style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
             )
         }
@@ -532,7 +533,8 @@ private fun MainScreen(
         label = "driving-ban-pulse-value",
     )
     val background = mainBackgroundColor(ui, if (ui.appScreenshotState != null) 0f else pulseFraction)
-    val usesDarkForeground = ConsumerMainScreenLogic.usesDarkForeground(ui)
+    // Choose the higher-contrast text color from the rendered warning background.
+    val usesDarkForeground = background.luminance() > 0.179f
     val foreground = if (usesDarkForeground) Color.Black else Color.White
     val buttonBg = if (usesDarkForeground) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.14f)
     val buttonBorder = foreground.copy(alpha = 0.95f)
@@ -542,6 +544,7 @@ private fun MainScreen(
     val limitText = ConsumerMainScreenLogic.limitText(ui)
     val runtimeBanner = runtimeBanner(ui)
     val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
+    val penaltyNotice = ConsumerMainScreenLogic.currentPenaltyNotice(ui)
 
     BoxWithConstraints(
         modifier = Modifier
@@ -553,9 +556,14 @@ private fun MainScreen(
         val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
         val compactPhoneLayout = maxHeight.value < 780f
         val screenInset = (minDimensionDp.value * 0.02f).dp
-        val signWidthFactor = if (compactPhoneLayout) 0.62f else 0.74f
+        val signWidthFactor = when {
+            compactPhoneLayout && penaltyNotice != null -> 0.48f
+            penaltyNotice != null -> 0.58f
+            compactPhoneLayout -> 0.62f
+            else -> 0.74f
+        }
         val signSize = min(maxWidth.value * signWidthFactor, maxWidth.value - (screenInset.value * 2f)).dp
-        val primaryMetricScale = if (compactPhoneLayout) 0.42f else SPEED_LIMIT_NUMBER_SCALE
+        val primaryMetricScale = if (compactPhoneLayout || penaltyNotice != null) 0.42f else SPEED_LIMIT_NUMBER_SCALE
         val primaryMetricFont = (signSize.value * primaryMetricScale).sp
         val secondaryScale = sharedSecondaryScale(
             baseSecondaryFontSp = primaryMetricFont.value * SECONDARY_TEXT_RATIO,
@@ -625,10 +633,10 @@ private fun MainScreen(
                     showsPedestrianZoneIcon = showsPedestrianZoneSign,
                     showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
                     cameraSourceStateDescription = when {
-                        ui.isUnlimitedSpeedLimitActive -> "Durch Kamera erkannt: keine Geschwindigkeitsbegrenzung"
-                        ui.speedLimitDisplayText == "Schritt" -> "Durch Kamera erkannt: Schrittgeschwindigkeit"
-                        ui.speedLimitKmh != null -> "Tempolimit ${ui.speedLimitKmh}, durch Kamera erkannt"
-                        else -> "Durch Kamera erkanntes Verkehrszeichen"
+                        ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
+                        ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
+                        ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
+                        else -> stringResource(R.string.ui_camera_sign)
                     },
                     onDoubleTap = onCapture,
                 )
@@ -645,6 +653,15 @@ private fun MainScreen(
                 secondaryFont = secondaryFont,
                 metricSlotMinHeight = metricSlotMinHeight,
             )
+
+            if (!ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+                ActivePenaltyRulesBlock(
+                    countryName = ui.activePenaltyRules.countryName,
+                    isAvailable = ui.activePenaltyRules.isAvailable,
+                    notice = penaltyNotice,
+                    foreground = foreground,
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -673,6 +690,61 @@ private fun MainScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 12.dp),
         )
+    }
+}
+
+@Composable
+private fun ActivePenaltyRulesBlock(
+    countryName: String,
+    isAvailable: Boolean,
+    notice: SpeedPenaltyNotice?,
+    foreground: Color,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 4.dp)
+            .testTag("active-penalty-rules"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(
+            if (isAvailable) {
+                stringResource(R.string.ui_active_country_rules, countryName)
+            } else {
+                stringResource(R.string.ui_country_rules_pending)
+            },
+            color = foreground,
+            fontSize = 12.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("active-rule-country"),
+        )
+        if (notice != null) {
+            Text(
+                notice.title,
+                color = foreground,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag("penalty-notice-title"),
+            )
+            if (notice.details.isNotBlank()) {
+                Text(
+                    notice.details,
+                    color = foreground,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.testTag("penalty-notice-details"),
+                )
+            }
+            Text(
+                stringResource(R.string.ui_penalty_estimate),
+                color = foreground,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag("penalty-estimate-note"),
+            )
+        }
     }
 }
 
@@ -729,7 +801,7 @@ private fun BottomCornerButtons(
             border = buttonBorder,
             modifier = Modifier.testTag("legal-button"),
         ) {
-            Icon(Icons.Default.Info, contentDescription = "Rechtliche Hinweise", tint = foreground)
+            Icon(Icons.Default.Info, contentDescription = stringResource(R.string.ui_legal_title), tint = foreground)
         }
         PillIconButton(
             onClick = onOpenSettings,
@@ -737,7 +809,7 @@ private fun BottomCornerButtons(
             border = buttonBorder,
             modifier = Modifier.testTag("settings-button"),
         ) {
-            Icon(Icons.Default.Settings, contentDescription = "Einstellungen", tint = foreground)
+            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.ui_settings_title), tint = foreground)
         }
     }
 }
@@ -755,7 +827,7 @@ private fun LocalRecordingsButton(
         border = buttonBorder,
         modifier = Modifier.testTag("local-recordings-button"),
     ) {
-        Icon(Icons.Default.BugReport, contentDescription = "Lokale Erfassungen", tint = foreground)
+        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
     }
 }
 
@@ -794,17 +866,18 @@ private fun SpeedLimitSign(
     val density = LocalDensity.current
     val numberFontPx = with(density) { numberFontSize.toPx() }
     val trafficSignTypeface = rememberTrafficSignTypeface()
+    val signDescription = if (showsActiveCameraLimitIndicator) {
+        cameraSourceStateDescription ?: stringResource(R.string.ui_camera_speed_limit, limitText)
+    } else {
+        stringResource(R.string.ui_speed_limit_description, limitText)
+    }
     Box(
         modifier = Modifier
             .then(modifier)
             .size(signSize)
             .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleTap() }) }
             .semantics {
-                contentDescription = if (showsActiveCameraLimitIndicator) {
-                    cameraSourceStateDescription ?: "Tempolimit $limitText, durch Kamera erkannt"
-                } else {
-                    "Tempolimit $limitText"
-                }
+                contentDescription = signDescription
             }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
@@ -812,7 +885,7 @@ private fun SpeedLimitSign(
         if (showsPedestrianZoneIcon) {
             Image(
                 painter = painterResource(id = R.drawable.ic_pedestrian_zone_sign),
-                contentDescription = "Fussgaengerzone",
+                contentDescription = stringResource(R.string.ui_pedestrian_zone),
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
@@ -1164,12 +1237,12 @@ private fun SettingsSheet(
         mutableStateOf(ui.audioAlertThresholdKmh.toString())
     }
     var confirmDeleteDownloaded by rememberSaveable { mutableStateOf(false) }
-    SheetScaffold(title = "Einstellungen", onDismiss = onDismiss, testTag = "settings-sheet") {
+    SheetScaffold(title = stringResource(R.string.ui_settings_title), onDismiss = onDismiss, testTag = "settings-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
             item {
-                SectionCard("Verkehrszeichenerkennung") {
+                SectionCard(stringResource(R.string.ui_traffic_sign_recognition)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Live-Kamera (TSR)", modifier = Modifier.weight(1f), color = Color.Black)
+                        Text(stringResource(R.string.ui_camera_live), modifier = Modifier.weight(1f), color = Color.Black)
                         Switch(
                             checked = ui.trafficSignRecognitionEnabled,
                             onCheckedChange = controller::setTrafficSignRecognitionEnabled,
@@ -1180,7 +1253,7 @@ private fun SettingsSheet(
                         if (ui.trafficSignRecognitionEnabled) {
                             ui.trafficSignCameraRuntimeDetail
                         } else {
-                            "Die Kamera-Erkennung ist ausgeschaltet; TSR-Ereignisse werden nicht verarbeitet."
+                            stringResource(R.string.ui_camera_disabled_detail)
                         },
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
@@ -1188,9 +1261,9 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard("Akustische Hinweise") {
+                SectionCard(stringResource(R.string.ui_audio_alerts)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Sprachausgabe", modifier = Modifier.weight(1f), color = Color.Black)
+                        Text(stringResource(R.string.ui_spoken_alerts), modifier = Modifier.weight(1f), color = Color.Black)
                         Switch(
                             checked = ui.audioAlertsEnabled,
                             onCheckedChange = controller::setAudioAlertsEnabled,
@@ -1207,17 +1280,17 @@ private fun SettingsSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("audio-alert-threshold"),
-                        label = { Text("Warnung ab (km/h)") },
+                        label = { Text(stringResource(R.string.ui_alert_threshold)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         enabled = ui.audioAlertsEnabled,
                     )
                     Text(
                         text = if (!ui.audioAlertsEnabled) {
-                            "Sprachausgabe ist deaktiviert."
+                            stringResource(R.string.ui_spoken_alerts_disabled)
                         } else if (ui.audioAlertThresholdKmh == 0) {
-                            "Akustische Hinweise sind deaktiviert."
+                            stringResource(R.string.ui_audio_alerts_disabled)
                         } else {
-                            "Sprachwarnung startet bei ${ui.audioAlertThresholdKmh} km/h ueber dem erkannten Tempolimit."
+                            stringResource(R.string.ui_spoken_alert_threshold_detail, ui.audioAlertThresholdKmh)
                         },
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
@@ -1225,9 +1298,9 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard("Offline-Spracherkennung") {
-                    DebugLabel("Plattform", "Vosk (gebuendelt)")
-                    DebugLabel("Status", speechModelStateLabel(ui.germanSpeechModelState))
+                SectionCard(stringResource(R.string.ui_offline_speech)) {
+                    DebugLabel(stringResource(R.string.ui_platform), stringResource(R.string.ui_vosk_bundled))
+                    DebugLabel(stringResource(R.string.ui_status), speechModelStateLabel(ui.germanSpeechModelState))
                     Text(
                         ui.germanSpeechModelStatus,
                         color = if (ui.germanSpeechModelState == GermanSpeechModelState.READY) Color(0xFF555555) else SignalOrange,
@@ -1238,32 +1311,32 @@ private fun SettingsSheet(
                         colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
                         modifier = Modifier.testTag("speech-model-install-button"),
                     ) {
-                        Text("Offline-Modell neu laden")
+                        Text(stringResource(R.string.ui_reload_speech_model))
                     }
                 }
             }
             item {
-                SectionCard("Kartendaten-Download") {
+                SectionCard(stringResource(R.string.ui_map_downloads)) {
                     Text(ui.firstLocationPackStatus, fontSize = 13.sp)
                     Text(ui.countryModelPackStatus, fontSize = 13.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = ui.firstLocationAllowsCellular, onCheckedChange = controller::setFirstLocationAllowsCellular)
-                        Text("Erste Karte auch über mobile Daten laden", fontSize = 13.sp)
+                        Text(stringResource(R.string.ui_first_map_cellular), fontSize = 13.sp)
                     }
-                    OutlinedButton(onClick = controller::retryFirstLocationSetup) { Text("Standortauswahl erneut versuchen") }
-                    DebugLabel("Status", controller.formattedSyncStatus())
-                    DebugLabel("Bundle", ui.activeBundleVersion)
+                    OutlinedButton(onClick = controller::retryFirstLocationSetup) { Text(stringResource(R.string.ui_retry_location_selection)) }
+                    DebugLabel(stringResource(R.string.ui_status), controller.formattedSyncStatus())
+                    DebugLabel(stringResource(R.string.ui_map_bundle), ui.activeBundleVersion)
                     syncMessageLine(ui)?.let { (text, color) ->
                         Text(text, color = color, fontSize = 13.sp)
                     }
                     Text(
-                        "Top-10 Laender (A-Z). Bundles koennen einzeln geladen oder geloescht werden.",
+                        stringResource(R.string.ui_map_downloads_help),
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
                     )
                     if (ui.bundleDownloadSections.isEmpty()) {
                         Text(
-                            "Keine Downloadliste verfuegbar.",
+                            stringResource(R.string.ui_downloads_unavailable),
                             color = Color(0xFF555555),
                             fontSize = 13.sp,
                         )
@@ -1304,21 +1377,21 @@ private fun SettingsSheet(
                             colors = ButtonDefaults.buttonColors(containerColor = SignalOrange),
                             modifier = Modifier.testTag("settings-manifest-button"),
                         ) {
-                            Text("Manifest testen")
+                            Text(stringResource(R.string.ui_test_manifest))
                         }
                         Button(
                             onClick = controller::bootstrapAndSync,
                             colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
                             modifier = Modifier.testTag("settings-sync-button"),
                         ) {
-                            Text("Sync starten")
+                            Text(stringResource(R.string.ui_start_sync))
                         }
                     }
                     OutlinedButton(
                         onClick = { confirmDeleteDownloaded = true },
                         modifier = Modifier.testTag("settings-delete-bundles-button"),
                     ) {
-                        Text("Heruntergeladene Datenbanken loeschen")
+                        Text(stringResource(R.string.ui_delete_downloaded_maps))
                     }
                     if (ui.maintenanceMessage.isNotBlank()) {
                         Text(ui.maintenanceMessage, color = Color(0xFF555555), fontSize = 13.sp)
@@ -1332,16 +1405,16 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard("Bussgeldregeln") {
-                    DebugLabel("Aktive Datei", ui.activePenaltyRules.fileName)
-                    DebugLabel("Land", "${ui.activePenaltyRules.countryName} (${ui.activePenaltyRules.countryCode})")
-                    DebugLabel("Stufen", ui.activePenaltyRules.bandCount.toString())
+                SectionCard(stringResource(R.string.ui_penalty_rules)) {
+                    DebugLabel(stringResource(R.string.ui_active_file), ui.activePenaltyRules.fileName)
+                    DebugLabel(stringResource(R.string.ui_country), "${ui.activePenaltyRules.countryName} (${ui.activePenaltyRules.countryCode})")
+                    DebugLabel(stringResource(R.string.ui_penalty_bands), ui.activePenaltyRules.bandCount.toString())
                 }
             }
             item {
-                SectionCard("Startbildschirm") {
+                SectionCard(stringResource(R.string.ui_welcome_screen)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Nicht mehr anzeigen", modifier = Modifier.weight(1f), color = Color.Black)
+                        Text(stringResource(R.string.ui_hide_welcome), modifier = Modifier.weight(1f), color = Color.Black)
                         Switch(
                             checked = ui.hideWelcomeScreen,
                             onCheckedChange = controller::setHideWelcomeScreen,
@@ -1350,9 +1423,9 @@ private fun SettingsSheet(
                     }
                     Text(
                         if (ui.hideWelcomeScreen) {
-                            "Der Startbildschirm wird nicht mehr automatisch angezeigt."
+                            stringResource(R.string.ui_welcome_hidden)
                         } else {
-                            "Der Startbildschirm wird bei Seed-Daten oder veralteten Deutschland-Daten angezeigt."
+                            stringResource(R.string.ui_welcome_visible)
                         },
                         color = Color(0xFF555555),
                         fontSize = 13.sp,
@@ -1360,13 +1433,13 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard("Debug") {
+                SectionCard(stringResource(R.string.ui_diagnostics)) {
                     Button(
                         onClick = onOpenDebug,
                         colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
                         modifier = Modifier.testTag("open-debug-button"),
                     ) {
-                        Text("Debug-Informationen oeffnen")
+                        Text(stringResource(R.string.ui_open_diagnostics))
                     }
                 }
             }
@@ -1380,14 +1453,14 @@ private fun SettingsSheet(
                         controller.deleteDownloadedBundlesKeepingSeed()
                         confirmDeleteDownloaded = false
                     }) {
-                        Text("Loeschen")
+                        Text(stringResource(R.string.ui_delete))
                     }
                 },
                 dismissButton = {
-                    OutlinedButton(onClick = { confirmDeleteDownloaded = false }) { Text("Abbrechen") }
+                    OutlinedButton(onClick = { confirmDeleteDownloaded = false }) { Text(stringResource(R.string.ui_cancel)) }
                 },
-                title = { Text("Heruntergeladene Datenbanken loeschen?") },
-                text = { Text("Alle heruntergeladenen Bundle-Daten werden entfernt. Der Seed-Datensatz bleibt erhalten.") },
+                title = { Text(stringResource(R.string.ui_delete_maps_title)) },
+                text = { Text(stringResource(R.string.ui_delete_maps_message)) },
             )
         }
     }
@@ -1399,16 +1472,16 @@ private fun DebugSheet(
     onDismiss: () -> Unit,
 ) {
     val ui = controller.uiState
-    SheetScaffold(title = "Debug", onDismiss = onDismiss, testTag = "debug-sheet") {
+    SheetScaffold(title = stringResource(R.string.ui_diagnostics), onDismiss = onDismiss, testTag = "debug-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
             item {
-                SectionCard("Letzter Fix") {
+                SectionCard(stringResource(R.string.ui_latest_location)) {
                     controller.debugRows().forEach { (key, value) -> DebugLabel(key, value) }
                 }
             }
             item {
-                SectionCard("Matcher") {
-                    DebugLabel("Aktiv", ui.matcherDebugProfile.debugLabel)
+                SectionCard(stringResource(R.string.ui_map_matcher)) {
+                    DebugLabel(stringResource(R.string.ui_active), ui.matcherDebugProfile.debugLabel)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         MatcherDebugProfile.entries.forEach { profile ->
                             val selected = profile == ui.matcherDebugProfile
@@ -1441,7 +1514,7 @@ private fun DebugSheet(
             controller.currentOsmUrl()?.let { osmUrl ->
                 item {
                     SectionCard("OSM") {
-                        DebugLabel("Way", ui.limitWayId ?: "n/a")
+                        DebugLabel(stringResource(R.string.ui_osm_way), ui.limitWayId ?: "n/a")
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = Color(0xFF555555))
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1452,15 +1525,15 @@ private fun DebugSheet(
                             colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
                             modifier = Modifier.testTag("debug-open-osm-button"),
                         ) {
-                            Text("Im Browser oeffnen")
+                            Text(stringResource(R.string.ui_open_browser))
                         }
                     }
                 }
             }
             item {
-                SectionCard("Logs") {
+                SectionCard(stringResource(R.string.ui_logs)) {
                     if (ui.gpsLogPath.isBlank() && ui.matchLogPath.isBlank()) {
-                        Text("Noch keine Logdateien vorhanden.", color = Color(0xFF555555))
+                        Text(stringResource(R.string.ui_no_logs), color = Color(0xFF555555))
                     }
                     if (ui.gpsLogPath.isNotBlank()) {
                         DebugLabel("GPS-CSV", ui.gpsLogPath)
@@ -1469,44 +1542,44 @@ private fun DebugSheet(
                             colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
                             modifier = Modifier.testTag("debug-share-gps-log-button"),
                         ) {
-                            Text("GPS-CSV teilen")
+                            Text(stringResource(R.string.ui_share_gps))
                         }
                     }
                     if (ui.matchLogPath.isNotBlank()) {
-                        DebugLabel("Matcher-Log", ui.matchLogPath)
+                        DebugLabel(stringResource(R.string.ui_matcher_log), ui.matchLogPath)
                         OutlinedButton(
                             onClick = controller::shareMatchLog,
                             modifier = Modifier.testTag("debug-share-match-log-button"),
                         ) {
-                            Text("Matcher-Log teilen")
+                            Text(stringResource(R.string.ui_share_matcher_log))
                         }
                     }
                     if (ui.runtimeDiagnosticsLogPath.isNotBlank()) {
-                        DebugLabel("Diagnose-Log", ui.runtimeDiagnosticsLogPath)
+                        DebugLabel(stringResource(R.string.ui_diagnostics_log), ui.runtimeDiagnosticsLogPath)
                         OutlinedButton(
                             onClick = controller::shareRuntimeDiagnosticsLog,
                             modifier = Modifier.testTag("debug-share-runtime-diagnostics-log-button"),
                         ) {
-                            Text("Diagnose-Log teilen")
+                            Text(stringResource(R.string.ui_share_diagnostics_log))
                         }
                         OutlinedButton(
                             onClick = controller::clearRuntimeDiagnosticsLog,
                             modifier = Modifier.testTag("debug-clear-runtime-diagnostics-log-button"),
                         ) {
-                            Text("Diagnose-Log leeren")
+                            Text(stringResource(R.string.ui_clear_diagnostics_log))
                         }
                     }
                     OutlinedButton(
                         onClick = controller::clearDrivingLogs,
                         modifier = Modifier.testTag("debug-clear-logs-button"),
                     ) {
-                        Text("Fahrlog leeren")
+                        Text(stringResource(R.string.ui_clear_driving_log))
                     }
                 }
             }
             if (ui.lastError.isNotBlank()) {
                 item {
-                    SectionCard("Fehler") {
+                    SectionCard(stringResource(R.string.ui_error)) {
                         Text(ui.lastError, color = SignalRed)
                     }
                 }
@@ -1522,16 +1595,16 @@ private fun LocalRecordingsSheet(
     onDismiss: () -> Unit,
 ) {
     val ui = controller.uiState
-    SheetScaffold(title = "Lokale Erfassungen", onDismiss = onDismiss, testTag = "local-recordings-sheet") {
+    SheetScaffold(title = stringResource(R.string.ui_recordings_title), onDismiss = onDismiss, testTag = "local-recordings-sheet") {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "Zur Erfassung von Korrekturen Schild doppelklicken. Android bestaetigt mit \"Korrektur\", anschliessend die korrekte Geschwindigkeit sprechen.",
+                stringResource(R.string.ui_capture_help),
                 color = Color(0xFF555555),
                 fontSize = 13.sp,
             )
             if (ui.localObservations.isEmpty()) {
-                SectionCard("Status") {
-                    Text("Keine lokalen Erfassungen vorhanden.", color = Color(0xFF555555))
+                SectionCard(stringResource(R.string.ui_status)) {
+                    Text(stringResource(R.string.ui_no_observations), color = Color(0xFF555555))
                 }
             } else {
                 LazyColumn(
@@ -1557,10 +1630,10 @@ private fun LocalRecordingsSheet(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text(observation.capturedAtUTC, color = Color(0xFF777777), fontSize = 12.sp)
-                                        Text(observation.streetName, color = Color.Black, fontWeight = FontWeight.SemiBold)
+                                        Text(observation.streetContext?.trim().orEmpty().ifBlank { stringResource(R.string.ui_street_unknown) }, color = Color.Black, fontWeight = FontWeight.SemiBold)
                                         if (observation.modality == LocalObservationModality.COMPUTER_VISION) {
                                             Text(
-                                                "Kamera-Erkennung${observation.evidenceSummary?.let { " • $it" }.orEmpty()}",
+                                                stringResource(R.string.ui_camera_observation, observation.evidenceSummary?.let { " • $it" }.orEmpty()),
                                                 color = CameraEvidenceAccent,
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.SemiBold,
@@ -1577,13 +1650,17 @@ private fun LocalRecordingsSheet(
                                                 .padding(horizontal = 10.dp, vertical = 4.dp),
                                         )
                                         Text(
-                                            "alt ${observation.oldSpeedKmh ?: "n/a"} • neu ${observation.newSpeedValue?.let(::formatObservationValue).orEmpty().ifBlank { observation.newSpeedKmh?.toString() ?: "n/a" }}",
+                                            stringResource(
+                                                R.string.ui_observation_values,
+                                                observation.oldSpeedKmh?.toString() ?: "–",
+                                                observation.newSpeedValue?.let { formatObservationValue(it) }.orEmpty().ifBlank { observation.newSpeedKmh?.toString() ?: "–" },
+                                            ),
                                             color = Color.Black,
                                         )
-                                        observation.wayId?.let { Text("way $it", color = Color(0xFF777777), fontSize = 12.sp) }
+                                        observation.wayId?.let { Text(stringResource(R.string.ui_observation_way, it), color = Color(0xFF777777), fontSize = 12.sp) }
                                     }
                                     IconButton(onClick = { controller.deleteLocalObservation(observation.id) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Eintrag loeschen")
+                                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.ui_delete_observation))
                                     }
                                 }
                                 when (observation.state) {
@@ -1591,10 +1668,10 @@ private fun LocalRecordingsSheet(
                                     LocalObservationState.NEEDS_REVIEW -> {
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             OutlinedButton(onClick = { controller.approveLocalObservation(observation.id) }) {
-                                                Text("Freigeben")
+                                                Text(stringResource(R.string.ui_approve))
                                             }
                                             OutlinedButton(onClick = { controller.discardLocalObservation(observation.id) }) {
-                                                Text("Verwerfen")
+                                                Text(stringResource(R.string.ui_discard))
                                             }
                                         }
                                     }
@@ -1605,10 +1682,10 @@ private fun LocalRecordingsSheet(
                                                 onClick = { controller.exportLocalObservation(observation.id) },
                                                 colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
                                             ) {
-                                                Text("Exportieren")
+                                                Text(stringResource(R.string.ui_export))
                                             }
                                             OutlinedButton(onClick = { controller.discardLocalObservation(observation.id) }) {
-                                                Text("Verwerfen")
+                                                Text(stringResource(R.string.ui_discard))
                                             }
                                         }
                                     }
@@ -1624,7 +1701,7 @@ private fun LocalRecordingsSheet(
                 Text(ui.localObservationStatus, color = Color(0xFF555555), fontSize = 13.sp)
             }
             if (ui.lastExportDirectoryPath.isNotBlank()) {
-                Text("Export: ${ui.lastExportDirectoryPath}", color = Color(0xFF555555), fontSize = 12.sp)
+                Text(stringResource(R.string.ui_export_directory, ui.lastExportDirectoryPath), color = Color(0xFF555555), fontSize = 12.sp)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
@@ -1634,7 +1711,7 @@ private fun LocalRecordingsSheet(
                 ) {
                     Icon(Icons.Default.Download, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("changes.osc exportieren")
+                    Text(stringResource(R.string.ui_export_osc))
                 }
                 OutlinedButton(
                     onClick = controller::deleteAllLocalObservations,
@@ -1642,7 +1719,7 @@ private fun LocalRecordingsSheet(
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Alle loeschen")
+                    Text(stringResource(R.string.ui_delete_all))
                 }
             }
         }
@@ -1654,17 +1731,17 @@ private fun LegalSheet(
     ui: ConsumerUiState,
     onDismiss: () -> Unit,
 ) {
-    SheetScaffold(title = "Rechtliche Hinweise", onDismiss = onDismiss, testTag = "legal-sheet") {
+    SheetScaffold(title = stringResource(R.string.ui_legal_title), onDismiss = onDismiss, testTag = "legal-sheet") {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            SectionCard("Rechtlicher Hinweis") {
+            SectionCard(stringResource(R.string.ui_legal_notice)) {
                 Text(stringResource(R.string.legal_disclaimer_long), color = Color.Black)
             }
-            Text(ui.legalText.ifBlank { "Keine rechtlichen Hinweise gebuendelt." }, color = Color.Black, lineHeight = 22.sp)
+            Text(ui.legalText.ifBlank { stringResource(R.string.ui_legal_missing) }, color = Color.Black, lineHeight = 22.sp)
         }
     }
 }
@@ -1675,17 +1752,19 @@ private data class RuntimeBanner(
     val foreground: Color,
 )
 
+@Composable
 private fun formatObservationValue(value: String): String {
-    return if (value == "walk") "Fussgaengerzone" else value
+    return if (value == "walk") stringResource(R.string.ui_pedestrian_zone) else value
 }
 
+@Composable
 private fun observationStateLabel(state: LocalObservationState): String {
     return when (state) {
-        LocalObservationState.LOCAL_ONLY -> "Lokal"
-        LocalObservationState.NEEDS_REVIEW -> "Pruefen"
-        LocalObservationState.APPROVED_FOR_EXPORT -> "Freigegeben"
-        LocalObservationState.EXPORTED_OSC -> "Exportiert"
-        LocalObservationState.DISCARDED -> "Verworfen"
+        LocalObservationState.LOCAL_ONLY -> stringResource(R.string.ui_observation_local)
+        LocalObservationState.NEEDS_REVIEW -> stringResource(R.string.ui_observation_review)
+        LocalObservationState.APPROVED_FOR_EXPORT -> stringResource(R.string.ui_observation_approved)
+        LocalObservationState.EXPORTED_OSC -> stringResource(R.string.ui_observation_exported)
+        LocalObservationState.DISCARDED -> stringResource(R.string.ui_observation_discarded)
     }
 }
 
@@ -1709,26 +1788,27 @@ private fun observationStateForeground(state: LocalObservationState): Color {
     }
 }
 
+@Composable
 private fun runtimeBanner(ui: ConsumerUiState): RuntimeBanner? {
     return when (ui.driveStatus) {
         "requesting_location" -> RuntimeBanner(
-            text = "Standortfreigabe wird angefragt.",
+            text = stringResource(R.string.ui_location_permission_requested),
             background = Color(0xFFFFF3D8),
             foreground = Color(0xFF6B5200),
         )
         "location_denied" -> RuntimeBanner(
-            text = "Standortzugriff verweigert. Bitte in Android erlauben.",
+            text = stringResource(R.string.ui_location_permission_denied),
             background = Color(0xFFF7D9D6),
             foreground = SignalRed,
         )
         "location_error" -> RuntimeBanner(
-            text = "Standortfehler. Debug pruefen oder GPS erneut aktivieren.",
+            text = stringResource(R.string.ui_location_error),
             background = Color(0xFFF7D9D6),
             foreground = SignalRed,
         )
         else -> if (ui.activeDBPath.isBlank()) {
             RuntimeBanner(
-                text = "Noch kein lokales Bundle aktiv. Seed oder Sync in den Einstellungen vorbereiten.",
+                text = stringResource(R.string.ui_no_active_map),
                 background = Color(0xFFFFF3D8),
                 foreground = Color(0xFF6B5200),
             )
@@ -1738,12 +1818,13 @@ private fun runtimeBanner(ui: ConsumerUiState): RuntimeBanner? {
     }
 }
 
+@Composable
 private fun speechModelStateLabel(state: GermanSpeechModelState): String = when (state) {
-    GermanSpeechModelState.CHECKING -> "prueft"
-    GermanSpeechModelState.DOWNLOADING -> "entpackt"
-    GermanSpeechModelState.PENDING -> "wartet"
-    GermanSpeechModelState.READY -> "bereit"
-    GermanSpeechModelState.UNAVAILABLE -> "nicht verfuegbar"
+    GermanSpeechModelState.CHECKING -> stringResource(R.string.ui_speech_checking)
+    GermanSpeechModelState.DOWNLOADING -> stringResource(R.string.ui_speech_unpacking)
+    GermanSpeechModelState.PENDING -> stringResource(R.string.ui_speech_pending)
+    GermanSpeechModelState.READY -> stringResource(R.string.ui_speech_ready)
+    GermanSpeechModelState.UNAVAILABLE -> stringResource(R.string.ui_speech_unavailable)
 }
 
 @Composable
@@ -1775,7 +1856,7 @@ private fun SheetScaffold(
                 ) {
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black, modifier = Modifier.weight(1f))
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Fertig", tint = Color.Black)
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
                     }
                 }
                 HorizontalDivider()
@@ -1915,7 +1996,7 @@ private fun BundleDownloadOptionRow(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Bundle loeschen",
+                        contentDescription = stringResource(R.string.ui_delete_bundle),
                         tint = SignalRed,
                     )
                 }
@@ -1963,7 +2044,7 @@ private fun DownloadActionIcon(
     ) {
         Icon(
             imageVector = Icons.Default.Download,
-            contentDescription = if (onClick != null) "Bundle laden" else null,
+            contentDescription = if (onClick != null) stringResource(R.string.ui_download_bundle) else null,
             tint = tint.copy(alpha = alpha),
             modifier = Modifier.size(16.dp),
         )
@@ -2020,16 +2101,17 @@ private fun progressBytesText(
     }
 }
 
+@Composable
 private fun syncMessageLine(ui: ConsumerUiState): Pair<String, Color>? {
     return when (ui.syncStatus) {
-        "ready_upToDate" -> "Daten sind verfuegbar und aktuell." to SignalGreen
-        "ready_fullDownload", "ready_deltaPatch" -> "Datensynchronisierung abgeschlossen. Lokale Daten sind aktuell." to SignalGreen
-        "ready_bootstrap" -> "Seed-Daten sind lokal verfuegbar." to SignalOrange
+        "ready_upToDate", "ready_up_to_date" -> stringResource(R.string.ui_sync_current) to SignalGreen
+        "ready_fullDownload", "ready_full_download", "ready_deltaPatch", "ready_delta_patch" -> stringResource(R.string.ui_sync_complete) to SignalGreen
+        "ready_bootstrap" -> stringResource(R.string.ui_sync_seed) to SignalOrange
         "sync_failed" -> {
             if (ui.activeDBPath.isNotBlank()) {
-                "Synchronisierung fehlgeschlagen, lokale Daten sind aber weiterhin verfuegbar." to SignalOrange
+                stringResource(R.string.ui_sync_failed_local) to SignalOrange
             } else {
-                "Synchronisierung fehlgeschlagen. Kein aktives Daten-Bundle verfuegbar." to SignalRed
+                stringResource(R.string.ui_sync_failed_no_map) to SignalRed
             }
         }
         else -> null

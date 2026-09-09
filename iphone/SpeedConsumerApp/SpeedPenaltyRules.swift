@@ -1,5 +1,44 @@
 import Foundation
 
+enum PenaltyCountryCode {
+    private static let codes = ["DE": "DEU", "FR": "FRA", "NL": "NLD", "BE": "BEL", "CH": "CHE", "GB": "GBR", "LU": "LUX", "LI": "LIE", "MC": "MCO", "RO": "ROU", "SE": "SWE", "IS": "ISL"]
+
+    static func normalized(_ raw: String?) -> String? {
+        guard let code = raw?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() else { return nil }
+        return codes[code] ?? (codes.values.contains(code) ? code : nil)
+    }
+
+    static func alpha2(_ raw: String?) -> String? {
+        guard let normalized = normalized(raw) else { return nil }
+        return codes.first(where: { $0.value == normalized })?.key
+    }
+}
+
+/// Extract overlap suspends warnings; a stable country transition requires
+/// three fresh fixes over fifteen seconds, independently of downloaded maps.
+struct PenaltyCountrySelection {
+    private var selection = TrafficSignCountrySelection()
+    private var lastTimestamp = -Double.infinity
+    private(set) var hasLocationEvidence = false
+    private(set) var countryCode: String?
+
+    mutating func suspend() {
+        hasLocationEvidence = true
+        countryCode = nil
+        selection.suspendPendingTransition()
+    }
+
+    mutating func update(countries: Set<String>, timestamp: Double) -> String? {
+        guard timestamp.isFinite, timestamp > lastTimestamp else { return countryCode }
+        lastTimestamp = timestamp
+        hasLocationEvidence = true
+        let normalized = countries.compactMap { PenaltyCountryCode.alpha2($0) }
+        let selected = selection.update(countries: normalized.count == countries.count ? Set(normalized) : [], timestamp: timestamp)
+        countryCode = PenaltyCountryCode.normalized(selected)
+        return countryCode
+    }
+}
+
 enum PenaltySeverity: String, Codable, Sendable {
     case moneyOnly = "money_only"
     case pointsAndFine = "points_and_fine"
@@ -115,6 +154,14 @@ private struct LocalityPenaltyVariants: Decodable, Sendable {
 }
 
 struct OverspeedPenaltyBand: Decodable, Sendable {
+    struct LocalizedTemplates: Decodable, Sendable {
+        let titleTemplate: String
+        let detailTemplate: String
+        enum CodingKeys: String, CodingKey {
+            case titleTemplate = "title_template"
+            case detailTemplate = "detail_template"
+        }
+    }
     let minDeltaKmh: Int
     let maxDeltaKmh: Int?
     let severity: PenaltySeverity
@@ -125,6 +172,9 @@ struct OverspeedPenaltyBand: Decodable, Sendable {
     let drivingBanMonths: Int?
     let conditionalDrivingBanMonths: Int?
     let drivingBanCondition: String?
+    let enforcementClass: String?
+    let localizedTemplates: [String: LocalizedTemplates]?
+    private let postedLimitVariants: [String: LocalityPenaltyVariant]?
     private let localityVariants: LocalityPenaltyVariants?
 
     init(
@@ -150,6 +200,9 @@ struct OverspeedPenaltyBand: Decodable, Sendable {
         self.conditionalDrivingBanMonths = conditionalDrivingBanMonths
         self.drivingBanCondition = drivingBanCondition
         self.localityVariants = nil
+        self.postedLimitVariants = nil
+        self.localizedTemplates = nil
+        self.enforcementClass = nil
     }
 
     enum CodingKeys: String, CodingKey {
@@ -175,6 +228,9 @@ struct OverspeedPenaltyBand: Decodable, Sendable {
         case drivingBanConditionDE = "fahrverbot_bedingung"
         case localityVariants = "locality_variants"
         case localityVariantsDE = "ortsvarianten"
+        case postedLimitVariants = "posted_limit_variants"
+        case localizedTemplates = "localized_templates"
+        case enforcementClass = "enforcement_class"
     }
 
     init(from decoder: Decoder) throws {
@@ -214,9 +270,16 @@ struct OverspeedPenaltyBand: Decodable, Sendable {
             LocalityPenaltyVariants.self,
             for: [.localityVariants, .localityVariantsDE]
         )
+        self.postedLimitVariants = try container.decodeIfPresent([String: LocalityPenaltyVariant].self, forKey: .postedLimitVariants)
+        self.localizedTemplates = try container.decodeIfPresent([String: LocalizedTemplates].self, forKey: .localizedTemplates)
+        self.enforcementClass = try container.decodeIfPresent(String.self, forKey: .enforcementClass)
     }
 
-    func variant(for area: PenaltyRoadArea?) -> LocalityPenaltyVariant? {
+    func variant(for area: PenaltyRoadArea?, postedLimitKmh: Int? = nil) -> LocalityPenaltyVariant? {
+        if let postedLimitVariants {
+            guard let postedLimitKmh, postedLimitKmh > 0 else { return nil }
+            return postedLimitVariants[postedLimitKmh <= 50 ? "at_most_50" : "above_50"]
+        }
         guard let area, let localityVariants else {
             return nil
         }
@@ -358,10 +421,12 @@ struct SpeedPenaltyNotice: Sendable {
     let drivingBanMonths: Int?
     let conditionalDrivingBanMonths: Int?
     let drivingBanCondition: String?
+    let enforcementClass: String?
 }
 
 enum SpeedPenaltyRuleEngine {
-    static func resolveNotice(overspeedKmh: Int, rules: SpeedPenaltyRuleSet, insideCity: Bool? = nil) -> SpeedPenaltyNotice? {
+    static func resolveNotice(overspeedKmh: Int, rules: SpeedPenaltyRuleSet, insideCity: Bool? = nil,
+                              postedLimitKmh: Int? = nil, languageCode: String? = nil) -> SpeedPenaltyNotice? {
         guard overspeedKmh > 0 else {
             return nil
         }
@@ -377,7 +442,9 @@ enum SpeedPenaltyRuleEngine {
             return nil
         }
         let area = PenaltyRoadArea(insideCity: insideCity)
-        let variant = band.variant(for: area)
+        let variant = band.variant(for: area, postedLimitKmh: postedLimitKmh)
+        let language = (languageCode ?? Bundle.main.preferredLocalizations.first ?? "en").split(separator: "-").first.map(String.init) ?? "en"
+        let templates = band.localizedTemplates?[language] ?? band.localizedTemplates?["en"]
         let moneyFine = variant?.moneyFineEUR ?? band.moneyFineEUR
         let points = variant?.penaltyPoints ?? band.penaltyPoints
         let drivingBanMonths = variant?.drivingBanMonths ?? band.drivingBanMonths
@@ -388,13 +455,13 @@ enum SpeedPenaltyRuleEngine {
         return SpeedPenaltyNotice(
             severity: severity,
             title: applyTemplate(
-                band.titleTemplate,
+                templates?.titleTemplate ?? band.titleTemplate,
                 deltaKmh: overspeedKmh,
                 rules: rules,
                 area: area
             ),
             details: applyTemplate(
-                band.detailTemplate,
+                templates?.detailTemplate ?? band.detailTemplate,
                 deltaKmh: overspeedKmh,
                 rules: rules,
                 area: area
@@ -404,7 +471,8 @@ enum SpeedPenaltyRuleEngine {
             penaltyPoints: points,
             drivingBanMonths: drivingBanMonths,
             conditionalDrivingBanMonths: conditionalDrivingBanMonths,
-            drivingBanCondition: drivingBanCondition
+            drivingBanCondition: drivingBanCondition,
+            enforcementClass: band.enforcementClass
         )
     }
 

@@ -31,18 +31,19 @@ object ConsumerMainScreenLogic {
             overspeedKmh = currentOverspeedKmh(state),
             rules = state.activePenaltyRules.ruleSet,
             insideCity = state.lastLookupInsideCity,
+            postedSpeedLimitKmh = state.speedLimitKmh,
         )
     }
 
     fun primaryMetricText(state: ConsumerUiState): String {
         if (isInSpeedCaptureMode(state)) {
             return when (state.speedCaptureMode) {
-                SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> "Mikrofon"
-                SpeedCaptureModeState.PREPARING -> "Bereite"
-                SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> "Jetzt"
-                SpeedCaptureModeState.EVALUATING -> "Pruefe"
-                SpeedCaptureModeState.SAVING -> "Speichere"
-                SpeedCaptureModeState.FAILED -> "Erneut"
+                SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> ConsumerUiStrings.text("Allow", "Mikrofon", "Autoriser", "Sta toe")
+                SpeedCaptureModeState.PREPARING -> ConsumerUiStrings.text("Preparing", "Bereite", "Préparation", "Voorbereiden")
+                SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> ConsumerUiStrings.text("Speak", "Jetzt", "Parlez", "Spreek")
+                SpeedCaptureModeState.EVALUATING -> ConsumerUiStrings.text("Checking", "Prüfe", "Vérification", "Controleren")
+                SpeedCaptureModeState.SAVING -> ConsumerUiStrings.text("Saving", "Speichere", "Enregistrement", "Opslaan")
+                SpeedCaptureModeState.FAILED -> ConsumerUiStrings.text("Try", "Erneut", "Réessayez", "Probeer")
                 SpeedCaptureModeState.IDLE -> ""
             }
         }
@@ -52,8 +53,8 @@ object ConsumerMainScreenLogic {
             return drivingBanMonths.toString()
         }
         return when (notice?.severity) {
-            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: "?"
-            PenaltySeverity.POINTS_AND_FINE -> notice.penaltyPoints?.toString() ?: "?"
+            PenaltySeverity.MONEY_ONLY -> notice.moneyFineEUR?.toString() ?: "!"
+            PenaltySeverity.POINTS_AND_FINE -> notice.penaltyPoints?.takeIf { it > 0 }?.toString() ?: "!"
             null -> if (isSearchingSignal(state)) " " else state.currentSpeedKmh.roundToInt().toString()
         }
     }
@@ -61,12 +62,12 @@ object ConsumerMainScreenLogic {
     fun secondaryMetricText(state: ConsumerUiState): String {
         if (isInSpeedCaptureMode(state)) {
             return when (state.speedCaptureMode) {
-                SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> "erlauben"
-                SpeedCaptureModeState.PREPARING -> "Offline"
-                SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> "sprechen"
-                SpeedCaptureModeState.EVALUATING -> "Eingabe"
-                SpeedCaptureModeState.SAVING -> "Wert"
-                SpeedCaptureModeState.FAILED -> "sprechen"
+                SpeedCaptureModeState.REQUESTING_MIC_PERMISSION -> ConsumerUiStrings.text("microphone", "erlauben", "le microphone", "microfoon")
+                SpeedCaptureModeState.PREPARING -> ConsumerUiStrings.text("offline", "offline", "hors ligne", "offline")
+                SpeedCaptureModeState.SPEAKING_PROMPT, SpeedCaptureModeState.LISTENING -> ConsumerUiStrings.text("now", "sprechen", "maintenant", "nu")
+                SpeedCaptureModeState.EVALUATING -> ConsumerUiStrings.text("input", "Eingabe", "de la saisie", "invoer")
+                SpeedCaptureModeState.SAVING -> ConsumerUiStrings.text("value", "Wert", "de la valeur", "waarde")
+                SpeedCaptureModeState.FAILED -> ConsumerUiStrings.text("again", "sprechen", "de parler", "opnieuw")
                 SpeedCaptureModeState.IDLE -> ""
             }
         }
@@ -75,11 +76,14 @@ object ConsumerMainScreenLogic {
         if (drivingBanMonths > 0) {
             return localizedDrivingBanLabel(drivingBanMonths)
         }
+        if (notice != null && notice.moneyFineEUR == null && (notice.penaltyPoints ?: 0) == 0) {
+            return ConsumerUiStrings.text("Review", "Prüfen", "À vérifier", "Controleren")
+        }
         return when (notice?.severity) {
             PenaltySeverity.MONEY_ONLY -> state.activePenaltyRules.currencyCode
             PenaltySeverity.POINTS_AND_FINE -> {
                 val points = notice.penaltyPoints
-                localizedPointsLabel(points ?: 2)
+                localizedPointsLabel(points ?: 0)
             }
             null -> if (isSearchingSignal(state)) localizedSearchingSignalLabel() else "km/h"
         }
@@ -113,7 +117,7 @@ object ConsumerMainScreenLogic {
         val latitude = state.currentLatitude
         val longitude = state.currentLongitude
         if (latitude == null || longitude == null) {
-            return "Suche..."
+            return ConsumerUiStrings.text("Searching…", "Suche…", "Recherche…", "Zoeken…")
         }
         return iso6709Coordinate(latitude = latitude, longitude = longitude, fractionalDigits = 3)
     }
@@ -126,7 +130,11 @@ object ConsumerMainScreenLogic {
         if (city != null) {
             return city
         }
-        return if (hasUsableGpsFix(state)) "Stadt unbekannt" else "Suche..."
+        return if (hasUsableGpsFix(state)) {
+            ConsumerUiStrings.text("City unknown", "Stadt unbekannt", "Ville inconnue", "Plaats onbekend")
+        } else {
+            ConsumerUiStrings.text("Searching…", "Suche…", "Recherche…", "Zoeken…")
+        }
     }
 
     fun shouldShowCityBadge(state: ConsumerUiState): Boolean {
@@ -161,7 +169,7 @@ object ConsumerMainScreenLogic {
         if (overspeed <= 0) {
             return null
         }
-        if (isDrivingBanWarningActive(state)) {
+        if (isDrivingBanWarningActive(state) || currentPenaltyNotice(state)?.enforcementClass != null) {
             return 1.0
         }
         val pointThreshold = minOverspeedForPoints(state).coerceAtLeast(1).toDouble()
