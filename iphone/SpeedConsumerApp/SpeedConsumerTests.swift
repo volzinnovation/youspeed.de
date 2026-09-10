@@ -381,6 +381,14 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .denied))
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .unavailable))
         XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .failed))
+        XCTAssertTrue(DriveRecorderPolicy.canProcessPanoramaxUploads(
+            for: .recording,
+            purpose: .standaloneTrafficSignRecognition
+        ))
+        XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(
+            for: .recording,
+            purpose: .driveRecording
+        ))
         XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .preparing))
         XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .recording))
         XCTAssertFalse(DriveRecorderPolicy.canProcessPanoramaxUploads(for: .stopping))

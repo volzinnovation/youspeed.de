@@ -1534,7 +1534,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var canProcessPanoramaxUploads: Bool {
         DriveRecorderPolicy.canProcessPanoramaxUploads(
-            for: driveCaptureCoordinator?.state ?? driveRecorderState
+            for: driveCaptureCoordinator?.state ?? driveRecorderState,
+            purpose: driveCaptureCoordinator?.sessionPurpose
         )
     }
 
@@ -3002,6 +3003,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     var panoramaxUploadIsReady: Bool {
         panoramaxAccount.isConnected && panoramaxAccount.tokenForUpload() != nil
+    }
+
+    func validatePanoramaxConnection() async -> Bool {
+        await panoramaxAccount.validateConnectionAndWait()
     }
 
     /// Applies the gallery selection to each affected batch, then starts the existing

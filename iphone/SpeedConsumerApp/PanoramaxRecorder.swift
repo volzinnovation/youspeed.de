@@ -109,7 +109,16 @@ enum DriveRecorderPolicy {
             && !panoramaxActive
     }
 
-    static func canProcessPanoramaxUploads(for state: DriveRecorderState) -> Bool {
+    static func canProcessPanoramaxUploads(
+        for state: DriveRecorderState,
+        purpose: DriveCaptureSessionPurpose? = nil
+    ) -> Bool {
+        // Standalone TSR keeps the camera session alive while driving, but it
+        // is not a Panoramax/drive recording and must not block post-drive
+        // review or upload.
+        if purpose == .standaloneTrafficSignRecognition {
+            return true
+        }
         switch state {
         case .preparing, .recording, .stopping:
             return false

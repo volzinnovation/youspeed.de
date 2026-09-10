@@ -68,21 +68,27 @@ final class PanoramaxAccountModel: ObservableObject {
     }
 
     func validateConnection() {
+        Task { @MainActor [weak self] in
+            _ = await self?.validateConnectionAndWait()
+        }
+    }
+
+    func validateConnectionAndWait() async -> Bool {
         let origin = normalizedOrigin
         guard let token = credentials.token(for: origin) else {
             updateConnectionState()
-            return
+            return false
         }
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                try await Self.validate(token: token, origin: origin)
-                isConnected = true
-                status = "Verbunden"
-            } catch {
-                isConnected = false
-                status = "Noch nicht bestaetigt oder abgelaufen"
-            }
+        status = "Verbindung wird geprueft"
+        do {
+            try await Self.validate(token: token, origin: origin)
+            isConnected = true
+            status = "Verbunden"
+            return true
+        } catch {
+            isConnected = false
+            status = "Noch nicht bestaetigt oder abgelaufen"
+            return false
         }
     }
 

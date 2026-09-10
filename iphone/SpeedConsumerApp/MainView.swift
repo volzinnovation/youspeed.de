@@ -2271,11 +2271,13 @@ private struct PanoramaxReviewView: View {
                             .disabled(!viewModel.canProcessPanoramaxUploads)
                         } else if DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) {
                             Button(NSLocalizedString("panoramax.gallery.upload", comment: "")) {
-                                viewModel.uploadPanoramaxBatch(batchID: batch.batchID)
+                                Task { @MainActor in
+                                    guard await viewModel.validatePanoramaxConnection() else { return }
+                                    viewModel.uploadPanoramaxBatch(batchID: batch.batchID)
+                                }
                             }
                             .disabled(
                                 !viewModel.canProcessPanoramaxUploads
-                                || !viewModel.panoramaxUploadIsReady
                                 || viewModel.isPanoramaxUploadActive(batchID: batch.batchID)
                             )
                             if let status = viewModel.panoramaxUploadStatus(for: batch.batchID) { Text(status) }
@@ -2613,19 +2615,21 @@ private struct PictureGalleryView: View {
                         Spacer(minLength: 0)
                         if viewModel.activePanoramaxUploadBatchIDs.isEmpty, !entries.isEmpty {
                             Button {
-                                guard viewModel.canProcessPanoramaxUploads else { return }
-                                guard viewModel.panoramaxUploadIsReady else {
-                                    showingAccountRequired = true
-                                    return
-                                }
-                                viewModel.uploadPanoramaxSelections(
-                                    uploadableSelectedEntries.map {
-                                        (batchID: $0.batch.batchID, itemID: $0.item.itemID)
+                                Task { @MainActor in
+                                    guard viewModel.canProcessPanoramaxUploads else { return }
+                                    guard await viewModel.validatePanoramaxConnection() else {
+                                        showingAccountRequired = true
+                                        return
                                     }
-                                )
-                                let newlyStartedBatchIDs = Set(uploadableSelectedEntries.map { $0.batch.batchID })
-                                for batchID in resumableBatchIDs.subtracting(newlyStartedBatchIDs) {
-                                    viewModel.uploadPanoramaxBatch(batchID: batchID)
+                                    viewModel.uploadPanoramaxSelections(
+                                        uploadableSelectedEntries.map {
+                                            (batchID: $0.batch.batchID, itemID: $0.item.itemID)
+                                        }
+                                    )
+                                    let newlyStartedBatchIDs = Set(uploadableSelectedEntries.map { $0.batch.batchID })
+                                    for batchID in resumableBatchIDs.subtracting(newlyStartedBatchIDs) {
+                                        viewModel.uploadPanoramaxBatch(batchID: batchID)
+                                    }
                                 }
                             } label: {
                                 Image(systemName: "arrow.up.circle.fill")
