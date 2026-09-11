@@ -435,9 +435,9 @@ private fun MainScreen(
         val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
         val compactPhoneLayout = maxHeight.value < 780f
         val screenInset = (minDimensionDp.value * 0.02f).dp
-        val signWidthFactor = if (compactPhoneLayout) 0.62f else 0.74f
+        val signWidthFactor = if (compactPhoneLayout) 0.60f else 0.72f
         val preferredSignSize = min(maxWidth.value * signWidthFactor, maxWidth.value - (screenInset.value * 2f))
-        val signSize = (if (recorderVisible) min(preferredSignSize, maxHeight.value * 0.32f) else preferredSignSize).dp
+        val signSize = (if (recorderVisible) min(preferredSignSize, maxHeight.value * 0.30f) else preferredSignSize).dp
         val primaryMetricScale = if (compactPhoneLayout) 0.42f else SPEED_LIMIT_NUMBER_SCALE
         val primaryMetricFont = (signSize.value * primaryMetricScale).sp
         val secondaryScale = sharedSecondaryScale(
@@ -479,7 +479,7 @@ private fun MainScreen(
                 onOpenLocalRecordings = onOpenLocalRecordings,
             )
 
-            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 1f))
+            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 0.6f))
 
             val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
                 isInSpeedCaptureMode = ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
@@ -518,7 +518,9 @@ private fun MainScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 1f))
+            // Keep the sign separate from the preview even when the weighted space is small.
+            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 0.6f))
 
             BoxWithConstraints(modifier = Modifier.weight(3f).fillMaxWidth()) {
                 val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
@@ -737,7 +739,7 @@ private fun LocalRecordingsButton(
         border = buttonBorder,
         modifier = Modifier.testTag("local-recordings-button"),
     ) {
-        Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
+        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
     }
 }
 
@@ -800,10 +802,12 @@ private fun SpeedLimitSign(
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize().clip(CircleShape)) {
                 if (showsUnlimitedIcon) {
+                    val borderWidth = size.minDimension * 0.028f
                     drawCircle(color = Color.White)
-                    drawCircle(color = Color.Black.copy(alpha = 0.82f), style = Stroke(width = size.minDimension * 0.028f))
+                    drawCircle(color = Color.Black.copy(alpha = 0.82f),
+                        radius = (size.minDimension - borderWidth) / 2f, style = Stroke(width = borderWidth))
                     repeat(5) { index ->
                         rotate(degrees = 51f, pivot = center) {
                             val stripeWidth = size.minDimension * 0.028f
@@ -817,17 +821,20 @@ private fun SpeedLimitSign(
                         }
                     }
                 } else {
+                    val standardBlackBorderWidth = size.minDimension * 0.0175f
+                    val standardRedBandWidth = size.minDimension * 0.134f
                     drawCircle(color = Color.White)
+                    // Match iPhone's strokeBorder: both rings stay inside the measured sign.
                     drawCircle(
                         color = if (showsActiveCameraLimitIndicator) Color.White else Color.Black.copy(alpha = 0.75f),
-                        style = Stroke(width = size.minDimension * 0.018f),
+                        radius = (size.minDimension - standardBlackBorderWidth) / 2f,
+                        style = Stroke(width = standardBlackBorderWidth),
                     )
                     drawCircle(
                         color = SpeedSignBorderRed,
-                        style = Stroke(width = size.minDimension * 0.134f),
+                        radius = size.minDimension / 2f - standardBlackBorderWidth - standardRedBandWidth / 2f,
+                        style = Stroke(width = standardRedBandWidth),
                     )
-                    val standardBlackBorderWidth = size.minDimension * 0.018f
-                    val standardRedBandWidth = size.minDimension * 0.134f
                     val standardInnerDiameter = max(1f, size.minDimension - (2f * (standardBlackBorderWidth + standardRedBandWidth)))
                     val targetWidth = standardInnerDiameter * 0.86f
                     val textPaint = AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG).apply {
