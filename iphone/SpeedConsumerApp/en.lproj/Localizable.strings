@@ -253,7 +253,6 @@
 "first_location.wifi" = "Matching map: %@. Waiting for Wi-Fi or permission to use mobile data.";
 "first_location.downloading" = "Downloading the matching map: %@.";
 "first_location.location_failed" = "Location could not be determined. Try location selection again.";
-"first_location.cellular" = "Allow mobile data for the first map";
 "first_location.retry" = "Retry location selection";
 "penalty.country_unresolved" = "Country unclear — penalty warnings paused";
 "penalty.review" = "Review";

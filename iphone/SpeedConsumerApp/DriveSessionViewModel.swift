@@ -562,12 +562,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published var maintenanceMessage: String = ""
     @Published private(set) var firstLocationPackStatus = NSLocalizedString("first_location.waiting", comment: "")
     @Published private(set) var countryModelPackStatus = NSLocalizedString("first_location.model_waiting", comment: "")
-    @Published var firstLocationAllowsCellular = UserDefaults.standard.bool(forKey: "youspeed.first_location_cellular") {
-        didSet {
-            UserDefaults.standard.set(firstLocationAllowsCellular, forKey: "youspeed.first_location_cellular")
-            continueFirstLocationSetup()
-        }
-    }
     private let regionalPackCatalog = RegionalPackCatalog.bundled()
     private let countryPackRegistry = TrafficSignCountryPackRegistry.bundled()
     private var countryPackSelection = TrafficSignCountrySelection()
@@ -3631,9 +3625,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 let downloadManager: V3BundleManager
                 if firstLocationSetup {
                     let configuration = URLSessionConfiguration.default
-                    configuration.allowsCellularAccess = firstLocationAllowsCellular
-                    configuration.allowsExpensiveNetworkAccess = firstLocationAllowsCellular
-                    configuration.allowsConstrainedNetworkAccess = firstLocationAllowsCellular
+                    configuration.allowsCellularAccess = false
+                    configuration.allowsExpensiveNetworkAccess = false
+                    configuration.allowsConstrainedNetworkAccess = false
                     downloadManager = V3BundleManager(session: URLSession(configuration: configuration))
                 } else {
                     downloadManager = bundleManager
@@ -4336,7 +4330,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             firstLocationNetworkMonitor.pathUpdateHandler = { [weak self] path in
                 Task { @MainActor [weak self] in
                     self?.firstLocationNetworkReady = path.status == .satisfied
-                    self?.firstLocationNetworkMetered = path.isExpensive || path.isConstrained
+                    self?.firstLocationNetworkMetered = path.isExpensive || path.isConstrained || !path.usesInterfaceType(.wifi)
                     self?.continueFirstLocationSetup()
                 }
             }
@@ -4405,7 +4399,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             firstLocationPackStatus = NSLocalizedString("first_location.existing", comment: "")
             return
         }
-        guard firstLocationNetworkReady && (!firstLocationNetworkMetered || firstLocationAllowsCellular) else {
+        guard firstLocationNetworkReady && !firstLocationNetworkMetered else {
             firstLocationPackStatus = String(format: NSLocalizedString("first_location.wifi", comment: ""), option.displayName)
             return
         }

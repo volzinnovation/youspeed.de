@@ -128,6 +128,7 @@ dependencies {
     implementation("androidx.camera:camera-core:$cameraXVersion")
     implementation("androidx.camera:camera-camera2:$cameraXVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraXVersion")
+    implementation("androidx.camera:camera-video:$cameraXVersion")
     implementation(composeBom)
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")

@@ -21,7 +21,14 @@
     <string name="ui_status">Status</string>
     <string name="ui_reload_speech_model">Reload offline model</string>
     <string name="ui_map_downloads">Map downloads</string>
-    <string name="ui_first_map_cellular">Allow mobile data for the first map</string>
+    <string name="ui_drive_recorder_start">Start drive recording</string>
+    <string name="ui_drive_recorder_stop">Stop drive recording</string>
+    <string name="ui_dashcam_title">Dashcam videos</string>
+    <string name="ui_dashcam_empty">No dashcam videos recorded yet.</string>
+    <string name="ui_dashcam_share">Share video</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Capture Panoramax photos</string>
+    <string name="ui_panoramax_settings_detail">Photos are captured while drive recording is active, with GPS accuracy and distance/time safeguards.</string>
     <string name="ui_retry_location_selection">Retry location selection</string>
     <string name="ui_map_bundle">Map bundle</string>
     <string name="ui_map_downloads_help">Top 10 countries (A–Z). Download or delete map bundles individually.</string>

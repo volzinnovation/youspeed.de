@@ -21,7 +21,6 @@
     <string name="ui_status">Stato</string>
     <string name="ui_reload_speech_model">Ricarica modello offline</string>
     <string name="ui_map_downloads">Download delle mappe</string>
-    <string name="ui_first_map_cellular">Consenti dati mobili per la prima mappa</string>
     <string name="ui_retry_location_selection">Riprova selezione tramite posizione</string>
     <string name="ui_map_bundle">Pacchetto mappe</string>
     <string name="ui_map_downloads_help">I 10 paesi principali (A–Z). Scarica o elimina i pacchetti di mappe singolarmente.</string>

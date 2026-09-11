@@ -21,7 +21,6 @@
     <string name="ui_status">Status</string>
     <string name="ui_reload_speech_model">Offlinemodel opnieuw laden</string>
     <string name="ui_map_downloads">Kaarten downloaden</string>
-    <string name="ui_first_map_cellular">Mobiele data toestaan voor de eerste kaart</string>
     <string name="ui_retry_location_selection">Locatieselectie opnieuw proberen</string>
     <string name="ui_map_bundle">Kaartbundel</string>
     <string name="ui_map_downloads_help">Top 10 landen (A–Z). Download of verwijder kaartbundels afzonderlijk.</string>

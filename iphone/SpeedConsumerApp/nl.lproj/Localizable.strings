@@ -253,7 +253,6 @@
 "first_location.wifi" = "Passende kaart: %@. Wachten op wifi of toestemming voor mobiele data.";
 "first_location.downloading" = "De passende kaart wordt gedownload: %@.";
 "first_location.location_failed" = "De locatie kon niet worden bepaald. Probeer de locatieselectie opnieuw.";
-"first_location.cellular" = "Mobiele data toestaan voor de eerste kaart";
 "first_location.retry" = "Locatieselectie opnieuw proberen";
 "penalty.country_unresolved" = "Land onduidelijk — boetewaarschuwingen gepauzeerd";
 "penalty.review" = "Controleren";

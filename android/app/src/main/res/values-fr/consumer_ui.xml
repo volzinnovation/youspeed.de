@@ -21,7 +21,6 @@
     <string name="ui_status">État</string>
     <string name="ui_reload_speech_model">Recharger le modèle hors ligne</string>
     <string name="ui_map_downloads">Téléchargement des cartes</string>
-    <string name="ui_first_map_cellular">Autoriser les données mobiles pour la première carte</string>
     <string name="ui_retry_location_selection">Réessayer la sélection par localisation</string>
     <string name="ui_map_bundle">Paquet de cartes</string>
     <string name="ui_map_downloads_help">Les 10 pays principaux (A–Z). Téléchargez ou supprimez chaque paquet de cartes séparément.</string>

@@ -18,6 +18,11 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.io.FileInputStream
@@ -475,6 +480,9 @@ internal class AndroidTrafficSignCameraRuntime(
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalysis: ImageAnalysis? = null
     private var imageCapture: ImageCapture? = null
+    private var videoCapture: VideoCapture<Recorder>? = null
+    private var activeRecording: Recording? = null
+    private var activeRecordingFile: File? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
     private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
 
@@ -545,18 +553,22 @@ internal class AndroidTrafficSignCameraRuntime(
                             }
                         }
                 }
-                val capture = if (controller.isPanoramaxCaptureEnabled()) {
+                val capture = if (controller.isDashcamRecordingEnabled()) {
                     ImageCapture.Builder()
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
                 } else null
+                val video = if (controller.isDashcamRecordingEnabled()) {
+                    VideoCapture.withOutput(Recorder.Builder().build())
+                } else null
                 provider.unbindAll()
-                val useCases = listOfNotNull(analysis, capture)
+                val useCases = listOfNotNull(analysis, capture, video)
                 check(useCases.isNotEmpty()) { "No camera use case enabled" }
                 provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
+                videoCapture = video
             }.onFailure { failure ->
                 runtime.close()
                 backend = null
@@ -570,8 +582,34 @@ internal class AndroidTrafficSignCameraRuntime(
                     TrafficSignCameraRuntimeState.ACTIVE,
                     ConsumerRuntimeText.CAMERA_ACTIVE.text(),
                 )
+                videoCapture?.let(::startDashcamRecording)
             }
         }, mainExecutor)
+    }
+
+    private fun startDashcamRecording(video: VideoCapture<Recorder>) {
+        if (activeRecording != null || !controller.isDashcamRecordingEnabled()) return
+        val file = controller.nextDashcamRecordingFile()
+        val output = FileOutputOptions.Builder(file).build()
+        activeRecordingFile = file
+        activeRecording = video.output
+            .prepareRecording(context, output)
+            .start(mainExecutor) { event ->
+                when (event) {
+                    is VideoRecordEvent.Start,
+                    is VideoRecordEvent.Status,
+                    -> Unit
+                    is VideoRecordEvent.Finalize -> {
+                        activeRecording = null
+                        activeRecordingFile = null
+                        controller.onDashcamRecordingFinalized(
+                            path = file.absolutePath,
+                            success = event.error == VideoRecordEvent.Finalize.ERROR_NONE,
+                            detail = event.cause?.message ?: "Video recording failed (${event.error})",
+                        )
+                    }
+                }
+            }
     }
 
     private fun analysisConditions(): TrafficSignAnalysisConditions {
@@ -619,11 +657,15 @@ internal class AndroidTrafficSignCameraRuntime(
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
+        activeRecording?.stop()
+        activeRecording = null
+        activeRecordingFile = null
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.let { cameraProvider?.unbind(it) }
         imageCapture?.let { cameraProvider?.unbind(it) }
         imageAnalysis = null
         imageCapture = null
+        videoCapture = null
         cameraProvider = null
         bridge?.close()
         bridge = null

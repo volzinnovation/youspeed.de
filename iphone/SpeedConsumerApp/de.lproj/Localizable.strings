@@ -253,7 +253,6 @@
 "first_location.wifi" = "Passende Karte: %@. Warte auf WLAN oder Freigabe mobiler Daten.";
 "first_location.downloading" = "Lade die passende Karte: %@.";
 "first_location.location_failed" = "Standort konnte nicht bestimmt werden. Standortauswahl erneut versuchen.";
-"first_location.cellular" = "Erste Karte auch über mobile Daten laden";
 "first_location.retry" = "Standortauswahl erneut versuchen";
 "penalty.country_unresolved" = "Land unklar – Bußgeldhinweise pausiert";
 "penalty.review" = "Prüfen";

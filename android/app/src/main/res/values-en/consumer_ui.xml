@@ -21,7 +21,6 @@
     <string name="ui_status">Status</string>
     <string name="ui_reload_speech_model">Reload offline model</string>
     <string name="ui_map_downloads">Map downloads</string>
-    <string name="ui_first_map_cellular">Allow mobile data for the first map</string>
     <string name="ui_retry_location_selection">Retry location selection</string>
     <string name="ui_map_bundle">Map bundle</string>
     <string name="ui_map_downloads_help">Top 10 countries (A–Z). Download or delete map bundles individually.</string>

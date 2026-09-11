@@ -80,7 +80,8 @@ class MainActivity : ComponentActivity(), ConsumerHost {
     }
 
     override fun startTrafficSignCamera() {
-        if (trafficSignCameraRuntime != null || isFinishing || isDestroyed) return
+        if (isFinishing || isDestroyed) return
+        trafficSignCameraRuntime?.close()
         trafficSignCameraRuntime = AndroidTrafficSignCameraRuntime(
             context = applicationContext,
             lifecycleOwner = this,

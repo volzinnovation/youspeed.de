@@ -207,7 +207,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                         onOpenDebug = { openDebug = true },
                         onOpenLocalRecordings = { openLocalRecordings = true },
                         onOpenPanoramaxGallery = { openPanoramaxGallery = true },
-                        onTogglePanoramax = controller::togglePanoramaxCapture,
+                        onToggleDriveRecorder = controller::toggleDriveRecorder,
                         onCapture = controller::beginSpeedCapture,
                     )
                 }
@@ -234,7 +234,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                         onOpenDebug = { openDebug = true },
                         onOpenLocalRecordings = { openLocalRecordings = true },
                         onOpenPanoramaxGallery = { openPanoramaxGallery = true },
-                        onTogglePanoramax = controller::togglePanoramaxCapture,
+                        onToggleDriveRecorder = controller::toggleDriveRecorder,
                         onCapture = controller::beginSpeedCapture,
                     )
                 }
@@ -538,7 +538,7 @@ private fun MainScreen(
     onOpenDebug: () -> Unit,
     onOpenLocalRecordings: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
-    onTogglePanoramax: () -> Unit,
+    onToggleDriveRecorder: () -> Unit,
     onCapture: () -> Unit,
 ) {
     val pulseTransition = rememberInfiniteTransition(label = "driving-ban-pulse")
@@ -692,13 +692,51 @@ private fun MainScreen(
             onOpenLegal = onOpenLegal,
             onOpenSettings = onOpenSettings,
             onOpenPanoramaxGallery = onOpenPanoramaxGallery,
-            onTogglePanoramax = onTogglePanoramax,
-            panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
+            onToggleDriveRecorder = onToggleDriveRecorder,
+            driveRecorderState = ui.driveRecorderState,
             panoramaxCaptureCount = ui.panoramaxCaptureCount,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 12.dp),
         )
+        if (ui.driveRecorderState != DriveRecorderState.DISABLED) {
+            DriveRecorderStatusStrip(
+                ui = ui,
+                foreground = foreground,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = CONTROL_BUTTON_DIAMETER + 22.dp)
+                    .testTag("drive-recorder-status"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun DriveRecorderStatusStrip(
+    ui: ConsumerUiState,
+    foreground: Color,
+    modifier: Modifier = Modifier,
+) {
+    val stateLabel = ui.driveRecorderState.name.lowercase(Locale.US).replace('_', ' ')
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(999.dp),
+        color = foreground.copy(alpha = 0.14f),
+        border = androidx.compose.foundation.BorderStroke(1.dp, foreground.copy(alpha = 0.42f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stateLabel, color = foreground, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("Dashcam", color = foreground.copy(alpha = 0.9f), fontSize = 10.sp)
+            if (ui.trafficSignRecognitionEnabled) Text("TSR", color = foreground.copy(alpha = 0.9f), fontSize = 10.sp)
+            if (ui.panoramaxCaptureEnabled) {
+                Text("Panoramax ${ui.panoramaxCaptureCount}", color = foreground.copy(alpha = 0.9f), fontSize = 10.sp)
+            }
+        }
     }
 }
 
@@ -766,8 +804,8 @@ private fun BottomCornerButtons(
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
-    onTogglePanoramax: () -> Unit,
-    panoramaxCaptureEnabled: Boolean,
+    onToggleDriveRecorder: () -> Unit,
+    driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -778,17 +816,17 @@ private fun BottomCornerButtons(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         PillIconButton(
-            onClick = onTogglePanoramax,
-            background = if (panoramaxCaptureEnabled) Color(0x3321C55D) else buttonBg,
-            border = if (panoramaxCaptureEnabled) Color(0xFFEF4444) else buttonBorder,
-            modifier = Modifier.testTag("panoramax-toggle-button"),
+            onClick = onToggleDriveRecorder,
+            background = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0x3321C55D) else buttonBg,
+            border = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else buttonBorder,
+            modifier = Modifier.testTag("drive-recorder-toggle-button"),
         ) {
             Icon(
-                imageVector = if (panoramaxCaptureEnabled) Icons.Default.Stop else Icons.Default.CameraAlt,
+                imageVector = if (driveRecorderState == DriveRecorderState.RECORDING) Icons.Default.Stop else Icons.Default.CameraAlt,
                 contentDescription = stringResource(
-                    if (panoramaxCaptureEnabled) R.string.ui_panoramax_stop else R.string.ui_panoramax_start,
+                    if (driveRecorderState == DriveRecorderState.RECORDING) R.string.ui_drive_recorder_stop else R.string.ui_drive_recorder_start,
                 ),
-                tint = if (panoramaxCaptureEnabled) Color(0xFFEF4444) else foreground,
+                tint = if (driveRecorderState == DriveRecorderState.RECORDING) Color(0xFFEF4444) else foreground,
             )
         }
         Spacer(modifier = Modifier.weight(1f))
@@ -851,7 +889,7 @@ private fun LocalRecordingsButton(
         border = buttonBorder,
         modifier = Modifier.testTag("local-recordings-button"),
     ) {
-        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
+        Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
     }
 }
 
@@ -1308,6 +1346,28 @@ private fun SettingsSheet(
                 }
             }
             item {
+                SectionCard(stringResource(R.string.ui_panoramax_settings)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.ui_panoramax_capture), modifier = Modifier.weight(1f), color = Color.Black)
+                        Switch(
+                            checked = ui.panoramaxCaptureEnabled,
+                            onCheckedChange = controller::setPanoramaxCaptureEnabled,
+                            modifier = Modifier.testTag("panoramax-settings-toggle"),
+                        )
+                    }
+                    Text(
+                        if (ui.panoramaxCaptureEnabled) {
+                            stringResource(R.string.ui_panoramax_capture_active, ui.panoramaxCaptureCount)
+                        } else {
+                            stringResource(R.string.ui_panoramax_capture_idle)
+                        },
+                        color = Color(0xFF555555),
+                        fontSize = 13.sp,
+                    )
+                    Text(stringResource(R.string.ui_panoramax_settings_detail), color = Color(0xFF555555), fontSize = 13.sp)
+                }
+            }
+            item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.ui_spoken_alerts), modifier = Modifier.weight(1f), color = Color.Black)
@@ -1366,10 +1426,6 @@ private fun SettingsSheet(
                 SectionCard(stringResource(R.string.ui_map_downloads)) {
                     Text(ui.firstLocationPackStatus, fontSize = 13.sp)
                     Text(ui.countryModelPackStatus, fontSize = 13.sp)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = ui.firstLocationAllowsCellular, onCheckedChange = controller::setFirstLocationAllowsCellular)
-                        Text(stringResource(R.string.ui_first_map_cellular), fontSize = 13.sp)
-                    }
                     OutlinedButton(onClick = controller::retryFirstLocationSetup) { Text(stringResource(R.string.ui_retry_location_selection)) }
                     DebugLabel(stringResource(R.string.ui_status), controller.formattedSyncStatus())
                     DebugLabel(stringResource(R.string.ui_map_bundle), ui.activeBundleVersion)
@@ -1642,6 +1698,7 @@ private fun LocalRecordingsSheet(
     onDismiss: () -> Unit,
 ) {
     val ui = controller.uiState
+    val context = LocalContext.current
     SheetScaffold(title = stringResource(R.string.ui_recordings_title), onDismiss = onDismiss, testTag = "local-recordings-sheet") {
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
@@ -1649,6 +1706,23 @@ private fun LocalRecordingsSheet(
                 color = Color(0xFF555555),
                 fontSize = 13.sp,
             )
+            SectionCard(stringResource(R.string.ui_dashcam_title)) {
+                if (ui.dashcamRecordings.isEmpty()) {
+                    Text(stringResource(R.string.ui_dashcam_empty), color = Color(0xFF555555))
+                } else {
+                    ui.dashcamRecordings.take(10).forEach { recording ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(recording.createdAt.toString(), color = Color.Black, fontSize = 12.sp)
+                                Text(Formatter.formatFileSize(context, recording.bytes), color = Color(0xFF666666), fontSize = 12.sp)
+                            }
+                            OutlinedButton(onClick = { controller.shareDashcamRecording(recording.path) }) {
+                                Text(stringResource(R.string.ui_dashcam_share))
+                            }
+                        }
+                    }
+                }
+            }
             if (ui.localObservations.isEmpty()) {
                 SectionCard(stringResource(R.string.ui_status)) {
                     Text(stringResource(R.string.ui_no_observations), color = Color(0xFF555555))

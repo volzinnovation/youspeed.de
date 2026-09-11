@@ -253,7 +253,6 @@
 "first_location.wifi" = "Carte correspondante : %@. En attente du Wi-Fi ou de l’autorisation des données mobiles.";
 "first_location.downloading" = "Téléchargement de la carte correspondante : %@.";
 "first_location.location_failed" = "Impossible de déterminer la position. Réessayez la sélection par localisation.";
-"first_location.cellular" = "Autoriser les données mobiles pour la première carte";
 "first_location.retry" = "Réessayer la sélection par localisation";
 "penalty.country_unresolved" = "Pays incertain — alertes de sanction suspendues";
 "penalty.review" = "À vérifier";

@@ -2985,7 +2985,6 @@ private struct SettingsView: View {
                 } else {
                     Text(viewModel.firstLocationPackStatus).font(.footnote)
                     Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
-                    Toggle(NSLocalizedString("first_location.cellular", comment: ""), isOn: $viewModel.firstLocationAllowsCellular)
                     Button(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
                     ForEach(viewModel.bundleDownloadSections) { country in
                         if country.options.count == 1, let option = country.options.first {
