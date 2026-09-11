@@ -50,24 +50,26 @@ def main():
                 run("shell", "uiautomator", "dump", "/sdcard/youspeed-country-window.xml")
                 xml = run("exec-out", "cat", "/sdcard/youspeed-country-window.xml")
                 nodes = {n.get("resource-id"): n for n in ET.fromstring(xml).iter("node") if n.get("resource-id")}
-                if "active-rule-country" in nodes:
+                if "primary-metric" in nodes:
                     break
-            assert "active-rule-country" in nodes, f"Country UI missing: {code} {locale} +{delta}"
+            assert "primary-metric" in nodes, f"Primary metric UI missing: {code} {locale} +{delta}"
             band = next((b for b in rules["bands"] if b["min_delta_kmh"] <= delta <= (b["max_delta_kmh"] or 1000)), None)
+            expected_title = ""
+            expected_detail = ""
             if band:
-                expected = band["localized_templates"][locale[:2]]["title_template"].replace("{delta}", str(delta)).replace("{currency}", rules["currency_code"])
-                assert nodes["penalty-notice-title"].get("text") == expected, (locale, nodes)
-                assert "penalty-estimate-note" in nodes
+                expected_metric = band.get("money_fine_eur")
+                if expected_metric is None:
+                    expected_metric = band.get("penalty_points")
+                assert nodes["primary-metric"].get("text") == str(expected_metric if expected_metric is not None else "!"), (locale, nodes)
+                expected_title = band["localized_templates"][locale[:2]]["title_template"].replace("{delta}", str(delta)).replace("{currency}", rules["currency_code"])
                 expected_detail = band["localized_templates"][locale[:2]]["detail_template"].replace("{delta}", str(delta)).replace("{currency}", rules["currency_code"])
-                assert nodes["penalty-notice-details"].get("text") == expected_detail, (nodes["penalty-notice-details"].get("text"), expected_detail)
-            else:
-                assert "penalty-notice-title" not in nodes
             (destination / name).write_bytes(run("exec-out", "screencap", "-p"))
             (destination / name.replace(".png", ".xml")).write_bytes(xml)
             entry = dict(platform="android", country=code, locale=locale, delta_kmh=delta, limit_kmh=limit,
+                         title=expected_title, details=expected_detail,
                          simulated=True, image=str((destination / name).resolve()),
                          displayed={key: node.get("text") for key, node in nodes.items() if key in
-                                    ["active-rule-country", "penalty-notice-title", "penalty-notice-details", "primary-metric", "secondary-metric"]})
+                                    ["primary-metric", "secondary-metric"]})
             (destination / name.replace(".png", ".json")).write_text(json.dumps(entry, ensure_ascii=False, indent=2))
             manifest.append(entry)
             print(f"Captured {folder}/{name}", flush=True)

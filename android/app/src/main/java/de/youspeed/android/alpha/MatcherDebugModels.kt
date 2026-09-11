@@ -12,6 +12,10 @@ internal enum class LookupMatchingModel {
     CORRIDOR_HMM_NO_THREE_WAY_GATE,
     CORRIDOR_HMM_NO_SAME_REF_BOUNCE_GATE,
     CORRIDOR_HMM_ANTI_ABA_HYSTERESIS,
+    SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
+    SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+    SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
+    SIMPLE_SEQUENCE_VITERBI_HEURISTIC,
 }
 
 enum class MatcherDebugProfile(
@@ -27,7 +31,11 @@ enum class MatcherDebugProfile(
     M5("m5", "M5", "Corridor-aware final", LookupMatchingModel.CORRIDOR_HMM),
     M6("m6", "M6", "M2 + urban consecutive distance-gap release", LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC),
     M7("m7", "M7", "M6 + 10m search window", LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC),
-    M9("m9", "M9", "Guarded stale-ref suppression", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC),
+    M8("m8", "M8", "M6 + no-ref street-name continuity", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC),
+    M9("m9", "M9", "M8 + guarded stale-ref suppression", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC),
+    M10("m10", "M10", "M9 + node-direction-aware junction release", LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC),
+    M11("m11", "M11", "M10 + topology-only particle sequence", LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC),
+    M12("m12", "M12", "M11 + 10-fix HMM/Viterbi", LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC),
     ;
 
     val debugLabel: String

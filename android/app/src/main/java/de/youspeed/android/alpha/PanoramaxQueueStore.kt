@@ -61,6 +61,10 @@ class PanoramaxQueueStore(private val appRoot: File) {
         ?.sortedByDescending { it.createdAt }
         ?: emptyList()
 
+    fun thumbnailFile(item: PanoramaxItemRecord): File = File(root, item.thumbnailPath)
+
+    fun originalFile(item: PanoramaxItemRecord): File = File(root, item.originalPath)
+
     @Synchronized
     fun getBatch(batchId: String): PanoramaxBatchRecord? = fileFor(batchId).takeIf(File::exists)?.let { decode(it.readText()) }
 

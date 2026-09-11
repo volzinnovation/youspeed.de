@@ -94,6 +94,10 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         trafficSignCameraRuntime = null
     }
 
+    override fun capturePanoramaxPhoto() {
+        trafficSignCameraRuntime?.capturePanoramaxPhoto()
+    }
+
     override fun showTransientMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }

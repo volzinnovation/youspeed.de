@@ -9,6 +9,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.location.Location
@@ -225,6 +227,14 @@ data class ConsumerUiState(
     val gpsHorizontalAccuracyM: Double? = null,
     val gpsSignalBars: Int = 0,
     val gpsFixCount: Int = 0,
+    val coarseLatitude: Double? = null,
+    val coarseLongitude: Double? = null,
+    val coarseHorizontalAccuracyM: Double? = null,
+    val coarseLocationSource: String? = null,
+    val coarseCityName: String? = null,
+    val coarseCityPlaceName: String? = null,
+    val coarseCityDistrictName: String? = null,
+    val coarseCitySource: String? = null,
     val gpsLogPath: String = "",
     val matchLogPath: String = "",
     val runtimeDiagnosticsLogPath: String = "",
@@ -266,6 +276,10 @@ data class ConsumerUiState(
     val lastTrafficSignPictogram: TrafficSignPictogram? = null,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
+    val panoramaxCaptureEnabled: Boolean = false,
+    val panoramaxCaptureCount: Int = 0,
+    val panoramaxLastCaptureDetail: String = "No photo captured",
+    val panoramaxBatches: List<PanoramaxBatchRecord> = emptyList(),
     val trafficSignGeneration: Long = 0L,
     val effectiveSpeedLimitSource: EffectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE,
     val effectiveSpeedLimitReason: String = "no_limit",
@@ -421,6 +435,7 @@ class ConsumerSessionController(
     private val lookupToken = TrafficSignLookupMutationGate()
     private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
+    private val panoramaxQueueStore = PanoramaxQueueStore(appContext)
     private val wayMatchTracker = WayMatchSessionTracker()
     private val trafficSignResolver = TrafficSignRuntimeSourceResolver()
     private val trafficSignStateLock = Any()
@@ -453,6 +468,7 @@ class ConsumerSessionController(
     private var latestTrafficSignContext: TrafficSignDetectionContext? = null
     private var latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
     private var latestResolverLocation: Location? = null
+    private var coarseLocationSequence = 0L
     private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
     private var latestTrafficSignInsideCity: Boolean? = null
     private var trafficSignTraversalEpoch = 1L
@@ -470,6 +486,10 @@ class ConsumerSessionController(
     private var isAwaitingSpeedCapturePromptCompletion = false
     private var isSpeedCaptureResolved = false
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection? = null
+    private var panoramaxCaptureEnabled = false
+    private var panoramaxCaptureSessionId: String? = null
+    private var panoramaxLastCaptureSample: PanoramaxLocationSample? = null
+    private var panoramaxCaptureInFlight = false
     private var pendingStartupData: PendingStartupData? = null
     private var isStartupWaitingForSpeechModel = false
     private var isGermanSpeechModelCheckInFlight = false
@@ -489,10 +509,28 @@ class ConsumerSessionController(
 
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            if (!isDriving) {
+            if (!isDriving || !hasFineLocationPermission() || location.provider == LocationManager.NETWORK_PROVIDER) {
                 return
             }
             consumeLocation(location)
+        }
+
+        override fun onProviderEnabled(provider: String) = Unit
+
+        override fun onProviderDisabled(provider: String) = Unit
+
+        @Deprecated("Deprecated in Java")
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+    }
+
+    /** Network provider uses Wi-Fi/cell positioning on Android. It is useful
+     * for administrative context only; it must never drive speed matching or
+     * Panoramax capture. */
+    private val coarseLocationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            if (isDriving) {
+                consumeCoarseLocation(location)
+            }
         }
 
         override fun onProviderEnabled(provider: String) = Unit
@@ -522,6 +560,8 @@ class ConsumerSessionController(
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
             otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
             trafficSignGeneration = trafficSignGeneration.get(),
+            panoramaxBatches = panoramaxQueueStore.listBatches(),
+            panoramaxCaptureCount = panoramaxQueueStore.listBatches().sumOf { it.items.size },
         ),
     )
         private set
@@ -800,6 +840,154 @@ class ConsumerSessionController(
         mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
     }
 
+    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean =
+        uiState.trafficSignRecognitionEnabled && isDriving
+
+    internal fun isPanoramaxCaptureEnabled(): Boolean = panoramaxCaptureEnabled && isDriving
+
+    internal fun currentPanoramaxLocationSample(): PanoramaxLocationSample? {
+        val lat = uiState.currentLatitude ?: return null
+        val lon = uiState.currentLongitude ?: return null
+        val accuracy = uiState.gpsHorizontalAccuracyM ?: return null
+        return PanoramaxLocationSample(
+            latitude = lat,
+            longitude = lon,
+            capturedAt = clock.instant(),
+            accuracyMeters = accuracy,
+        )
+    }
+
+    fun togglePanoramaxCapture() {
+        if (!isDriving || uiState.appScreenshotState != null) return
+        if (panoramaxCaptureEnabled) {
+            panoramaxCaptureEnabled = false
+            panoramaxCaptureSessionId = null
+            panoramaxLastCaptureSample = null
+            panoramaxCaptureInFlight = false
+            panoramaxQueueStore.listBatches().firstOrNull { it.state == PanoramaxBatchState.CAPTURING }
+                ?.let { batch -> runCatching { panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW) } }
+            updateState {
+                val batches = panoramaxQueueStore.listBatches()
+                copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size }, panoramaxCaptureEnabled = false)
+            }
+            reconcileTrafficSignCamera()
+            return
+        }
+        val sessionId = UUID.randomUUID().toString().lowercase(Locale.US)
+        panoramaxCaptureEnabled = true
+        panoramaxCaptureSessionId = sessionId
+        panoramaxLastCaptureSample = null
+        panoramaxCaptureInFlight = false
+        runCatching { panoramaxQueueStore.createBatch(sessionId) }
+            .onFailure { error ->
+                panoramaxCaptureEnabled = false
+                panoramaxCaptureSessionId = null
+                updateState { copy(lastError = error.message ?: error.javaClass.simpleName) }
+            }
+        updateState {
+            copy(
+                panoramaxBatches = panoramaxQueueStore.listBatches(),
+                panoramaxCaptureEnabled = panoramaxCaptureEnabled,
+            )
+        }
+        reconcileTrafficSignCamera()
+    }
+
+    fun refreshPanoramaxBatches() {
+        updateState {
+            val batches = panoramaxQueueStore.listBatches()
+            copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
+        }
+    }
+
+    fun deletePanoramaxItem(batchId: String, itemId: String) {
+        runCatching { panoramaxQueueStore.deleteItem(batchId, itemId) }
+            .onSuccess {
+                updateState {
+                    val batches = panoramaxQueueStore.listBatches()
+                    copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
+                }
+            }
+            .onFailure { error -> updateState { copy(lastError = error.message ?: error.javaClass.simpleName) } }
+    }
+
+    fun setPanoramaxItemIncluded(batchId: String, itemId: String, included: Boolean) {
+        runCatching {
+            panoramaxQueueStore.updateItem(
+                batchId,
+                itemId,
+                if (included) PanoramaxItemState.INCLUDED else PanoramaxItemState.EXCLUDED,
+            )
+        }.onSuccess {
+            updateState {
+                val batches = panoramaxQueueStore.listBatches()
+                copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
+            }
+        }
+            .onFailure { error -> updateState { copy(lastError = error.message ?: error.javaClass.simpleName) } }
+    }
+
+    internal fun onPanoramaxPhotoCaptured(path: String, sample: PanoramaxLocationSample) {
+        submitBackgroundTask {
+            val sessionId = panoramaxCaptureSessionId
+            val batch = panoramaxQueueStore.listBatches().firstOrNull {
+                it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == sessionId
+            }
+            if (!panoramaxCaptureEnabled || sessionId == null || batch == null) {
+                File(path).delete()
+                panoramaxCaptureInFlight = false
+                return@submitBackgroundTask
+            }
+            runCatching {
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(path, bounds)
+                val thumbnailOptions = BitmapFactory.Options().apply { inSampleSize = 4 }
+                val thumbnail = BitmapFactory.decodeFile(path, thumbnailOptions)
+                    ?: error("Could not decode Panoramax photo")
+                val thumbnailFile = File.createTempFile("panoramax-thumb-", ".jpg", appContext.cacheDir)
+                FileOutputStream(thumbnailFile).use { output ->
+                    check(thumbnail.compress(Bitmap.CompressFormat.JPEG, 82, output)) { "Could not create thumbnail" }
+                }
+                thumbnail.recycle()
+                val original = File(path)
+                val metadata = PanoramaxCaptureMetadata(
+                    captureId = UUID.randomUUID().toString().lowercase(Locale.US),
+                    captureSessionId = sessionId,
+                    capturedAt = sample.capturedAt,
+                    location = sample,
+                    sha256 = PanoramaxQueueStore.sha256(original),
+                    byteSize = original.length(),
+                    software = "YouSpeed Android ${BuildConfig.VERSION_NAME}",
+                    imageWidthPixels = bounds.outWidth.takeIf { it > 0 },
+                    imageHeightPixels = bounds.outHeight.takeIf { it > 0 },
+                )
+                panoramaxQueueStore.addJpeg(batch.batchId, original, thumbnailFile, metadata)
+                thumbnailFile.delete()
+                original.delete()
+                updateState {
+                    copy(
+                        panoramaxBatches = panoramaxQueueStore.listBatches(),
+                        panoramaxCaptureCount = panoramaxQueueStore.listBatches().sumOf { it.items.size },
+                        panoramaxLastCaptureDetail = "Photo saved",
+                    )
+                }
+            }.onFailure { error ->
+                File(path).delete()
+                updateState { copy(panoramaxLastCaptureDetail = error.message ?: error.javaClass.simpleName) }
+            }
+            panoramaxCaptureInFlight = false
+        }
+    }
+
+    private fun maybeCapturePanoramaxPhoto() {
+        if (!panoramaxCaptureEnabled || panoramaxCaptureInFlight) return
+        val sample = currentPanoramaxLocationSample() ?: return
+        if (!PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample)) return
+        panoramaxLastCaptureSample = sample
+        panoramaxCaptureInFlight = true
+        host?.capturePanoramaxPhoto()
+    }
+
     fun startDriving() {
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY) {
             return
@@ -827,6 +1015,13 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
+        panoramaxCaptureEnabled = false
+        panoramaxCaptureSessionId = null
+        panoramaxLastCaptureSample = null
+        panoramaxCaptureInFlight = false
+        panoramaxQueueStore.listBatches().filter { it.state == PanoramaxBatchState.CAPTURING }.forEach { batch ->
+            runCatching { panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW) }
+        }
         isDriving = false
         host?.stopTrafficSignCamera()
         lookupToken.advance()
@@ -848,6 +1043,8 @@ class ConsumerSessionController(
                     currentSpeedKmh = 0.0,
                     trafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
                     trafficSignCameraRuntimeDetail = ConsumerRuntimeText.CAMERA_DISABLED.text(),
+                    panoramaxCaptureEnabled = false,
+                    panoramaxBatches = panoramaxQueueStore.listBatches(),
                 )
             }
         }
@@ -1000,7 +1197,7 @@ class ConsumerSessionController(
             )
             return
         }
-        if (uiState.trafficSignRecognitionEnabled && isDriving) {
+        if ((uiState.trafficSignRecognitionEnabled || panoramaxCaptureEnabled) && isDriving) {
             host?.startTrafficSignCamera()
         }
     }
@@ -1028,7 +1225,8 @@ class ConsumerSessionController(
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     private fun reconcileTrafficSignCamera() {
-        val shouldRun = uiState.trafficSignRecognitionEnabled && isDriving && uiState.appScreenshotState == null
+        val shouldRun = (uiState.trafficSignRecognitionEnabled || panoramaxCaptureEnabled) &&
+            isDriving && uiState.appScreenshotState == null
         if (!shouldRun) {
             host?.stopTrafficSignCamera()
             updateState {
@@ -2048,8 +2246,16 @@ class ConsumerSessionController(
         resetDerivedSpeedTracking()
         updateState { copy(currentSpeedKmh = 0.0) }
         ensureDrivingLogsExist()
-        val providers = locationManager.getProviders(true).filterNotNull()
-        if (providers.isEmpty()) {
+        val enabledProviders = locationManager.getProviders(true).filterNotNull()
+        val preciseProviders = if (hasFineLocationPermission()) {
+            enabledProviders.filter { provider ->
+                provider == LocationManager.GPS_PROVIDER || provider == "fused"
+            }
+        } else {
+            emptyList()
+        }
+        val hasNetworkProvider = LocationManager.NETWORK_PROVIDER in enabledProviders
+        if (preciseProviders.isEmpty() && !hasNetworkProvider) {
             updateState {
                 copy(
                     driveStatus = "location_error",
@@ -2058,7 +2264,7 @@ class ConsumerSessionController(
             }
             return
         }
-        providers.forEach { provider ->
+        preciseProviders.forEach { provider ->
             runCatching {
                 locationManager.requestLocationUpdates(provider, 3_000L, 0f, locationListener, Looper.getMainLooper())
             }.onFailure {
@@ -2070,9 +2276,30 @@ class ConsumerSessionController(
                 }
             }
         }
-        providers.mapNotNull { provider -> runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull() }
+        if (hasNetworkProvider) {
+            runCatching {
+                locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    5_000L,
+                    0f,
+                    coarseLocationListener,
+                    Looper.getMainLooper(),
+                )
+            }.onFailure {
+                appendRuntimeDiagnosticEvent(
+                    event = "coarse_location_updates_failed",
+                    details = mapOf("error" to (it.message ?: it.javaClass.simpleName)),
+                )
+            }
+        }
+        preciseProviders.mapNotNull { provider -> runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull() }
             .maxByOrNull { it.time }
             ?.let(::consumeLocation)
+        if (hasNetworkProvider) {
+            runCatching { locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) }
+                .getOrNull()
+                ?.let(::consumeCoarseLocation)
+        }
         updateState {
             copy(
                 driveStatus = "running",
@@ -2085,6 +2312,7 @@ class ConsumerSessionController(
 
     private fun stopLocationUpdates() {
         runCatching { locationManager.removeUpdates(locationListener) }
+        runCatching { locationManager.removeUpdates(coarseLocationListener) }
     }
 
     private fun resetDerivedSpeedTracking() {
@@ -2133,6 +2361,9 @@ class ConsumerSessionController(
     }
 
     private fun consumeLocation(location: Location) {
+        if (!hasFineLocationPermission() || location.provider == LocationManager.NETWORK_PROVIDER) {
+            return
+        }
         discoverPacks(location)
         val previousLocation = recentSpeedSampleLocations
             .asReversed()
@@ -2164,6 +2395,7 @@ class ConsumerSessionController(
             )
         }
         maybeSpeakOverspeedWarning()
+        maybeCapturePanoramaxPhoto()
 
         val token = lookupToken.advance()
         val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
@@ -2481,6 +2713,52 @@ class ConsumerSessionController(
                         matchLogPath = matchLogFile().absolutePath,
                     )
                 }
+            }
+        }
+    }
+
+    private fun consumeCoarseLocation(location: Location) {
+        if (!location.latitude.isFinite() || !location.longitude.isFinite()) {
+            return
+        }
+        val accuracy = location.accuracy.toDouble().takeIf { it.isFinite() && it >= 0.0 }
+        val sequence = ++coarseLocationSequence
+        updateState {
+            copy(
+                coarseLatitude = location.latitude,
+                coarseLongitude = location.longitude,
+                coarseHorizontalAccuracyM = accuracy,
+                coarseLocationSource = "wifi_network",
+            )
+        }
+        val dbPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() } ?: return
+        val countryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
+            ?: inferCountryCodeFromDBPath(dbPath)
+        submitBackgroundTask {
+            val context = runCatching {
+                V3SpeedLimitLookup(
+                    dbPath = dbPath,
+                    countryCode = countryCode,
+                    matchingModel = uiState.matcherDebugProfile.lookupModel,
+                ).use { lookup -> lookup.lookupCityContext(location.latitude, location.longitude) }
+            }.onFailure { error ->
+                appendRuntimeDiagnosticEvent(
+                    event = "coarse_city_lookup_error",
+                    details = mapOf(
+                        "lat" to location.latitude,
+                        "lon" to location.longitude,
+                        "dbPath" to dbPath,
+                        "error" to (error.message ?: error.javaClass.simpleName),
+                    ),
+                )
+            }.getOrNull() ?: return@submitBackgroundTask
+            postState {
+                if (sequence != coarseLocationSequence) this else copy(
+                    coarseCityName = context.cityName,
+                    coarseCityPlaceName = context.cityPlaceName,
+                    coarseCityDistrictName = context.cityDistrictName,
+                    coarseCitySource = context.citySource ?: "n/a",
+                )
             }
         }
     }
@@ -3116,6 +3394,10 @@ class ConsumerSessionController(
         val fine = appContext.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarse = appContext.checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
+    }
+
+    private fun hasFineLocationPermission(): Boolean {
+        return appContext.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasMicrophonePermission(): Boolean {

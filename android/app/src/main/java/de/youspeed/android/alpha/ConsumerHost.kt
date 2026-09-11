@@ -11,6 +11,8 @@ interface ConsumerHost {
 
     fun stopTrafficSignCamera()
 
+    fun capturePanoramaxPhoto()
+
     fun showTransientMessage(message: String)
 
     fun openExternalUrl(url: String)

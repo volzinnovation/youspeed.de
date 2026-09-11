@@ -9,6 +9,10 @@ object ConsumerMainScreenLogic {
         return state.currentLatitude != null && state.currentLongitude != null && state.gpsSignalBars > 0
     }
 
+    fun hasUsableCoarseLocation(state: ConsumerUiState): Boolean {
+        return state.coarseLatitude != null && state.coarseLongitude != null
+    }
+
     fun isInSpeedCaptureMode(state: ConsumerUiState): Boolean {
         return state.speedCaptureMode != SpeedCaptureModeState.IDLE
     }
@@ -114,8 +118,8 @@ object ConsumerMainScreenLogic {
         if (street != null && state.limitWayId != null) {
             return street
         }
-        val latitude = state.currentLatitude
-        val longitude = state.currentLongitude
+        val latitude = state.currentLatitude ?: state.coarseLatitude
+        val longitude = state.currentLongitude ?: state.coarseLongitude
         if (latitude == null || longitude == null) {
             return ConsumerUiStrings.text("Searching…", "Suche…", "Recherche…", "Zoeken…")
         }
@@ -126,11 +130,13 @@ object ConsumerMainScreenLogic {
         if (isInSpeedCaptureMode(state)) {
             return ""
         }
-        val city = normalizedPlaceText(state.limitCityName ?: state.limitCityPlaceName)
+        val city = normalizedPlaceText(
+            state.limitCityName ?: state.limitCityPlaceName ?: state.coarseCityName ?: state.coarseCityPlaceName,
+        )
         if (city != null) {
             return city
         }
-        return if (hasUsableGpsFix(state)) {
+        return if (hasUsableGpsFix(state) || hasUsableCoarseLocation(state)) {
             ConsumerUiStrings.text("City unknown", "Stadt unbekannt", "Ville inconnue", "Plaats onbekend")
         } else {
             ConsumerUiStrings.text("Searching…", "Suche…", "Recherche…", "Zoeken…")
@@ -153,9 +159,13 @@ object ConsumerMainScreenLogic {
     fun cityBadgePlaceText(state: ConsumerUiState): String? {
         return normalizedPlaceText(state.limitCityPlaceName)
             ?: normalizedPlaceText(state.limitCityName)
+            ?: normalizedPlaceText(state.coarseCityPlaceName)
+            ?: normalizedPlaceText(state.coarseCityName)
     }
 
-    fun cityBadgeDistrictText(state: ConsumerUiState): String? = normalizedPlaceText(state.limitCityDistrictName)
+    fun cityBadgeDistrictText(state: ConsumerUiState): String? =
+        normalizedPlaceText(state.limitCityDistrictName)
+            ?: normalizedPlaceText(state.coarseCityDistrictName)
 
     fun isDrivingBanWarningActive(state: ConsumerUiState): Boolean {
         return (currentPenaltyNotice(state)?.drivingBanMonths ?: 0) > 0

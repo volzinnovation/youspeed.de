@@ -12,6 +12,8 @@ import android.os.PowerManager
 import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
@@ -19,6 +21,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.io.FileInputStream
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
@@ -471,6 +474,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private val closed = AtomicBoolean(false)
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalysis: ImageAnalysis? = null
+    private var imageCapture: ImageCapture? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
     private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
 
@@ -480,16 +484,20 @@ internal class AndroidTrafficSignCameraRuntime(
         onStateChanged(TrafficSignCameraRuntimeState.STARTING, ConsumerRuntimeText.CAMERA_MODEL_LOADING.text())
         startupExecutor.execute {
             val loaded = runCatching {
-                val pack = AndroidTrafficSignModelPackLoader.load(context)
-                val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState)
-                val runtimeBridge = TrafficSignLiveRuntimeBridge(
-                    controller = controller,
-                    modelPack = pack.modelPack,
-                    runtimeArtifact = pack.detectorArtifact,
-                    backend = runtimeBackend,
-                    conditionsSnapshot = ::analysisConditions,
-                )
-                LoadedRuntime(pack, runtimeBackend, runtimeBridge)
+                if (!controller.isTrafficSignRecognitionRuntimeEnabled()) {
+                    LoadedRuntime(null, null, null)
+                } else {
+                    val pack = AndroidTrafficSignModelPackLoader.load(context)
+                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState)
+                    val runtimeBridge = TrafficSignLiveRuntimeBridge(
+                        controller = controller,
+                        modelPack = pack.modelPack,
+                        runtimeArtifact = pack.detectorArtifact,
+                        backend = runtimeBackend,
+                        conditionsSnapshot = ::analysisConditions,
+                    )
+                    LoadedRuntime(pack, runtimeBackend, runtimeBridge)
+                }
             }
             mainExecutor.execute main@{
                 if (closed.get() || generation.get() != startGeneration) {
@@ -516,27 +524,39 @@ internal class AndroidTrafficSignCameraRuntime(
             if (closed.get() || generation.get() != startGeneration) return@addListener
             runCatching {
                 val provider = providerFuture.get()
-                val analysis = ImageAnalysis.Builder()
-                    .setResolutionSelector(
-                        ResolutionSelector.Builder()
-                            .setResolutionStrategy(
-                                ResolutionStrategy(
-                                    Size(1280, 720),
-                                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
-                                ),
-                            )
-                            .build(),
-                    )
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                analysis.setAnalyzer(cameraExecutor) { image ->
-                    val frame = CameraXTrafficSignFrame(image)
-                    runtime.bridge.submit(frame)
+                val analysis = runtime.bridge?.let { bridge ->
+                    ImageAnalysis.Builder()
+                        .setResolutionSelector(
+                            ResolutionSelector.Builder()
+                                .setResolutionStrategy(
+                                    ResolutionStrategy(
+                                        Size(1280, 720),
+                                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                                    ),
+                                )
+                                .build(),
+                        )
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build()
+                        .also { imageAnalysis ->
+                            imageAnalysis.setAnalyzer(cameraExecutor) { image ->
+                                val frame = CameraXTrafficSignFrame(image)
+                                bridge.submit(frame)
+                            }
+                        }
                 }
+                val capture = if (controller.isPanoramaxCaptureEnabled()) {
+                    ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .build()
+                } else null
                 provider.unbindAll()
-                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, analysis)
+                val useCases = listOfNotNull(analysis, capture)
+                check(useCases.isNotEmpty()) { "No camera use case enabled" }
+                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 cameraProvider = provider
                 imageAnalysis = analysis
+                imageCapture = capture
             }.onFailure { failure ->
                 runtime.close()
                 backend = null
@@ -576,12 +596,34 @@ internal class AndroidTrafficSignCameraRuntime(
     private fun currentThermalState(): String? =
         context.getSystemService(PowerManager::class.java)?.currentThermalStatus?.toString()
 
+    fun capturePanoramaxPhoto() {
+        val capture = imageCapture ?: return
+        val sample = controller.currentPanoramaxLocationSample() ?: return
+        val file = File.createTempFile("panoramax-", ".jpg", context.cacheDir)
+        val options = ImageCapture.OutputFileOptions.Builder(file).build()
+        capture.takePicture(
+            options,
+            cameraExecutor,
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    controller.onPanoramaxPhotoCaptured(file.absolutePath, sample)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    file.delete()
+                }
+            },
+        )
+    }
+
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.let { cameraProvider?.unbind(it) }
+        imageCapture?.let { cameraProvider?.unbind(it) }
         imageAnalysis = null
+        imageCapture = null
         cameraProvider = null
         bridge?.close()
         bridge = null
@@ -592,13 +634,13 @@ internal class AndroidTrafficSignCameraRuntime(
     }
 
     private data class LoadedRuntime(
-        val pack: AndroidTrafficSignVerifiedPack,
-        val backend: AndroidLiteRtTrafficSignBackend,
-        val bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>,
+        val pack: AndroidTrafficSignVerifiedPack?,
+        val backend: AndroidLiteRtTrafficSignBackend?,
+        val bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>?,
     ) : AutoCloseable {
         override fun close() {
-            bridge.close()
-            backend.close()
+            bridge?.close()
+            backend?.close()
         }
     }
 }

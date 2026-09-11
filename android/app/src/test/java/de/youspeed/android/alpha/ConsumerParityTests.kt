@@ -245,8 +245,26 @@ class ConsumerParityTests {
 
     @Test
     fun matcherStartupProfileMigratesLegacyDefaultToM7() {
+        assertEquals(MatcherDebugProfile.M7, MatcherDebugProfile.default)
         assertEquals(MatcherDebugProfile.M7, MatcherDebugProfile.resolveInitialProfile("m1", forcedVersion = 0))
         assertEquals(MatcherDebugProfile.M7, MatcherDebugProfile.resolveInitialProfile(null, forcedVersion = 0))
+    }
+
+    @Test
+    fun coarseLocationShowsAdministrativeContextWithoutGpsRoadMatch() {
+        val state = ConsumerUiState(
+            coarseLatitude = 48.80,
+            coarseLongitude = 8.44,
+            coarseHorizontalAccuracyM = 2_000.0,
+            coarseLocationSource = "wifi_network",
+            coarseCityPlaceName = "Bad Herrenalb",
+            coarseCityDistrictName = "Landkreis Calw",
+        )
+
+        assertTrue(ConsumerMainScreenLogic.hasUsableCoarseLocation(state))
+        assertFalse(ConsumerMainScreenLogic.hasUsableGpsFix(state))
+        assertEquals("Bad Herrenalb", ConsumerMainScreenLogic.debugWayIdText(state))
+        assertTrue(ConsumerMainScreenLogic.shouldShowCityBadge(state))
     }
 
     @Test
@@ -269,8 +287,18 @@ class ConsumerParityTests {
             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
             MatcherDebugProfile.M7.lookupModel,
         )
-        assertEquals("M9 Guarded stale-ref suppression", MatcherDebugProfile.M9.debugLabel)
+        assertEquals(
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
+            MatcherDebugProfile.M8.lookupModel,
+        )
+        assertEquals("M9 M8 + guarded stale-ref suppression", MatcherDebugProfile.M9.debugLabel)
         assertEquals(LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC, MatcherDebugProfile.M9.lookupModel)
+        assertEquals(
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+            MatcherDebugProfile.M10.lookupModel,
+        )
+        assertEquals(LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC, MatcherDebugProfile.M11.lookupModel)
+        assertEquals(LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC, MatcherDebugProfile.M12.lookupModel)
     }
 
     @Test

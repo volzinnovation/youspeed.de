@@ -889,7 +889,6 @@ struct MainView: View {
     ) -> some View {
         let valueUnitSpacing: CGFloat = 0
         let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
-        let metricScale: CGFloat = finePresentation == nil ? 1 : 0.68
 
         VStack(spacing: 0) {
             VStack(spacing: valueUnitSpacing) {
@@ -900,38 +899,16 @@ struct MainView: View {
                         .font(.system(size: secondaryFont, weight: .bold, design: .default))
                 } else {
                     Text(primaryMetricText)
-                        .font(primaryMetricFont(size: primaryFont * metricScale))
+                        .font(primaryMetricFont(size: primaryFont))
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.45)
                         .lineLimit(viewModel.isInSpeedCaptureMode ? 2 : 1)
                     Text(secondaryMetricText.isEmpty ? " " : secondaryMetricText)
-                        .font(.system(size: secondaryFont * metricScale, weight: .bold, design: .default))
+                        .font(.system(size: secondaryFont, weight: .bold, design: .default))
                         .minimumScaleFactor(0.45)
                         .padding(.top, -primaryFont * 0.06)
                         .opacity(secondaryMetricText.isEmpty ? 0 : 1)
                 }
-            }
-            if let notice = finePresentation {
-                Text("\(viewModel.penaltyCountryDisplayName) · \(notice.title)")
-                    .font(.system(size: 16, weight: .bold))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 5)
-                Text(notice.details)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(5)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 15)
-                    .padding(.top, 3)
-                Text(NSLocalizedString("penalty.indicative", comment: ""))
-                    .font(.system(size: 10, weight: .regular))
-                    .lineLimit(2)
-                    .padding(.horizontal, 15)
-                    .padding(.top, 4)
-            } else if !viewModel.penaltyRulesAreApplicable {
-                Text(NSLocalizedString("penalty.country_unresolved", comment: ""))
-                    .font(.footnote)
-                    .padding(.horizontal)
             }
         }
         .frame(maxWidth: .infinity, minHeight: metricSlotMinHeight, alignment: .center)

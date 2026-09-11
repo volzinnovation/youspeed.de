@@ -55,6 +55,14 @@ internal data class SpeedLookupResult(
     val matchedWayStable: Boolean = true,
 )
 
+internal data class CityContextLookupResult(
+    val cityName: String?,
+    val cityPlaceName: String?,
+    val cityDistrictName: String?,
+    val citySource: String?,
+    val insideCity: Boolean,
+)
+
 internal class V3SpeedLimitLookup(
     private val dbPath: String,
     countryCode: String? = null,
@@ -79,6 +87,15 @@ internal class V3SpeedLimitLookup(
     private val hasCityPlaceTable = tableExists("city_place")
     private val hasCityPlaceRtreeTable = tableExists("city_place_rtree")
     private val hasWaysRtreeTable = tableExists("ways_rtree")
+    private val bundleSchemaVersion = metadataValue("schema_version")?.toIntOrNull() ?: 1
+    private val hasWayTileTable = tableExists("way_tile") &&
+        columnExists("way_tile", "way_id") &&
+        columnExists("way_tile", "tile_x") &&
+        columnExists("way_tile", "tile_y")
+    private val wayTileSizeM = metadataValue("tile_size_m")
+        ?.toIntOrNull()
+        ?.takeIf { it > 0 }
+    private val supportsRtreeModule = sqliteSupportsRtreeModule()
     private val hasSurfaceWayNetworkRtreeTable = tableExists("surface_way_network_rtree")
     private val hasTunnelWayNetworkRtreeTable = tableExists("tunnel_way_network_rtree")
     private val hasMotorwayWayNetworkRtreeTable = tableExists("motorway_way_network_rtree")
@@ -102,10 +119,10 @@ internal class V3SpeedLimitLookup(
     private val hasTunnelColumn = columnExists("ways", "tunnel")
     private val hasAreaResidentialColumn = columnExists("areas", "residential")
     private val hasAreaPointsColumn = columnExists("areas", "points_json")
-    @Volatile private var allowWaysRtreeQueries = hasWaysRtreeTable
-    @Volatile private var allowAreasRtreeQueries = hasAreasRtreeTable
-    @Volatile private var allowCityBoundaryRtreeQueries = hasCityBoundaryRtreeTable
-    @Volatile private var allowCityPlaceRtreeQueries = hasCityPlaceRtreeTable
+    @Volatile private var allowWaysRtreeQueries = hasWaysRtreeTable && supportsRtreeModule
+    @Volatile private var allowAreasRtreeQueries = hasAreasRtreeTable && supportsRtreeModule
+    @Volatile private var allowCityBoundaryRtreeQueries = hasCityBoundaryRtreeTable && supportsRtreeModule
+    @Volatile private var allowCityPlaceRtreeQueries = hasCityPlaceRtreeTable && supportsRtreeModule
 
     private val usesThreeWayGate: Boolean
         get() = matchingModel != LookupMatchingModel.CORRIDOR_HMM_NO_THREE_WAY_GATE
@@ -125,7 +142,11 @@ internal class V3SpeedLimitLookup(
             LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC,
             LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> false
             LookupMatchingModel.CORRIDOR_HMM_RAW_MINI_HMM,
             LookupMatchingModel.CORRIDOR_HMM,
@@ -330,6 +351,46 @@ internal class V3SpeedLimitLookup(
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
             matchedWayStable = matchedWayStable,
+        )
+    }
+
+    /**
+     * Resolves only the administrative city context. This is intentionally
+     * separate from [lookup]: a network/Wi-Fi fix may identify a city or
+     * county, but must never select a road or speed limit for the drive.
+     */
+    fun lookupCityContext(lat: Double, lon: Double): CityContextLookupResult {
+        val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
+        val polygonContext = if (hasCityBoundaryTable && hasCityRingTable) {
+            resolveCityContextFromPolygons(lat = lat, lon = lon, hasPlaceTables = hasCityPlaceTable)
+        } else {
+            null
+        }
+        val areaContext = if (hasAreasTable) {
+            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates)
+        } else {
+            null
+        }
+        val context = when {
+            polygonContext != null && areaContext != null -> preferredCityContext(polygonContext, areaContext)
+            polygonContext != null -> polygonContext
+            areaContext != null -> areaContext
+            else -> CityContext(
+                insideCity = false,
+                cityName = null,
+                cityPlaceName = null,
+                cityDistrictName = null,
+                citySource = "unavailable",
+                candidateBoundaries = 0,
+                placeCandidates = 0,
+            )
+        }
+        return CityContextLookupResult(
+            cityName = context.cityName,
+            cityPlaceName = context.cityPlaceName,
+            cityDistrictName = context.cityDistrictName,
+            citySource = context.citySource,
+            insideCity = context.insideCity,
         )
     }
 
@@ -591,7 +652,11 @@ internal class V3SpeedLimitLookup(
                 LookupMatchingModel.SIMPLE_SPEED_REF_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
+                LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> {
                     val simpleCandidates = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
                         graphSelectableCandidates
@@ -606,10 +671,13 @@ internal class V3SpeedLimitLookup(
                         urbanSameRefReleaseEnabled = matchingModel in setOf(
                             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
                             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
                         ),
-                        useStreetNameFallbackContinuity = false,
-                        useGuardedStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+                        useStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
+                        useGuardedStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC ||
+                            matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
                         wayLinks = wayLinks,
                     )
                     selectionTrace += simpleSelection.selectionTrace
@@ -625,7 +693,11 @@ internal class V3SpeedLimitLookup(
                             LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> "simple_speed_ref_connected"
                             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC -> "simple_speed_ref_urban_release"
                             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC -> "simple_speed_ref_urban_release_10m"
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC -> "simple_speed_ref_street_name_fallback"
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC -> "simple_speed_ref_street_name_guard"
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC -> "simple_speed_ref_street_name_guard_node_aware"
+                            LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC -> "simple_sequence_particle"
+                            LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC -> "simple_sequence_viterbi"
                             else -> "simple_speed_ref"
                         },
                     )
@@ -4806,14 +4878,38 @@ internal class V3SpeedLimitLookup(
         val wayGeomSelect = if (hasWayGeomTable) "g.points_json" else "NULL"
         val useNetworkRtree = allowWaysRtreeQueries && hasNetworkRtreeTable(network)
         val useGeneralRtree = allowWaysRtreeQueries && hasWaysRtreeTable
+        val tileRange = if (bundleSchemaVersion >= 2 && hasWayTileTable && wayTileSizeM != null) {
+            tileRangeForBounds(bounds, wayTileSizeM)
+        } else {
+            null
+        }
+        val useTilePrefilter = tileRange != null
+        val tileCte = if (useTilePrefilter) {
+            """
+            WITH tile_rows AS (
+              SELECT DISTINCT way_id
+              FROM way_tile
+              WHERE tile_x BETWEEN ? AND ?
+                AND tile_y BETWEEN ? AND ?
+            )
+            """.trimIndent()
+        } else {
+            ""
+        }
         val fromClause = when {
+            useNetworkRtree && useTilePrefilter ->
+                "FROM tile_rows t JOIN ${network.rtreeTableName} r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
+            useGeneralRtree && useTilePrefilter ->
+                "FROM tile_rows t JOIN ways_rtree r ON r.way_id = t.way_id JOIN ways w ON w.way_id = t.way_id"
             useNetworkRtree -> "FROM ${network.rtreeTableName} r JOIN ways w ON w.way_id = r.way_id"
             useGeneralRtree -> "FROM ways_rtree r JOIN ways w ON w.way_id = r.way_id"
+            useTilePrefilter -> "FROM tile_rows t JOIN ways w ON w.way_id = t.way_id"
             else -> "FROM ways w"
         }
         val boundsSource = if (useNetworkRtree || useGeneralRtree) "r" else "w"
         val extraWhereClause = if (useNetworkRtree) "" else "AND ${candidateNetworkFilterSql(network)}"
         val sql = """
+            $tileCte
             SELECT
               w.way_id,
               w.highway,
@@ -4864,29 +4960,35 @@ internal class V3SpeedLimitLookup(
               )
             LIMIT ?
         """.trimIndent()
-        val params = arrayOf(
-            bounds.maxLon.toString(),
-            bounds.minLon.toString(),
-            bounds.maxLat.toString(),
-            bounds.minLat.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lon.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            lat.toString(),
-            maxCandidates.toString(),
-        )
+        val params = buildList {
+            tileRange?.let {
+                add(it.minX.toString())
+                add(it.maxX.toString())
+                add(it.minY.toString())
+                add(it.maxY.toString())
+            }
+            add(bounds.maxLon.toString())
+            add(bounds.minLon.toString())
+            add(bounds.maxLat.toString())
+            add(bounds.minLat.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lon.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(lat.toString())
+            add(maxCandidates.toString())
+        }.toTypedArray()
 
         val out = ArrayList<WayCandidate>()
         try {
@@ -5466,6 +5568,16 @@ internal class V3SpeedLimitLookup(
         }
     }
 
+    private fun sqliteSupportsRtreeModule(): Boolean {
+        return runCatching {
+            db.rawQuery("PRAGMA compile_options", null).use { cursor ->
+                generateSequence {
+                    if (cursor.moveToNext()) cursor.stringOrNull(0) else null
+                }.any { option -> option.equals("ENABLE_RTREE", ignoreCase = true) }
+            }
+        }.getOrDefault(false)
+    }
+
     private fun metadataValue(key: String): String? {
         if (!tableExists("metadata")) return null
         db.rawQuery("SELECT value FROM metadata WHERE key = ? LIMIT 1", arrayOf(key)).use { cursor ->
@@ -5707,6 +5819,30 @@ internal class V3SpeedLimitLookup(
                 minLat = lat - degLat,
                 maxLon = lon + degLon,
                 maxLat = lat + degLat,
+            )
+        }
+
+        private fun tileRangeForBounds(bounds: QueryBounds, tileSizeM: Int): TileRange {
+            val minTile = mercatorTile(bounds.minLon, bounds.minLat, tileSizeM)
+            val maxTile = mercatorTile(bounds.maxLon, bounds.maxLat, tileSizeM)
+            return TileRange(
+                minX = min(minTile.first, maxTile.first),
+                maxX = max(minTile.first, maxTile.first),
+                minY = min(minTile.second, maxTile.second),
+                maxY = max(minTile.second, maxTile.second),
+            )
+        }
+
+        private fun mercatorTile(lon: Double, lat: Double, tileSizeM: Int): Pair<Int, Int> {
+            val clampedLat = lat.coerceIn(-85.05112878, 85.05112878)
+            val earthRadiusM = 6_378_137.0
+            val x = earthRadiusM * Math.toRadians(lon)
+            val y = earthRadiusM * Math.log(
+                Math.tan(Math.PI / 4.0 + Math.toRadians(clampedLat) / 2.0),
+            )
+            return Pair(
+                Math.floor(x / tileSizeM.toDouble()).toInt(),
+                Math.floor(y / tileSizeM.toDouble()).toInt(),
             )
         }
 
@@ -6241,6 +6377,13 @@ private data class QueryBounds(
     val minLat: Double,
     val maxLon: Double,
     val maxLat: Double,
+)
+
+private data class TileRange(
+    val minX: Int,
+    val maxX: Int,
+    val minY: Int,
+    val maxY: Int,
 )
 
 private data class XYPoint(

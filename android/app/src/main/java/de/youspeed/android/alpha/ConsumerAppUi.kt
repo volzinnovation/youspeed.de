@@ -54,12 +54,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.AlertDialog
@@ -176,6 +183,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
     var openLegal by rememberSaveable { mutableStateOf(false) }
     var openDebug by rememberSaveable { mutableStateOf(false) }
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
+    var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(ui.startupDataState, ui.appScreenshotState) {
         if (ui.appScreenshotState == null && ui.startupDataState == StartupDataState.READY && ui.driveStatus == "stopped") {
@@ -198,6 +206,8 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                         onOpenLegal = { openLegal = true },
                         onOpenDebug = { openDebug = true },
                         onOpenLocalRecordings = { openLocalRecordings = true },
+                        onOpenPanoramaxGallery = { openPanoramaxGallery = true },
+                        onTogglePanoramax = controller::togglePanoramaxCapture,
                         onCapture = controller::beginSpeedCapture,
                     )
                 }
@@ -223,6 +233,8 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                         onOpenLegal = { openLegal = true },
                         onOpenDebug = { openDebug = true },
                         onOpenLocalRecordings = { openLocalRecordings = true },
+                        onOpenPanoramaxGallery = { openPanoramaxGallery = true },
+                        onTogglePanoramax = controller::togglePanoramaxCapture,
                         onCapture = controller::beginSpeedCapture,
                     )
                 }
@@ -250,6 +262,9 @@ fun ConsumerApp(controller: ConsumerSessionController) {
             }
             if (openLocalRecordings) {
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
+            }
+            if (openPanoramaxGallery) {
+                PanoramaxGallerySheet(controller = controller, onDismiss = { openPanoramaxGallery = false })
             }
         }
     }
@@ -522,6 +537,8 @@ private fun MainScreen(
     onOpenLegal: () -> Unit,
     onOpenDebug: () -> Unit,
     onOpenLocalRecordings: () -> Unit,
+    onOpenPanoramaxGallery: () -> Unit,
+    onTogglePanoramax: () -> Unit,
     onCapture: () -> Unit,
 ) {
     val pulseTransition = rememberInfiniteTransition(label = "driving-ban-pulse")
@@ -546,7 +563,6 @@ private fun MainScreen(
     val limitText = ConsumerMainScreenLogic.limitText(ui)
     val runtimeBanner = runtimeBanner(ui)
     val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
-    val penaltyNotice = ConsumerMainScreenLogic.currentPenaltyNotice(ui)
 
     BoxWithConstraints(
         modifier = Modifier
@@ -558,14 +574,9 @@ private fun MainScreen(
         val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
         val compactPhoneLayout = maxHeight.value < 780f
         val screenInset = (minDimensionDp.value * 0.02f).dp
-        val signWidthFactor = when {
-            compactPhoneLayout && penaltyNotice != null -> 0.48f
-            penaltyNotice != null -> 0.58f
-            compactPhoneLayout -> 0.62f
-            else -> 0.74f
-        }
+        val signWidthFactor = if (compactPhoneLayout) 0.62f else 0.74f
         val signSize = min(maxWidth.value * signWidthFactor, maxWidth.value - (screenInset.value * 2f)).dp
-        val primaryMetricScale = if (compactPhoneLayout || penaltyNotice != null) 0.42f else SPEED_LIMIT_NUMBER_SCALE
+        val primaryMetricScale = if (compactPhoneLayout) 0.42f else SPEED_LIMIT_NUMBER_SCALE
         val primaryMetricFont = (signSize.value * primaryMetricScale).sp
         val secondaryScale = sharedSecondaryScale(
             baseSecondaryFontSp = primaryMetricFont.value * SECONDARY_TEXT_RATIO,
@@ -578,11 +589,9 @@ private fun MainScreen(
         val metricSlotMinHeight = with(LocalDensity.current) {
             (primaryMetricFont.toDp() * 1.05f) + (secondaryFont.toDp() * 1.2f)
         }
-        val locationSlotMinHeight = if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-            0.dp
-        } else {
-            max(LOCATION_SLOT_MIN_HEIGHT.value, minDimensionDp.value * 0.225f).dp
-        }
+        // Keep the location slot stable when a GPS fix arrives. The bottom
+        // photo controls remain a separate, always-present layer.
+        val locationSlotMinHeight = max(LOCATION_SLOT_MIN_HEIGHT.value, minDimensionDp.value * 0.225f).dp
         val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
         val bottomButtonGapWidth = max(
             0f,
@@ -603,6 +612,8 @@ private fun MainScreen(
                 pictogram = ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
                 gpsSignalBars = ui.gpsSignalBars,
                 gpsHorizontalAccuracyM = ui.gpsHorizontalAccuracyM,
+                coarseLocationAvailable = ConsumerMainScreenLogic.hasUsableCoarseLocation(ui),
+                coarseHorizontalAccuracyM = ui.coarseHorizontalAccuracyM,
                 onOpenLocalRecordings = onOpenLocalRecordings,
             )
 
@@ -657,15 +668,6 @@ private fun MainScreen(
                 metricSlotMinHeight = metricSlotMinHeight,
             )
 
-            if (!ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-                ActivePenaltyRulesBlock(
-                    countryName = ui.activePenaltyRules.countryName,
-                    isAvailable = ui.activePenaltyRules.isAvailable,
-                    notice = penaltyNotice,
-                    foreground = foreground,
-                )
-            }
-
             Spacer(modifier = Modifier.weight(1f))
 
             LocationStatusBlock(
@@ -689,65 +691,14 @@ private fun MainScreen(
             buttonBorder = buttonBorder,
             onOpenLegal = onOpenLegal,
             onOpenSettings = onOpenSettings,
+            onOpenPanoramaxGallery = onOpenPanoramaxGallery,
+            onTogglePanoramax = onTogglePanoramax,
+            panoramaxCaptureEnabled = ui.panoramaxCaptureEnabled,
+            panoramaxCaptureCount = ui.panoramaxCaptureCount,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 12.dp),
         )
-    }
-}
-
-@Composable
-private fun ActivePenaltyRulesBlock(
-    countryName: String,
-    isAvailable: Boolean,
-    notice: SpeedPenaltyNotice?,
-    foreground: Color,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp)
-            .testTag("active-penalty-rules"),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        Text(
-            if (isAvailable) {
-                stringResource(R.string.ui_active_country_rules, countryName)
-            } else {
-                stringResource(R.string.ui_country_rules_pending)
-            },
-            color = foreground,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.testTag("active-rule-country"),
-        )
-        if (notice != null) {
-            Text(
-                notice.title,
-                color = foreground,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag("penalty-notice-title"),
-            )
-            if (notice.details.isNotBlank()) {
-                Text(
-                    notice.details,
-                    color = foreground,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.testTag("penalty-notice-details"),
-                )
-            }
-            Text(
-                stringResource(R.string.ui_penalty_estimate),
-                color = foreground,
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag("penalty-estimate-note"),
-            )
-        }
     }
 }
 
@@ -760,6 +711,8 @@ private fun TopCornerButtons(
     pictogram: TrafficSignPictogram?,
     gpsSignalBars: Int,
     gpsHorizontalAccuracyM: Double?,
+    coarseLocationAvailable: Boolean,
+    coarseHorizontalAccuracyM: Double?,
     onOpenLocalRecordings: () -> Unit,
 ) {
     Row(
@@ -776,7 +729,13 @@ private fun TopCornerButtons(
         )
         Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            GpsSignalBadge(bars = gpsSignalBars, accuracyM = gpsHorizontalAccuracyM, foreground = foreground)
+            GpsSignalBadge(
+                bars = gpsSignalBars,
+                accuracyM = gpsHorizontalAccuracyM,
+                coarseLocationAvailable = coarseLocationAvailable,
+                coarseAccuracyM = coarseHorizontalAccuracyM,
+                foreground = foreground,
+            )
             pictogram?.let { RecognizedTrafficSignPictogram(it) }
         }
     }
@@ -806,6 +765,10 @@ private fun BottomCornerButtons(
     buttonBorder: Color,
     onOpenLegal: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenPanoramaxGallery: () -> Unit,
+    onTogglePanoramax: () -> Unit,
+    panoramaxCaptureEnabled: Boolean,
+    panoramaxCaptureCount: Int,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -814,6 +777,48 @@ private fun BottomCornerButtons(
             .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
+        PillIconButton(
+            onClick = onTogglePanoramax,
+            background = if (panoramaxCaptureEnabled) Color(0x3321C55D) else buttonBg,
+            border = if (panoramaxCaptureEnabled) Color(0xFFEF4444) else buttonBorder,
+            modifier = Modifier.testTag("panoramax-toggle-button"),
+        ) {
+            Icon(
+                imageVector = if (panoramaxCaptureEnabled) Icons.Default.Stop else Icons.Default.CameraAlt,
+                contentDescription = stringResource(
+                    if (panoramaxCaptureEnabled) R.string.ui_panoramax_stop else R.string.ui_panoramax_start,
+                ),
+                tint = if (panoramaxCaptureEnabled) Color(0xFFEF4444) else foreground,
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        PillIconButton(
+            onClick = onOpenPanoramaxGallery,
+            background = buttonBg,
+            border = buttonBorder,
+            modifier = Modifier.testTag("panoramax-gallery-button"),
+        ) {
+            Box {
+                Icon(
+                    Icons.Default.PhotoLibrary,
+                    contentDescription = stringResource(R.string.ui_panoramax_gallery),
+                    tint = foreground,
+                )
+                if (panoramaxCaptureCount > 0) {
+                    Text(
+                        panoramaxCaptureCount.toString(),
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(Color(0xFFEF4444), CircleShape)
+                            .padding(horizontal = 4.dp, vertical = 1.dp),
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
         PillIconButton(
             onClick = onOpenLegal,
             background = buttonBg,
@@ -1209,9 +1214,13 @@ private fun CityBadgeLine(
 private fun GpsSignalBadge(
     bars: Int,
     accuracyM: Double?,
+    coarseLocationAvailable: Boolean,
+    coarseAccuracyM: Double?,
     foreground: Color,
 ) {
-    val accuracyText = accuracyM?.let { String.format(Locale.US, "%.0f m", it) }
+    val hasGps = bars > 0 && accuracyM != null
+    val shownAccuracyM = if (hasGps) accuracyM else coarseAccuracyM
+    val accuracyText = shownAccuracyM?.let { String.format(Locale.US, "%.0f m", it) }
     Column(
         modifier = Modifier
             .heightIn(min = GPS_BADGE_MIN_HEIGHT)
@@ -1221,7 +1230,11 @@ private fun GpsSignalBadge(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
-                imageVector = if (bars >= 2) Icons.Default.Wifi else Icons.Default.WifiOff,
+                imageVector = when {
+                    hasGps -> Icons.Default.LocationOn
+                    coarseLocationAvailable -> Icons.Default.Wifi
+                    else -> Icons.Default.LocationSearching
+                },
                 contentDescription = null,
                 tint = foreground,
                 modifier = Modifier.size(44.dp),
@@ -1241,6 +1254,12 @@ private fun GpsSignalBadge(
             color = foreground.copy(alpha = if (accuracyText == null) 0f else 0.82f),
             fontSize = 11.sp,
             fontFamily = FontFamily.Monospace,
+        )
+        Text(
+            if (hasGps) "GPS" else if (coarseLocationAvailable) "WLAN" else "GPS",
+            color = foreground.copy(alpha = if (hasGps || coarseLocationAvailable) 0.82f else 0f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
         )
     }
 }
@@ -2047,6 +2066,132 @@ private fun BundleDownloadOptionRow(
                     enabled = !controller.isSyncingNow() && !controller.hasActiveBundleDownload(),
                     onClick = { controller.downloadSelectedBundle(option) },
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PanoramaxGallerySheet(
+    controller: ConsumerSessionController,
+    onDismiss: () -> Unit,
+) {
+    val ui = controller.uiState
+    val context = LocalContext.current
+    val queueStore = remember(context) { PanoramaxQueueStore(context) }
+    val entries = ui.panoramaxBatches.flatMap { batch ->
+        batch.items.map { item -> batch to item }
+    }
+    SheetScaffold(
+        title = stringResource(R.string.ui_panoramax_gallery_title),
+        onDismiss = onDismiss,
+        testTag = "panoramax-gallery-sheet",
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                if (ui.panoramaxCaptureEnabled) {
+                    stringResource(R.string.ui_panoramax_capture_active, ui.panoramaxCaptureCount)
+                } else {
+                    stringResource(R.string.ui_panoramax_capture_idle)
+                },
+                color = if (ui.panoramaxCaptureEnabled) SignalRed else Color(0xFF555555),
+                fontSize = 13.sp,
+            )
+            if (entries.isEmpty()) {
+                SectionCard(stringResource(R.string.ui_status)) {
+                    Text(stringResource(R.string.ui_panoramax_empty), color = Color(0xFF555555))
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    items(
+                        items = entries,
+                        key = { (batch, item) -> "${batch.batchId}:${item.itemId}" },
+                    ) { (batch, item) ->
+                        val thumbnail = remember(item.thumbnailPath) {
+                            BitmapFactory.decodeFile(queueStore.thumbnailFile(item).absolutePath)?.asImageBitmap()
+                        }
+                        ElevatedCard(
+                            colors = CardDefaults.elevatedCardColors(containerColor = Paper),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                if (thumbnail != null) {
+                                    Image(
+                                        bitmap = thumbnail,
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(width = 112.dp, height = 72.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 112.dp, height = 72.dp)
+                                            .background(Color(0x22000000), RoundedCornerShape(8.dp)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                                    }
+                                }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        String.format(Locale.US, "%.5f, %.5f", item.metadata.location.latitude, item.metadata.location.longitude),
+                                        color = Color.Black,
+                                        fontSize = 12.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                    )
+                                    Text(item.metadata.capturedAt.toString(), color = Color(0xFF777777), fontSize = 11.sp)
+                                    Text(
+                                        if (item.state == PanoramaxItemState.EXCLUDED) {
+                                            stringResource(R.string.ui_panoramax_exclude)
+                                        } else {
+                                            stringResource(R.string.ui_panoramax_include)
+                                        },
+                                        color = if (item.state == PanoramaxItemState.EXCLUDED) Color(0xFF777777) else SignalGreen,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                }
+                                Column {
+                                    IconButton(
+                                        onClick = {
+                                            controller.setPanoramaxItemIncluded(
+                                                batch.batchId,
+                                                item.itemId,
+                                                item.state == PanoramaxItemState.EXCLUDED,
+                                            )
+                                        },
+                                        enabled = !ui.panoramaxCaptureEnabled,
+                                    ) {
+                                        Icon(
+                                            if (item.state == PanoramaxItemState.EXCLUDED) Icons.Default.RadioButtonUnchecked else Icons.Default.CheckCircle,
+                                            contentDescription = stringResource(R.string.ui_panoramax_include),
+                                            tint = if (item.state == PanoramaxItemState.EXCLUDED) Color(0xFF777777) else SignalGreen,
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { controller.deletePanoramaxItem(batch.batchId, item.itemId) },
+                                        enabled = !ui.panoramaxCaptureEnabled,
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.ui_panoramax_delete), tint = SignalRed)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

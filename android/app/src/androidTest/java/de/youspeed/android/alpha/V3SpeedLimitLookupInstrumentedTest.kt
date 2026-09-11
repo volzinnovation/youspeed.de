@@ -13,6 +13,52 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class V3SpeedLimitLookupInstrumentedTest {
     @Test
+    fun schema2WayTilePrefilterCanServeLookup() {
+        val dbFile = createFixtureDb("schema2-way-tile-${UUID.randomUUID()}.sqlite") { db ->
+            execSql(
+                db,
+                """
+                CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                INSERT INTO metadata VALUES ('schema_version', '2');
+                INSERT INTO metadata VALUES ('tile_size_m', '4096');
+                CREATE TABLE ways (
+                  way_id INTEGER PRIMARY KEY, highway TEXT, street_name TEXT, ref TEXT, maxspeed TEXT,
+                  maxspeed_type TEXT, source_maxspeed TEXT, approx_heading_deg REAL, service TEXT, tunnel TEXT,
+                  min_lon REAL NOT NULL, min_lat REAL NOT NULL, max_lon REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE ways_rtree (
+                  way_id INTEGER NOT NULL, min_lon REAL NOT NULL, max_lon REAL NOT NULL,
+                  min_lat REAL NOT NULL, max_lat REAL NOT NULL
+                );
+                CREATE TABLE way_tile (way_id INTEGER NOT NULL, tile_x INTEGER NOT NULL, tile_y INTEGER NOT NULL);
+                CREATE TABLE way_geom (way_id INTEGER PRIMARY KEY, points_json TEXT NOT NULL);
+
+                INSERT INTO ways VALUES (7001, 'residential', 'Schema Two Way', NULL, '30', NULL, NULL, 90.0, 'main', NULL, -0.001, -0.001, 0.001, 0.001);
+                INSERT INTO ways_rtree VALUES (7001, -0.001, 0.001, -0.001, 0.001);
+                INSERT INTO way_tile VALUES (7001, 0, 0);
+                INSERT INTO way_geom VALUES (7001, '[[0.0,-0.001],[0.0,0.001]]');
+                """.trimIndent(),
+            )
+        }
+
+        V3SpeedLimitLookup(dbFile.absolutePath, countryCode = "DEU").use { lookup ->
+            val result = lookup.lookup(
+                lat = 0.0,
+                lon = 0.0,
+                radiusM = 100.0,
+                maxCandidates = 16,
+                headingDeg = 90.0,
+                speedKmh = 30.0,
+                horizontalAccuracyM = 5.0,
+                gpsSignalBars = 4,
+            )
+
+            assertEquals("7001", result.wayId)
+            assertEquals(30, result.speedLimitKmh)
+        }
+    }
+
+    @Test
     fun m7ProvidesDirectionalHypothesisEvenAtLowSpeed() {
         val dbFile = createFixtureDb("m7-tsr-${UUID.randomUUID()}.sqlite") { db ->
             execSql(
