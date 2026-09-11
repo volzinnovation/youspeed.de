@@ -16,12 +16,14 @@ enum class BundleSyncMode {
     BOOTSTRAP,
     UP_TO_DATE,
     FULL_DOWNLOAD,
+    DELTA_PATCH,
 }
 
 enum class BundleSyncStage {
     PREPARING,
     DOWNLOADING,
     ASSEMBLING,
+    APPLYING_DELTA,
     COMPLETED,
 }
 
@@ -89,6 +91,7 @@ class BundleBootstrapper(
     private val httpFetcher: HttpFetcher,
     private val clock: Clock = Clock.systemUTC(),
     private val assetReader: AppAssetReader? = null,
+    private val deltaDatabase: BundleDeltaDatabase = AndroidBundleDeltaDatabase(),
 ) {
     private data class CoverageRing(
         val isHole: Boolean,
@@ -261,6 +264,31 @@ class BundleBootstrapper(
         return decodeManifestOrThrow(manifestUrl, raw)
     }
 
+    /** Like iPhone, synchronizes every preferred-country shard and returns the last successful activation. */
+    fun syncFromManifestEndpoints(
+        endpoints: List<V3ManifestEndpoint>,
+        preferredCountryCode: String? = null,
+        onProgress: ((BundleSyncProgress) -> Unit)? = null,
+    ): BundleSyncResult {
+        require(endpoints.isNotEmpty()) { "No embedded manifest endpoints available" }
+        val preferred = preferredCountryCode?.trim()?.uppercase(Locale.ROOT)
+        val matching = endpoints.filter { preferred == null || it.countryCode.uppercase(Locale.ROOT) == preferred }
+        val sequence = matching.ifEmpty { endpoints }
+        var lastSuccess: BundleSyncResult? = null
+        var firstFailure: Exception? = null
+        sequence.forEachIndexed { index, endpoint ->
+            val prefix = "[${index + 1}/${sequence.size}] ${endpoint.countryCode} ${endpoint.regionId}"
+            try {
+                lastSuccess = syncFromManifestUrl(endpoint.manifestUrl) { progress ->
+                    onProgress?.invoke(progress.copy(detail = "$prefix: ${progress.detail}"))
+                }
+            } catch (failure: Exception) {
+                if (firstFailure == null) firstFailure = failure
+            }
+        }
+        return lastSuccess ?: throw (firstFailure ?: IOException("No manifest endpoint could be synchronized"))
+    }
+
     @Throws(IOException::class)
     fun syncFromManifestUrl(
         manifestUrl: String,
@@ -283,7 +311,9 @@ class BundleBootstrapper(
         if (current != null &&
             current.region == manifest.region &&
             current.bundleVersion == manifest.bundleVersion &&
-            File(current.dbPath).exists()
+            materializedDatabaseExpectation(manifest)?.let { (bytes, sha) ->
+                verifiedMaterializedSha(File(current.dbPath), bytes, sha) != null
+            } == true
         ) {
             emitProgress(
                 onProgress = onProgress,
@@ -298,6 +328,11 @@ class BundleBootstrapper(
                 dbPath = current.dbPath,
                 details = "already active",
             )
+        }
+
+        if (current != null && current.region == manifest.region && current.bundleVersion != manifest.bundleVersion &&
+            !DeltaUpdatePolicy.forceFullReload(current.bundleVersion, manifest.bundleVersion) && manifest.deltaIndex != null) {
+            tryApplyDelta(current, manifest, manifestUrl, manifestRaw, onProgress)?.let { return it }
         }
 
         val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/${tokenize(manifest.bundleVersion)}")
@@ -382,32 +417,7 @@ class BundleBootstrapper(
                 )
             }
 
-            val finalDb = File(bundleDir, manifest.db.file)
-            if (finalDb.exists() && !finalDb.delete()) {
-                throw IOException("Unable to replace existing DB: ${finalDb.absolutePath}")
-            }
-            if (!stagingDb.renameTo(finalDb)) {
-                stagingDb.copyTo(finalDb, overwrite = true)
-                if (!stagingDb.delete()) {
-                    stagingDb.deleteOnExit()
-                }
-            }
-
-            File(bundleDir, "bundle-manifest.v3.json").writeText(manifestRaw)
-
-            val state = ActiveBundleState(
-                region = manifest.region,
-                countryCode = manifest.countryCode,
-                bundleVersion = manifest.bundleVersion,
-                dbFileName = manifest.db.file,
-                dbPath = finalDb.absolutePath,
-                dbSha256 = dbArtifact.sha256,
-                dbBytes = dbArtifact.bytes,
-                manifestUrl = manifestUrl,
-                activatedAtUTC = Instant.now(clock).toString(),
-            )
-            File(rootDir, "active_bundle.json").writeText(ContractJson.encodeActiveBundleState(state))
-            invalidateCoverageCache()
+            val finalDb = activatePreparedDatabase(stagingDb, bundleDir, manifest, manifestRaw, manifestUrl, dbArtifact)
             emitProgress(
                 onProgress = onProgress,
                 stage = BundleSyncStage.COMPLETED,
@@ -434,6 +444,93 @@ class BundleBootstrapper(
                 downloadedArtifact.delete()
             }
         }
+    }
+
+    private fun tryApplyDelta(current: ActiveBundleState, manifest: V3BundleManifest, manifestUrl: String,
+        manifestRaw: String, onProgress: ((BundleSyncProgress) -> Unit)?): BundleSyncResult? {
+        val ref = manifest.deltaIndex ?: return null
+        val indexUrl = ContractJson.resolveArtifactUrl(ref, manifestUrl)
+        emitProgress(onProgress, BundleSyncStage.PREPARING, "Loading delta index", 0, 0)
+        val entries = ContractJson.decodeDeltaIndex(httpFetcher.fetch(indexUrl).toString(Charsets.UTF_8))
+        val path = DeltaUpdatePolicy.path(entries, current.bundleVersion, manifest.bundleVersion, manifest.region) ?: return null
+        var expected = current.bundleVersion
+        val steps = path.map { entry ->
+            val url = java.net.URI(indexUrl).resolve(entry.deltaManifestFile).toString()
+            val delta = ContractJson.decodeDeltaManifest(httpFetcher.fetch(url).toString(Charsets.UTF_8))
+            require(delta.region == manifest.region && delta.fromBundleVersion == expected &&
+                delta.toBundleVersion == entry.toBundleVersion && delta.toBundleVersion != delta.fromBundleVersion) {
+                "Delta manifest version or region mismatch in update chain"
+            }
+            expected = delta.toBundleVersion
+            url to delta
+        }
+        require(expected == manifest.bundleVersion) { "Delta path does not terminate at target bundle version" }
+        val expectedDatabase = materializedDatabaseExpectation(manifest)
+            ?: throw IOException("Delta target is missing materialized database identity")
+        val total = steps.fold(0L) { count, (_, delta) ->
+            val bytes = delta.patch.bytes.coerceAtLeast(0)
+            if (Long.MAX_VALUE - count < bytes) Long.MAX_VALUE else count + bytes
+        }
+        val stagingDir = File(rootDir, "staging").also { if (!it.exists() && !it.mkdirs()) throw IOException("Cannot create staging directory") }
+        val available = stagingDir.usableSpace
+        val required = current.dbBytes.toDouble() + total.toDouble() + 256.0 * 1024 * 1024
+        if (available > 0L && available.toDouble() < required) throw IOException("Insufficient disk space for delta update")
+        val staging = File.createTempFile("delta-", ".sqlite", stagingDir)
+        try {
+            File(current.dbPath).copyTo(staging, overwrite = true)
+            var downloaded = 0L
+            for ((index, step) in steps.withIndex()) {
+                val patch = step.second.patch
+                emitProgress(onProgress, BundleSyncStage.DOWNLOADING, "Downloading delta patch ${index + 1}/${steps.size}", downloaded, total)
+                val bytes = httpFetcher.fetch(ContractJson.resolveArtifactUrl(patch, step.first))
+                val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+                require(digest.equals(patch.sha256, ignoreCase = true)) { "Delta patch sha256 mismatch" }
+                val compression = patch.compression?.trim()?.lowercase(Locale.ROOT)?.takeIf { it.isNotEmpty() }
+                    ?: if (patch.file.endsWith(".zlib", true) || patch.file.endsWith(".sqlz", true)) "zlib" else "none"
+                val sqlBytes = when (compression) {
+                    "none", "identity" -> bytes
+                    "zlib" -> InflaterInputStream(bytes.inputStream()).use { it.readBytes() }
+                    else -> throw IOException("Unsupported delta patch compression: $compression")
+                }
+                val sql = Charsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(sqlBytes)).toString()
+                downloaded = (downloaded.toDouble() + patch.bytes.coerceAtLeast(0).toDouble()).coerceAtMost(total.toDouble()).toLong()
+                emitProgress(onProgress, BundleSyncStage.APPLYING_DELTA, "Applying delta patch ${index + 1}/${steps.size}", downloaded, total)
+                deltaDatabase.applyPatch(staging, sql)
+            }
+            deltaDatabase.validate(staging)
+            validateFile(staging, expectedDatabase.first, expectedDatabase.second, "materialized delta database")
+            val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/${tokenize(manifest.bundleVersion)}")
+            val finalDb = activatePreparedDatabase(staging, bundleDir, manifest, manifestRaw, manifestUrl,
+                MaterializedDatabaseArtifact(expectedDatabase.first, expectedDatabase.second.lowercase(Locale.ROOT)))
+            emitProgress(onProgress, BundleSyncStage.COMPLETED, "Delta update applied", total, total)
+            return BundleSyncResult(BundleSyncMode.DELTA_PATCH, manifest.bundleVersion, finalDb.absolutePath, "delta chain applied")
+        } finally {
+            staging.delete()
+            File(staging.path + "-wal").delete()
+            File(staging.path + "-shm").delete()
+            File(staging.path + "-journal").delete()
+        }
+    }
+
+    private fun activatePreparedDatabase(stagingDb: File, bundleDir: File, manifest: V3BundleManifest,
+        manifestRaw: String, manifestUrl: String, dbArtifact: MaterializedDatabaseArtifact): File {
+        if (!bundleDir.exists() && !bundleDir.mkdirs()) throw IOException("Cannot create bundle directory")
+        val finalDb = File(bundleDir, manifest.db.file)
+        val prepared = File(bundleDir, manifest.db.file + ".tmp")
+        java.nio.file.Files.move(stagingDb.toPath(), prepared.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        java.nio.file.Files.move(prepared.toPath(), finalDb.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+            java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        File(bundleDir, "bundle-manifest.v3.json").writeText(manifestRaw)
+        val state = ActiveBundleState(manifest.region, manifest.countryCode, manifest.bundleVersion, manifest.db.file,
+            finalDb.absolutePath, dbArtifact.sha256, dbArtifact.bytes, manifestUrl, Instant.now(clock).toString())
+        val stateFile = File(rootDir, "active_bundle.json")
+        val temporaryState = File(rootDir, "active_bundle.json.tmp")
+        temporaryState.writeText(ContractJson.encodeActiveBundleState(state))
+        java.nio.file.Files.move(temporaryState.toPath(), stateFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+            java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+        invalidateCoverageCache()
+        return finalDb
     }
 
     private fun assembleMultipartArtifact(

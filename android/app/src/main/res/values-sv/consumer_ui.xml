@@ -103,4 +103,12 @@
     <string name="ui_show_other_signs">Visa andra vägmärken</string>
     <string name="ui_other_signs_detail">Visar det senast identifierade vägmärket uppe till höger när kameran är på. Ett nytt märke ersätter det; hastighetsgränser visas i hastighetsvisningen.</string>
     <string name="ui_last_recognized_sign">Senast identifierade vägmärke: %1$s</string>
+    <string name="ui_drive_recorder_start">Starta färdinspelning</string>
+    <string name="ui_drive_recorder_stop">Stoppa färdinspelning</string>
+    <string name="ui_dashcam_title">Bilkameravideor</string>
+    <string name="ui_dashcam_empty">Inga videor har spelats in med bilkameran ännu.</string>
+    <string name="ui_dashcam_share">Dela video</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Ta foton för Panoramax</string>
+    <string name="ui_panoramax_settings_detail">Foton tas under färdinspelningen med hänsyn till GPS-noggrannhet och gränser för avstånd och tid.</string>
 </resources>

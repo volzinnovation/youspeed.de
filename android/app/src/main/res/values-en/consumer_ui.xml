@@ -103,4 +103,12 @@
     <string name="ui_show_other_signs">Show other traffic signs</string>
     <string name="ui_other_signs_detail">Shows the latest recognized sign at the top right while the camera is on. A new sign replaces it; speed signs remain in the speed display.</string>
     <string name="ui_last_recognized_sign">Last recognized sign: %1$s</string>
+    <string name="ui_drive_recorder_start">Start drive recording</string>
+    <string name="ui_drive_recorder_stop">Stop drive recording</string>
+    <string name="ui_dashcam_title">Dashcam videos</string>
+    <string name="ui_dashcam_empty">No dashcam videos recorded yet.</string>
+    <string name="ui_dashcam_share">Share video</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Capture Panoramax photos</string>
+    <string name="ui_panoramax_settings_detail">Photos are captured while drive recording is active, with GPS accuracy and distance/time safeguards.</string>
 </resources>

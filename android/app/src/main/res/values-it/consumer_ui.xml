@@ -103,4 +103,12 @@
     <string name="ui_show_other_signs">Mostra altri segnali stradali</string>
     <string name="ui_other_signs_detail">Mostra l’ultimo segnale riconosciuto in alto a destra con la fotocamera attiva. Ogni nuovo segnale lo sostituisce; i limiti restano nel display della velocità.</string>
     <string name="ui_last_recognized_sign">Ultimo segnale riconosciuto: %1$s</string>
+    <string name="ui_drive_recorder_start">Avvia registrazione del viaggio</string>
+    <string name="ui_drive_recorder_stop">Interrompi registrazione del viaggio</string>
+    <string name="ui_dashcam_title">Video della dashcam</string>
+    <string name="ui_dashcam_empty">Nessun video della dashcam ancora registrato.</string>
+    <string name="ui_dashcam_share">Condividi video</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Scatta foto per Panoramax</string>
+    <string name="ui_panoramax_settings_detail">Le foto vengono scattate durante la registrazione del viaggio, rispettando la precisione GPS e le soglie di distanza e tempo.</string>
 </resources>

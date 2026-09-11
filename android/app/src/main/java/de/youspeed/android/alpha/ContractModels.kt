@@ -52,6 +52,9 @@ data class V3BundleManifest(
     }
 }
 
+data class V3DeltaEntry(val fromBundleVersion: String, val toBundleVersion: String, val region: String?, val deltaManifestFile: String)
+data class V3DeltaManifest(val region: String, val fromBundleVersion: String, val toBundleVersion: String, val patch: BundleArtifact)
+
 data class V3BundleTargetRegionConfig(
     val regionId: String,
     val regionName: String?,
@@ -259,6 +262,23 @@ object ContractJson {
                 )
             },
         )
+    }
+
+    fun decodeDeltaIndex(raw: String): List<V3DeltaEntry> {
+        val root = json.parseToJsonElement(raw).jsonObject
+        require(root.requiredString("format") == "youspeed.v3.delta.index") { "Unexpected delta index format" }
+        return root.requiredArray("entries").map { element ->
+            val entry = element.jsonObject
+            V3DeltaEntry(entry.requiredString("from_bundle_version"), entry.requiredString("to_bundle_version"),
+                entry.optionalString("region"), entry.requiredString("delta_manifest_file"))
+        }
+    }
+
+    fun decodeDeltaManifest(raw: String): V3DeltaManifest {
+        val root = json.parseToJsonElement(raw).jsonObject
+        require(root.requiredString("format") == "youspeed.v3.delta.manifest") { "Unexpected delta manifest format" }
+        return V3DeltaManifest(root.requiredString("region"), root.requiredString("from_bundle_version"),
+            root.requiredString("to_bundle_version"), root.requiredObject("patch").toBundleArtifact())
     }
 
     fun encodeActiveBundleState(state: ActiveBundleState): String {

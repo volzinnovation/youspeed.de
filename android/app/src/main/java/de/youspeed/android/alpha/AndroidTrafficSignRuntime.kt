@@ -1,6 +1,7 @@
 package de.youspeed.android.alpha
 
 import android.content.Context
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -8,13 +9,21 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.ImageFormat
+import android.hardware.HardwareBuffer
+import android.media.ImageReader
 import android.os.PowerManager
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
 import android.util.Size
+import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -477,63 +486,169 @@ internal class AndroidTrafficSignCameraRuntime(
     private val startupExecutor = Executors.newSingleThreadExecutor()
     private val generation = AtomicLong(0L)
     private val closed = AtomicBoolean(false)
+    private val cameraResourcesReleased = AtomicBoolean(false)
+    private val cameraReleaseCallbacks = mutableListOf<() -> Unit>()
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalysis: ImageAnalysis? = null
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
+    private var preview: Preview? = null
+    private var previewSurfaceProvider: Preview.SurfaceProvider? = null
+    private var modelLoading = false
+    private var recognitionRuntimeSerial = 0L
+    private var recognitionUnavailable = false
+    private var cameraBound = false
+    private var videoRequested = false
+    private var recordingStopRequested = false
+    private var videoTerminallyStopped = false
     private var activeRecording: Recording? = null
     private var activeRecordingFile: File? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
-    private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
+    @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
+
+    // A hidden preview still supplies a surface. Removing the UI must never
+    // suspend analysis or movie recording while CameraX waits for its surface.
+    private val offscreenPreviewProvider = Preview.SurfaceProvider { request ->
+        val drainThread = HandlerThread("YouSpeedPreviewDrain").apply { start() }
+        val reader = try {
+            ImageReader.newInstance(request.resolution.width, request.resolution.height,
+                ImageFormat.PRIVATE, 3, HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE)
+        } catch (failure: Exception) {
+            drainThread.quitSafely()
+            request.willNotProvideSurface()
+            onStateChanged(TrafficSignCameraRuntimeState.UNAVAILABLE,
+                failure.message ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text())
+            return@SurfaceProvider
+        }
+        reader.setOnImageAvailableListener({ source ->
+            // PRIVATE frames are never mapped or retained. Draining the
+            // consumer keeps a hidden preview from blocking the camera graph.
+            runCatching { source.acquireLatestImage()?.close() }
+        }, Handler(drainThread.looper))
+        request.provideSurface(reader.surface, mainExecutor) {
+            reader.close()
+            drainThread.quitSafely()
+        }
+    }
 
     fun start() {
         if (closed.get()) return
-        val startGeneration = generation.incrementAndGet()
+        generation.incrementAndGet()
         onStateChanged(TrafficSignCameraRuntimeState.STARTING, ConsumerRuntimeText.CAMERA_MODEL_LOADING.text())
+        refreshConfiguration()
+    }
+
+    fun setPreviewSurfaceProvider(provider: Preview.SurfaceProvider?) {
+        previewSurfaceProvider = provider
+        preview?.setSurfaceProvider(mainExecutor, provider ?: offscreenPreviewProvider)
+    }
+
+    /** Module changes preserve the camera and any independently running movie. */
+    fun refreshConfiguration() {
+        if (closed.get()) return
+        videoRequested = controller.isDashcamRecordingEnabled()
+        if (!controller.isTrafficSignRecognitionRuntimeEnabled()) {
+            bridge?.close()
+            bridge = null
+            backend?.close()
+            backend = null
+            recognitionUnavailable = false
+        } else if (bridge == null && !modelLoading && !recognitionUnavailable) {
+            loadRecognitionRuntime()
+        }
+        bindCamera(generation.get())
+        setDashcamRecordingEnabled(videoRequested)
+    }
+
+    private fun loadRecognitionRuntime() {
+        val startGeneration = generation.get()
+        val recognitionGeneration = controller.uiState.trafficSignGeneration
+        val runtimeSerial = ++recognitionRuntimeSerial
+        modelLoading = true
         startupExecutor.execute {
             val loaded = runCatching {
-                if (!controller.isTrafficSignRecognitionRuntimeEnabled()) {
-                    LoadedRuntime(null, null, null)
-                } else {
                     val pack = AndroidTrafficSignModelPackLoader.load(context)
                     val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState)
-                    val runtimeBridge = TrafficSignLiveRuntimeBridge(
+                    val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         controller = controller,
                         modelPack = pack.modelPack,
                         runtimeArtifact = pack.detectorArtifact,
                         backend = runtimeBackend,
                         conditionsSnapshot = ::analysisConditions,
-                    )
+                        onRuntimeUnavailable = { detail, failedGeneration -> mainExecutor.execute {
+                            if (!closed.get() && generation.get() == startGeneration && recognitionRuntimeSerial == runtimeSerial) {
+                                stopRecognitionAfterFailure(
+                                    "Speed-sign recognition stopped after three camera-processing errors in a row. " +
+                                        "Turn recognition off and on to retry. $detail",
+                                    failedGeneration,
+                                )
+                            }
+                        } },
+                    ) } catch (failure: Throwable) {
+                        runtimeBackend.close()
+                        throw failure
+                    }
                     LoadedRuntime(pack, runtimeBackend, runtimeBridge)
-                }
             }
             mainExecutor.execute main@{
+                modelLoading = false
                 if (closed.get() || generation.get() != startGeneration) {
                     loaded.getOrNull()?.close()
                     return@main
                 }
+                if (!controller.isTrafficSignRecognitionRuntimeEnabled()) {
+                    loaded.getOrNull()?.close()
+                    return@main
+                }
                 loaded.onFailure { failure ->
-                    onStateChanged(
-                        TrafficSignCameraRuntimeState.FAILED,
-                        failure.message?.takeIf(String::isNotBlank) ?: failure.javaClass.simpleName,
-                    )
+                    if (controller.uiState.trafficSignGeneration != recognitionGeneration) loadRecognitionRuntime()
+                    else stopRecognitionAfterFailure(failure.message?.takeIf(String::isNotBlank) ?: failure.javaClass.simpleName,
+                        recognitionGeneration)
                 }.onSuccess { runtime ->
                     backend = runtime.backend
                     bridge = runtime.bridge
-                    bindCamera(runtime, startGeneration)
+                    bindCamera(startGeneration)
                 }
             }
         }
     }
 
-    private fun bindCamera(runtime: LoadedRuntime, startGeneration: Long) {
+    private fun stopRecognitionAfterFailure(detail: String, recognitionGeneration: Long) {
+        if (controller.uiState.trafficSignGeneration != recognitionGeneration) {
+            // The controller may reset its generation before another frame
+            // reaches the orchestrator. Its terminal old scope must not make
+            // the newly authorized scope permanently reject every frame.
+            bridge?.close()
+            bridge = null
+            backend?.close()
+            backend = null
+            recognitionUnavailable = false
+            if (controller.isTrafficSignRecognitionRuntimeEnabled() && !modelLoading) loadRecognitionRuntime()
+            return
+        }
+        recognitionUnavailable = true
+        bridge?.close()
+        bridge = null
+        backend?.close()
+        backend = null
+        controller.onTrafficSignRecognitionUnavailable(detail, recognitionGeneration)
+    }
+
+    private fun bindCamera(startGeneration: Long) {
+        if (cameraBound) return
         val providerFuture = ProcessCameraProvider.getInstance(context)
         providerFuture.addListener({
-            if (closed.get() || generation.get() != startGeneration) return@addListener
+            if (closed.get() || generation.get() != startGeneration || cameraBound) return@addListener
             runCatching {
                 val provider = providerFuture.get()
-                val analysis = runtime.bridge?.let { bridge ->
+                val rotation = (lifecycleOwner as? Activity)?.display?.rotation ?: Surface.ROTATION_0
+                // Reserve the complete shared graph before any movie starts.
+                // Adding analysis later rebuilds CameraX's StreamSharing edges
+                // and can invalidate the rotated surface of an active movie.
+                // Module switches control consumers, never output bindings.
+                val analysis = imageAnalysis ?: run {
                     ImageAnalysis.Builder()
+                        .setTargetRotation(rotation)
                         .setResolutionSelector(
                             ResolutionSelector.Builder()
                                 .setResolutionStrategy(
@@ -548,68 +663,112 @@ internal class AndroidTrafficSignCameraRuntime(
                         .build()
                         .also { imageAnalysis ->
                             imageAnalysis.setAnalyzer(cameraExecutor) { image ->
-                                val frame = CameraXTrafficSignFrame(image)
-                                bridge.submit(frame)
+                                val current = bridge
+                                if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
                             }
                         }
                 }
-                val capture = if (controller.isDashcamRecordingEnabled()) {
+                val capture = imageCapture ?: run {
                     ImageCapture.Builder()
+                        .setTargetRotation(rotation)
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
-                } else null
-                val video = if (controller.isDashcamRecordingEnabled()) {
-                    VideoCapture.withOutput(Recorder.Builder().build())
-                } else null
-                provider.unbindAll()
-                val useCases = listOfNotNull(analysis, capture, video)
-                check(useCases.isNotEmpty()) { "No camera use case enabled" }
+                }
+                val video = videoCapture ?: run {
+                    VideoCapture.withOutput(Recorder.Builder().build()).apply { targetRotation = rotation }
+                }
+                val currentPreview = preview ?: Preview.Builder().setTargetRotation(rotation).build().also {
+                    it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
+                }
+                currentPreview.targetRotation = rotation
+                analysis.targetRotation = rotation
+                capture.targetRotation = rotation
+                video.targetRotation = rotation
+                val useCases = listOf(currentPreview, analysis, capture, video)
                 provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
                 videoCapture = video
+                preview = currentPreview
             }.onFailure { failure ->
-                runtime.close()
-                backend = null
-                bridge = null
                 onStateChanged(
                     TrafficSignCameraRuntimeState.UNAVAILABLE,
                     failure.message?.takeIf(String::isNotBlank) ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text(),
                 )
             }.onSuccess {
-                onStateChanged(
-                    TrafficSignCameraRuntimeState.ACTIVE,
-                    ConsumerRuntimeText.CAMERA_ACTIVE.text(),
-                )
-                videoCapture?.let(::startDashcamRecording)
+                if (!cameraBound) {
+                    cameraBound = true
+                    onStateChanged(TrafficSignCameraRuntimeState.ACTIVE, ConsumerRuntimeText.CAMERA_ACTIVE.text())
+                }
+                setDashcamRecordingEnabled(controller.isDashcamRecordingEnabled())
             }
         }, mainExecutor)
     }
 
+    fun setDashcamRecordingEnabled(enabled: Boolean) {
+        videoRequested = enabled
+        if (!enabled) {
+            videoTerminallyStopped = false
+            activeRecording?.let {
+                recordingStopRequested = true
+                activeRecordingFile?.absolutePath?.let { path ->
+                    controller.onDashcamRecordingStateChanged(active = true, transitioning = true, path = path)
+                }
+                it.stop()
+            }
+        } else if (cameraBound) {
+            videoCapture?.let(::startDashcamRecording)
+        }
+    }
+
     private fun startDashcamRecording(video: VideoCapture<Recorder>) {
-        if (activeRecording != null || !controller.isDashcamRecordingEnabled()) return
+        if (closed.get() || activeRecording != null || videoTerminallyStopped || !videoRequested ||
+            !controller.isDashcamRecordingEnabled()) return
         val file = controller.nextDashcamRecordingFile()
-        val output = FileOutputOptions.Builder(file).build()
+        val output = FileOutputOptions.Builder(file).setFileSizeLimit(MAXIMUM_DASHCAM_FILE_BYTES).build()
         activeRecordingFile = file
-        activeRecording = video.output
+        recordingStopRequested = false
+        controller.onDashcamRecordingStateChanged(active = false, transitioning = true, path = file.absolutePath)
+        runCatching { video.output
             .prepareRecording(context, output)
             .start(mainExecutor) { event ->
                 when (event) {
-                    is VideoRecordEvent.Start,
-                    is VideoRecordEvent.Status,
-                    -> Unit
+                    is VideoRecordEvent.Start -> if (!closed.get()) controller.onDashcamRecordingStateChanged(active = true, path = file.absolutePath)
+                    is VideoRecordEvent.Status -> Unit
                     is VideoRecordEvent.Finalize -> {
+                        val resumeAfterStop = recordingStopRequested && videoRequested
+                        val stoppedByUser = recordingStopRequested
+                        recordingStopRequested = false
                         activeRecording = null
                         activeRecordingFile = null
+                        controller.onDashcamRecordingStateChanged(active = false, path = file.absolutePath)
+                        val reachedLimit = event.error == VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED
+                        val succeeded = event.error == VideoRecordEvent.Finalize.ERROR_NONE || reachedLimit
+                        videoTerminallyStopped = !stoppedByUser || reachedLimit
+                        if (!succeeded) file.delete()
                         controller.onDashcamRecordingFinalized(
                             path = file.absolutePath,
-                            success = event.error == VideoRecordEvent.Finalize.ERROR_NONE,
+                            success = succeeded,
                             detail = event.cause?.message ?: "Video recording failed (${event.error})",
                         )
+                        // A user stop leaves the other camera modules running.
+                        // A 5 GB cap is a completed movie, never an upload trigger.
+                        if (resumeAfterStop && !reachedLimit && controller.isDashcamRecordingEnabled() && !closed.get()) {
+                            startDashcamRecording(video)
+                        }
+                        if (closed.get()) releaseCameraResources()
                     }
                 }
             }
+        }.onSuccess { activeRecording = it }.onFailure { failure ->
+            file.delete()
+            activeRecordingFile = null
+            videoTerminallyStopped = true
+            controller.onDashcamRecordingStateChanged(active = false, path = file.absolutePath)
+            controller.onDashcamRecordingFinalized(file.absolutePath, false,
+                failure.message ?: "Video recording could not start")
+        }
     }
 
     private fun analysisConditions(): TrafficSignAnalysisConditions {
@@ -634,46 +793,79 @@ internal class AndroidTrafficSignCameraRuntime(
     private fun currentThermalState(): String? =
         context.getSystemService(PowerManager::class.java)?.currentThermalStatus?.toString()
 
-    fun capturePanoramaxPhoto() {
-        val capture = imageCapture ?: return
-        val sample = controller.currentPanoramaxLocationSample() ?: return
-        val file = File.createTempFile("panoramax-", ".jpg", context.cacheDir)
+    fun capturePanoramaxPhoto(requestId: String) {
+        val captureGeneration = generation.get()
+        fun fail(detail: String) = controller.onPanoramaxPhotoCaptureFailed(detail, requestId)
+        if (closed.get()) return fail("Camera session has stopped")
+        val capture = imageCapture ?: return fail("Still camera is unavailable")
+        val sample = controller.currentPanoramaxLocationSample() ?: return fail("No current GPS fix for photo")
+        val file = runCatching { File.createTempFile("panoramax-", ".jpg", context.cacheDir) }
+            .getOrElse { return fail(it.message ?: "Could not create photo file") }
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
-        capture.takePicture(
+        runCatching { capture.takePicture(
             options,
             cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    controller.onPanoramaxPhotoCaptured(file.absolutePath, sample)
+                    if (closed.get() || generation.get() != captureGeneration) {
+                        file.delete()
+                        fail("Camera session changed before photo completed")
+                    } else controller.onPanoramaxPhotoCaptured(file.absolutePath, sample, requestId)
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     file.delete()
+                    fail(exception.message ?: "Still capture failed")
                 }
             },
-        )
+        ) }.onFailure { file.delete(); fail(it.message ?: "Still capture failed") }
+    }
+
+    /** Main-thread completion barrier before a replacement runtime binds this camera. */
+    fun closeAfterFinalization(onReleased: () -> Unit) {
+        if (cameraResourcesReleased.get()) onReleased() else {
+            cameraReleaseCallbacks += onReleased
+            close()
+        }
     }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
-        activeRecording?.stop()
-        activeRecording = null
-        activeRecordingFile = null
-        imageAnalysis?.clearAnalyzer()
-        imageAnalysis?.let { cameraProvider?.unbind(it) }
-        imageCapture?.let { cameraProvider?.unbind(it) }
-        imageAnalysis = null
-        imageCapture = null
-        videoCapture = null
-        cameraProvider = null
+        videoRequested = false
         bridge?.close()
         bridge = null
         backend?.close()
         backend = null
+        imageAnalysis?.clearAnalyzer()
         startupExecutor.shutdown()
-        cameraExecutor.shutdown()
+        // Keep the movie's surface alive until CameraX finalizes the local
+        // file, with the same bounded five-second stop recovery as iPhone.
+        val wasRecording = activeRecording != null
+        activeRecording?.stop()
+        if (wasRecording) {
+            Handler(Looper.getMainLooper()).postDelayed(::releaseCameraResources, 5_000L)
+        } else releaseCameraResources()
     }
+
+    private fun releaseCameraResources() {
+        if (!cameraResourcesReleased.compareAndSet(false, true)) return
+        activeRecording = null
+        activeRecordingFile = null
+        cameraProvider?.unbind(*listOfNotNull(imageAnalysis, imageCapture, videoCapture, preview).toTypedArray())
+        imageAnalysis = null
+        imageCapture = null
+        videoCapture = null
+        preview = null
+        cameraProvider = null
+        cameraExecutor.shutdown()
+        controller.onDashcamCameraReleased()
+        val completions = cameraReleaseCallbacks.toList()
+        cameraReleaseCallbacks.clear()
+        completions.forEach { it() }
+    }
+
+    private companion object { const val MAXIMUM_DASHCAM_FILE_BYTES = 5_000_000_000L }
 
     private data class LoadedRuntime(
         val pack: AndroidTrafficSignVerifiedPack?,

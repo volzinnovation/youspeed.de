@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.location.Location
@@ -15,6 +14,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
+import android.os.VibrationEffect
+import android.os.VibratorManager
+import androidx.camera.core.Preview
+import java.time.Duration
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.compose.runtime.getValue
@@ -283,15 +286,39 @@ data class ConsumerUiState(
     val isLowSpeedMatchingRuleActive: Boolean = false,
     val matcherDebugProfile: MatcherDebugProfile = MatcherDebugProfile.default,
     val trafficSignRecognitionEnabled: Boolean = false,
+    val trafficSignRecognitionIndependentEnabled: Boolean = false,
+    val trafficSignFeedbackMode: TrafficSignFeedbackMode = TrafficSignFeedbackMode.SOUND,
+    val trafficSignLastEvent: TrafficSignRecognitionEvent? = null,
+    val trafficSignRecognitionUnavailable: Boolean = false,
     val otherTrafficSignDisplayEnabled: Boolean = false,
     val lastTrafficSignPictogram: TrafficSignPictogram? = null,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
-    val panoramaxCaptureEnabled: Boolean = false,
+    val panoramaxCaptureEnabled: Boolean = true,
+    val panoramaxTriggerMode: PanoramaxCaptureTriggerMode = PanoramaxCaptureTriggerMode.DISTANCE,
+    val panoramaxMinimumDistanceMeters: Double = 25.0,
+    val panoramaxMinimumIntervalSeconds: Double = 5.0,
+    val panoramaxUnlimitedStorage: Boolean = false,
+    val panoramaxStorageLimitMB: Double = 1000.0,
+    val panoramaxDeleteUploadedImages: Boolean = false,
+    val panoramaxMaintenanceIssue: String? = null,
+    val panoramaxMaintenanceInProgress: Boolean = true,
+    val panoramaxAccountConnected: Boolean = false,
+    val panoramaxAccountHasToken: Boolean = false,
+    val panoramaxAccountBusy: Boolean = false,
+    val panoramaxAccountStatus: String = "",
+    val panoramaxActiveUploadBatchIds: Set<String> = emptySet(),
+    val panoramaxUploadStatusByBatch: Map<String, String> = emptyMap(),
+    val panoramaxUploadProgressByBatch: Map<String, PanoramaxUploadProgress> = emptyMap(),
     val panoramaxCaptureCount: Int = 0,
     val panoramaxLastCaptureDetail: String = "No photo captured",
     val panoramaxBatches: List<PanoramaxBatchRecord> = emptyList(),
     val driveRecorderState: DriveRecorderState = DriveRecorderState.DISABLED,
+    val driveRecorderStartedAt: Instant? = null,
+    val dashcamRecordingEnabled: Boolean = false,
+    val driveRecorderDashcamActive: Boolean = false,
+    val driveRecorderDashcamTransitioning: Boolean = false,
+    val driveRecorderPanoramaxActive: Boolean = false,
     val dashcamRecordings: List<DashcamRecording> = emptyList(),
     val trafficSignGeneration: Long = 0L,
     val effectiveSpeedLimitSource: EffectiveSpeedLimitSource = EffectiveSpeedLimitSource.NONE,
@@ -430,7 +457,10 @@ class ConsumerSessionController(
     }.getOrNull()
     private val countryPackSelection = TrafficSignCountrySelection()
     private val penaltyCountrySelection = PenaltyCountrySelection()
-    private val penaltyCountryExpiry = Runnable { updateState { copy(activePenaltyRules = ActivePenaltyRules.unavailable()) } }
+    private val penaltyCountryExpiry = Runnable {
+        val country = penaltyCountrySelection.expire(clock.millis() / 1000.0)
+        updateState { copy(activePenaltyRules = country?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable()) }
+    }
     private var firstLocationRegion: RegionalPackCatalog.Region? = null
     private var firstLocationAttempts = 0
     private var firstLocationRetryAfter = 0L
@@ -442,6 +472,19 @@ class ConsumerSessionController(
     private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val panoramaxQueueStore = PanoramaxQueueStore(appContext)
+    private val panoramaxAccount by lazy {
+        PanoramaxAccount(appContext).also { account ->
+            account.onChange = { postState { copy(panoramaxAccountConnected = account.state.isConnected,
+                panoramaxAccountHasToken = account.state.hasToken, panoramaxAccountBusy = account.state.isBusy,
+                panoramaxAccountStatus = account.state.status) } }
+        }
+    }
+    private val panoramaxUploader by lazy {
+        PanoramaxUploadCoordinator(panoramaxQueueStore, panoramaxAccount,
+            canProcessUploads = ::canProcessPanoramaxUploads,
+            deleteUploadedImages = { uiState.panoramaxDeleteUploadedImages },
+            onChange = { refreshPanoramaxUploadState() })
+    }
     private val dashcamDirectory = File(appContext.filesDir, "dashcam").apply { mkdirs() }
     private val wayMatchTracker = WayMatchSessionTracker()
     private val trafficSignResolver = TrafficSignRuntimeSourceResolver()
@@ -475,6 +518,7 @@ class ConsumerSessionController(
     private var latestTrafficSignContext: TrafficSignDetectionContext? = null
     private var latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
     private var latestResolverLocation: Location? = null
+    @Volatile private var latestCaptureLocation: Location? = null
     private var coarseLocationSequence = 0L
     private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
     private var latestTrafficSignInsideCity: Boolean? = null
@@ -494,7 +538,17 @@ class ConsumerSessionController(
     private var isSpeedCaptureResolved = false
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection? = null
     private var panoramaxCaptureEnabled = preferences.getBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, true)
-    private var driveRecorderEnabled = false
+    @Volatile private var driveRecorderEnabled = false
+    @Volatile private var applicationActive = true
+    private val captureLock = Any()
+    private val feedbackGate = TrafficSignFeedbackGate()
+    private var confirmationToneUntilMs = 0L
+    private var activeDashcamPath: String? = null
+    @Volatile private var latestDashcamEventPath: String? = null
+    private data class PendingPhoto(val requestId: String, val sessionId: String,
+        val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>)
+    private var pendingPhoto: PendingPhoto? = null
+    private var latestAnnotationDrafts: List<PanoramaxTrafficSignAnnotationDraft> = emptyList()
     private var panoramaxCaptureSessionId: String? = null
     private var panoramaxLastCaptureSample: PanoramaxLocationSample? = null
     private var panoramaxCaptureInFlight = false
@@ -566,6 +620,14 @@ class ConsumerSessionController(
             matcherDebugProfile = initialMatcherDebugProfile,
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
             otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
+            trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
+            trafficSignFeedbackMode = runCatching { TrafficSignFeedbackMode.valueOf(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", "SOUND")!!) }.getOrDefault(TrafficSignFeedbackMode.SOUND),
+            panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
+            panoramaxMinimumDistanceMeters = preferences.getFloat("youspeed.panoramax.minimum_distance", 25f).toDouble().coerceIn(3.0, 100.0),
+            panoramaxMinimumIntervalSeconds = preferences.getFloat("youspeed.panoramax.minimum_interval", 5f).toDouble().coerceIn(1.0, 60.0),
+            panoramaxUnlimitedStorage = preferences.getBoolean("youspeed.panoramax.unlimited_storage", false),
+            panoramaxStorageLimitMB = preferences.getFloat("youspeed.panoramax.storage_limit_mb", 1000f).toDouble().coerceIn(100.0, 10000.0),
+            panoramaxDeleteUploadedImages = preferences.getBoolean("youspeed.panoramax.delete_uploaded", false),
             panoramaxCaptureEnabled = panoramaxCaptureEnabled,
             dashcamRecordings = listDashcamRecordings(),
             trafficSignGeneration = trafficSignGeneration.get(),
@@ -597,6 +659,7 @@ class ConsumerSessionController(
                 "screenshotState" to launchScreenshotState?.rawValue,
             ),
         )
+        preparePanoramaxStorage()
         if (launchScreenshotState != null) {
             configureForScreenshotMode(launchScreenshotState)
         } else {
@@ -615,6 +678,7 @@ class ConsumerSessionController(
         if (!isDisposed.compareAndSet(false, true)) {
             return
         }
+        panoramaxUploader.close()
         stopDriving()
         runCatching { locationManager.removeUpdates(firstLocationListener) }
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
@@ -772,10 +836,11 @@ class ConsumerSessionController(
         val countryCode = penaltyCountrySelection.update(regionalPackCatalog, location.latitude, location.longitude,
             if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
             location.time / 1000.0, clock.millis() / 1000.0)
-        mainHandler.removeCallbacks(penaltyCountryExpiry)
         updateState { copy(activePenaltyRules = countryCode?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable()) }
-        if (countryCode != null) {
-            val remainingValidityMs = (location.time + 30_000L - clock.millis()).coerceAtLeast(0L)
+        val expirySeconds = penaltyCountrySelection.expiryTimestampSeconds
+        if (penaltyCountrySelection.lastUpdateAcceptedNewFix || expirySeconds == null) mainHandler.removeCallbacks(penaltyCountryExpiry)
+        if (penaltyCountrySelection.lastUpdateAcceptedNewFix && expirySeconds != null) {
+            val remainingValidityMs = (expirySeconds * 1000.0 - clock.millis()).toLong().coerceAtLeast(1L)
             mainHandler.postDelayed(penaltyCountryExpiry, remainingValidityMs)
         }
         if (!location.hasAccuracy() || !FirstLocationPackPolicy.acceptsFix(location.latitude, location.longitude,
@@ -823,16 +888,36 @@ class ConsumerSessionController(
         mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
     }
 
-    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean =
-        uiState.trafficSignRecognitionEnabled && isDriving
+    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean = DriveRecorderPolicy.shouldRunRecognition(
+        uiState.trafficSignRecognitionEnabled, uiState.trafficSignRecognitionIndependentEnabled,
+        driveRecorderEnabled, isDriving, applicationActive,
+    )
 
-    internal fun isDashcamRecordingEnabled(): Boolean = driveRecorderEnabled && isDriving
+    internal fun isDriveRecorderSessionActive(): Boolean = driveRecorderEnabled && isDriving && applicationActive
+    internal fun isDashcamRecordingEnabled(): Boolean = isDriveRecorderSessionActive() && uiState.dashcamRecordingEnabled
+    internal fun isPanoramaxCaptureEnabled(): Boolean = panoramaxCaptureEnabled && isDriveRecorderSessionActive()
 
-    internal fun isPanoramaxCaptureEnabled(): Boolean = panoramaxCaptureEnabled && isDashcamRecordingEnabled()
+    fun canProcessPanoramaxUploads(): Boolean = !driveRecorderEnabled && DriveRecorderPolicy.canProcessPanoramaxUploads(uiState.driveRecorderState) &&
+        !uiState.panoramaxMaintenanceInProgress
+
+    fun setDriveRecorderPreviewSurfaceProvider(provider: Preview.SurfaceProvider?) {
+        host?.setDriveRecorderPreviewSurfaceProvider(provider)
+    }
+
+    fun setApplicationActive(active: Boolean) {
+        if (applicationActive == active) return
+        applicationActive = active
+        invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
+        if (!active && driveRecorderEnabled) stopDriveRecorder()
+        reconcileTrafficSignCamera()
+    }
 
     internal fun nextDashcamRecordingFile(): File {
         dashcamDirectory.mkdirs()
-        return File(dashcamDirectory, "dashcam-${clock.millis()}-${UUID.randomUUID()}.mp4")
+        return File(dashcamDirectory, "dashcam-${clock.millis()}-${UUID.randomUUID()}.mp4").also {
+            activeDashcamPath = it.absolutePath
+            latestDashcamEventPath = it.absolutePath
+        }
     }
 
     private fun listDashcamRecordings(): List<DashcamRecording> =
@@ -842,44 +927,56 @@ class ConsumerSessionController(
             .map { file -> DashcamRecording(file.absolutePath, Instant.ofEpochMilli(file.lastModified()), file.length()) }
 
     fun toggleDriveRecorder() {
-        if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY) return
-        if (driveRecorderEnabled) {
-            driveRecorderEnabled = false
-            updateState { copy(driveRecorderState = DriveRecorderState.STOPPING) }
-            endPanoramaxCaptureSession()
-            reconcileTrafficSignCamera()
-            return
-        }
+        if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY ||
+            uiState.driveRecorderState == DriveRecorderState.STOPPING) return
+        if (driveRecorderEnabled) { stopDriveRecorder(); return }
+        if (panoramaxCaptureEnabled && uiState.panoramaxMaintenanceInProgress) return
+        stopPanoramaxUploads()
+        latestDashcamEventPath = null
         driveRecorderEnabled = true
-        updateState { copy(driveRecorderState = DriveRecorderState.PREPARING) }
+        feedbackGate.reset()
+        updateState { copy(driveRecorderState = DriveRecorderState.PREPARING, dashcamRecordingEnabled = true,
+            driveRecorderStartedAt = clock.instant(), trafficSignRecognitionUnavailable = false) }
         if (!isDriving) startDriving() else reconcileTrafficSignCamera()
     }
 
-    fun setPanoramaxCaptureEnabled(enabled: Boolean) {
-        if (panoramaxCaptureEnabled == enabled) return
-        panoramaxCaptureEnabled = enabled
-        preferences.edit().putBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, enabled).apply()
-        if (enabled && isDashcamRecordingEnabled()) beginPanoramaxCaptureSession()
-        if (!enabled) endPanoramaxCaptureSession()
-        updateState {
-            copy(
-                panoramaxCaptureEnabled = enabled,
-                panoramaxBatches = panoramaxQueueStore.listBatches(),
-                panoramaxCaptureCount = panoramaxQueueStore.listBatches().sumOf { it.items.size },
-            )
+    private fun stopDriveRecorder() {
+        driveRecorderEnabled = false
+        updateState { copy(driveRecorderState = DriveRecorderState.STOPPING, dashcamRecordingEnabled = false,
+            driveRecorderPanoramaxActive = false) }
+        endPanoramaxCaptureSession()
+        reconcileTrafficSignCamera()
+        if (!uiState.driveRecorderDashcamActive && !uiState.driveRecorderDashcamTransitioning) {
+            updateState { copy(driveRecorderState = DriveRecorderState.DISABLED, driveRecorderStartedAt = null) }
         }
+    }
+
+    fun toggleDriveRecorderDashcam() {
+        if (uiState.driveRecorderState != DriveRecorderState.RECORDING || uiState.driveRecorderDashcamTransitioning) return
+        updateState { copy(dashcamRecordingEnabled = !dashcamRecordingEnabled, driveRecorderDashcamTransitioning = true) }
         reconcileTrafficSignCamera()
     }
 
+    fun toggleDriveRecorderTrafficSignRecognition() {
+        if (uiState.driveRecorderState != DriveRecorderState.RECORDING) return
+        setTrafficSignRecognitionEnabled(!uiState.trafficSignRecognitionEnabled)
+    }
+
+    fun setPanoramaxCaptureEnabled(enabled: Boolean) {
+        if (panoramaxCaptureEnabled == enabled || DriveRecorderPolicy.isActive(uiState.driveRecorderState)) return
+        panoramaxCaptureEnabled = enabled
+        preferences.edit().putBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, enabled).apply()
+        updateState { copy(panoramaxCaptureEnabled = enabled) }
+    }
+
     internal fun currentPanoramaxLocationSample(): PanoramaxLocationSample? {
-        val lat = uiState.currentLatitude ?: return null
-        val lon = uiState.currentLongitude ?: return null
-        val accuracy = uiState.gpsHorizontalAccuracyM ?: return null
+        val location = latestCaptureLocation?.let(::Location) ?: return null
+        if (!location.hasAccuracy() || location.provider == LocationManager.NETWORK_PROVIDER) return null
         return PanoramaxLocationSample(
-            latitude = lat,
-            longitude = lon,
-            capturedAt = clock.instant(),
-            accuracyMeters = accuracy,
+            latitude = location.latitude, longitude = location.longitude,
+            capturedAt = Instant.ofEpochMilli(location.time), accuracyMeters = location.accuracy.toDouble(),
+            altitudeMeters = location.altitude.takeIf { location.hasAltitude() && it.isFinite() },
+            headingDegrees = location.bearing.toDouble().takeIf { location.hasBearing() && it.isFinite() && it >= 0.0 },
         )
     }
 
@@ -902,12 +999,16 @@ class ConsumerSessionController(
     }
 
     private fun endPanoramaxCaptureSession() {
-        panoramaxCaptureSessionId = null
-        panoramaxLastCaptureSample = null
-        panoramaxCaptureInFlight = false
+        synchronized(captureLock) {
+            panoramaxCaptureSessionId = null
+            panoramaxLastCaptureSample = null
+            panoramaxCaptureInFlight = false
+            pendingPhoto = null
+        }
         panoramaxQueueStore.listBatches().filter { it.state == PanoramaxBatchState.CAPTURING }.forEach { batch ->
             runCatching { panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW) }
         }
+        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
     }
 
     fun refreshPanoramaxBatches() {
@@ -917,19 +1018,13 @@ class ConsumerSessionController(
         }
     }
 
-    fun deletePanoramaxItem(batchId: String, itemId: String) {
-        runCatching { panoramaxQueueStore.deleteItem(batchId, itemId) }
-            .onSuccess {
-                updateState {
-                    val batches = panoramaxQueueStore.listBatches()
-                    copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
-                }
-            }
-            .onFailure { error -> updateState { copy(lastError = error.message ?: error.javaClass.simpleName) } }
-    }
+    fun deletePanoramaxItem(batchId: String, itemId: String) = deletePanoramaxItems(mapOf(batchId to setOf(itemId)))
 
     fun setPanoramaxItemIncluded(batchId: String, itemId: String, included: Boolean) {
+        if (!canProcessPanoramaxUploads()) return
         runCatching {
+            val batch = panoramaxQueueStore.getBatch(batchId) ?: return
+            if (!PanoramaxQueuePolicy.canEditSelection(batch.state)) return
             panoramaxQueueStore.updateItem(
                 batchId,
                 itemId,
@@ -944,65 +1039,260 @@ class ConsumerSessionController(
             .onFailure { error -> updateState { copy(lastError = error.message ?: error.javaClass.simpleName) } }
     }
 
-    internal fun onPanoramaxPhotoCaptured(path: String, sample: PanoramaxLocationSample) {
-        submitBackgroundTask {
-            val sessionId = panoramaxCaptureSessionId
-            val batch = panoramaxQueueStore.listBatches().firstOrNull {
-                it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == sessionId
-            }
-            if (!panoramaxCaptureEnabled || sessionId == null || batch == null) {
-                File(path).delete()
-                panoramaxCaptureInFlight = false
-                return@submitBackgroundTask
-            }
-            runCatching {
-                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeFile(path, bounds)
-                val thumbnailOptions = BitmapFactory.Options().apply { inSampleSize = 4 }
-                val thumbnail = BitmapFactory.decodeFile(path, thumbnailOptions)
-                    ?: error("Could not decode Panoramax photo")
-                val thumbnailFile = File.createTempFile("panoramax-thumb-", ".jpg", appContext.cacheDir)
-                FileOutputStream(thumbnailFile).use { output ->
-                    check(thumbnail.compress(Bitmap.CompressFormat.JPEG, 82, output)) { "Could not create thumbnail" }
-                }
-                thumbnail.recycle()
+    internal fun onPanoramaxPhotoCaptured(path: String, @Suppress("UNUSED_PARAMETER") sample: PanoramaxLocationSample, requestId: String) {
+        if (!submitBackgroundTask {
+            val request = synchronized(captureLock) { pendingPhoto?.takeIf { it.requestId == requestId && it.sessionId == panoramaxCaptureSessionId } }
+            if (request == null) { File(path).delete(); return@submitBackgroundTask }
+            var thumbnailFile: File? = null
+            try {
                 val original = File(path)
-                val metadata = PanoramaxCaptureMetadata(
-                    captureId = UUID.randomUUID().toString().lowercase(Locale.US),
-                    captureSessionId = sessionId,
-                    capturedAt = sample.capturedAt,
-                    location = sample,
-                    sha256 = PanoramaxQueueStore.sha256(original),
-                    byteSize = original.length(),
-                    software = "YouSpeed Android ${BuildConfig.VERSION_NAME}",
-                    imageWidthPixels = bounds.outWidth.takeIf { it > 0 },
-                    imageHeightPixels = bounds.outHeight.takeIf { it > 0 },
-                )
-                panoramaxQueueStore.addJpeg(batch.batchId, original, thumbnailFile, metadata)
-                thumbnailFile.delete()
-                original.delete()
-                updateState {
-                    copy(
-                        panoramaxBatches = panoramaxQueueStore.listBatches(),
-                        panoramaxCaptureCount = panoramaxQueueStore.listBatches().sumOf { it.items.size },
-                        panoramaxLastCaptureDetail = "Photo saved",
-                    )
+                val dimensions = PanoramaxJpegMetadata.pixelDimensions(original) ?: error("Could not decode Panoramax photo")
+                val drafts = synchronized(captureLock) {
+                    (request.drafts + latestAnnotationDrafts).distinctBy { it.sourceEventId }
                 }
-            }.onFailure { error ->
+                val annotations = drafts.mapNotNull { it.projected(dimensions.first, dimensions.second, request.sample.capturedAt) }
+                PanoramaxJpegMetadata.write(original, request.sample, annotations)
+                thumbnailFile = File.createTempFile("panoramax-thumb-", ".jpg", appContext.cacheDir)
+                PanoramaxJpegMetadata.createThumbnail(original, requireNotNull(thumbnailFile))
+                val metadata = PanoramaxCaptureMetadata(
+                    captureId = request.requestId, captureSessionId = request.sessionId,
+                    capturedAt = request.sample.capturedAt, location = request.sample,
+                    sha256 = PanoramaxQueueStore.sha256(original), byteSize = original.length(),
+                    software = "YouSpeed Android ${BuildConfig.VERSION_NAME}",
+                    imageWidthPixels = dimensions.first, imageHeightPixels = dimensions.second,
+                    trafficSignAnnotations = annotations.takeIf { it.isNotEmpty() },
+                )
+                synchronized(captureLock) {
+                    if (pendingPhoto?.requestId != requestId || panoramaxCaptureSessionId != request.sessionId) return@synchronized
+                    val batch = panoramaxQueueStore.listBatches().firstOrNull {
+                        it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == request.sessionId
+                    } ?: return@synchronized
+                    panoramaxQueueStore.addJpeg(batch.batchId, original, requireNotNull(thumbnailFile), metadata)
+                    panoramaxLastCaptureSample = request.sample
+                    val attachedIds = annotations.map { it.sourceEventId }.toSet()
+                    latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId in attachedIds }
+                    updateState { copy(panoramaxLastCaptureDetail = ConsumerUiStrings.text("Photo saved", "Foto gespeichert", "Photo enregistrée", "Foto opgeslagen")) }
+                }
+                enforcePanoramaxStorageLimit()
+            } catch (error: Exception) {
+                updateState { copy(panoramaxLastCaptureDetail = error.message ?: "Photo could not be saved") }
+            } finally {
                 File(path).delete()
-                updateState { copy(panoramaxLastCaptureDetail = error.message ?: error.javaClass.simpleName) }
+                thumbnailFile?.delete()
+                synchronized(captureLock) { if (pendingPhoto?.requestId == requestId) { pendingPhoto = null; panoramaxCaptureInFlight = false } }
+                refreshPanoramaxBatches()
             }
-            panoramaxCaptureInFlight = false
+        }) File(path).delete()
+    }
+
+    internal fun onPanoramaxPhotoCaptureFailed(detail: String, requestId: String) {
+        val wasPending = synchronized(captureLock) {
+            if (pendingPhoto?.requestId != requestId) false else {
+                pendingPhoto = null; panoramaxCaptureInFlight = false; true
+            }
         }
+        if (wasPending) postState { copy(panoramaxLastCaptureDetail = detail) }
     }
 
     private fun maybeCapturePanoramaxPhoto() {
-        if (!panoramaxCaptureEnabled || panoramaxCaptureInFlight) return
+        if (!isPanoramaxCaptureEnabled() || uiState.driveRecorderState != DriveRecorderState.RECORDING) return
         val sample = currentPanoramaxLocationSample() ?: return
-        if (!PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample)) return
-        panoramaxLastCaptureSample = sample
-        panoramaxCaptureInFlight = true
-        host?.capturePanoramaxPhoto()
+        val request = synchronized(captureLock) {
+            val sessionId = panoramaxCaptureSessionId ?: return
+            if (panoramaxCaptureInFlight || !PanoramaxCapturePolicy.shouldCapture(panoramaxLastCaptureSample, sample,
+                    now = clock.instant(), config = PanoramaxCadenceConfig(distanceMeters = uiState.panoramaxMinimumDistanceMeters,
+                        fallbackInterval = Duration.ofMillis((uiState.panoramaxMinimumIntervalSeconds * 1000).toLong()),
+                        triggerMode = uiState.panoramaxTriggerMode))) return
+            PendingPhoto(UUID.randomUUID().toString(), sessionId, sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList()).also {
+                pendingPhoto = it; panoramaxCaptureInFlight = true
+            }
+        }
+        val currentHost = host
+        if (currentHost == null) onPanoramaxPhotoCaptureFailed("Camera unavailable", request.requestId)
+        else mainHandler.post { currentHost.capturePanoramaxPhoto(request.requestId) }
+    }
+
+    private fun preparePanoramaxStorage() {
+        submitBackgroundTask {
+            runCatching {
+                val failures = panoramaxQueueStore.performStartupMaintenanceNow().failedRelativePaths.toMutableList()
+                panoramaxQueueStore.repairMissingThumbnails()
+                if (uiState.panoramaxDeleteUploadedImages) failures += panoramaxQueueStore.deleteUploadedItemsInCompletedBatches().failedRelativePaths
+                if (!uiState.panoramaxUnlimitedStorage) failures += panoramaxQueueStore.enforceStorageLimit((uiState.panoramaxStorageLimitMB * 1_000_000).toLong()).failedRelativePaths
+                cleanupDashcamRecordings()
+                postState { copy(panoramaxMaintenanceIssue = failures.takeIf { it.isNotEmpty() }?.joinToString(),
+                    panoramaxAccountStatus = panoramaxAccount.state.status,
+                    panoramaxAccountConnected = panoramaxAccount.state.isConnected,
+                    panoramaxAccountHasToken = panoramaxAccount.state.hasToken,
+                    panoramaxAccountBusy = panoramaxAccount.state.isBusy, panoramaxMaintenanceInProgress = false) }
+            }.onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message, panoramaxMaintenanceInProgress = false) } }
+            refreshPanoramaxBatches()
+        }
+    }
+
+    private fun enforcePanoramaxStorageLimit() {
+        if (uiState.panoramaxUnlimitedStorage) return
+        val report = panoramaxQueueStore.enforceStorageLimit((uiState.panoramaxStorageLimitMB * 1_000_000).toLong())
+        if (report.hasFailures) postState { copy(panoramaxMaintenanceIssue = report.failedRelativePaths.joinToString()) }
+    }
+
+    fun panoramaxOriginalFile(item: PanoramaxItemRecord): File = panoramaxQueueStore.originalFile(item)
+    fun panoramaxThumbnailFile(item: PanoramaxItemRecord): File = panoramaxQueueStore.thumbnailFile(item)
+
+    fun setPanoramaxItemFavorite(batchId: String, itemId: String, favorite: Boolean) {
+        submitBackgroundTask {
+            runCatching { panoramaxQueueStore.updateItemFavorite(batchId, itemId, favorite) }
+                .onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
+            refreshPanoramaxBatches()
+        }
+    }
+
+    fun deletePanoramaxItems(selections: Map<String, Set<String>>) {
+        if (!canProcessPanoramaxUploads()) return
+        selections.keys.forEach(panoramaxUploader::stopBatch)
+        submitBackgroundTask {
+            selections.forEach { (batchId, itemIds) ->
+                runCatching { panoramaxQueueStore.deleteItems(batchId, itemIds) }
+                    .onSuccess { if (it.hasFailures) postState { copy(panoramaxMaintenanceIssue = it.failedRelativePaths.joinToString()) } }
+                    .onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
+            }
+            refreshPanoramaxBatches()
+        }
+    }
+
+    fun connectPanoramaxAccount() { submitBackgroundTask { panoramaxAccount.connect()?.let { url -> mainHandler.post { host?.openExternalUrl(url) } } } }
+    fun validatePanoramaxAccount() { submitBackgroundTask { panoramaxAccount.validateConnection() } }
+    fun disconnectPanoramaxAccount() { stopPanoramaxUploads(); submitBackgroundTask { panoramaxAccount.disconnect() } }
+    fun uploadPanoramaxSelections(selections: Map<String, Set<String>>) { if (canProcessPanoramaxUploads()) panoramaxUploader.uploadSelections(selections) }
+    fun resumePanoramaxUpload(batchId: String) { if (canProcessPanoramaxUploads()) panoramaxUploader.uploadBatch(batchId) }
+    fun stopPanoramaxUploads() { panoramaxUploader.stopAll() }
+
+    private fun refreshPanoramaxUploadState() {
+        val active = panoramaxUploader.activeBatchIds
+        val status = panoramaxUploader.statusByBatch
+        val progress = panoramaxUploader.progressByBatch
+        postState { copy(panoramaxActiveUploadBatchIds = active, panoramaxUploadStatusByBatch = status,
+            panoramaxUploadProgressByBatch = progress, panoramaxAccountConnected = panoramaxAccount.state.isConnected,
+            panoramaxAccountHasToken = panoramaxAccount.state.hasToken, panoramaxAccountBusy = panoramaxAccount.state.isBusy,
+            panoramaxAccountStatus = panoramaxAccount.state.status) }
+        refreshPanoramaxBatches()
+    }
+
+    fun setPanoramaxTriggerMode(value: PanoramaxCaptureTriggerMode) {
+        preferences.edit().putString("youspeed.panoramax.trigger_mode", value.name).apply()
+        updateState { copy(panoramaxTriggerMode = value) }
+    }
+    fun setPanoramaxMinimumDistanceMeters(value: Double) {
+        val clamped = value.coerceIn(3.0, 100.0)
+        preferences.edit().putFloat("youspeed.panoramax.minimum_distance", clamped.toFloat()).apply()
+        updateState { copy(panoramaxMinimumDistanceMeters = clamped) }
+    }
+    fun setPanoramaxMinimumIntervalSeconds(value: Double) {
+        val clamped = value.coerceIn(1.0, 60.0)
+        preferences.edit().putFloat("youspeed.panoramax.minimum_interval", clamped.toFloat()).apply()
+        updateState { copy(panoramaxMinimumIntervalSeconds = clamped) }
+    }
+    fun setPanoramaxUnlimitedStorage(value: Boolean) {
+        preferences.edit().putBoolean("youspeed.panoramax.unlimited_storage", value).apply()
+        updateState { copy(panoramaxUnlimitedStorage = value) }
+        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
+    }
+    fun setPanoramaxStorageLimitMB(value: Double) {
+        val clamped = value.coerceIn(100.0, 10000.0)
+        preferences.edit().putFloat("youspeed.panoramax.storage_limit_mb", clamped.toFloat()).apply()
+        updateState { copy(panoramaxStorageLimitMB = clamped) }
+        submitBackgroundTask { enforcePanoramaxStorageLimit(); refreshPanoramaxBatches() }
+    }
+    fun setPanoramaxDeleteUploadedImages(value: Boolean) {
+        preferences.edit().putBoolean("youspeed.panoramax.delete_uploaded", value).apply()
+        updateState { copy(panoramaxDeleteUploadedImages = value) }
+        if (value) submitBackgroundTask {
+            runCatching { panoramaxQueueStore.deleteUploadedItemsInCompletedBatches() }
+                .onSuccess { if (it.hasFailures) postState { copy(panoramaxMaintenanceIssue = it.failedRelativePaths.joinToString()) } }
+                .onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
+            refreshPanoramaxBatches()
+        }
+    }
+
+    fun setTrafficSignRecognitionIndependentEnabled(value: Boolean) {
+        preferences.edit().putBoolean("youspeed.drive_recorder.tsr_independent_enabled", value).apply()
+        updateState { copy(trafficSignRecognitionIndependentEnabled = value, trafficSignRecognitionUnavailable = false) }
+        invalidateTrafficSignGeneration(true, "independent_recognition_changed", isTrafficSignRecognitionRuntimeEnabled())
+        reconcileTrafficSignCamera()
+    }
+    fun setTrafficSignFeedbackMode(value: TrafficSignFeedbackMode) {
+        preferences.edit().putString("youspeed.drive_recorder.tsr_feedback_mode", value.name).apply()
+        updateState { copy(trafficSignFeedbackMode = value) }
+        feedbackGate.reset()
+    }
+
+    fun onTrafficSignRecognitionEvent(event: TrafficSignRecognitionEvent, generation: Long) {
+        mainHandler.post {
+            if (generation != trafficSignGeneration.get() || !isTrafficSignRecognitionRuntimeEnabled() ||
+                event.driveSessionId != trafficSignDriveSessionId) return@post
+            PanoramaxTrafficSignAnnotationDraft.from(event)?.let { draft ->
+                val captureSession = synchronized(captureLock) {
+                    latestAnnotationDrafts = (latestAnnotationDrafts.filter { Duration.between(it.frameTimestampUtc, event.frameTimestampUtc).abs().toMillis() <= 5_000 &&
+                        it.physicalSignTrackId != draft.physicalSignTrackId } + draft)
+                    panoramaxCaptureSessionId
+                }
+                if (captureSession != null) submitBackgroundTask {
+                    runCatching {
+                        synchronized(captureLock) {
+                            if (generation != trafficSignGeneration.get() || captureSession != panoramaxCaptureSessionId || panoramaxCaptureInFlight) return@synchronized
+                            val batch = panoramaxQueueStore.listBatches().firstOrNull {
+                                it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == captureSession
+                            } ?: return@synchronized
+                            if (panoramaxQueueStore.attachTrafficSignAnnotation(batch.batchId, draft) != null) {
+                                latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId == draft.sourceEventId }
+                            }
+                        }
+                    }.onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
+                }
+            }
+            updateState { copy(trafficSignLastEvent = event) }
+        }
+    }
+
+    fun onTrafficSignRecognitionUnavailable(detail: String, generation: Long) {
+        mainHandler.post {
+            if (generation != trafficSignGeneration.get() || !isTrafficSignRecognitionRuntimeEnabled()) return@post
+            invalidateTrafficSignGeneration(true, "recognition_unavailable", false)
+            updateState { copy(trafficSignRecognitionUnavailable = true, trafficSignCameraRuntimeDetail = detail) }
+            if (!driveRecorderEnabled) host?.stopTrafficSignCamera()
+        }
+    }
+
+    fun onDashcamRecordingStateChanged(active: Boolean, transitioning: Boolean = false, path: String) {
+        postState { if (path != latestDashcamEventPath) this else copy(driveRecorderDashcamActive = active, driveRecorderDashcamTransitioning = transitioning,
+            dashcamRecordingEnabled = if (!active && !transitioning) false else dashcamRecordingEnabled,
+            driveRecorderState = if (!driveRecorderEnabled && !active && !transitioning) DriveRecorderState.DISABLED else driveRecorderState,
+            driveRecorderStartedAt = if (!driveRecorderEnabled && !active && !transitioning) null else driveRecorderStartedAt) }
+    }
+
+    fun onDashcamCameraReleased() {
+        postState {
+            if (driveRecorderEnabled) this else copy(driveRecorderState = DriveRecorderState.DISABLED,
+                driveRecorderDashcamActive = false, driveRecorderDashcamTransitioning = false,
+                dashcamRecordingEnabled = false, driveRecorderStartedAt = null)
+        }
+    }
+
+    fun deleteDashcamRecordings(paths: Set<String>) {
+        if (DriveRecorderPolicy.isActive(uiState.driveRecorderState)) return
+        submitBackgroundTask {
+            val allowed = listDashcamRecordings().map { it.path }.toSet()
+            val failures = paths.intersect(allowed).filter { it != activeDashcamPath && !File(it).delete() }
+            postState { copy(dashcamRecordings = listDashcamRecordings(), lastError = if (failures.isEmpty()) "" else "Some videos could not be deleted") }
+        }
+    }
+
+    private fun cleanupDashcamRecordings() {
+        var size = listDashcamRecordings().sumOf { it.bytes }
+        listDashcamRecordings().asReversed().filter { it.path != activeDashcamPath }.forEach { recording ->
+            if (size > DriveRecorderPolicy.MOVIE_LIBRARY_LIMIT_BYTES && File(recording.path).delete()) size -= recording.bytes
+        }
+        postState { copy(dashcamRecordings = listDashcamRecordings()) }
     }
 
     fun startDriving() {
@@ -1032,6 +1322,7 @@ class ConsumerSessionController(
     }
 
     fun stopDriving() {
+        latestCaptureLocation = null
         driveRecorderEnabled = false
         endPanoramaxCaptureSession()
         isDriving = false
@@ -1159,6 +1450,7 @@ class ConsumerSessionController(
 
     fun setTrafficSignRecognitionEnabled(enabled: Boolean) {
         if (uiState.trafficSignRecognitionEnabled == enabled) return
+        feedbackGate.reset()
         preferences.edit().putBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, enabled).apply()
         invalidateTrafficSignGeneration(
             clearAssertion = true,
@@ -1168,6 +1460,8 @@ class ConsumerSessionController(
         updateState {
             copy(
                 trafficSignRecognitionEnabled = enabled,
+                trafficSignRecognitionUnavailable = false,
+                trafficSignLastEvent = null,
                 trafficSignCameraRuntimeState = if (enabled) {
                     trafficSignCameraRuntimeState
                 } else {
@@ -1214,9 +1508,7 @@ class ConsumerSessionController(
             )
             return
         }
-        if ((uiState.trafficSignRecognitionEnabled || isPanoramaxCaptureEnabled() || driveRecorderEnabled) && isDriving) {
-            host?.startTrafficSignCamera()
-        }
+        reconcileTrafficSignCamera()
     }
 
     fun onTrafficSignCameraRuntimeStateChanged(
@@ -1234,12 +1526,17 @@ class ConsumerSessionController(
                 TrafficSignCameraRuntimeState.DISABLED -> DriveRecorderState.DISABLED
             }
             updateState { copy(driveRecorderState = recorderState) }
-            if (state == TrafficSignCameraRuntimeState.ACTIVE && isDashcamRecordingEnabled()) beginPanoramaxCaptureSession()
+            if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
+            if (state in setOf(TrafficSignCameraRuntimeState.FAILED, TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) {
+                driveRecorderEnabled = false
+                endPanoramaxCaptureSession()
+            }
         }
         postState {
             copy(
                 trafficSignCameraRuntimeState = state,
-                trafficSignCameraRuntimeDetail = detail,
+                trafficSignCameraRuntimeDetail = if (trafficSignRecognitionUnavailable && state == TrafficSignCameraRuntimeState.ACTIVE) trafficSignCameraRuntimeDetail else detail,
+                driveRecorderPanoramaxActive = isPanoramaxCaptureEnabled() && state == TrafficSignCameraRuntimeState.ACTIVE,
             )
         }
         appendRuntimeDiagnosticEvent(
@@ -1252,25 +1549,13 @@ class ConsumerSessionController(
     }
 
     fun onDashcamRecordingFinalized(path: String, success: Boolean, detail: String?) {
-        val file = File(path)
-        if (!success) {
-            updateState {
-                copy(
-                    driveRecorderState = if (driveRecorderEnabled) DriveRecorderState.FAILED else DriveRecorderState.DISABLED,
-                    lastError = detail.orEmpty(),
-                )
-            }
-            return
-        }
-        updateState {
-            copy(
-                driveRecorderState = if (driveRecorderEnabled) DriveRecorderState.RECORDING else DriveRecorderState.DISABLED,
+        if (activeDashcamPath == path) activeDashcamPath = null
+        submitBackgroundTask { cleanupDashcamRecordings() }
+        postState {
+            if (path != latestDashcamEventPath) copy(dashcamRecordings = listDashcamRecordings()) else
+            copy(driveRecorderState = if (driveRecorderEnabled) driveRecorderState else DriveRecorderState.DISABLED,
                 dashcamRecordings = listDashcamRecordings(),
-                lastError = "",
-            )
-        }
-        if (!file.exists() || file.length() == 0L) {
-            updateState { copy(lastError = "Dashcam recording was empty") }
+                lastError = if (success) "" else detail.orEmpty())
         }
     }
 
@@ -1278,8 +1563,7 @@ class ConsumerSessionController(
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     private fun reconcileTrafficSignCamera() {
-        val shouldRun = (uiState.trafficSignRecognitionEnabled || isPanoramaxCaptureEnabled() || driveRecorderEnabled) &&
-            isDriving && uiState.appScreenshotState == null
+        val shouldRun = (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive()) && uiState.appScreenshotState == null
         if (!shouldRun) {
             host?.stopTrafficSignCamera()
             updateState {
@@ -1307,7 +1591,7 @@ class ConsumerSessionController(
     fun currentTrafficSignDetectionContext(): TrafficSignDetectionContextSnapshotValue? =
         synchronized(trafficSignStateLock) {
             val (generation, writePermitted) = trafficSignGeneration.snapshot()
-            if (!writePermitted || !uiState.trafficSignRecognitionEnabled || !isDriving) {
+            if (!writePermitted || !isTrafficSignRecognitionRuntimeEnabled() || uiState.trafficSignRecognitionUnavailable) {
                 null
             } else latestTrafficSignContext?.let { context ->
                 TrafficSignDetectionContextSnapshotValue(
@@ -1316,7 +1600,7 @@ class ConsumerSessionController(
                         sourceRelationIds = context.sourceRelationIds.toSet(),
                     ),
                     generation = generation,
-                    runtimeActivationEligible = isDriving && uiState.trafficSignRecognitionEnabled,
+                    runtimeActivationEligible = isTrafficSignRecognitionRuntimeEnabled() && context.speedMetersPerSecond.isFinite() && context.speedMetersPerSecond * 3.6 >= 1.0,
                     driveSessionId = trafficSignDriveSessionId,
                 )
             }
@@ -1386,6 +1670,8 @@ class ConsumerSessionController(
         permitWrites: Boolean,
     ) {
         val generation = trafficSignGeneration.incrementAndGet(permitWrites)
+        feedbackGate.reset()
+        synchronized(captureLock) { latestAnnotationDrafts = emptyList() }
         val base = synchronized(trafficSignStateLock) {
             if (clearAssertion) trafficSignResolver.clear()
             latestTrafficSignContext = null
@@ -1477,6 +1763,23 @@ class ConsumerSessionController(
         expectedGeneration: Long = trafficSignGeneration.get(),
     ) {
         val resolution = effective.resolution
+        if (passage != null && effective.source == EffectiveSpeedLimitSource.CAMERA && resolution?.kind == TrafficSignResolvedLimitKind.NUMERIC) {
+            mainHandler.post {
+                val context = passage.activationContext
+                val speed = resolution.speedKmh
+                if (trafficSignGeneration.get() == expectedGeneration && context != null && speed != null &&
+                    uiState.speedCaptureMode == SpeedCaptureModeState.IDLE && isTrafficSignRecognitionRuntimeEnabled() &&
+                    uiState.trafficSignFeedbackMode != TrafficSignFeedbackMode.SILENT &&
+                    feedbackGate.shouldEmit(passage.physicalTrackId, speed, context, passage.passageBoundary.timestampUtc)) {
+                    when (uiState.trafficSignFeedbackMode) {
+                        TrafficSignFeedbackMode.SOUND -> playSpeedCaptureConfirmationTone()
+                        TrafficSignFeedbackMode.SPOKEN_SPEED -> speakText(ConsumerUiStrings.text(
+                            "$speed kilometres per hour", "$speed Kilometer pro Stunde", "$speed kilomètres par heure", "$speed kilometer per uur"))
+                        TrafficSignFeedbackMode.SILENT -> Unit
+                    }
+                }
+            }
+        }
         postState {
             if (this@ConsumerSessionController.trafficSignGeneration.get() != expectedGeneration ||
                 !trafficSignRecognitionEnabled || !this@ConsumerSessionController.isDriving
@@ -1543,65 +1846,29 @@ class ConsumerSessionController(
             setError(ConsumerRuntimeText.SYNC_ALREADY_RUNNING.text())
             return
         }
-        var lastFailure: Exception? = null
         updateState {
-            copy(
-                syncStatus = "syncing",
-                syncProgressDetail = ConsumerRuntimeText.SYNC_STARTING.text(),
-                syncProgressCompletedBytes = 0L,
-                syncProgressTotalBytes = 0L,
-                maintenanceMessage = "",
-                activeDownloadOptionId = null,
-                lastError = "",
-            )
+            copy(syncStatus = "syncing", syncProgressDetail = ConsumerRuntimeText.SYNC_STARTING.text(),
+                syncProgressCompletedBytes = 0L, syncProgressTotalBytes = 0L,
+                maintenanceMessage = "", activeDownloadOptionId = null, lastError = "")
         }
         submitBackgroundTask {
-            val endpoints = manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) == "DEU" } +
-                manifestEndpoints.filter { it.countryCode.uppercase(Locale.US) != "DEU" }
-            for (endpoint in endpoints) {
-                try {
-                    postState {
-                        copy(
-                            syncStatus = "syncing",
-                            syncProgressDetail = ConsumerRuntimeText.DOWNLOADING_NAME.text(endpoint.manifestRegion),
-                            syncProgressCompletedBytes = 0L,
-                            syncProgressTotalBytes = 0L,
-                            maintenanceMessage = "",
-                            activeDownloadOptionId = null,
-                            lastError = "",
-                        )
-                    }
-                    val sync = bootstrapper.syncFromManifestUrl(
-                        manifestUrl = endpoint.manifestUrl,
-                        onProgress = ::applyBundleSyncProgress,
-                    )
-                    refreshDownloadedBundleInventory()
-                    val active = bootstrapper.activeState()
-                    replaceLookupService(
-                        sync.dbPath,
-                        preferredCountryCode = active?.countryCode ?: endpoint.countryCode,
-                        reason = "bootstrap_and_sync",
-                    )
-                    postState {
-                        copy(
-                            syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
-                            syncProgressDetail = ConsumerRuntimeText.SYNC_COMPLETE.text(),
-                            syncProgressCompletedBytes = 0L,
-                            syncProgressTotalBytes = 0L,
-                            maintenanceMessage = sync.details,
-                            activeDownloadOptionId = null,
-                            activeBundleVersion = sync.bundleVersion,
-                            activeDBPath = sync.dbPath,
-
-                            lastError = "",
-                        )
-                    }
-                    return@submitBackgroundTask
-                } catch (error: Exception) {
-                    lastFailure = error
+            try {
+                val preferredCountry = bootstrapper.activeState()?.countryCode
+                    ?: lookupServiceCountryCode ?: "DEU"
+                val sync = bootstrapper.syncFromManifestEndpoints(manifestEndpoints, preferredCountry, ::applyBundleSyncProgress)
+                refreshDownloadedBundleInventory()
+                replaceLookupService(sync.dbPath, preferredCountryCode = bootstrapper.activeState()?.countryCode,
+                    reason = "bootstrap_and_sync")
+                postState {
+                    copy(syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
+                        syncProgressDetail = ConsumerRuntimeText.SYNC_COMPLETE.text(),
+                        syncProgressCompletedBytes = 0L, syncProgressTotalBytes = 0L,
+                        maintenanceMessage = sync.details, activeDownloadOptionId = null,
+                        activeBundleVersion = sync.bundleVersion, activeDBPath = sync.dbPath, lastError = "")
                 }
+            } catch (error: Exception) {
+                setError(error.message ?: ConsumerRuntimeText.NO_ENDPOINT_SYNCED.text())
             }
-            setError(lastFailure?.message ?: ConsumerRuntimeText.NO_ENDPOINT_SYNCED.text())
         }
     }
 
@@ -1690,7 +1957,7 @@ class ConsumerSessionController(
                     )
                 }
             } catch (error: Exception) {
-                if (initialDownloader != null) postState {
+                if (firstLocationSetup) postState {
                     copy(firstLocationPackStatus = ConsumerRuntimeText.MAP_DOWNLOAD_FAILED.text())
                 }
                 setError(error.message ?: error.javaClass.simpleName)
@@ -2085,6 +2352,7 @@ class ConsumerSessionController(
                     BundleSyncStage.PREPARING -> ConsumerRuntimeText.DOWNLOAD_PREPARING.text()
                     BundleSyncStage.DOWNLOADING -> ConsumerRuntimeText.DOWNLOAD_RUNNING.text()
                     BundleSyncStage.ASSEMBLING -> ConsumerRuntimeText.DOWNLOAD_ASSEMBLING.text()
+                    BundleSyncStage.APPLYING_DELTA -> ConsumerRuntimeText.DOWNLOAD_ASSEMBLING.text()
                     BundleSyncStage.COMPLETED -> ConsumerRuntimeText.SYNC_COMPLETE.text()
                 },
                 syncProgressCompletedBytes = progress.completedBytes.coerceAtLeast(0L),
@@ -2438,6 +2706,7 @@ class ConsumerSessionController(
             currentLatitude = location.latitude,
             currentLongitude = location.longitude,
         )
+        latestCaptureLocation = Location(location)
         val filteredSpeedKmh = updateCurrentSpeed(location)
         val gpsFixCount = uiState.gpsFixCount + 1
         val gpsHorizontalAccuracyM = location.accuracy.toDouble().takeIf { it >= 0.0 }
@@ -2605,6 +2874,7 @@ class ConsumerSessionController(
                         horizontalAccuracyM = gpsHorizontalAccuracyM,
                         gpsSignalBars = gpsSignalBars,
                         matchContext = matchContext,
+                        headingAccuracyDeg = location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     )
                 }
                 if (!lookupToken.isCurrent(token)) return@submitBackgroundTask
@@ -2683,6 +2953,9 @@ class ConsumerSessionController(
                         lon = location.longitude,
                         horizontalAccuracyM = gpsHorizontalAccuracyM,
                         gpsSignalBars = gpsSignalBars,
+                        headingDeg = location.bearing.toDouble().takeIf { location.hasBearing() },
+                        speedKmh = filteredSpeedKmh,
+                        headingAccuracyDeg = location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     )
                     evaluation
                 } ?: return@submitBackgroundTask
@@ -2825,7 +3098,7 @@ class ConsumerSessionController(
     }
 
     private fun maybeSpeakOverspeedWarning() {
-        if (uiState.driveStatus != "running" || !uiState.audioAlertsEnabled || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
+        if (uiState.driveStatus != "running" || !uiState.audioAlertsEnabled || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE || clock.millis() < confirmationToneUntilMs) {
             lastAnnouncedSpeechText = null
             return
         }
@@ -2845,6 +3118,7 @@ class ConsumerSessionController(
         if (!changedSignificantly && now - lastAudioFeedbackAtMs < 8_000L) {
             return
         }
+        if (textToSpeech?.isSpeaking == true) return
         speakText(speechText)
         lastAudioFeedbackAtMs = now
         lastAnnouncedSpeechText = speechText
@@ -2871,7 +3145,12 @@ class ConsumerSessionController(
         } else {
             ConsumerRuntimeText.DRIVING_BAN_MONTHS.text(drivingBanMonths)
         }
-        if (uiState.audioAlertsEnabled) {
+        runCatching {
+            appContext.getSystemService(VibratorManager::class.java)?.defaultVibrator?.vibrate(
+                VibrationEffect.createWaveform(longArrayOf(0, 120, 80, 120), -1),
+            )
+        }
+        if (uiState.audioAlertsEnabled && textToSpeech?.isSpeaking != true && clock.millis() >= confirmationToneUntilMs) {
             speakText(speechText)
         }
         wasDrivingBanWarningActive = true
@@ -2945,7 +3224,7 @@ class ConsumerSessionController(
             showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_NOT_READY.text())
             return
         }
-        startSpeedCapturePromptSpeech()
+        startSpeedCaptureListening()
     }
 
     private fun startSpeedCapturePromptSpeech() {
@@ -3009,9 +3288,6 @@ class ConsumerSessionController(
                     override fun onPartialTranscript(transcript: String) {
                         if (transcript.isNotBlank()) {
                             updateState { copy(speedCaptureTranscript = transcript) }
-                            if (SpeedCaptureSpeech.resolveSelection(transcript) != null) {
-                                finishSpeedCaptureListening(source = "partial_result", transcripts = listOf(transcript))
-                            }
                         }
                     }
 
@@ -3040,7 +3316,7 @@ class ConsumerSessionController(
         isSpeedCaptureResolved = true
         updateState { copy(speedCaptureMode = SpeedCaptureModeState.EVALUATING) }
         stopActiveSpeedCaptureRecognition(clearStatus = false)
-        val candidates = (transcripts + uiState.speedCaptureTranscript)
+        val candidates = transcripts
             .map(String::trim)
             .filter(String::isNotEmpty)
             .distinct()
@@ -3272,6 +3548,7 @@ class ConsumerSessionController(
     }
 
     private fun playSpeedCaptureConfirmationTone() {
+        confirmationToneUntilMs = clock.millis() + 1000
         val tone = confirmationToneGenerator ?: ToneGenerator(AudioManager.STREAM_NOTIFICATION, 75).also {
             confirmationToneGenerator = it
         }
@@ -4114,6 +4391,10 @@ class ConsumerSessionController(
 
     private fun updateState(transform: ConsumerUiState.() -> ConsumerUiState) {
         if (isDisposed.get()) {
+            return
+        }
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            postState(transform)
             return
         }
         uiState = uiState.transform().withCurrentTrafficSignDisplayGeneration(

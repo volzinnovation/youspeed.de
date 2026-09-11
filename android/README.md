@@ -25,39 +25,36 @@ described by `app/build.gradle.kts`, then run:
 The script writes stable, versioned APK filenames to `android/dist/`. The
 keystore and its passwords must remain outside the source repository.
 
-## Current scope
+## Cross-platform behavior
 
-- load bundled `BundleTargets.top10.json`
-- derive the same Germany shard manifest endpoints as iPhone
-- fetch and parse a real shard manifest
-- complete one full-bundle bootstrap flow with checksum validation and activation metadata persistence
-- replay fixture and bundled-seed matcher regressions on Android emulator/device
-- tolerate Android builds where SQLite `rtree` tables exist in the shard DB but the module is not exposed at runtime by falling back to bbox-table queries
-- default to the M7 matcher and expose directional hypotheses for camera TSR,
-  including displacement-derived heading from the second GPS fix
-- accept structurally compatible raw-score model packs during field testing;
-  calibration metadata is provenance and does not gate activation
-- finalize primary speed-sign passages without supplementary-sign grouping,
-  OCR, restrictions, bounding-box-IoU identity, or a low-speed admission gate
-- keep one UUID for a physical sign track and show a white eye-shaped marker
-  only while a committed camera limit is actually in use
-- invalidate camera-derived limits on an explicit bundle transition from outside
-  to inside a built-up area
-- preserve confirmed TSR annotations, including German Zone 30 (`DE:274.1`),
-  in the Panoramax sidecar and repair `Exif.Photo.UserComment` before upload
-- request camera permission only when TSR is enabled, bind one rear-camera
-  CameraX `ImageAnalysis` stream, and run the pinned two-stage model locally
-  through LiteRT
-- verify both bundled `.tflite` files against their manifest SHA-256 before
-  opening the interpreters; only detector class `sign` enters live inference,
-  while `plate` and `face` are explicitly ignored
+iPhone is the behavioral reference. Android now provides the recorder, recognition,
+photo contribution, settings, and map-update behavior covered by the September
+2026 parity review. See [the implementation and validation matrix](../docs/ANDROID_FEATURE_PARITY.md).
 
-The normalized-frame orchestration and live-controller bridge now have a real
-CameraX/LiteRT producer. The bundled detector and classifier are pinned sibling
-exports of the iPhone field-test checkpoints, with fixture parity recorded in
-the pack's provenance report. Android still has no Dashcam/Panoramax recorder
-lifecycle today; TSR therefore owns its CameraX analysis stream directly and is
-already independent of any recording state.
+- Shared bundle targets, country rules, regional discovery, catalog, and v3 schema.
+- Default M7 tunnel/junction matching, M10 node headings, M11 particle matching,
+  and M12 graph/Viterbi matching; SQLite bbox fallback when R-tree is unavailable.
+- Full map downloads and eligible raw/zlib SQL delta chains, validated before
+  atomic activation; current-country endpoint processing follows iPhone.
+- One shared rear-camera session with live video/recognition controls, optional
+  preview, elapsed time, and independent photo capture while video is off.
+- Recognition is opt-in, standalone recognition defaults off, and feedback
+  defaults to sound. Stationary frames cannot activate speed-limit passages.
+  Inference uses the verified local LiteRT models, candidate bursts, thermal
+  caps, and visible terminal failure states.
+- Photos default to distance mode, 25 m, 5 s, and a 1 GB quota. JPEGs and sidecars
+  retain GPS, altitude/course when available, and confirmed sign annotations.
+- Panoramax account connection and explicit post-drive review/upload, progress,
+  cancellation/resume, favorites, original viewing, bulk deletion, queue repair,
+  and optional cleanup after remote processing completes. No automatic uploads.
+- Full local movie library with playback/share/delete, 5 GB movie files and
+  10 GB library retention.
+- Voice corrections start listening after preparation, use a four-second
+  window, and commit only completed transcripts. Android uses bundled Vosk.
+
+The packaged detector/classifier are sibling exports of the iPhone checkpoints.
+Model provenance does not establish accuracy on all road scenes; town-entry
+recognition remains limited on both platforms.
 
 ## Local verification
 

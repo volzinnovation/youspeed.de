@@ -21,4 +21,15 @@
     <string name="welcome_hide">Niet meer tonen</string>
     <string name="legal_disclaimer_short">Opmerking: getoonde boetes, punten en rijverboden zijn alleen indicatief en geen juridisch advies. Officiële besluiten en de geldende wet zijn bepalend.</string>
     <string name="legal_disclaimer_long">De in YouSpeed getoonde waarden voor boetes, punten en rijverboden zijn alleen indicatief. Ze vormen geen juridisch advies en geen bindende juridische informatie. Alleen officiële besluiten en de wet die op dat moment geldt zijn bepalend; extra kosten kunnen van toepassing zijn.</string>
+    <string name="ui_panoramax_start">Foto-opname starten</string>
+    <string name="ui_panoramax_stop">Foto-opname stoppen</string>
+    <string name="ui_panoramax_gallery">Fotogalerij openen</string>
+    <string name="ui_panoramax_gallery_title">Panoramax-foto’s</string>
+    <string name="ui_panoramax_empty">Nog geen Panoramax-foto’s gemaakt.</string>
+    <string name="ui_panoramax_capture_active">Foto-opname actief · %1$d opgeslagen</string>
+    <string name="ui_panoramax_capture_idle">Foto-opname gereed</string>
+    <string name="ui_panoramax_delete">Foto verwijderen</string>
+    <string name="ui_panoramax_include">Opnemen</string>
+    <string name="ui_panoramax_exclude">Uitsluiten</string>
+    <string name="ui_panoramax_no_camera">Camera is niet beschikbaar</string>
 </resources>

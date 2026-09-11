@@ -21,4 +21,15 @@
     <string name="welcome_hide">Ne plus afficher</string>
     <string name="legal_disclaimer_short">Remarque : les amendes, points et interdictions de conduire affichés sont indicatifs et ne constituent pas un conseil juridique. Les avis officiels et le droit applicable font foi.</string>
     <string name="legal_disclaimer_long">Les valeurs d’amende, de points et d’interdiction de conduire affichées dans YouSpeed sont uniquement indicatives. Elles ne constituent ni un conseil juridique ni une information juridique contraignante. Seuls les avis officiels et le droit applicable au moment des faits font foi ; des frais supplémentaires peuvent s’appliquer.</string>
+    <string name="ui_panoramax_start">Démarrer la prise de photos</string>
+    <string name="ui_panoramax_stop">Arrêter la prise de photos</string>
+    <string name="ui_panoramax_gallery">Ouvrir la galerie de photos</string>
+    <string name="ui_panoramax_gallery_title">Photos Panoramax</string>
+    <string name="ui_panoramax_empty">Aucune photo Panoramax prise pour le moment.</string>
+    <string name="ui_panoramax_capture_active">Prise de photos active · %1$d enregistrées</string>
+    <string name="ui_panoramax_capture_idle">Prise de photos prête</string>
+    <string name="ui_panoramax_delete">Supprimer la photo</string>
+    <string name="ui_panoramax_include">Inclure</string>
+    <string name="ui_panoramax_exclude">Exclure</string>
+    <string name="ui_panoramax_no_camera">La caméra est indisponible</string>
 </resources>

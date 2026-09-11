@@ -2,6 +2,10 @@ package de.youspeed.android.alpha
 
 import java.io.File
 import org.junit.Assert.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Test
 
 class AttributionCatalogTests {
@@ -11,7 +15,10 @@ class AttributionCatalogTests {
     @Test fun shippedCatalogCreditsEveryPictogramAndIncludesRequiredOfflineNotices() {
         val catalog = AttributionCatalog.decode(raw)
         val signIds = catalog.entries.filter { it.category == "sign" && it.id.startsWith("sign-DE:") }
-        assertEquals(104, signIds.size)
+        val artworkIds = Json.parseToJsonElement(File(shared, "tsr/sign-pictograms/manifest.json").readText())
+            .jsonObject.getValue("artworks").jsonArray.map { "sign-" + it.jsonObject.getValue("sign_code").jsonPrimitive.content }.toSet()
+        assertTrue("Every shipped pictogram needs an attribution", artworkIds.isNotEmpty())
+        assertEquals(artworkIds, signIds.map { it.id }.toSet())
         assertTrue(catalog.entries.any { it.category == "data" })
         assertTrue(catalog.entries.any { it.category == "model" })
         assertTrue(catalog.entries.any { it.category == "software" })

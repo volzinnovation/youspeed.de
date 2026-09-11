@@ -21,4 +21,15 @@
     <string name="welcome_hide">Do not show again</string>
     <string name="legal_disclaimer_short">Note: Displayed fines, points, and driving-ban information are advisory only and are not legal advice. Official notices and the law in force at the time are authoritative.</string>
     <string name="legal_disclaimer_long">The fines, points, and driving-ban information shown in YouSpeed are advisory only. They are not legal advice or a binding legal assessment. Official notices and the law in force at the time are authoritative; additional fees and costs may apply.</string>
+    <string name="ui_panoramax_start">Start photo capture</string>
+    <string name="ui_panoramax_stop">Stop photo capture</string>
+    <string name="ui_panoramax_gallery">Open photo gallery</string>
+    <string name="ui_panoramax_gallery_title">Panoramax photos</string>
+    <string name="ui_panoramax_empty">No Panoramax photos captured yet.</string>
+    <string name="ui_panoramax_capture_active">Photo capture active · %1$d saved</string>
+    <string name="ui_panoramax_capture_idle">Photo capture ready</string>
+    <string name="ui_panoramax_delete">Delete photo</string>
+    <string name="ui_panoramax_include">Include</string>
+    <string name="ui_panoramax_exclude">Exclude</string>
+    <string name="ui_panoramax_no_camera">Camera is unavailable</string>
 </resources>

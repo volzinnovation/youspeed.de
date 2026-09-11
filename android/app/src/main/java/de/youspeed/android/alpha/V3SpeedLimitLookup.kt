@@ -165,22 +165,21 @@ internal class V3SpeedLimitLookup(
         horizontalAccuracyM: Double? = null,
         gpsSignalBars: Int? = null,
         matchContext: WayMatchContext? = null,
+        headingAccuracyDeg: Double? = null,
     ): SpeedLookupResult {
         val startedAtNs = System.nanoTime()
-        val normalizedMatchContext = matchContext ?: WayMatchContext()
+        val normalizedMatchContext = normalizedMatchContext(matchContext ?: WayMatchContext())
         val effectiveRadiusM = if (
             matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_NARROW_WINDOW_HEURISTIC
         ) {
             min(radiusM.coerceAtLeast(0.0), SIMPLE_SPEED_REF_NARROW_WINDOW_RADIUS_M)
         } else {
-            radiusM
+            radiusM.coerceAtLeast(0.0)
         }
         val observedHeadingDeg = headingDeg?.takeIf {
-            speedKmh != null &&
-                speedKmh.isFinite() &&
-                speedKmh >= HEADING_MIN_SPEED_KMH &&
-                it.isFinite()
-        }
+            it.isFinite() && !(speedKmh != null && speedKmh.isFinite() && speedKmh < HEADING_MIN_SPEED_KMH) &&
+                !(headingAccuracyDeg != null && headingAccuracyDeg.isFinite() && headingAccuracyDeg > 45.0)
+        }?.let(::normalizedHeadingDegrees)
         if (!hasWaysTable) {
             return SpeedLookupResult(
                 wayId = null,
@@ -218,13 +217,8 @@ internal class V3SpeedLimitLookup(
             )
         }
 
-        val candidates = queryWayCandidates(
-            lat = lat,
-            lon = lon,
-            radiusM = effectiveRadiusM,
-            maxCandidates = maxCandidates,
-            headingDeg = observedHeadingDeg,
-            matchContext = normalizedMatchContext,
+        val candidates = queryCandidatesWithAccuracy(
+            lat, lon, effectiveRadiusM, maxCandidates, observedHeadingDeg, horizontalAccuracyM, normalizedMatchContext,
         )
         val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
         val polygonCityContext = if (hasCityBoundaryTable && hasCityRingTable) {
@@ -257,8 +251,8 @@ internal class V3SpeedLimitLookup(
             )
         }
         val wayLinks = loadWayLinksContext(normalizedMatchContext, candidates)
-        val corridorProgress = loadCorridorProgressContext(candidates)
-        val corridorPairs = corridorPairContext
+        val corridorProgress = if (usesCorridorMatcher) loadCorridorProgressContext(candidates) else CorridorProgressContext(false, emptyMap())
+        val corridorPairs = if (usesCorridorMatcher) corridorPairContext else CorridorPairContext(false, emptyMap(), emptyMap())
         val accuracyBufferM = scaledAccuracyBufferM(horizontalAccuracyM)
 
         val selection = selectCandidate(
@@ -628,6 +622,14 @@ internal class V3SpeedLimitLookup(
         val portalEligibleTunnelRefs = portalEligibleTunnels.flatMapTo(linkedSetOf()) { normalizedRefTokens(it.streetRef) }
         if (!usesCorridorMatcher) {
             return when (matchingModel) {
+                LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC -> {
+                    val sequence = selectSimpleSequenceViterbiCandidate(sortedCandidates, matchContext, observedHeadingDeg,
+                        speedKmh, horizontalAccuracyM, radiusM, wayLinks)
+                    selectionTrace += sequence.trace
+                    buildNonCorridorCandidateSelection(sequence.selected, sequence.traces, selectionTrace,
+                        nearbyTunnelCandidateWayIds, nearbyTunnelCandidateRefs, portalEligibleTunnelWayIds,
+                        portalEligibleTunnelRefs, "simple_sequence_viterbi", sequence.hypotheses)
+                }
                 LookupMatchingModel.CONNECTED_BASELINE -> {
                     val baselineSelection = selectConnectedBaselineCandidate(
                         candidates = graphSelectableCandidates,
@@ -656,7 +658,6 @@ internal class V3SpeedLimitLookup(
                 LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
-                LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC,
                 LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC -> {
                     val simpleCandidates = if (matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_CONNECTED_HEURISTIC) {
                         graphSelectableCandidates
@@ -667,6 +668,15 @@ internal class V3SpeedLimitLookup(
                         candidates = simpleCandidates,
                         matchContext = matchContext,
                         speedKmh = speedKmh,
+                        observedHeadingDeg = observedHeadingDeg,
+                        accuracyBufferM = accuracyBufferM,
+                        gpsSignalBars = gpsSignalBars,
+                        corridorProgress = corridorProgress,
+                        corridorPairs = corridorPairs,
+                        nodeDirectionAwareLowSpeedJunctionRelease = matchingModel in setOf(
+                            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
+                        ),
                         horizontalAccuracyM = horizontalAccuracyM,
                         urbanSameRefReleaseEnabled = matchingModel in setOf(
                             LookupMatchingModel.SIMPLE_SPEED_REF_URBAN_RELEASE_HEURISTIC,
@@ -674,16 +684,22 @@ internal class V3SpeedLimitLookup(
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
                             LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+                            LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
                         ),
                         useStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_FALLBACK_HEURISTIC,
                         useGuardedStreetNameFallbackContinuity = matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC ||
-                            matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+                            matchingModel == LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC ||
+                            matchingModel == LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC,
                         wayLinks = wayLinks,
                     )
                     selectionTrace += simpleSelection.selectionTrace
+                    val particle = if (matchingModel == LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC)
+                        selectSimpleSequenceParticleCandidate(sortedCandidates, simpleSelection.selected, matchContext, observedHeadingDeg, speedKmh) else null
+                    if (particle != null) selectionTrace += particle.trace
                     buildNonCorridorCandidateSelection(
-                        finalSelected = simpleSelection.selected,
-                        traceRankedCandidates = simpleSelection.traceRankedCandidates,
+                        finalSelected = particle?.selected ?: simpleSelection.selected,
+                        traceRankedCandidates = particle?.traces?.takeIf { it.isNotEmpty() } ?: simpleSelection.traceRankedCandidates,
+                        sequenceHypotheses = particle?.hypotheses,
                         selectionTrace = selectionTrace,
                         nearbyTunnelCandidateWayIds = nearbyTunnelCandidateWayIds,
                         nearbyTunnelCandidateRefs = nearbyTunnelCandidateRefs,
@@ -715,19 +731,19 @@ internal class V3SpeedLimitLookup(
         var recentWayCandidate: WayCandidate? = null
         for (candidate in graphSelectableCandidates) {
             when (continuityClass(candidate, matchContext, wayLinks)) {
-                ContinuityClass.PREFERRED_WAY -> if (preferredCandidate == null || isBetterCandidate(candidate, preferredCandidate!!)) preferredCandidate = candidate
+                ContinuityClass.PREFERRED_WAY -> if (preferredCandidate == null || isBetterCandidate(candidate, preferredCandidate)) preferredCandidate = candidate
                 ContinuityClass.SAME_REF -> {
-                    if (sameRefCandidate == null || isBetterCandidate(candidate, sameRefCandidate!!)) {
+                    if (sameRefCandidate == null || isBetterCandidate(candidate, sameRefCandidate)) {
                         sameRefCandidate = candidate
                     }
                     if (normalizedWayId(candidate.wayId) != matchContext.preferredWayId &&
-                        (sameRefTransitionCandidate == null || isBetterCandidate(candidate, sameRefTransitionCandidate!!))
+                        (sameRefTransitionCandidate == null || isBetterCandidate(candidate, sameRefTransitionCandidate))
                     ) {
                         sameRefTransitionCandidate = candidate
                     }
                 }
-                ContinuityClass.LINKED_WAY -> if (linkedWayCandidate == null || isBetterCandidate(candidate, linkedWayCandidate!!)) linkedWayCandidate = candidate
-                ContinuityClass.RECENT_WAY -> if (recentWayCandidate == null || isBetterCandidate(candidate, recentWayCandidate!!)) recentWayCandidate = candidate
+                ContinuityClass.LINKED_WAY -> if (linkedWayCandidate == null || isBetterCandidate(candidate, linkedWayCandidate)) linkedWayCandidate = candidate
+                ContinuityClass.RECENT_WAY -> if (recentWayCandidate == null || isBetterCandidate(candidate, recentWayCandidate)) recentWayCandidate = candidate
                 ContinuityClass.NONE -> Unit
             }
         }
@@ -1240,13 +1256,14 @@ internal class V3SpeedLimitLookup(
         val linkedByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedRefByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedNodeKeysByPair = linkedMapOf<Pair<String, String>, MutableSet<String>>()
+        val sharedNodeSelect = if (columnExists("way_links", "shared_node_key")) "shared_node_key" else "NULL"
         db.rawQuery(
             """
-            SELECT way_id, linked_way_id, shared_ref, shared_node_key
+            SELECT way_id, linked_way_id, shared_ref, $sharedNodeSelect
             FROM way_links
             WHERE way_id IN ($placeholders) OR linked_way_id IN ($placeholders)
             """.trimIndent(),
-            (wayIds + wayIds).toTypedArray(),
+            (wayIds.toList() + wayIds.toList()).toTypedArray(),
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val from = cursor.stringOrNull(0) ?: continue
@@ -2327,6 +2344,7 @@ internal class V3SpeedLimitLookup(
         portalEligibleTunnelWayIds: Set<String>,
         portalEligibleTunnelRefs: Set<String>,
         modelTraceName: String? = null,
+        sequenceHypotheses: List<WayMatchHypothesis>? = null,
     ): CandidateSelection {
         val finalSelectionTrace = selectionTrace.toMutableList()
         finalSelected?.let {
@@ -2405,7 +2423,7 @@ internal class V3SpeedLimitLookup(
             usedWalkingTurnSwitch = false,
             usedMiniHMM = false,
             miniHMMCandidateCount = 0,
-            matchHypotheses = directionalHypotheses,
+            matchHypotheses = sequenceHypotheses ?: directionalHypotheses,
             selectionTrace = finalSelectionTrace,
         )
     }
@@ -2665,6 +2683,12 @@ internal class V3SpeedLimitLookup(
         matchContext: WayMatchContext,
         speedKmh: Double?,
         horizontalAccuracyM: Double?,
+        observedHeadingDeg: Double?,
+        accuracyBufferM: Double,
+        gpsSignalBars: Int?,
+        corridorProgress: CorridorProgressContext,
+        corridorPairs: CorridorPairContext,
+        nodeDirectionAwareLowSpeedJunctionRelease: Boolean,
         urbanSameRefReleaseEnabled: Boolean,
         useStreetNameFallbackContinuity: Boolean,
         useGuardedStreetNameFallbackContinuity: Boolean,
@@ -2675,11 +2699,25 @@ internal class V3SpeedLimitLookup(
         val poorSignal = (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) > poorSignalThresholdM
         val lowSpeedAccurateGps = (speedKmh ?: 0.0) < lowSpeedThresholdKmh &&
             (horizontalAccuracyM ?: Double.POSITIVE_INFINITY) < poorSignalThresholdM
-        val filteredCandidates = if (matchContext.isInTunnelMode && poorSignal) {
-            candidates.filter { isTruthyOsmTag(it.tunnel) }.ifEmpty { candidates }
-        } else {
-            candidates
+        val selectionTrace = mutableListOf<MatchSelectionTrace>()
+        val legacyTunnelCandidates = candidates.filter {
+            isLegacyTunnelCandidateSelectable(it, matchContext, wayLinks, accuracyBufferM)
         }
+        val tunnelCandidates = if (legacyTunnelCandidates.isEmpty() &&
+            shouldFallbackToTunnelOnlyCandidateSet(candidates, matchContext)) candidates else legacyTunnelCandidates
+        if (tunnelCandidates.size != candidates.size) selectionTrace += MatchSelectionTrace(
+            "simple_tunnel_selectability_gate", "filtered ${candidates.size - tunnelCandidates.size} tunnel candidates without portal or continuity support",
+        )
+        val ambiguityFiltered = suppressAmbiguousSurfaceToTunnelEntries(
+            tunnelCandidates, matchContext, wayLinks, corridorProgress, accuracyBufferM, horizontalAccuracyM, gpsSignalBars,
+        )
+        val corridorAwareCandidates = ambiguityFiltered.ifEmpty { tunnelCandidates }
+        if (corridorAwareCandidates.size != tunnelCandidates.size) selectionTrace += MatchSelectionTrace(
+            "simple_tunnel_ambiguity_gate", "filtered ${tunnelCandidates.size - corridorAwareCandidates.size} ambiguous surface-to-tunnel portal candidates",
+        )
+        val filteredCandidates = if (matchContext.isInTunnelMode && poorSignal) {
+            corridorAwareCandidates.filter { isTruthyOsmTag(it.tunnel) }.ifEmpty { corridorAwareCandidates }
+        } else corridorAwareCandidates
         val rankedCandidates = filteredCandidates.sortedWith(
             Comparator { lhs, rhs ->
                 when {
@@ -2693,11 +2731,10 @@ internal class V3SpeedLimitLookup(
         val bestCandidate = rankedCandidates.firstOrNull()
             ?: return NonCorridorMatcherSelection(
                 traceRankedCandidates = traceRankedCandidates,
-                selectionTrace = listOf(
+                selectionTrace = selectionTrace + listOf(
                     MatchSelectionTrace(step = "simple_speed_ref_heuristic", detail = "no selectable candidates"),
                 ),
             )
-        val selectionTrace = mutableListOf<MatchSelectionTrace>()
         if (filteredCandidates.size != candidates.size) {
             selectionTrace += MatchSelectionTrace(
                 step = "simple_tunnel_hold_gate",
@@ -2723,14 +2760,15 @@ internal class V3SpeedLimitLookup(
                     useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                     ageOutStaleRefContinuity = true,
                 )
-                previousContinuityCandidate = rankedCandidates.firstOrNull { candidate ->
+                previousContinuityCandidate = rankedCandidates.filter { candidate ->
                     val candidateTokens = continuityTokens(
                         candidate = candidate,
                         source = continuityIdentity.second,
                         useStreetNameFallbackContinuity = useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity,
                     )
                     candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in continuityIdentity.first }
-                }
+                }.minWithOrNull(compareBy<WayCandidate> { simpleContinuityGuardRank(it, matchContext) }
+                    .thenComparator { lhs, rhs -> if (isBetterDistanceCandidate(lhs, rhs)) -1 else if (isBetterDistanceCandidate(rhs, lhs)) 1 else 0 })
             }
         } else {
             continuityIdentity = preferredSimpleContinuityIdentity(
@@ -2738,14 +2776,15 @@ internal class V3SpeedLimitLookup(
                 useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                 ageOutStaleRefContinuity = false,
             )
-            previousContinuityCandidate = rankedCandidates.firstOrNull { candidate ->
+            previousContinuityCandidate = rankedCandidates.filter { candidate ->
                 val candidateTokens = continuityTokens(
                     candidate = candidate,
                     source = continuityIdentity.second,
                     useStreetNameFallbackContinuity = useStreetNameFallbackContinuity,
                 )
                 candidateTokens.isNotEmpty() && candidateTokens.any { token -> token in continuityIdentity.first }
-            }
+            }.minWithOrNull(compareBy<WayCandidate> { simpleContinuityGuardRank(it, matchContext) }
+                .thenComparator { lhs, rhs -> if (isBetterDistanceCandidate(lhs, rhs)) -1 else if (isBetterDistanceCandidate(rhs, lhs)) 1 else 0 })
         }
 
         val urbanReleasePressureActive = if (
@@ -2774,7 +2813,17 @@ internal class V3SpeedLimitLookup(
             0
         }
 
-        val selected = if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
+        val junctionRelease = if (speedKmh != null && speedKmh.isFinite() && speedKmh < lowSpeedThresholdKmh &&
+            continuityIdentity.second == SimpleContinuityIdentitySource.REF && previousContinuityCandidate != null) {
+            lowSpeedSameRefJunctionTransitionCandidate(rankedCandidates, previousContinuityCandidate, bestCandidate,
+                observedHeadingDeg, speedKmh, accuracyBufferM, matchContext, wayLinks,
+                nodeDirectionAwareLowSpeedJunctionRelease, traceRankedCandidates, selectionTrace)
+        } else null
+        val selected = if (junctionRelease != null) {
+            selectionTrace += MatchSelectionTrace("simple_low_speed_same_ref_junction_release",
+                "released same-ref ${previousContinuityCandidate?.wayId} for linked turn ${junctionRelease.first.wayId} via anchor ${junctionRelease.second.wayId}")
+            junctionRelease.first
+        } else if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
             if (
                 urbanSameRefReleaseEnabled &&
                 urbanReleasePressureActive &&
@@ -2820,11 +2869,35 @@ internal class V3SpeedLimitLookup(
             )
         }
 
+        val tunnelContinuityCandidate = previousContinuityCandidate?.takeIf { isTruthyOsmTag(it.tunnel) }
+            ?: rankedCandidates.firstOrNull { candidate ->
+                isTruthyOsmTag(candidate.tunnel) && continuityTokens(candidate, continuityIdentity.second,
+                    useStreetNameFallbackContinuity || useGuardedStreetNameFallbackContinuity).any { it in continuityIdentity.first }
+            } ?: rankedCandidates.firstOrNull { isTruthyOsmTag(it.tunnel) }
+        var finalSelected = selected
+        if (!matchContext.isInTunnelMode && !isTruthyOsmTag(finalSelected.tunnel) && tunnelContinuityCandidate != null &&
+            shouldPromoteTunnelEntry(tunnelContinuityCandidate, finalSelected, matchContext, wayLinks,
+                corridorProgress, horizontalAccuracyM, gpsSignalBars, accuracyBufferM)) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace += MatchSelectionTrace("tunnel_entry_gate", "promoted tunnel ${finalSelected.wayId} over surface ${selected.wayId} on simple continuity path")
+        } else if (matchContext.isInTunnelMode && !isTruthyOsmTag(finalSelected.tunnel) && tunnelContinuityCandidate != null &&
+            shouldKeepTunnelContinuity(tunnelContinuityCandidate, finalSelected, matchContext, wayLinks,
+                corridorProgress, corridorPairs, accuracyBufferM, horizontalAccuracyM, gpsSignalBars)) {
+            finalSelected = tunnelContinuityCandidate
+            selectionTrace += MatchSelectionTrace("tunnel_exit_gate", "kept tunnel ${finalSelected.wayId} and rejected surface exit ${selected.wayId} on simple continuity path")
+        }
+        if (continuityIdentity.second == SimpleContinuityIdentitySource.REF && previousContinuityCandidate != null &&
+            normalizedWayId(finalSelected.wayId) != normalizedWayId(previousContinuityCandidate.wayId) &&
+            shouldSuppressImmediateSameRefBounce(finalSelected, previousContinuityCandidate, matchContext, wayLinks, accuracyBufferM)) {
+            finalSelected = previousContinuityCandidate
+            selectionTrace += MatchSelectionTrace("simple_same_ref_bounce_hold", "kept ${finalSelected.wayId} over ${selected.wayId} to avoid immediate same-ref bounce")
+        }
         val reason = when {
+            junctionRelease != null -> "low_speed_same_ref_junction_release"
             urbanSameRefReleaseEnabled &&
                 urbanReleasePressureActive &&
                 nextUrbanReleaseStreak >= SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK &&
-                normalizedWayId(selected.wayId) == normalizedWayId(bestCandidate.wayId) -> {
+                normalizedWayId(finalSelected.wayId) == normalizedWayId(bestCandidate.wayId) -> {
                 if (continuityIdentity.second == SimpleContinuityIdentitySource.STREET_NAME) {
                     "urban_same_name_distance_gap_release"
                 } else {
@@ -2854,13 +2927,429 @@ internal class V3SpeedLimitLookup(
         }
         selectionTrace += MatchSelectionTrace(
             step = "simple_speed_ref_heuristic",
-            detail = "selected ${selected.wayId ?: "nil"} nearest=${bestCandidate.wayId ?: "nil"} reason=$reason speed_kmh=${formatMetric(speedKmh ?: 0.0)} hacc_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)}",
+            detail = "selected ${finalSelected.wayId ?: "nil"} nearest=${bestCandidate.wayId ?: "nil"} reason=$reason speed_kmh=${formatMetric(speedKmh ?: 0.0)} hacc_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)}",
         )
         return NonCorridorMatcherSelection(
-            selected = selected,
+            selected = finalSelected,
             traceRankedCandidates = traceRankedCandidates,
             selectionTrace = selectionTrace,
         )
+    }
+
+    private fun isServiceLikeTransitionCandidate(candidate: WayCandidate): Boolean =
+        candidate.highway?.lowercase(Locale.ROOT) == "service" || candidate.service?.trim()?.lowercase(Locale.ROOT) in setOf(
+            "driveway", "parking_aisle", "alley", "emergency_access", "drive-through", "yard", "bus", "delivery", "parking",
+            "busbay", "siding", "spur", "slipway", "weigh_station", "training",
+        )
+
+    private fun shouldFallbackToTunnelOnlyCandidateSet(candidates: List<WayCandidate>, context: WayMatchContext): Boolean =
+        candidates.isNotEmpty() && !context.isInTunnelMode && context.preferredWayId == null &&
+            !context.hadRecentGpsSignalLoss && context.recentTunnelCandidateWayIds.isEmpty() &&
+            context.recentTunnelCandidateRefs.isEmpty() && candidates.all { isTruthyOsmTag(it.tunnel) } &&
+            candidates.any { !isServiceLikeTransitionCandidate(it) }
+
+    private fun simpleContinuityGuardRank(candidate: WayCandidate, context: WayMatchContext): Int =
+        (if (highwayFamily(context.preferredHighway)?.let { it != highwayFamily(candidate.highway) } == true) 4 else 0) +
+            (if (isServiceLikeTransitionCandidate(candidate)) 2 else 0) +
+            (if (context.isInTunnelMode != isTruthyOsmTag(candidate.tunnel)) 1 else 0)
+
+    private fun recentApproachHeadingDeg(context: WayMatchContext, queryPoint: LatLonPoint): Double? {
+        val fix = context.recentFixes.firstOrNull {
+            haversineM(it.lat, it.lon, queryPoint.lat, queryPoint.lon) >= 2.0
+        } ?: context.recentFixes.firstOrNull() ?: return null
+        return computeAxisHeadingDegOrNull(fix.lat, fix.lon, queryPoint.lat, queryPoint.lon)
+    }
+
+    private fun junctionAnchors(candidates: List<WayCandidate>, current: WayCandidate, context: WayMatchContext): List<WayCandidate> {
+        val tokens = preferredSimpleRefContinuityTokens(context, ageOutStaleRefContinuity = false)
+        return (listOfNotNull(context.preferredWayId) + context.recentWayHistory + context.recentWayIds + listOfNotNull(current.wayId))
+            .distinct().mapNotNull { wayId -> candidates.firstOrNull { normalizedWayId(it.wayId) == wayId } }
+            .filter { tokens.isEmpty() || normalizedRefTokens(it.streetRef).any(tokens::contains) }.ifEmpty { listOf(current) }
+    }
+
+    private fun sharedJunctionPoint(first: WayCandidate, second: WayCandidate): LatLonPoint? {
+        val pairs = listOfNotNull(first.points.firstOrNull(), first.points.lastOrNull()).flatMap { a ->
+            listOfNotNull(second.points.firstOrNull(), second.points.lastOrNull()).map { b -> a to b }
+        }
+        val pair = pairs.minByOrNull { (a, b) -> haversineM(a.lat, a.lon, b.lat, b.lon) } ?: return null
+        if (haversineM(pair.first.lat, pair.first.lon, pair.second.lat, pair.second.lon) > 16.0) return null
+        return LatLonPoint((pair.first.lat + pair.second.lat) * 0.5, (pair.first.lon + pair.second.lon) * 0.5)
+    }
+
+    private fun junctionNodeHeadingDeg(candidate: WayCandidate, point: LatLonPoint, towardNode: Boolean): Double? {
+        val startDistance = candidate.points.firstOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+        val endDistance = candidate.points.lastOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+        val atStart = startDistance <= endDistance && startDistance <= 16.0
+        if (!atStart && endDistance > 16.0) return null
+        val heading = (if (atStart) candidate.startHeadingDeg else candidate.endHeadingDeg) ?: axisHeadingDeg(candidate) ?: return null
+        return if (atStart == towardNode) normalizedHeadingDegrees(heading + 180.0) else heading
+    }
+
+    private fun nodeDirectionTransitionHeadingEvidence(anchor: WayCandidate, candidate: WayCandidate,
+        point: LatLonPoint, heading: Double?, speed: Double?): TransitionHeadingEvidence? {
+        val from = junctionNodeHeadingDeg(anchor, point, towardNode = true) ?: return null
+        val to = junctionNodeHeadingDeg(candidate, point, towardNode = false) ?: return null
+        if (heading == null || speed == null || !speed.isFinite() || speed < HEADING_MIN_SPEED_KMH) return null
+        return TransitionHeadingEvidence(
+            headingMismatchDeg(heading, from), headingMismatchDeg(heading, to), headingMismatchDeg(from, to), speed,
+            anchor.endpointProximityM <= SEGMENT_TRANSITION_ENDPOINT_THRESHOLD_M &&
+                candidate.endpointProximityM <= SEGMENT_TRANSITION_ENDPOINT_THRESHOLD_M * 2.0,
+            isServiceLikeTransitionCandidate(candidate),
+        )
+    }
+
+    private fun lowSpeedSameRefJunctionTransitionCandidate(
+        candidates: List<WayCandidate>, current: WayCandidate, best: WayCandidate, heading: Double?, speed: Double,
+        accuracyBufferM: Double, context: WayMatchContext, links: WayLinksContext, nodeAware: Boolean,
+        rankedTraces: List<TraceRankedCandidate>, trace: MutableList<MatchSelectionTrace>,
+    ): Pair<WayCandidate, WayCandidate>? {
+        if (!links.available || speed < HEADING_MIN_SPEED_KMH || normalizedWayId(current.wayId) == null) return null
+        val effectiveHeading = heading ?: recentApproachHeadingDeg(context, current.queryPoint) ?: return null
+        val tokens = preferredSimpleRefContinuityTokens(context, ageOutStaleRefContinuity = false)
+        val anchors = junctionAnchors(candidates, current, context)
+        val distanceSlack = max(3.0, accuracyBufferM * 0.35)
+        val currentSlack = max(4.0, accuracyBufferM * 0.4)
+        val eligible = candidates.filter {
+            normalizedWayId(it.wayId) != null && normalizedWayId(it.wayId) != normalizedWayId(current.wayId) &&
+                normalizedRefTokens(it.streetRef).let { refs -> refs.isEmpty() || refs.toSet() != tokens }
+        }
+        val releases = eligible.mapNotNull { candidate ->
+            if (candidate.distanceM > best.distanceM + distanceSlack || candidate.distanceM > current.distanceM + currentSlack ||
+                isServiceLikeTransitionCandidate(candidate)) return@mapNotNull null
+            anchors.firstOrNull { anchor ->
+                val evidence = if (nodeAware) {
+                    sharedJunctionPoint(anchor, candidate)?.let {
+                        nodeDirectionTransitionHeadingEvidence(anchor, candidate, it, effectiveHeading, speed)
+                    }
+                } else if (links.isLinked(anchor.wayId, candidate.wayId) || links.isLinked(candidate.wayId, anchor.wayId)) {
+                    transitionHeadingEvidence(axisHeadingDeg(anchor), anchor.endpointProximityM, candidate, effectiveHeading, speed)
+                } else null
+                evidence != null && evidence.nearEndpoint && evidence.meaningfulTurn && evidence.candidateClearlyBetterAligned &&
+                    evidence.candidateMismatchDeg <= (if (nodeAware) 40.0 else 35.0) && evidence.currentMismatchDeg >= 40.0
+            }?.let { candidate to it }
+        }
+        val result = releases.minWithOrNull(compareBy<Pair<WayCandidate, WayCandidate>> { it.first.score }
+            .thenComparator { a, b -> if (isBetterDistanceCandidate(a.first, b.first)) -1 else if (isBetterDistanceCandidate(b.first, a.first)) 1 else 0 })
+        if (result != null || !nodeAware) return result
+        // M10 reports why a topologically linked turn is not yet admissible.
+        val probes = eligible.mapNotNull { candidate ->
+            anchors.firstNotNullOfOrNull { anchor ->
+                if (!links.isLinked(anchor.wayId, candidate.wayId) && !links.isLinked(candidate.wayId, anchor.wayId)) return@firstNotNullOfOrNull null
+                val shared = sharedJunctionPoint(anchor, candidate)
+                val evidence = shared?.let { nodeDirectionTransitionHeadingEvidence(anchor, candidate, it, effectiveHeading, speed) }
+                val flags = buildList {
+                    if (candidate.distanceM > best.distanceM + distanceSlack) add("best_gap")
+                    if (candidate.distanceM > current.distanceM + currentSlack) add("current_gap")
+                    if (shared == null) add("shared_node_missing")
+                    if (evidence != null) {
+                        if (!evidence.nearEndpoint) add("not_near_endpoint")
+                        if (!evidence.meaningfulTurn) add("turn_not_meaningful")
+                        if (!evidence.candidateClearlyBetterAligned) add("candidate_not_better_aligned")
+                        if (evidence.candidateMismatchDeg > 40.0) add("candidate_heading_mismatch")
+                        if (evidence.currentMismatchDeg < 40.0) add("current_heading_still_aligned")
+                        if (evidence.serviceLike) add("service_like")
+                    } else if (shared != null) add("heading_unavailable")
+                }
+                if (flags.isEmpty()) null else candidate to MatchSelectionTrace("simple_low_speed_same_ref_probe",
+                    buildList {
+                        fun geometryRank(way: WayCandidate) = candidates.indexOfFirst { it.wayId == way.wayId }.takeIf { it >= 0 }?.plus(1)
+                        add("candidate=${candidate.wayId}")
+                        add("anchor=${anchor.wayId}")
+                        add("blocked=${flags.distinct().joinToString(",")}")
+                        add("candidate_geometry_rank=${geometryRank(candidate)}")
+                        add("candidate_trace_rank=${rankedTraces.firstOrNull { it.candidate.wayId == candidate.wayId }?.traceRank}")
+                        add("current_geometry_rank=${geometryRank(current)}")
+                        add("best_geometry_rank=${geometryRank(best)}")
+                        add("candidate_m=${formatMetric(candidate.distanceM)}")
+                        add("current_m=${formatMetric(current.distanceM)}")
+                        add("best_m=${formatMetric(best.distanceM)}")
+                        add("candidate_endpoint_m=${formatMetric(candidate.endpointProximityM)}")
+                        add("current_endpoint_m=${formatMetric(current.endpointProximityM)}")
+                        if (evidence != null) {
+                            add("turn_deg=${formatMetric(evidence.turnAngleDeg)}")
+                            add("candidate_mismatch_deg=${formatMetric(evidence.candidateMismatchDeg)}")
+                            add("current_mismatch_deg=${formatMetric(evidence.currentMismatchDeg)}")
+                        }
+                    }.joinToString(" "))
+            }
+        }
+        probes.minWithOrNull { a, b -> if (isBetterDistanceCandidate(a.first, b.first)) -1 else if (isBetterDistanceCandidate(b.first, a.first)) 1 else 0 }
+            ?.let { trace += it.second }
+        return null
+    }
+
+    private data class SequenceSelection(
+        val selected: WayCandidate?, val traces: List<TraceRankedCandidate>,
+        val hypotheses: List<WayMatchHypothesis>, val trace: List<MatchSelectionTrace>,
+    )
+
+    private fun candidateFromHypothesis(h: WayMatchHypothesis): WayCandidate {
+        val points = listOfNotNull(
+            if (h.startLat != null && h.startLon != null) LatLonPoint(h.startLat, h.startLon) else null,
+            if (h.endLat != null && h.endLon != null) LatLonPoint(h.endLat, h.endLon) else null,
+        )
+        val heading = if (points.size == 2) computeAxisHeadingDegOrNull(points[0].lat, points[0].lon, points[1].lat, points[1].lon) else null
+        return WayCandidate(h.wayId, h.highway, null, if (h.isTunnel) "yes" else null, null, null, h.streetRef, null,
+            DerivedSpeedSource.NONE, false, 0.0, h.endpointProximityM, 0.0, 0.0, h.emissionScore,
+            points.firstOrNull() ?: LatLonPoint(0.0, 0.0), points, heading, heading, heading)
+    }
+
+    private fun selectSimpleSequenceParticleCandidate(candidates: List<WayCandidate>, heuristic: WayCandidate?,
+        context: WayMatchContext, heading: Double?, speed: Double?): SequenceSelection {
+        val point = candidates.firstOrNull()?.queryPoint ?: return SequenceSelection(heuristic, emptyList(), emptyList(), emptyList())
+        val links = WayLinksContext(false, emptyMap(), emptyMap())
+        val motionHeading = heading ?: recentApproachHeadingDeg(context, point)
+        val seeds = context.recentHypotheses.take(MINI_HMM_BEAM_WIDTH).ifEmpty {
+            candidates.firstOrNull { normalizedWayId(it.wayId) == context.preferredWayId }
+                ?.let { wayMatchHypothesis(it, 0.0, it.score) }?.let(::listOf).orEmpty()
+        }
+        val seedSource = when { context.recentHypotheses.isNotEmpty() -> "recent_hypotheses"; seeds.isNotEmpty() -> "preferred_way"; else -> "cold_start" }
+        data class State(val candidate: WayCandidate, val emission: Double, val transition: Double, val seed: String?, val reason: String) {
+            val cost: Double get() = emission + transition
+        }
+        val states = candidates.take(MAX_TRACE_CANDIDATE_COUNT).filter { normalizedWayId(it.wayId) != null }.map { candidate ->
+            var emission = candidate.score
+            if (heading == null && motionHeading != null) axisHeadingDeg(candidate)?.let {
+                emission += headingMismatchDeg(motionHeading, it) * 1.4
+            }
+            var cost = if (seeds.isEmpty()) 0.0 else Double.POSITIVE_INFINITY
+            var seed: String? = null
+            var reason = "emission_only"
+            for (h in seeds) {
+                val generic = genericTransitionPenalty(h, candidate, motionHeading, speed, context, links)
+                val anchor = candidateFromHypothesis(h)
+                val evidence = sharedJunctionPoint(anchor, candidate)?.let {
+                    nodeDirectionTransitionHeadingEvidence(anchor, candidate, it, motionHeading, speed)
+                }
+                val geometryTurn = evidence != null && evidence.nearEndpoint && evidence.meaningfulTurn &&
+                    evidence.candidateClearlyBetterAligned && evidence.candidateMismatchDeg <= 40.0 && evidence.currentMismatchDeg >= 40.0 && !evidence.serviceLike
+                val useTurn = geometryTurn && 1.0 < generic
+                val total = h.cumulativeCost * 0.65 + if (useTurn) 1.0 else generic
+                if (total < cost) { cost = total; seed = h.wayId; reason = if (useTurn) "shared_node_turn" else "history" }
+            }
+            State(candidate, emission, cost.takeIf { it.isFinite() } ?: 0.0, seed, reason)
+        }.sortedWith(compareBy<State> { it.cost }.thenBy { it.emission }.thenBy { it.candidate.wayId ?: "~" })
+        val best = states.firstOrNull()
+        val heuristicCost = states.firstOrNull { normalizedWayId(it.candidate.wayId) == normalizedWayId(heuristic?.wayId) }?.cost
+            ?: heuristic?.score ?: Double.POSITIVE_INFINITY
+        val agree = best != null && normalizedWayId(best.candidate.wayId) == normalizedWayId(heuristic?.wayId)
+        val cold = seeds.isEmpty() && heading == null && motionHeading == null
+        val switch = best != null && !agree && !cold && best.cost + 4.0 < heuristicCost
+        val selected = if (switch && best != null) best.candidate else heuristic ?: best?.candidate
+        val trace = mutableListOf(MatchSelectionTrace("simple_sequence_particle_seed", "source=$seedSource count=${seeds.size} motion_heading_deg=$motionHeading"))
+        if (best != null) {
+            trace += MatchSelectionTrace(if (agree) "simple_sequence_particle_agree" else if (switch) "simple_sequence_particle_switch" else "simple_sequence_particle_hold",
+                "heuristic=${heuristic?.wayId} particle=${best.candidate.wayId} particle_cost=${formatMetric(best.cost)} heuristic_cost=${formatMetric(heuristicCost)} seed=${best.seed} reason=${best.reason}")
+            trace += MatchSelectionTrace("simple_sequence_particle", "best_particle=${best.candidate.wayId} cost=${formatMetric(best.cost)} emission=${formatMetric(best.emission)} transition=${formatMetric(best.transition)}")
+        }
+        return SequenceSelection(selected,
+            states.mapIndexed { index, state -> TraceRankedCandidate(state.candidate, continuityClass(state.candidate, context, links), false, null, true, true, state.cost, index + 1) },
+            states.take(MINI_HMM_BEAM_WIDTH).mapNotNull { wayMatchHypothesis(it.candidate, it.cost, it.emission) }, trace)
+    }
+
+    private data class ViterbiObservation(val lat: Double, val lon: Double, val heading: Double?, val speed: Double?, val accuracy: Double?)
+    private data class ViterbiLayer(val observation: ViterbiObservation, val candidates: List<WayCandidate>)
+    private data class ViterbiState(val candidate: WayCandidate, val cost: Double, val emission: Double,
+        val transition: Double, val routeDistance: Double?, val observedDistance: Double?, val previous: Int?)
+    private data class WayEndpoints(val start: String, val end: String, val length: Double)
+    private data class GraphEdge(val to: String, val length: Double)
+    private data class LocalWayGraph(val ways: Map<String, WayEndpoints>, val edges: Map<String, List<GraphEdge>>) {
+        val available: Boolean get() = ways.isNotEmpty()
+    }
+    private data class ContinuityGroups(val route: MutableSet<Long> = mutableSetOf(), val name: MutableSet<Long> = mutableSetOf())
+
+    private fun selectSimpleSequenceViterbiCandidate(current: List<WayCandidate>, context: WayMatchContext,
+        heading: Double?, speed: Double?, accuracy: Double?, radius: Double, links: WayLinksContext): SequenceSelection {
+        val point = current.firstOrNull()?.queryPoint ?: context.recentFixes.firstOrNull()?.let { LatLonPoint(it.lat, it.lon) } ?: LatLonPoint(0.0, 0.0)
+        val observations = context.recentFixes.take(9).reversed().map { fix ->
+            val useHeading = fix.speedKmh?.let { !it.isFinite() || it >= HEADING_MIN_SPEED_KMH } != false &&
+                fix.headingAccuracyDeg?.let { !it.isFinite() || it < 0.0 || it <= 45.0 } != false
+            ViterbiObservation(fix.lat, fix.lon, if (useHeading) fix.headingDeg?.takeIf { it.isFinite() }?.let(::normalizedHeadingDegrees) else null, fix.speedKmh, fix.horizontalAccuracyM)
+        } + ViterbiObservation(point.lat, point.lon, heading, speed, accuracy)
+        var skipped = 0
+        val layers = observations.mapIndexedNotNull { index, observation ->
+            val candidates = if (index == observations.lastIndex) current.take(6) else {
+                val preferredRadius = candidateLookupRadiusM(radius, observation.accuracy)
+                fun query(r: Double): List<WayCandidate> = runCatching {
+                    queryWayCandidates(observation.lat, observation.lon, r, MAX_TRACE_CANDIDATE_COUNT, observation.heading, context).take(6)
+                }.getOrDefault(emptyList())
+                query(preferredRadius).ifEmpty { if (preferredRadius + 0.5 < radius) query(radius) else emptyList() }
+            }.filter { normalizedWayId(it.wayId) != null }
+            if (candidates.isEmpty()) { skipped++; null } else ViterbiLayer(observation, candidates)
+        }
+        val graph = loadLocalWayGraph(layers)
+        val continuity = loadSequenceContinuity(layers.flatMap { it.candidates }.mapNotNull { it.wayId } +
+            context.recentWayIds + context.recentHypotheses.map { it.wayId } + listOfNotNull(context.preferredWayId))
+        val trace = mutableListOf(MatchSelectionTrace("simple_sequence_viterbi_seed",
+            "source=rolling_hmm history_fixes=${observations.size - 1} layers=${layers.size} skipped_observations=$skipped graph_available=${graph.available} graph_way_count=${graph.ways.size} continuity_available=${hasWayContinuityMembershipTable} continuity_way_count=${continuity.size}"))
+        if (layers.isEmpty()) return SequenceSelection(current.firstOrNull(), buildBaselineTraceRankedCandidates(current, context, links), emptyList(), trace)
+        val pathCache = mutableMapOf<String, Map<String, Double>>()
+        val allStates = mutableListOf<List<ViterbiState>>()
+        for ((layerIndex, layer) in layers.withIndex()) {
+            val previousLayer = layers.getOrNull(layerIndex - 1)
+            val previousStates = allStates.getOrNull(layerIndex - 1).orEmpty()
+            allStates += layer.candidates.map { candidate ->
+                val sigma = (layer.observation.accuracy ?: 8.0).coerceIn(4.0, 25.0)
+                var emission = 0.5 * (candidate.distanceM / sigma).let { it * it }
+                if (layer.observation.heading != null) (candidate.localHeadingDeg ?: axisHeadingDeg(candidate))?.let {
+                    emission += 0.5 * (headingMismatchDeg(layer.observation.heading, it) / 35.0).let { mismatch -> mismatch * mismatch }
+                }
+                if (previousLayer == null || previousStates.isEmpty()) ViterbiState(candidate, emission, emission, 0.0, null, null, null)
+                else {
+                    var best: ViterbiState? = null
+                    val observed = haversineM(previousLayer.observation.lat, previousLayer.observation.lon, layer.observation.lat, layer.observation.lon)
+                    for ((index, previous) in previousStates.withIndex()) {
+                        val bonus = if (previous.candidate.wayId == candidate.wayId) 0.0 else {
+                            val before = continuity[previous.candidate.wayId]; val after = continuity[candidate.wayId]
+                            when {
+                                before == null || after == null -> 0.0
+                                before.route.any(after.route::contains) -> 1.1
+                                before.name.any(after.name::contains) -> 0.55
+                                else -> 0.0
+                            }
+                        }
+                        val route = if (graph.available) viterbiRouteDistance(previous.candidate, candidate, graph, pathCache) else null
+                        val transition = if (route != null) max(0.0, abs(route - observed) / max(12.0, observed * 0.5 + 10.0) - bonus)
+                        else if (!graph.available || bonus > 0.0) {
+                            val h = wayMatchHypothesis(previous.candidate, 0.0, previous.candidate.score)
+                            if (h == null) 14.0 else max(0.0, genericTransitionPenalty(h, candidate, layer.observation.heading,
+                                layer.observation.speed, context, links) + 2.0 - bonus)
+                        } else 14.0
+                        val cost = previous.cost + emission + transition
+                        if (best == null || cost < best.cost) best = ViterbiState(candidate, cost, emission, transition, route, observed, index)
+                    }
+                    requireNotNull(best)
+                }
+            }
+        }
+        val states = allStates.last()
+        val sorted = states.withIndex().sortedWith(compareBy<IndexedValue<ViterbiState>> { it.value.cost }
+            .thenBy { it.value.transition }.thenBy { it.value.emission }.thenBy { it.value.candidate.wayId ?: "~" })
+        val best = sorted.first()
+        val path = mutableListOf<String>()
+        var stateIndex: Int? = best.index
+        for (layer in allStates.asReversed()) {
+            val state = stateIndex?.let { layer.getOrNull(it) } ?: break
+            state.candidate.wayId?.let { path.add(0, it) }
+            stateIndex = state.previous
+        }
+        trace += MatchSelectionTrace("simple_sequence_viterbi", "best_viterbi=${best.value.candidate.wayId} cost=${best.value.cost} emission=${best.value.emission} transition=${best.value.transition} path=${path.joinToString(">")}")
+        return SequenceSelection(best.value.candidate,
+            sorted.mapIndexed { index, state -> TraceRankedCandidate(state.value.candidate, continuityClass(state.value.candidate, context, links), false, null, true, true, state.value.cost, index + 1) },
+            sorted.take(6).mapNotNull { wayMatchHypothesis(it.value.candidate, it.value.cost, it.value.emission) }, trace)
+    }
+
+    private fun polylineEndpointDistances(lat: Double, lon: Double, points: List<LatLonPoint>): Pair<Double, Double>? {
+        if (points.isEmpty()) return null
+        if (points.size == 1) return 0.0 to 0.0
+        val lengths = points.zipWithNext().map { (a, b) -> haversineM(a.lat, a.lon, b.lat, b.lon) }
+        var bestDistance = Double.POSITIVE_INFINITY
+        var bestAlong = 0.0
+        var travelled = 0.0
+        for (index in 0 until points.lastIndex) {
+            val a = toXYMeters(points[index].lat, points[index].lon, lat, lon)
+            val b = toXYMeters(points[index+1].lat, points[index+1].lon, lat, lon)
+            val dx = b.x-a.x; val dy = b.y-a.y
+            val lengthSquared = dx*dx+dy*dy
+            val fraction = if (lengthSquared > 0.0) (-(a.x*dx+a.y*dy)/lengthSquared).coerceIn(0.0, 1.0) else 0.0
+            val distance = hypot(a.x+fraction*dx, a.y+fraction*dy)
+            if (distance < bestDistance) { bestDistance = distance; bestAlong = travelled + fraction*lengths[index] }
+            travelled += lengths[index]
+        }
+        return bestAlong to max(0.0, travelled-bestAlong)
+    }
+
+    private fun candidateLookupRadiusM(radius: Double, accuracy: Double?): Double =
+        if (accuracy != null && accuracy.isFinite() && accuracy >= 0.0) min(max(radius, 0.0), accuracy) else max(radius, 0.0)
+
+    private fun loadSequenceContinuity(wayIds: List<String>): Map<String, ContinuityGroups> {
+        if (!hasWayContinuityMembershipTable) return emptyMap()
+        val ids = wayIds.mapNotNull { it.toLongOrNull() }.distinct().sorted()
+        if (ids.isEmpty()) return emptyMap()
+        val membershipKind = columnExists("way_continuity_membership", "continuity_kind")
+        if (!membershipKind && !hasWayContinuityGroupTable) return emptyMap()
+        val kind = if (membershipKind) "m.continuity_kind" else "g.continuity_kind"
+        val join = if (membershipKind) "" else "JOIN way_continuity_group g ON g.continuity_group_id=m.continuity_group_id"
+        return runCatching {
+            val groups = mutableMapOf<String, ContinuityGroups>()
+            db.rawQuery("SELECT m.way_id,m.continuity_group_id,$kind FROM way_continuity_membership m $join WHERE m.way_id IN (${ids.joinToString(",") { "?" }})",
+                ids.map { it.toString() }.toTypedArray()).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val group = cursor.getLong(1)
+                    if (group == 0L) continue
+                    val kindValue = cursor.stringOrNull(2)
+                    if (kindValue !in setOf("route_relation_connected", "same_street_name_connected")) continue
+                    val target = groups.getOrPut(cursor.getString(0)) { ContinuityGroups() }
+                    if (kindValue == "route_relation_connected") target.route += group else target.name += group
+                }
+            }
+            groups
+        }.getOrDefault(emptyMap())
+    }
+
+    private fun loadLocalWayGraph(layers: List<ViterbiLayer>): LocalWayGraph {
+        if (layers.isEmpty() || !tableExists("way_endpoints")) return LocalWayGraph(emptyMap(), emptyMap())
+        val observations = layers.map { it.observation }
+        val travelled = observations.zipWithNext().sumOf { (a, b) -> haversineM(a.lat, a.lon, b.lat, b.lon) }
+        val margin = max(120.0, travelled * 0.5 + 30.0)
+        val minLat = observations.minOf { it.lat }; val maxLat = observations.maxOf { it.lat }
+        val minLon = observations.minOf { it.lon }; val maxLon = observations.maxOf { it.lon }
+        val dLat = margin / 111132.0
+        val dLon = margin / (111320.0 * max(0.173648, abs(cos((minLat + maxLat) * 0.5 * Math.PI / 180.0))))
+        val ways = linkedMapOf<String, WayEndpoints>()
+        val edges = mutableMapOf<String, MutableList<GraphEdge>>()
+        fun append(cursor: Cursor) {
+            while (cursor.moveToNext()) {
+                val id = cursor.stringOrNull(0)?.takeIf { it.isNotEmpty() } ?: continue
+                val start = cursor.stringOrNull(1)?.takeIf { it.isNotEmpty() } ?: continue
+                val end = cursor.stringOrNull(2)?.takeIf { it.isNotEmpty() } ?: continue
+                val length = cursor.getDouble(3)
+                if (id in ways || !length.isFinite() || length < 0.0) continue
+                ways[id] = WayEndpoints(start, end, length)
+                edges.getOrPut(start) { mutableListOf() } += GraphEdge(end, length)
+                edges.getOrPut(end) { mutableListOf() } += GraphEdge(start, length)
+            }
+        }
+        // Android SQLite may not expose rtree. The ordinary bbox columns are the equivalent fallback.
+        val boundsTable = if (allowWaysRtreeQueries) "ways_rtree" else "ways"
+        try {
+            db.rawQuery("SELECT CAST(e.way_id AS TEXT),e.start_node_key,e.end_node_key,e.way_length_m FROM way_endpoints e JOIN $boundsTable r ON r.way_id=e.way_id WHERE r.min_lon<=? AND r.max_lon>=? AND r.min_lat<=? AND r.max_lat>=?",
+                arrayOf((maxLon+dLon).toString(), (minLon-dLon).toString(), (maxLat+dLat).toString(), (minLat-dLat).toString())).use(::append)
+            val missing = layers.flatMap { it.candidates }.mapNotNull { it.wayId }.toSet() - ways.keys
+            if (missing.isNotEmpty()) db.rawQuery("SELECT CAST(way_id AS TEXT),start_node_key,end_node_key,way_length_m FROM way_endpoints WHERE CAST(way_id AS TEXT) IN (${missing.joinToString(",") { "?" }})",
+                missing.sorted().toTypedArray()).use(::append)
+        } catch (_: SQLiteException) { return LocalWayGraph(emptyMap(), emptyMap()) }
+        return LocalWayGraph(ways, edges)
+    }
+
+    private fun viterbiRouteDistance(before: WayCandidate, after: WayCandidate, graph: LocalWayGraph,
+        cache: MutableMap<String, Map<String, Double>>): Double? {
+        if (before.wayId == after.wayId && before.distanceToStartM != null && after.distanceToStartM != null)
+            return abs(after.distanceToStartM - before.distanceToStartM)
+        fun options(c: WayCandidate): List<Pair<String, Double>> {
+            val ends = graph.ways[c.wayId] ?: return emptyList()
+            val out = listOfNotNull(c.distanceToStartM?.let { ends.start to it }, c.distanceToEndM?.let { ends.end to it })
+            return if (out.size == 2 && out[0].first == out[1].first) listOf(out.minBy { it.second }) else out
+        }
+        var best = Double.POSITIVE_INFINITY
+        for ((start, distance) in options(before)) {
+            val distances = cache.getOrPut(start) {
+                val found = mutableMapOf(start to 0.0)
+                val frontier = java.util.PriorityQueue<Pair<String, Double>>(compareBy { it.second })
+                frontier += start to 0.0
+                while (frontier.isNotEmpty()) {
+                    val (node, travelled) = frontier.remove()
+                    if (travelled > (found[node] ?: Double.POSITIVE_INFINITY)) continue
+                    for (edge in graph.edges[node].orEmpty()) {
+                        val next = travelled + edge.length
+                        if (next < (found[edge.to] ?: Double.POSITIVE_INFINITY)) { found[edge.to] = next; frontier += edge.to to next }
+                    }
+                }
+                found
+            }
+            for ((end, tail) in options(after)) distances[end]?.let { best = min(best, distance + it + tail) }
+        }
+        return best.takeIf { it.isFinite() }
     }
 
     private enum class SimpleContinuityIdentitySource(val traceLabel: String) {
@@ -3289,7 +3778,7 @@ internal class V3SpeedLimitLookup(
         val turnAngleDeg = headingMismatchDeg(sourceHeading, candidateHeading)
         val nearEndpoint = fromEndpointProximityM <= SEGMENT_TRANSITION_ENDPOINT_THRESHOLD_M &&
             candidate.endpointProximityM <= (SEGMENT_TRANSITION_ENDPOINT_THRESHOLD_M * 2.0)
-        val serviceLike = !candidate.service.isNullOrEmpty() || candidate.highway?.lowercase() == "service"
+        val serviceLike = isServiceLikeTransitionCandidate(candidate)
         return TransitionHeadingEvidence(
             currentMismatchDeg = currentMismatchDeg,
             candidateMismatchDeg = candidateMismatchDeg,
@@ -3443,7 +3932,9 @@ internal class V3SpeedLimitLookup(
     }
 
     private fun axisHeadingDeg(candidate: WayCandidate): Double? {
-        return candidate.localHeadingDeg ?: candidate.startHeadingDeg ?: candidate.endHeadingDeg
+        val start = candidate.points.firstOrNull() ?: return null
+        val end = candidate.points.lastOrNull() ?: return null
+        return computeAxisHeadingDegOrNull(start.lat, start.lon, end.lat, end.lon)
     }
 
     private fun axisHeadingDeg(
@@ -4826,6 +5317,49 @@ internal class V3SpeedLimitLookup(
 
     private fun normalizedWayId(raw: String?): String? = raw?.trim()?.ifBlank { null }
 
+    private fun normalizedMatchContext(context: WayMatchContext): WayMatchContext {
+        val preferred = normalizedWayId(context.preferredWayId)
+        val history = (context.recentWayHistory.ifEmpty { context.recentWayIds }).mapNotNull(::normalizedWayId).distinct().toMutableList()
+        if (preferred != null) { history.remove(preferred); history.add(0, preferred) }
+        val expireRefs = matchingModel in setOf(LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SPEED_REF_STREET_NAME_GUARD_NODE_AWARE_HEURISTIC,
+            LookupMatchingModel.SIMPLE_SEQUENCE_PARTICLE_HEURISTIC, LookupMatchingModel.SIMPLE_SEQUENCE_VITERBI_HEURISTIC) &&
+            normalizedRefTokens(context.activeStreetRef).isEmpty() &&
+            context.consecutiveNoRefMatchCount >= SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES
+        val preferredRefs = if (expireRefs) emptyList() else normalizedRefTokens(context.preferredStreetRef)
+            .ifEmpty { context.recentStreetRefs.flatMap(::normalizedRefTokens) }
+        val recentRefs = if (expireRefs) emptyList() else (context.recentStreetRefs.flatMap(::normalizedRefTokens) + preferredRefs).distinct()
+        return context.copy(preferredWayId = preferred, recentWayHistory = history,
+            recentWayIds = (context.recentWayIds.mapNotNull(::normalizedWayId) + history).distinct(),
+            recentFixes = context.recentFixes.take(10), preferredStreetRef = preferredRefs.joinToString(";").ifEmpty { null },
+            recentStreetRefs = recentRefs, recentHypotheses = context.recentHypotheses.take(max(MINI_HMM_BEAM_WIDTH, 6)),
+            recentTunnelCandidateWayIds = context.recentTunnelCandidateWayIds.mapNotNull(::normalizedWayId).toSet(),
+            recentTunnelCandidateRefs = context.recentTunnelCandidateRefs.flatMap(::normalizedRefTokens).toSet(),
+            recentTunnelApproachWayIds = context.recentTunnelApproachWayIds.mapNotNull(::normalizedWayId).toSet(),
+            recentTunnelApproachRefs = context.recentTunnelApproachRefs.flatMap(::normalizedRefTokens).toSet())
+    }
+
+    private fun queryCandidatesWithAccuracy(lat: Double, lon: Double, radius: Double, maxCandidates: Int,
+        heading: Double?, accuracy: Double?, context: WayMatchContext): List<WayCandidate> {
+        val cap = candidateLookupRadiusM(radius, accuracy)
+        val capped = queryWayCandidates(lat, lon, cap, maxCandidates, heading, context)
+        if (cap >= radius) return capped
+        val full = queryWayCandidates(lat, lon, radius, maxCandidates, heading, context)
+        if (capped.isEmpty()) return full
+        val links = loadWayLinksContext(context, full)
+        val refs = (normalizedRefTokens(context.preferredStreetRef) + normalizedRefTokens(context.activeStreetRef) +
+            context.recentStreetRefs + context.recentTunnelCandidateRefs).toSet()
+        val expansion = if (context.recentHypotheses.isNotEmpty()) full.take(MINI_HMM_BEAM_WIDTH).mapNotNull { it.wayId }.toSet() else emptySet()
+        val selected = capped.mapNotNull { it.wayId }.toMutableSet()
+        val additional = full.filter { candidate ->
+            val id = normalizedWayId(candidate.wayId) ?: return@filter false
+            val keep = id == context.preferredWayId || id in context.recentWayIds || id in context.recentTunnelCandidateWayIds ||
+                normalizedRefTokens(candidate.streetRef).any(refs::contains) || isLinkedCandidate(id, context, links) || id in expansion
+            keep && selected.add(id)
+        }
+        return (capped + additional).sortedWith(candidateComparator)
+    }
+
     private fun queryWayCandidates(
         lat: Double,
         lon: Double,
@@ -5021,10 +5555,11 @@ internal class V3SpeedLimitLookup(
                         maxLat = maxLat,
                     )
                     val polylineDistance = polylineDistanceM(lat = lat, lon = lon, points = points)
-                    val distanceToStartM = points.firstOrNull()?.let { haversineM(lat1 = lat, lon1 = lon, lat2 = it.lat, lon2 = it.lon) }
-                    val distanceToEndM = points.lastOrNull()?.let { haversineM(lat1 = lat, lon1 = lon, lat2 = it.lat, lon2 = it.lon) }
+                    val alongDistances = polylineEndpointDistances(lat, lon, points)
+                    val distanceToStartM = alongDistances?.first
+                    val distanceToEndM = alongDistances?.second
                     val endpointProximityM = min(distanceToStartM ?: Double.POSITIVE_INFINITY, distanceToEndM ?: Double.POSITIVE_INFINITY)
-                    val distance = min(bboxDistance, polylineDistance ?: Double.POSITIVE_INFINITY)
+                    val distance = polylineDistance ?: bboxDistance
                     val localHeading = polylineHeadingDeg(lat = lat, lon = lon, points = points)
                     val headingPenalty = if (headingDeg != null) {
                         val candidateHeading = localHeading ?: approxHeading
@@ -5052,7 +5587,7 @@ internal class V3SpeedLimitLookup(
                         endpointProximityM = endpointProximityM,
                         distanceToStartM = distanceToStartM,
                         distanceToEndM = distanceToEndM,
-                        score = distance + headingPenalty + unknownHighwayPenalty,
+                        score = distance + headingPenalty,
                         queryPoint = LatLonPoint(lat = lat, lon = lon),
                         points = points,
                         localHeadingDeg = localHeading,

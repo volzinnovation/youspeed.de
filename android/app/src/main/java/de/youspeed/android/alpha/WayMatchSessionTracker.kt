@@ -3,6 +3,11 @@ package de.youspeed.android.alpha
 internal data class WayMatchRecentFix(
     val lat: Double,
     val lon: Double,
+    val headingDeg: Double? = null,
+    val headingAccuracyDeg: Double? = null,
+    val speedKmh: Double? = null,
+    val horizontalAccuracyM: Double? = null,
+    val gpsSignalBars: Int? = null,
 )
 
 internal data class CorridorMatchState(
@@ -139,6 +144,9 @@ internal class WayMatchSessionTracker {
         lon: Double,
         horizontalAccuracyM: Double?,
         gpsSignalBars: Int,
+        headingDeg: Double? = null,
+        speedKmh: Double? = null,
+        headingAccuracyDeg: Double? = null,
     ) {
         val matchedWayId = result.wayId?.trim().orEmpty()
         if (matchedWayId.isNotEmpty()) {
@@ -161,8 +169,8 @@ internal class WayMatchSessionTracker {
         replaceLinkedSet(recentTunnelCandidateWayIds, result.nearbyTunnelCandidateWayIds, RECENT_WAY_LIMIT)
         replaceLinkedSet(recentTunnelCandidateRefs, result.nearbyTunnelCandidateRefs, RECENT_STREET_REF_LIMIT)
         recentHypotheses = result.matchHypotheses
-        recentFixes.addFirst(WayMatchRecentFix(lat = lat, lon = lon))
-        while (recentFixes.size > 3) {
+        recentFixes.addFirst(WayMatchRecentFix(lat, lon, headingDeg, headingAccuracyDeg, speedKmh, horizontalAccuracyM, gpsSignalBars))
+        while (recentFixes.size > 10) {
             recentFixes.removeLast()
         }
         updateTunnelApproachState(result, horizontalAccuracyM, gpsSignalBars)

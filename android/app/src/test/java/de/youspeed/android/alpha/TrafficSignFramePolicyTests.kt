@@ -30,7 +30,7 @@ class TrafficSignFramePolicyTests {
 
         assertEquals(2, TrafficSignAdaptiveFramePolicy.decide(active.copy(powerSaveMode = true)).targetFramesPerSecond)
         assertEquals(
-            4,
+            5,
             TrafficSignAdaptiveFramePolicy.decide(active.copy(thermalPressure = TrafficSignThermalPressure.FAIR)).targetFramesPerSecond,
         )
         assertEquals(
@@ -41,6 +41,17 @@ class TrafficSignFramePolicyTests {
         assertTrue(critical.paused)
         assertEquals(0, critical.targetFramesPerSecond)
         assertNull(critical.minimumIntervalNanos)
+        assertTrue(TrafficSignAdaptiveFramePolicy.decide(active.copy(applicationIsActive = false)).paused)
+    }
+
+    @Test
+    fun speedBandsMatchTheIphoneReference() {
+        listOf(0.0 to 2, 20.0 to 2, 30.0 to 4, 45.0 to 4, 60.0 to 6, 75.0 to 6, 100.0 to 8, 120.0 to 8)
+            .forEach { (kmh, fps) ->
+                assertEquals(fps, TrafficSignAdaptiveFramePolicy.decide(
+                    TrafficSignAnalysisConditions(speedMetersPerSecond = kmh / 3.6),
+                ).targetFramesPerSecond)
+            }
     }
 
     @Test

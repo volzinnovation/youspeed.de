@@ -4,6 +4,7 @@ import java.io.File
 import java.time.Instant
 import java.util.ArrayDeque
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -202,7 +203,9 @@ class TrafficSignRecognitionOrchestratorTests {
     @Test
     fun stationaryContextCannotArmOrFinalizeAuthoritativePassage() {
         val harness = Harness()
-        harness.runtimeActivationEligible = false
+        // The production caller may authorize the driving session while GPS
+        // reports a stationary vehicle. The orchestrator must enforce motion.
+        harness.context = harness.context.copy(speedMetersPerSecond = 0.0)
         repeat(3) { index ->
             harness.clockNanos = index * 500_000_000L
             harness.orchestrator.submit(harness.frame("stationary-$index", capturedAtNanos = harness.clockNanos))
@@ -216,6 +219,82 @@ class TrafficSignRecognitionOrchestratorTests {
 
         assertTrue(harness.observer.outputs.none { it.passageEvent != null })
         assertNull(harness.orchestrator.speedOverride())
+    }
+
+    @Test
+    fun stationaryLossCannotFinalizeAPreviouslyArmedMovingTrack() {
+        val harness = Harness()
+        repeat(3) { index ->
+            harness.clockNanos = index * 500_000_000L
+            harness.orchestrator.submit(harness.frame("moving-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        }
+        harness.context = harness.context.copy(speedMetersPerSecond = 0.0)
+        repeat(3) { index ->
+            harness.clockNanos += 500_000_000L
+            harness.orchestrator.submit(harness.frame("stopped-loss-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        }
+        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+    }
+
+    @Test
+    fun recognizedCandidateEnablesTenFpsBurstThenReturnsToSpeedCadence() {
+        val harness = Harness()
+        harness.orchestrator.submit(harness.frame("candidate", capturedAtNanos = 0L))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        harness.clockNanos = 100_000_000L
+        harness.orchestrator.submit(harness.frame("burst", capturedAtNanos = harness.clockNanos))
+        assertEquals(listOf("burst"), harness.backend.activeFrameIds())
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        harness.clockNanos = 1_500_000_000L
+        harness.orchestrator.submit(harness.frame("baseline", capturedAtNanos = harness.clockNanos))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+        harness.clockNanos = 1_600_000_000L
+        harness.orchestrator.submit(harness.frame("throttled", capturedAtNanos = harness.clockNanos))
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+        harness.clockNanos = 2_000_000_000L
+        harness.orchestrator.tick()
+        assertEquals(listOf("throttled"), harness.backend.activeFrameIds())
+    }
+
+    @Test
+    fun threeConsecutiveFailuresStopInferenceButSuccessResetsTheBudget() {
+        val harness = Harness()
+        fun submit(id: String, result: TrafficSignBackendResult) {
+            harness.clockNanos += 500_000_000L
+            harness.orchestrator.submit(harness.frame(id, capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(result)
+        }
+        repeat(2) { submit("transient-$it", TrafficSignBackendResult.Unavailable("transient")) }
+        submit("recovered", TrafficSignBackendResult.Recognition(null))
+        repeat(2) { submit("retry-$it", TrafficSignBackendResult.Unavailable("failed")) }
+        assertTrue(harness.observer.outputs.none { it.terminalBackendFailure })
+        submit("terminal", TrafficSignBackendResult.Unavailable("failed"))
+        assertTrue(harness.observer.outputs.last().terminalBackendFailure)
+        val rejected = harness.frame("after-terminal", capturedAtNanos = harness.clockNanos + 500_000_000L)
+        assertFalse(harness.orchestrator.submit(rejected))
+        assertEquals(1, rejected.releaseCount)
+        assertTrue(harness.backend.activeFrameIds().isEmpty())
+    }
+
+    @Test
+    fun failureFromInvalidatedGenerationCannotStopTheNewRuntimeScope() {
+        val harness = Harness()
+        repeat(2) { index ->
+            harness.clockNanos += 500_000_000L
+            harness.orchestrator.submit(harness.frame("error-$index", capturedAtNanos = harness.clockNanos))
+            harness.backend.completeNext(TrafficSignBackendResult.Unavailable("transient"))
+        }
+        harness.clockNanos += 500_000_000L
+        harness.orchestrator.submit(harness.frame("old-scope", capturedAtNanos = harness.clockNanos))
+        harness.contextGeneration += 1
+        harness.orchestrator.reconcileContext(harness.context, harness.contextGeneration)
+        harness.backend.completeNext(TrafficSignBackendResult.Unavailable("stale"))
+        assertFalse(harness.observer.outputs.last().terminalBackendFailure)
+        harness.clockNanos += 500_000_000L
+        assertTrue(harness.orchestrator.submit(harness.frame("new-scope", capturedAtNanos = harness.clockNanos)))
+        harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
     }
 
     @Test
@@ -781,6 +860,7 @@ class TrafficSignRecognitionOrchestratorTests {
             sourceRelationIds = setOf(9_001L),
             continuityCapable = true,
             traversalEpoch = 1L,
+            speedMetersPerSecond = 5.0,
         )
 
         fun signature(osm: String, local: String?) = TrafficSignRuntimeSourceSignature(

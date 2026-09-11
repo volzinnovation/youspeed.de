@@ -734,6 +734,24 @@ class TrafficSignPassageTests {
     }
 
     @Test
+    fun productionForwarderPreservesGenerationAndSurfacesOnlyTerminalFailures() {
+        val events = mutableListOf<Pair<TrafficSignRecognitionEvent, Long>>()
+        val failures = mutableListOf<Pair<String, Long>>()
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitRecognitionEvent = { event, generation -> events += event to generation },
+            onRuntimeUnavailable = { detail, generation -> failures += detail to generation },
+            submitFinalizedPassage = { true },
+        )
+        val event = recognition(t0)
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, contextGeneration = 7))
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, backendFailureReason = "temporary", contextGeneration = 7))
+        assertEquals(listOf(event to 7L), events)
+        assertTrue(failures.isEmpty())
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, backendFailureReason = "stopped", terminalBackendFailure = true, contextGeneration = 8))
+        assertEquals(listOf("stopped" to 8L), failures)
+    }
+
+    @Test
     fun missingVerifiedBundleChecksumFailsClosed() {
         val resolver = TrafficSignRuntimeSourceResolver()
         val bundle = base(50, EffectiveSpeedLimitSource.BUNDLE)

@@ -23,39 +23,46 @@ class VoskSpeedCaptureSession(
 
     private var recognizer: Recognizer? = null
     private var speechService: SpeechService? = null
-    private var latestPartialTranscript: String = ""
-    private var latestCandidateTranscripts: List<String> = emptyList()
+    private val transcripts = SpeedCaptureTranscriptBuffer()
     private var completed = false
 
     @Throws(IOException::class)
     fun start(timeoutMs: Long, listener: Listener): Boolean {
+        if (completed || speechService != null) return false
         val recognizer = createRecognizer()
-        recognizer.setMaxAlternatives(5)
-        val speechService = SpeechService(recognizer, VOSK_SAMPLE_RATE)
+        val speechService = try {
+            recognizer.setMaxAlternatives(5)
+            SpeechService(recognizer, VOSK_SAMPLE_RATE)
+        } catch (failure: Exception) {
+            recognizer.close()
+            throw failure
+        }
         this.recognizer = recognizer
         this.speechService = speechService
         return speechService.startListening(
             object : RecognitionListener {
                 override fun onPartialResult(hypothesis: String) {
+                    if (completed) return
                     val transcript = parsePartialTranscript(hypothesis)
                     if (transcript.isNotBlank()) {
-                        latestPartialTranscript = transcript
+                        transcripts.updatePartial(transcript)
                         listener.onPartialTranscript(transcript)
                     }
                 }
 
                 override fun onResult(hypothesis: String) {
-                    val transcripts = parseCandidateTranscripts(hypothesis)
-                    if (transcripts.isNotEmpty()) {
-                        latestCandidateTranscripts = transcripts
-                        latestPartialTranscript = transcripts.first()
-                        listener.onPartialTranscript(transcripts.first())
+                    if (completed) return
+                    val candidates = parseCandidateTranscripts(hypothesis)
+                    if (candidates.isNotEmpty()) {
+                        // Vosk's onResult is an endpointed utterance. A partial
+                        // hypothesis may still be revised and must not save a correction.
+                        completeOnce(listener, transcripts.acceptCompleted(candidates), "utterance_result")
                     }
                 }
 
                 override fun onFinalResult(hypothesis: String) {
-                    val transcripts = parseCandidateTranscripts(hypothesis)
-                    val finalTranscripts = transcripts.ifEmpty { fallbackTranscripts() }
+                    if (completed) return
+                    val finalTranscripts = transcripts.acceptCompleted(parseCandidateTranscripts(hypothesis))
                     completeOnce(listener, finalTranscripts, "final_result")
                 }
 
@@ -69,7 +76,16 @@ class VoskSpeedCaptureSession(
                 }
 
                 override fun onTimeout() {
-                    completeOnce(listener, fallbackTranscripts(), "timeout")
+                    if (completed) return
+                    // SpeechService posts timeout after stopping AudioRecord.
+                    // Join its worker before asking native Vosk to flush the
+                    // final utterance, so no acceptWaveForm call can race it.
+                    val candidates = runCatching {
+                        this@VoskSpeedCaptureSession.speechService?.stop()
+                        this@VoskSpeedCaptureSession.recognizer?.finalResult
+                            ?.let(::parseCandidateTranscripts).orEmpty()
+                    }.getOrDefault(emptyList())
+                    completeOnce(listener, transcripts.acceptCompleted(candidates), "timeout_final_result")
                 }
             },
             timeoutMs.toInt(),
@@ -77,18 +93,12 @@ class VoskSpeedCaptureSession(
     }
 
     override fun close() {
+        completed = true
         runCatching { speechService?.cancel() }
         runCatching { speechService?.shutdown() }
         speechService = null
         runCatching { recognizer?.close() }
         recognizer = null
-    }
-
-    private fun fallbackTranscripts(): List<String> {
-        return (latestCandidateTranscripts + latestPartialTranscript)
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .distinct()
     }
 
     private fun completeOnce(listener: Listener, transcripts: List<String>, source: String) {

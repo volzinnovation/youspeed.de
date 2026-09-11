@@ -103,4 +103,12 @@
     <string name="ui_show_other_signs">Afficher les autres panneaux</string>
     <string name="ui_other_signs_detail">Affiche le dernier panneau reconnu en haut à droite lorsque la caméra est active. Un nouveau panneau le remplace ; les limitations restent dans l’affichage de vitesse.</string>
     <string name="ui_last_recognized_sign">Dernier panneau reconnu : %1$s</string>
+    <string name="ui_drive_recorder_start">Démarrer l’enregistrement du trajet</string>
+    <string name="ui_drive_recorder_stop">Arrêter l’enregistrement du trajet</string>
+    <string name="ui_dashcam_title">Vidéos de la caméra embarquée</string>
+    <string name="ui_dashcam_empty">Aucune vidéo de la caméra embarquée enregistrée pour le moment.</string>
+    <string name="ui_dashcam_share">Partager la vidéo</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Prendre des photos pour Panoramax</string>
+    <string name="ui_panoramax_settings_detail">Les photos sont prises pendant l’enregistrement du trajet, en tenant compte de la précision GPS et des seuils de distance et de temps.</string>
 </resources>

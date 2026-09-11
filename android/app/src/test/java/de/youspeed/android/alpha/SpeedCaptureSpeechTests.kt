@@ -2,9 +2,33 @@ package de.youspeed.android.alpha
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpeedCaptureSpeechTests {
+    @Test
+    fun timeoutOrEmptyFinalResultNeverPromotesAProvisionalHypothesis() {
+        val buffer = SpeedCaptureTranscriptBuffer()
+        buffer.updatePartial("hundert")
+        assertEquals("100", SpeedCaptureSpeech.resolveSelection(buffer.partialTranscript)?.value)
+        assertTrue(buffer.finalCandidates().isEmpty())
+        assertTrue(buffer.acceptCompleted(emptyList()).isEmpty())
+        buffer.updatePartial("hundert zwanzig")
+        assertTrue(buffer.acceptCompleted(listOf(" ")).isEmpty())
+    }
+
+    @Test
+    fun finalizedUtteranceReplacesThePartialAndPreservesOnlyCompletedAlternatives() {
+        val buffer = SpeedCaptureTranscriptBuffer()
+        buffer.updatePartial("hundert")
+        val final = buffer.acceptCompleted(listOf("hundert zwanzig", " 120 ", "120"))
+        assertEquals(listOf("hundert zwanzig", "120"), final)
+        assertEquals("120", final.firstNotNullOfOrNull(SpeedCaptureSpeech::resolveSelection)?.value)
+        buffer.updatePartial("dreissig")
+        assertEquals(final, buffer.acceptCompleted(emptyList()))
+        assertEquals(final, buffer.finalCandidates())
+    }
+
     @Test
     fun resolvesGermanTranscriptToNumericWhitelistValue() {
         val selection = SpeedCaptureSpeech.resolveSelection("bitte hier hundert dreissig")

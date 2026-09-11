@@ -31,10 +31,27 @@ data class SpeedCaptureSelection(
         get() = value.toIntOrNull()
 }
 
+/** Partial hypotheses may be displayed but never become a saved correction. */
+internal class SpeedCaptureTranscriptBuffer {
+    var partialTranscript: String = ""
+        private set
+    private var completedCandidates: List<String> = emptyList()
+
+    fun updatePartial(transcript: String) { partialTranscript = transcript.trim() }
+
+    fun acceptCompleted(transcripts: List<String>): List<String> {
+        val candidates = transcripts.map(String::trim).filter(String::isNotEmpty).distinct()
+        if (candidates.isNotEmpty()) completedCandidates = candidates
+        return completedCandidates
+    }
+
+    fun finalCandidates(): List<String> = completedCandidates
+}
+
 object SpeedCaptureSpeech {
     const val speechLocaleTag: String = "de-DE"
     const val promptText: String = "Korrektur"
-    const val listeningWindowMs: Long = 30_000L
+    const val listeningWindowMs: Long = 4_000L
     const val timeoutPaddingMs: Long = 350L
     const val startDelayMs: Long = 300L
     const val promptFallbackDelayMs: Long = 3_800L

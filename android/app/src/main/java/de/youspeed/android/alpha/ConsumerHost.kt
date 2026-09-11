@@ -11,7 +11,9 @@ interface ConsumerHost {
 
     fun stopTrafficSignCamera()
 
-    fun capturePanoramaxPhoto()
+    fun setDriveRecorderPreviewSurfaceProvider(provider: androidx.camera.core.Preview.SurfaceProvider?) {}
+
+    fun capturePanoramaxPhoto(requestId: String)
 
     fun showTransientMessage(message: String)
 

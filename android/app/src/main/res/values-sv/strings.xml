@@ -21,4 +21,15 @@
     <string name="welcome_hide">Visa inte igen</string>
     <string name="legal_disclaimer_short">Obs: visade boter, punkter och korforbud ar endast vagledande och ar inte juridisk radgivning. Officiella beslut och gallande lag ar avgorande.</string>
     <string name="legal_disclaimer_long">De varden for boter, punkter och korforbud som visas i YouSpeed ar endast vagledande. De ar inte juridisk radgivning eller en bindande juridisk bedomning. Endast officiella beslut och den lag som galler vid tidpunkten ar avgorande; ytterligare avgifter och kostnader kan tillkomma.</string>
+    <string name="ui_panoramax_start">Starta fotografering</string>
+    <string name="ui_panoramax_stop">Stoppa fotografering</string>
+    <string name="ui_panoramax_gallery">Öppna fotogalleri</string>
+    <string name="ui_panoramax_gallery_title">Panoramax-foton</string>
+    <string name="ui_panoramax_empty">Inga Panoramax-foton har tagits ännu.</string>
+    <string name="ui_panoramax_capture_active">Fotografering aktiv · %1$d sparade</string>
+    <string name="ui_panoramax_capture_idle">Fotografering redo</string>
+    <string name="ui_panoramax_delete">Radera foto</string>
+    <string name="ui_panoramax_include">Inkludera</string>
+    <string name="ui_panoramax_exclude">Uteslut</string>
+    <string name="ui_panoramax_no_camera">Kameran är inte tillgänglig</string>
 </resources>

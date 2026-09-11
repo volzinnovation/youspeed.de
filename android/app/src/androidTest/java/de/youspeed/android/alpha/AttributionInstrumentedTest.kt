@@ -16,6 +16,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import java.io.File
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +33,12 @@ class AttributionInstrumentedTest {
 
     @Test fun packagedCreditsAndFullNoticesAreAvailableOfflineFromInfo() {
         val catalog = context.assets.open(AttributionCatalog.ASSET_PATH).bufferedReader().use { AttributionCatalog.decode(it.readText()) }
-        assertEquals(104, catalog.entries.count { it.category == "sign" && it.id.startsWith("sign-DE:") })
+        val artworkIds = context.assets.open("tsr/sign-pictograms/manifest.json").bufferedReader().use {
+            Json.parseToJsonElement(it.readText()).jsonObject.getValue("artworks").jsonArray
+                .map { artwork -> "sign-" + artwork.jsonObject.getValue("sign_code").jsonPrimitive.content }.toSet()
+        }
+        assertTrue(artworkIds.isNotEmpty())
+        assertEquals(artworkIds, catalog.entries.filter { it.category == "sign" && it.id.startsWith("sign-DE:") }.map { it.id }.toSet())
         for (path in AttributionCatalog.NOTICE_PATHS) {
             assertTrue(context.assets.open(path).bufferedReader().use { it.readText() }.isNotBlank())
         }

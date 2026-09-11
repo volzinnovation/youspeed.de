@@ -21,18 +21,47 @@ object PenaltyCountryCodes {
 class PenaltyCountrySelection {
     private val selection = TrafficSignCountrySelection()
     private var lastAcceptedTimestamp: Double? = null
+    private var latestFixIsValid = false
+    var countryCode: String? = null
+        private set
+    var lastUpdateAcceptedNewFix: Boolean = false
+        private set
+
+    /** Mirrors the iPhone expiry task's small scheduling cushion; duplicates never extend this deadline. */
+    val expiryTimestampSeconds: Double?
+        get() = lastAcceptedTimestamp?.takeIf { latestFixIsValid }?.plus(30.05)
+
+    fun expire(now: Double): String? {
+        if (lastAcceptedTimestamp?.let { now - it > 30.0 } == true) suspend()
+        return countryCode
+    }
+
+    private fun suspend() {
+        latestFixIsValid = false
+        countryCode = null
+        selection.suspendPendingTransition()
+    }
 
     fun update(catalog: RegionalPackCatalog?, latitude: Double, longitude: Double, accuracy: Double,
                timestamp: Double, now: Double): String? {
+        lastUpdateAcceptedNewFix = false
+        expire(now)
         val accepted = FirstLocationPackPolicy.acceptsFix(latitude, longitude, accuracy, timestamp, now)
-        if (!accepted) {
-            selection.suspendPendingTransition()
+        // Invalid evidence clears presentation even when its timestamp is a duplicate.
+        if (!accepted || catalog == null) {
+            suspend()
             return null
         }
-        if (lastAcceptedTimestamp?.let { timestamp - it > 30.0 } == true) selection.suspendPendingTransition()
-        if (lastAcceptedTimestamp == null || timestamp > lastAcceptedTimestamp!!) lastAcceptedTimestamp = timestamp
-        val countries = catalog?.matches(longitude, latitude)?.map { it.country }?.toSet().orEmpty()
-        return PenaltyCountryCodes.normalize(selection.update(countries, timestamp))
+        // A second delivery of a fix is not fresh country evidence and must not
+        // clear an existing fine, count toward a border transition, or restore a suspended fine.
+        if (lastAcceptedTimestamp?.let { timestamp <= it } == true) return countryCode
+        latestFixIsValid = true
+        lastAcceptedTimestamp = timestamp
+        lastUpdateAcceptedNewFix = true
+        val countries = catalog.matches(longitude, latitude).map { it.country }.toSet()
+        val normalized = countries.mapNotNull(PenaltyCountryCodes::alpha2)
+        countryCode = PenaltyCountryCodes.normalize(selection.update(if (normalized.size == countries.size) normalized.toSet() else emptySet(), timestamp))
+        return countryCode
     }
 }
 

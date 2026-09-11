@@ -69,6 +69,8 @@ data class TrafficSignOrchestrationOutput(
     val speedOverride: TrafficSignSpeedOverride?,
     val passageEvent: TrafficSignPassageEvent? = null,
     val backendFailureReason: String? = null,
+    val terminalBackendFailure: Boolean = false,
+    val contextGeneration: Long = 0L,
     val displayObservation: TrafficSignDisplayObservation? = null,
 )
 
@@ -120,6 +122,9 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     private var currentContextGeneration: Long? = null
     private var currentOverride: TrafficSignSpeedOverride? = null
     private var closed = false
+    private var consecutiveBackendFailures = 0
+    private var terminalBackendFailure = false
+    private var candidateBurstUntilNanos = Long.MIN_VALUE
 
     init {
         TrafficSignModelPackValidator.requireValid(modelPack)
@@ -149,7 +154,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         var accepted = false
 
         synchronized(lock) {
-            if (!closed) {
+            if (!closed && !terminalBackendFailure) {
                 val previousTimestamp = lastAcceptedTimestampNanos
                 if (previousTimestamp == null || frame.capturedAtMonotonicNanos >= previousTimestamp) {
                     // This single call is deliberately inside the acceptance
@@ -388,9 +393,12 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     }
 
     private fun takeDispatchLocked(): Dispatch? {
+        if (terminalBackendFailure) return null
+        val now = monotonicClockNanos()
+        val supplied = conditionsSnapshot()
         val accepted = frameSlot.takeIfDue(
-            nowNanos = monotonicClockNanos(),
-            conditions = conditionsSnapshot(),
+            nowNanos = now,
+            conditions = supplied.copy(hasActiveTrack = supplied.hasActiveTrack || now < candidateBurstUntilNanos),
         ) ?: return null
         val inferenceId = nextInferenceId++
         val active = ActiveInference(
@@ -416,6 +424,19 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             if (!closed) {
                 val created = createEventLocked(active, backendResult)
                 val event = created.event
+                if (created.contextIsCurrent && backendResult is TrafficSignBackendResult.Unavailable) {
+                    consecutiveBackendFailures += 1
+                    if (consecutiveBackendFailures >= MAXIMUM_CONSECUTIVE_BACKEND_FAILURES) {
+                        terminalBackendFailure = true
+                        frameSlot.clear()
+                    }
+                } else if (created.contextIsCurrent) {
+                    consecutiveBackendFailures = 0
+                    if (event.state in setOf(TrafficSignRecognitionState.PROVISIONAL,
+                            TrafficSignRecognitionState.CONFIRMED, TrafficSignRecognitionState.UNKNOWN)) {
+                        candidateBurstUntilNanos = monotonicClockNanos() + CANDIDATE_BURST_NANOS
+                    }
+                }
                 if (!passageFinalizer.hasActiveTrack() && event.candidate != null) {
                     currentEligibleRouteRelationGroupIds = active.accepted.context.routeRelationGroupIds
                 }
@@ -427,7 +448,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     // Calibration remains provenance. During field testing a
                     // raw-score pack uses its declared raw thresholds and is
                     // just as eligible for passage evaluation.
-                    overrideEligible = active.accepted.runtimeActivationEligible,
+                    overrideEligible = active.accepted.runtimeActivationEligible &&
+                        active.accepted.context.speedMetersPerSecond * 3.6 >= 1.0,
                     strongPassGeometry = (backendResult as? TrafficSignBackendResult.Recognition)?.strongPassGeometry == true,
                 )
                 val previousOverride = currentOverride
@@ -463,6 +485,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                         }
                     } else null,
                     backendFailureReason = (backendResult as? TrafficSignBackendResult.Unavailable)?.reason,
+                    terminalBackendFailure = terminalBackendFailure,
+                    contextGeneration = active.accepted.contextGeneration,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -560,6 +584,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         return CreatedEvent(
             event = event,
             fusedScore = fusion?.fusedScore,
+            contextIsCurrent = sourceIsCurrent,
             qualifiedAnalyzedFrame = backendResult is TrafficSignBackendResult.Recognition &&
                 sourceIsCurrent &&
                 active.accepted.metadata.source == TrafficSignInputSource.LIVE_FRAME,
@@ -622,6 +647,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     private data class CreatedEvent(
         val event: TrafficSignRecognitionEvent,
         val fusedScore: Double?,
+        val contextIsCurrent: Boolean,
         val qualifiedAnalyzedFrame: Boolean,
     )
 
@@ -637,6 +663,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
 
     private companion object {
         const val NANOS_PER_MILLISECOND = 1_000_000L
+        const val CANDIDATE_BURST_NANOS = 1_500_000_000L
+        const val MAXIMUM_CONSECUTIVE_BACKEND_FAILURES = 3
     }
 }
 

@@ -41,6 +41,7 @@ enum class PanoramaxItemState {
     REJECTED,
     RETRYABLE_ERROR,
     PERMANENT_ERROR,
+    ABANDONED,
 }
 
 data class PanoramaxLocationSample(
@@ -310,11 +311,14 @@ data class PanoramaxCaptureMetadata(
     }
 }
 
+enum class PanoramaxCaptureTriggerMode { DISTANCE, TIME }
+
 data class PanoramaxCadenceConfig(
     val distanceMeters: Double = 25.0,
     val fallbackInterval: Duration = Duration.ofSeconds(5),
     val maxLocationAge: Duration = Duration.ofSeconds(10),
     val maxAccuracyMeters: Double = 50.0,
+    val triggerMode: PanoramaxCaptureTriggerMode = PanoramaxCaptureTriggerMode.DISTANCE,
 ) {
     init {
         require(distanceMeters > 0.0)
@@ -338,13 +342,12 @@ object PanoramaxCapturePolicy {
         val previous = lastCapture ?: return true
         if (!current.capturedAt.isAfter(previous.capturedAt)) return false
         val distance = haversineMeters(previous.latitude, previous.longitude, current.latitude, current.longitude)
-        val requiredMovement = max(
-            config.distanceMeters,
-            2.0 * max(current.accuracyMeters, previous.accuracyMeters),
-        )
-        // A time fallback is only useful while moving; it must not produce stationary duplicates.
-        return distance >= requiredMovement ||
-            (Duration.between(previous.capturedAt, current.capturedAt) >= config.fallbackInterval && distance >= requiredMovement)
+        val precisionMovement = 2.0 * max(current.accuracyMeters, previous.accuracyMeters)
+        if (distance < precisionMovement) return false
+        return when (config.triggerMode) {
+            PanoramaxCaptureTriggerMode.DISTANCE -> distance >= max(config.distanceMeters, precisionMovement)
+            PanoramaxCaptureTriggerMode.TIME -> Duration.between(previous.capturedAt, current.capturedAt) >= config.fallbackInterval
+        }
     }
 
     private fun haversineMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

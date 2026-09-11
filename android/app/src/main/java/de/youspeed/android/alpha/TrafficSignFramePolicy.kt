@@ -1,6 +1,5 @@
 package de.youspeed.android.alpha
 
-import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -16,6 +15,7 @@ data class TrafficSignAnalysisConditions(
     val hasActiveTrack: Boolean = false,
     val powerSaveMode: Boolean = false,
     val thermalPressure: TrafficSignThermalPressure = TrafficSignThermalPressure.NOMINAL,
+    val applicationIsActive: Boolean = true,
 )
 
 data class TrafficSignFrameRateDecision(
@@ -38,6 +38,7 @@ data class TrafficSignFrameRateDecision(
  */
 object TrafficSignAdaptiveFramePolicy {
     fun decide(conditions: TrafficSignAnalysisConditions): TrafficSignFrameRateDecision {
+        if (!conditions.applicationIsActive) return TrafficSignFrameRateDecision(0, true, "application_inactive")
         if (conditions.thermalPressure == TrafficSignThermalPressure.CRITICAL) {
             return TrafficSignFrameRateDecision(
                 targetFramesPerSecond = 0,
@@ -77,16 +78,18 @@ object TrafficSignAdaptiveFramePolicy {
 
     private fun speedTarget(speedMetersPerSecond: Double?): Int {
         val usableSpeed = speedMetersPerSecond?.takeIf { it.isFinite() && it > 0.0 } ?: return MIN_FRAMES_PER_SECOND
-        // Roughly one analyzed frame per five metres, clamped to the product contract.
-        return ceil(usableSpeed / METRES_PER_ANALYZED_FRAME).toInt()
-            .coerceIn(MIN_FRAMES_PER_SECOND, SPEED_BASELINE_CAP)
+        // Use the same km/h bands as the iPhone reference.
+        return when {
+            usableSpeed * 3.6 >= 100.0 -> 8
+            usableSpeed * 3.6 >= 60.0 -> 6
+            usableSpeed * 3.6 >= 30.0 -> 4
+            else -> MIN_FRAMES_PER_SECOND
+        }
     }
 
     const val MIN_FRAMES_PER_SECOND = 2
     const val MAX_FRAMES_PER_SECOND = 10
-    private const val SPEED_BASELINE_CAP = 8
-    private const val FAIR_THERMAL_CAP = 4
-    private const val METRES_PER_ANALYZED_FRAME = 5.0
+    private const val FAIR_THERMAL_CAP = 5
 }
 
 data class PendingTrafficSignFrame<T>(

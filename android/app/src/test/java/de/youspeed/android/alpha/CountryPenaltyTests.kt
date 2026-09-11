@@ -38,7 +38,7 @@ class CountryPenaltyTests {
         assertEquals("NLD", fix(52.3676, 4.9041, 271.0))
     }
 
-    @Test fun overlapAndDuplicateFixesSuppressPreviousCountry() {
+    @Test fun duplicateAfterOverlapKeepsThePreviousCountrySuspended() {
         val regions = listOf("DE", "FR").map { country ->
             RegionalPackCatalog.Region(country, country, country, listOf(0.0, 0.0, 5.0, 5.0),
                 listOf(listOf(listOf(listOf(0.0, 0.0), listOf(5.0, 0.0), listOf(5.0, 5.0), listOf(0.0, 5.0), listOf(0.0, 0.0)))))
@@ -48,6 +48,70 @@ class CountryPenaltyTests {
         assertNull(selector.update(RegionalPackCatalog(regions), 2.0, 2.0, 5.0, 101.0, 101.0))
         assertNull(selector.update(RegionalPackCatalog(regions.take(1)), 2.0, 2.0, 5.0, 101.0, 101.0))
         assertNull(selector.update(null, 2.0, 2.0, 5.0, 102.0, 102.0))
+    }
+
+    @Test fun duplicateAndOlderValidFixPreserveTheDisplayedCountryAndOriginalExpiry() {
+        val selector = PenaltyCountrySelection()
+        val catalog = catalog()
+        assertEquals("DEU", selector.update(catalog, 49.0102, 8.4266, 5.0, 100.0, 100.0))
+        assertTrue(selector.lastUpdateAcceptedNewFix)
+        assertEquals(130.05, selector.expiryTimestampSeconds!!, 0.0001)
+        // Different coordinates on a redelivered timestamp cannot imply a border crossing.
+        assertEquals("DEU", selector.update(catalog, 48.8566, 2.3522, 5.0, 100.0, 110.0))
+        assertFalse(selector.lastUpdateAcceptedNewFix)
+        assertEquals("DEU", selector.update(catalog, 48.8566, 2.3522, 5.0, 99.0, 112.0))
+        assertFalse(selector.lastUpdateAcceptedNewFix)
+        assertEquals(130.05, selector.expiryTimestampSeconds!!, 0.0001)
+        assertEquals("DEU", selector.expire(130.0))
+        assertNull(selector.expire(130.05))
+        assertNull(selector.expiryTimestampSeconds)
+    }
+
+    @Test fun duplicateAndOlderFixesNeitherCountNorResetPendingCountryEvidence() {
+        val selector = PenaltyCountrySelection()
+        val catalog = catalog()
+        fun germany(time: Double, now: Double = time) = selector.update(catalog, 49.0102, 8.4266, 5.0, time, now)
+        fun france(time: Double, now: Double = time) = selector.update(catalog, 48.8566, 2.3522, 5.0, time, now)
+        assertEquals("DEU", germany(100.0))
+        assertNull(france(110.0))
+        val pendingExpiry = selector.expiryTimestampSeconds
+        assertNull(germany(110.0, 112.0))
+        assertNull(germany(105.0, 113.0))
+        assertNull(france(110.0, 114.0))
+        assertEquals(pendingExpiry, selector.expiryTimestampSeconds)
+        assertNull(france(118.0))
+        assertEquals("FRA", france(126.0))
+    }
+
+    @Test fun invalidDuplicateClearsFineAndValidRedeliveryCannotRestoreIt() {
+        val selector = PenaltyCountrySelection()
+        val catalog = catalog()
+        fun fix(time: Double, now: Double, accuracy: Double = 5.0) =
+            selector.update(catalog, 49.0102, 8.4266, accuracy, time, now)
+        assertEquals("DEU", fix(100.0, 100.0))
+        assertNull(fix(100.0, 101.0, accuracy = 101.0))
+        assertNull(selector.expiryTimestampSeconds)
+        assertNull(fix(100.0, 102.0))
+        assertFalse(selector.lastUpdateAcceptedNewFix)
+        assertNull(fix(99.0, 102.0))
+        assertEquals("DEU", fix(103.0, 103.0))
+        assertEquals(133.05, selector.expiryTimestampSeconds!!, 0.0001)
+        assertNull(selector.update(null, 49.0102, 8.4266, 5.0, 103.0, 104.0))
+        assertNull(fix(103.0, 105.0))
+    }
+
+    @Test fun invalidFixResetsPendingEvidenceAndOldFixCannotReestablishIt() {
+        val selector = PenaltyCountrySelection()
+        val catalog = catalog()
+        fun france(time: Double, accuracy: Double = 5.0) = selector.update(catalog, 48.8566, 2.3522, accuracy, time, time)
+        assertEquals("DEU", selector.update(catalog, 49.0102, 8.4266, 5.0, 100.0, 100.0))
+        assertNull(france(110.0))
+        assertNull(france(115.0, 101.0))
+        assertNull(selector.update(catalog, 48.8566, 2.3522, 5.0, 110.0, 116.0))
+        assertNull(selector.expiryTimestampSeconds)
+        assertNull(france(118.0))
+        assertNull(france(126.0))
+        assertEquals("FRA", france(134.0))
     }
 
     @Test fun countryTransitionRequiresNewEvidenceAfterGpsSilence() {

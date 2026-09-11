@@ -103,4 +103,12 @@
     <string name="ui_show_other_signs">Mostrar otras señales de tráfico</string>
     <string name="ui_other_signs_detail">Muestra la última señal reconocida arriba a la derecha con la cámara activa. Cada nueva señal la reemplaza; los límites permanecen en el indicador de velocidad.</string>
     <string name="ui_last_recognized_sign">Última señal reconocida: %1$s</string>
+    <string name="ui_drive_recorder_start">Iniciar grabación del trayecto</string>
+    <string name="ui_drive_recorder_stop">Detener grabación del trayecto</string>
+    <string name="ui_dashcam_title">Vídeos de la cámara del coche</string>
+    <string name="ui_dashcam_empty">Todavía no se han grabado vídeos de la cámara del coche.</string>
+    <string name="ui_dashcam_share">Compartir vídeo</string>
+    <string name="ui_panoramax_settings">Panoramax</string>
+    <string name="ui_panoramax_capture">Tomar fotos para Panoramax</string>
+    <string name="ui_panoramax_settings_detail">Las fotos se toman durante la grabación del trayecto, respetando la precisión del GPS y los umbrales de distancia y tiempo.</string>
 </resources>

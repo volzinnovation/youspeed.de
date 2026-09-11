@@ -16,7 +16,10 @@ import java.time.Clock
 
 class MainActivity : ComponentActivity(), ConsumerHost {
     private var trafficSignCameraRuntime: AndroidTrafficSignCameraRuntime? = null
-    private val sessionController by lazy {
+    private var cameraReleasePending = false
+    private var cameraRequested = false
+    private var previewSurfaceProvider: androidx.camera.core.Preview.SurfaceProvider? = null
+    internal val sessionController by lazy {
         ConsumerSessionController(
             context = this,
             rootDir = File(filesDir, "bundle"),
@@ -57,6 +60,16 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        sessionController.setApplicationActive(true)
+    }
+
+    override fun onStop() {
+        sessionController.setApplicationActive(false)
+        super.onStop()
+    }
+
     override fun onDestroy() {
         sessionController.dispose()
         super.onDestroy()
@@ -81,22 +94,44 @@ class MainActivity : ComponentActivity(), ConsumerHost {
 
     override fun startTrafficSignCamera() {
         if (isFinishing || isDestroyed) return
-        trafficSignCameraRuntime?.close()
+        cameraRequested = true
+        if (cameraReleasePending) return
+        trafficSignCameraRuntime?.let { it.refreshConfiguration(); return }
         trafficSignCameraRuntime = AndroidTrafficSignCameraRuntime(
             context = applicationContext,
             lifecycleOwner = this,
             controller = sessionController,
             onStateChanged = sessionController::onTrafficSignCameraRuntimeStateChanged,
-        ).also(AndroidTrafficSignCameraRuntime::start)
+        ).also {
+            it.setPreviewSurfaceProvider(previewSurfaceProvider)
+            it.start()
+        }
     }
 
     override fun stopTrafficSignCamera() {
-        trafficSignCameraRuntime?.close()
+        cameraRequested = false
+        val previous = trafficSignCameraRuntime ?: return
         trafficSignCameraRuntime = null
+        cameraReleasePending = true
+        previous.closeAfterFinalization {
+            // Drain already posted finalization updates before starting a new
+            // camera graph; a rapid foreground transition may request it.
+            window.decorView.post {
+                cameraReleasePending = false
+                if (cameraRequested && !isFinishing && !isDestroyed) startTrafficSignCamera()
+            }
+        }
     }
 
-    override fun capturePanoramaxPhoto() {
-        trafficSignCameraRuntime?.capturePanoramaxPhoto()
+    override fun setDriveRecorderPreviewSurfaceProvider(provider: androidx.camera.core.Preview.SurfaceProvider?) {
+        previewSurfaceProvider = provider
+        trafficSignCameraRuntime?.setPreviewSurfaceProvider(provider)
+    }
+
+    override fun capturePanoramaxPhoto(requestId: String) {
+        val runtime = trafficSignCameraRuntime
+        if (runtime != null) runtime.capturePanoramaxPhoto(requestId)
+        else sessionController.onPanoramaxPhotoCaptureFailed("Camera unavailable", requestId)
     }
 
     override fun showTransientMessage(message: String) {
