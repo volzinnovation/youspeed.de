@@ -3378,6 +3378,55 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Panoramax").appendingPathComponent(restored.items[0].thumbnailPath).path))
     }
 
+    func testPanoramaxQueueRepairsMissingThumbnailFromOriginal() async throws {
+        #if canImport(UIKit)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let timestamp = Date(timeIntervalSince1970: 1_000)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100))
+        let jpeg = try XCTUnwrap(renderer.jpegData(withCompressionQuality: 0.9) { context in
+            UIColor.systemBlue.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        })
+        let batch = try store.createBatch(captureSessionID: "session-thumbnail-repair", createdAt: timestamp)
+        let metadata = PanoramaxCaptureMetadata(
+            captureID: "capture-thumbnail-repair",
+            captureSessionID: batch.captureSessionID,
+            capturedAt: timestamp,
+            location: PanoramaxLocationSample(
+                latitude: 49,
+                longitude: 8,
+                capturedAt: timestamp,
+                accuracyMeters: 5,
+                altitudeMeters: nil,
+                headingDegrees: nil
+            ),
+            sha256: PanoramaxQueueStore.sha256(jpeg),
+            byteSize: Int64(jpeg.count),
+            software: "YouSpeed/test"
+        )
+        let item = try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata)
+        let thumbnailURL = try XCTUnwrap(store.thumbnailURL(for: item))
+        try FileManager.default.removeItem(at: thumbnailURL)
+
+        let loaded = await PanoramaxQueueMaintenanceExecutor.shared.loadBatches(store: store)
+        XCTAssertTrue(loaded.batchLoadSucceeded)
+        XCTAssertEqual(loaded.batches.first?.items.map(\.itemID), [item.itemID])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: thumbnailURL.path))
+
+        let startup = await PanoramaxQueueMaintenanceExecutor.shared.runStartup(
+            store: store,
+            deleteCompletedUploads: false
+        )
+        XCTAssertTrue(startup.batchLoadSucceeded)
+        XCTAssertEqual(startup.batches.first?.items.map(\.itemID), [item.itemID])
+        let repairedSource = try XCTUnwrap(CGImageSourceCreateWithURL(thumbnailURL as CFURL, nil))
+        XCTAssertNotNil(CGImageSourceCreateImageAtIndex(repairedSource, 0, nil))
+        XCTAssertEqual(try store.repairMissingThumbnails(), 0)
+        #endif
+    }
+
     func testPanoramaxQueueRejectsLatePhotoAfterDriveIsClosed() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

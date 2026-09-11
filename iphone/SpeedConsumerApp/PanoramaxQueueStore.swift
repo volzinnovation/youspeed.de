@@ -1,5 +1,6 @@
 import Foundation
 import CryptoKit
+import ImageIO
 
 struct PanoramaxBatchRecord: Codable, Equatable {
     let batchID: String
@@ -152,6 +153,38 @@ final class PanoramaxQueueStore: @unchecked Sendable {
 
     func originalURL(for item: PanoramaxItemRecord) -> URL? {
         fileURL(forRelativePath: item.originalPath)
+    }
+
+    /// Rebuilds thumbnails that were lost while the durable queue record was
+    /// already committed. Older builds could leave the sidecar and image
+    /// files out of sync after an interrupted cleanup, so the gallery must be
+    /// able to recover from the original whenever it is still available.
+    @discardableResult
+    func repairMissingThumbnails() throws -> Int {
+        try lock.withLock {
+            let files = try FileManager.default.contentsOfDirectory(at: batchesDirectory, includingPropertiesForKeys: nil)
+                .filter { $0.pathExtension == "json" }
+            var repairedCount = 0
+
+            for file in files {
+                guard let batch = try? decoder.decode(PanoramaxBatchRecord.self, from: Data(contentsOf: file)) else {
+                    continue
+                }
+                for item in batch.items {
+                    guard let original = originalURL(for: item),
+                          let thumbnail = thumbnailURL(for: item),
+                          FileManager.default.fileExists(atPath: original.path),
+                          !Self.isReadableImage(at: thumbnail),
+                          let thumbnailData = Self.makeThumbnail(from: original) else {
+                        continue
+                    }
+                    try thumbnailData.write(to: thumbnail, options: .atomic)
+                    protect(thumbnail)
+                    repairedCount += 1
+                }
+            }
+            return repairedCount
+        }
     }
 
     /// Associates a confirmed TSR result with the nearest picture in the same
@@ -505,6 +538,45 @@ final class PanoramaxQueueStore: @unchecked Sendable {
 
     static func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
+    private static func isReadableImage(at url: URL) -> Bool {
+        guard FileManager.default.fileExists(atPath: url.path),
+              let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            return false
+        }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil) != nil
+    }
+
+    private static func makeThumbnail(from url: URL) -> Data? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(
+                  source,
+                  0,
+                  [
+                      kCGImageSourceCreateThumbnailFromImageAlways: true,
+                      kCGImageSourceCreateThumbnailWithTransform: true,
+                      kCGImageSourceThumbnailMaxPixelSize: 640
+                  ] as CFDictionary
+              ) else {
+            return nil
+        }
+        let output = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            output,
+            "public.jpeg" as CFString,
+            1,
+            nil
+        ) else {
+            return nil
+        }
+        CGImageDestinationAddImage(
+            destination,
+            image,
+            [kCGImageDestinationLossyCompressionQuality: 0.72] as CFDictionary
+        )
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
+    }
+
     private static func isJPEG(_ data: Data) -> Bool {
         data.count >= 4 && data.prefix(2) == Data([0xff, 0xd8]) && data.suffix(2) == Data([0xff, 0xd9])
     }
@@ -773,6 +845,9 @@ actor PanoramaxQueueMaintenanceExecutor {
         let deletion = deleteCompletedUploads
             ? completedRetentionReport(store: store)
             : PanoramaxDeletionReport()
+        // Repair once at startup; upload progress refreshes must not decode the
+        // whole gallery while holding the queue lock after every uploaded item.
+        _ = try? store.repairMissingThumbnails()
         return result(store: store, startup: startup, deletion: deletion)
     }
 

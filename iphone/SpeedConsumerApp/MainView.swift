@@ -2376,6 +2376,11 @@ private struct PanoramaxReviewItemRow: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
+        } else if let url = viewModel.panoramaxOriginalURL(for: item),
+                  let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
         } else {
             Color.secondary.opacity(0.2)
                 .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
@@ -2734,6 +2739,8 @@ private struct PictureGalleryView: View {
     @ViewBuilder
     private func thumbnail(for item: PanoramaxItemRecord) -> some View {
         if let url = viewModel.panoramaxThumbnailURL(for: item), let image = UIImage(contentsOfFile: url.path) {
+            Image(uiImage: image).resizable().scaledToFill()
+        } else if let url = viewModel.panoramaxOriginalURL(for: item), let image = UIImage(contentsOfFile: url.path) {
             Image(uiImage: image).resizable().scaledToFill()
         } else {
             Color.secondary.opacity(0.2).overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
