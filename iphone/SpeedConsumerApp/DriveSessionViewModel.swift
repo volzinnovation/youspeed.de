@@ -221,6 +221,14 @@ enum AppScreenshotState: String {
         let longitude: Double
         let gpsHorizontalAccuracyM: Double
         let gpsSignalBars: Int
+
+        var baseEffectiveSpeedLimitState: EffectiveSpeedLimitState {
+            EffectiveSpeedLimitState.base(
+                localValue: speedLimitDisplayText == "Schritt" ? "walk" : nil,
+                bundledSpeedKmh: speedLimitKmh,
+                bundledUnlimited: isUnlimitedSpeedLimitActive
+            )
+        }
     }
 
     static func current(processInfo: ProcessInfo = .processInfo) -> AppScreenshotState? {
@@ -572,8 +580,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var activeMapCountryCode: String?
     private var penaltyRulesUseBundledSource = false
     private var firstLocationRegion: RegionalPackCatalog.Region?
-    private var firstLocationAttempts = 0
-    private var firstLocationRetryAfter = Date.distantPast
+    private var hasRequestedOnboardingLocation = false
+    @Published private(set) var recommendedBundleOptionID: String?
+    @Published private(set) var onboardingStateLoaded = false
+    @Published private(set) var onboardingCompleted = false
+    @Published private(set) var onboardingStep = 0
+    @Published private(set) var onboardingLocationAuthorization: CLAuthorizationStatus = .notDetermined
+    @Published private(set) var onboardingHasPreciseLocation = false
     deinit {
         penaltyCountryExpiryTask?.cancel()
     }
@@ -789,14 +802,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
         }
     }
-    @Published var hideWelcomeScreen: Bool {
-        didSet {
-            guard hideWelcomeScreen != oldValue else {
-                return
-            }
-            UserDefaults.standard.set(hideWelcomeScreen, forKey: Self.hideWelcomeScreenDefaultsKey)
-        }
-    }
     @Published var matcherDebugProfile: MatcherDebugProfile {
         didSet {
             guard matcherDebugProfile != oldValue else {
@@ -921,7 +926,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var tunnelModeTracker = TunnelModeTracker()
     private static let audioAlertThresholdDefaultsKey = "youspeed.audio_alert_threshold_kmh"
     private static let audioAlertsEnabledDefaultsKey = "youspeed.audio_alerts_enabled"
-    private static let hideWelcomeScreenDefaultsKey = "youspeed.hide_welcome_screen"
     private static let dashcamRecordingEnabledDefaultsKey = "youspeed.drive_recorder.dashcam_enabled"
     private static let trafficSignRecognitionEnabledDefaultsKey = "youspeed.drive_recorder.tsr_enabled"
     private static let trafficSignRecognitionIndependentEnabledDefaultsKey =
@@ -942,7 +946,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let matcherDebugProfileForcedVersionDefaultsKey = "youspeed.matcher_debug_profile_forced_version"
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
-    private static let defaultHideWelcomeScreen = false
     private static let defaultTrafficSignCountryCode = "DE"
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let fallbackLookupRadiusM: Double = 50.0
@@ -1399,7 +1402,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     override init() {
         let storedThreshold = UserDefaults.standard.object(forKey: Self.audioAlertThresholdDefaultsKey) as? Int
         let storedAudioEnabled = UserDefaults.standard.object(forKey: Self.audioAlertsEnabledDefaultsKey) as? Bool
-        let storedHideWelcome = UserDefaults.standard.object(forKey: Self.hideWelcomeScreenDefaultsKey) as? Bool
         let storedDashcamEnabled = UserDefaults.standard.object(forKey: Self.dashcamRecordingEnabledDefaultsKey) as? Bool
         let storedTSREnabled = UserDefaults.standard.object(forKey: Self.trafficSignRecognitionEnabledDefaultsKey) as? Bool
         let storedTSRIndependentEnabled = UserDefaults.standard.object(
@@ -1428,7 +1430,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activePenaltyRulesFile = "DEU-rules.json"
         audioAlertThresholdKmh = min(max(storedThreshold ?? Self.defaultAudioAlertThresholdKmh, 0), 80)
         audioAlertsEnabled = storedAudioEnabled ?? Self.defaultAudioAlertsEnabled
-        hideWelcomeScreen = storedHideWelcome ?? Self.defaultHideWelcomeScreen
         dashcamRecordingEnabled = storedDashcamEnabled ?? false
         // Keep on-device TSR opt-in; its German bootstrap model ships with the
         // app and is prepared in the background.
@@ -1491,6 +1492,114 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             await self?.refreshLocalObservations()
             await self?.refreshDownloadedBundleInventory()
             await self?.refreshExpectedBundleSizes()
+        }
+    }
+
+    var hasOnboardingMap: Bool {
+        FirstRunOnboardingPolicy.hasUsableMap(
+            databaseReady: isDatabaseReadyForQueries,
+            bundleVersion: activeBundleVersion
+        )
+    }
+
+    var shouldPresentOnboarding: Bool {
+        onboardingStateLoaded && (!onboardingCompleted || !hasOnboardingMap)
+    }
+
+    var canAdvanceOnboarding: Bool {
+        FirstRunOnboardingPolicy.canAdvance(
+            step: onboardingStep, hasMap: hasOnboardingMap,
+            hasPreciseLocation: onboardingHasPreciseLocation
+        )
+    }
+
+    /// Resolve migration only after the active map has been validated. Writing
+    /// false now prevents a first download from masquerading as an old install.
+    private func prepareOnboardingAfterStartup() {
+        let defaults = UserDefaults.standard
+        let stored = defaults.object(forKey: "youspeed.onboarding.completed") as? Bool
+        onboardingCompleted = FirstRunOnboardingPolicy.resolveCompletion(
+            storedCompletion: stored, hasMap: hasOnboardingMap
+        )
+        defaults.set(onboardingCompleted, forKey: "youspeed.onboarding.completed")
+        onboardingStep = FirstRunOnboardingPolicy.resolvedStep(
+            storedStep: defaults.integer(forKey: "youspeed.onboarding.step"),
+            hasMap: hasOnboardingMap
+        )
+        defaults.set(onboardingStep, forKey: "youspeed.onboarding.step")
+        refreshOnboardingLocationPermission()
+        onboardingStateLoaded = true
+    }
+
+    func normalizeOnboardingState() {
+        guard onboardingStateLoaded, !hasOnboardingMap else { return }
+        onboardingCompleted = false
+        setOnboardingStep(0)
+        UserDefaults.standard.set(false, forKey: "youspeed.onboarding.completed")
+        if isDriving { stopDriving() }
+    }
+
+    func advanceOnboarding() {
+        guard canAdvanceOnboarding else { return }
+        if onboardingStep == FirstRunOnboardingPolicy.lastStep {
+            guard FirstRunOnboardingPolicy.canFinish(
+                hasMap: hasOnboardingMap, hasPreciseLocation: onboardingHasPreciseLocation
+            ) else { return }
+            UserDefaults.standard.set(true, forKey: "youspeed.onboarding.completed")
+            onboardingCompleted = true
+        } else {
+            setOnboardingStep(onboardingStep + 1)
+        }
+    }
+
+    func goBackInOnboarding() {
+        setOnboardingStep(max(0, onboardingStep - 1))
+    }
+
+    func replayOnboarding() {
+        guard !isDriveRecorderActive else { return }
+        stopDriving()
+        onboardingCompleted = false
+        UserDefaults.standard.set(false, forKey: "youspeed.onboarding.completed")
+        setOnboardingStep(0)
+    }
+
+    private func setOnboardingStep(_ step: Int) {
+        onboardingStep = FirstRunOnboardingPolicy.resolvedStep(storedStep: step, hasMap: hasOnboardingMap)
+        UserDefaults.standard.set(onboardingStep, forKey: "youspeed.onboarding.step")
+    }
+
+    func refreshOnboardingLocationPermission() {
+        onboardingLocationAuthorization = locationManager.authorizationStatus
+        onboardingHasPreciseLocation =
+            (onboardingLocationAuthorization == .authorizedAlways
+                || onboardingLocationAuthorization == .authorizedWhenInUse)
+            && locationManager.accuracyAuthorization == .fullAccuracy
+    }
+
+    func requestOnboardingLocation() {
+        hasRequestedOnboardingLocation = true
+        firstLocationPackStatus = NSLocalizedString("first_location.waiting", comment: "")
+        refreshOnboardingLocationPermission()
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedAlways, .authorizedWhenInUse:
+            locationManager.requestLocation()
+        default:
+            firstLocationPackStatus = NSLocalizedString("first_location.permission", comment: "")
+        }
+    }
+
+    func selectOnboardingMap(_ optionID: String) {
+        // A location reply may arrive after the user opens the region picker.
+        // Clear the suggestion intent so that reply cannot replace their choice.
+        hasRequestedOnboardingLocation = false
+        firstLocationRegion = nil
+        recommendedBundleOptionID = nil
+        if !isDriving { locationManager.stopUpdatingLocation() }
+        if let option = bundleDownloadSections.flatMap(\.options).first(where: { $0.id == optionID }) {
+            firstLocationPackStatus = String(format: NSLocalizedString("onboarding.map.selected", comment: ""), option.displayName)
         }
     }
 
@@ -3644,7 +3753,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
                 await refreshDownloadedBundleInventory()
                 if firstLocationSetup {
-                    UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
                     firstLocationPackStatus = String(format: NSLocalizedString("first_location.ready", comment: ""), option.displayName)
                 }
             } catch {
@@ -4011,7 +4119,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             defer {
                 startupTask = nil
-                if startupDataState == .ready { beginFirstLocationSetup() }
+                if startupDataState == .ready {
+                    prepareOnboardingAfterStartup()
+                    beginFirstLocationSetup()
+                }
                 continueFirstLocationSetup()
             }
 
@@ -4129,12 +4240,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         syncProgressDetail = "Screenshot mode"
         isUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive
         audioAlertsEnabled = false
-        hideWelcomeScreen = true
         speedLimitService = nil
         bundleDownloadSections = buildBundleDownloadSections()
         downloadedBundleCountByRegion = [:]
         downloadedBundleLatestVersionByRegion = [:]
         expectedBundleBytesByRegion = [:]
+        // The effective state drives the sign. Populate its backing fields as
+        // well so later runtime-ready callbacks preserve the screenshot limit.
+        currentBundledSpeedLimitKmh = fixture.speedLimitKmh
+        currentBaseUnlimitedSpeedLimitActive = fixture.isUnlimitedSpeedLimitActive
+        currentLocalCorrectionValue = fixture.speedLimitDisplayText == "Schritt" ? "walk" : nil
+        publishEffectiveSpeedLimitState(fixture.baseEffectiveSpeedLimitState)
         if screenshotState == .cameraLimitActive {
             publishEffectiveSpeedLimitState(
                 EffectiveSpeedLimitState(
@@ -4307,25 +4423,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func beginFirstLocationSetup() {
         guard AppScreenshotState.current() == nil else { return }
-        if !downloadedBundleCountByRegion.isEmpty {
-            UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
-        }
-        guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else {
+        refreshOnboardingLocationPermission()
+        if hasOnboardingMap {
             firstLocationPackStatus = NSLocalizedString("first_location.complete", comment: "")
-            return
         }
-        switch locationManager.authorizationStatus {
-        case .notDetermined: locationManager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse, .authorizedAlways: locationManager.requestLocation()
-        default: firstLocationPackStatus = NSLocalizedString("first_location.permission", comment: "")
-        }
+        // The walkthrough explains location before the user requests it.
+        // A suggested map is never downloaded without pressing Download.
     }
 
     func retryFirstLocationSetup() {
-        firstLocationAttempts = 0
-        firstLocationRetryAfter = .distantPast
         firstLocationRegion = nil
-        beginFirstLocationSetup()
+        recommendedBundleOptionID = nil
+        requestOnboardingLocation()
     }
 
     private func discoverPacks(for location: CLLocation) {
@@ -4350,10 +4459,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         ).state
         countryModelPackStatus = String(format: NSLocalizedString("first_location.model_country", comment: ""), country ?? "—",
                                        NSLocalizedString(state == "country_unresolved" ? "first_location.model_unresolved" : "first_location.model_unavailable", comment: ""))
-        guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else { return }
-        // The first valid containing region is retained for the initial bundle download.
-        if firstLocationRegion == nil { firstLocationRegion = matches.first }
+        guard isDriving || hasRequestedOnboardingLocation else { return }
+        firstLocationRegion = matches.first
         if firstLocationRegion == nil {
+            recommendedBundleOptionID = nil
             firstLocationPackStatus = NSLocalizedString("first_location.no_coverage", comment: "")
         }
         continueFirstLocationSetup()
@@ -4361,29 +4470,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private func continueFirstLocationSetup() {
         guard AppScreenshotState.current() == nil,
-              !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete"),
-              startupDataState == .ready, startupTask == nil, syncTask == nil,
               let region = firstLocationRegion else { return }
         guard let option = bundleDownloadSections.flatMap(\.options).first(where: { $0.id == region.id }) else {
+            recommendedBundleOptionID = nil
             firstLocationPackStatus = NSLocalizedString("first_location.no_endpoint", comment: "")
             return
         }
-        if !downloadedBundleCountByRegion.isEmpty {
-            UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
-            firstLocationPackStatus = NSLocalizedString("first_location.existing", comment: "")
-            return
-        }
-        guard firstLocationAttempts < 3, Date() >= firstLocationRetryAfter else { return }
-        firstLocationAttempts += 1
-        firstLocationRetryAfter = Date().addingTimeInterval(60)
-        firstLocationPackStatus = String(format: NSLocalizedString("first_location.downloading", comment: ""), option.displayName)
-        downloadSelectedBundle(option, firstLocationSetup: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
-            self?.continueFirstLocationSetup()
-        }
+        recommendedBundleOptionID = option.id
+        firstLocationPackStatus = String(format: NSLocalizedString("onboarding.map.suggested", comment: ""), option.displayName)
     }
 
     func startDriving() {
+        guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
         resetTrafficSignPictogram()
         if speedLimitService == nil && startupDataState != .ready {
             ensureSeedBootstrapIfNeeded()
@@ -6940,8 +7038,9 @@ extension DriveSessionViewModel: AVSpeechSynthesizerDelegate {
 
 extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        refreshOnboardingLocationPermission()
         guard isDriving else {
-            if !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete"),
+            if hasRequestedOnboardingLocation,
                manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
                 manager.requestLocation()
             }

@@ -101,7 +101,7 @@ class ConsumerSmokeTest {
     @Test
     fun defaultLaunch_reachesKnownRootWithoutCrash() {
         launchApp(screenshotState = null)
-        waitAnyByRes(listOf("startup-root", "welcome-root", "main-root"), 120_000)
+        waitAnyByRes(listOf("startup-root", "onboarding-root", "main-root"), 120_000)
     }
 
     private fun launchApp(screenshotState: String?) {

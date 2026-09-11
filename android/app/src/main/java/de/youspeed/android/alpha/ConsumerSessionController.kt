@@ -265,6 +265,13 @@ data class ConsumerUiState(
     val audioAlertsEnabled: Boolean = true,
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
+    val onboardingCompleted: Boolean = false,
+    val onboardingStep: Int = 0,
+    val onboardingSelectedMapId: String? = null,
+    val onboardingSuggestedMapId: String? = null,
+    val onboardingLocationRequested: Boolean = false,
+    val onboardingLocating: Boolean = false,
+    val preciseLocationGranted: Boolean = false,
     val bundleDownloadSections: List<BundleDownloadCountrySection> = emptyList(),
     val firstLocationPackStatus: String = ConsumerRuntimeText.FIRST_LOCATION_WAITING.text(),
     val countryModelPackStatus: String = ConsumerRuntimeText.MODEL_COUNTRY_PENDING.text(),
@@ -462,9 +469,8 @@ class ConsumerSessionController(
         updateState { copy(activePenaltyRules = country?.let(::loadPenaltyRules) ?: ActivePenaltyRules.unavailable()) }
     }
     private var firstLocationRegion: RegionalPackCatalog.Region? = null
-    private var firstLocationAttempts = 0
-    private var firstLocationRetryAfter = 0L
     private var firstLocationRequested = false
+    private var locationSuggestionGeneration = 0L
     private val firstLocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) { discoverPacks(location) }
     }
@@ -609,6 +615,11 @@ class ConsumerSessionController(
             audioAlertsEnabled = preferences.getBoolean(KEY_AUDIO_ALERTS_ENABLED, true),
             audioAlertThresholdKmh = preferences.getInt(KEY_AUDIO_ALERT_THRESHOLD, 8).coerceIn(0, 80),
             hideWelcomeScreen = preferences.getBoolean(KEY_HIDE_WELCOME, false),
+            onboardingCompleted = preferences.getBoolean(OnboardingPolicy.COMPLETED_KEY, false),
+            onboardingStep = preferences.getInt(OnboardingPolicy.STEP_KEY, 0).coerceIn(0, OnboardingPolicy.LAST_STEP),
+            onboardingSelectedMapId = preferences.getString("youspeed.onboarding.selected_map", null),
+            onboardingLocationRequested = preferences.getBoolean("youspeed.onboarding.location_requested", false),
+            preciseLocationGranted = hasFineLocationPermission(),
             gpsLogPath = gpsLogFile().absolutePath,
             matchLogPath = matchLogFile().absolutePath,
             runtimeDiagnosticsLogPath = runtimeDiagnosticsLogFile().absolutePath,
@@ -670,7 +681,6 @@ class ConsumerSessionController(
     fun bindHost(host: ConsumerHost) {
         this.host = host
         reconcileTrafficSignCamera()
-        beginFirstLocationSetup()
     }
 
     fun dispose() {
@@ -729,6 +739,14 @@ class ConsumerSessionController(
                 localSpeedOverridesByWayId = resolveLocalSpeedOverrides(observations)
                 localSpeedOverrideValuesByWayId = resolveLocalSpeedOverrideValues(observations)
                 val active = bootstrapper.activeState()
+                // Resolve migration before READY makes a user-initiated download possible.
+                // Persist false as well: the first new download must not skip the later steps.
+                if (!preferences.contains(OnboardingPolicy.COMPLETED_KEY)) {
+                    preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY,
+                        OnboardingPolicy.migrateCompletion(null, OnboardingPolicy.hasUsableMap(
+                            active?.bundleVersion ?: "none", active?.dbPath?.let { File(it).isFile } == true,
+                        ))).apply()
+                }
                 replaceLookupService(
                     active?.dbPath,
                     preferredCountryCode = active?.countryCode,
@@ -790,49 +808,117 @@ class ConsumerSessionController(
         beginStartupDataLoadIfNeeded(force = true)
     }
 
-    fun shouldPresentWelcome(now: Instant = clock.instant()): Boolean {
-        if (uiState.startupDataState != StartupDataState.READY || uiState.hideWelcomeScreen) {
-            return false
+    fun hasUsableOnboardingMap(): Boolean = hasUsableOnboardingMap(uiState)
+
+    private fun hasUsableOnboardingMap(state: ConsumerUiState): Boolean = OnboardingPolicy.hasUsableMap(
+        state.activeBundleVersion,
+        state.activeDBPath.takeIf { it.isNotBlank() }?.let { File(it).let { db -> db.isFile && db.length() > 0 } } == true,
+    )
+
+    fun shouldPresentOnboarding(): Boolean = uiState.appScreenshotState == null &&
+        uiState.startupDataState == StartupDataState.READY &&
+        OnboardingPolicy.requiresSetup(uiState.onboardingCompleted, hasUsableOnboardingMap())
+
+    fun advanceOnboarding() {
+        refreshOnboardingPermissions()
+        if (!OnboardingPolicy.canAdvance(uiState.onboardingStep, hasUsableOnboardingMap(), uiState.preciseLocationGranted)) return
+        if (uiState.onboardingStep == OnboardingPolicy.LAST_STEP) {
+            preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY, true).apply()
+            updateState { copy(onboardingCompleted = true, onboardingLocating = false) }
+            firstLocationRequested = false
+            runCatching { locationManager.removeUpdates(firstLocationListener) }
+        } else {
+            setOnboardingStep(uiState.onboardingStep + 1)
         }
-        return ConsumerAppLogic.requiresWelcome(uiState.activeBundleVersion, now)
     }
 
-    private fun beginFirstLocationSetup() {
-        if (isDisposed.get() || host == null || uiState.appScreenshotState != null || firstLocationRequested ||
-            uiState.startupDataState != StartupDataState.READY) return
+    fun goBackInOnboarding() = setOnboardingStep(uiState.onboardingStep - 1)
+
+    private fun setOnboardingStep(step: Int) {
+        val next = OnboardingPolicy.resumedStep(step, hasUsableOnboardingMap())
+        preferences.edit().putInt(OnboardingPolicy.STEP_KEY, next).apply()
+        updateState { copy(onboardingStep = next) }
+    }
+
+    fun canReplayOnboarding(): Boolean = !driveRecorderEnabled && !DriveRecorderPolicy.isActive(uiState.driveRecorderState)
+
+    fun replayOnboarding(): Boolean {
+        if (!canReplayOnboarding()) return false
+        stopDriving()
+        preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY, false).putInt(OnboardingPolicy.STEP_KEY, 0).apply()
+        updateState { copy(onboardingCompleted = false, onboardingStep = 0) }
+        return true
+    }
+
+    fun pauseDrivingForOnboarding() {
+        if (shouldPresentOnboarding() && isDriving) stopDriving()
+    }
+
+    fun refreshOnboardingPermissions() {
+        val precise = hasFineLocationPermission()
+        updateState { copy(preciseLocationGranted = precise,
+            driveStatus = if (!isDriving && shouldPresentOnboarding()) "stopped" else driveStatus,
+            lastError = if (precise && lastError == ConsumerRuntimeText.LOCATION_DENIED.text()) "" else lastError) }
+    }
+
+    fun requestOnboardingLocationPermission() {
+        preferences.edit().putBoolean("youspeed.onboarding.location_requested", true).apply()
+        updateState { copy(onboardingLocationRequested = true, preciseLocationGranted = hasFineLocationPermission()) }
+        if (!hasFineLocationPermission()) host?.requestLocationPermission()
+    }
+
+    fun openOnboardingLocationSettings() { host?.openApplicationSettings() }
+
+    fun selectOnboardingMap(id: String) {
+        if (isSyncingNow() || uiState.bundleDownloadSections.flatMap { it.options }.none { it.id == id }) return
+        firstLocationRequested = false
+        locationSuggestionGeneration++
+        runCatching { locationManager.removeUpdates(firstLocationListener) }
+        preferences.edit().putString("youspeed.onboarding.selected_map", id).apply()
+        updateState { copy(onboardingSelectedMapId = id, onboardingLocating = false, lastError = "") }
+    }
+
+    fun downloadOnboardingMap() {
+        val selected = uiState.bundleDownloadSections.flatMap { it.options }
+            .firstOrNull { it.id == uiState.onboardingSelectedMapId } ?: return
+        downloadSelectedBundle(selected, firstLocationSetup = true)
+    }
+
+    fun useLocationForOnboarding() {
+        if (isSyncingNow()) return
+        firstLocationRegion = null
         firstLocationRequested = true
-        if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
-            preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
-        }
-        if (preferences.getBoolean("youspeed.first_location_map_complete", false)) {
-            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.FIRST_MAP_COMPLETE.text()) }
-            return
-        }
+        preferences.edit().putBoolean("youspeed.onboarding.location_requested", true).apply()
+        updateState { copy(onboardingLocationRequested = true, onboardingLocating = true,
+            onboardingSuggestedMapId = null, firstLocationPackStatus = appContext.getString(R.string.onboarding_locating)) }
         if (hasLocationPermission()) requestFirstLocation() else host?.requestLocationPermission()
     }
 
     @SuppressLint("MissingPermission")
     private fun requestFirstLocation() {
-        if (!hasLocationPermission() || isDisposed.get() || uiState.appScreenshotState != null ||
-            preferences.getBoolean("youspeed.first_location_map_complete", false)) return
+        if (!firstLocationRequested || !hasLocationPermission() || isDisposed.get() || uiState.appScreenshotState != null) return
+        val generation = ++locationSuggestionGeneration
         runCatching { locationManager.removeUpdates(firstLocationListener) }
-        locationManager.getProviders(true).filter { it != LocationManager.PASSIVE_PROVIDER }.forEach { provider ->
+        for (provider in locationManager.getProviders(true).filter { it != LocationManager.PASSIVE_PROVIDER }) {
+            if (!firstLocationRequested) break
+            runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()?.let(::discoverPacks)
+            if (!firstLocationRequested) break
             runCatching { locationManager.requestLocationUpdates(provider, 1000L, 0f, firstLocationListener, Looper.getMainLooper()) }
         }
         mainHandler.postDelayed({
-            runCatching { locationManager.removeUpdates(firstLocationListener) }
-        }, 60_000)
+            if (generation == locationSuggestionGeneration && firstLocationRequested && uiState.onboardingLocating) {
+                firstLocationRequested = false
+                runCatching { locationManager.removeUpdates(firstLocationListener) }
+                updateState { copy(onboardingLocating = false,
+                    firstLocationPackStatus = appContext.getString(R.string.onboarding_location_unavailable)) }
+            }
+        }, 30_000)
     }
 
-    fun retryFirstLocationSetup() {
-        firstLocationAttempts = 0
-        firstLocationRetryAfter = 0
-        firstLocationRegion = null
-        firstLocationRequested = false
-        beginFirstLocationSetup()
-    }
+    fun retryFirstLocationSetup() = useLocationForOnboarding()
 
     private fun discoverPacks(location: Location) {
+        if (!isDriving && !firstLocationRequested) return
         val countryCode = penaltyCountrySelection.update(regionalPackCatalog, location.latitude, location.longitude,
             if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
             location.time / 1000.0, clock.millis() / 1000.0)
@@ -856,39 +942,25 @@ class ConsumerSessionController(
         val prefix = country?.let { ConsumerRuntimeText.MODEL_COUNTRY_PREFIX.text(it) } ?: ConsumerRuntimeText.MODEL_PREFIX.text()
         updateState { copy(countryModelPackStatus = prefix + if (state == "country_unresolved")
             ConsumerRuntimeText.MODEL_COUNTRY_UNCLEAR.text() else ConsumerRuntimeText.MODEL_DOWNLOAD_UNAVAILABLE.text()) }
-        if (preferences.getBoolean("youspeed.first_location_map_complete", false)) return
-        if (firstLocationRegion == null) firstLocationRegion = matches.firstOrNull()
-        if (firstLocationRegion == null) {
-            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.LOCATION_MAP_UNAVAILABLE.text()) }
+        if (!firstLocationRequested) return
+        firstLocationRegion = matches.firstOrNull()
+        val option = firstLocationRegion?.let { region ->
+            uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == region.id }
+        }
+        firstLocationRequested = false
+        runCatching { locationManager.removeUpdates(firstLocationListener) }
+        if (option == null) {
+            updateState { copy(onboardingLocating = false,
+                firstLocationPackStatus = appContext.getString(R.string.onboarding_location_unavailable)) }
         } else {
-            runCatching { locationManager.removeUpdates(firstLocationListener) }
+            preferences.edit().putString("youspeed.onboarding.selected_map", option.id).apply()
+            updateState { copy(onboardingLocating = false, onboardingSuggestedMapId = option.id,
+                onboardingSelectedMapId = option.id,
+                firstLocationPackStatus = appContext.getString(R.string.onboarding_suggested_map, option.displayName)) }
         }
-        continueFirstLocationSetup()
     }
 
-    private fun continueFirstLocationSetup() {
-        if (isDisposed.get() || uiState.appScreenshotState != null ||
-            preferences.getBoolean("youspeed.first_location_map_complete", false) ||
-            uiState.startupDataState != StartupDataState.READY || isSyncingNow()) return
-        val region = firstLocationRegion ?: return
-        val option = uiState.bundleDownloadSections.flatMap { it.options }.firstOrNull { it.id == region.id } ?: run {
-            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.REGION_DOWNLOAD_UNAVAILABLE.text()) }
-            return
-        }
-        if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
-            preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
-            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.KEEP_EXISTING_MAPS.text()) }
-            return
-        }
-        if (firstLocationAttempts >= 3 || clock.millis() < firstLocationRetryAfter) return
-        firstLocationAttempts++
-        firstLocationRetryAfter = clock.millis() + 60_000
-        updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.MATCHING_MAP_LOADING.text(option.displayName)) }
-        downloadSelectedBundle(option, firstLocationSetup = true)
-        mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
-    }
-
-    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean = DriveRecorderPolicy.shouldRunRecognition(
+    internal fun isTrafficSignRecognitionRuntimeEnabled(): Boolean = !shouldPresentOnboarding() && DriveRecorderPolicy.shouldRunRecognition(
         uiState.trafficSignRecognitionEnabled, uiState.trafficSignRecognitionIndependentEnabled,
         driveRecorderEnabled, isDriving, applicationActive,
     )
@@ -905,10 +977,20 @@ class ConsumerSessionController(
     }
 
     fun setApplicationActive(active: Boolean) {
+        if (active) {
+            refreshOnboardingPermissions()
+            if (uiState.onboardingLocating) requestFirstLocation()
+        }
         if (applicationActive == active) return
         applicationActive = active
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
-        if (!active && driveRecorderEnabled) stopDriveRecorder()
+        if (!active) {
+            if (driveRecorderEnabled) stopDriveRecorder()
+            if (uiState.onboardingLocating) {
+                locationSuggestionGeneration++
+                runCatching { locationManager.removeUpdates(firstLocationListener) }
+            }
+        }
         reconcileTrafficSignCamera()
     }
 
@@ -927,6 +1009,7 @@ class ConsumerSessionController(
             .map { file -> DashcamRecording(file.absolutePath, Instant.ofEpochMilli(file.lastModified()), file.length()) }
 
     fun toggleDriveRecorder() {
+        if (shouldPresentOnboarding()) return
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY ||
             uiState.driveRecorderState == DriveRecorderState.STOPPING) return
         if (driveRecorderEnabled) { stopDriveRecorder(); return }
@@ -1296,6 +1379,7 @@ class ConsumerSessionController(
     }
 
     fun startDriving() {
+        if (shouldPresentOnboarding()) return
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY) {
             return
         }
@@ -1355,11 +1439,13 @@ class ConsumerSessionController(
     }
 
     fun onLocationPermissionResult(granted: Boolean) {
+        refreshOnboardingPermissions()
         if (!granted) {
             updateState {
                 copy(
-                    firstLocationPackStatus = ConsumerRuntimeText.LOCATION_REQUIRED_FOR_MAP.text(),
-                    driveStatus = "location_denied",
+                    onboardingLocating = false,
+                    firstLocationPackStatus = appContext.getString(R.string.onboarding_location_unavailable),
+                    driveStatus = if (isDriving) "location_denied" else "stopped",
                     lastError = ConsumerRuntimeText.LOCATION_DENIED.text(),
                 )
             }
@@ -1373,6 +1459,7 @@ class ConsumerSessionController(
     }
 
     fun beginSpeedCapture() {
+        if (shouldPresentOnboarding()) return
         if (uiState.startupDataState != StartupDataState.READY || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
             return
         }
@@ -1563,7 +1650,7 @@ class ConsumerSessionController(
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     private fun reconcileTrafficSignCamera() {
-        val shouldRun = (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive()) && uiState.appScreenshotState == null
+        val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive()) && uiState.appScreenshotState == null
         if (!shouldRun) {
             host?.stopTrafficSignCamera()
             updateState {
@@ -3484,6 +3571,7 @@ class ConsumerSessionController(
                 startupDataState = StartupDataState.READY,
                 startupProgress = 1.0,
                 startupDetail = prepared.startupDetail,
+                onboardingCompleted = preferences.getBoolean(OnboardingPolicy.COMPLETED_KEY, false),
                 activeBundleVersion = prepared.activeBundleVersion,
                 activeDBPath = prepared.activeDBPath,
 
@@ -3495,10 +3583,6 @@ class ConsumerSessionController(
                 localObservationStatus = "",
                 lastError = "",
             )
-        }
-        mainHandler.post {
-            beginFirstLocationSetup()
-            continueFirstLocationSetup()
         }
     }
 
@@ -4389,6 +4473,15 @@ class ConsumerSessionController(
         }
     }
 
+    private fun normalizeOnboardingState(state: ConsumerUiState): ConsumerUiState {
+        if (state.startupDataState != StartupDataState.READY || state.appScreenshotState != null) return state
+        if (hasUsableOnboardingMap(state)) return state
+        if (state.onboardingCompleted || state.onboardingStep != 0) {
+            preferences.edit().putBoolean(OnboardingPolicy.COMPLETED_KEY, false).putInt(OnboardingPolicy.STEP_KEY, 0).apply()
+        }
+        return state.copy(onboardingCompleted = false, onboardingStep = 0)
+    }
+
     private fun updateState(transform: ConsumerUiState.() -> ConsumerUiState) {
         if (isDisposed.get()) {
             return
@@ -4397,7 +4490,7 @@ class ConsumerSessionController(
             postState(transform)
             return
         }
-        uiState = uiState.transform().withCurrentTrafficSignDisplayGeneration(
+        uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
             previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
         )
     }
@@ -4410,7 +4503,7 @@ class ConsumerSessionController(
             if (isDisposed.get()) {
                 return@post
             }
-            uiState = uiState.transform().withCurrentTrafficSignDisplayGeneration(
+            uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
                 previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
             )
         }

@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">YouSpeed</string>
     <string name="header_title">YouSpeed</string>
     <string name="header_summary">Live speed-limit assistance with offline map data and advisory speeding-cost estimates.</string>
@@ -32,4 +32,71 @@
     <string name="ui_panoramax_include">Include</string>
     <string name="ui_panoramax_exclude">Exclude</string>
     <string name="ui_panoramax_no_camera">Camera is unavailable</string>
+
+    <!-- Guided setup follows ConsumerUiStrings: EN, DE, FR and NL are localized.
+         Other app locales intentionally use these English defaults. Scope the lint
+         annotation to these keys so missing translations elsewhere remain errors. -->
+    <string name="onboarding_step" tools:ignore="MissingTranslation">Step %1$d of 5</string>
+    <string name="onboarding_setup" tools:ignore="MissingTranslation">Setup</string>
+    <string name="onboarding_replay" tools:ignore="MissingTranslation">Show setup again</string>
+    <string name="onboarding_replay_detail" tools:ignore="MissingTranslation">Explore maps and features again when the recorder is stopped.</string>
+    <string name="onboarding_map_title" tools:ignore="MissingTranslation">Download your map</string>
+    <string name="onboarding_map_body" tools:ignore="MissingTranslation">YouSpeed needs a downloaded map to show roads and speed limits. Use your location for a suggestion, or choose a region yourself.</string>
+    <string name="onboarding_use_location" tools:ignore="MissingTranslation">Use my location</string>
+    <string name="onboarding_locating" tools:ignore="MissingTranslation">Finding a map for your location…</string>
+    <string name="onboarding_location_unavailable" tools:ignore="MissingTranslation">No suitable location was found. Try again or choose a region below.</string>
+    <string name="onboarding_suggested_map" tools:ignore="MissingTranslation">Suggested for your location: %1$s</string>
+    <string name="onboarding_choose_map" tools:ignore="MissingTranslation">Choose a region</string>
+    <string name="onboarding_download" tools:ignore="MissingTranslation">Download map</string>
+    <string name="onboarding_retry_download" tools:ignore="MissingTranslation">Retry download</string>
+    <string name="onboarding_map_ready" tools:ignore="MissingTranslation">Your downloaded map is ready.</string>
+    <string name="onboarding_map_required" tools:ignore="MissingTranslation">Download a map to continue. The included sample is not enough for setup.</string>
+    <string name="onboarding_map_network" tools:ignore="MissingTranslation">The download uses your internet connection, including mobile data. Afterward, the map works offline. Map data: OpenStreetMap contributors.</string>
+    <string name="onboarding_driving_title" tools:ignore="MissingTranslation">Ready for the road</string>
+    <string name="onboarding_driving_body" tools:ignore="MissingTranslation">Allow precise location while using the app so YouSpeed can match your road and show your current speed. You can also choose spoken speed alerts.</string>
+    <string name="onboarding_allow_location" tools:ignore="MissingTranslation">Allow precise location</string>
+    <string name="onboarding_location_ready" tools:ignore="MissingTranslation">Precise location is enabled.</string>
+    <string name="onboarding_location_denied" tools:ignore="MissingTranslation">Precise location is still required. Allow it in the permission prompt or open app settings and enable precise location.</string>
+    <string name="onboarding_open_settings" tools:ignore="MissingTranslation">Open app settings</string>
+    <string name="onboarding_audio" tools:ignore="MissingTranslation">Spoken speed alerts</string>
+    <string name="onboarding_audio_body" tools:ignore="MissingTranslation">Choose how far above the limit a spoken warning begins. Your existing settings are kept.</string>
+    <string name="onboarding_threshold" tools:ignore="MissingTranslation">%1$d km/h over the limit</string>
+    <string name="onboarding_dashcam_title" tools:ignore="MissingTranslation">Your optional dashcam</string>
+    <string name="onboarding_dashcam_body" tools:ignore="MissingTranslation">Record a drive as a video on this phone. Setup does not start recording or open the camera.</string>
+    <string name="onboarding_dashcam_control_title" tools:ignore="MissingTranslation">Start and stop on the driving screen</string>
+    <string name="onboarding_dashcam_control_body" tools:ignore="MissingTranslation">Tap the recorder button when you are ready. Its timer shows the session. Turn video off separately while keeping sign recognition or photos active. Camera permission is requested when you use the camera.</string>
+    <string name="onboarding_dashcam_library_title" tools:ignore="MissingTranslation">Play, share or delete videos</string>
+    <string name="onboarding_dashcam_library_body" tools:ignore="MissingTranslation">Open the video library after stopping. Tap a video to play it, use Share to send or upload it through another app, or select recordings to delete locally. YouSpeed keeps videos on this device; Panoramax uploads are for photos.</string>
+    <string name="onboarding_sources_title" tools:ignore="MissingTranslation">Where limits come from</string>
+    <string name="onboarding_sources_body" tools:ignore="MissingTranslation">Your map and own corrections work without a camera. Camera recognition adds roadside signs.</string>
+    <string name="onboarding_source_map_title" tools:ignore="MissingTranslation">Downloaded map</string>
+    <string name="onboarding_source_map_body" tools:ignore="MissingTranslation">The downloaded road data supplies known speed limits offline. A normal speed-limit sign has no camera eye. Map information may be missing or out of date.</string>
+    <string name="onboarding_source_correction_title" tools:ignore="MissingTranslation">Your own corrections</string>
+    <string name="onboarding_source_correction_body" tools:ignore="MissingTranslation">Double-tap the speed-limit sign, then say the observed limit in German. Recognition runs on this phone and asks for microphone access when first used. Your confirmed correction stays local; review it in settings.</string>
+    <string name="onboarding_source_camera_title" tools:ignore="MissingTranslation">Camera recognition and the eye</string>
+    <string name="onboarding_source_camera_body" tools:ignore="MissingTranslation">The camera can recognize roadside signs. An eye beside the active speed-limit sign means the displayed limit currently comes from camera recognition. When the camera assertion ends, the app returns to map data or your applicable correction. Always follow the signs on the road.</string>
+    <string name="onboarding_recognition" tools:ignore="MissingTranslation">Recognize signs with the camera</string>
+    <string name="onboarding_independent" tools:ignore="MissingTranslation">Recognize without starting the recorder</string>
+    <string name="onboarding_independent_body" tools:ignore="MissingTranslation">With recognition enabled, this option uses the camera on the driving screen without saving a dashcam video. You can also turn video off during a recorder session and keep recognition on.</string>
+    <string name="onboarding_panoramax_title" tools:ignore="MissingTranslation">Capture for Panoramax</string>
+    <string name="onboarding_panoramax_body" tools:ignore="MissingTranslation">Capture street-level photos with GPS while the recorder runs, even with video off. Photos stay on your phone until you choose to publish them on Panoramax.</string>
+    <string name="onboarding_panoramax_capture" tools:ignore="MissingTranslation">Capture photos with the recorder</string>
+    <string name="onboarding_panoramax_review_title" tools:ignore="MissingTranslation">Stop, inspect and select</string>
+    <string name="onboarding_panoramax_review_body" tools:ignore="MissingTranslation">Photos are captured at intervals during the recorder session. Stop the recorder, then open the photo gallery. Open a photo full-size and zoom to inspect it. Mark favorites to protect them from automatic cleanup. Select individual photos or all, clear the selection, or delete unwanted local photos.</string>
+    <string name="onboarding_panoramax_upload_title" tools:ignore="MissingTranslation">Connect, confirm and upload</string>
+    <string name="onboarding_panoramax_upload_body" tools:ignore="MissingTranslation">Connect your Panoramax account in settings. Choose photos and confirm Upload to send the selected photos and their GPS locations for publication. Follow each batch’s progress, stop uploads when needed, and resume interrupted uploads. Uploads use your internet connection, including mobile data, and are available after recording stops.</string>
+    <string name="onboarding_finish_body" tools:ignore="MissingTranslation">You can change these choices in settings at any time. Finish setup to open the driving screen.</string>
+    <string name="onboarding_normal_limit_caption" tools:ignore="MissingTranslation">Map or your correction</string>
+    <string name="onboarding_camera_limit_caption" tools:ignore="MissingTranslation">Eye: camera limit is active</string>
+    <string name="onboarding_video_screenshot" tools:ignore="MissingTranslation">Example of the video library with playback, sharing and selection controls</string>
+    <string name="onboarding_review_screenshot" tools:ignore="MissingTranslation">Example of photo review with favorites and selection</string>
+    <string name="onboarding_upload_screenshot" tools:ignore="MissingTranslation">Connect your Panoramax account in settings before uploading</string>
+    <string name="onboarding_back" tools:ignore="MissingTranslation">Back</string>
+    <string name="onboarding_next" tools:ignore="MissingTranslation">Continue</string>
+    <string name="onboarding_finish" tools:ignore="MissingTranslation">Finish setup</string>
+    <string name="onboarding_expand_screenshot" tools:ignore="MissingTranslation">Enlarge example</string>
+    <string name="onboarding_screenshot_hint" tools:ignore="MissingTranslation">Tap the example to enlarge it. Pinch to zoom.</string>
+    <string name="onboarding_close_example" tools:ignore="MissingTranslation">Close example</string>
+    <string name="onboarding_threshold_decrease_label" tools:ignore="MissingTranslation">Lower the warning threshold</string>
+    <string name="onboarding_threshold_increase_label" tools:ignore="MissingTranslation">Raise the warning threshold</string>
 </resources>

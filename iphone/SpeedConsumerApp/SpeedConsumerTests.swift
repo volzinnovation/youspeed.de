@@ -224,6 +224,48 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    func testOnboardingRequiresAValidatedNonSeedMap() {
+        for version in ["", "none", "seed", " SEED "] {
+            XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: version))
+        }
+        XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: false, bundleVersion: "2026-09-11"))
+        XCTAssertTrue(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: "2026-09-11"))
+        // A dated map may need an update, but must not repeat first-run setup.
+        XCTAssertTrue(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: "2020-01-01"))
+    }
+
+    func testOnboardingMigratesExistingMapUsersButPersistsIncompleteFirstRun() {
+        XCTAssertTrue(FirstRunOnboardingPolicy.resolveCompletion(storedCompletion: nil, hasMap: true))
+        let firstRun = FirstRunOnboardingPolicy.resolveCompletion(storedCompletion: nil, hasMap: false)
+        XCTAssertFalse(firstRun)
+        XCTAssertFalse(FirstRunOnboardingPolicy.resolveCompletion(storedCompletion: firstRun, hasMap: true))
+        XCTAssertTrue(FirstRunOnboardingPolicy.resolveCompletion(storedCompletion: true, hasMap: true))
+        XCTAssertFalse(FirstRunOnboardingPolicy.resolveCompletion(storedCompletion: true, hasMap: false))
+    }
+
+    func testOnboardingResumesStepAndReturnsToMapWhenDataIsMissing() {
+        XCTAssertEqual(FirstRunOnboardingPolicy.resolvedStep(storedStep: 3, hasMap: true), 3)
+        XCTAssertEqual(FirstRunOnboardingPolicy.resolvedStep(storedStep: 3, hasMap: false), 0)
+        XCTAssertEqual(FirstRunOnboardingPolicy.resolvedStep(storedStep: -1, hasMap: true), 0)
+        XCTAssertEqual(FirstRunOnboardingPolicy.resolvedStep(storedStep: 99, hasMap: true), 4)
+    }
+
+    func testOnboardingAllowsManualMapChoiceBeforePreciseLocationButGatesDriving() {
+        XCTAssertTrue(FirstRunOnboardingPolicy.canAdvance(step: 0, hasMap: true, hasPreciseLocation: false))
+        XCTAssertFalse(FirstRunOnboardingPolicy.canAdvance(step: 1, hasMap: true, hasPreciseLocation: false))
+        XCTAssertTrue(FirstRunOnboardingPolicy.canAdvance(step: 1, hasMap: true, hasPreciseLocation: true))
+        for step in 0...4 {
+            XCTAssertFalse(FirstRunOnboardingPolicy.canAdvance(step: step, hasMap: false, hasPreciseLocation: true))
+        }
+    }
+
+    func testOnboardingCannotFinishAfterLocationIsRevokedOrMapRemoved() {
+        XCTAssertFalse(FirstRunOnboardingPolicy.canFinish(hasMap: true, hasPreciseLocation: false))
+        XCTAssertFalse(FirstRunOnboardingPolicy.canFinish(hasMap: false, hasPreciseLocation: true))
+        XCTAssertFalse(FirstRunOnboardingPolicy.canAdvance(step: 4, hasMap: true, hasPreciseLocation: false))
+        XCTAssertTrue(FirstRunOnboardingPolicy.canFinish(hasMap: true, hasPreciseLocation: true))
+    }
+
     func testMainRecorderControlStartsDashcamWithoutChangingOtherConsumers() {
         for trafficSignRecognitionEnabled in [false, true] {
             for panoramaxEnabled in [false, true] {
@@ -5030,6 +5072,15 @@ final class SpeedConsumerTests: XCTestCase {
             "Expected bundled pedestrian-zone sign asset"
         )
         #endif
+    }
+
+    func testNormalScreenshotFixturePublishesMapLimitWithoutCameraMarker() {
+        let state = AppScreenshotState.warnLevel0.fixture.baseEffectiveSpeedLimitState
+        XCTAssertEqual(state.value, .numeric(50))
+        XCTAssertEqual(state.source, .bundle)
+        XCTAssertFalse(state.hasCameraEvidenceMarker)
+        XCTAssertEqual(AppScreenshotState.pedestrianZone.fixture.baseEffectiveSpeedLimitState.value, .walk)
+        XCTAssertEqual(AppScreenshotState.autobahnUnlimitedAbove130.fixture.baseEffectiveSpeedLimitState.value, .unlimited)
     }
 
     func testPedestrianScreenshotFixtureUsesWalkingPacePresentation() {

@@ -84,6 +84,16 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         )
     }
 
+    override fun onResume() {
+        super.onResume()
+        sessionController.refreshOnboardingPermissions()
+    }
+
+    override fun openApplicationSettings() {
+        startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:$packageName")))
+    }
+
     override fun requestMicrophonePermission() {
         microphonePermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
     }

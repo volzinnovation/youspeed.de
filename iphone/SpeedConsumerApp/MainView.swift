@@ -3080,12 +3080,12 @@ private struct SettingsView: View {
                 LabeledContent(NSLocalizedString("settings.penalty.bands", comment: ""), value: "\(viewModel.activePenaltyRules.bands.count)")
             }
 
-            Section(NSLocalizedString("settings.welcome.section", comment: "")) {
-                Toggle(NSLocalizedString("welcome.hide", comment: ""), isOn: $viewModel.hideWelcomeScreen)
-
-                Text(viewModel.hideWelcomeScreen
-                     ? NSLocalizedString("settings.welcome.hidden", comment: "")
-                     : NSLocalizedString("settings.welcome.visible", comment: ""))
+            Section(NSLocalizedString("onboarding.settings.section", comment: "")) {
+                Button(NSLocalizedString("onboarding.settings.replay", comment: "")) {
+                    viewModel.replayOnboarding()
+                }
+                .disabled(viewModel.isDriveRecorderActive)
+                Text(NSLocalizedString("onboarding.settings.description", comment: ""))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

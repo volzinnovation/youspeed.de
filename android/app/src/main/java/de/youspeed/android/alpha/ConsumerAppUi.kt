@@ -180,15 +180,17 @@ internal object CameraSpeedLimitUsePresentation {
 @Composable
 fun ConsumerApp(controller: ConsumerSessionController) {
     val ui = controller.uiState
-    var dismissedWelcomeThisSession by rememberSaveable { mutableStateOf(false) }
     var openSettings by rememberSaveable { mutableStateOf(false) }
     var openLegal by rememberSaveable { mutableStateOf(false) }
     var openDebug by rememberSaveable { mutableStateOf(false) }
     var openLocalRecordings by rememberSaveable { mutableStateOf(false) }
     var openPanoramaxGallery by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(ui.startupDataState, ui.appScreenshotState) {
-        if (ui.appScreenshotState == null && ui.startupDataState == StartupDataState.READY && ui.driveStatus == "stopped") {
+    val showingOnboarding = controller.shouldPresentOnboarding()
+    LaunchedEffect(ui.startupDataState, ui.appScreenshotState, showingOnboarding) {
+        if (showingOnboarding) {
+            controller.pauseDrivingForOnboarding()
+        } else if (ui.appScreenshotState == null && ui.startupDataState == StartupDataState.READY && ui.driveStatus == "stopped") {
             controller.startDriving()
         }
     }
@@ -215,17 +217,25 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     )
                 }
 
-                controller.shouldPresentWelcome(Instant.now()) && !dismissedWelcomeThisSession -> {
-                    WelcomeScreen(
+                showingOnboarding -> {
+                    OnboardingScreen(
                         ui = ui,
-                        onOpenSettings = {
-                            dismissedWelcomeThisSession = true
-                            openSettings = true
+                        hasUsableMap = controller.hasUsableOnboardingMap(),
+                        isSyncing = controller.isSyncingNow(),
+                        onNext = controller::advanceOnboarding,
+                        onBack = controller::goBackInOnboarding,
+                        onUseLocation = {
+                            if (ui.onboardingStep == 0) controller.useLocationForOnboarding()
+                            else controller.requestOnboardingLocationPermission()
                         },
-                        onContinue = {
-                            dismissedWelcomeThisSession = true
-                        },
-                        onHideWelcomeChanged = controller::setHideWelcomeScreen,
+                        onOpenLocationSettings = controller::openOnboardingLocationSettings,
+                        onSelectMap = controller::selectOnboardingMap,
+                        onDownloadMap = controller::downloadOnboardingMap,
+                        onAudioEnabled = controller::setAudioAlertsEnabled,
+                        onAudioThreshold = controller::setAudioAlertThresholdKmh,
+                        onRecognitionEnabled = controller::setTrafficSignRecognitionEnabled,
+                        onIndependentRecognitionEnabled = controller::setTrafficSignRecognitionIndependentEnabled,
+                        onPanoramaxEnabled = controller::setPanoramaxCaptureEnabled,
                     )
                 }
 
@@ -321,169 +331,6 @@ private fun StartupScreen(
                     Text(stringResource(R.string.startup_retry), style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun WelcomeScreen(
-    ui: ConsumerUiState,
-    onOpenSettings: () -> Unit,
-    onContinue: () -> Unit,
-    onHideWelcomeChanged: (Boolean) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .testTag("welcome-root"),
-    ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp)
-                .widthIn(max = 560.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            Text(
-                stringResource(R.string.welcome_title),
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-                style = roundedUiTextStyle(size = 34.sp, weight = FontWeight.Bold),
-            )
-            Text(
-                stringResource(R.string.welcome_copy),
-                color = Color.White.copy(alpha = 0.92f),
-                textAlign = TextAlign.Center,
-                style = roundedUiTextStyle(size = 18.sp, weight = FontWeight.SemiBold),
-            )
-            CoverageCard(activeBundleVersion = ui.activeBundleVersion)
-            Text(
-                if (ui.activeBundleVersion == "seed" || ui.activeBundleVersion == "none") {
-                    stringResource(R.string.welcome_scope_seed)
-                } else {
-                    stringResource(R.string.welcome_scope_active, ui.activeBundleVersion)
-                },
-                color = Color.White.copy(alpha = 0.88f),
-                textAlign = TextAlign.Center,
-                style = roundedUiTextStyle(size = 15.sp, weight = FontWeight.Medium),
-            )
-            Card(colors = CardDefaults.cardColors(containerColor = Color(0x33FFD54F))) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(R.string.welcome_legal_heading),
-                        color = Color.Yellow,
-                        style = roundedUiTextStyle(size = 14.sp, weight = FontWeight.Bold),
-                    )
-                    Text(
-                        stringResource(R.string.legal_disclaimer_short),
-                        color = Color.White.copy(alpha = 0.86f),
-                        style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
-                    )
-                }
-            }
-            Card(colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))) {
-                Text(
-                    stringResource(R.string.welcome_osm_credit),
-                    color = Color.White.copy(alpha = 0.76f),
-                    modifier = Modifier.padding(12.dp),
-                    style = roundedUiTextStyle(size = 13.sp, weight = FontWeight.Normal),
-                )
-            }
-            Button(
-                onClick = onOpenSettings,
-                colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("welcome-open-settings-button"),
-            ) { Text(stringResource(R.string.welcome_open_settings), style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold)) }
-            OutlinedButton(
-                onClick = onContinue,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("welcome-continue-button"),
-            ) {
-                Text(
-                    stringResource(R.string.welcome_continue),
-                    color = Color.White,
-                    style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold),
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onHideWelcomeChanged(!ui.hideWelcomeScreen) }
-                    .testTag("welcome-hide-toggle"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                androidx.compose.material3.Checkbox(checked = ui.hideWelcomeScreen, onCheckedChange = onHideWelcomeChanged)
-                Text(
-                    stringResource(R.string.welcome_hide),
-                    color = Color.White.copy(alpha = 0.92f),
-                    style = roundedUiTextStyle(size = 15.sp, weight = FontWeight.SemiBold),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CoverageCard(activeBundleVersion: String) {
-    val hasActiveDataset = activeBundleVersion != "seed" && activeBundleVersion != "none"
-    Card(colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color.White.copy(alpha = 0.06f)),
-            ) {
-                val countryColor = if (hasActiveDataset) Color(0xFF2F66CC) else Color.White.copy(alpha = 0.92f)
-                val outline = if (hasActiveDataset) Color.White else Color.Black.copy(alpha = 0.75f)
-                drawRoundRect(
-                    color = countryColor,
-                    topLeft = Offset(size.width * 0.24f, size.height * 0.10f),
-                    size = Size(size.width * 0.44f, size.height * 0.78f),
-                    cornerRadius = CornerRadius(26f, 26f),
-                )
-                if (hasActiveDataset) {
-                    val badgePath = Path().apply {
-                        addRoundRect(
-                            androidx.compose.ui.geometry.RoundRect(
-                                left = size.width * 0.36f,
-                                top = size.height * 0.34f,
-                                right = size.width * 0.48f,
-                                bottom = size.height * 0.48f,
-                                cornerRadius = CornerRadius(16f, 16f),
-                            ),
-                        )
-                    }
-                    drawPath(badgePath, color = Color.White, style = Stroke(width = 6f))
-                }
-                drawRoundRect(
-                    color = outline,
-                    topLeft = Offset(size.width * 0.24f, size.height * 0.10f),
-                    size = Size(size.width * 0.44f, size.height * 0.78f),
-                    cornerRadius = CornerRadius(26f, 26f),
-                    style = Stroke(width = 3f),
-                )
-            }
-            Text(
-                stringResource(R.string.ui_map_bundle),
-                color = Color.White.copy(alpha = 0.84f),
-                style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
-            )
-            Text(
-                stringResource(
-                    if (hasActiveDataset) R.string.welcome_coverage_active else R.string.welcome_coverage_none,
-                ),
-                color = if (hasActiveDataset) Color(0xFF6FB0FF) else Color.White.copy(alpha = 0.72f),
-                style = roundedUiTextStyle(size = 11.sp, weight = FontWeight.SemiBold),
-            )
         }
     }
 }
@@ -1432,24 +1279,13 @@ private fun SettingsSheet(
                 }
             }
             item {
-                SectionCard(stringResource(R.string.ui_welcome_screen)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.ui_hide_welcome), modifier = Modifier.weight(1f), color = Color.Black)
-                        Switch(
-                            checked = ui.hideWelcomeScreen,
-                            onCheckedChange = controller::setHideWelcomeScreen,
-                            modifier = Modifier.testTag("hide-welcome-toggle"),
-                        )
-                    }
-                    Text(
-                        if (ui.hideWelcomeScreen) {
-                            stringResource(R.string.ui_welcome_hidden)
-                        } else {
-                            stringResource(R.string.ui_welcome_visible)
-                        },
-                        color = Color(0xFF555555),
-                        fontSize = 13.sp,
-                    )
+                SectionCard(stringResource(R.string.onboarding_setup)) {
+                    OutlinedButton(
+                        onClick = { if (controller.replayOnboarding()) onDismiss() },
+                        enabled = controller.canReplayOnboarding(),
+                        modifier = Modifier.testTag("settings-replay-onboarding-button"),
+                    ) { Text(stringResource(R.string.onboarding_replay)) }
+                    Text(stringResource(R.string.onboarding_replay_detail), color = Color(0xFF555555), fontSize = 13.sp)
                 }
             }
             item {

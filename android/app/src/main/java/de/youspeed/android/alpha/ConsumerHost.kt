@@ -3,6 +3,8 @@ package de.youspeed.android.alpha
 interface ConsumerHost {
     fun requestLocationPermission()
 
+    fun openApplicationSettings() {}
+
     fun requestMicrophonePermission()
 
     fun requestCameraPermission()
