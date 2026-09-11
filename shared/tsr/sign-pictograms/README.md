@@ -1,6 +1,6 @@
 # German sign pictograms
 
-Reviewed on 2026-09-10 against the user-supplied [German sign plate since
+Reviewed on 2026-09-11 against the user-supplied [German sign plate since
 2017](https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017)
 and the German StVO. The plate identifies artwork; the law determines the
 meaning. These are offline UI assets, not training samples or proof of model
@@ -50,7 +50,7 @@ render different bytes and correctly fail that reproducibility check.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
-All 105 assets already have transparent exteriors; do not turn white pixels
+All 107 assets already have transparent exteriors; do not turn white pixels
 globally transparent, which would also erase required parts of the signs.
 
 `display_eligible` means that a faithful pictogram exists for the entry. It does
@@ -88,8 +88,11 @@ The catalog retains source-map provenance and documents its changes per entry:
 - `exit` remains blocked: the deployed DE:460 is a numbered motorway detour,
   which does not establish an unambiguous exit pictogram.
 - The deployed incline mappings also interchange ascent/descent. The actual
-  classifier only emits generic `hazard:incline`, so no direction or percentage
-  is fabricated.
+  classifier only emits generic `hazard:incline`; DE:108 is retained as a
+  family-level reference, but no direction or percentage is fabricated.
+- `bicycle:priority` uses DE:244.1 as the closest German equivalent
+  (Fahrradstraße), while `parking:disabled` uses the precise German wheelchair
+  supplementary sign 1044-10 used with DE:314.
 
 These are display mappings; they do not change the deployed Prolix service or
 the classifier weights. Existing model labels can themselves remain imperfect

@@ -342,16 +342,16 @@
     },
     {
       "class_id": "bicycle:priority",
-      "sign_code": null,
-      "image_path": null,
+      "sign_code": "DE:244.1",
+      "image_path": "tsr/sign-pictograms/png/de-244.1.png",
       "label": {
         "de": "Fahrradvorrang",
         "en": "Bicycle priority",
         "fr": "Priorité aux vélos",
         "nl": "Voorrang voor fietsers"
       },
-      "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "display_eligible": true,
+      "notes": "Closest reviewed German equivalent: Zeichen 244.1 (Beginn einer Fahrradstraße). Germany has no standalone StVO sign named bicycle priority; this pictogram is presentation-only."
     },
     {
       "class_id": "bicycle:start",
@@ -528,7 +528,7 @@
     },
     {
       "class_id": "hazard:incline",
-      "sign_code": null,
+      "sign_code": "DE:108",
       "image_path": null,
       "label": {
         "de": "Gefälle oder Steigung",
@@ -537,7 +537,7 @@
         "nl": "Daling of stijging"
       },
       "display_eligible": false,
-      "notes": "The class omits the numeric value and/or direction required for a faithful sign pictogram."
+      "notes": "Closest German sign family is DE:108 (Gefälle); the classifier omits direction and percentage, so no pictogram is displayed."
     },
     {
       "class_id": "hazard:intersection",
@@ -566,16 +566,16 @@
     },
     {
       "class_id": "hazard:level_crossing",
-      "sign_code": null,
-      "image_path": null,
+      "sign_code": "DE:151",
+      "image_path": "tsr/sign-pictograms/png/de-151.png",
       "label": {
         "de": "Bahnübergang",
         "en": "Level crossing",
         "fr": "Passage à niveau",
         "nl": "Overweg"
       },
-      "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "display_eligible": true,
+      "notes": "Reviewed German equivalent: Zeichen 151 (Bahnübergang)."
     },
     {
       "class_id": "hazard:moving_bridge",
@@ -752,16 +752,16 @@
     },
     {
       "class_id": "hazard:train2",
-      "sign_code": null,
-      "image_path": null,
+      "sign_code": "DE:151",
+      "image_path": "tsr/sign-pictograms/png/de-151.png",
       "label": {
         "de": "Bahnübergang, unbestimmte Ausführung",
         "en": "Level crossing, unspecified type",
         "fr": "Passage à niveau, type non précisé",
         "nl": "Overweg, onbepaald type"
       },
-      "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "display_eligible": true,
+      "notes": "Closest reviewed German equivalent: Zeichen 151 (Bahnübergang); the classifier does not identify a more specific German crossing subtype."
     },
     {
       "class_id": "hazard:wild_animals",
@@ -1404,7 +1404,7 @@
     },
     {
       "class_id": "oneway",
-      "sign_code": null,
+      "sign_code": "DE:220",
       "image_path": null,
       "label": {
         "de": "Einbahnstraße",
@@ -1413,7 +1413,7 @@
         "nl": "Eenrichtingsweg"
       },
       "display_eligible": false,
-      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+      "notes": "Closest German sign family is DE:220 (Einbahnstraße); the classifier omits the left/right layout variant, so no pictogram is displayed."
     },
     {
       "class_id": "other",
@@ -1505,16 +1505,16 @@
     },
     {
       "class_id": "parking:disabled",
-      "sign_code": null,
-      "image_path": null,
+      "sign_code": "DE:1044-10",
+      "image_path": "tsr/sign-pictograms/png/de-1044-10.png",
       "label": {
         "de": "Behindertenparkplatz",
         "en": "Accessible parking",
         "fr": "Stationnement réservé aux personnes handicapées",
         "nl": "Gehandicaptenparkeerplaats"
       },
-      "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "display_eligible": true,
+      "notes": "German accessible-parking marking is Zeichen 314 with Zusatzzeichen 1044-10; the bundled pictogram is the precise wheelchair supplementary sign, not a fabricated composite."
     },
     {
       "class_id": "parking:pedestrian",
@@ -1677,16 +1677,16 @@
     },
     {
       "class_id": "traffic_signal",
-      "sign_code": null,
-      "image_path": null,
+      "sign_code": "DE:131",
+      "image_path": "tsr/sign-pictograms/png/de-131.png",
       "label": {
         "de": "Lichtsignal",
         "en": "Traffic signal",
         "fr": "Signal lumineux",
         "nl": "Verkeerslicht"
       },
-      "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "display_eligible": true,
+      "notes": "Closest reviewed German warning sign: Zeichen 131 (Lichtzeichenanlage)."
     },
     {
       "class_id": "trunk:end",

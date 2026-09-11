@@ -49,7 +49,7 @@
       "license": "Public domain (Commons PD-GermanGov / PD-VzKat)",
       "source_url": "https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360",
       "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
-      "changes": "Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 104 shared TSR pictograms.",
+      "changes": "Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 107 shared TSR pictograms.",
       "category": "sign"
     },
     {
@@ -2209,6 +2209,26 @@
       "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
       "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
       "source_url": "https://commons.wikimedia.org/w/index.php?curid=61817370&oldid=906770477",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:244.1",
+      "title": "DE:244.1 · Zeichen 244.1 - Beginn einer Fahrradstraße, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61870428&oldid=1186467577",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:1044-10",
+      "title": "DE:1044-10 · Zusatzzeichen 1044-10 - nur Schwerbehinderte mit außergewöhnlicher Gehbehinderung und Blinde, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben von 1992 digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, Verkehrsblatt und DIN-Normen",
+      "license": "Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=989006&oldid=1091385473",
       "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
       "changes": "Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped."
     }

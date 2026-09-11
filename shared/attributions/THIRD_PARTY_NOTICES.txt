@@ -52,7 +52,7 @@ Mediatus; German official traffic-sign artwork
 Public domain (Commons PD-GermanGov / PD-VzKat)
 Source: https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360
 Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
-Changes: Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 104 shared TSR pictograms.
+Changes: Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 107 shared TSR pictograms.
 
 ================================================================================
 
@@ -2001,6 +2001,24 @@ DE:311 · Zeichen 311 - Ortstafel Rückseite, StVO 2017.svg
 Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
 Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
 Source: https://commons.wikimedia.org/w/index.php?curid=61817370&oldid=906770477
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:244.1 · Zeichen 244.1 - Beginn einer Fahrradstraße, StVO 2013.svg
+Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=61870428&oldid=1186467577
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:1044-10 · Zusatzzeichen 1044-10 - nur Schwerbehinderte mit außergewöhnlicher Gehbehinderung und Blinde, StVO 1992.svg
+Nach den amtlichen Vorgaben von 1992 digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, Verkehrsblatt und DIN-Normen
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=989006&oldid=1091385473
 Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
 Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
 

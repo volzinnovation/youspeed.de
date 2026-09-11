@@ -31,6 +31,30 @@ classes remain without artwork: a generic height, weight, distance or bend
 class must not display an invented number or direction. Corrections to
 inaccurate upstream class-to-sign mappings are recorded in the catalog.
 
+## DE Prolix mapping gap follow-up — 2026-09-11
+
+The analytics-owned Prolix CSV had 144 populated DE cells. Ten additional
+classifier-label rows are now populated with reviewed exact or closest German
+references, and the generated `DE.json` carries the same 154-entry mapping:
+
+| Class label | DE reference | Device treatment |
+| --- | --- | --- |
+| `bicycle:priority` | `DE:244.1` | Closest equivalent, Fahrradstraße; Commons pictogram added. |
+| `hazard:incline` | `DE:108` | Family reference only; direction/percentage omitted. |
+| `hazard:left_turn` / `hazard:right_turn` | `DE:103-10` / `DE:103-20` | Exact bend pictograms already bundled. |
+| `hazard:level_crossing` / `hazard:train2` | `DE:151` | German Bahnübergang warning pictogram. |
+| `oneway` | `DE:220` | Family reference only; left/right variant omitted. |
+| `parking:disabled` | `DE:1044-10` | German wheelchair supplementary pictogram added; used with DE:314. |
+| `traffic_signal` | `DE:131` | German Lichtzeichenanlage warning pictogram. |
+| `zone:30:end` | `DE:274.2` | Exact 30-zone-end pictogram already bundled. |
+
+The CSV also corrects the swapped `arrow_turn_left`/`arrow_turn_right`
+assignments and changes the incorrect `hazard:turn_right` aircraft reference
+(`DE:101-20`) to the German right-bend sign (`DE:103-20`). Invalid/background
+classes, dog prohibition, generic prohibition, car+bicycle prohibition and
+directionless subtypes remain blank because no faithful standalone German
+StVO pictogram exists for those classifier outputs.
+
 ## Speed effects
 
 | Sign or model class | State-machine effect |
@@ -122,7 +146,7 @@ that capability.
 - iPhone: Debug simulator build and unsigned device Release build passed;
   256 tests passed with 22 existing optional map/benchmark-fixture and
   physical-device tests skipped.
-- All 104 original SVG/PNG pairs passed offline hash/provenance verification
+- All 107 original SVG/PNG pairs passed offline hash/provenance verification
   and visual review. The final Android Debug/Release APKs and iPhone simulator
   Debug/device Release apps contain the exact reviewed catalog and PNG bytes.
 - All four iPhone localization files contain the same 284 keys, without

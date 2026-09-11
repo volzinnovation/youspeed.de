@@ -20,7 +20,7 @@ python3 scripts/attributions/generate.py --check
 python3 -m pytest -q tests/tsr/test_attributions.py
 ```
 
-The generator reads each of the 104 sign images' exact author, source revision,
+The generator reads each of the 107 sign images' exact author, source revision,
 licence basis and modification record from `../tsr/sign-pictograms/manifest.json`.
 It also reads national rule citations, `additional-sources.json`, and
 `android-components.json`. Edit those inputs, then regenerate; do not hand-edit
