@@ -250,7 +250,6 @@
 "first_location.no_coverage" = "No matching map is available for this location.";
 "first_location.no_endpoint" = "No download is available for the matching region.";
 "first_location.existing" = "Existing maps remain selected.";
-"first_location.wifi" = "Matching map: %@. Waiting for Wi-Fi or permission to use mobile data.";
 "first_location.downloading" = "Downloading the matching map: %@.";
 "first_location.location_failed" = "Location could not be determined. Try location selection again.";
 "first_location.retry" = "Retry location selection";

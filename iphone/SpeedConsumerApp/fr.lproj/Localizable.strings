@@ -250,7 +250,6 @@
 "first_location.no_coverage" = "Aucune carte correspondante n’est disponible pour cette position.";
 "first_location.no_endpoint" = "Aucun téléchargement n’est disponible pour cette région.";
 "first_location.existing" = "Les cartes existantes restent sélectionnées.";
-"first_location.wifi" = "Carte correspondante : %@. En attente du Wi-Fi ou de l’autorisation des données mobiles.";
 "first_location.downloading" = "Téléchargement de la carte correspondante : %@.";
 "first_location.location_failed" = "Impossible de déterminer la position. Réessayez la sélection par localisation.";
 "first_location.retry" = "Réessayer la sélection par localisation";

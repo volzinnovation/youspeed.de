@@ -1,7 +1,6 @@
 import CoreLocation
 import AVFoundation
 import Foundation
-import Network
 import OSLog
 import Speech
 import UIKit
@@ -575,13 +574,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var firstLocationRegion: RegionalPackCatalog.Region?
     private var firstLocationAttempts = 0
     private var firstLocationRetryAfter = Date.distantPast
-    private var firstLocationNetworkReady = false
-    private var firstLocationNetworkMetered = true
-    private let firstLocationNetworkMonitor = NWPathMonitor()
-    private var firstLocationNetworkStarted = false
-
     deinit {
-        firstLocationNetworkMonitor.cancel()
         penaltyCountryExpiryTask?.cancel()
     }
     @Published var driveStatus: String = "stopped"
@@ -3623,15 +3616,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
                 let sync: BundleSyncResult
                 let downloadManager: V3BundleManager
-                if firstLocationSetup {
-                    let configuration = URLSessionConfiguration.default
-                    configuration.allowsCellularAccess = false
-                    configuration.allowsExpensiveNetworkAccess = false
-                    configuration.allowsConstrainedNetworkAccess = false
-                    downloadManager = V3BundleManager(session: URLSession(configuration: configuration))
-                } else {
-                    downloadManager = bundleManager
-                }
+                downloadManager = bundleManager
                 sync = try await downloadManager.syncFromManifestURL(option.endpoint.manifestURL) { progress in
                     Task { @MainActor [weak self] in
                         self?.applySyncProgress(progress)
@@ -4325,17 +4310,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if !downloadedBundleCountByRegion.isEmpty {
             UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
         }
-        if !firstLocationNetworkStarted {
-            firstLocationNetworkStarted = true
-            firstLocationNetworkMonitor.pathUpdateHandler = { [weak self] path in
-                Task { @MainActor [weak self] in
-                    self?.firstLocationNetworkReady = path.status == .satisfied
-                    self?.firstLocationNetworkMetered = path.isExpensive || path.isConstrained || !path.usesInterfaceType(.wifi)
-                    self?.continueFirstLocationSetup()
-                }
-            }
-            firstLocationNetworkMonitor.start(queue: DispatchQueue(label: "de.youspeed.first-location-network"))
-        }
         guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else {
             firstLocationPackStatus = NSLocalizedString("first_location.complete", comment: "")
             return
@@ -4377,7 +4351,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         countryModelPackStatus = String(format: NSLocalizedString("first_location.model_country", comment: ""), country ?? "—",
                                        NSLocalizedString(state == "country_unresolved" ? "first_location.model_unresolved" : "first_location.model_unavailable", comment: ""))
         guard !UserDefaults.standard.bool(forKey: "youspeed.first_location_map_complete") else { return }
-        // The first valid containing region is retained while waiting for Wi-Fi.
+        // The first valid containing region is retained for the initial bundle download.
         if firstLocationRegion == nil { firstLocationRegion = matches.first }
         if firstLocationRegion == nil {
             firstLocationPackStatus = NSLocalizedString("first_location.no_coverage", comment: "")
@@ -4397,10 +4371,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if !downloadedBundleCountByRegion.isEmpty {
             UserDefaults.standard.set(true, forKey: "youspeed.first_location_map_complete")
             firstLocationPackStatus = NSLocalizedString("first_location.existing", comment: "")
-            return
-        }
-        guard firstLocationNetworkReady && !firstLocationNetworkMetered else {
-            firstLocationPackStatus = String(format: NSLocalizedString("first_location.wifi", comment: ""), option.displayName)
             return
         }
         guard firstLocationAttempts < 3, Date() >= firstLocationRetryAfter else { return }

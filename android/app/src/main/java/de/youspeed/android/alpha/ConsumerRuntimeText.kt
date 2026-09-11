@@ -411,12 +411,6 @@ internal enum class ConsumerRuntimeText(
         "Modèle de panneaux %1\$s : ",
         "Verkeersbordmodel %1\$s: ",
     ),
-    MATCHING_MAP_WAITING(
-        "Matching map: %1\$s. Waiting for Wi-Fi or mobile data permission.",
-        "Passende Karte: %1\$s. Warte auf WLAN oder Freigabe mobiler Daten.",
-        "Carte adaptée : %1\$s. En attente du Wi-Fi ou de l’autorisation des données mobiles.",
-        "Passende kaart: %1\$s. Wachten op wifi of toestemming voor mobiele data.",
-    ),
     MATCHING_MAP_LOADING(
         "Downloading the matching map: %1\$s.",
         "Lade die passende Karte: %1\$s.",

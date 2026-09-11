@@ -250,7 +250,6 @@
 "first_location.no_coverage" = "Für diesen Standort ist keine passende Karte im Katalog verfügbar.";
 "first_location.no_endpoint" = "Kein Download-Endpunkt für die passende Region verfügbar.";
 "first_location.existing" = "Vorhandene Karten bleiben ausgewählt.";
-"first_location.wifi" = "Passende Karte: %@. Warte auf WLAN oder Freigabe mobiler Daten.";
 "first_location.downloading" = "Lade die passende Karte: %@.";
 "first_location.location_failed" = "Standort konnte nicht bestimmt werden. Standortauswahl erneut versuchen.";
 "first_location.retry" = "Standortauswahl erneut versuchen";

@@ -1,10 +1,5 @@
 package de.youspeed.android.alpha
 
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import java.net.HttpURLConnection
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
@@ -436,17 +431,10 @@ class ConsumerSessionController(
     private val countryPackSelection = TrafficSignCountrySelection()
     private val penaltyCountrySelection = PenaltyCountrySelection()
     private val penaltyCountryExpiry = Runnable { updateState { copy(activePenaltyRules = ActivePenaltyRules.unavailable()) } }
-    private val connectivityManager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private var firstLocationRegion: RegionalPackCatalog.Region? = null
     private var firstLocationAttempts = 0
     private var firstLocationRetryAfter = 0L
     private var firstLocationRequested = false
-    private var firstLocationNetworkRegistered = false
-    private val firstLocationNetworkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-            mainHandler.post { continueFirstLocationSetup() }
-        }
-    }
     private val firstLocationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) { discoverPacks(location) }
     }
@@ -629,7 +617,6 @@ class ConsumerSessionController(
         }
         stopDriving()
         runCatching { locationManager.removeUpdates(firstLocationListener) }
-        if (firstLocationNetworkRegistered) runCatching { connectivityManager.unregisterNetworkCallback(firstLocationNetworkCallback) }
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.removeCallbacks(speedCaptureListeningStartRunnable)
         appendRuntimeDiagnosticEvent(
@@ -753,10 +740,6 @@ class ConsumerSessionController(
         if (uiState.downloadedBundleCountByRegion.isNotEmpty()) {
             preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
         }
-        if (!firstLocationNetworkRegistered) {
-            runCatching { connectivityManager.registerDefaultNetworkCallback(firstLocationNetworkCallback) }
-                .onSuccess { firstLocationNetworkRegistered = true }
-        }
         if (preferences.getBoolean("youspeed.first_location_map_complete", false)) {
             updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.FIRST_MAP_COMPLETE.text()) }
             return
@@ -832,27 +815,11 @@ class ConsumerSessionController(
             updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.KEEP_EXISTING_MAPS.text()) }
             return
         }
-        val network = connectivityManager.activeNetwork
-        val capabilities = network?.let { connectivityManager.getNetworkCapabilities(it) }
-        if (network == null || capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) != true ||
-            !capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-            !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)) {
-            updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.MATCHING_MAP_WAITING.text(option.displayName)) }
-            return
-        }
         if (firstLocationAttempts >= 3 || clock.millis() < firstLocationRetryAfter) return
         firstLocationAttempts++
         firstLocationRetryAfter = clock.millis() + 60_000
-        // Bind all artifact requests to this network, so a Wi-Fi loss cannot
-        // silently move a large initial download onto the mobile connection.
-        val downloader = BundleBootstrapper(rootDir, HttpUrlFetcher { url ->
-            val current = connectivityManager.getNetworkCapabilities(network)
-            check(current != null && current.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) &&
-                current.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED))
-            network.openConnection(url) as HttpURLConnection
-        }, clock, assetReader)
         updateState { copy(firstLocationPackStatus = ConsumerRuntimeText.MATCHING_MAP_LOADING.text(option.displayName)) }
-        downloadSelectedBundle(option, downloader)
+        downloadSelectedBundle(option, firstLocationSetup = true)
         mainHandler.postDelayed({ continueFirstLocationSetup() }, 60_000)
     }
 
@@ -1673,7 +1640,11 @@ class ConsumerSessionController(
         }
     }
 
-    fun downloadSelectedBundle(option: BundleDownloadOption, initialDownloader: BundleBootstrapper? = null) {
+    fun downloadSelectedBundle(
+        option: BundleDownloadOption,
+        initialDownloader: BundleBootstrapper? = null,
+        firstLocationSetup: Boolean = initialDownloader != null,
+    ) {
         if (isSyncingNow()) {
             setError(ConsumerRuntimeText.DOWNLOAD_BUSY.text())
             return
@@ -1702,10 +1673,10 @@ class ConsumerSessionController(
                     preferredCountryCode = active?.countryCode ?: option.countryCode,
                     reason = "download_selected_bundle",
                 )
-                if (initialDownloader != null) preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
+                if (firstLocationSetup) preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
                 postState {
                     copy(
-                        firstLocationPackStatus = if (initialDownloader != null) ConsumerRuntimeText.MATCHING_MAP_READY.text(option.displayName) else firstLocationPackStatus,
+                        firstLocationPackStatus = if (firstLocationSetup) ConsumerRuntimeText.MATCHING_MAP_READY.text(option.displayName) else firstLocationPackStatus,
                         syncStatus = "ready_${sync.mode.name.lowercase(Locale.US)}",
                         syncProgressDetail = ConsumerRuntimeText.MAP_LOADED.text(option.displayName),
                         syncProgressCompletedBytes = 0L,
