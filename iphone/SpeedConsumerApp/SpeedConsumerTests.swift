@@ -969,6 +969,10 @@ final class SpeedConsumerTests: XCTestCase {
             XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
             XCTAssertEqual(Set(sign.label.keys), ["de", "en", "fr", "nl"])
         }
+        let pedestrianCrossing = try XCTUnwrap(catalog.sign(for: "pedestrian_crossing"))
+        XCTAssertEqual(pedestrianCrossing.signCode, "DE:350")
+        XCTAssertTrue(pedestrianCrossing.displayEligible)
+        XCTAssertNotNil(pedestrianCrossing.imageURL())
     }
 
     func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
@@ -1024,6 +1028,8 @@ final class SpeedConsumerTests: XCTestCase {
         display.reset()
         display.consume(observation("give_way", 1), catalog: catalog)
         XCTAssertEqual(display.sign?.classID, "give_way", "A reset begins a new timestamp scope")
+        display.consume(observation("pedestrian_crossing", 2), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "pedestrian_crossing")
     }
 
     func testProlixStructuralAliasesDistinguishSpeedEndsAndCityEntry() {

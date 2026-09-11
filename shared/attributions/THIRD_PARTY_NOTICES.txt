@@ -1714,6 +1714,15 @@ Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 
 
 ================================================================================
 
+DE:350 · Zeichen 350 - Fußgängerüberweg, StVO 1970.svg
+Interpreted and digitally redrawn by Mediatus; Straßenverkehrs-Ordnung, Verkehrsblatt, DIN-Normen
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=27563603&oldid=1175796842
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
 DE:208 · Zeichen 208 - Dem Gegenverkehr Vorrang gewähren! 600x600, StVO 1992.svg
 Andreas 06 (ursprüngliche Datei); komplett neu erstellt durch Mediatus; Straßenverkehrs-Ordnung (StVO)
 Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)

@@ -50,7 +50,7 @@ render different bytes and correctly fail that reproducibility check.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
-All 104 assets already have transparent exteriors; do not turn white pixels
+All 105 assets already have transparent exteriors; do not turn white pixels
 globally transparent, which would also erase required parts of the signs.
 
 `display_eligible` means that a faithful pictogram exists for the entry. It does

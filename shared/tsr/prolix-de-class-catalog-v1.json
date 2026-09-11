@@ -1594,15 +1594,14 @@
     {
       "class_id": "pedestrian_crossing",
       "sign_code": "DE:350",
-      "image_path": null,
+      "image_path": "tsr/sign-pictograms/png/de-350.png",
       "label": {
         "de": "Fußgängerüberweg",
         "en": "Pedestrian crossing",
         "fr": "Passage piéton",
         "nl": "Voetgangersoversteekplaats"
       },
-      "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "display_eligible": true
     },
     {
       "class_id": "priority:backward",

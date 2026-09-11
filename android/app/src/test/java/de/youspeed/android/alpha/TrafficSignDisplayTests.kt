@@ -22,6 +22,10 @@ class TrafficSignDisplayTests {
         assertNull(TrafficSignDisplayPolicy.next(second, observe("no:end"), catalog))
         assertNull(TrafficSignDisplayPolicy.next(second, observe("motorway:end"), catalog))
         assertNull(catalog.pictogram("DE:310")) // Reference artwork cannot invent a classifier class.
+        val pedestrianCrossing = requireNotNull(catalog.pictogram("pedestrian_crossing"))
+        assertEquals("pedestrian_crossing", pedestrianCrossing.classId)
+        assertEquals("tsr/sign-pictograms/png/de-350.png", pedestrianCrossing.imagePath)
+        assertEquals("pedestrian_crossing", TrafficSignDisplayPolicy.next(second, observe("pedestrian_crossing"), catalog)?.classId)
     }
 
     @Test fun independentDisplaySelectsClassifierConfidenceWithExistingDetectorAdmissionFloor() {
