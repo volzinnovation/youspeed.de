@@ -8,7 +8,7 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
-val releaseBaseVersionCode = 10006
+val releaseBaseVersionCode = 10007
 val releaseVersionName = "1.1"
 val releaseAbiCodes = linkedMapOf(
     "armeabi-v7a" to 1,
