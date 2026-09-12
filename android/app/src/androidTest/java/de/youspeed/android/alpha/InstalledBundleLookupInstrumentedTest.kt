@@ -27,9 +27,9 @@ class InstalledBundleLookupInstrumentedTest {
         assertTrue("Download and activate Baden-Württemberg in the app first", stateFile.isFile)
         val originalState = stateFile.readText()
         val bootstrapper = BundleBootstrapper(bundleRoot, ReadOnlyFetcher)
-        // The production accessor verifies the materialized database's size and SHA-256.
+        // Integrity was verified at installation; opening the local map must not rehash it.
         val active = bootstrapper.activeState()
-        assertNotNull("Installed active state must reference a verified database", active)
+        assertNotNull("Installed active state must reference an available database", active)
         val installed = requireNotNull(active)
         assertEquals("baden-wuerttemberg", installed.region)
         assertEquals("DEU", installed.countryCode)

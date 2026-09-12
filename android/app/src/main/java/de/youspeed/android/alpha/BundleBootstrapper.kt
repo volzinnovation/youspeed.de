@@ -104,8 +104,6 @@ class BundleBootstrapper(
         val countryCode: String?,
         val dbPath: String,
         val dbSha256: String?,
-        val dbBytes: Long,
-        val dbLastModifiedMillis: Long,
         val bbox: BundleCoverageBBox,
         val rings: List<CoverageRing>,
     )
@@ -121,13 +119,8 @@ class BundleBootstrapper(
         }
         val state = runCatching { ContractJson.decodeActiveBundleState(stateFile.readText()) }.getOrNull()
             ?: return null
-        return state.takeIf {
-            verifiedMaterializedSha(
-                file = File(state.dbPath),
-                expectedBytes = state.dbBytes,
-                expectedSha256 = state.dbSha256,
-            ) != null
-        }
+        // Content integrity is checked before installation; local access only needs the file to remain available.
+        return state.takeIf { File(it.dbPath).isAvailableDatabase() }
     }
 
     fun listDownloadedBundles(): List<DownloadedBundleInfo> {
@@ -226,7 +219,7 @@ class BundleBootstrapper(
                 .thenByDescending { it.bundleVersion }
                 .thenBy { it.region },
         ).first()
-        if (!best.materializedArtifactFingerprintMatches()) {
+        if (!File(best.dbPath).isAvailableDatabase()) {
             best = loadCoverageEntriesIfNeeded(forceReload = true)
                 .filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
                 .sortedWith(
@@ -312,7 +305,7 @@ class BundleBootstrapper(
             current.region == manifest.region &&
             current.bundleVersion == manifest.bundleVersion &&
             materializedDatabaseExpectation(manifest)?.let { (bytes, sha) ->
-                verifiedMaterializedSha(File(current.dbPath), bytes, sha) != null
+                current.dbBytes == bytes && current.dbSha256.equals(sha, ignoreCase = true)
             } == true
         ) {
             emitProgress(
@@ -665,15 +658,13 @@ class BundleBootstrapper(
                 ?: return@forEach
             val coverage = manifest.coverage ?: return@forEach
             val dbFile = File(bundleDir, manifest.db.file)
-            if (!dbFile.exists()) {
+            if (!dbFile.isAvailableDatabase()) {
                 return@forEach
             }
-            val expectedArtifact = materializedDatabaseExpectation(manifest) ?: return@forEach
-            val verifiedSha = verifiedMaterializedSha(
-                file = dbFile,
-                expectedBytes = expectedArtifact.first,
-                expectedSha256 = expectedArtifact.second,
-            ) ?: return@forEach
+            // Keep the installed digest as metadata without reading the database again during GPS routing.
+            val installedSha = materializedDatabaseExpectation(manifest)?.second
+                ?.trim()?.lowercase(Locale.US)
+                ?.takeIf { Regex("^[0-9a-f]{64}$").matches(it) }
 
             val rings = if (coverage.poly != null) {
                 val polyText = loadCoveragePolyText(
@@ -695,9 +686,7 @@ class BundleBootstrapper(
                 bundleVersion = manifest.bundleVersion,
                 countryCode = manifest.countryCode,
                 dbPath = dbFile.absolutePath,
-                dbSha256 = verifiedSha,
-                dbBytes = dbFile.length(),
-                dbLastModifiedMillis = dbFile.lastModified(),
+                dbSha256 = installedSha,
                 bbox = coverage.bbox,
                 rings = rings,
             )
@@ -920,21 +909,7 @@ class BundleBootstrapper(
         }
     }
 
-    private fun verifiedMaterializedSha(
-        file: File,
-        expectedBytes: Long,
-        expectedSha256: String,
-    ): String? {
-        if (!file.isFile || file.length() != expectedBytes) return null
-        val expected = expectedSha256.trim().lowercase(Locale.US)
-        if (!Regex("^[0-9a-f]{64}$").matches(expected)) return null
-        return sha256Hex(file).takeIf { it == expected }
-    }
-
-    private fun CoverageEntry.materializedArtifactFingerprintMatches(): Boolean {
-        val file = File(dbPath)
-        return file.isFile && file.length() == dbBytes && file.lastModified() == dbLastModifiedMillis
-    }
+    private fun File.isAvailableDatabase(): Boolean = isFile && length() > 0L
 
     private fun sha256Hex(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")

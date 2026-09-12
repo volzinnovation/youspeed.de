@@ -516,7 +516,7 @@ class BundleContractTests {
     }
 
     @Test
-    fun resolveLocalBundleRouteDropsChecksumWhenMaterializedDatabaseChanges() {
+    fun resolveLocalBundleRouteDropsUnavailableMaterializedDatabase() {
         val tempRoot = createTempDirectory("android-alpha-route-integrity").toFile()
         tempRoot.deleteOnExit()
         val dbFile = writeCoverageBundle(
@@ -531,9 +531,7 @@ class BundleContractTests {
         val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
         assertNotNull(bootstrapper.resolveLocalBundleRoute(48.5, 8.5, fallbackDBPath = null)?.dbSha256)
 
-        val previousModified = dbFile.lastModified()
-        dbFile.writeBytes(ByteArray(dbFile.length().toInt()) { 0x5a })
-        dbFile.setLastModified(previousModified + 2_000L)
+        dbFile.writeBytes(byteArrayOf())
 
         assertEquals(null, bootstrapper.resolveLocalBundleRoute(48.5, 8.5, fallbackDBPath = null))
     }

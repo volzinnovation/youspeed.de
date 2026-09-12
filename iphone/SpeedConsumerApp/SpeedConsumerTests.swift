@@ -7248,7 +7248,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.wayID, "100")
     }
 
-    func testStartupRecoveryRejectsValidSQLiteWhoseMaterializedChecksumWasTampered() async throws {
+    func testInstalledBundleReuseDoesNotReverifyDatabaseContents() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
         if fm.fileExists(atPath: supportDir.path) {
@@ -7256,70 +7256,244 @@ final class SpeedConsumerTests: XCTestCase {
         }
         defer { try? fm.removeItem(at: supportDir) }
 
-        let bundleDir = supportDir
-            .appendingPathComponent("bundles", isDirectory: true)
-            .appendingPathComponent("deu-2026-09-04-tamper", isDirectory: true)
-        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
-        let dbURL = bundleDir.appendingPathComponent("DEU-tamper.speeds_v3.sqlite")
-        try createFixtureV3DB(at: dbURL)
-        let originalData = try Data(contentsOf: dbURL)
+        let sourceDB = fm.temporaryDirectory.appendingPathComponent("installed-reuse-\(UUID().uuidString).sqlite")
+        defer { try? fm.removeItem(at: sourceDB) }
+        try createFixtureV3DB(at: sourceDB)
+        let originalData = try Data(contentsOf: sourceDB)
         let originalBytes = originalData.count
         let originalSHA = sha256Hex(originalData)
+        let manifestURL = URL(string: "https://speedconsumer.test/installed-reuse.json")!
+        let downloadURL = URL(string: "https://speedconsumer.test/installed-reuse.sqlite")!
         let manifest = V3BundleManifest(
             format: "youspeed.v3.bundle.manifest",
             schemaVersion: 1,
             variant: "v3",
             region: "DEU",
             countryCode: "DE",
-            bundleVersion: "2026-09-04-tamper",
+            bundleVersion: "2026-09-04-reuse",
             createdAtUTC: "2026-09-04T00:00:00Z",
             minAppVersion: "1.0.0",
             db: BundleArtifact(
-                file: dbURL.lastPathComponent,
+                file: "installed-reuse.sqlite",
                 bytes: Int64(originalBytes),
                 sha256: originalSHA,
-                url: nil
+                url: downloadURL.absoluteString
             ),
             dbParts: nil,
-            deltaIndex: nil
+            deltaIndex: nil,
+            coverage: BundleCoverage(
+                bbox: BundleCoverageBBox(minLon: 13, minLat: 52, maxLon: 14, maxLat: 53),
+                poly: nil
+            )
         )
-        try JSONEncoder().encode(manifest).write(
-            to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"),
-            options: .atomic
-        )
+        let manifestData = try JSONEncoder().encode(manifest)
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: manifestData),
+            downloadURL.absoluteString: (status: 200, body: originalData),
+        ]
+        defer { MockURLProtocol.responses = [:] }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let installer = V3BundleManager(fileManager: fm, session: session)
+        let installed = try await installer.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(installed.mode, .fullDownload)
+        XCTAssertEqual(installed.dbSHA256, originalSHA)
+        let dbURL = URL(fileURLWithPath: installed.dbPath)
+        let bundleDir = dbURL.deletingLastPathComponent()
 
-        // Keep the file a valid v3 SQLite database and keep its byte count
-        // unchanged, so rejection specifically exercises the materialized SHA.
+        // Change both content and mtime, then use fresh managers so neither the
+        // old in-memory digest cache nor the coverage cache can hide a recheck.
         try executeSQL(
             at: dbURL,
             sql: "UPDATE ways SET maxspeed='31' WHERE way_id='100';"
         )
-        let tamperedData = try Data(contentsOf: dbURL)
-        XCTAssertEqual(tamperedData.count, originalBytes)
-        XCTAssertNotEqual(sha256Hex(tamperedData), originalSHA)
-        XCTAssertEqual(
-            try V3SpeedLimitService(dbPath: dbURL.path).lookupSpeedLimit(
-                lat: 52.5205,
-                lon: 13.4055,
-                radiusM: 250,
-                maxCandidates: 64
-            ).speedLimitKmh,
-            31,
-            "the tampered artifact remains structurally valid SQLite"
+        try fm.setAttributes(
+            [.modificationDate: Date(timeIntervalSinceNow: 60)],
+            ofItemAtPath: dbURL.path
         )
+        let changedData = try Data(contentsOf: dbURL)
+        XCTAssertEqual(changedData.count, originalBytes)
+        XCTAssertNotEqual(sha256Hex(changedData), originalSHA)
 
-        let manager = V3BundleManager(
-            fileManager: fm,
-            session: URLSession(configuration: .ephemeral)
-        )
+        // Any attempt to redownload the database now fails through the mock.
+        MockURLProtocol.responses = [manifestURL.absoluteString: (status: 200, body: manifestData)]
+        let manager = V3BundleManager(fileManager: fm, session: session)
+        let activeURL = try await manager.activeDatabaseURL()
+        assertPathEqual(activeURL?.path, dbURL.path)
         let recovered = try await manager.recoverLocalDataAtStartup()
-        let activeState = try await manager.activeState()
-        XCTAssertNil(recovered)
-        XCTAssertNil(activeState)
-        XCTAssertFalse(
-            fm.fileExists(atPath: bundleDir.path),
-            "checksum-invalid materialized bundles must be removed, never activated"
+        XCTAssertEqual(recovered?.mode, .upToDate)
+        XCTAssertEqual(recovered?.dbSHA256, originalSHA)
+        assertPathEqual(recovered?.dbPath, dbURL.path)
+        let route = try await manager.resolveLocalBundleRoute(lat: 52.5205, lon: 13.4055, fallbackDBPath: nil)
+        assertPathEqual(route?.dbPath, dbURL.path)
+        XCTAssertEqual(route?.dbSHA256, originalSHA)
+        let unchanged = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertEqual(unchanged.mode, .upToDate)
+        XCTAssertEqual(unchanged.dbSHA256, originalSHA)
+        XCTAssertEqual(try Data(contentsOf: dbURL), changedData)
+
+        try fm.removeItem(at: supportDir.appendingPathComponent("active_bundle.json"))
+        let directoryManager = V3BundleManager(fileManager: fm, session: session)
+        let directoryRecovery = try await directoryManager.recoverLocalDataAtStartup()
+        XCTAssertEqual(directoryRecovery?.mode, .upToDate)
+        XCTAssertEqual(directoryRecovery?.dbSHA256, originalSHA)
+        assertPathEqual(directoryRecovery?.dbPath, dbURL.path)
+        XCTAssertTrue(fm.fileExists(atPath: bundleDir.path))
+
+        // Installed startup also performs no SQLite schema validation. Opening
+        // database contents is the consuming service's responsibility.
+        try Data("already installed nonempty bytes".utf8).write(to: dbURL)
+        let restarted = V3BundleManager(fileManager: fm, session: session)
+        let reopened = try await restarted.recoverLocalDataAtStartup()
+        XCTAssertEqual(reopened?.mode, .upToDate)
+        XCTAssertEqual(reopened?.dbSHA256, originalSHA)
+    }
+
+    func testFreshBundleIntegrityFailuresPreserveInstalledDatabase() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let sourceDB = fm.temporaryDirectory.appendingPathComponent("download-integrity-\(UUID().uuidString).sqlite")
+        defer { try? fm.removeItem(at: sourceDB) }
+        try createFixtureV3DB(at: sourceDB)
+        let sourceData = try Data(contentsOf: sourceDB)
+        let sourceSHA = sha256Hex(sourceData)
+        let compressedData = try gzipCompressedData(sourceData)
+        let compressedSHA = sha256Hex(compressedData)
+        let manifestURL = URL(string: "https://speedconsumer.test/integrity.json")!
+        let downloadURL = URL(string: "https://speedconsumer.test/integrity.sqlite")!
+        func manifest(version: String, artifact: BundleArtifact) -> V3BundleManifest {
+            V3BundleManifest(
+                format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+                region: "DEU", bundleVersion: version, createdAtUTC: "2026-09-04T00:00:00Z",
+                minAppVersion: "1.0.0", db: artifact, dbParts: nil, deltaIndex: nil
+            )
+        }
+        func artifact(bytes: Int64, sha: String, compressed: Bool = false,
+                      materializedBytes: Int64? = nil, materializedSHA: String? = nil) -> BundleArtifact {
+            BundleArtifact(
+                file: "integrity.sqlite", bytes: bytes, sha256: sha, url: downloadURL.absoluteString,
+                compression: compressed ? "gzip" : nil,
+                uncompressedBytes: materializedBytes, uncompressedSHA256: materializedSHA
+            )
+        }
+        let initialManifest = manifest(
+            version: "2026-09-04-installed",
+            artifact: artifact(bytes: Int64(sourceData.count), sha: sourceSHA)
         )
+        MockURLProtocol.responses = [
+            manifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(initialManifest)),
+            downloadURL.absoluteString: (status: 200, body: sourceData),
+        ]
+        defer { MockURLProtocol.responses = [:] }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        let manager = V3BundleManager(fileManager: fm, session: session)
+        let installed = try await manager.syncFromManifestURL(manifestURL)
+        let installedURL = URL(fileURLWithPath: installed.dbPath)
+        let stateURL = supportDir.appendingPathComponent("active_bundle.json")
+        let installedState = try Data(contentsOf: stateURL)
+        let wrongSHA = String(repeating: "0", count: 64)
+        let cases: [(String, Data, BundleArtifact)] = [
+            ("raw-sha", sourceData, artifact(bytes: Int64(sourceData.count), sha: wrongSHA)),
+            ("raw-size", sourceData, artifact(bytes: Int64(sourceData.count + 1), sha: sourceSHA)),
+            ("gzip-sha", compressedData, artifact(bytes: Int64(compressedData.count), sha: wrongSHA,
+                compressed: true, materializedBytes: Int64(sourceData.count), materializedSHA: sourceSHA)),
+            ("materialized-sha", compressedData, artifact(bytes: Int64(compressedData.count), sha: compressedSHA,
+                compressed: true, materializedBytes: Int64(sourceData.count), materializedSHA: wrongSHA)),
+            ("materialized-size", compressedData, artifact(bytes: Int64(compressedData.count), sha: compressedSHA,
+                compressed: true, materializedBytes: Int64(sourceData.count + 1), materializedSHA: sourceSHA)),
+        ]
+        for (name, body, candidateArtifact) in cases {
+            let candidate = manifest(version: "2026-09-05-\(name)", artifact: candidateArtifact)
+            MockURLProtocol.responses = [
+                manifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(candidate)),
+                downloadURL.absoluteString: (status: 200, body: body),
+            ]
+            do {
+                _ = try await manager.syncFromManifestURL(manifestURL)
+                XCTFail("Expected fresh download integrity rejection: \(name)")
+            } catch {
+                switch error {
+                case ConsumerAppError.checksum(_), ConsumerAppError.invalidManifest(_): break
+                default: XCTFail("Expected integrity error for \(name), got \(error)")
+                }
+            }
+            XCTAssertEqual(try Data(contentsOf: stateURL), installedState, name)
+            XCTAssertEqual(try Data(contentsOf: installedURL), sourceData, name)
+            let activeURL = try await manager.activeDatabaseURL()
+            assertPathEqual(activeURL?.path, installedURL.path)
+        }
+    }
+
+    func testSameVersionChangedManifestDigestDownloadsReplacement() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let sourceDB = fm.temporaryDirectory.appendingPathComponent("republished-bundle-\(UUID().uuidString).sqlite")
+        defer { try? fm.removeItem(at: sourceDB) }
+        try createFixtureV3DB(at: sourceDB)
+        let firstData = try Data(contentsOf: sourceDB)
+        try executeSQL(at: sourceDB, sql: "UPDATE ways SET maxspeed='32' WHERE way_id='100';")
+        let replacementData = try Data(contentsOf: sourceDB)
+        XCTAssertNotEqual(sha256Hex(firstData), sha256Hex(replacementData))
+        let manifestURL = URL(string: "https://speedconsumer.test/republished.json")!
+        let downloadURL = URL(string: "https://speedconsumer.test/republished.sqlite")!
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: config)
+        defer { MockURLProtocol.responses = [:] }
+        var firstPath: String?
+        for body in [firstData, replacementData] {
+            let manifest = V3BundleManifest(
+                format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+                region: "DEU", bundleVersion: "2026-09-04-republished", createdAtUTC: "2026-09-04T00:00:00Z",
+                minAppVersion: "1.0.0",
+                db: BundleArtifact(file: "republished.sqlite", bytes: Int64(body.count),
+                    sha256: sha256Hex(body), url: downloadURL.absoluteString),
+                dbParts: nil, deltaIndex: nil
+            )
+            MockURLProtocol.responses = [
+                manifestURL.absoluteString: (status: 200, body: try JSONEncoder().encode(manifest)),
+                downloadURL.absoluteString: (status: 200, body: body),
+            ]
+            let manager = V3BundleManager(fileManager: fm, session: session)
+            let result = try await manager.syncFromManifestURL(manifestURL)
+            XCTAssertEqual(result.mode, .fullDownload)
+            XCTAssertEqual(result.dbSHA256, sha256Hex(body))
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: result.dbPath)), body)
+            if let firstPath { assertPathEqual(result.dbPath, firstPath) }
+            firstPath = result.dbPath
+        }
+    }
+
+    func testInstalledDatabaseAvailabilityRejectsMissingEmptyAndDirectoryPaths() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        try fm.createDirectory(at: supportDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: supportDir) }
+        let dbURL = supportDir.appendingPathComponent("unavailable.sqlite")
+        let state = ActiveBundleState(
+            region: "DEU", bundleVersion: "2026-09-04", dbFileName: dbURL.lastPathComponent,
+            activatedAtUTC: "2026-09-04T00:00:00Z", dbPath: dbURL.path,
+            dbSHA256: String(repeating: "a", count: 64)
+        )
+        for kind in ["missing", "empty", "directory"] {
+            if fm.fileExists(atPath: dbURL.path) { try fm.removeItem(at: dbURL) }
+            if kind == "empty" { try Data().write(to: dbURL) }
+            if kind == "directory" { try fm.createDirectory(at: dbURL, withIntermediateDirectories: true) }
+            try JSONEncoder().encode(state).write(to: supportDir.appendingPathComponent("active_bundle.json"))
+            let manager = V3BundleManager(fileManager: fm, session: URLSession(configuration: .ephemeral))
+            let activeURL = try await manager.activeDatabaseURL()
+            XCTAssertNil(activeURL, kind)
+            let recovered = try await manager.recoverLocalDataAtStartup()
+            XCTAssertNil(recovered, kind)
+        }
     }
 
     func testStartupRecoveryRemovesUnusableRemnantsWhenNothingIsRecoverable() async throws {

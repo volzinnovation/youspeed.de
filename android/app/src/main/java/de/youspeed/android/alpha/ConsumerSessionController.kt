@@ -2819,6 +2819,9 @@ class ConsumerSessionController(
         val fallbackBundleVersion = uiState.activeBundleVersion
 
         submitBackgroundTask {
+            // A newer fix may already be queued while an earlier map lookup is running.
+            // Discard obsolete work before touching the database again.
+            if (!lookupToken.isCurrent(token)) return@submitBackgroundTask
             val route = runCatching {
                 bootstrapper.resolveLocalBundleRoute(
                     lat = location.latitude,
@@ -3153,9 +3156,10 @@ class ConsumerSessionController(
             )
         }
         val dbPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() } ?: return
-        val countryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
-            ?: inferCountryCodeFromDBPath(dbPath)
         submitBackgroundTask {
+            if (sequence != coarseLocationSequence) return@submitBackgroundTask
+            val countryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
+                ?: inferCountryCodeFromDBPath(dbPath)
             val context = runCatching {
                 V3SpeedLimitLookup(
                     dbPath = dbPath,

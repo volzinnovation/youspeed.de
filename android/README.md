@@ -36,6 +36,9 @@ photo contribution, settings, and map-update behavior covered by the September
   and M12 graph/Viterbi matching; SQLite bbox fallback when R-tree is unavailable.
 - Full map downloads and eligible raw/zlib SQL delta chains, validated before
   atomic activation; current-country endpoint processing follows iPhone.
+- Installed maps open offline. Android verifies database integrity at installation,
+  then uses the saved metadata without rehashing the database at startup or during
+  location lookups.
 - One shared rear-camera session with live video/recognition controls, optional
   preview, elapsed time, and independent photo capture while video is off.
 - Recognition is opt-in, standalone recognition defaults off, and feedback
