@@ -498,6 +498,8 @@ internal class AndroidTrafficSignCameraRuntime(
     private var recognitionRuntimeSerial = 0L
     private var recognitionUnavailable = false
     private var cameraBound = false
+    private var cameraBindingInProgress = false
+    private var graphIncludesRecorderOutputs = false
     private var videoRequested = false
     private var recordingStopRequested = false
     private var videoTerminallyStopped = false
@@ -635,17 +637,20 @@ internal class AndroidTrafficSignCameraRuntime(
     }
 
     private fun bindCamera(startGeneration: Long) {
-        if (cameraBound) return
+        val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
+        if (cameraBindingInProgress ||
+            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs))
+        ) return
+        cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
         providerFuture.addListener({
-            if (closed.get() || generation.get() != startGeneration || cameraBound) return@addListener
+            if (closed.get() || generation.get() != startGeneration) {
+                cameraBindingInProgress = false
+                return@addListener
+            }
             runCatching {
                 val provider = providerFuture.get()
                 val rotation = (lifecycleOwner as? Activity)?.display?.rotation ?: Surface.ROTATION_0
-                // Reserve the complete shared graph before any movie starts.
-                // Adding analysis later rebuilds CameraX's StreamSharing edges
-                // and can invalidate the rotated surface of an active movie.
-                // Module switches control consumers, never output bindings.
                 val analysis = imageAnalysis ?: run {
                     ImageAnalysis.Builder()
                         .setTargetRotation(rotation)
@@ -668,35 +673,49 @@ internal class AndroidTrafficSignCameraRuntime(
                             }
                         }
                 }
-                val capture = imageCapture ?: run {
+                // Standalone TSR only needs image analysis. Some Android
+                // devices reject the four-output graph (Preview, analysis,
+                // stills, and video), so reserving recorder outputs here can
+                // make recognition unavailable before recording is requested.
+                // Once the recorder is active, the graph is kept intact while
+                // its individual consumers are toggled.
+                val includeRecorderOutputs = recorderOutputsNeeded || graphIncludesRecorderOutputs
+                val capture = if (includeRecorderOutputs) imageCapture ?: run {
                     ImageCapture.Builder()
                         .setTargetRotation(rotation)
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
-                }
-                val video = videoCapture ?: run {
+                } else null
+                val video = if (includeRecorderOutputs) videoCapture ?: run {
                     VideoCapture.withOutput(Recorder.Builder().build()).apply { targetRotation = rotation }
-                }
-                val currentPreview = preview ?: Preview.Builder().setTargetRotation(rotation).build().also {
-                    it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
-                }
-                currentPreview.targetRotation = rotation
+                } else null
+                val currentPreview = if (includeRecorderOutputs) {
+                    preview ?: Preview.Builder().setTargetRotation(rotation).build().also {
+                        it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
+                    }
+                } else null
+                currentPreview?.targetRotation = rotation
                 analysis.targetRotation = rotation
-                capture.targetRotation = rotation
-                video.targetRotation = rotation
-                val useCases = listOf(currentPreview, analysis, capture, video)
+                capture?.targetRotation = rotation
+                video?.targetRotation = rotation
+                val oldUseCases = listOfNotNull(preview, imageAnalysis, imageCapture, videoCapture)
+                if (cameraBound) provider.unbind(*oldUseCases.toTypedArray())
+                val useCases = listOfNotNull(currentPreview, analysis, capture, video)
                 provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
                 videoCapture = video
                 preview = currentPreview
+                graphIncludesRecorderOutputs = includeRecorderOutputs
             }.onFailure { failure ->
+                cameraBindingInProgress = false
                 onStateChanged(
                     TrafficSignCameraRuntimeState.UNAVAILABLE,
                     failure.message?.takeIf(String::isNotBlank) ?: ConsumerRuntimeText.REAR_CAMERA_UNAVAILABLE.text(),
                 )
             }.onSuccess {
+                cameraBindingInProgress = false
                 if (!cameraBound) {
                     cameraBound = true
                     onStateChanged(TrafficSignCameraRuntimeState.ACTIVE, ConsumerRuntimeText.CAMERA_ACTIVE.text())
