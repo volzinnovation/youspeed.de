@@ -84,17 +84,28 @@ class DriveRecorderInstrumentedTest {
                 act {
                     assertTrue("Recorder test requires a real road database", it.hasUsableOnboardingMap())
                     assertFalse("Recorder test has completed setup", it.shouldPresentOnboarding())
-                    it.setTrafficSignRecognitionEnabled(false)
+                    // Start independent TSR first, then enable the recorder. This is the
+                    // lifecycle ordering that previously skipped Panoramax batch creation.
+                    it.setTrafficSignRecognitionEnabled(true)
+                    it.setTrafficSignRecognitionIndependentEnabled(true)
                     it.setPanoramaxCaptureEnabled(true)
+                    it.startDriving()
+                }
+                awaitState("Standalone camera active") {
+                    it.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE &&
+                        it.driveRecorderState == DriveRecorderState.DISABLED
+                }
+                act {
                     it.toggleDriveRecorder()
                 }
                 awaitState("Movie and photos active") { it.driveRecorderDashcamActive && it.driveRecorderPanoramaxActive }
+                awaitState("First Panoramax photo saved") { it.panoramaxCaptureCount > 0 }
                 act { it.toggleDriveRecorderTrafficSignRecognition() }
                 // Incremental CameraX graph changes previously stopped the movie here.
                 SystemClock.sleep(2_000)
                 assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
                 assertTrue(state().driveRecorderDashcamActive)
-                assertTrue(state().trafficSignRecognitionEnabled)
+                assertFalse(state().trafficSignRecognitionEnabled)
                 act { it.toggleDriveRecorderDashcam() }
                 awaitState("Movie off") { !it.driveRecorderDashcamActive && !it.driveRecorderDashcamTransitioning }
                 assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)

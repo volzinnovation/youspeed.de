@@ -1021,6 +1021,7 @@ class ConsumerSessionController(
         updateState { copy(driveRecorderState = DriveRecorderState.PREPARING, dashcamRecordingEnabled = true,
             driveRecorderStartedAt = clock.instant(), trafficSignRecognitionUnavailable = false) }
         if (!isDriving) startDriving() else reconcileTrafficSignCamera()
+        ensurePanoramaxCaptureSessionIfCameraActive()
     }
 
     private fun stopDriveRecorder() {
@@ -1098,6 +1099,31 @@ class ConsumerSessionController(
         updateState {
             val batches = panoramaxQueueStore.listBatches()
             copy(panoramaxBatches = batches, panoramaxCaptureCount = batches.sumOf { it.items.size })
+        }
+    }
+
+    /**
+     * The camera runtime is shared with independent TSR. If it was already active when the
+     * recorder was enabled, there is no new ACTIVE callback to create the Panoramax batch.
+     */
+    private fun ensurePanoramaxCaptureSessionIfCameraActive() {
+        if (DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+                driveRecorderEnabled = driveRecorderEnabled,
+                panoramaxEnabled = panoramaxCaptureEnabled,
+                driving = isDriving,
+                applicationActive = applicationActive,
+                cameraState = uiState.trafficSignCameraRuntimeState,
+            )) {
+            beginPanoramaxCaptureSession()
+        }
+    }
+
+    /** Re-applies the movie consumer after the shared camera reports ACTIVE. */
+    private fun ensureDashcamRecordingIfCameraActive(cameraState: TrafficSignCameraRuntimeState = uiState.trafficSignCameraRuntimeState) {
+        if (driveRecorderEnabled && uiState.dashcamRecordingEnabled && isDriving && applicationActive &&
+            cameraState == TrafficSignCameraRuntimeState.ACTIVE
+        ) {
+            host?.startTrafficSignCamera()
         }
     }
 
@@ -1614,6 +1640,7 @@ class ConsumerSessionController(
             }
             updateState { copy(driveRecorderState = recorderState) }
             if (state == TrafficSignCameraRuntimeState.ACTIVE && isPanoramaxCaptureEnabled()) beginPanoramaxCaptureSession()
+            if (state == TrafficSignCameraRuntimeState.ACTIVE) ensureDashcamRecordingIfCameraActive(state)
             if (state in setOf(TrafficSignCameraRuntimeState.FAILED, TrafficSignCameraRuntimeState.UNAVAILABLE, TrafficSignCameraRuntimeState.DENIED)) {
                 driveRecorderEnabled = false
                 endPanoramaxCaptureSession()
@@ -1663,6 +1690,18 @@ class ConsumerSessionController(
         }
         if (hasCameraPermission()) {
             host?.startTrafficSignCamera()
+            ensurePanoramaxCaptureSessionIfCameraActive()
+            // Reusing an already-active shared camera does not emit another ACTIVE callback.
+            // Bring the recorder state across the same boundary synchronously so the movie
+            // consumer and Panoramax capture are not left in PREPARING forever.
+            if (driveRecorderEnabled && uiState.trafficSignCameraRuntimeState == TrafficSignCameraRuntimeState.ACTIVE) {
+                updateState {
+                    copy(
+                        driveRecorderState = DriveRecorderState.RECORDING,
+                        driveRecorderPanoramaxActive = isPanoramaxCaptureEnabled(),
+                    )
+                }
+            }
         } else if (uiState.trafficSignCameraRuntimeState != TrafficSignCameraRuntimeState.REQUESTING_PERMISSION) {
             updateState {
                 copy(

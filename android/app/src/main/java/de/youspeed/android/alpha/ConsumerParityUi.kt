@@ -24,7 +24,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +44,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
@@ -184,15 +196,16 @@ private fun RecorderModuleButton(
     }
 }
 
-/** Supplies a live surface only while visible; runtime keeps an offscreen surface otherwise. */
+/** Keeps the live surface attached for the recorder session so toggling telemetry does not rebuild CameraX. */
 @Composable
 internal fun RecorderPreviewWorkspace(
     controller: ConsumerSessionController,
     modifier: Modifier = Modifier,
     visible: Boolean,
+    attached: Boolean = true,
     onDismiss: (() -> Unit)? = null,
 ) {
-    if (!visible) return
+    if (!attached) return
     val context = LocalContext.current
     val texture = remember(context) { TextureView(context) }
     val owner = remember(texture) { RecorderPreviewSurface(texture) }
@@ -200,9 +213,16 @@ internal fun RecorderPreviewWorkspace(
         controller.setDriveRecorderPreviewSurfaceProvider(owner.provider)
         onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null); owner.close() }
     }
-    Box(modifier.clip(RoundedCornerShape(16.dp)).background(Color.Black).testTag("recorder-camera-preview")) {
+    Box(
+        modifier
+            .alpha(if (visible) 1f else 0f)
+            .zIndex(if (visible) 1f else -1f)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black)
+            .testTag("recorder-camera-preview"),
+    ) {
         AndroidView(factory = { texture }, modifier = Modifier.fillMaxSize())
-        if (onDismiss != null) TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
+        if (visible && onDismiss != null) TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
             Text(doneLabel(), color = Color.White)
         }
     }
@@ -403,6 +423,35 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
 }
 
 @Composable
+private fun GalleryActionBar(content: @Composable RowScope.() -> Unit) {
+    Surface(tonalElevation = 3.dp) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun GalleryAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        Modifier.width(76.dp).clickable(enabled = enabled, onClick = onClick).padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(icon, contentDescription = label, tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+    }
+}
+
+@Composable
 internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
     val recordings = controller.uiState.dashcamRecordings
     val context = LocalContext.current
@@ -415,33 +464,47 @@ internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
             "Videos liegen auf diesem Gerät. Wähle eine Aufnahme zum Abspielen, Teilen oder Löschen.",
             "Les vidéos sont stockées sur cet appareil. Sélectionnez un enregistrement à lire, partager ou supprimer.",
             "Video’s staan op dit apparaat. Selecteer een opname om af te spelen, te delen of te verwijderen."))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = { selected = if (selected.size == recordings.size) emptySet() else recordings.map { it.path }.toSet() }, enabled = recordings.isNotEmpty()) {
-                Text(parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"))
-            }
-            TextButton(onClick = { deleteConfirmation = true }, enabled = selected.isNotEmpty() &&
-                controller.uiState.driveRecorderState !in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)) {
-                Text("${deleteLabel()} (${selected.size})")
-            }
-        }
         if (recordings.isEmpty()) Text(parityText("No recordings yet.", "Noch keine Aufnahmen.", "Aucun enregistrement.", "Nog geen opnamen."))
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(recordings, key = { it.path }) { recording ->
                 Card {
-                    Column(Modifier.fillMaxWidth().padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(recording.path in selected, { checked -> selected = if (checked) selected + recording.path else selected - recording.path })
-                            Column(Modifier.weight(1f).clickable { playing = recording.path }) {
-                                Text(dateText(recording.createdAt), fontWeight = FontWeight.SemiBold)
-                                Text(android.text.format.Formatter.formatFileSize(context, recording.bytes), style = MaterialTheme.typography.bodySmall)
-                            }
+                    Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Checkbox(recording.path in selected, { checked -> selected = if (checked) selected + recording.path else selected - recording.path })
+                        Icon(Icons.Default.VideoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(Modifier.weight(1f).clickable { playing = recording.path }) {
+                            Text(dateText(recording.createdAt), fontWeight = FontWeight.SemiBold)
+                            Text(android.text.format.Formatter.formatFileSize(context, recording.bytes), style = MaterialTheme.typography.bodySmall)
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TextButton(onClick = { playing = recording.path }) { Text(parityText("Play", "Abspielen", "Lire", "Afspelen")) }
-                            TextButton(onClick = { controller.shareDashcamRecording(recording.path) }) { Text(parityText("Share", "Teilen", "Partager", "Delen")) }
+                        IconButton(onClick = { controller.shareDashcamRecording(recording.path) },
+                            enabled = controller.uiState.driveRecorderState == DriveRecorderState.DISABLED) {
+                            Icon(Icons.Default.Share, contentDescription = parityText("Share", "Teilen", "Partager", "Delen"))
                         }
                     }
                 }
+            }
+        }
+        if (recordings.isNotEmpty()) {
+            GalleryActionBar {
+                GalleryAction(
+                    icon = Icons.Default.CheckCircle,
+                    label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
+                    enabled = selected.size != recordings.size,
+                    onClick = { selected = recordings.map { it.path }.toSet() },
+                )
+                GalleryAction(
+                    icon = Icons.Default.RadioButtonUnchecked,
+                    label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
+                    enabled = selected.isNotEmpty(),
+                    onClick = { selected = emptySet() },
+                )
+                GalleryAction(
+                    icon = Icons.Default.Delete,
+                    label = "${deleteLabel()} (${selected.size})",
+                    enabled = selected.isNotEmpty() && controller.uiState.driveRecorderState !in
+                        setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING),
+                    onClick = { deleteConfirmation = true },
+                )
             }
         }
     }
@@ -491,18 +554,6 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
             "Fotos vor dem Hochladen prüfen. Ein Foto zum Prüfen öffnen; Favoriten vor automatischer Bereinigung schützen.",
             "Vérifiez les photos avant l’envoi. Ouvrez-les pour les inspecter ; les favoris sont protégés du nettoyage automatique.",
             "Controleer foto’s vóór het uploaden. Open een foto om die te bekijken; favorieten zijn beschermd tegen automatisch opruimen."))
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TextButton(onClick = {
-                selected = if (count > 0) emptyMap() else ui.panoramaxBatches.filter { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING }
-                    .associate { batch -> batch.batchId to batch.items.map { it.itemId }.toSet() }
-            }) { Text(if (count > 0) parityText("Clear selection", "Auswahl aufheben", "Effacer la sélection", "Selectie wissen")
-                else parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren")) }
-            TextButton(onClick = { deleteConfirmation = true }, enabled = count > 0 && controller.canProcessPanoramaxUploads() &&
-                selected.keys.none { it in ui.panoramaxActiveUploadBatchIds }) { Text("${deleteLabel()} ($count)") }
-            Button(onClick = { uploadConfirmation = true }, enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected) {
-                Text(parityText("Upload", "Hochladen", "Envoyer", "Uploaden") + " ($count)")
-            }
-        }
         if (!controller.canProcessPanoramaxUploads()) Text(parityText("Uploads are available after recording has finished.",
             "Uploads sind nach Abschluss der Aufnahme verfügbar.", "Les envois sont disponibles après la fin de l’enregistrement.",
             "Uploaden kan nadat de opname is voltooid."), style = MaterialTheme.typography.bodySmall)
@@ -543,22 +594,72 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                                     item.metadata.trafficSignAnnotations.orEmpty().firstOrNull()?.speedLimitKmh?.let { Text("$it km/h", fontWeight = FontWeight.Bold) }
                                 }
                             }
-                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                TextButton(onClick = { controller.setPanoramaxItemFavorite(batch.batchId, item.itemId, !item.isFavorite) }) {
-                                    Text(if (item.isFavorite) parityText("★ Favorite", "★ Favorit", "★ Favori", "★ Favoriet")
-                                        else parityText("☆ Favorite", "☆ Favorit", "☆ Favori", "☆ Favoriet"))
+                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                IconButton(onClick = { controller.setPanoramaxItemFavorite(batch.batchId, item.itemId, !item.isFavorite) }) {
+                                    Icon(
+                                        if (item.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                        contentDescription = if (item.isFavorite) parityText("Remove favorite", "Favorit entfernen", "Retirer des favoris", "Favoriet verwijderen")
+                                        else parityText("Add favorite", "Als Favorit markieren", "Ajouter aux favoris", "Favoriet maken"),
+                                        tint = if (item.isFavorite) Color(0xFFFFC107) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                                 if (item.state in setOf(PanoramaxItemState.CAPTURED, PanoramaxItemState.INCLUDED, PanoramaxItemState.EXCLUDED, PanoramaxItemState.RETRYABLE_ERROR)) {
-                                    TextButton(onClick = { controller.setPanoramaxItemIncluded(batch.batchId, item.itemId, item.state == PanoramaxItemState.EXCLUDED) }, enabled = editable) {
-                                        Text(if (item.state == PanoramaxItemState.EXCLUDED) parityText("Include", "Einbeziehen", "Inclure", "Opnemen")
-                                            else parityText("Exclude", "Ausschließen", "Exclure", "Uitsluiten"))
+                                    IconButton(onClick = { controller.setPanoramaxItemIncluded(batch.batchId, item.itemId, item.state == PanoramaxItemState.EXCLUDED) }, enabled = editable) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = if (item.state == PanoramaxItemState.EXCLUDED) parityText("Include", "Einbeziehen", "Inclure", "Opnemen")
+                                            else parityText("Exclude", "Ausschließen", "Exclure", "Uitsluiten"),
+                                            tint = if (item.state == PanoramaxItemState.EXCLUDED) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF43A047),
+                                        )
                                     }
                                 }
-                                TextButton(onClick = { focused = batch.batchId to item.itemId }) { Text(parityText("Open", "Öffnen", "Ouvrir", "Openen")) }
+                                IconButton(onClick = { focused = batch.batchId to item.itemId }) {
+                                    Icon(Icons.Default.PhotoLibrary, contentDescription = parityText("Open", "Öffnen", "Ouvrir", "Openen"))
+                                }
                             }
                         }
                     }
                 }
+            }
+        }
+        GalleryActionBar {
+            GalleryAction(
+                icon = Icons.Default.CheckCircle,
+                label = parityText("Select all", "Alle auswählen", "Tout sélectionner", "Alles selecteren"),
+                enabled = ui.panoramaxBatches.any { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING },
+                onClick = {
+                    selected = ui.panoramaxBatches.filter { it.batchId !in ui.panoramaxActiveUploadBatchIds && it.state != PanoramaxBatchState.CAPTURING }
+                        .associate { batch -> batch.batchId to batch.items.map { it.itemId }.toSet() }
+                },
+            )
+            GalleryAction(
+                icon = Icons.Default.RadioButtonUnchecked,
+                label = parityText("Select none", "Auswahl aufheben", "Tout désélectionner", "Niets selecteren"),
+                enabled = count > 0,
+                onClick = { selected = emptyMap() },
+            )
+            GalleryAction(
+                icon = Icons.Default.Delete,
+                label = "${deleteLabel()} ($count)",
+                enabled = count > 0 && controller.canProcessPanoramaxUploads() &&
+                    selected.keys.none { it in ui.panoramaxActiveUploadBatchIds },
+                onClick = { deleteConfirmation = true },
+            )
+            Spacer(Modifier.weight(1f))
+            if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
+                GalleryAction(
+                    icon = Icons.Default.Upload,
+                    label = "${parityText("Upload", "Hochladen", "Envoyer", "Uploaden")} ($count)",
+                    enabled = count > 0 && controller.canProcessPanoramaxUploads() && ui.panoramaxAccountConnected,
+                    onClick = { uploadConfirmation = true },
+                )
+            } else {
+                GalleryAction(
+                    icon = Icons.Default.Stop,
+                    label = parityText("Stop", "Stopp", "Arrêter", "Stoppen"),
+                    enabled = true,
+                    onClick = controller::stopPanoramaxUploads,
+                )
             }
         }
     }

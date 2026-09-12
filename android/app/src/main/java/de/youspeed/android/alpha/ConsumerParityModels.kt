@@ -18,11 +18,38 @@ object DriveRecorderPolicy {
                              driving: Boolean, applicationActive: Boolean): Boolean =
         enabled && (independent || recording) && driving && applicationActive
 
+    fun shouldEnsurePanoramaxCaptureSession(
+        driveRecorderEnabled: Boolean,
+        panoramaxEnabled: Boolean,
+        driving: Boolean,
+        applicationActive: Boolean,
+        cameraState: TrafficSignCameraRuntimeState,
+    ): Boolean = driveRecorderEnabled && panoramaxEnabled && driving && applicationActive &&
+        cameraState == TrafficSignCameraRuntimeState.ACTIVE
+
     fun canShowPreview(state: DriveRecorderState, dashcamActive: Boolean, captureActive: Boolean): Boolean =
         state == DriveRecorderState.RECORDING && dashcamActive && !captureActive
 
     const val MOVIE_FILE_LIMIT_BYTES = 5_000_000_000L
     const val MOVIE_LIBRARY_LIMIT_BYTES = 10_000_000_000L
+}
+
+enum class DriveRecorderWorkspaceSelection { PREVIEW, TELEMETRY }
+
+data class DriveRecorderPreviewPresentation(
+    val isAttached: Boolean,
+    val isVisible: Boolean,
+) {
+    companion object {
+        fun resolve(
+            sessionAvailable: Boolean,
+            selection: DriveRecorderWorkspaceSelection,
+            previewAvailable: Boolean,
+        ): DriveRecorderPreviewPresentation = DriveRecorderPreviewPresentation(
+            isAttached = sessionAvailable,
+            isVisible = sessionAvailable && selection == DriveRecorderWorkspaceSelection.PREVIEW && previewAvailable,
+        )
+    }
 }
 
 /** A physical sign produces feedback once, even if it is visible in many frames. */

@@ -35,6 +35,62 @@ class ConsumerLifecycleParityTests {
         assertFalse(DriveRecorderPolicy.canShowPreview(DriveRecorderState.STOPPING, true, false))
     }
 
+    @Test fun panoramaxSessionIsRecheckedWhenCameraWasAlreadyActive() {
+        assertTrue(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+            driveRecorderEnabled = true,
+            panoramaxEnabled = true,
+            driving = true,
+            applicationActive = true,
+            cameraState = TrafficSignCameraRuntimeState.ACTIVE,
+        ))
+        assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+            driveRecorderEnabled = true, panoramaxEnabled = true, driving = true,
+            applicationActive = true, cameraState = TrafficSignCameraRuntimeState.STARTING,
+        ))
+        assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+            driveRecorderEnabled = false, panoramaxEnabled = true, driving = true,
+            applicationActive = true, cameraState = TrafficSignCameraRuntimeState.ACTIVE,
+        ))
+        assertFalse(DriveRecorderPolicy.shouldEnsurePanoramaxCaptureSession(
+            driveRecorderEnabled = true, panoramaxEnabled = false, driving = true,
+            applicationActive = true, cameraState = TrafficSignCameraRuntimeState.ACTIVE,
+        ))
+    }
+
+    @Test fun previewStaysAttachedWhileTelemetryIsVisible() {
+        val telemetry = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable = true,
+            selection = DriveRecorderWorkspaceSelection.TELEMETRY,
+            previewAvailable = true,
+        )
+        assertTrue(telemetry.isAttached)
+        assertFalse(telemetry.isVisible)
+
+        val preview = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable = true,
+            selection = DriveRecorderWorkspaceSelection.PREVIEW,
+            previewAvailable = true,
+        )
+        assertTrue(preview.isAttached)
+        assertTrue(preview.isVisible)
+
+        val unavailable = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable = true,
+            selection = DriveRecorderWorkspaceSelection.PREVIEW,
+            previewAvailable = false,
+        )
+        assertTrue(unavailable.isAttached)
+        assertFalse(unavailable.isVisible)
+
+        val noSession = DriveRecorderPreviewPresentation.resolve(
+            sessionAvailable = false,
+            selection = DriveRecorderWorkspaceSelection.PREVIEW,
+            previewAvailable = true,
+        )
+        assertFalse(noSession.isAttached)
+        assertFalse(noSession.isVisible)
+    }
+
     @Test fun feedbackDeduplicatesAWholeTrackButPermitsDistinctSignsAndNewSessions() {
         val gate = TrafficSignFeedbackGate()
         val context = context()

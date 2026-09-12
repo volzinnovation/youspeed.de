@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,6 +81,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -400,8 +403,17 @@ private fun MainScreen(
     LaunchedEffect(ui.driveRecorderState, ui.driveRecorderDashcamActive) {
         if (ui.driveRecorderDashcamActive) previewSelected = true
     }
-    val previewVisible = previewSelected && DriveRecorderPolicy.canShowPreview(ui.driveRecorderState,
-        ui.driveRecorderDashcamActive, ConsumerMainScreenLogic.isInSpeedCaptureMode(ui))
+    val previewPresentation = DriveRecorderPreviewPresentation.resolve(
+        sessionAvailable = recorderVisible,
+        selection = if (previewSelected) DriveRecorderWorkspaceSelection.PREVIEW
+        else DriveRecorderWorkspaceSelection.TELEMETRY,
+        previewAvailable = DriveRecorderPolicy.canShowPreview(
+            ui.driveRecorderState,
+            ui.driveRecorderDashcamActive,
+            ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+        ),
+    )
+    val previewVisible = previewPresentation.isVisible
     val pulseTransition = rememberInfiniteTransition(label = "driving-ban-pulse")
     val pulseFraction by pulseTransition.animateFloat(
         initialValue = 0f,
@@ -526,37 +538,50 @@ private fun MainScreen(
                 val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
                 val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
                 val fittedLocationHeight = min(locationSlotMinHeight.value, maxHeight.value * 0.30f).dp
-                Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly,
-                    horizontalAlignment = Alignment.CenterHorizontally) {
-            MetricStatusBlock(
-                displayedPrimaryMetric = primaryMetric,
-                secondaryMetric = secondaryMetric,
-                foreground = foreground,
-                ui = ui,
-                primaryMetricFont = primaryMetricFont * metricScale,
-                secondaryFont = secondaryFont * metricScale,
-                metricSlotMinHeight = fittedMetricHeight,
-            )
+                Box(Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(if (previewVisible) 0f else 1f),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        MetricStatusBlock(
+                            displayedPrimaryMetric = primaryMetric,
+                            secondaryMetric = secondaryMetric,
+                            foreground = foreground,
+                            ui = ui,
+                            primaryMetricFont = primaryMetricFont * metricScale,
+                            secondaryFont = secondaryFont * metricScale,
+                            metricSlotMinHeight = fittedMetricHeight,
+                        )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
-            Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-            LocationStatusBlock(
-                ui = ui,
-                foreground = foreground,
-                debugFont = debugFont,
-                debugSpacing = debugSpacing,
-                metricDebugGap = metricDebugGap,
-                locationSlotMinHeight = fittedLocationHeight,
-                contentHorizontalPadding = contentHorizontalPadding,
-                locationBadgeWidth = bottomButtonGapWidth,
-                runtimeBanner = runtimeBanner,
-                onOpenDebug = onOpenDebug,
-            )
-            }
+                        Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                            LocationStatusBlock(
+                                ui = ui,
+                                foreground = foreground,
+                                debugFont = debugFont,
+                                debugSpacing = debugSpacing,
+                                metricDebugGap = metricDebugGap,
+                                locationSlotMinHeight = fittedLocationHeight,
+                                contentHorizontalPadding = contentHorizontalPadding,
+                                locationBadgeWidth = bottomButtonGapWidth,
+                                runtimeBanner = runtimeBanner,
+                                onOpenDebug = onOpenDebug,
+                            )
+                        }
+                    }
+                    if (previewPresentation.isAttached) {
+                        RecorderPreviewWorkspace(
+                            controller,
+                            Modifier.fillMaxSize().padding(horizontal = contentHorizontalPadding),
+                            visible = previewVisible,
+                            onDismiss = { previewSelected = false },
+                        )
+                    }
                 }
-                RecorderPreviewWorkspace(controller, Modifier.fillMaxSize().padding(horizontal = contentHorizontalPadding),
-                    visible = previewVisible, onDismiss = { previewSelected = false })
             }
         }
 
@@ -1899,15 +1924,23 @@ private fun PanoramaxGallerySheet(controller: ConsumerSessionController, onDismi
     var videos by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_panoramax_gallery), onDismiss = onDismiss, testTag = "panoramax-gallery-sheet") {
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { videos = false }, modifier = Modifier.weight(1f)) {
-                    Text(ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s"))
-                }
-                OutlinedButton(onClick = { videos = true }, modifier = Modifier.weight(1f)) {
-                    Text(ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s"))
-                }
+            Box(Modifier.weight(1f)) {
+                if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller)
             }
-            if (videos) DashcamLibraryContent(controller) else PanoramaxGalleryContent(controller)
+            NavigationBar {
+                NavigationBarItem(
+                    selected = !videos,
+                    onClick = { videos = false },
+                    icon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null) },
+                    label = { Text(ConsumerUiStrings.text("Pictures", "Bilder", "Photos", "Foto’s")) },
+                )
+                NavigationBarItem(
+                    selected = videos,
+                    onClick = { videos = true },
+                    icon = { Icon(Icons.Default.VideoLibrary, contentDescription = null) },
+                    label = { Text(ConsumerUiStrings.text("Videos", "Videos", "Vidéos", "Video’s")) },
+                )
+            }
         }
     }
 }
