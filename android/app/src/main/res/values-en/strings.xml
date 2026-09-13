@@ -48,7 +48,7 @@
     <string name="onboarding_download">Download map</string>
     <string name="onboarding_retry_download">Retry download</string>
     <string name="onboarding_map_ready">Your downloaded map is ready.</string>
-    <string name="onboarding_map_required">Download a map to continue. The included sample is not enough for setup.</string>
+    <string name="onboarding_map_required">Download a map to continue.</string>
     <string name="onboarding_map_network">The download uses your internet connection, including mobile data. Afterward, the map works offline. Map data: OpenStreetMap contributors.</string>
     <string name="onboarding_driving_title">Ready for the road</string>
     <string name="onboarding_driving_body">Allow precise location while using the app so YouSpeed can match your road and show your current speed. You can also choose spoken speed alerts.</string>
