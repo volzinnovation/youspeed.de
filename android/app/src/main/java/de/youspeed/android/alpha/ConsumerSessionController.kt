@@ -4563,6 +4563,9 @@ class ConsumerSessionController(
         return JSONObject().apply {
             result.speedLimitKmh?.let { put("speedLimitKmh", it) }
             put("isUnlimitedSpeedLimit", result.isUnlimitedSpeedLimit)
+            put("matchedWayStable", result.matchedWayStable)
+            put("matchedFixCount", matchContext?.matchedFixCount ?: 0)
+            matchContext?.preferredWayId?.let { put("preferredWayID", it) }
             result.wayId?.let { put("wayID", it) }
             result.highway?.let { put("highway", it) }
             selectedTrace?.service?.let { put("service", it) }

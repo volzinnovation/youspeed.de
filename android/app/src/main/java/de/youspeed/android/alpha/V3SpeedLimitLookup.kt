@@ -269,9 +269,10 @@ internal class V3SpeedLimitLookup(
             corridorPairs = corridorPairs,
         )
         val best = selection.selected
-        val matchedWayStable = best?.wayId != null &&
+        val selectedWayId = normalizedWayId(best?.wayId)
+        val matchedWayStable = selectedWayId != null &&
             normalizedMatchContext.matchedFixCount > 0 &&
-            normalizedMatchContext.preferredWayId == best.wayId
+            normalizedWayId(normalizedMatchContext.preferredWayId) == selectedWayId
         val routeMembership = loadRouteRelationMembership(best?.wayId)
         val insideCityDecision = when {
             highwayImpliesInsideCity(best?.highway) -> true to "highway_class_in_city"
