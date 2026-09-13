@@ -48,7 +48,7 @@
     <string name="onboarding_download">Karte herunterladen</string>
     <string name="onboarding_retry_download">Download erneut versuchen</string>
     <string name="onboarding_map_ready">Deine heruntergeladene Karte ist bereit.</string>
-    <string name="onboarding_map_required">Lade eine Karte herunter, um fortzufahren. Die mitgelieferte Beispielkarte reicht für die Einrichtung nicht aus.</string>
+    <string name="onboarding_map_required">Lade eine Datenbank herunter, um fortzufahren.</string>
     <string name="onboarding_map_network">Der Download nutzt deine Internetverbindung, auch mobile Daten. Danach funktioniert die Karte offline. Kartendaten: OpenStreetMap-Mitwirkende.</string>
     <string name="onboarding_driving_title">Bereit für die Fahrt</string>
     <string name="onboarding_driving_body">Erlaube den genauen Standort während der App-Nutzung, damit YouSpeed deine Straße und aktuelle Geschwindigkeit bestimmen kann. Du kannst außerdem gesprochene Tempowarnungen auswählen.</string>
