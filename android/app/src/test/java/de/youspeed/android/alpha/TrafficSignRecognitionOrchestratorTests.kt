@@ -735,15 +735,16 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
-    fun stillAndInactiveFramesCannotPublishLivePictograms() {
-        for (still in listOf(true, false)) {
-            val harness = Harness()
-            harness.runtimeActivationEligible = still
-            harness.orchestrator.submit(harness.frame("not-live", source = if (still) TrafficSignInputSource.CAMERA_STILL else TrafficSignInputSource.LIVE_FRAME,
-                capturedAtNanos = 0L))
-            harness.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
-            assertNull(harness.observer.outputs.single().displayObservation)
-        }
+    fun stationaryLiveFramesCanPublishPictogramsButStillFramesCannot() {
+        val stationary = Harness().also { it.runtimeActivationEligible = false }
+        stationary.orchestrator.submit(stationary.frame("stationary-live", capturedAtNanos = 0L))
+        stationary.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertTrue(stationary.observer.outputs.single().displayObservation != null)
+
+        val still = Harness().also { it.runtimeActivationEligible = true }
+        still.orchestrator.submit(still.frame("camera-still", source = TrafficSignInputSource.CAMERA_STILL, capturedAtNanos = 0L))
+        still.backend.completeNext(TrafficSignBackendResult.Recognition(detection()))
+        assertNull(still.observer.outputs.single().displayObservation)
     }
 
     private class Harness(

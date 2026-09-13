@@ -477,7 +477,11 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     event = event,
                     speedOverride = currentOverride,
                     passageEvent = passage,
-                    displayObservation = if (created.qualifiedAnalyzedFrame && active.accepted.runtimeActivationEligible &&
+                    // Presentation is independent from speed-limit activation.
+                    // The iPhone lane continues to show an accepted sign while
+                    // stationary; only the passage finalizer may activate a
+                    // camera speed override, and it retains the movement gate.
+                    displayObservation = if (created.qualifiedAnalyzedFrame &&
                         !active.accepted.driveSessionId.isNullOrBlank() && backendResult is TrafficSignBackendResult.Recognition
                     ) {
                         TrafficSignDisplayPolicy.accepted(backendResult.displayDetections)?.let {
