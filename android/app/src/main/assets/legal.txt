@@ -19,7 +19,7 @@ Alexander Gerhart, Auguststr. 2, 10117 Berlin
 
 Datenschutzinformation (Art. 13 DSGVO)
 Verantwortlicher: Alexander Gerhart, Auguststr. 2, 10117 Berlin, alexander@moonshots.gmbh
-Zwecke der Verarbeitung: Betrieb der App, Bereitstellung von Karten- und Regeldaten sowie Support-Anfragen
+Zwecke der Verarbeitung: Betrieb der App, Bereitstellung von Datenbank- und Regeldaten sowie Support-Anfragen
 Rechtsgrundlagen: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) sowie lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb)
 Empfaenger: IT-Hosting-Dienstleister sowie Content Delivery Networks (CDN) zur Auslieferung der App-Inhalte.
 Drittlanduebermittlung: Nein
@@ -42,7 +42,7 @@ ist zusaetzlich ein gesetzlicher Vertreter in der EU gemaess Art. 13 DSA zu bene
 
 Datenquelle, Urheberrecht und Lizenz (OpenStreetMap)
 Diese App verwendet Geodaten aus OpenStreetMap sowie daraus abgeleitete Datensaetze.
-Kartendaten: Copyright OpenStreetMap-Mitwirkende.
+Datenbank: Copyright OpenStreetMap-Mitwirkende.
 Lizenz: Open Database License (ODbL) v1.0
 https://opendatacommons.org/licenses/odbl/1-0/
 Attribution/Urheberhinweis:

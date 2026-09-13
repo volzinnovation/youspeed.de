@@ -279,6 +279,7 @@
 "limit.accessibility.walk" = "Voetgangerszone, stapvoets rijden";
 "limit.accessibility.unlimited" = "Geen snelheidslimiet";
 "limit.accessibility.end_unknown" = "Einde gedetecteerd, snelheidslimiet onbekend";
+"limit.accessibility.end" = "Einde van snelheidsbeperking gedetecteerd";
 "limit.accessibility.unknown" = "Snelheidslimiet onbekend";
 
 /* Recognized road-sign display */

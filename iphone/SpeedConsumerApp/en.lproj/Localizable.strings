@@ -279,6 +279,7 @@
 "limit.accessibility.walk" = "Pedestrian zone, walking speed";
 "limit.accessibility.unlimited" = "No speed limit";
 "limit.accessibility.end_unknown" = "End detected, speed limit unknown";
+"limit.accessibility.end" = "End of speed restriction detected";
 "limit.accessibility.unknown" = "Speed limit unknown";
 
 /* Recognized road-sign display */

@@ -872,8 +872,9 @@ struct TrafficSignPassageFinalizer: Sendable {
     ) -> TrafficSignPassageFinalizerUpdate {
         guard event.source == .liveFrame else { return .idle }
         // This legacy-named eligibility bit is frozen with the analyzed frame
-        // and represents active-drive motion. Calibration remains evidence in
-        // the event, but does not disable live testing with a raw-score pack.
+        // and represents runtime/source admission, not vehicle motion.
+        // Calibration remains evidence in the event, but does not disable
+        // live testing with a raw-score pack.
         guard calibratedActivationEligible else { return currentStateUpdate }
         pruneCommittedSignSuppression(at: event.frameTimestampUtc)
 
@@ -1755,7 +1756,8 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
     mutating func commit(
         _ passage: TrafficSignPassageEvent,
         base: EffectiveSpeedLimitState,
-        verifiedEnclosingBase: EffectiveSpeedLimitState? = nil
+        verifiedEnclosingBase: EffectiveSpeedLimitState? = nil,
+        fallbackSpeedLimitAfterEnd: EffectiveSpeedLimitValue? = nil
     ) -> TrafficSignPassageCommitResult {
         let context = passage.activationContext
         let action = passage.action
@@ -1787,7 +1789,12 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
                 ? maskOrPreserveUnsafeEnd(action, reason: "camera_end_unverified_bundle")
                 : (false, .unknown, "camera_unverified_bundle_review_only")
         } else {
-            resolution = reduce(action: action, base: base, conditional: conditional)
+            resolution = reduce(
+                action: action,
+                base: base,
+                conditional: conditional,
+                fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd
+            )
         }
         let directionScope: LocalObservationDirectionScope
         switch context.travelDirection {
@@ -1938,7 +1945,8 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
     private mutating func reduce(
         action: TrafficSignStructuralAction,
         base: EffectiveSpeedLimitState,
-        conditional: Bool
+        conditional: Bool,
+        fallbackSpeedLimitAfterEnd: EffectiveSpeedLimitValue?
     ) -> (applied: Bool, value: EffectiveSpeedLimitValue, reason: String) {
         guard !conditional else {
             return action.isSpeedEnd
@@ -1980,6 +1988,9 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
                 if let city = rules.city {
                     return (true, city, "camera_maximum_end_preserved_city")
                 }
+                if let fallbackSpeedLimitAfterEnd {
+                    return (true, fallbackSpeedLimitAfterEnd, "camera_maximum_end_fallback")
+                }
                 if let enclosing = rules.enclosingBase {
                     return (true, enclosing.value, "camera_maximum_end_restored_verified_enclosing")
                 }
@@ -1991,7 +2002,11 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
                 return (false, .numeric(posted), "camera_maximum_end_mismatch_review_only")
             }
             rules.posted = nil
-            return resolvedEnclosing(afterEnding: posted, reason: "camera_maximum_end")
+            return resolvedEnclosing(
+                afterEnding: posted,
+                reason: "camera_maximum_end",
+                fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd
+            )
         case .allRestrictionsEnd:
             let ended = rules.posted
             rules.posted = nil
@@ -2008,7 +2023,11 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
             }
             rules.zone = nil
             rules.posted = nil
-            return resolvedEnclosing(afterEnding: zone.value, reason: "camera_zone_end")
+            return resolvedEnclosing(
+                afterEnding: zone.value,
+                reason: "camera_zone_end",
+                fallbackSpeedLimitAfterEnd: fallbackSpeedLimitAfterEnd
+            )
         case .cityExit:
             guard rules.city != nil else {
                 return (true, .unknown, "camera_city_exit_unresolved")
@@ -2098,12 +2117,16 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
 
     private func resolvedEnclosing(
         afterEnding endedValue: Int?,
-        reason: String
+        reason: String,
+        fallbackSpeedLimitAfterEnd: EffectiveSpeedLimitValue? = nil
     ) -> (applied: Bool, value: EffectiveSpeedLimitValue, reason: String) {
         if let posted = rules.posted { return (true, .numeric(posted), reason) }
         if rules.pedestrian { return (true, .walk, reason) }
         if let zone = rules.zone { return (true, .numeric(zone.value), reason) }
         if let city = rules.city { return (true, city, reason) }
+        if let fallbackSpeedLimitAfterEnd {
+            return (true, fallbackSpeedLimitAfterEnd, "\(reason)_fallback")
+        }
         guard let enclosing = rules.enclosingBase else {
             return (true, .unknown, "\(reason)_unresolved")
         }
@@ -2129,7 +2152,7 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
     }
 }
 
-private extension TrafficSignStructuralAction {
+extension TrafficSignStructuralAction {
     var isTemporary: Bool {
         if case .temporaryMaximum = self { return true }
         return false
@@ -2143,6 +2166,15 @@ private extension TrafficSignStructuralAction {
             return true
         case .postedMaximum, .zoneStart, .cityEntry, .pedestrianZoneStart,
              .temporaryMaximum, .nonSpeedRestrictionEnd, .unresolved:
+            return false
+        }
+    }
+
+    var isSpeedLimitEnd: Bool {
+        switch self {
+        case .maximumSpeedEnd, .zoneEnd:
+            return true
+        default:
             return false
         }
     }

@@ -26,6 +26,18 @@ class TrafficSignDisplayTests {
         assertEquals("pedestrian_crossing", pedestrianCrossing.classId)
         assertEquals("tsr/sign-pictograms/png/de-350.png", pedestrianCrossing.imagePath)
         assertEquals("pedestrian_crossing", TrafficSignDisplayPolicy.next(second, observe("pedestrian_crossing"), catalog)?.classId)
+        val school = requireNotNull(catalog.pictogram("hazard:school"))
+        assertEquals("Kinder", school.labels["de"])
+        assertNull(school.imagePath)
+        assertEquals("hazard:school", TrafficSignDisplayPolicy.next(second, observe("hazard:school"), catalog)?.classId)
+        for (classId in listOf("hazard:bicycle", "hazard:wild_animals", "hazard:wind")) {
+            assertNotNull(catalog.pictogram(classId))
+            assertEquals(classId, TrafficSignDisplayPolicy.next(second, observe(classId), catalog)?.classId)
+            assertNull(catalog.pictogram(classId)?.imagePath)
+        }
+        assertTrue(observe("maxspeed:end").isSpeedLimitEnd)
+        assertTrue(observe("zone:end").isSpeedLimitEnd)
+        assertTrue(observe("zone:30:end").isSpeedLimitEnd)
     }
 
     @Test fun independentDisplaySelectsClassifierConfidenceWithExistingDetectorAdmissionFloor() {

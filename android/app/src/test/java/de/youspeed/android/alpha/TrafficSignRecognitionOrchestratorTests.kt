@@ -201,10 +201,10 @@ class TrafficSignRecognitionOrchestratorTests {
     }
 
     @Test
-    fun stationaryContextCannotArmOrFinalizeAuthoritativePassage() {
+    fun stationaryContextCanArmAndFinalizeAuthoritativePassage() {
         val harness = Harness()
-        // The production caller may authorize the driving session while GPS
-        // reports a stationary vehicle. The orchestrator must enforce motion.
+        // A recognized sign is authoritative even when GPS reports a
+        // stationary vehicle.
         harness.context = harness.context.copy(speedMetersPerSecond = 0.0)
         repeat(3) { index ->
             harness.clockNanos = index * 500_000_000L
@@ -217,12 +217,12 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
         }
 
-        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
-        assertNull(harness.orchestrator.speedOverride())
+        assertTrue(harness.observer.outputs.any { it.passageEvent?.resolution?.speedKmh == 30 })
+        assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
     @Test
-    fun stationaryLossCannotFinalizeAPreviouslyArmedMovingTrack() {
+    fun stationaryLossCanFinalizeAPreviouslyArmedMovingTrack() {
         val harness = Harness()
         repeat(3) { index ->
             harness.clockNanos = index * 500_000_000L
@@ -235,7 +235,8 @@ class TrafficSignRecognitionOrchestratorTests {
             harness.orchestrator.submit(harness.frame("stopped-loss-$index", capturedAtNanos = harness.clockNanos))
             harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
         }
-        assertTrue(harness.observer.outputs.none { it.passageEvent != null })
+        assertTrue(harness.observer.outputs.any { it.passageEvent?.resolution?.speedKmh == 30 })
+        assertEquals(30, harness.orchestrator.speedOverride()?.speedKmh)
     }
 
     @Test

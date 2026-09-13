@@ -450,8 +450,8 @@
         "fr": "Cyclistes",
         "nl": "Fietsers"
       },
-      "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "display_eligible": true,
+      "notes": "Rendered as the generic DE:138 cyclist warning sign; the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:bothways",
@@ -699,8 +699,8 @@
         "fr": "Enfants",
         "nl": "Kinderen"
       },
-      "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "display_eligible": true,
+      "notes": "Rendered as the generic DE:136 children warning sign; the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:slippery",
@@ -773,8 +773,8 @@
         "fr": "Passage d’animaux sauvages",
         "nl": "Overstekend wild"
       },
-      "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "display_eligible": true,
+      "notes": "Rendered as the generic DE:142 wild-animal warning sign; the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:wind",
@@ -786,8 +786,8 @@
         "fr": "Vent latéral",
         "nl": "Zijwind"
       },
-      "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "display_eligible": true,
+      "notes": "Rendered as the generic DE:117 crosswind warning sign; the classifier does not identify the left/right direction variant."
     },
     {
       "class_id": "hazard:zigzag",

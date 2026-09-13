@@ -866,6 +866,44 @@ class TrafficSignPassageTests {
     }
 
     @Test
+    fun matchingMaximumSpeedEndUsesCityDefaultOrExplicitOsmFallback() {
+        val innerCity = TrafficSignRuntimeSourceResolver()
+        val base = base(70, EffectiveSpeedLimitSource.BUNDLE)
+        innerCity.commit(passage(action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70)), base)
+        val cityEnd = innerCity.commit(
+            passage(action = TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 70), at = t0.plusSeconds(1)),
+            base,
+            fallbackSpeedLimitAfterEnd = TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50),
+        )
+        assertEquals(50, cityEnd.resolution?.speedKmh)
+
+        val osmFallback = TrafficSignRuntimeSourceResolver()
+        osmFallback.commit(passage(action = TrafficSignAction(TrafficSignActionKind.POSTED_MAXIMUM, 70)), base)
+        val wayEnd = osmFallback.commit(
+            passage(action = TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END, 70), at = t0.plusSeconds(2)),
+            base,
+            fallbackSpeedLimitAfterEnd = TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 100),
+        )
+        assertEquals(100, wayEnd.resolution?.speedKmh)
+    }
+
+    @Test
+    fun matchingZoneEndUsesTheSamePostEndFallback() {
+        val resolver = TrafficSignRuntimeSourceResolver()
+        val base = base(70, EffectiveSpeedLimitSource.BUNDLE)
+        resolver.commit(
+            passage(action = TrafficSignAction(TrafficSignActionKind.ZONE_START, valueKmh = 30)),
+            base,
+        )
+        val ended = resolver.commit(
+            passage(action = TrafficSignAction(TrafficSignActionKind.ZONE_END), at = t0.plusSeconds(1)),
+            base,
+            fallbackSpeedLimitAfterEnd = TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, 50),
+        )
+        assertEquals(50, ended.resolution?.speedKmh)
+    }
+
+    @Test
     fun typedEndsPreserveEnclosingLayersAndRejectZoneValueMismatch() {
         val bundle = base(70, EffectiveSpeedLimitSource.BUNDLE)
         val resolver = TrafficSignRuntimeSourceResolver()

@@ -1,6 +1,7 @@
 <resources>
     <string name="ui_country_germany">Germany</string>
     <string name="ui_camera_unlimited">Camera detected: no speed limit</string>
+    <string name="ui_camera_speed_limit_end">End of speed restriction detected</string>
     <string name="ui_camera_walking">Camera detected: walking pace</string>
     <string name="ui_camera_sign">Camera-detected traffic sign</string>
     <string name="ui_legal_title">Legal information</string>

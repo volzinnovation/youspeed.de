@@ -13,12 +13,14 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     conditionsSnapshot: () -> TrafficSignAnalysisConditions,
     monotonicClockNanos: () -> Long = System::nanoTime,
     onRuntimeUnavailable: (String, Long) -> Unit = controller::onTrafficSignRecognitionUnavailable,
+    onContextMismatch: (Long) -> Unit = controller::onTrafficSignRecognitionContextMismatch,
 ) : AutoCloseable {
     private val forwarder = TrafficSignFinalizedPassageForwarder(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
         submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
+        onContextMismatch = onContextMismatch,
     )
     private val orchestrator: TrafficSignRecognitionOrchestrator<F>
 
@@ -55,9 +57,13 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
+    private val onContextMismatch: (Long) -> Unit = {},
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
+        if (!output.contextIsCurrent) {
+            onContextMismatch(output.contextGeneration)
+        }
         if (output.terminalBackendFailure) {
             onRuntimeUnavailable(requireNotNull(output.backendFailureReason), output.contextGeneration)
         } else if (output.backendFailureReason == null) {

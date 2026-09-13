@@ -651,6 +651,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             guard trafficSignRecognitionEnabled != oldValue else { return }
             UserDefaults.standard.set(trafficSignRecognitionEnabled, forKey: Self.trafficSignRecognitionEnabledDefaultsKey)
             trafficSignRecognitionState = trafficSignRecognitionEnabled ? .unavailable : .disabled
+            trafficSignDebugRoadContextInvalid = false
+            trafficSignDebugGenerationSessionContextMismatch = false
+            trafficSignDebugRuntimeUnhealthy = false
             handleTrafficSignRecognitionSettingChange()
         }
     }
@@ -671,6 +674,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
     @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
+    @Published private(set) var trafficSignEndOverlayVisible = false
     private let trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
     private var trafficSignDisplayState = TrafficSignDisplayState()
     var trafficSignCityEntryRecognitionAvailable: Bool {
@@ -706,6 +710,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var driveRecorderTrafficSignRecognitionAvailable = false
     @Published private(set) var driveRecorderPanoramaxActive = false
     @Published private(set) var trafficSignRecognitionState: TrafficSignRecognitionState = .unavailable
+    @Published private(set) var trafficSignDebugRoadContextInvalid = false
+    @Published private(set) var trafficSignDebugGenerationSessionContextMismatch = false
+    @Published private(set) var trafficSignDebugRuntimeUnhealthy = false
     @Published private(set) var trafficSignRecognitionLastEvent: TrafficSignRecognitionEvent?
     @Published private(set) var trafficSignRecognitionActiveOverride: TrafficSignTransientSpeedOverride?
     @Published private(set) var effectiveSpeedLimitState: EffectiveSpeedLimitState = .none
@@ -840,6 +847,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignFeedbackGate = TrafficSignFeedbackGate()
     private var lastTrafficSignConsoleLogSignature: String?
     private var lastTrafficSignConsoleLogAt = Date.distantPast
+    private var lastTrafficSignDebugLogSignature: String?
+    private var lastTrafficSignDebugLogAt = Date.distantPast
     private var latestTrafficSignLookupFixID = 0
     private var panoramaxUploadTasks: [String: Task<Void, Never>] = [:]
     private var panoramaxInFlightItemIDByBatch: [String: String] = [:]
@@ -899,6 +908,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureRecognitionTask: SFSpeechRecognitionTask?
     private var speedCaptureAudioEngine: AVAudioEngine?
     private var speedCaptureStartListeningTask: Task<Void, Never>?
+    private var trafficSignEndOverlayTask: Task<Void, Never>?
+    private var trafficSignEndOverlayGeneration = 0
     private var speedCaptureLatestTranscript: String = ""
     private var speedCaptureDidResolve = false
     private var lastKnownSpeedLimitKmh: Int?
@@ -947,6 +958,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let defaultAudioAlertThresholdKmh = 8
     private static let defaultAudioAlertsEnabled = true
     private static let defaultTrafficSignCountryCode = "DE"
+    private static let trafficSignEndOverlayDurationNanos: UInt64 = 2_000_000_000
     private static let drivingBanWarningReminderInterval: TimeInterval = 24
     private static let fallbackLookupRadiusM: Double = 50.0
     private static let minLookupRadiusM: Double = 50.0
@@ -1829,6 +1841,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
+    private func speedLimitFallbackAfterEnd() -> EffectiveSpeedLimitValue? {
+        if let insideCity = lastLookupInsideCity {
+            return .numeric(insideCity ? 50 : 100)
+        }
+        let base = currentBaseEffectiveSpeedLimitState().value
+        return base == .unknown ? nil : base
+    }
+
     private var currentCoordinateForTrafficSignEvaluation: TrafficSignCoordinate? {
         guard let latitude = currentLatitude,
               let longitude = currentLongitude,
@@ -1923,6 +1943,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self?.acceptTrafficSignRuntimeUnavailability(emission)
             }
         }
+        let admissionMismatchHandler: TrafficSignRuntime.AdmissionMismatchHandler = { [weak self] detail in
+            Task { @MainActor [weak self] in
+                self?.noteTrafficSignDebugIssue(
+                    issue: "generation_session_context_mismatch",
+                    reason: "runtime_admission_rejected",
+                    detail: detail
+                )
+            }
+        }
         let processingGate = trafficSignProcessingGate
 
         let loadingLog = "lifecycle=loading country=\(countryCode) model_pack=\(directoryURL.lastPathComponent)"
@@ -1940,6 +1969,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     callbackQueue: .main,
                     eventHandler: eventHandler,
                     unavailabilityHandler: unavailableHandler,
+                    admissionMismatchHandler: admissionMismatchHandler,
                     processingGate: processingGate
                 )
             }.value
@@ -1957,6 +1987,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             switch result {
             case .ready(let runtime):
                 self.trafficSignRuntime = runtime
+                self.trafficSignDebugRuntimeUnhealthy = false
                 self.trafficSignRecognitionModelPackID = runtime.verifiedPack.manifest.packId
                 Self.tsrLogger.notice(
                     "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) lifecycle=ready pack=\(runtime.verifiedPack.manifest.packId, privacy: .public)"
@@ -2004,18 +2035,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if trafficSignRecognitionEnabled {
             trafficSignRecognitionState = .unavailable
         }
+        noteTrafficSignDebugIssue(
+            issue: "runtime_unhealthy",
+            reason: "runtime_unavailable",
+            detail: "code=\(reason.code.rawValue)"
+        )
         syncDriveRecorderState()
     }
 
     private func acceptTrafficSignRuntimeUnavailability(
         _ emission: TrafficSignRuntimeUnavailabilityEmission
     ) {
-        guard Self.trafficSignRuntimeUnavailabilityIsCurrent(
+        let isCurrent = Self.trafficSignRuntimeUnavailabilityIsCurrent(
             emission,
             activeRuntimeIdentity: trafficSignRuntime?.runtimeIdentity,
             activeToken: trafficSignGenerationToken,
             activeCaptureSessionID: driveCaptureCoordinator?.activeCaptureSessionID
-        ) else { return }
+        )
+        guard isCurrent else {
+            noteTrafficSignDebugIssue(
+                issue: "generation_session_context_mismatch",
+                reason: "runtime_unavailable_rejected",
+                detail: "emission_session=\(emission.sessionGeneration):\(emission.contextGeneration) active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration) emission_capture=\(emission.captureSessionId ?? "none") active_capture=\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
+            )
+            return
+        }
         handleTrafficSignRuntimeUnavailability(emission.reason)
     }
 
@@ -2044,7 +2088,67 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         mutationEnabled && expectedToken == activeToken
     }
 
+    private func noteTrafficSignDebugIssue(
+        issue: String,
+        reason: String,
+        detail: String
+    ) {
+        let signature = "\(issue)|\(reason)|\(detail)"
+        let now = Date()
+        if signature != lastTrafficSignDebugLogSignature
+            || now.timeIntervalSince(lastTrafficSignDebugLogAt) >= 5 {
+            lastTrafficSignDebugLogSignature = signature
+            lastTrafficSignDebugLogAt = now
+            let line = "event=debug_issue issue=\(issue) reason=\(reason) detail=\(detail) session_generation=\(trafficSignRecorderGeneration) context_generation=\(trafficSignContextGeneration) capture_session=\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
+            Self.tsrLogger.warning(
+                "timestamp=\(Self.trafficSignTimestamp(now), privacy: .public) \(line, privacy: .public)"
+            )
+            appendTSRLog(line, timestamp: now)
+        }
+        switch issue {
+        case "runtime_unhealthy":
+            trafficSignDebugRuntimeUnhealthy = true
+        case "road_context_invalid":
+            trafficSignDebugRoadContextInvalid = true
+        case "generation_session_context_mismatch":
+            trafficSignDebugGenerationSessionContextMismatch = true
+        default:
+            break
+        }
+    }
+
+    private func refreshTrafficSignDebugRoadContextStatus() {
+        guard trafficSignProcessingIsEnabled else {
+            trafficSignDebugRoadContextInvalid = false
+            return
+        }
+        let context = latestTrafficSignDetectionContext
+        guard trafficSignFrameContextIsCurrent,
+              let context,
+              context.isValid,
+              context.matchedWayStable else {
+            let reason: String
+            if !trafficSignFrameContextIsCurrent {
+                reason = "not_current"
+            } else if latestTrafficSignDetectionContext == nil {
+                reason = "missing"
+            } else if context?.wayId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+                reason = "way_unmatched"
+            } else {
+                reason = "way_unstable"
+            }
+            noteTrafficSignDebugIssue(
+                issue: "road_context_invalid",
+                reason: reason,
+                detail: "way=\(context?.wayId ?? "none")"
+            )
+            return
+        }
+        trafficSignDebugRoadContextInvalid = false
+    }
+
     private func refreshTrafficSignFrameSnapshot() {
+        refreshTrafficSignDebugRoadContextStatus()
         guard trafficSignProcessingIsEnabled,
               let latitude = currentLatitude,
               let longitude = currentLongitude,
@@ -2105,6 +2209,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func invalidateTrafficSignInferenceContext() {
         resetTrafficSignPictogram()
         trafficSignContextGeneration &+= 1
+        trafficSignDebugGenerationSessionContextMismatch = false
         trafficSignFrameContextIsCurrent = false
         latestTrafficSignDetectionContext = nil
         trafficSignFrameState.update(nil)
@@ -2204,10 +2309,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// Accepts one immutable frame result. Only a generation-matched finalized
     /// passage may mutate the effective source or reach persistence.
     private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
-        guard trafficSignMutationIsEnabled,
-              emission.sessionGeneration == trafficSignRecorderGeneration,
-              emission.contextGeneration == trafficSignContextGeneration else { return }
+        guard trafficSignMutationIsEnabled else { return }
+        let generationMatches = emission.sessionGeneration == trafficSignRecorderGeneration
+        let contextMatches = emission.contextGeneration == trafficSignContextGeneration
+        let captureSessionMatches = emission.captureSessionId == driveCaptureCoordinator?.activeCaptureSessionID
+        guard generationMatches, contextMatches, captureSessionMatches else {
+            noteTrafficSignDebugIssue(
+                issue: "generation_session_context_mismatch",
+                reason: "runtime_emission_rejected",
+                detail: "emission=\(emission.sessionGeneration):\(emission.contextGeneration):\(emission.captureSessionId ?? "none") active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration):\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
+            )
+            return
+        }
         logTrafficSignRuntimeEmission(emission)
+        if emission.displayObservation?.isSpeedLimitEnd == true {
+            showTrafficSignEndOverlay()
+        }
         if trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
             trafficSignPictogram = trafficSignDisplayState.sign
@@ -2220,6 +2337,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard case .committed(let passage) = emission.passageUpdate else { return }
         guard passage.sessionGeneration == trafficSignRecorderGeneration,
               passage.contextGeneration == trafficSignContextGeneration else {
+            noteTrafficSignDebugIssue(
+                issue: "generation_session_context_mismatch",
+                reason: "passage_rejected",
+                detail: "passage=\(passage.sessionGeneration):\(passage.contextGeneration) active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration)"
+            )
             appendTSRLog(
                 "passage_activation=rejected reason=generation_mismatch track=\(passage.physicalTrackID)",
                 timestamp: emission.event.frameTimestampUtc
@@ -2240,6 +2362,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             coordinate: currentCoordinateForTrafficSignEvaluation,
             timestamp: emission.event.frameTimestampUtc
         ) else {
+            noteTrafficSignDebugIssue(
+                issue: "generation_session_context_mismatch",
+                reason: "passage_road_scope_rejected",
+                detail: "track=\(passage.physicalTrackID) current_way=\(latestTrafficSignDetectionContext?.wayId ?? "none")"
+            )
             appendTSRLog(
                 "passage_activation=rejected reason=latest_road_scope_incompatible track=\(passage.physicalTrackID)",
                 timestamp: emission.event.frameTimestampUtc
@@ -2249,7 +2376,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         let commit = trafficSignEffectiveLimitResolver.commit(
             passage,
-            base: currentBaseEffectiveSpeedLimitState()
+            base: currentBaseEffectiveSpeedLimitState(),
+            fallbackSpeedLimitAfterEnd: speedLimitFallbackAfterEnd()
         )
         guard commit.applied else {
             appendTSRLog(
@@ -2536,6 +2664,27 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func resetTrafficSignPictogram() {
         trafficSignDisplayState.reset()
         trafficSignPictogram = nil
+        trafficSignEndOverlayTask?.cancel()
+        trafficSignEndOverlayTask = nil
+        trafficSignEndOverlayGeneration &+= 1
+        trafficSignEndOverlayVisible = false
+    }
+
+    private func showTrafficSignEndOverlay() {
+        trafficSignEndOverlayGeneration &+= 1
+        let generation = trafficSignEndOverlayGeneration
+        trafficSignEndOverlayTask?.cancel()
+        trafficSignEndOverlayVisible = true
+        trafficSignEndOverlayTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: Self.trafficSignEndOverlayDurationNanos)
+            } catch {
+                return
+            }
+            guard let self, self.trafficSignEndOverlayGeneration == generation else { return }
+            self.trafficSignEndOverlayVisible = false
+            self.trafficSignEndOverlayTask = nil
+        }
     }
 
     /// Changes only the Dashcam consumer. The shared camera session, elapsed
@@ -4155,7 +4304,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         "startup recovered_local mode=\(recovered.mode.rawValue, privacy: .public) version=\(recovered.bundleVersion, privacy: .public)"
                     )
                 } else {
-                    startupDetail = "Pruefe lokale Kartendaten"
+                    startupDetail = "Pruefe lokale Datenbank"
                     startupProgress = max(startupProgress, Self.startupSeedActivationFloorProgress)
                     Self.logger.notice("startup no_local_data_fallback=none")
                     startupResult = try await bundleManager.bootstrapSeedIfNeeded()

@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonPrimitive
 /** A catalog pictogram is presentation only; it never represents a speed assertion. */
 data class TrafficSignPictogram(
     val classId: String,
-    val imagePath: String,
+    val imagePath: String?,
     val labels: Map<String, String>,
 ) {
     fun label(locale: Locale = Locale.getDefault()): String = labels[locale.language] ?: labels.getValue("en")
@@ -39,10 +39,12 @@ internal class TrafficSignDisplayCatalog private constructor(
             val pictograms = signs.mapNotNull { sign ->
                 val classId = sign.getValue("class_id").jsonPrimitive.content
                 val imagePath = sign["image_path"]?.jsonPrimitive?.contentOrNull
-                if (!sign.getValue("display_eligible").jsonPrimitive.boolean || imagePath == null || classId !in labels) {
+                if (!sign.getValue("display_eligible").jsonPrimitive.boolean || classId !in labels) {
                     null
                 } else {
-                    require(imagePath.startsWith("tsr/sign-pictograms/png/") && !imagePath.contains(".."))
+                    imagePath?.let { path ->
+                        require(path.startsWith("tsr/sign-pictograms/png/") && !path.contains(".."))
+                    }
                     val names = sign.getValue("label").jsonObject.mapValues { it.value.jsonPrimitive.content }
                     require(listOf("en", "de", "fr", "nl").all { !names[it].isNullOrBlank() })
                     classId to TrafficSignPictogram(classId, imagePath, names)
@@ -58,6 +60,10 @@ data class TrafficSignDisplayObservation(
     val candidate: TrafficSignCandidate,
     val generation: Long,
     val driveSessionId: String,
+    val isSpeedLimitEnd: Boolean = candidate.normalizedPrimarySemantic().kind in setOf(
+        TrafficSignSemanticKind.MAXIMUM_SPEED_END,
+        TrafficSignSemanticKind.ZONE_END,
+    ),
 )
 
 internal object TrafficSignDisplayPolicy {
@@ -88,6 +94,8 @@ internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemant
     val token = rawClassId.trim().lowercase(Locale.ROOT)
     val numericEnd = Regex("^(?:de:)?278(?:-([0-9]{1,3}))?$").matchEntire(token)
     return when {
+        token == "maxspeed:end" -> TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED_END)
+        token in setOf("zone:end", "zone:30:end") -> TrafficSignSemantic(TrafficSignSemanticKind.ZONE_END)
         Regex("^(?:de:)?28[01](?:-[0-9]+)?$").matches(token) ||
             token in setOf("no_overtaking:end", "no_overtaking:end:hgv", "no_overtaking:hgv:end") -> TrafficSignSemantic(TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END)
         numericEnd != null -> {

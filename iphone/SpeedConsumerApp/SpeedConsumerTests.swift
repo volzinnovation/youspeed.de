@@ -1007,8 +1007,15 @@ final class SpeedConsumerTests: XCTestCase {
         for alias in ["DE:278-50", "DE:281", "DE:310", "DE:311", "city:start"] {
             XCTAssertFalse(catalog.canRecognize(alias), "Reference aliases must not claim recognition capability")
         }
+        let customPictogramClasses: Set<String> = [
+            "hazard:school", "hazard:bicycle", "hazard:wild_animals", "hazard:wind"
+        ]
         for sign in catalog.signs where sign.displayEligible {
-            XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
+            if customPictogramClasses.contains(sign.classID) {
+                XCTAssertNil(sign.imageURL(), "Custom pictograms must not require a packaged image")
+            } else {
+                XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
+            }
             XCTAssertEqual(Set(sign.label.keys), ["de", "en", "fr", "nl"])
         }
         let pedestrianCrossing = try XCTUnwrap(catalog.sign(for: "pedestrian_crossing"))
@@ -1072,6 +1079,12 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(display.sign?.classID, "give_way", "A reset begins a new timestamp scope")
         display.consume(observation("pedestrian_crossing", 2), catalog: catalog)
         XCTAssertEqual(display.sign?.classID, "pedestrian_crossing")
+        display.consume(observation("hazard:school", 3), catalog: catalog)
+        XCTAssertEqual(display.sign?.classID, "hazard:school")
+        for (index, classID) in ["hazard:bicycle", "hazard:wild_animals", "hazard:wind"].enumerated() {
+            display.consume(observation(classID, 4.0 + Double(index)), catalog: catalog)
+            XCTAssertEqual(display.sign?.classID, classID)
+        }
     }
 
     func testProlixStructuralAliasesDistinguishSpeedEndsAndCityEntry() {
@@ -15964,7 +15977,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         }
     }
 
-    func testInactiveDriveStillCannotArmButRawScoreMayTrack() {
+    func testExplicitlyIneligibleLiveFrameStillCannotArmButRawScoreMayTrack() {
         var finalizer = TrafficSignPassageFinalizer()
         let context = makeContext()
         let disabled = finalizer.ingest(
@@ -16021,6 +16034,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             ),
             sessionGeneration: 1,
             contextGeneration: 1,
+            frameSpeedKmh: 0,
             calibratedActivationEligible: true
         )
         let armed = finalizer.ingest(
@@ -16032,6 +16046,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             ),
             sessionGeneration: 1,
             contextGeneration: 1,
+            frameSpeedKmh: 0,
             calibratedActivationEligible: true
         )
         guard case .armed = armed else {
@@ -16041,12 +16056,14 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             makeMissing(offset: 0.2, context: context),
             sessionGeneration: 1,
             contextGeneration: 1,
+            frameSpeedKmh: 0,
             calibratedActivationEligible: true
         )
         let committed = finalizer.ingest(
             makeMissing(offset: 0.3, context: context),
             sessionGeneration: 1,
             contextGeneration: 1,
+            frameSpeedKmh: 0,
             calibratedActivationEligible: true
         )
         guard case .committed(let passage) = committed else {
@@ -16275,6 +16292,46 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertEqual(matching.effectiveState.source, .none)
         XCTAssertTrue(matching.effectiveState.hasCameraEvidenceMarker)
         XCTAssertFalse(matching.persistence.runtimeApplicable)
+    }
+
+    func testMaximumEndUsesCityDefaultOrExplicitWayFallback() {
+        var innerCityResolver = TrafficSignEffectiveLimitResolver()
+        let context = makeContext()
+        let base = makeBase(70)
+        _ = innerCityResolver.commit(
+            makePassage(action: .postedMaximum(70), context: context),
+            base: base
+        )
+        let cityEnd = innerCityResolver.commit(
+            makePassage(action: .maximumSpeedEnd(70), context: context, eventID: "city-end"),
+            base: base,
+            fallbackSpeedLimitAfterEnd: .numeric(50)
+        )
+        XCTAssertEqual(cityEnd.effectiveState.value, .numeric(50))
+
+        var wayResolver = TrafficSignEffectiveLimitResolver()
+        _ = wayResolver.commit(
+            makePassage(action: .postedMaximum(70), context: context),
+            base: base
+        )
+        let wayEnd = wayResolver.commit(
+            makePassage(action: .maximumSpeedEnd(70), context: context, eventID: "way-end"),
+            base: base,
+            fallbackSpeedLimitAfterEnd: .numeric(100)
+        )
+        XCTAssertEqual(wayEnd.effectiveState.value, .numeric(100))
+
+        var zoneResolver = TrafficSignEffectiveLimitResolver()
+        _ = zoneResolver.commit(
+            makePassage(action: .zoneStart(30), context: context),
+            base: base
+        )
+        let zoneEnd = zoneResolver.commit(
+            makePassage(action: .zoneEnd(nil), context: context, eventID: "zone-end"),
+            base: base,
+            fallbackSpeedLimitAfterEnd: .numeric(50)
+        )
+        XCTAssertEqual(zoneEnd.effectiveState.value, .numeric(50))
     }
 
     func testMotorwayAndMotorroadExitsClearPostedLayerAndOnlyRestoreVerifiedEnclosingRule() {

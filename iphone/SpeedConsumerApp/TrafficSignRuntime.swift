@@ -1146,6 +1146,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     typealias SnapshotProvider = @Sendable () -> TrafficSignFrameSnapshot?
     typealias EventHandler = @Sendable (TrafficSignRuntimeEmission) -> Void
     typealias UnavailabilityHandler = @Sendable (TrafficSignRuntimeUnavailabilityEmission) -> Void
+    typealias AdmissionMismatchHandler = @Sendable (String) -> Void
 
     /// A single Vision/Core ML failure can be caused by transient device load.
     /// Three failures without an intervening success indicate a persistent
@@ -1198,6 +1199,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private let snapshotProvider: SnapshotProvider
     private let eventHandler: EventHandler
     private let unavailabilityHandler: UnavailabilityHandler?
+    private let admissionMismatchHandler: AdmissionMismatchHandler?
     private let processingGate: TrafficSignWriteGate?
     private let shadowRuntimeV2: TrafficSignShadowRuntimeV2?
     private let shadowEvidenceStoreV2: TrafficSignShadowEvidenceStoreV2?
@@ -1217,6 +1219,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         callbackQueue: DispatchQueue = .main,
         eventHandler: @escaping EventHandler,
         unavailabilityHandler: UnavailabilityHandler? = nil,
+        admissionMismatchHandler: AdmissionMismatchHandler? = nil,
         processingGate: TrafficSignWriteGate? = nil,
         shadowRuntimeV2: TrafficSignShadowRuntimeV2? = nil,
         shadowEvidenceStoreV2: TrafficSignShadowEvidenceStoreV2? = nil
@@ -1227,6 +1230,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         self.callbackQueue = callbackQueue
         self.eventHandler = eventHandler
         self.unavailabilityHandler = unavailabilityHandler
+        self.admissionMismatchHandler = admissionMismatchHandler
         self.processingGate = processingGate
         self.shadowRuntimeV2 = shadowRuntimeV2
         self.shadowEvidenceStoreV2 = shadowEvidenceStoreV2
@@ -1507,9 +1511,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         contextGeneration: item.snapshot.contextGeneration,
                         frameCoordinate: item.snapshot.coordinate,
                         frameSpeedKmh: item.snapshot.conditions.speedKmh,
-                        calibratedActivationEligible: item.snapshot.conditions.speedKmh.map {
-                            $0.isFinite && $0 >= 1
-                        } == true
+                        // Speed-limit activation is based on an admitted live
+                        // frame, not on the vehicle's current speed.
+                        calibratedActivationEligible: item.source == .liveFrame
                     )
                     // Shadow QA must never disable the existing recognition
                     // UI. The admission gate covers staging/JPEG/event sinks,
@@ -1544,6 +1548,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     processed = nil
                 }
                 guard let processed else {
+                    notifyAdmissionMismatch(item, reason: "processing_gate_rejected")
                     self.discardStaleWorkItem()
                     return
                 }
@@ -1798,16 +1803,30 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                       self.handleAdmittedInferenceFailure(item: item, error: error)
                       return true
                   }) == true else {
+                notifyAdmissionMismatch(item, reason: "inference_failure_processing_gate_rejected")
                 discardStaleWorkItem()
                 return
             }
             return
         }
         guard isWorkItemStillCurrent(item) else {
+            notifyAdmissionMismatch(item, reason: "inference_failure_stale_frame")
             discardStaleWorkItem()
             return
         }
         handleAdmittedInferenceFailure(item: item, error: error)
+    }
+
+    private func notifyAdmissionMismatch(_ item: WorkItem, reason: String) {
+        guard let admissionMismatchHandler else { return }
+        let current = snapshotProvider()
+        let currentSession = current.map { String($0.sessionGeneration) } ?? "none"
+        let currentContext = current.map { String($0.contextGeneration) } ?? "none"
+        let currentCapture = current?.captureSessionId ?? "none"
+        let detail = "reason=\(reason) frame=\(item.snapshot.sessionGeneration):\(item.snapshot.contextGeneration):\(item.snapshot.captureSessionId ?? "none") current=\(currentSession):\(currentContext):\(currentCapture)"
+        callbackQueue.async {
+            admissionMismatchHandler(detail)
+        }
     }
 
     private func handleAdmittedInferenceFailure(item: WorkItem, error: Error) {
@@ -1917,6 +1936,7 @@ enum TrafficSignRuntimeBootstrap {
         backendFactory: BackendFactory? = nil,
         eventHandler: @escaping TrafficSignRuntime.EventHandler,
         unavailabilityHandler: TrafficSignRuntime.UnavailabilityHandler? = nil,
+        admissionMismatchHandler: TrafficSignRuntime.AdmissionMismatchHandler? = nil,
         processingGate: TrafficSignWriteGate? = nil
     ) -> TrafficSignRuntimeBootstrapResult {
         do {
@@ -1958,6 +1978,7 @@ enum TrafficSignRuntimeBootstrap {
                 callbackQueue: callbackQueue,
                 eventHandler: eventHandler,
                 unavailabilityHandler: unavailabilityHandler,
+                admissionMismatchHandler: admissionMismatchHandler,
                 processingGate: processingGate,
                 shadowRuntimeV2: shadowRuntimeV2,
                 shadowEvidenceStoreV2: shadowEvidenceStoreV2

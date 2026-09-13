@@ -24,6 +24,7 @@ interface TrafficSignNormalizedFrameHandle {
 data class TrafficSignDetectionContextSnapshotValue(
     val context: TrafficSignDetectionContext,
     val generation: Long,
+    /** Runtime/source admission for authoritative live-frame passage evaluation; independent of vehicle speed. */
     val runtimeActivationEligible: Boolean = false,
     val driveSessionId: String? = null,
 ) {
@@ -71,6 +72,7 @@ data class TrafficSignOrchestrationOutput(
     val backendFailureReason: String? = null,
     val terminalBackendFailure: Boolean = false,
     val contextGeneration: Long = 0L,
+    val contextIsCurrent: Boolean = true,
     val displayObservation: TrafficSignDisplayObservation? = null,
 )
 
@@ -448,8 +450,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     // Calibration remains provenance. During field testing a
                     // raw-score pack uses its declared raw thresholds and is
                     // just as eligible for passage evaluation.
-                    overrideEligible = active.accepted.runtimeActivationEligible &&
-                        active.accepted.context.speedMetersPerSecond * 3.6 >= 1.0,
+                    overrideEligible = active.accepted.runtimeActivationEligible,
                     strongPassGeometry = (backendResult as? TrafficSignBackendResult.Recognition)?.strongPassGeometry == true,
                 )
                 val previousOverride = currentOverride
@@ -480,7 +481,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     // Presentation is independent from speed-limit activation.
                     // The iPhone lane continues to show an accepted sign while
                     // stationary; only the passage finalizer may activate a
-                    // camera speed override, and it retains the movement gate.
+                    // camera speed override, after its evidence and context
+                    // checks pass.
                     displayObservation = if (created.qualifiedAnalyzedFrame &&
                         !active.accepted.driveSessionId.isNullOrBlank() && backendResult is TrafficSignBackendResult.Recognition
                     ) {
@@ -491,6 +493,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     backendFailureReason = (backendResult as? TrafficSignBackendResult.Unavailable)?.reason,
                     terminalBackendFailure = terminalBackendFailure,
                     contextGeneration = active.accepted.contextGeneration,
+                    contextIsCurrent = created.contextIsCurrent,
                 )
                 dispatch = takeDispatchLocked()
             }

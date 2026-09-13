@@ -63,6 +63,13 @@ enum class TunnelModeState {
     ACTIVE,
 }
 
+enum class TrafficSignDebugIndicator {
+    NORMAL,
+    INVALID_ROAD_CONTEXT,
+    GENERATION_SESSION_CONTEXT_MISMATCH,
+    RUNTIME_UNHEALTHY,
+}
+
 enum class DriveRecorderState {
     DISABLED,
     REQUESTING_PERMISSION,
@@ -297,8 +304,12 @@ data class ConsumerUiState(
     val trafficSignFeedbackMode: TrafficSignFeedbackMode = TrafficSignFeedbackMode.SOUND,
     val trafficSignLastEvent: TrafficSignRecognitionEvent? = null,
     val trafficSignRecognitionUnavailable: Boolean = false,
+    val trafficSignDebugRoadContextInvalid: Boolean = false,
+    val trafficSignDebugGenerationSessionContextMismatch: Boolean = false,
+    val trafficSignDebugRuntimeUnhealthy: Boolean = false,
     val otherTrafficSignDisplayEnabled: Boolean = false,
     val lastTrafficSignPictogram: TrafficSignPictogram? = null,
+    val isTrafficSignEndOverlayVisible: Boolean = false,
     val trafficSignCameraRuntimeState: TrafficSignCameraRuntimeState = TrafficSignCameraRuntimeState.DISABLED,
     val trafficSignCameraRuntimeDetail: String = ConsumerRuntimeText.CAMERA_DISABLED.text(),
     val panoramaxCaptureEnabled: Boolean = true,
@@ -494,6 +505,9 @@ class ConsumerSessionController(
     private val dashcamDirectory = File(appContext.filesDir, "dashcam").apply { mkdirs() }
     private val wayMatchTracker = WayMatchSessionTracker()
     private val trafficSignResolver = TrafficSignRuntimeSourceResolver()
+    private var trafficSignEndOverlayGeneration = 0L
+    private var trafficSignEndOverlayHideRunnable: Runnable? = null
+    private val trafficSignEndOverlayDurationMs = 2_000L
     private val trafficSignStateLock = Any()
     private val bundledVoskModelStore = BundledVoskModelStore(appContext, rootDir)
     private val initialMatcherDebugProfile: MatcherDebugProfile =
@@ -522,6 +536,8 @@ class ConsumerSessionController(
     private var localSpeedOverridesByWayId: Map<String, Int> = emptyMap()
     private var localSpeedOverrideValuesByWayId: Map<String, String> = emptyMap()
     private var latestTrafficSignContext: TrafficSignDetectionContext? = null
+    private var lastTrafficSignDebugLogSignature: String? = null
+    private var lastTrafficSignDebugLogAtMs = 0L
     private var latestTrafficSignBase = TrafficSignBaseLimit(null, EffectiveSpeedLimitSource.NONE, "no_limit")
     private var latestResolverLocation: Location? = null
     @Volatile private var latestCaptureLocation: Location? = null
@@ -1337,8 +1353,22 @@ class ConsumerSessionController(
 
     fun onTrafficSignRecognitionEvent(event: TrafficSignRecognitionEvent, generation: Long) {
         mainHandler.post {
-            if (generation != trafficSignGeneration.get() || !isTrafficSignRecognitionRuntimeEnabled() ||
-                event.driveSessionId != trafficSignDriveSessionId) return@post
+            val currentGeneration = trafficSignGeneration.get()
+            val generationMismatch = generation != currentGeneration
+            val sessionMismatch = event.driveSessionId != trafficSignDriveSessionId
+            if (generationMismatch || sessionMismatch) {
+                noteTrafficSignDebugMismatch(
+                    reason = "recognition_event_rejected",
+                    details = mapOf(
+                        "eventGeneration" to generation,
+                        "currentGeneration" to currentGeneration,
+                        "eventSessionId" to event.driveSessionId,
+                        "currentSessionId" to trafficSignDriveSessionId,
+                    ),
+                )
+                return@post
+            }
+            if (!isTrafficSignRecognitionRuntimeEnabled()) return@post
             PanoramaxTrafficSignAnnotationDraft.from(event)?.let { draft ->
                 val captureSession = synchronized(captureLock) {
                     latestAnnotationDrafts = (latestAnnotationDrafts.filter { Duration.between(it.frameTimestampUtc, event.frameTimestampUtc).abs().toMillis() <= 5_000 &&
@@ -1365,10 +1395,41 @@ class ConsumerSessionController(
 
     fun onTrafficSignRecognitionUnavailable(detail: String, generation: Long) {
         mainHandler.post {
-            if (generation != trafficSignGeneration.get() || !isTrafficSignRecognitionRuntimeEnabled()) return@post
+            val currentGeneration = trafficSignGeneration.get()
+            if (generation != currentGeneration) {
+                noteTrafficSignDebugMismatch(
+                    reason = "runtime_unavailable_rejected",
+                    details = mapOf(
+                        "eventGeneration" to generation,
+                        "currentGeneration" to currentGeneration,
+                        "detail" to detail,
+                    ),
+                )
+                return@post
+            }
+            if (!isTrafficSignRecognitionRuntimeEnabled()) return@post
             invalidateTrafficSignGeneration(true, "recognition_unavailable", false)
-            updateState { copy(trafficSignRecognitionUnavailable = true, trafficSignCameraRuntimeDetail = detail) }
+            updateState {
+                copy(
+                    trafficSignRecognitionUnavailable = true,
+                    trafficSignCameraRuntimeDetail = detail,
+                    trafficSignDebugRuntimeUnhealthy = true,
+                )
+            }
             if (!driveRecorderEnabled) host?.stopTrafficSignCamera()
+        }
+    }
+
+    fun onTrafficSignRecognitionContextMismatch(generation: Long) {
+        mainHandler.post {
+            noteTrafficSignDebugMismatch(
+                reason = "orchestrator_context_rejected",
+                details = mapOf(
+                    "eventGeneration" to generation,
+                    "currentGeneration" to trafficSignGeneration.get(),
+                    "currentWayId" to latestTrafficSignContext?.wayId,
+                ),
+            )
         }
     }
 
@@ -1574,6 +1635,9 @@ class ConsumerSessionController(
             copy(
                 trafficSignRecognitionEnabled = enabled,
                 trafficSignRecognitionUnavailable = false,
+                trafficSignDebugRoadContextInvalid = false,
+                trafficSignDebugGenerationSessionContextMismatch = false,
+                trafficSignDebugRuntimeUnhealthy = false,
                 trafficSignLastEvent = null,
                 trafficSignCameraRuntimeState = if (enabled) {
                     trafficSignCameraRuntimeState
@@ -1599,13 +1663,45 @@ class ConsumerSessionController(
     /** Presentation-only callback. This path never invokes the speed resolver or passage persistence. */
     fun submitTrafficSignDisplayObservation(observation: TrafficSignDisplayObservation) {
         if (TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(observation.candidate))) == null) return
+        if (observation.isSpeedLimitEnd) showTrafficSignEndOverlay()
+        val currentGeneration = trafficSignGeneration.get()
+        val generationMismatch = observation.generation != currentGeneration
+        val sessionMismatch = observation.driveSessionId != trafficSignDriveSessionId
+        if (generationMismatch || sessionMismatch) {
+            noteTrafficSignDebugMismatch(
+                reason = "display_observation_rejected",
+                details = mapOf(
+                    "eventGeneration" to observation.generation,
+                    "currentGeneration" to currentGeneration,
+                    "eventSessionId" to observation.driveSessionId,
+                    "currentSessionId" to trafficSignDriveSessionId,
+                ),
+            )
+            return
+        }
         postState {
-            if (!otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving ||
-                observation.generation != this@ConsumerSessionController.trafficSignGeneration.get() ||
-                observation.driveSessionId != trafficSignDriveSessionId
-            ) this else copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
+            if (!otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving) {
+                this
+            } else copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
                 lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
             ))
+        }
+    }
+
+    private fun showTrafficSignEndOverlay() {
+        mainHandler.post {
+            if (isDisposed.get()) return@post
+            trafficSignEndOverlayGeneration += 1L
+            val generation = trafficSignEndOverlayGeneration
+            trafficSignEndOverlayHideRunnable?.let(mainHandler::removeCallbacks)
+            updateState { copy(isTrafficSignEndOverlayVisible = true) }
+            val hide = Runnable {
+                if (generation == trafficSignEndOverlayGeneration) {
+                    updateState { copy(isTrafficSignEndOverlayVisible = false) }
+                }
+            }
+            trafficSignEndOverlayHideRunnable = hide
+            mainHandler.postDelayed(hide, trafficSignEndOverlayDurationMs)
         }
     }
 
@@ -1628,6 +1724,18 @@ class ConsumerSessionController(
         state: TrafficSignCameraRuntimeState,
         detail: String,
     ) {
+        if (state in setOf(
+                TrafficSignCameraRuntimeState.FAILED,
+                TrafficSignCameraRuntimeState.UNAVAILABLE,
+                TrafficSignCameraRuntimeState.DENIED,
+            ) && isTrafficSignRecognitionRuntimeEnabled()
+        ) {
+            noteTrafficSignDebugIssue(
+                issue = TrafficSignDebugIndicator.RUNTIME_UNHEALTHY,
+                reason = "camera_runtime_state",
+                details = mapOf("state" to state.name.lowercase(Locale.US), "detail" to detail),
+            )
+        }
         if (driveRecorderEnabled) {
             val recorderState = when (state) {
                 TrafficSignCameraRuntimeState.ACTIVE -> DriveRecorderState.RECORDING
@@ -1651,6 +1759,12 @@ class ConsumerSessionController(
                 trafficSignCameraRuntimeState = state,
                 trafficSignCameraRuntimeDetail = if (trafficSignRecognitionUnavailable && state == TrafficSignCameraRuntimeState.ACTIVE) trafficSignCameraRuntimeDetail else detail,
                 driveRecorderPanoramaxActive = isPanoramaxCaptureEnabled() && state == TrafficSignCameraRuntimeState.ACTIVE,
+                trafficSignDebugRuntimeUnhealthy = trafficSignDebugRuntimeUnhealthy
+                    || state in setOf(
+                        TrafficSignCameraRuntimeState.FAILED,
+                        TrafficSignCameraRuntimeState.UNAVAILABLE,
+                        TrafficSignCameraRuntimeState.DENIED,
+                    ),
             )
         }
         appendRuntimeDiagnosticEvent(
@@ -1720,47 +1834,180 @@ class ConsumerSessionController(
             if (!writePermitted || !isTrafficSignRecognitionRuntimeEnabled() || uiState.trafficSignRecognitionUnavailable) {
                 null
             } else latestTrafficSignContext?.let { context ->
+                if (!context.isValidForTrafficSignDebugging()) {
+                    noteTrafficSignDebugRoadContextInvalid(context)
+                } else {
+                    clearTrafficSignDebugRoadContextInvalid()
+                }
                 TrafficSignDetectionContextSnapshotValue(
                     context = context.copy(
                         routeRelationGroupIds = context.routeRelationGroupIds.toSet(),
                         sourceRelationIds = context.sourceRelationIds.toSet(),
                     ),
                     generation = generation,
-                    runtimeActivationEligible = isTrafficSignRecognitionRuntimeEnabled() && context.speedMetersPerSecond.isFinite() && context.speedMetersPerSecond * 3.6 >= 1.0,
+                    // A recognized sign may establish the active limit even
+                    // while the vehicle is stationary. Runtime admission is
+                    // the safety gate; vehicle speed is not.
+                    runtimeActivationEligible = isTrafficSignRecognitionRuntimeEnabled(),
                     driveSessionId = trafficSignDriveSessionId,
                 )
+            } ?: run {
+                noteTrafficSignDebugRoadContextInvalid(null)
+                null
             }
         }
+
+    private fun TrafficSignDetectionContext.isValidForTrafficSignDebugging(): Boolean =
+        !wayId.isNullOrBlank() && matchedWayStable && hasVerifiedBundle
+
+    private fun noteTrafficSignDebugRoadContextInvalid(context: TrafficSignDetectionContext?) {
+        val reason = when {
+            context == null -> "missing"
+            context.wayId.isNullOrBlank() -> "way_unmatched"
+            !context.matchedWayStable -> "way_unstable"
+            !context.hasVerifiedBundle -> "bundle_unverified"
+            else -> "invalid"
+        }
+        noteTrafficSignDebugIssue(
+            issue = TrafficSignDebugIndicator.INVALID_ROAD_CONTEXT,
+            reason = "road_context_invalid",
+            details = mapOf(
+                "reason" to reason,
+                "wayId" to context?.wayId,
+                "matchedWayStable" to context?.matchedWayStable,
+                "hasVerifiedBundle" to context?.hasVerifiedBundle,
+            ),
+        )
+    }
+
+    private fun clearTrafficSignDebugRoadContextInvalid() {
+        updateState { copy(trafficSignDebugRoadContextInvalid = false) }
+    }
+
+    private fun noteTrafficSignDebugMismatch(
+        reason: String,
+        details: Map<String, Any?> = emptyMap(),
+    ) {
+        noteTrafficSignDebugIssue(
+            issue = TrafficSignDebugIndicator.GENERATION_SESSION_CONTEXT_MISMATCH,
+            reason = reason,
+            details = details,
+        )
+    }
+
+    private fun noteTrafficSignDebugIssue(
+        issue: TrafficSignDebugIndicator,
+        reason: String,
+        details: Map<String, Any?> = emptyMap(),
+    ) {
+        val signature = buildString {
+            append(issue.name)
+            append('|')
+            append(reason)
+            details.toSortedMap().forEach { (key, value) ->
+                append('|')
+                append(key)
+                append('=')
+                append(value)
+            }
+        }
+        val now = clock.millis()
+        if (signature != lastTrafficSignDebugLogSignature || now - lastTrafficSignDebugLogAtMs >= 5_000L) {
+            lastTrafficSignDebugLogSignature = signature
+            lastTrafficSignDebugLogAtMs = now
+            appendRuntimeDiagnosticEvent(
+                event = "traffic_sign_debug_issue",
+                details = details + mapOf(
+                    "issue" to issue.name.lowercase(Locale.US),
+                    "reason" to reason,
+                    "trafficSignGeneration" to trafficSignGeneration.get(),
+                    "driveSessionId" to trafficSignDriveSessionId,
+                ),
+            )
+        }
+        updateState {
+            when (issue) {
+                TrafficSignDebugIndicator.INVALID_ROAD_CONTEXT -> copy(trafficSignDebugRoadContextInvalid = true)
+                TrafficSignDebugIndicator.GENERATION_SESSION_CONTEXT_MISMATCH -> copy(
+                    trafficSignDebugGenerationSessionContextMismatch = true,
+                )
+                TrafficSignDebugIndicator.RUNTIME_UNHEALTHY -> copy(trafficSignDebugRuntimeUnhealthy = true)
+                TrafficSignDebugIndicator.NORMAL -> this
+            }
+        }
+    }
 
     /**
      * Accepts only an already-finalized live-frame passage. Visibility events
      * and the v2 shadow lane have no API path into the authoritative resolver.
      */
     fun submitFinalizedTrafficSignPassage(event: TrafficSignPassageEvent): Boolean {
-        if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
-            event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId
-        ) {
+        val currentGeneration = trafficSignGeneration.get()
+        val generationMismatch = event.generation != currentGeneration
+        val sessionMismatch = event.driveSessionId != trafficSignDriveSessionId
+        if (generationMismatch || sessionMismatch) {
+            noteTrafficSignDebugMismatch(
+                reason = "passage_rejected",
+                details = mapOf(
+                    "eventGeneration" to event.generation,
+                    "currentGeneration" to currentGeneration,
+                    "eventSessionId" to event.driveSessionId,
+                    "currentSessionId" to trafficSignDriveSessionId,
+                ),
+            )
+            return false
+        }
+        if (!uiState.trafficSignRecognitionEnabled || !isDriving) {
             return false
         }
         return submitBackgroundTask {
-            if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
-                event.generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId
-            ) {
+            val backgroundGenerationMismatch = event.generation != trafficSignGeneration.get()
+            val backgroundSessionMismatch = event.driveSessionId != trafficSignDriveSessionId
+            if (backgroundGenerationMismatch || backgroundSessionMismatch) {
+                noteTrafficSignDebugMismatch(
+                    reason = "passage_background_rejected",
+                    details = mapOf(
+                        "eventGeneration" to event.generation,
+                        "currentGeneration" to trafficSignGeneration.get(),
+                        "eventSessionId" to event.driveSessionId,
+                        "currentSessionId" to trafficSignDriveSessionId,
+                    ),
+                )
+                return@submitBackgroundTask
+            }
+            if (!uiState.trafficSignRecognitionEnabled || !isDriving) {
                 return@submitBackgroundTask
             }
             val outcome = synchronized(trafficSignStateLock) {
                 // Invalidation advances the generation before taking this lock. Recheck all
                 // admission state here so an old callback cannot mutate the resolver after a
                 // disable, stop, or bundle replacement has logically taken effect.
+                val contextCurrent = trafficSignPassageContextIsCurrent(event, latestTrafficSignContext)
                 if (!uiState.trafficSignRecognitionEnabled || !isDriving ||
                     event.generation != trafficSignGeneration.get() ||
                     event.driveSessionId != trafficSignDriveSessionId ||
-                    !trafficSignPassageContextIsCurrent(event, latestTrafficSignContext)
+                    !contextCurrent
                 ) {
+                    if (!contextCurrent) {
+                        noteTrafficSignDebugMismatch(
+                            reason = "passage_context_rejected",
+                            details = mapOf(
+                                "eventGeneration" to event.generation,
+                                "currentGeneration" to trafficSignGeneration.get(),
+                                "eventSessionId" to event.driveSessionId,
+                                "currentSessionId" to trafficSignDriveSessionId,
+                                "currentWayId" to latestTrafficSignContext?.wayId,
+                            ),
+                        )
+                    }
                     return@synchronized null
                 }
                 val base = latestTrafficSignBase
-                var effective = trafficSignResolver.commit(event, base)
+                var effective = trafficSignResolver.commit(
+                    event,
+                    base,
+                    fallbackSpeedLimitAfterEnd = speedLimitFallbackAfterEnd(),
+                )
                 latestTrafficSignContext?.let { current ->
                     effective = trafficSignResolver.reconcile(
                         TrafficSignRoadMatch(
@@ -1811,6 +2058,10 @@ class ConsumerSessionController(
             copy(
                 trafficSignGeneration = generation,
                 lastTrafficSignPictogram = null,
+                isTrafficSignEndOverlayVisible = false,
+                trafficSignDebugRoadContextInvalid = false,
+                trafficSignDebugGenerationSessionContextMismatch = false,
+                trafficSignDebugRuntimeUnhealthy = false,
                 speedLimitKmh = base.resolution?.speedKmh,
                 speedLimitDisplayText = if (base.resolution?.kind == TrafficSignResolvedLimitKind.WALK) "Schritt" else null,
                 isUnlimitedSpeedLimitActive = base.resolution?.kind == TrafficSignResolvedLimitKind.UNLIMITED,
@@ -3740,6 +3991,11 @@ class ConsumerSessionController(
             reason = if (bundleResolution == null) "bundle_no_limit" else "bundle",
         )
     }
+
+    private fun speedLimitFallbackAfterEnd(): TrafficSignResolvedLimit? =
+        latestTrafficSignInsideCity?.let { insideCity ->
+            TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, if (insideCity) 50 else 100)
+        } ?: latestTrafficSignBase.resolution
 
     private fun resolvedLimitForCanonicalValue(value: String?): TrafficSignResolvedLimit? = when (
         val normalized = value?.trim()?.lowercase(Locale.US)

@@ -279,6 +279,7 @@
 "limit.accessibility.walk" = "Zone piétonne, vitesse au pas";
 "limit.accessibility.unlimited" = "Pas de limitation de vitesse";
 "limit.accessibility.end_unknown" = "Fin détectée, limitation inconnue";
+"limit.accessibility.end" = "Fin de limitation de vitesse détectée";
 "limit.accessibility.unknown" = "Limitation de vitesse inconnue";
 
 /* Recognized road-sign display */

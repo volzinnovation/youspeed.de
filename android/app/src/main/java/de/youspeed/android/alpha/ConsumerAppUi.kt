@@ -112,6 +112,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
@@ -154,6 +155,22 @@ private val CameraEvidenceAccent = Color(0xFF7B0E17)
 private val BrightYellow = Color(0xFFF9D950)
 private val SoftOrange = Color(0xFFF39A24)
 private val SoftRed = Color(0xFFC5212E)
+
+private fun trafficSignBugButtonTint(ui: ConsumerUiState, foreground: Color): Color {
+    if (!ui.trafficSignRecognitionEnabled) return foreground
+    val runtimeUnhealthy = ui.trafficSignRecognitionUnavailable ||
+        ui.trafficSignDebugRuntimeUnhealthy ||
+        ui.trafficSignCameraRuntimeState in setOf(
+            TrafficSignCameraRuntimeState.DENIED,
+            TrafficSignCameraRuntimeState.UNAVAILABLE,
+            TrafficSignCameraRuntimeState.FAILED,
+        )
+    if (runtimeUnhealthy) return SoftRed
+    if (ui.trafficSignDebugRoadContextInvalid || ui.trafficSignDebugGenerationSessionContextMismatch) {
+        return BrightYellow
+    }
+    return foreground
+}
 private const val DRIVING_BAN_PULSE_CYCLE_SECONDS = 2.2f
 private const val SPEED_LIMIT_NUMBER_SCALE = 0.5f
 private const val SECONDARY_TEXT_RATIO = 9f / 16f
@@ -483,6 +500,7 @@ private fun MainScreen(
                 foreground = foreground,
                 buttonBg = buttonBg,
                 buttonBorder = buttonBorder,
+                bugTint = trafficSignBugButtonTint(ui, foreground),
                 pictogram = ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
                 gpsSignalBars = ui.gpsSignalBars,
                 gpsHorizontalAccuracyM = ui.gpsHorizontalAccuracyM,
@@ -528,6 +546,14 @@ private fun MainScreen(
                     },
                     onDoubleTap = onCapture,
                 )
+                if (ui.isTrafficSignEndOverlayVisible) {
+                    EndOfSpeedLimitSign(
+                        modifier = Modifier
+                            .offset(y = -(signSize * 0.42f))
+                            .testTag("speed-limit-end-overlay"),
+                        signSize = signSize * 0.34f,
+                    )
+                }
             }
 
             // Keep the sign separate from the preview even when the weighted space is small.
@@ -620,6 +646,7 @@ private fun TopCornerButtons(
     foreground: Color,
     buttonBg: Color,
     buttonBorder: Color,
+    bugTint: Color,
     pictogram: TrafficSignPictogram?,
     gpsSignalBars: Int,
     gpsHorizontalAccuracyM: Double?,
@@ -638,6 +665,7 @@ private fun TopCornerButtons(
             foreground = foreground,
             buttonBg = buttonBg,
             buttonBorder = buttonBorder,
+            tint = bugTint,
         )
         Spacer(modifier = Modifier.weight(1f))
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -655,17 +683,133 @@ private fun TopCornerButtons(
 
 @Composable
 private fun RecognizedTrafficSignPictogram(pictogram: TrafficSignPictogram) {
-    val context = LocalContext.current
-    val bitmap = remember(pictogram.imagePath) {
-        runCatching { context.assets.open(pictogram.imagePath).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
+    val modifier = Modifier.size(72.dp)
+        .padding(5.dp).testTag("last-traffic-sign-pictogram")
+    val description = stringResource(R.string.ui_last_recognized_sign, pictogram.label())
+    if (pictogram.classId in setOf("hazard:school", "hazard:bicycle", "hazard:wild_animals", "hazard:wind")) {
+        HazardWarningSign(modifier, pictogram.classId, description)
+    } else {
+        val context = LocalContext.current
+        val bitmap = remember(pictogram.imagePath) {
+            pictogram.imagePath?.let { path ->
+                runCatching { context.assets.open(path).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
+            }
+        }
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
+                modifier = modifier,
+            )
+        }
     }
-    if (bitmap != null) {
-        Image(
-            bitmap = bitmap,
-            contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
-            modifier = Modifier.size(72.dp)
-                .padding(5.dp).testTag("last-traffic-sign-pictogram"),
-        )
+}
+
+@Composable
+private fun HazardWarningSign(modifier: Modifier, classId: String, description: String) {
+    Canvas(modifier.semantics { contentDescription = description }) {
+        val border = size.minDimension * 0.09f
+        val triangle = Path().apply {
+            moveTo(size.width / 2f, border)
+            lineTo(size.width - border, size.height - border)
+            lineTo(border, size.height - border)
+            close()
+        }
+        drawPath(triangle, Color.Yellow)
+        drawPath(triangle, Color.Red, style = Stroke(width = border, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        when (classId) {
+            "hazard:school" -> {
+                val figureScale = size.minDimension * 0.3f
+                drawWarningPerson(Offset(size.width * 0.4f, size.height * 0.56f), figureScale)
+                drawWarningPerson(Offset(size.width * 0.61f, size.height * 0.64f), figureScale * 0.78f)
+            }
+            "hazard:bicycle" -> drawBicycleWarningSymbol()
+            "hazard:wild_animals" -> drawWildAnimalWarningSymbol()
+            "hazard:wind" -> drawWindWarningSymbol()
+        }
+    }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWarningPerson(anchor: Offset, scale: Float) {
+    val headRadius = scale * 0.11f
+    drawCircle(Color.Black, headRadius, Offset(anchor.x, anchor.y - scale * 0.32f))
+    drawLine(Color.Black, Offset(anchor.x, anchor.y - scale * 0.18f), Offset(anchor.x, anchor.y + scale * 0.2f), strokeWidth = scale * 0.12f, cap = StrokeCap.Round)
+    drawLine(Color.Black, Offset(anchor.x - scale * 0.22f, anchor.y - scale * 0.02f), Offset(anchor.x + scale * 0.22f, anchor.y - scale * 0.02f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
+    drawLine(Color.Black, Offset(anchor.x, anchor.y + scale * 0.2f), Offset(anchor.x - scale * 0.18f, anchor.y + scale * 0.48f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
+    drawLine(Color.Black, Offset(anchor.x, anchor.y + scale * 0.2f), Offset(anchor.x + scale * 0.18f, anchor.y + scale * 0.48f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBicycleWarningSymbol() {
+    val radius = size.minDimension * 0.11f
+    val left = Offset(size.width * 0.37f, size.height * 0.67f)
+    val right = Offset(size.width * 0.63f, size.height * 0.67f)
+    drawCircle(Color.Black, radius, left, style = Stroke(width = size.minDimension * 0.045f))
+    drawCircle(Color.Black, radius, right, style = Stroke(width = size.minDimension * 0.045f))
+    drawLine(Color.Black, left, Offset(size.width * 0.49f, size.height * 0.49f), strokeWidth = size.minDimension * 0.045f)
+    drawLine(Color.Black, Offset(size.width * 0.49f, size.height * 0.49f), right, strokeWidth = size.minDimension * 0.045f)
+    drawLine(Color.Black, left, right, strokeWidth = size.minDimension * 0.045f)
+    drawLine(Color.Black, Offset(size.width * 0.49f, size.height * 0.49f), Offset(size.width * 0.59f, size.height * 0.49f), strokeWidth = size.minDimension * 0.045f)
+    drawCircle(Color.Black, size.minDimension * 0.045f, Offset(size.width * 0.49f, size.height * 0.49f))
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWildAnimalWarningSymbol() {
+    val center = Offset(size.width * 0.5f, size.height * 0.58f)
+    val radius = size.minDimension * 0.14f
+    drawCircle(Color.Black, radius, center)
+    val ear = Path().apply {
+        moveTo(center.x - radius * 0.8f, center.y - radius * 0.5f)
+        lineTo(center.x - radius * 1.35f, center.y - radius * 1.7f)
+        lineTo(center.x - radius * 0.2f, center.y - radius * 1.0f)
+        close()
+    }
+    drawPath(ear, Color.Black)
+    val otherEar = Path().apply {
+        moveTo(center.x + radius * 0.8f, center.y - radius * 0.5f)
+        lineTo(center.x + radius * 1.35f, center.y - radius * 1.7f)
+        lineTo(center.x + radius * 0.2f, center.y - radius * 1.0f)
+        close()
+    }
+    drawPath(otherEar, Color.Black)
+    drawLine(Color.Black, center, Offset(center.x - radius * 1.8f, center.y - radius * 2.0f), strokeWidth = radius * 0.18f, cap = StrokeCap.Round)
+    drawLine(Color.Black, center, Offset(center.x + radius * 1.8f, center.y - radius * 2.0f), strokeWidth = radius * 0.18f, cap = StrokeCap.Round)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWindWarningSymbol() {
+    repeat(3) { index ->
+        val y = size.height * (0.45f + index * 0.11f)
+        val path = Path().apply {
+            moveTo(size.width * 0.28f, y)
+            cubicTo(size.width * 0.46f, y - size.height * 0.1f, size.width * 0.6f, y + size.height * 0.1f, size.width * 0.76f, y)
+        }
+        drawPath(path, Color.Black, style = Stroke(width = size.minDimension * 0.045f, cap = StrokeCap.Round))
+    }
+}
+
+@Composable
+private fun EndOfSpeedLimitSign(modifier: Modifier = Modifier, signSize: androidx.compose.ui.unit.Dp) {
+    val description = stringResource(R.string.ui_camera_speed_limit_end)
+    Canvas(
+        modifier = modifier
+            .size(signSize)
+            .semantics { contentDescription = description },
+    ) {
+        val borderWidth = size.minDimension * 0.028f
+        drawCircle(Color.White)
+        clipPath(Path().apply { addOval(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)) }) {
+            repeat(5) { index ->
+                rotate(degrees = -51f, pivot = center) {
+                    val stripeWidth = size.minDimension * 0.035f
+                    val stripeHeight = size.minDimension * 1.7f
+                    val offsetX = (index - 2) * size.minDimension * 0.12f
+                    drawRect(
+                        color = Color.Black.copy(alpha = 0.42f),
+                        topLeft = Offset(center.x + offsetX - stripeWidth / 2f, center.y - stripeHeight / 2f),
+                        size = Size(stripeWidth, stripeHeight),
+                    )
+                }
+            }
+        }
+        drawCircle(Color.Black.copy(alpha = 0.82f), radius = (size.minDimension - borderWidth) / 2f, style = Stroke(width = borderWidth))
     }
 }
 
@@ -757,14 +901,15 @@ private fun LocalRecordingsButton(
     foreground: Color,
     buttonBg: Color,
     buttonBorder: Color,
+    tint: Color = foreground,
 ) {
     PillIconButton(
         onClick = onClick,
         background = buttonBg,
-        border = buttonBorder,
+        border = if (tint == foreground) buttonBorder else tint,
         modifier = Modifier.testTag("local-recordings-button"),
     ) {
-        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = foreground)
+        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.ui_recordings_title), tint = tint)
     }
 }
 

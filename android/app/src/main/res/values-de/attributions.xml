@@ -14,7 +14,7 @@
     <string name="credits_full_notices">Vollständige Quellen- und Softwarehinweise</string>
     <string name="credits_model_notices">Hinweise zu Verkehrszeichenmodellen</string>
     <string name="credits_speech_notices">Lizenz des Sprachmodells</string>
-    <string name="credits_category_data">Kartendaten</string>
+    <string name="credits_category_data">Datenbank</string>
     <string name="credits_category_software">Software</string>
     <string name="credits_category_model">Erkennungsmodelle</string>
     <string name="credits_category_sign">Verkehrszeichen-Piktogramme</string>

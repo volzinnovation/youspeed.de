@@ -1,6 +1,7 @@
 <resources>
     <string name="ui_country_germany">Duitsland</string>
     <string name="ui_camera_unlimited">Camera herkent: geen snelheidslimiet</string>
+    <string name="ui_camera_speed_limit_end">Einde van snelheidsbeperking gedetecteerd</string>
     <string name="ui_camera_walking">Camera herkent: stapvoets</string>
     <string name="ui_camera_sign">Verkeersbord herkend door camera</string>
     <string name="ui_legal_title">Juridische informatie</string>

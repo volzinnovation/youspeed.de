@@ -1,6 +1,7 @@
 <resources>
     <string name="ui_country_germany">Allemagne</string>
     <string name="ui_camera_unlimited">Détection caméra : aucune limitation de vitesse</string>
+    <string name="ui_camera_speed_limit_end">Fin de limitation de vitesse détectée</string>
     <string name="ui_camera_walking">Détection caméra : allure du pas</string>
     <string name="ui_camera_sign">Panneau détecté par la caméra</string>
     <string name="ui_legal_title">Informations légales</string>

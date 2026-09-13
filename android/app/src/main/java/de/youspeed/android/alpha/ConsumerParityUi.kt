@@ -790,7 +790,7 @@ internal fun TrafficSignDetailsContent(controller: ConsumerSessionController) {
                 Text(parityText("Evidence frames: ", "Belegbilder: ", "Images de preuve : ", "Bewijsbeelden: ") + it.evidenceFrames)
             }
             Text(if (ui.cameraSpeedLimitEvidence) parityText("Camera limit is active.", "Kameralimit ist aktiv.", "La limite caméra est active.", "Cameralimiet is actief.")
-                else parityText("The map or a local correction supplies the speed limit.", "Karte oder lokale Korrektur liefert das Tempolimit.",
+                else parityText("The database or a local correction supplies the speed limit.", "Datenbank oder lokale Korrektur liefert das Tempolimit.",
                     "La carte ou une correction locale fournit la limite de vitesse.", "De kaart of een lokale correctie levert de snelheidslimiet."))
         } }
     }

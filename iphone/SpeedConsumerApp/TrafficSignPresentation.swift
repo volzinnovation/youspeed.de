@@ -62,7 +62,24 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
     let classifierScore: Double
     let timestamp: Date
     let affectsSpeed: Bool
+    let isSpeedLimitEnd: Bool
     let classifierCheckpointSHA256: String
+
+    init(
+        classID: String,
+        classifierScore: Double,
+        timestamp: Date,
+        affectsSpeed: Bool,
+        isSpeedLimitEnd: Bool = false,
+        classifierCheckpointSHA256: String
+    ) {
+        self.classID = classID
+        self.classifierScore = classifierScore
+        self.timestamp = timestamp
+        self.affectsSpeed = affectsSpeed
+        self.isSpeedLimitEnd = isSpeedLimitEnd
+        self.classifierCheckpointSHA256 = classifierCheckpointSHA256
+    }
 
     static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?) -> Self? {
         guard let classifierCheckpointSHA256 else { return nil }
@@ -88,10 +105,12 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
             calibratedConfidence: detection.calibratedConfidence,
             boundingBox: detection.boundingBox, trackId: nil, evidenceFrames: 1
         )
+        let action = TrafficSignStructuralAction.normalized(from: candidate)
         return Self(classID: detection.rawClassId,
                     classifierScore: detection.classifierRawScore ?? detection.rawScore,
                     timestamp: timestamp,
-                    affectsSpeed: TrafficSignStructuralAction.normalized(from: candidate).passageEventEligible,
+                    affectsSpeed: action.passageEventEligible,
+                    isSpeedLimitEnd: action.isSpeedLimitEnd,
                     classifierCheckpointSHA256: classifierCheckpointSHA256)
     }
 }

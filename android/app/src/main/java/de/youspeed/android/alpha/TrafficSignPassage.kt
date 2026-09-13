@@ -856,7 +856,11 @@ class TrafficSignRuntimeSourceResolver(
         newlyPersistableEvent = null
     }
 
-    fun commit(event: TrafficSignPassageEvent, base: TrafficSignBaseLimit): EffectiveSpeedLimit {
+    fun commit(
+        event: TrafficSignPassageEvent,
+        base: TrafficSignBaseLimit,
+        fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit? = null,
+    ): EffectiveSpeedLimit {
         if (!event.overrideEligible) return effective(base)
         val context = event.activationContext
         if (context == null || context.wayId.isNullOrBlank()) {
@@ -878,7 +882,7 @@ class TrafficSignRuntimeSourceResolver(
         if (wayId.isEmpty() || !context.matchedWayStable || !context.hasVerifiedBundle
         ) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
-                maskOrPreserveUnsafeEnd(event, base, "camera_end_unsafe_context")
+                maskOrPreserveUnsafeEnd(event, base, "camera_end_unsafe_context", fallbackSpeedLimitAfterEnd)
             } else {
                 effective(base)
             }
@@ -886,7 +890,7 @@ class TrafficSignRuntimeSourceResolver(
         val firstSeenWayId = event.firstSeenContext?.wayId?.trim().orEmpty()
         if (firstSeenWayId.isEmpty()) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
-                maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_missing")
+                maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_missing", fallbackSpeedLimitAfterEnd)
             } else {
                 effective(base)
             }
@@ -894,7 +898,7 @@ class TrafficSignRuntimeSourceResolver(
         val activationRelationGroups = event.eligibleRouteRelationGroupIds.intersect(context.routeRelationGroupIds)
         if (wayId != firstSeenWayId && activationRelationGroups.isEmpty()) {
             return if (event.action.kind in SPEED_END_ACTION_KINDS) {
-                maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_lost")
+                maskOrPreserveUnsafeEnd(event, base, "camera_end_recognition_scope_lost", fallbackSpeedLimitAfterEnd)
             } else {
                 effective(base)
             }
@@ -903,7 +907,7 @@ class TrafficSignRuntimeSourceResolver(
             ?.takeIf { it.scope.traversalEpoch == context.traversalEpoch }
             ?.layers
             .orEmpty()
-        val reduced = reduceLayers(previousLayers, event.action, event.finalizedEventId, base)
+        val reduced = reduceLayers(previousLayers, event.action, event.finalizedEventId, base, fallbackSpeedLimitAfterEnd)
         if (reduced.noMutation) return effective(base)
         val resolution = reduced.layers.lastOrNull()?.resolution ?: reduced.fallback
         val scope = TrafficSignApplicabilityScope(
@@ -939,14 +943,13 @@ class TrafficSignRuntimeSourceResolver(
         event: TrafficSignPassageEvent,
         base: TrafficSignBaseLimit,
         reason: String,
+        fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit?,
     ): EffectiveSpeedLimit {
         val previous = active ?: return base.effective()
-        val reduced = reduceLayers(previous.layers, event.action, event.finalizedEventId, base)
+        val reduced = reduceLayers(previous.layers, event.action, event.finalizedEventId, base, fallbackSpeedLimitAfterEnd)
         if (reduced.noMutation) return effective(base)
         val survivingResolution = reduced.layers.lastOrNull()?.resolution
-        val resolution = survivingResolution
-            ?: base.resolution?.takeIf { base.structurallyVerifiedForEnd }
-            ?: TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
+        val resolution = survivingResolution ?: reduced.fallback
         active = previous.copy(
             event = event,
             layers = reduced.layers,
@@ -1095,6 +1098,7 @@ class TrafficSignRuntimeSourceResolver(
         action: TrafficSignAction,
         eventId: String,
         base: TrafficSignBaseLimit,
+        fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit?,
     ): ReducedLayers {
         val layers = current.toMutableList()
         fun add(kind: TrafficSignActionKind, resolution: TrafficSignResolvedLimit, remove: Set<TrafficSignActionKind>) {
@@ -1128,9 +1132,14 @@ class TrafficSignRuntimeSourceResolver(
             TrafficSignActionKind.MAXIMUM_SPEED_END -> {
                 val index = layers.indexOfLast { it.kind == TrafficSignActionKind.POSTED_MAXIMUM }
                 if (index < 0) {
-                    val enclosing = layers.lastOrNull()?.resolution
+                    val layerEnclosing = layers.lastOrNull()?.resolution
+                    val enclosing = layerEnclosing ?: fallbackSpeedLimitAfterEnd
                     return if (enclosing != null) {
-                        ReducedLayers(layers, enclosing, "camera_maximum_speed_end_enclosing_rule")
+                        ReducedLayers(
+                            layers,
+                            enclosing,
+                            if (layerEnclosing != null) "camera_maximum_speed_end_enclosing_rule" else "camera_maximum_speed_end_fallback",
+                        )
                     } else {
                         unresolved(emptyList(), "camera_maximum_speed_end_unresolved")
                     }
@@ -1144,16 +1153,16 @@ class TrafficSignRuntimeSourceResolver(
                     )
                 }
                 layers.removeAt(index)
-                return restored(layers, base, "camera_maximum_speed_end")
+                return restored(layers, base, "camera_maximum_speed_end", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.ALL_RESTRICTIONS_END -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.POSTED_MAXIMUM, TrafficSignActionKind.TEMPORARY_MAXIMUM) }
-                return restored(layers, base, "camera_all_restrictions_end")
+                return restored(layers, base, "camera_all_restrictions_end", null)
             }
             TrafficSignActionKind.ZONE_END -> {
                 val zoneIndex = layers.indexOfLast { it.kind == TrafficSignActionKind.ZONE_START }
                 if (zoneIndex < 0) {
-                    val enclosing = layers.lastOrNull()?.resolution
+                    val enclosing = layers.lastOrNull()?.resolution ?: fallbackSpeedLimitAfterEnd
                     return if (enclosing != null) {
                         ReducedLayers(layers, enclosing, "camera_zone_end_enclosing_rule")
                     } else {
@@ -1169,11 +1178,11 @@ class TrafficSignRuntimeSourceResolver(
                     )
                 }
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.ZONE_START, TrafficSignActionKind.POSTED_MAXIMUM) }
-                return restored(layers, base, "camera_zone_end")
+                return restored(layers, base, "camera_zone_end", fallbackSpeedLimitAfterEnd)
             }
             TrafficSignActionKind.CITY_EXIT -> {
                 layers.removeAll { it.kind in setOf(TrafficSignActionKind.CITY_ENTRY, TrafficSignActionKind.POSTED_MAXIMUM) }
-                return restored(layers, base, "camera_city_exit")
+                return restored(layers, base, "camera_city_exit", null)
             }
             TrafficSignActionKind.PEDESTRIAN_ZONE_END -> {
                 layers.removeAll {
@@ -1183,7 +1192,7 @@ class TrafficSignRuntimeSourceResolver(
                         TrafficSignActionKind.TEMPORARY_MAXIMUM,
                     )
                 }
-                return restored(layers, base, "camera_pedestrian_zone_end")
+                return restored(layers, base, "camera_pedestrian_zone_end", null)
             }
             TrafficSignActionKind.MOTORWAY_EXIT,
             TrafficSignActionKind.MOTORROAD_EXIT -> {
@@ -1195,7 +1204,7 @@ class TrafficSignRuntimeSourceResolver(
                         TrafficSignActionKind.TEMPORARY_MAXIMUM,
                     )
                 }
-                return restored(layers, base, "camera_road_class_exit")
+                return restored(layers, base, "camera_road_class_exit", null)
             }
             TrafficSignActionKind.NON_SPEED_RESTRICTION_END -> return ReducedLayers(layers, active?.resolution ?: TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN), "camera_non_speed_end", noMutation = true)
             TrafficSignActionKind.TEMPORARY_MAXIMUM,
@@ -1207,11 +1216,18 @@ class TrafficSignRuntimeSourceResolver(
         layers: List<TrafficSignRuleLayer>,
         base: TrafficSignBaseLimit,
         reason: String,
+        fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit?,
     ): ReducedLayers {
         val restored = layers.lastOrNull()?.resolution
+            ?: fallbackSpeedLimitAfterEnd
             ?: base.resolution?.takeIf { base.structurallyVerifiedForEnd }
             ?: TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.UNKNOWN)
-        return ReducedLayers(layers, restored, if (restored.kind == TrafficSignResolvedLimitKind.UNKNOWN) "${reason}_unresolved" else reason)
+        val resolvedReason = when {
+            restored.kind == TrafficSignResolvedLimitKind.UNKNOWN -> "${reason}_unresolved"
+            layers.none { it.resolution == restored } && fallbackSpeedLimitAfterEnd != null -> "${reason}_fallback"
+            else -> reason
+        }
+        return ReducedLayers(layers, restored, resolvedReason)
     }
 
     private fun unresolved(layers: List<TrafficSignRuleLayer>, reason: String) = ReducedLayers(
