@@ -2742,6 +2742,12 @@ internal class V3SpeedLimitLookup(
                 detail = "kept ${filteredCandidates.size} tunnel candidates while horizontal_accuracy_m=${formatMetric(horizontalAccuracyM ?: Double.POSITIVE_INFINITY)} remained above ${formatMetric(poorSignalThresholdM)}",
             )
         }
+        val preferredWayCandidate = matchContext.preferredWayId?.let { preferredWayId ->
+            val normalizedPreferredWayId = normalizedWayId(preferredWayId)
+            rankedCandidates.firstOrNull { candidate ->
+                normalizedWayId(candidate.wayId) == normalizedPreferredWayId
+            }
+        }
         val continuityIdentity: Pair<Set<String>, SimpleContinuityIdentitySource>
         val previousContinuityCandidate: WayCandidate?
         if (useGuardedStreetNameFallbackContinuity) {
@@ -2824,6 +2830,17 @@ internal class V3SpeedLimitLookup(
             selectionTrace += MatchSelectionTrace("simple_low_speed_same_ref_junction_release",
                 "released same-ref ${previousContinuityCandidate?.wayId} for linked turn ${junctionRelease.first.wayId} via anchor ${junctionRelease.second.wayId}")
             junctionRelease.first
+        } else if (
+            speedKmh != null && speedKmh.isFinite() &&
+            speedKmh <= SIMPLE_STATIONARY_PREFERRED_HOLD_MAX_SPEED_KMH &&
+            preferredWayCandidate != null &&
+            shouldHoldStationaryPreferredWay(preferredWayCandidate, bestCandidate, accuracyBufferM)
+        ) {
+            selectionTrace += MatchSelectionTrace(
+                step = "simple_stationary_preferred_hold",
+                detail = "kept preferred ${preferredWayCandidate.wayId ?: "nil"} over nearest ${bestCandidate.wayId ?: "nil"} at speed_kmh=${formatMetric(speedKmh)} preferred_m=${formatMetric(preferredWayCandidate.distanceM)} nearest_m=${formatMetric(bestCandidate.distanceM)}",
+            )
+            preferredWayCandidate
         } else if (speedKmh != null && speedKmh >= lowSpeedThresholdKmh && previousContinuityCandidate != null) {
             if (
                 urbanSameRefReleaseEnabled &&
@@ -2935,6 +2952,18 @@ internal class V3SpeedLimitLookup(
             traceRankedCandidates = traceRankedCandidates,
             selectionTrace = selectionTrace,
         )
+    }
+
+    private fun shouldHoldStationaryPreferredWay(
+        preferredCandidate: WayCandidate,
+        bestCandidate: WayCandidate,
+        accuracyBufferM: Double,
+    ): Boolean {
+        if (normalizedWayId(preferredCandidate.wayId) == normalizedWayId(bestCandidate.wayId)) return false
+        val improvementRequiredM = maxOf(SIMPLE_STATIONARY_PREFERRED_HOLD_MIN_GAP_M, accuracyBufferM)
+        val bestIsMateriallyBetter = bestCandidate.distanceM + improvementRequiredM < preferredCandidate.distanceM &&
+            bestCandidate.distanceM <= maxOf(SIMPLE_STATIONARY_PREFERRED_HOLD_MAX_BEST_DISTANCE_M, accuracyBufferM + 1.0)
+        return !bestIsMateriallyBetter
     }
 
     private fun isServiceLikeTransitionCandidate(candidate: WayCandidate): Boolean =
@@ -6183,6 +6212,9 @@ internal class V3SpeedLimitLookup(
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_MAX_BEST_DISTANCE_M = 2.5
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_MIN_DISTANCE_GAP_M = 25.0
         private const val SIMPLE_SAME_REF_URBAN_RELEASE_REQUIRED_STREAK = 2
+        private const val SIMPLE_STATIONARY_PREFERRED_HOLD_MAX_SPEED_KMH = 2.0
+        private const val SIMPLE_STATIONARY_PREFERRED_HOLD_MIN_GAP_M = 8.0
+        private const val SIMPLE_STATIONARY_PREFERRED_HOLD_MAX_BEST_DISTANCE_M = 5.0
         private const val SIMPLE_SPEED_REF_NARROW_WINDOW_RADIUS_M = 10.0
         private const val SIMPLE_STREET_NAME_FALLBACK_MIN_NO_REF_MATCHES = 2
         private const val RECENT_WAY_SCORE_SLACK_M = 6.0

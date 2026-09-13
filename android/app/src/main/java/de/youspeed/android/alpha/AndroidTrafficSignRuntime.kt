@@ -256,6 +256,22 @@ internal fun primaryDetection(detections: List<TrafficSignDetection>): TrafficSi
     .maxByOrNull { it.candidate.rawScore }
     ?: detections.maxByOrNull { it.candidate.rawScore }
 
+internal data class AndroidTrafficSignInferenceResult(
+    val detections: List<TrafficSignDetection>,
+    val detectorProposalCount: Int,
+    val detectorTopScore: Double?,
+    val classifierInvocationCount: Int,
+    val classifiedDetectionCount: Int,
+    val classifierTopScore: Double?,
+    val inferenceMs: Double,
+    val detectorRawSignTopScore: Double?,
+    val detectorRawGlobalTopScore: Double?,
+    val detectorRawSignScoresAboveThreshold: Int,
+    val sourceWidthPixels: Int,
+    val sourceHeightPixels: Int,
+    val sourceLumaMean: Double?,
+)
+
 internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val verifiedPack: AndroidTrafficSignVerifiedPack,
 ) : AutoCloseable {
@@ -291,6 +307,11 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     fun recognize(source: Bitmap): TrafficSignDetection? = primaryDetection(recognizeAll(source))
 
     fun recognizeAll(source: Bitmap): List<TrafficSignDetection> {
+        return recognizeAllWithDiagnostics(source).detections
+    }
+
+    fun recognizeAllWithDiagnostics(source: Bitmap): AndroidTrafficSignInferenceResult {
+        val startedAtNanos = System.nanoTime()
         prepareDetectorInput(source)
         detectorOutput.clear()
         detector.run(detectorInput, detectorOutput)
@@ -303,8 +324,56 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             inputSize = DETECTOR_SIZE,
             minimumScore = verifiedPack.modelPack.thresholds.unknown,
         )
+        var rawSignTopScore: Double? = null
+        var rawGlobalTopScore: Double? = null
+        var rawSignScoresAboveThreshold = 0
+        for (index in 0 until AndroidYoloSignDecoder.OUTPUT_ELEMENTS) {
+            val signScore = detectorOutputFloats[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + index]
+            if (signScore.isFinite()) {
+                rawSignTopScore = maxOf(rawSignTopScore ?: Double.NEGATIVE_INFINITY, signScore.toDouble())
+                if (signScore >= verifiedPack.modelPack.thresholds.unknown) rawSignScoresAboveThreshold += 1
+            }
+        }
+        detectorOutputFloats.forEach { value ->
+            if (value.isFinite()) rawGlobalTopScore = maxOf(rawGlobalTopScore ?: Double.NEGATIVE_INFINITY, value.toDouble())
+        }
+        val lumaMean = sourceLumaMean(source)
 
-        return proposals.mapNotNull { proposal -> classify(source, proposal) }
+        val classified = proposals.map { proposal -> classify(source, proposal) }
+        val detections = classified.mapNotNull(ClassificationResult::detection)
+        return AndroidTrafficSignInferenceResult(
+            detections = detections,
+            detectorProposalCount = proposals.size,
+            detectorTopScore = proposals.maxOfOrNull { it.score.toDouble() },
+            classifierInvocationCount = classified.count { it.classifierScore != null },
+            classifiedDetectionCount = detections.size,
+            classifierTopScore = classified.mapNotNull { it.classifierScore }.maxOrNull(),
+            inferenceMs = (System.nanoTime() - startedAtNanos).coerceAtLeast(0L) / 1_000_000.0,
+            detectorRawSignTopScore = rawSignTopScore,
+            detectorRawGlobalTopScore = rawGlobalTopScore,
+            detectorRawSignScoresAboveThreshold = rawSignScoresAboveThreshold,
+            sourceWidthPixels = source.width,
+            sourceHeightPixels = source.height,
+            sourceLumaMean = lumaMean,
+        )
+    }
+
+    private fun sourceLumaMean(source: Bitmap): Double? {
+        val sampleStep = 32
+        var sum = 0.0
+        var count = 0
+        var y = 0
+        while (y < source.height) {
+            var x = 0
+            while (x < source.width) {
+                val color = source.getPixel(x, y)
+                sum += 0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)
+                count += 1
+                x += sampleStep
+            }
+            y += sampleStep
+        }
+        return count.takeIf { it > 0 }?.let { sum / it.toDouble() }
     }
 
     private fun prepareDetectorInput(source: Bitmap) {
@@ -324,9 +393,14 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     /** Runs the pinned classifier on an explicitly supplied crop; used for reproducible capability probes. */
     internal fun classifyCropForDiagnostic(source: Bitmap): TrafficSignDetection? = classify(
         source, AndroidYoloProposal(1f, NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)), minimumScore = 0.0,
+    ).detection
+
+    private data class ClassificationResult(
+        val detection: TrafficSignDetection?,
+        val classifierScore: Double?,
     )
 
-    private fun classify(source: Bitmap, proposal: AndroidYoloProposal, minimumScore: Double = verifiedPack.modelPack.thresholds.unknown): TrafficSignDetection? {
+    private fun classify(source: Bitmap, proposal: AndroidYoloProposal, minimumScore: Double = verifiedPack.modelPack.thresholds.unknown): ClassificationResult {
         val box = proposal.box
         val left = ((box.x - box.width * HORIZONTAL_CROP_PADDING) * source.width).coerceAtLeast(0.0)
         val top = ((box.y - box.height * TOP_CROP_PADDING) * source.height).coerceAtLeast(0.0)
@@ -334,7 +408,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             .coerceAtMost(source.width.toDouble())
         val bottom = ((box.y + box.height * (1.0 + BOTTOM_CROP_EXTENSION)) * source.height)
             .coerceAtMost(source.height.toDouble())
-        if (right <= left || bottom <= top) return null
+        if (right <= left || bottom <= top) return ClassificationResult(null, null)
 
         Canvas(classifierBitmap).apply {
             drawColor(Color.BLACK)
@@ -373,11 +447,11 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 bestScore = score
             }
         }
-        if (bestIndex < 0 || bestScore < minimumScore) return null
+        if (bestIndex < 0) return ClassificationResult(null, null)
         val classId = verifiedPack.displayCatalog.classId(bestIndex)
         val mapping = mappingsByClassId[classId]
         val combinedScore = min(proposal.score.toDouble(), bestScore.toDouble())
-        return TrafficSignDetection(
+        val detection = TrafficSignDetection(
             candidate = TrafficSignCandidate(
                 rawClassId = classId,
                 rawLabel = mapping?.label ?: classId,
@@ -393,6 +467,10 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 restrictions = emptyList(),
             ),
             cropQuality = box.area,
+        )
+        return ClassificationResult(
+            detection = detection.takeIf { bestScore >= minimumScore },
+            classifierScore = bestScore.toDouble(),
         )
     }
 
@@ -447,12 +525,29 @@ internal class AndroidLiteRtTrafficSignBackend(
             val result = runCatching {
                 val bitmap = frame.orientedBitmap()
                 try {
-                    val detections = engine.recognizeAll(bitmap)
+                    val inference = engine.recognizeAllWithDiagnostics(bitmap)
+                    val detections = inference.detections
                     TrafficSignBackendResult.Recognition(
                         detection = primaryDetection(detections),
                         displayDetections = detections,
                         thermalState = thermalState(),
                         strongPassGeometry = false,
+                        diagnostics = TrafficSignInferenceDiagnostics(
+                            inferenceMs = inference.inferenceMs,
+                            detectorProposalCount = inference.detectorProposalCount,
+                            detectorTopScore = inference.detectorTopScore,
+                            classifierInvocationCount = inference.classifierInvocationCount,
+                            classifiedDetectionCount = inference.classifiedDetectionCount,
+                            classifierTopScore = inference.classifierTopScore,
+                            primaryClassId = primaryDetection(detections)?.candidate?.rawClassId,
+                            primaryScore = primaryDetection(detections)?.candidate?.rawScore,
+                            detectorRawSignTopScore = inference.detectorRawSignTopScore,
+                            detectorRawGlobalTopScore = inference.detectorRawGlobalTopScore,
+                            detectorRawSignScoresAboveThreshold = inference.detectorRawSignScoresAboveThreshold,
+                            sourceWidthPixels = inference.sourceWidthPixels,
+                            sourceHeightPixels = inference.sourceHeightPixels,
+                            sourceLumaMean = inference.sourceLumaMean,
+                        ),
                     )
                 } finally {
                     bitmap.recycle()
@@ -658,7 +753,11 @@ internal class AndroidTrafficSignCameraRuntime(
                             ResolutionSelector.Builder()
                                 .setResolutionStrategy(
                                     ResolutionStrategy(
-                                        Size(1280, 720),
+                                        // iPhone keeps the high-resolution video output for
+                                        // TSR. Keep the same camera detail on Android and let
+                                        // the pinned 1280px model perform its declared
+                                        // scale-fit preprocessing.
+                                        Size(1920, 1080),
                                         ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
                                     ),
                                 )

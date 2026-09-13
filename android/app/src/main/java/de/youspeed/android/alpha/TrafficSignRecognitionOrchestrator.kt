@@ -33,6 +33,44 @@ data class TrafficSignDetectionContextSnapshotValue(
     }
 }
 
+/**
+ * Compact per-frame evidence from the concrete camera backend. Keeping this
+ * separate from the public recognition event makes failures at detector,
+ * classifier, fusion, and context stages distinguishable in field logs.
+ */
+data class TrafficSignInferenceDiagnostics(
+    val inferenceMs: Double,
+    val detectorProposalCount: Int,
+    val detectorTopScore: Double?,
+    val classifierInvocationCount: Int,
+    val classifiedDetectionCount: Int,
+    val classifierTopScore: Double?,
+    val primaryClassId: String?,
+    val primaryScore: Double?,
+    val detectorRawSignTopScore: Double? = null,
+    val detectorRawGlobalTopScore: Double? = null,
+    val detectorRawSignScoresAboveThreshold: Int = 0,
+    val sourceWidthPixels: Int = 0,
+    val sourceHeightPixels: Int = 0,
+    val sourceLumaMean: Double? = null,
+) {
+    init {
+        require(inferenceMs.isFinite() && inferenceMs >= 0.0)
+        require(detectorProposalCount >= 0)
+        require(classifierInvocationCount >= 0)
+        require(classifiedDetectionCount >= 0)
+        require(detectorTopScore == null || detectorTopScore.isFinite())
+        require(classifierTopScore == null || classifierTopScore.isFinite())
+        require(primaryScore == null || primaryScore.isFinite())
+        require(detectorRawSignTopScore == null || detectorRawSignTopScore.isFinite())
+        require(detectorRawGlobalTopScore == null || detectorRawGlobalTopScore.isFinite())
+        require(detectorRawSignScoresAboveThreshold >= 0)
+        require(sourceWidthPixels >= 0)
+        require(sourceHeightPixels >= 0)
+        require(sourceLumaMean == null || sourceLumaMean.isFinite())
+    }
+}
+
 /** Must return one internally consistent snapshot of all road-context fields and its monotonic generation. */
 fun interface TrafficSignDetectionContextSnapshot {
     fun snapshot(): TrafficSignDetectionContextSnapshotValue?
@@ -45,6 +83,7 @@ sealed interface TrafficSignBackendResult {
         val thermalState: String? = null,
         val strongPassGeometry: Boolean = false,
         val displayDetections: List<TrafficSignDetection> = listOfNotNull(detection),
+        val diagnostics: TrafficSignInferenceDiagnostics? = null,
     ) : TrafficSignBackendResult
 
     data class Unavailable(
@@ -74,6 +113,7 @@ data class TrafficSignOrchestrationOutput(
     val contextGeneration: Long = 0L,
     val contextIsCurrent: Boolean = true,
     val displayObservation: TrafficSignDisplayObservation? = null,
+    val inferenceDiagnostics: TrafficSignInferenceDiagnostics? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -494,6 +534,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     terminalBackendFailure = terminalBackendFailure,
                     contextGeneration = active.accepted.contextGeneration,
                     contextIsCurrent = created.contextIsCurrent,
+                    inferenceDiagnostics = (backendResult as? TrafficSignBackendResult.Recognition)?.diagnostics,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -640,6 +681,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val bundleSha256: String?,
         val traversalEpoch: Long,
         val routeRelationGroupIds: Set<Long>,
+        val matchedWayStable: Boolean,
     ) {
         constructor(context: TrafficSignDetectionContext) : this(
             wayId = context.wayId,
@@ -648,6 +690,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
             bundleSha256 = context.bundleSha256,
             traversalEpoch = context.traversalEpoch,
             routeRelationGroupIds = context.routeRelationGroupIds,
+            matchedWayStable = context.matchedWayStable,
         )
     }
 

@@ -14,6 +14,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     monotonicClockNanos: () -> Long = System::nanoTime,
     onRuntimeUnavailable: (String, Long) -> Unit = controller::onTrafficSignRecognitionUnavailable,
     onContextMismatch: (Long) -> Unit = controller::onTrafficSignRecognitionContextMismatch,
+    onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = controller::onTrafficSignInferenceDiagnostics,
 ) : AutoCloseable {
     private val forwarder = TrafficSignFinalizedPassageForwarder(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
@@ -21,6 +22,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
         onContextMismatch = onContextMismatch,
+        onInferenceDiagnostics = onInferenceDiagnostics,
     )
     private val orchestrator: TrafficSignRecognitionOrchestrator<F>
 
@@ -58,9 +60,11 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
+    private val onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = {},
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
+        onInferenceDiagnostics(output)
         if (!output.contextIsCurrent) {
             onContextMismatch(output.contextGeneration)
         }
