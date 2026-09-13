@@ -214,17 +214,31 @@ private struct PanoramaxPhotoProcessingResult {
     var annotationLogLine: String? = nil
 }
 
-/// A traffic-sign recognizer attaches here without owning or reconfiguring the
+/// An image analyzer attaches here without owning or reconfiguring the
 /// platform camera session. Work must finish quickly because the dispatcher
 /// drops stale frames instead of building an inference backlog.
 protocol DriveVideoFrameConsumer: AnyObject {
     func consumeVideoFrame(_ sampleBuffer: CMSampleBuffer, orientation: CGImagePropertyOrientation)
 }
 
-private final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let lock = NSLock()
     private weak var consumer: (any DriveVideoFrameConsumer)?
     private var enabled = false
+    private weak var laneConsumer: (any DriveVideoFrameConsumer)?
+    private var lanesEnabled = false
+
+    func setLaneConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
+        lock.lock()
+        laneConsumer = consumer
+        lock.unlock()
+    }
+
+    func setLanesEnabled(_ enabled: Bool) {
+        lock.lock()
+        lanesEnabled = enabled
+        lock.unlock()
+    }
 
     var hasConsumer: Bool {
         lock.lock()
@@ -249,17 +263,23 @@ private final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutpu
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
+        dispatchFrame(sampleBuffer)
+    }
+
+    func dispatchFrame(_ sampleBuffer: CMSampleBuffer) {
         lock.lock()
         let activeConsumer = enabled ? consumer : nil
+        let activeLaneConsumer = lanesEnabled ? laneConsumer : nil
         lock.unlock()
+        activeLaneConsumer?.consumeVideoFrame(sampleBuffer, orientation: .right)
         activeConsumer?.consumeVideoFrame(sampleBuffer, orientation: .right)
     }
 }
 
 /// The single rear-camera owner for a recorded drive.
 ///
-/// One configured session fans out to four independent consumers: encoded
-/// Dashcam video, latest-frame TSR analysis, cadence-driven full-resolution
+/// One configured session fans out to independent consumers: encoded Dashcam
+/// video, latest-frame TSR and lane analysis, cadence-driven full-resolution
 /// Panoramax stills, and a display-only preview layer. Panoramax review and
 /// upload deliberately live outside this type and can only run after this
 /// session is inactive.
@@ -311,6 +331,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var activeDashcamEnabled = false
     private var activePanoramaxEnabled = false
     private var activeTSREnabled = false
+    private var activeLanesEnabled = false
     private var startTimeoutTask: Task<Void, Never>?
     private var stopTimeoutTask: Task<Void, Never>?
     private var dashcamTransitionTimeoutTask: Task<Void, Never>?
@@ -331,6 +352,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     var activeCaptureSessionID: String? { captureSessionID }
     var hasTrafficSignRecognitionConsumer: Bool { frameDispatcher.hasConsumer }
     var isDashcamOutputAvailable: Bool { movieOutputAvailable }
+    var isLaneAnalysisOutputAvailable: Bool { videoOutputAvailable }
     var isTrafficSignRecognitionOutputAvailable: Bool {
         videoOutputAvailable && frameDispatcher.hasConsumer
     }
@@ -356,9 +378,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
         frameDispatcher.setEnabled(false)
         activeTSREnabled = false
-        sessionQueue.async { [weak self] in
-            self?.videoOutput.connection(with: .video)?.isEnabled = false
-        }
+        updateVideoAnalysisConnection()
         lastCaptureDetail = "Verkehrszeichenmodell nicht mehr verfuegbar"
         if DriveRecorderPolicy.shouldStopAfterTrafficSignRuntimeLoss(
             for: state,
@@ -369,6 +389,25 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return
         }
         notifyChange()
+    }
+
+    func setLaneFrameConsumer(_ consumer: (any DriveVideoFrameConsumer)?) {
+        frameDispatcher.setLaneConsumer(consumer)
+    }
+
+    func setLaneAnalysisEnabled(_ enabled: Bool) {
+        let enabled = enabled && state == .recording && activeDashcamEnabled && videoOutputAvailable
+        guard activeLanesEnabled != enabled else { return }
+        activeLanesEnabled = enabled
+        frameDispatcher.setLanesEnabled(enabled)
+        updateVideoAnalysisConnection()
+    }
+
+    private func updateVideoAnalysisConnection() {
+        let enabled = activeTSREnabled || activeLanesEnabled
+        sessionQueue.async { [weak self] in
+            self?.videoOutput.connection(with: .video)?.isEnabled = enabled
+        }
     }
 
     /// Retains the newest confirmed result for the next still and, when there
@@ -599,9 +638,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         guard enabled else {
             frameDispatcher.setEnabled(false)
             activeTSREnabled = false
-            sessionQueue.async { [weak self] in
-                self?.videoOutput.connection(with: .video)?.isEnabled = false
-            }
+            updateVideoAnalysisConnection()
             lastCaptureDetail = "Verkehrszeichenerkennung pausiert"
             notifyChange()
             return true
@@ -640,6 +677,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         dashcamTransitionInFlight = false
         state = .stopping
         frameDispatcher.setEnabled(false)
+        activeLanesEnabled = false
+        frameDispatcher.setLanesEnabled(false)
         closePanoramaxBatchForReview()
         pendingSample = nil
         pendingPhotoUniqueID = nil
@@ -821,6 +860,16 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             videoOutput.videoSettings = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
             ]
+            // Both analyzers consume native sensor coordinates. Set this only
+            // while building the graph: VDO rotation physically rotates buffers
+            // and changing it during recording rebuilds the capture pipeline.
+            if let connection = videoOutput.connection(with: .video) {
+                if connection.isVideoRotationAngleSupported(0) { connection.videoRotationAngle = 0 }
+                if connection.isVideoMirroringSupported {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                    connection.isVideoMirrored = false
+                }
+            }
             videoOutput.setSampleBufferDelegate(frameDispatcher, queue: videoQueue)
             videoOutputAvailable = true
         }
@@ -985,6 +1034,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         clearDashcamTransition()
         captureSessionID = nil
         frameDispatcher.setEnabled(false)
+        activeLanesEnabled = false
+        frameDispatcher.setLanesEnabled(false)
     }
 
     nonisolated private static func persistPanoramaxPhoto(
@@ -1457,11 +1508,15 @@ typealias PanoramaxRecorder = DriveCaptureCoordinator
 
 struct DriveCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
+    var laneRuntime: LaneDetectionRuntime? = nil
+    var showDetectedLanes = false
+    var previewVisible = false
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
+        view.setLanePreview(runtime: laneRuntime, enabled: showDetectedLanes, visible: previewVisible)
         view.updateVideoRotation()
         return view
     }
@@ -1470,14 +1525,114 @@ struct DriveCameraPreview: UIViewRepresentable {
         if uiView.videoPreviewLayer.session !== session {
             uiView.videoPreviewLayer.session = session
         }
+        uiView.setLanePreview(runtime: laneRuntime, enabled: showDetectedLanes, visible: previewVisible)
         uiView.updateVideoRotation()
     }
 
     static func dismantleUIView(_ uiView: PreviewView, coordinator: Void) {
+        uiView.setLanePreview(runtime: nil, enabled: false, visible: false)
         uiView.videoPreviewLayer.session = nil
     }
 
     final class PreviewView: UIView {
+        private var laneRuntime: LaneDetectionRuntime?
+        private var lanesEnabled = false
+        private var previewVisible = false
+        private let laneLines = CAShapeLayer()
+        private let laneFill = CAShapeLayer()
+        private let laneStatus = UILabel()
+        private var laneTimer: Timer?
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            laneLines.fillColor = UIColor.clear.cgColor
+            laneLines.lineWidth = 2
+            laneLines.lineJoin = .round
+            laneLines.lineCap = .round
+            layer.addSublayer(laneFill)
+            layer.addSublayer(laneLines)
+            laneStatus.font = .preferredFont(forTextStyle: .caption2)
+            laneStatus.textColor = .white
+            laneStatus.backgroundColor = UIColor.black.withAlphaComponent(0.65)
+            laneStatus.layer.cornerRadius = 5
+            laneStatus.clipsToBounds = true
+            addSubview(laneStatus)
+            isAccessibilityElement = true
+            clipsToBounds = true
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        func setLanePreview(runtime: LaneDetectionRuntime?, enabled: Bool, visible: Bool) {
+            if laneRuntime !== runtime { laneRuntime?.setPreview(visible: false, rotation: 90) }
+            laneRuntime = runtime
+            lanesEnabled = enabled
+            previewVisible = visible
+            updateLaneActivity()
+        }
+
+        private func updateLaneActivity() {
+            let visible = lanesEnabled && previewVisible && window != nil
+            let rotation = Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90)
+            laneRuntime?.setPreview(visible: visible, rotation: rotation)
+            if visible && laneTimer == nil {
+                let timer = Timer(timeInterval: 1.0 / 15, repeats: true) { [weak self] _ in self?.drawLanes() }
+                RunLoop.main.add(timer, forMode: .common)
+                laneTimer = timer
+            } else if !visible {
+                laneTimer?.invalidate()
+                laneTimer = nil
+            }
+            drawLanes()
+        }
+
+        private func drawLanes() {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            defer { CATransaction.commit() }
+            laneLines.path = nil
+            laneFill.path = nil
+            laneStatus.isHidden = !lanesEnabled || !previewVisible
+            guard lanesEnabled, previewVisible, let snapshot = laneRuntime?.snapshot() else {
+                accessibilityValue = nil
+                return
+            }
+            let state = NSLocalizedString("drive_recorder.lanes.\(snapshot.state)", comment: "")
+            let label = String(format: NSLocalizedString("drive_recorder.lanes.status", comment: ""), state)
+            laneStatus.text = "  \(label)  "
+            laneStatus.sizeToFit()
+            laneStatus.frame.origin = CGPoint(x: 12, y: max(42, bounds.height - 65))
+            accessibilityValue = label
+            guard let frame = snapshot.frame,
+                  frame.rotation == Int(videoPreviewLayer.connection?.videoRotationAngle ?? 90) else { return }
+            let estimate = frame.estimate
+            let ageOpacity = LaneOverlayPolicy.opacity(capturedAt: estimate.timestampSeconds, now: LaneDetectionRuntime.now())
+            let color = estimate.hasReliablePair ? UIColor.systemTeal : UIColor.systemOrange
+            let lines = UIBezierPath()
+            func converted(_ point: LanePoint) -> CGPoint {
+                videoPreviewLayer.layerPointConverted(fromCaptureDevicePoint: frame.capturePoint(point))
+            }
+            for boundary in [estimate.left, estimate.right].compactMap({ $0 }) {
+                guard let first = boundary.points.first else { continue }
+                lines.move(to: converted(first))
+                for point in boundary.points.dropFirst() { lines.addLine(to: converted(point)) }
+            }
+            let confidence = [estimate.left, estimate.right].compactMap { $0?.confidence }.min() ?? 0
+            laneLines.strokeColor = color.cgColor
+            laneLines.opacity = Float(ageOpacity * confidence)
+            laneLines.path = lines.cgPath
+            let corridor = estimate.corridorPoints
+            if let first = corridor.first {
+                let fill = UIBezierPath()
+                fill.move(to: converted(first))
+                corridor.dropFirst().forEach { fill.addLine(to: converted($0)) }
+                fill.close()
+                laneFill.fillColor = color.withAlphaComponent(0.10).cgColor
+                laneFill.opacity = Float(ageOpacity * confidence)
+                laneFill.path = fill.cgPath
+            }
+        }
+
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
         var videoPreviewLayer: AVCaptureVideoPreviewLayer {
             guard let layer = layer as? AVCaptureVideoPreviewLayer else {
@@ -1489,11 +1644,13 @@ struct DriveCameraPreview: UIViewRepresentable {
         override func didMoveToWindow() {
             super.didMoveToWindow()
             updateVideoRotation()
+            updateLaneActivity()
         }
 
         override func layoutSubviews() {
             super.layoutSubviews()
             updateVideoRotation()
+            drawLanes()
         }
 
         func updateVideoRotation() {
@@ -1513,8 +1670,10 @@ struct DriveCameraPreview: UIViewRepresentable {
                 return
             }
             guard connection.isVideoRotationAngleSupported(angle) else { return }
-            guard connection.videoRotationAngle != angle else { return }
-            connection.videoRotationAngle = angle
+            if connection.videoRotationAngle != angle {
+                connection.videoRotationAngle = angle
+            }
+            updateLaneActivity()
         }
     }
 }

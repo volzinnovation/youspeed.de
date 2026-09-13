@@ -870,7 +870,14 @@ struct MainView: View {
             // during movie recording, which rebuilds the graph and terminates
             // the Dashcam file on physical devices.
             if previewPresentation.isAttached, let session = previewSession {
-                DriveCameraPreview(session: session)
+                DriveCameraPreview(
+                    session: session,
+                    laneRuntime: viewModel.laneDetectionRuntime,
+                    showDetectedLanes: viewModel.showDetectedLanes,
+                    previewVisible: showingPreview && !showingSettings && !showingLegalInfo
+                        && !showingDebug && !showingLocalRecordings && !showingPanoramaxGallery
+                        && !showingTrafficSignDetails
+                )
                     .frame(maxWidth: .infinity)
                     .frame(height: workspaceHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -2975,6 +2982,11 @@ private struct SettingsView: View {
                     .foregroundStyle(.secondary)
 
                 LabeledContent(NSLocalizedString("drive_recorder.settings.status", comment: ""), value: driveRecorderStatusText)
+
+                Toggle(NSLocalizedString("drive_recorder.settings.lanes", comment: ""), isOn: $viewModel.showDetectedLanes)
+                Text(NSLocalizedString("drive_recorder.settings.lanes_description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
                 Toggle(NSLocalizedString("drive_recorder.settings.tsr", comment: ""), isOn: $viewModel.trafficSignRecognitionEnabled)
                     .disabled(viewModel.isDriveRecorderActive)

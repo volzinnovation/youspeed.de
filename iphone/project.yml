@@ -19,6 +19,8 @@ targets:
           - "*.swift"
         excludes:
           - "SpeedConsumerTests.swift"
+          - "LaneDetectionTests.swift"
+          - "LaneDetectionRuntimeTests.swift"
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
         buildPhase: resources
@@ -113,6 +115,8 @@ targets:
     platform: iOS
     sources:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
+      - path: SpeedConsumerApp/LaneDetectionTests.swift
+      - path: SpeedConsumerApp/LaneDetectionRuntimeTests.swift
       - path: SpeedConsumerApp/TestFixtures
         buildPhase: resources
     dependencies:

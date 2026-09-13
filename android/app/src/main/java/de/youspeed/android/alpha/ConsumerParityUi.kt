@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
+import android.os.SystemClock
 import android.view.Surface
 import android.view.TextureView
 import android.widget.MediaController
@@ -12,6 +13,7 @@ import android.widget.VideoView
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.alpha
@@ -208,10 +212,14 @@ internal fun RecorderPreviewWorkspace(
     if (!attached) return
     val context = LocalContext.current
     val texture = remember(context) { TextureView(context) }
-    val owner = remember(texture) { RecorderPreviewSurface(texture) }
+    val owner = remember(texture, controller) { RecorderPreviewSurface(texture, controller::setLanePreviewGeometry) }
     DisposableEffect(controller, owner) {
         controller.setDriveRecorderPreviewSurfaceProvider(owner.provider)
         onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null); owner.close() }
+    }
+    DisposableEffect(controller, visible) {
+        controller.setLanePreviewVisible(visible)
+        onDispose { controller.setLanePreviewVisible(false) }
     }
     Box(
         modifier
@@ -222,13 +230,70 @@ internal fun RecorderPreviewWorkspace(
             .testTag("recorder-camera-preview"),
     ) {
         AndroidView(factory = { texture }, modifier = Modifier.fillMaxSize())
+        if (visible && controller.uiState.showDetectedLanes) LanePreviewOverlay(controller)
         if (visible && onDismiss != null) TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
             Text(doneLabel(), color = Color.White)
         }
     }
 }
 
-private class RecorderPreviewSurface(private val view: TextureView) : TextureView.SurfaceTextureListener, AutoCloseable {
+@Composable
+private fun BoxScope.LanePreviewOverlay(controller: ConsumerSessionController) {
+    val snapshot = controller.laneRuntimeSnapshot
+    val preview = controller.lanePreviewGeometry
+    var nowNanos by remember { mutableLongStateOf(SystemClock.elapsedRealtimeNanos()) }
+    LaunchedEffect(Unit) {
+        while (true) { nowNanos = SystemClock.elapsedRealtimeNanos(); delay(50) }
+    }
+    // A new camera result may arrive between the 50 ms fading ticks. Use the
+    // current clock too, avoiding a one-tick false future timestamp/flicker.
+    val opacity = snapshot.opacity(maxOf(nowNanos, SystemClock.elapsedRealtimeNanos()))
+    val state = if (snapshot.state == LanePresentationState.PAUSED) LanePresentationState.PAUSED
+        else if (opacity <= 0f) LanePresentationState.UNAVAILABLE else snapshot.state
+    val label = when (state) {
+        LanePresentationState.RELIABLE -> parityText("Reliable", "Zuverlässig", "Fiable", "Betrouwbaar")
+        LanePresentationState.UNCERTAIN -> parityText("Uncertain", "Unsicher", "Incertain", "Onzeker")
+        LanePresentationState.UNAVAILABLE -> parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar")
+        LanePresentationState.PAUSED -> parityText("Paused", "Pausiert", "En pause", "Gepauzeerd")
+    }
+    Canvas(Modifier.fillMaxSize().testTag("detected-lanes-overlay")) {
+        val geometry = snapshot.geometry ?: return@Canvas
+        val estimate = snapshot.estimate ?: return@Canvas
+        val destination = preview ?: return@Canvas
+        if (opacity <= 0f || state == LanePresentationState.PAUSED) return@Canvas
+        fun points(boundary: LaneBoundary?): List<LanePoint> = boundary?.points?.mapNotNull {
+            LaneOverlayGeometry.project(it, geometry, destination)
+        }.orEmpty()
+        fun path(points: List<LanePoint>): Path = Path().apply {
+            points.forEachIndexed { index, point ->
+                if (index == 0) moveTo(point.x.toFloat(), point.y.toFloat()) else lineTo(point.x.toFloat(), point.y.toFloat())
+            }
+        }
+        val left = points(estimate.left)
+        val right = points(estimate.right)
+        val color = if (estimate.hasReliablePair) Color(0xFF5EEAD4) else Color(0xFFFBBF24)
+        val corridor = estimate.corridorPoints.mapNotNull { LaneOverlayGeometry.project(it, geometry, destination) }
+        if (corridor.size >= 4) {
+            val area = path(corridor).apply { close() }
+            drawPath(area, color.copy(alpha = opacity * 0.10f))
+        }
+        listOf(left to estimate.left, right to estimate.right).forEach { (points, boundary) ->
+            if (points.size >= 2 && boundary != null) drawPath(path(points),
+                color.copy(alpha = opacity * boundary.confidence.toFloat().coerceIn(0f, 1f)),
+                style = Stroke(width = 2.dp.toPx()))
+        }
+        if (left.size >= 2 || right.size >= 2) controller.onLaneOverlayPainted(snapshot)
+    }
+    Text(parityText("Detected lanes", "Erkannte Fahrspuren", "Voies détectées", "Gedetecteerde rijstroken") + ": " + label,
+        modifier = Modifier.align(Alignment.BottomStart).padding(10.dp)
+            .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp)).padding(6.dp)
+            .testTag("detected-lanes-state"),
+        color = Color.White, style = MaterialTheme.typography.labelSmall)
+}
+
+private class RecorderPreviewSurface(private val view: TextureView,
+    private val onGeometry: (LanePreviewGeometry?) -> Unit,
+) : TextureView.SurfaceTextureListener, AutoCloseable {
     private val executor = ContextCompat.getMainExecutor(view.context)
     private var pending: SurfaceRequest? = null
     private var activeRequest: SurfaceRequest? = null
@@ -240,9 +305,13 @@ private class RecorderPreviewSurface(private val view: TextureView) : TextureVie
     private val destroyed = mutableSetOf<SurfaceTexture>()
     val provider = Preview.SurfaceProvider { request ->
         if (closed) request.willNotProvideSurface() else {
+            onGeometry(null)
+            info = null
             pending?.willNotProvideSurface()
             pending = request
-            request.setTransformationInfoListener(executor) { value -> info = value; transform() }
+            request.setTransformationInfoListener(executor) { value ->
+                if (request === activeRequest || request === pending) { info = value; transform() }
+            }
             supply()
         }
     }
@@ -282,17 +351,25 @@ private class RecorderPreviewSurface(private val view: TextureView) : TextureVie
             postTranslate(view.width / 2f, view.height / 2f)
         }
         view.setTransform(matrix)
+        val transformation = info
+        if (transformation == null) onGeometry(null) else {
+            val sensorMatrix = FloatArray(9).also(transformation.sensorToBufferTransform::getValues)
+            onGeometry(LanePreviewGeometry(bufferWidth, bufferHeight, crop.left, crop.top, crop.right, crop.bottom,
+                rotation, transformation.isMirroring, sensorMatrix.map(Float::toDouble), view.width, view.height))
+        }
     }
     override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) = supply()
     override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) = transform()
     override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
     override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
+        onGeometry(null)
         destroyed += texture
         activeRequest?.invalidate()
         if ((uses[texture] ?: 0) == 0) { texture.release(); destroyed.remove(texture) }
         return false
     }
     override fun close() {
+        onGeometry(null)
         closed = true
         pending?.willNotProvideSurface()
         pending = null
@@ -335,6 +412,13 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
     val active = ui.driveRecorderState in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
+            ParityToggle(parityText("Show detected lanes", "Erkannte Fahrspuren anzeigen", "Afficher les voies détectées", "Gedetecteerde rijstroken tonen"),
+                ui.showDetectedLanes, tag = "show-detected-lanes-toggle", onChange = controller::setShowDetectedLanes)
+            Text(parityText("Show lane markings in the live dashcam preview. Saved videos stay unchanged.",
+                "Fahrspurmarkierungen in der Live-Dashcam-Vorschau anzeigen. Gespeicherte Videos bleiben unverändert.",
+                "Afficher les voies dans l’aperçu dashcam en direct. Les vidéos enregistrées restent inchangées.",
+                "Toon rijstrookmarkeringen in het live dashcambeeld. Opgeslagen video's blijven ongewijzigd."),
+                style = MaterialTheme.typography.bodySmall)
             ParityToggle(parityText("Traffic-sign recognition", "Verkehrszeichenerkennung", "Reconnaissance des panneaux", "Verkeersbordherkenning"),
                 ui.trafficSignRecognitionEnabled, !active, "traffic-sign-recognition-toggle", controller::setTrafficSignRecognitionEnabled)
             ParityToggle(parityText("Show other traffic signs", "Andere Verkehrszeichen anzeigen", "Afficher les autres panneaux", "Andere verkeersborden tonen"),

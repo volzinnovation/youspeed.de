@@ -355,3 +355,12 @@
 "onboarding.screenshot.title" = "Schermafbeelding";
 "onboarding.screenshot.close" = "Sluiten";
 "onboarding.panoramax.account_screenshot" = "Verbind je Panoramax-account in Instellingen voordat je geselecteerde foto’s uploadt.";
+
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Gedetecteerde rijstroken tonen";
+"drive_recorder.settings.lanes_description" = "Experimentele rijstrookgrenzen in het live dashcambeeld tonen. Onzekere of verouderde lijnen vervagen; ze worden niet in de video opgeslagen.";
+"drive_recorder.lanes.status" = "Gedetecteerde rijstroken: %@";
+"drive_recorder.lanes.reliable" = "Betrouwbaar";
+"drive_recorder.lanes.uncertain" = "Onzeker";
+"drive_recorder.lanes.unavailable" = "Niet beschikbaar";
+"drive_recorder.lanes.paused" = "Gepauzeerd";

@@ -8,6 +8,7 @@ This directory contains the public technical documentation for YouSpeed.
 - [`TILE_ASSET_MIGRATION_PLAN.md`](TILE_ASSET_MIGRATION_PLAN.md): migration notes for the tile format
 - [`KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md`](KARLSRUHE_INCREMENTAL_SEED_ROLLOUT.md): incremental seed-bundle design
 - [`VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md`](VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md): optional traffic-sign recognition design
+- [`LANE_DETECTION.md`](LANE_DETECTION.md): optional dashcam lane overlay, camera integration and validation protocol
 - [`release/STORE_RELEASE_CHECKLIST.md`](release/STORE_RELEASE_CHECKLIST.md): public mobile-store release checks
 
 Platform setup and testing instructions live beside each implementation in [`../android/README.md`](../android/README.md) and [`../iphone/SpeedConsumerApp/README.md`](../iphone/SpeedConsumerApp/README.md).

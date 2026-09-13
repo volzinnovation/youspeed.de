@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import androidx.camera.core.Preview
@@ -334,6 +335,7 @@ data class ConsumerUiState(
     val driveRecorderState: DriveRecorderState = DriveRecorderState.DISABLED,
     val driveRecorderStartedAt: Instant? = null,
     val dashcamRecordingEnabled: Boolean = false,
+    val showDetectedLanes: Boolean = false,
     val driveRecorderDashcamActive: Boolean = false,
     val driveRecorderDashcamTransitioning: Boolean = false,
     val driveRecorderPanoramaxActive: Boolean = false,
@@ -564,6 +566,14 @@ class ConsumerSessionController(
     private var panoramaxCaptureEnabled = preferences.getBoolean(KEY_PANORAMAX_CAPTURE_ENABLED, true)
     @Volatile private var driveRecorderEnabled = false
     @Volatile private var applicationActive = true
+    @Volatile private var lanePreviewVisible = false
+    @Volatile private var lanePreviewScope = 0L
+    internal var lanePreviewGeometry by mutableStateOf<LanePreviewGeometry?>(null)
+        private set
+    internal var laneRuntimeSnapshot by mutableStateOf(LaneRuntimeSnapshot())
+        private set
+    private data class LanePaintMetric(val scope: Long, val frameId: Long, val ageMs: Double, val estimated: Boolean)
+    private var lanePaintMetric: LanePaintMetric? = null
     private val captureLock = Any()
     private val feedbackGate = TrafficSignFeedbackGate()
     private var confirmationToneUntilMs = 0L
@@ -649,6 +659,7 @@ class ConsumerSessionController(
             matcherDebugProfile = initialMatcherDebugProfile,
             trafficSignRecognitionEnabled = preferences.getBoolean(KEY_TRAFFIC_SIGN_RECOGNITION_ENABLED, false),
             otherTrafficSignDisplayEnabled = preferences.getBoolean(KEY_OTHER_TRAFFIC_SIGN_DISPLAY_ENABLED, false),
+            showDetectedLanes = preferences.getBoolean("youspeed.drive_recorder.show_detected_lanes", false),
             trafficSignRecognitionIndependentEnabled = preferences.getBoolean("youspeed.drive_recorder.tsr_independent_enabled", false),
             trafficSignFeedbackMode = runCatching { TrafficSignFeedbackMode.valueOf(preferences.getString("youspeed.drive_recorder.tsr_feedback_mode", "SOUND")!!) }.getOrDefault(TrafficSignFeedbackMode.SOUND),
             panoramaxTriggerMode = runCatching { PanoramaxCaptureTriggerMode.valueOf(preferences.getString("youspeed.panoramax.trigger_mode", "DISTANCE")!!) }.getOrDefault(PanoramaxCaptureTriggerMode.DISTANCE),
@@ -987,6 +998,81 @@ class ConsumerSessionController(
     internal fun isDashcamRecordingEnabled(): Boolean = isDriveRecorderSessionActive() && uiState.dashcamRecordingEnabled
     internal fun isPanoramaxCaptureEnabled(): Boolean = panoramaxCaptureEnabled && isDriveRecorderSessionActive()
 
+    internal fun laneAdmission(thermallyPaused: Boolean): LaneAdmission = LaneAdmission(
+        enabled = uiState.showDetectedLanes && lanePreviewVisible && lanePreviewGeometry != null &&
+            isDashcamRecordingEnabled() && uiState.driveRecorderDashcamActive &&
+            uiState.driveRecorderState == DriveRecorderState.RECORDING,
+        scope = lanePreviewScope,
+        thermallyPaused = thermallyPaused,
+    )
+
+    fun setShowDetectedLanes(enabled: Boolean) {
+        if (uiState.showDetectedLanes == enabled) return
+        preferences.edit().putBoolean("youspeed.drive_recorder.show_detected_lanes", enabled).apply()
+        updateState { copy(showDetectedLanes = enabled) }
+        clearLanePreview()
+    }
+
+    internal fun setLanePreviewVisible(visible: Boolean) {
+        if (lanePreviewVisible == visible) return
+        lanePreviewVisible = visible
+        clearLanePreview()
+    }
+
+    internal fun setLanePreviewGeometry(geometry: LanePreviewGeometry?) {
+        if (lanePreviewGeometry == geometry) return
+        lanePreviewGeometry = geometry
+        clearLanePreview()
+    }
+
+    private fun clearLanePreview() {
+        lanePreviewScope++
+        laneRuntimeSnapshot = LaneRuntimeSnapshot()
+        lanePaintMetric = null
+    }
+
+    internal fun onLaneDetectionResult(snapshot: LaneRuntimeSnapshot) {
+        if (snapshot.scope == lanePreviewScope) laneRuntimeSnapshot = snapshot
+    }
+
+    /** Called on the first Canvas draw of each result; does not mutate Compose state. */
+    internal fun onLaneOverlayPainted(snapshot: LaneRuntimeSnapshot) {
+        if (snapshot.scope != lanePreviewScope || (lanePaintMetric?.scope == snapshot.scope &&
+                lanePaintMetric?.frameId == snapshot.frameId)) return
+        lanePaintMetric = LanePaintMetric(snapshot.scope, snapshot.frameId,
+            (SystemClock.elapsedRealtimeNanos() - snapshot.capturedAtNanos) / 1e6, snapshot.captureAgeEstimated)
+    }
+
+    internal fun onLaneDetectionDiagnostics(snapshot: LaneRuntimeSnapshot) {
+        appendRuntimeDiagnosticEvent("lane_preview_performance", mapOf(
+            "frame_id" to snapshot.frameId, "state" to snapshot.state.name,
+            "preprocessing_ms" to snapshot.preprocessingMs, "detection_ms" to snapshot.detectionMs,
+            "capture_to_result_ms" to snapshot.captureToResultMs,
+            "capture_age_estimated" to snapshot.captureAgeEstimated,
+            "result_callback_age_ms" to ((SystemClock.elapsedRealtimeNanos() - snapshot.capturedAtNanos) / 1e6),
+            "first_painted_frame_id" to lanePaintMetric?.frameId,
+            "first_overlay_paint_age_ms" to lanePaintMetric?.ageMs,
+            "first_overlay_paint_age_estimated" to lanePaintMetric?.estimated,
+            "preview_scope" to snapshot.scope,
+            "image_width" to snapshot.geometry?.width, "image_height" to snapshot.geometry?.height,
+            "image_rotation_degrees" to snapshot.geometry?.rotationDegrees,
+            "processed_frames" to snapshot.processedFrames, "replaced_frames" to snapshot.replacedFrames,
+            "throttled_frames" to snapshot.throttledFrames,
+            "timestamp_rejected_frames" to snapshot.timestampRejectedFrames,
+            "window_samples" to snapshot.performance?.sampleCount,
+            "completed_frames_per_second" to snapshot.performance?.completedFramesPerSecond,
+            "preprocessing_p50_ms" to snapshot.performance?.preprocessing?.p50,
+            "preprocessing_p95_ms" to snapshot.performance?.preprocessing?.p95,
+            "preprocessing_max_ms" to snapshot.performance?.preprocessing?.maximum,
+            "detection_p50_ms" to snapshot.performance?.detection?.p50,
+            "detection_p95_ms" to snapshot.performance?.detection?.p95,
+            "detection_max_ms" to snapshot.performance?.detection?.maximum,
+            "capture_to_result_p50_ms" to snapshot.performance?.captureToResult?.p50,
+            "capture_to_result_p95_ms" to snapshot.performance?.captureToResult?.p95,
+            "capture_to_result_max_ms" to snapshot.performance?.captureToResult?.maximum,
+        ))
+    }
+
     fun canProcessPanoramaxUploads(): Boolean = !driveRecorderEnabled && DriveRecorderPolicy.canProcessPanoramaxUploads(uiState.driveRecorderState) &&
         !uiState.panoramaxMaintenanceInProgress
 
@@ -1001,6 +1087,7 @@ class ConsumerSessionController(
         }
         if (applicationActive == active) return
         applicationActive = active
+        clearLanePreview()
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
         if (!active) {
             if (driveRecorderEnabled) stopDriveRecorder()
@@ -1035,6 +1122,7 @@ class ConsumerSessionController(
         stopPanoramaxUploads()
         latestDashcamEventPath = null
         driveRecorderEnabled = true
+        clearLanePreview()
         feedbackGate.reset()
         updateState { copy(driveRecorderState = DriveRecorderState.PREPARING, dashcamRecordingEnabled = true,
             driveRecorderStartedAt = clock.instant(), trafficSignRecognitionUnavailable = false) }
@@ -1044,6 +1132,7 @@ class ConsumerSessionController(
 
     private fun stopDriveRecorder() {
         driveRecorderEnabled = false
+        clearLanePreview()
         updateState { copy(driveRecorderState = DriveRecorderState.STOPPING, dashcamRecordingEnabled = false,
             driveRecorderPanoramaxActive = false) }
         endPanoramaxCaptureSession()
@@ -1056,6 +1145,7 @@ class ConsumerSessionController(
     fun toggleDriveRecorderDashcam() {
         if (uiState.driveRecorderState != DriveRecorderState.RECORDING || uiState.driveRecorderDashcamTransitioning) return
         updateState { copy(dashcamRecordingEnabled = !dashcamRecordingEnabled, driveRecorderDashcamTransitioning = true) }
+        clearLanePreview()
         reconcileTrafficSignCamera()
     }
 
@@ -1480,10 +1570,15 @@ class ConsumerSessionController(
     }
 
     fun onDashcamRecordingStateChanged(active: Boolean, transitioning: Boolean = false, path: String) {
-        postState { if (path != latestDashcamEventPath) this else copy(driveRecorderDashcamActive = active, driveRecorderDashcamTransitioning = transitioning,
-            dashcamRecordingEnabled = if (!active && !transitioning) false else dashcamRecordingEnabled,
-            driveRecorderState = if (!driveRecorderEnabled && !active && !transitioning) DriveRecorderState.DISABLED else driveRecorderState,
-            driveRecorderStartedAt = if (!driveRecorderEnabled && !active && !transitioning) null else driveRecorderStartedAt) }
+        postState {
+            if (path != latestDashcamEventPath) this else {
+                if (driveRecorderDashcamActive != active || driveRecorderDashcamTransitioning != transitioning) clearLanePreview()
+                copy(driveRecorderDashcamActive = active, driveRecorderDashcamTransitioning = transitioning,
+                    dashcamRecordingEnabled = if (!active && !transitioning) false else dashcamRecordingEnabled,
+                    driveRecorderState = if (!driveRecorderEnabled && !active && !transitioning) DriveRecorderState.DISABLED else driveRecorderState,
+                    driveRecorderStartedAt = if (!driveRecorderEnabled && !active && !transitioning) null else driveRecorderStartedAt)
+            }
+        }
     }
 
     fun onDashcamCameraReleased() {
@@ -1839,6 +1934,7 @@ class ConsumerSessionController(
     private fun reconcileTrafficSignCamera() {
         val shouldRun = !shouldPresentOnboarding() && (isTrafficSignRecognitionRuntimeEnabled() || isDriveRecorderSessionActive()) && uiState.appScreenshotState == null
         if (!shouldRun) {
+            clearLanePreview()
             host?.stopTrafficSignCamera()
             updateState {
                 copy(

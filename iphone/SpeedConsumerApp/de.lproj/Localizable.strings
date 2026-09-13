@@ -355,3 +355,12 @@
 "onboarding.screenshot.title" = "Screenshot";
 "onboarding.screenshot.close" = "Schließen";
 "onboarding.panoramax.account_screenshot" = "Verbinde dein Panoramax-Konto in den Einstellungen, bevor du ausgewählte Fotos hochlädst.";
+
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Erkannte Fahrspuren anzeigen";
+"drive_recorder.settings.lanes_description" = "Experimentelle Fahrspurgrenzen in der Live-Dashcam-Vorschau anzeigen. Unsichere oder veraltete Linien verblassen; sie werden nicht im Video gespeichert.";
+"drive_recorder.lanes.status" = "Erkannte Fahrspuren: %@";
+"drive_recorder.lanes.reliable" = "Zuverlässig";
+"drive_recorder.lanes.uncertain" = "Unsicher";
+"drive_recorder.lanes.unavailable" = "Nicht verfügbar";
+"drive_recorder.lanes.paused" = "Pausiert";

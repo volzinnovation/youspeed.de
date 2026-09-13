@@ -11,6 +11,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.ImageFormat
 import android.hardware.HardwareBuffer
+import android.hardware.camera2.CameraCharacteristics
 import android.media.ImageReader
 import android.os.PowerManager
 import android.os.Handler
@@ -19,6 +20,8 @@ import android.os.Looper
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.CameraSelector
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -602,6 +605,18 @@ internal class AndroidTrafficSignCameraRuntime(
     private var activeRecordingFile: File? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
     @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
+    @Volatile private var laneClockIsRealtime = false
+    private val laneRuntime = AndroidLaneDetectionRuntime(
+        mainExecutor = mainExecutor,
+        admission = {
+            val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus
+                ?: PowerManager.THERMAL_STATUS_NONE
+            controller.laneAdmission(thermal >= PowerManager.THERMAL_STATUS_SEVERE)
+        },
+        clockIsRealtime = { laneClockIsRealtime },
+        onResult = controller::onLaneDetectionResult,
+        onDiagnostics = controller::onLaneDetectionDiagnostics,
+    )
 
     // A hidden preview still supplies a surface. Removing the UI must never
     // suspend analysis or movie recording while CameraX waits for its surface.
@@ -731,6 +746,7 @@ internal class AndroidTrafficSignCameraRuntime(
         controller.onTrafficSignRecognitionUnavailable(detail, recognitionGeneration)
     }
 
+    @androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
     private fun bindCamera(startGeneration: Long) {
         val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
         if (cameraBindingInProgress ||
@@ -767,6 +783,9 @@ internal class AndroidTrafficSignCameraRuntime(
                         .build()
                         .also { imageAnalysis ->
                             imageAnalysis.setAnalyzer(cameraExecutor) { image ->
+                                // Copy the admitted low-resolution Y plane before TSR owns
+                                // this ImageProxy. Lane work never retains or closes it.
+                                laneRuntime.submit(image)
                                 val current = bridge
                                 if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
                             }
@@ -800,7 +819,11 @@ internal class AndroidTrafficSignCameraRuntime(
                 val oldUseCases = listOfNotNull(preview, imageAnalysis, imageCapture, videoCapture)
                 if (cameraBound) provider.unbind(*oldUseCases.toTypedArray())
                 val useCases = listOfNotNull(currentPreview, analysis, capture, video)
-                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                val camera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                laneClockIsRealtime = runCatching {
+                    Camera2CameraInfo.from(camera.cameraInfo).getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE) ==
+                        CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME
+                }.getOrDefault(false)
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
@@ -951,6 +974,7 @@ internal class AndroidTrafficSignCameraRuntime(
         if (!closed.compareAndSet(false, true)) return
         generation.incrementAndGet()
         videoRequested = false
+        laneRuntime.close()
         bridge?.close()
         bridge = null
         backend?.close()

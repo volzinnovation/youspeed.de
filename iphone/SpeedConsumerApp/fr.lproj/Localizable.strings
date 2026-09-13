@@ -355,3 +355,12 @@
 "onboarding.screenshot.title" = "Capture d’écran";
 "onboarding.screenshot.close" = "Fermer";
 "onboarding.panoramax.account_screenshot" = "Connectez votre compte Panoramax dans les réglages avant d’envoyer les photos sélectionnées.";
+
+// Live lane visualization
+"drive_recorder.settings.lanes" = "Afficher les voies détectées";
+"drive_recorder.settings.lanes_description" = "Afficher les limites de voie expérimentales dans l’aperçu en direct. Les lignes incertaines ou anciennes s’estompent ; elles ne sont pas enregistrées dans la vidéo.";
+"drive_recorder.lanes.status" = "Voies détectées : %@";
+"drive_recorder.lanes.reliable" = "Fiables";
+"drive_recorder.lanes.uncertain" = "Incertaines";
+"drive_recorder.lanes.unavailable" = "Indisponibles";
+"drive_recorder.lanes.paused" = "En pause";

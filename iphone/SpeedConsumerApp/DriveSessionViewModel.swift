@@ -657,6 +657,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             handleTrafficSignRecognitionSettingChange()
         }
     }
+    @Published var showDetectedLanes: Bool {
+        didSet {
+            UserDefaults.standard.set(showDetectedLanes, forKey: "youspeed.drive_recorder.show_detected_lanes")
+            refreshLaneDetectionActivity()
+        }
+    }
+    let laneDetectionRuntime = LaneDetectionRuntime()
     @Published var trafficSignRecognitionIndependentEnabled: Bool {
         didSet {
             guard trafficSignRecognitionIndependentEnabled != oldValue else { return }
@@ -1446,6 +1453,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // Keep on-device TSR opt-in; its German bootstrap model ships with the
         // app and is prepared in the background.
         trafficSignRecognitionEnabled = storedTSREnabled ?? false
+        showDetectedLanes = UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.show_detected_lanes")
         trafficSignRecognitionIndependentEnabled = storedTSRIndependentEnabled ?? false
         trafficSignPictogramEnabled = UserDefaults.standard.bool(forKey: "youspeed.drive_recorder.tsr_pictogram_enabled")
         trafficSignFeedbackMode = storedTSRFeedbackMode ?? .sound
@@ -1467,6 +1475,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         panoramaxQueueStore = try? PanoramaxQueueStore(performStartupMaintenance: false)
         startPanoramaxQueueMaintenance()
         driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: panoramaxQueueStore)
+        driveCaptureCoordinator?.setLaneFrameConsumer(laneDetectionRuntime)
+        laneDetectionRuntime.onActivityChange = { [weak self] enabled in
+            self?.driveCaptureCoordinator?.setLaneAnalysisEnabled(enabled)
+        }
         applyPanoramaxConfiguration()
         driveCaptureCoordinator?.onChange = { [weak self] in
             self?.syncDriveRecorderState()
@@ -1734,6 +1746,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// The camera queue never reaches into this MainActor-owned view model.
     func setTrafficSignApplicationActive(_ isActive: Bool) {
         trafficSignApplicationIsActive = isActive
+        refreshLaneDetectionActivity()
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
         reconcileStandaloneTrafficSignRecognition(allowTerminalRetry: isActive)
@@ -1742,6 +1755,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var trafficSignProcessingIsEnabled: Bool {
         trafficSignMutationIsEnabled
             && trafficSignApplicationIsActive
+    }
+
+    private func refreshLaneDetectionActivity() {
+        laneDetectionRuntime.configure(
+            enabled: showDetectedLanes,
+            recording: driveCaptureCoordinator?.state == .recording
+                && driveCaptureCoordinator?.isDashcamModuleActive == true,
+            appActive: trafficSignApplicationIsActive,
+            sessionID: driveCaptureCoordinator?.activeCaptureSessionID,
+            sourceClock: driveCaptureCoordinator?.session.synchronizationClock
+        )
     }
 
     private var trafficSignMutationIsEnabled: Bool {
@@ -2800,6 +2824,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         driveRecorderTrafficSignRecognitionActive = driveCaptureCoordinator?.isTrafficSignRecognitionModuleActive ?? false
         driveRecorderTrafficSignRecognitionAvailable = driveCaptureCoordinator?.isTrafficSignRecognitionOutputAvailable ?? false
         driveRecorderPanoramaxActive = driveCaptureCoordinator?.isPanoramaxModuleActive ?? false
+        refreshLaneDetectionActivity()
         // The model may finish loading while camera permission/session setup is
         // still in progress. Honor the persisted chip selection as soon as the
         // coordinator reaches recording instead of requiring a second tap.

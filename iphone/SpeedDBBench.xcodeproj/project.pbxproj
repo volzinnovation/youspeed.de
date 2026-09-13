@@ -34,6 +34,7 @@
 		3DB5A95CCF0E10954593C7A9 /* luxembourg.poly in Resources */ = {isa = PBXBuildFile; fileRef = 3A73CDF8C3D4A7F7690153AA /* luxembourg.poly */; };
 		401C999BA34C8E1228B07B82 /* TrafficSignRecognition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32933858989CDE151BF55061 /* TrafficSignRecognition.swift */; };
 		48A333119998BC7A7EE86F1B /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
+		4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */; };
 		4E22751463668A7F86A3E491 /* iceland.poly in Resources */ = {isa = PBXBuildFile; fileRef = 3402DBBFAB304CAAFB0D5BAF /* iceland.poly */; };
 		4F0869F2CF922E1DDBAA2D65 /* legal.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9C00B7D4BAE2E00537C6B0B6 /* legal.txt */; };
 		4F74D049C1C2FDBE21F4558D /* tsr-panoramax-49e25e66.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4BC8711F5E9A8499C659EB9A /* tsr-panoramax-49e25e66.jpg */; };
@@ -44,6 +45,7 @@
 		5F554FF958BBABA79B8DD61D /* country-pack-registry-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */; };
 		63A1FDBA6F50BAF6E0D5A450 /* replay_track.kml in Resources */ = {isa = PBXBuildFile; fileRef = 9555D2DA081CCC7879470683 /* replay_track.kml */; };
 		6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 91B1B7ECB133C4AB02844194 /* ISL-rules.json */; };
+		6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1443061001BB609384462B /* LaneDetectionTests.swift */; };
 		7006E9AACC2D0E6939BEB8F9 /* SpeedDBBenchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */; };
 		742D763EA2475FF202180A34 /* bremen.poly in Resources */ = {isa = PBXBuildFile; fileRef = 817610973D395000FCEA8AF3 /* bremen.poly */; };
 		7451111A890B7585403A4372 /* TrafficSignShadowRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8508CFB9C9C5E5675C173D23 /* TrafficSignShadowRuntime.swift */; };
@@ -88,10 +90,12 @@
 		CC4EA803C4F7EFEBAA1DB1EE /* replay_track.gpx in Resources */ = {isa = PBXBuildFile; fileRef = AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */; };
 		CD944493365287C44D291E6E /* sweden.poly in Resources */ = {isa = PBXBuildFile; fileRef = 35751CA31400D0ACB6FC9A0E /* sweden.poly */; };
 		D333E4979D43534B1960C9E7 /* SpeedPenaltyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BE266A4DD3AE0B606D3F37 /* SpeedPenaltyRules.swift */; };
+		D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */; };
 		D679D5F480EAB8BF637CB901 /* LIE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */; };
 		D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AC054A6BC61AC4CD32E2F38 /* PanoramaxRecorder.swift */; };
 		D70C48E9F6CAEF7621025A83 /* attributions in Resources */ = {isa = PBXBuildFile; fileRef = 8C96B1695E93488607A5558F /* attributions */; };
 		D711F742798EA9D22533DD9A /* TrafficSignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */; };
+		D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */; };
 		DB637F1F956128BA7B69264C /* SQLiteBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */; };
 		E0878342351689F72CF6243B /* sachsen-anhalt.poly in Resources */ = {isa = PBXBuildFile; fileRef = CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */; };
 		E93B7697F175F99D0D1E163B /* LUX-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 851DCDB1BD9140D246609FF4 /* LUX-rules.json */; };
@@ -168,6 +172,7 @@
 		5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "country-pack-registry-v1.json"; sourceTree = "<group>"; };
 		68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */ = {isa = PBXFileReference; path = "baden-wuerttemberg.poly"; sourceTree = "<group>"; };
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; path = hessen.poly; sourceTree = "<group>"; };
+		6C1443061001BB609384462B /* LaneDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionTests.swift; sourceTree = "<group>"; };
 		6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceAttributions.swift; sourceTree = "<group>"; };
 		734BE1C063C1A673E23AE2B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */ = {isa = PBXFileReference; path = "mecklenburg-vorpommern.poly"; sourceTree = "<group>"; };
@@ -198,6 +203,7 @@
 		A6ED7E750AD7935392C27FFB /* belgium.poly */ = {isa = PBXFileReference; path = belgium.poly; sourceTree = "<group>"; };
 		A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = karlsruhe_variants.json; sourceTree = "<group>"; };
 		AA6714BC0E2B255C7AB5618D /* SpeedDBBenchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchApp.swift; sourceTree = "<group>"; };
+		ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionRuntime.swift; sourceTree = "<group>"; };
 		AD0551D5A2A80CF4977A8C71 /* replay_track.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = replay_track.gpx; sourceTree = "<group>"; };
 		B039211EBB57486701EE3554 /* BEL-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "BEL-rules.json"; sourceTree = "<group>"; };
 		B22B25E507BC34DEDF1FF173 /* StartupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupView.swift; sourceTree = "<group>"; };
@@ -209,6 +215,7 @@
 		BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSessionViewModel.swift; sourceTree = "<group>"; };
 		C30AA5A019882EBB0B4B0DA3 /* SpeedConsumer.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SpeedConsumer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C581EF7B8F3025A2F6113FAB /* monaco.poly */ = {isa = PBXFileReference; path = monaco.poly; sourceTree = "<group>"; };
+		C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetection.swift; sourceTree = "<group>"; };
 		CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */ = {isa = PBXFileReference; path = "schleswig-holstein.poly"; sourceTree = "<group>"; };
 		CE138CD23AE2B4EC6E7F347B /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		CFB95C79A397D9A68CD1CDB5 /* sachsen-anhalt.poly */ = {isa = PBXFileReference; path = "sachsen-anhalt.poly"; sourceTree = "<group>"; };
@@ -218,6 +225,7 @@
 		E178F2DA753300F0D332FA56 /* DEU-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "DEU-rules.json"; sourceTree = "<group>"; };
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LIE-rules.json"; sourceTree = "<group>"; };
+		ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaneDetectionRuntimeTests.swift; sourceTree = "<group>"; };
 		F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = karlsruhe_v3_A_geom16.sqlite; sourceTree = "<group>"; };
 		FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteBenchmarkRunner.swift; sourceTree = "<group>"; };
@@ -238,6 +246,10 @@
 				BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */,
 				5393AC2745A8215F4024E5DF /* en.lproj */,
 				881D085EDE2D348B7DF817C8 /* fr.lproj */,
+				C9CEBD6C0203A9D6C46955EF /* LaneDetection.swift */,
+				ACC246DEFF0D2E1BB0EE2AD1 /* LaneDetectionRuntime.swift */,
+				ED0EE73EBD62C9AFC470ABD8 /* LaneDetectionRuntimeTests.swift */,
+				6C1443061001BB609384462B /* LaneDetectionTests.swift */,
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
 				5460B7376654275955039717 /* MainView.swift */,
 				E1EF5534FE6EF8015DB05730 /* nl.lproj */,
@@ -647,6 +659,8 @@
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */,
 				B5530C9955E710BAEA5A27DD /* DriveSessionViewModel.swift in Sources */,
+				D60CF7D362BC29B5DEA0BECF /* LaneDetection.swift in Sources */,
+				4BE89006C90A4D59F921E5F1 /* LaneDetectionRuntime.swift in Sources */,
 				3189ACFB74E79AE546103ABB /* MainView.swift in Sources */,
 				2ADF071D330B6BD4E18E707D /* PanoramaxAccount.swift in Sources */,
 				BEF5831BB315456116060F66 /* PanoramaxCapture.swift in Sources */,
@@ -674,6 +688,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D7505C79B7A772FFE3B8ADE3 /* LaneDetectionRuntimeTests.swift in Sources */,
+				6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */,
 				197A06403B8311B89F11D4D6 /* SpeedConsumerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
