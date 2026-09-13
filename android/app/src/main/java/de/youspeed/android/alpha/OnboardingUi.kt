@@ -141,6 +141,7 @@ internal fun OnboardingScreen(
                         SetupScreenshot(R.drawable.onboarding_video_library, R.string.onboarding_video_screenshot)
                         SetupInfo(R.string.onboarding_dashcam_control_title, R.string.onboarding_dashcam_control_body)
                         SetupInfo(R.string.onboarding_dashcam_library_title, R.string.onboarding_dashcam_library_body)
+                        SetupInfo(R.string.onboarding_dashcam_permission_title, R.string.onboarding_dashcam_permission_body)
                     }
                     3 -> {
                         SetupBody(R.string.onboarding_sources_body)

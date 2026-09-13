@@ -65,6 +65,8 @@
     <string name="onboarding_dashcam_control_body">Tap the recorder button when you are ready. Its timer shows the session. Turn video off separately while keeping sign recognition or photos active. Camera permission is requested when you use the camera.</string>
     <string name="onboarding_dashcam_library_title">Play, share or delete videos</string>
     <string name="onboarding_dashcam_library_body">Open the video library after stopping. Tap a video to play it, use Share to send or upload it through another app, or select recordings to delete locally. YouSpeed keeps videos on this device; Panoramax uploads are for photos.</string>
+    <string name="onboarding_dashcam_permission_title">Camera and video permission</string>
+    <string name="onboarding_dashcam_permission_body">Android asks for camera permission when the camera is first started. This permission covers camera frames and video capture. Nothing is recorded during setup, and sign recognition without recording does not save video.</string>
     <string name="onboarding_sources_title">Where limits come from</string>
     <string name="onboarding_sources_body">Your map and own corrections work without a camera. Camera recognition adds roadside signs.</string>
     <string name="onboarding_source_map_title">Downloaded map</string>

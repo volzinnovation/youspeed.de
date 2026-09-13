@@ -50,7 +50,7 @@
     <string name="onboarding_download" tools:ignore="MissingTranslation">Download map</string>
     <string name="onboarding_retry_download" tools:ignore="MissingTranslation">Retry download</string>
     <string name="onboarding_map_ready" tools:ignore="MissingTranslation">Your downloaded map is ready.</string>
-    <string name="onboarding_map_required" tools:ignore="MissingTranslation">Download a map to continue. The included sample is not enough for setup.</string>
+    <string name="onboarding_map_required" tools:ignore="MissingTranslation">Download a map to continue.</string>
     <string name="onboarding_map_network" tools:ignore="MissingTranslation">The download uses your internet connection, including mobile data. Afterward, the map works offline. Map data: OpenStreetMap contributors.</string>
     <string name="onboarding_driving_title" tools:ignore="MissingTranslation">Ready for the road</string>
     <string name="onboarding_driving_body" tools:ignore="MissingTranslation">Allow precise location while using the app so YouSpeed can match your road and show your current speed. You can also choose spoken speed alerts.</string>
@@ -67,6 +67,8 @@
     <string name="onboarding_dashcam_control_body" tools:ignore="MissingTranslation">Tap the recorder button when you are ready. Its timer shows the session. Turn video off separately while keeping sign recognition or photos active. Camera permission is requested when you use the camera.</string>
     <string name="onboarding_dashcam_library_title" tools:ignore="MissingTranslation">Play, share or delete videos</string>
     <string name="onboarding_dashcam_library_body" tools:ignore="MissingTranslation">Open the video library after stopping. Tap a video to play it, use Share to send or upload it through another app, or select recordings to delete locally. YouSpeed keeps videos on this device; Panoramax uploads are for photos.</string>
+    <string name="onboarding_dashcam_permission_title" tools:ignore="MissingTranslation">Camera and video permission</string>
+    <string name="onboarding_dashcam_permission_body" tools:ignore="MissingTranslation">Android asks for camera permission when the camera is first started. This permission covers camera frames and video capture. Nothing is recorded during setup, and sign recognition without recording does not save video.</string>
     <string name="onboarding_sources_title" tools:ignore="MissingTranslation">Where limits come from</string>
     <string name="onboarding_sources_body" tools:ignore="MissingTranslation">Your map and own corrections work without a camera. Camera recognition adds roadside signs.</string>
     <string name="onboarding_source_map_title" tools:ignore="MissingTranslation">Downloaded map</string>

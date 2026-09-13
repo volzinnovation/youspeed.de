@@ -48,7 +48,7 @@
     <string name="onboarding_download">Kaart downloaden</string>
     <string name="onboarding_retry_download">Download opnieuw proberen</string>
     <string name="onboarding_map_ready">Je gedownloade kaart is klaar.</string>
-    <string name="onboarding_map_required">Download een kaart om door te gaan. De meegeleverde voorbeeldkaart is niet voldoende.</string>
+    <string name="onboarding_map_required">Download een kaart om door te gaan.</string>
     <string name="onboarding_map_network">De download gebruikt je internetverbinding, ook mobiele data. Daarna werkt de kaart offline. Kaartgegevens: OpenStreetMap-bijdragers.</string>
     <string name="onboarding_driving_title">Klaar voor onderweg</string>
     <string name="onboarding_driving_body">Sta precieze locatie toe tijdens gebruik zodat YouSpeed je weg en actuele snelheid kan bepalen. Je kunt ook gesproken snelheidswaarschuwingen kiezen.</string>
@@ -65,6 +65,8 @@
     <string name="onboarding_dashcam_control_body">Tik op de recorderknop wanneer je klaar bent. De timer toont de sessie. Zet video apart uit terwijl bordherkenning of foto’s actief blijven. Cameratoestemming wordt gevraagd bij gebruik.</string>
     <string name="onboarding_dashcam_library_title">Video’s afspelen, delen of verwijderen</string>
     <string name="onboarding_dashcam_library_body">Open de videobibliotheek na het stoppen. Speel een video af, gebruik Delen om deze via een andere app te versturen of uploaden, of selecteer opnamen om lokaal te verwijderen. Video’s blijven op dit apparaat; Panoramax-uploads zijn voor foto’s.</string>
+    <string name="onboarding_dashcam_permission_title">Camera- en videotoestemming</string>
+    <string name="onboarding_dashcam_permission_body">Android vraagt bij de eerste start van de camera om cameratoestemming. Deze toestemming omvat camerabeelden en video-opname. Tijdens de installatie wordt niets opgenomen en herkenning zonder opname slaat geen video op.</string>
     <string name="onboarding_sources_title">Waar limieten vandaan komen</string>
     <string name="onboarding_sources_body">Je kaart en eigen correcties werken zonder camera. Cameraherkenning voegt verkeersborden toe.</string>
     <string name="onboarding_source_map_title">Gedownloade kaart</string>

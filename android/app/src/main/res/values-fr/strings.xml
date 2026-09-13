@@ -48,7 +48,7 @@
     <string name="onboarding_download">Télécharger la carte</string>
     <string name="onboarding_retry_download">Réessayer le téléchargement</string>
     <string name="onboarding_map_ready">Votre carte téléchargée est prête.</string>
-    <string name="onboarding_map_required">Téléchargez une carte pour continuer. L’exemple inclus ne suffit pas pour la configuration.</string>
+    <string name="onboarding_map_required">Téléchargez une carte pour continuer.</string>
     <string name="onboarding_map_network">Le téléchargement utilise votre connexion internet, y compris les données mobiles. La carte fonctionne ensuite hors ligne. Données : contributeurs OpenStreetMap.</string>
     <string name="onboarding_driving_title">Prêt pour la route</string>
     <string name="onboarding_driving_body">Autorisez la position précise pendant l’utilisation pour identifier votre route et afficher votre vitesse. Vous pouvez aussi activer les alertes vocales.</string>
@@ -65,6 +65,8 @@
     <string name="onboarding_dashcam_control_body">Appuyez sur le bouton de l’enregistreur pour commencer. Le minuteur indique la session. Désactivez la vidéo séparément tout en gardant la reconnaissance ou les photos. L’autorisation est demandée à l’utilisation de la caméra.</string>
     <string name="onboarding_dashcam_library_title">Lire, partager ou supprimer les vidéos</string>
     <string name="onboarding_dashcam_library_body">Après l’arrêt, ouvrez la vidéothèque. Lisez une vidéo, utilisez Partager pour l’envoyer via une autre application ou sélectionnez des vidéos à supprimer localement. YouSpeed conserve les vidéos sur cet appareil ; les envois Panoramax concernent les photos.</string>
+    <string name="onboarding_dashcam_permission_title">Autorisation caméra et vidéo</string>
+    <string name="onboarding_dashcam_permission_body">Android demande l’autorisation de la caméra au premier démarrage de la caméra. Cette autorisation couvre les images de la caméra et la capture vidéo. Rien n’est enregistré pendant la configuration et la reconnaissance sans enregistrement ne sauvegarde aucune vidéo.</string>
     <string name="onboarding_sources_title">D’où viennent les limitations</string>
     <string name="onboarding_sources_body">La carte et vos corrections fonctionnent sans caméra. La reconnaissance ajoute les panneaux routiers.</string>
     <string name="onboarding_source_map_title">Carte téléchargée</string>

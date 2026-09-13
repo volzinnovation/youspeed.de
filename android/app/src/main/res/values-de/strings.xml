@@ -65,6 +65,8 @@
     <string name="onboarding_dashcam_control_body">Tippe auf die Rekorder-Taste, wenn du bereit bist. Der Timer zeigt die Sitzung. Schalte das Video separat aus, während Schilderkennung oder Fotos weiterlaufen. Die Kamerafreigabe wird bei der Kameranutzung angefragt.</string>
     <string name="onboarding_dashcam_library_title">Videos abspielen, teilen oder löschen</string>
     <string name="onboarding_dashcam_library_body">Öffne nach dem Stoppen die Videobibliothek. Spiele ein Video ab, nutze Teilen zum Senden oder Hochladen über eine andere App oder wähle Aufnahmen zum lokalen Löschen aus. YouSpeed speichert Videos auf diesem Gerät; Panoramax-Uploads sind für Fotos.</string>
+    <string name="onboarding_dashcam_permission_title">Kamera- und Videoberechtigung</string>
+    <string name="onboarding_dashcam_permission_body">Android fragt beim ersten Start der Kamera nach der Kameraberechtigung. Diese Berechtigung umfasst Kamerabilder und Videoaufnahme. Während der Einrichtung wird nichts aufgenommen; die Schildererkennung ohne Aufnahme speichert kein Video.</string>
     <string name="onboarding_sources_title">Woher Tempolimits kommen</string>
     <string name="onboarding_sources_body">Deine Karte und eigene Korrekturen funktionieren ohne Kamera. Die Kameraerkennung ergänzt Straßenschilder.</string>
     <string name="onboarding_source_map_title">Heruntergeladene Karte</string>

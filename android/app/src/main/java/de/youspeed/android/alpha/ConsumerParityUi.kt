@@ -346,6 +346,11 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
             ParityToggle(parityText("Recognize signs without recording", "Schilder ohne Aufnahme erkennen", "Reconnaître sans enregistrer", "Borden herkennen zonder opname"),
                 ui.trafficSignRecognitionIndependentEnabled, ui.trafficSignRecognitionEnabled, "traffic-sign-independent-toggle",
                 controller::setTrafficSignRecognitionIndependentEnabled)
+            Text(parityText("Android asks for camera/video permission when the camera is first started. This option recognizes signs without saving video.",
+                "Android fragt beim ersten Start der Kamera nach der Kamera-/Videoberechtigung. Diese Option erkennt Schilder, ohne ein Video zu speichern.",
+                "Android demande l’autorisation caméra/vidéo au premier démarrage de la caméra. Cette option reconnaît les panneaux sans enregistrer de vidéo.",
+                "Android vraagt bij de eerste start van de camera om camera-/videotoestemming. Deze optie herkent borden zonder video op te slaan."),
+                style = MaterialTheme.typography.bodySmall)
             Text(parityText("Recognition feedback", "Rückmeldung bei Erkennung", "Retour de reconnaissance", "Herkenningsmelding"), fontWeight = FontWeight.SemiBold)
             TrafficSignFeedbackMode.entries.forEach { mode ->
                 val label = when (mode) {
