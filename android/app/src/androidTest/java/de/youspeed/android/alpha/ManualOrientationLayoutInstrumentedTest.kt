@@ -58,8 +58,14 @@ class ManualOrientationLayoutInstrumentedTest {
                             .singleOrNull()?.boundsInWindow
                         val workspace = compose.onAllNodesWithTag("main-workspace-pane").fetchSemanticsNodes()
                             .singleOrNull()?.boundsInWindow
-                        val arranged = sign != null && workspace != null &&
-                            sign.right <= workspace.left && sign.center.y >= workspace.top && sign.center.y <= workspace.bottom
+                        val arranged = if (orientation.isLandscape) {
+                            sign != null && workspace != null &&
+                                sign.right <= workspace.left && sign.center.y >= workspace.top && sign.center.y <= workspace.bottom
+                        } else {
+                            sign != null && workspace != null &&
+                                sign.bottom <= workspace.top &&
+                                kotlin.math.abs(sign.center.x - workspace.center.x) <= 1f
+                        }
                         ready = device.displayRotation == orientation.targetRotation && arranged
                         ready
                     }

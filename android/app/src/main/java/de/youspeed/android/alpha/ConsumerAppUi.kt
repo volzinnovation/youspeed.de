@@ -479,12 +479,12 @@ private fun MainScreen(
     BoxWithConstraints(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
-        val landscape = ui.manualOrientation.isLandscape
-        // Portrait keeps the speed-limit pane on the viewer's left as well.
-        // Use the selected mode for control placement so a transient window
-        // measurement cannot put the debug shortcut back in the top corner.
-        val signPaneWidth = if (landscape) maxWidth * 0.45f else maxWidth * 0.5f
-        val workspaceWidth = maxWidth - signPaneWidth
+        val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
+        // Portrait uses the full display width for the sign pane so the sign
+        // and its camera eye are centered on the screen. Landscape keeps the
+        // two fixed panes side by side.
+        val signPaneWidth = if (landscape) maxWidth * 0.45f else maxWidth
+        val workspaceWidth = if (landscape) maxWidth - signPaneWidth else maxWidth
         val minDimension = min(maxWidth.value, maxHeight.value)
         val screenInset = max(8f, minDimension * 0.02f).dp
         val compact = maxHeight.value < 780f
@@ -492,6 +492,8 @@ private fun MainScreen(
         val signSize = min(preferredSignSize.value,
             if (landscape) max(48f, maxHeight.value - 104f)
             else maxHeight.value * 0.40f).dp
+        val portraitTopHeight = min(maxHeight.value * 0.57f,
+            signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 28f).dp
         val primaryMetricFont = (signSize.value * if (compact) 0.42f else SPEED_LIMIT_NUMBER_SCALE).sp
         val secondaryScale = sharedSecondaryScale(
             primaryMetricFont.value * SECONDARY_TEXT_RATIO,
@@ -530,8 +532,20 @@ private fun MainScreen(
                         ConsumerMainScreenLogic.isInSpeedCaptureMode(ui), ui.effectiveSpeedLimitSource,
                         ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
                     )
-                    Box(Modifier.align(Alignment.Center).size(signSize), contentAlignment = Alignment.Center) {
-                        if (showsActiveCameraLimitIndicator) ActiveCameraSpeedLimitEye(signSize, screenInset)
+                    // Keep the sign square inside a full-width eye canvas. The
+                    // eye tips use the canvas edges (with screen/control insets)
+                    // and would otherwise collapse onto the circle border.
+                    Box(
+                        Modifier.align(Alignment.Center)
+                            .fillMaxWidth()
+                            .height(signSize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (showsActiveCameraLimitIndicator) ActiveCameraSpeedLimitEye(
+                            signSize = signSize,
+                            screenInset = screenInset,
+                            landscape = landscape,
+                        )
                         SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
@@ -611,18 +625,18 @@ private fun MainScreen(
         ) { measurables, constraints ->
             val width = constraints.maxWidth
             val height = constraints.maxHeight
-            val upperWidth = if (landscape) (width * 0.45f).toInt() else (width * 0.5f).toInt()
-            val upperHeight = height
+            val upperWidth = if (landscape) (width * 0.45f).toInt() else width
+            val upperHeight = if (landscape) height else portraitTopHeight.roundToPx().coerceIn(0, height)
             val upper = measurables[0].measure(Constraints.fixed(upperWidth, upperHeight))
             val lower = measurables[1].measure(Constraints.fixed(
-                width - upperWidth,
-                height,
+                if (landscape) width - upperWidth else width,
+                if (landscape) height else height - upperHeight,
             ))
             layout(width, height) {
                 upper.place(0, 0)
                 // Absolute placement makes the requested left/right invariant
                 // independent of interface language and mounting direction.
-                lower.place(upperWidth, 0)
+                lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
         }
         if (!landscape) BottomCornerButtons(
@@ -1036,6 +1050,7 @@ private fun SpeedLimitSign(
 private fun ActiveCameraSpeedLimitEye(
     signSize: androidx.compose.ui.unit.Dp,
     screenInset: androidx.compose.ui.unit.Dp,
+    landscape: Boolean = false,
 ) {
     val density = LocalDensity.current
     Canvas(
@@ -1047,10 +1062,23 @@ private fun ActiveCameraSpeedLimitEye(
         val controlRadius = with(density) { CONTROL_BUTTON_DIAMETER.toPx() } / 2f
         val inset = with(density) { screenInset.toPx() }
         val center = Offset(size.width / 2f, size.height / 2f)
-        val tipLeftX = inset + controlRadius
-        val tipRightX = size.width - inset - controlRadius
-        val attachmentYOffset = radius * 0.58f
-        val attachmentXOffset = sqrt(max(0f, (radius * radius) - (attachmentYOffset * attachmentYOffset)))
+        // In landscape, use the midpoint between each canvas edge and the
+        // circle border. The shorter span produces the steeper eye geometry
+        // used by the iPhone layout while retaining a small portrait inset.
+        val tipInset = if (landscape) {
+            max(10f, (size.width - radius * 2f) / 4f)
+        } else {
+            inset + controlRadius
+        }
+        val tipLeftX = tipInset
+        val tipRightX = size.width - tipInset
+        // Extend the eye stroke underneath the circle by half its width so
+        // antialiasing cannot leave a seam where the white shapes meet.
+        val strokeWidth = max(4f, radius * 0.032f)
+        val attachmentRadius = max(0f, radius - strokeWidth / 2f)
+        val attachmentYOffset = attachmentRadius * 0.58f
+        val attachmentXOffset = sqrt(max(0f,
+            (attachmentRadius * attachmentRadius) - (attachmentYOffset * attachmentYOffset)))
         val path = Path().apply {
             moveTo(center.x - attachmentXOffset, center.y - attachmentYOffset)
             lineTo(tipLeftX, center.y)
@@ -1063,7 +1091,7 @@ private fun ActiveCameraSpeedLimitEye(
             path = path,
             color = Color.White,
             style = Stroke(
-                width = max(4f, radius * 0.032f),
+                width = strokeWidth,
                 cap = StrokeCap.Round,
             ),
         )

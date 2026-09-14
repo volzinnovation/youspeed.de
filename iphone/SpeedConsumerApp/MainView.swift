@@ -155,58 +155,65 @@ struct MainView: View {
             let minDimension = min(proxy.size.width, proxy.size.height)
             let screenInset = max(8, minDimension * 0.02)
             let sectionGap = landscape ? CGFloat(12) : max(14, minDimension * 0.04)
-            // Keep the speed-limit pane on the viewer's left in portrait as
-            // well, so the sign is centered in the left half of the display.
-            let paneWidth = (proxy.size.width - sectionGap) / 2
+            let paneWidth = landscape ? (proxy.size.width - sectionGap) / 2 : proxy.size.width
             let horizontalPadding = max(12, paneWidth * 0.04)
             let controlDiameter: CGFloat = landscape ? 40 : 44
             let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
             let contentTopInset = topPadding + (landscape ? 76 : 72)
-            let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? (landscape ? 56 : 68) : 0
-            let contentBottomInset = bottomPadding + controlDiameter + recorderStatusReserve + 10
+            let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? 68 : 0
+            // The recorder strip sits above landscape content and below portrait
+            // content. Both modes reserve the bottom action row outside it.
+            let contentBottomInset = bottomPadding + controlDiameter + 10
+                + (landscape ? 0 : recorderStatusReserve)
+            let workspaceTopInset = landscape ? screenInset + recorderStatusReserve : 0
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
                 : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
-                - locationReserve - sectionGap * 2) / 1.78
+                - locationReserve - sectionGap * 2)
+                / (1 + speedLimitNumberScale * (1.05 + secondaryTextRatio * 1.2))
             let signSize = landscape
                 ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
                 : min(signWidthBudget, max(60, portraitSignHeight))
-            let workspaceBudget = max(60, proxy.size.height - contentBottomInset - screenInset)
-            let primaryMetricFontSize = landscape
-                ? min(signSize * speedLimitNumberScale,
-                      max(24, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
-                : signSize * speedLimitNumberScale
+            let signPaneHeight = landscape ? proxy.size.height : signSize + contentTopInset
+            let workspacePaneHeight = landscape ? proxy.size.height
+                : max(0, proxy.size.height - signPaneHeight - sectionGap)
+            // GeometryReader is laid out inside the landscape safe area on
+            // devices with a home-indicator cutout. Expand the eye canvas by
+            // that excluded width so its center stays on the sign while its
+            // left tip is measured from the physical display edge.
+            let displayWidth = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+            let landscapeEdgeInset = landscape
+                ? max(proxy.safeAreaInsets.leading,
+                      max(proxy.safeAreaInsets.trailing,
+                          max(0, (displayWidth - proxy.size.width) / 2)))
+                : 0
+            let eyeCanvasWidth = paneWidth + landscapeEdgeInset * 2
+            // In landscape, place each tip halfway through the available gap
+            // between the display edge and the circle. This shortens the eye
+            // and makes its diagonals visibly steeper while preserving the
+            // physical-pixel inset on devices without a horizontal safe area.
+            let eyeTipInset = landscape
+                ? max(10 / UIScreen.main.scale, (eyeCanvasWidth - signSize) / 4)
+                : controlDiameter / 2
+            let workspaceBudget = max(0, workspacePaneHeight - contentBottomInset - workspaceTopInset)
+            let primaryMetricFontSize = min(signSize * speedLimitNumberScale,
+                max(0, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
             let baseSecondaryFont = primaryMetricFontSize * secondaryTextRatio
             let secondaryFont = baseSecondaryFont * sharedSecondaryScale(
                 baseSecondaryFont: baseSecondaryFont, availableWidth: paneWidth - horizontalPadding * 2)
             let debugFont = secondaryFont * 0.6
             let debugSpacing = max(2, minDimension * 0.004)
-            let layout = AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
+            let layout = landscape
+                ? AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
+                : AnyLayout(VStackLayout(spacing: sectionGap))
             ZStack {
                 screenBackgroundView.ignoresSafeArea()
                 layout {
                     ZStack(alignment: .top) {
                         ZStack {
-                            if showsActiveCameraLimitIndicator {
-                                ActiveCameraSpeedLimitEye(
-                                    signDiameter: signSize,
-                                    tipInset: controlDiameter / 2
-                                )
-                                .stroke(
-                                    .white,
-                                    style: StrokeStyle(
-                                        lineWidth: max(4, signSize * 0.016),
-                                        lineCap: .round,
-                                        lineJoin: .miter,
-                                        miterLimit: 3
-                                    )
-                                )
-                                .accessibilityHidden(true)
-                            }
-
                             SpeedLimitSignView(
                                 limitText: limitText,
                                 numberFontSize: signSize * speedLimitNumberScale,
@@ -226,9 +233,33 @@ struct MainView: View {
                                     .accessibilityLabel(NSLocalizedString("limit.accessibility.end", comment: ""))
                             }
                         }
-                        .frame(width: signSize, height: signSize)
+                        .background {
+                            if showsActiveCameraLimitIndicator {
+                                ActiveCameraSpeedLimitEye(
+                                    signDiameter: signSize,
+                                    tipInset: eyeTipInset
+                                )
+                                .stroke(
+                                    .white,
+                                    style: StrokeStyle(
+                                        lineWidth: max(4, signSize * 0.016),
+                                        lineCap: .round,
+                                        lineJoin: .miter,
+                                        miterLimit: 3
+                                    )
+                                )
+                                .frame(width: eyeCanvasWidth, height: signSize)
+                                .accessibilityHidden(true)
+                            }
+                        }
+                        // The sign stays square, but the eye needs the full pane
+                        // width so its two tips can sit symmetrically outside
+                        // the circle with a small inset from the display edge.
+                        .frame(height: signSize)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, landscape ? 0 : contentTopInset)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                        .padding(.horizontal, screenInset)
+                        .padding(.horizontal, landscape ? 0 : screenInset)
                         .contentShape(Rectangle())
                         .highPriorityGesture(
                             TapGesture(count: 2).onEnded {
@@ -239,7 +270,7 @@ struct MainView: View {
                             .padding(.horizontal, screenInset)
                             .padding(.top, topPadding)
                     }
-                    .frame(width: paneWidth, height: proxy.size.height)
+                    .frame(width: paneWidth, height: signPaneHeight)
                     .environment(\.layoutDirection, textLayoutDirection)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("dashboard.limitPane")
@@ -253,13 +284,15 @@ struct MainView: View {
                             debugSpacing: debugSpacing,
                             reservedHeight: locationReserve,
                             sectionGap: sectionGap,
-                            landscape: landscape
+                            landscape: landscape,
+                            availableHeight: workspaceBudget
                         )
                         .padding(.horizontal, horizontalPadding)
-                        .padding(.top, landscape ? screenInset + recorderStatusReserve : 0)
+                        .padding(.top, workspaceTopInset)
 
                         if showsDriveRecorderStatusStrip {
                             driveRecorderStatusStrip
+                                .accessibilityIdentifier("dashboard.recorderStatus")
                                 .padding(.horizontal, max(8, horizontalPadding * 0.72))
                                 .padding(.top, landscape ? screenInset : 0)
                                 .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
@@ -272,8 +305,7 @@ struct MainView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
                     }
-                    .frame(width: paneWidth)
-                    .frame(maxHeight: .infinity)
+                    .frame(width: paneWidth, height: workspacePaneHeight, alignment: .top)
                     .environment(\.layoutDirection, textLayoutDirection)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("dashboard.workspacePane")
@@ -861,7 +893,8 @@ struct MainView: View {
         debugSpacing: CGFloat,
         reservedHeight: CGFloat,
         sectionGap: CGFloat,
-        landscape: Bool
+        landscape: Bool,
+        availableHeight: CGFloat
     ) -> some View {
         let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
         let workspaceHeight = metricSlotMinHeight + reservedHeight + sectionGap
@@ -887,10 +920,7 @@ struct MainView: View {
                     compact: landscape
                 )
             }
-            .frame(maxWidth: .infinity, minHeight: workspaceHeight,
-                   maxHeight: landscape ? .infinity : nil,
-                   alignment: .center)
-            .offset(y: landscape ? workspaceHeight * 0.08 : 0)
+            .frame(maxWidth: .infinity, minHeight: workspaceHeight, alignment: .center)
             .contentShape(Rectangle())
             .opacity(showingPreview ? 0 : 1)
             .allowsHitTesting(!showingPreview)
@@ -907,7 +937,7 @@ struct MainView: View {
             if previewPresentation.isAttached, let session = previewSession {
                 DriveCameraPreview(session: session, orientation: viewModel.screenOrientation)
                     .frame(maxWidth: .infinity)
-                    .frame(height: workspaceHeight)
+                    .frame(height: availableHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -939,9 +969,11 @@ struct MainView: View {
                     .contentShape(Rectangle())
                     .opacity(showingPreview ? 1 : 0)
                     .allowsHitTesting(showingPreview)
-                    .accessibilityHidden(!showingPreview)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("dashboard.dashcamPreview")
                     .accessibilityLabel(NSLocalizedString("drive_recorder.preview.live", comment: ""))
                     .accessibilityHint(NSLocalizedString("drive_recorder.preview.hide", comment: ""))
+                    .accessibilityHidden(!showingPreview)
                     .onTapGesture {
                         guard DriveRecorderPreviewInteractionPolicy.canDismissPreview(
                             at: Date(),
@@ -951,7 +983,8 @@ struct MainView: View {
                     }
             }
         }
-        .frame(maxWidth: .infinity, minHeight: workspaceHeight)
+        .frame(maxWidth: .infinity)
+        .frame(height: availableHeight)
         .accessibilityAction(named: NSLocalizedString("drive_recorder.preview.show", comment: "")) {
             guard canShowDriveRecorderPreview, !showingPreview else { return }
             viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
@@ -1782,10 +1815,15 @@ private struct ActiveCameraSpeedLimitEye: Shape {
     func path(in rect: CGRect) -> Path {
         let radius = signDiameter / 2
         let center = CGPoint(x: rect.midX, y: rect.midY)
-        let attachmentYOffset = radius * 0.58
+        // Let the eye stroke run underneath the circle by half its width. The
+        // sign is painted over the eye, so this removes a one-pixel seam at
+        // the antialiased circle edge while preserving the same angle.
+        let eyeStrokeWidth = max(4, signDiameter * 0.016)
+        let attachmentRadius = max(0, radius - eyeStrokeWidth / 2)
+        let attachmentYOffset = attachmentRadius * 0.58
         let attachmentXOffset = max(
             0,
-            ((radius * radius) - (attachmentYOffset * attachmentYOffset)).squareRoot()
+            ((attachmentRadius * attachmentRadius) - (attachmentYOffset * attachmentYOffset)).squareRoot()
         )
         let leftSignX = center.x - attachmentXOffset
         let rightSignX = center.x + attachmentXOffset
