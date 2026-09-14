@@ -503,8 +503,12 @@ private fun MainScreen(
             primaryMetricFont.toDp() * 1.05f + secondaryFont.toDp() * 1.2f
         }
         val horizontalPadding = max(12f, workspaceWidth.value * 0.04f).dp
-        val locationHeight = max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
-        val locationBadgeWidth = max(0f, workspaceWidth.value - screenInset.value * 2f - CONTROL_BUTTON_DIAMETER.value * 2f).dp
+        val locationHeight = if (landscape) 72.dp else max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
+        val locationBadgeWidth = if (landscape) {
+            (workspaceWidth.value * 0.78f).coerceAtLeast(180f).dp
+        } else {
+            max(0f, workspaceWidth.value - screenInset.value * 2f - CONTROL_BUTTON_DIAMETER.value * 2f).dp
+        }
 
         // Keep both subtrees mounted. Only their measured size and placement
         // change, so the live PreviewView and its surface provider survive.
@@ -553,22 +557,32 @@ private fun MainScreen(
                         .testTag("main-workspace-pane"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    if (recorderVisible && landscape) RecorderModuleStrip(
+                        controller,
+                        Modifier.padding(horizontal = horizontalPadding, vertical = 6.dp)
+                            .testTag("drive-recorder-status"),
+                        compact = true,
+                        onPreviewRequested = { previewSelected = true },
+                    )
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                         val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
                         val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
                         val fittedLocationHeight = min(locationHeight.value, maxHeight.value * 0.30f).dp
                         Column(
-                            Modifier.fillMaxSize().alpha(if (previewVisible) 0f else 1f),
-                            verticalArrangement = Arrangement.SpaceEvenly,
+                            Modifier
+                                .fillMaxSize()
+                                .offset(y = if (landscape) (maxHeight.value * 0.08f).dp else 0.dp)
+                                .alpha(if (previewVisible) 0f else 1f),
+                            verticalArrangement = if (landscape) Arrangement.Center else Arrangement.SpaceEvenly,
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             MetricStatusBlock(primaryMetric, secondaryMetric, foreground, ui,
                                 primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight)
                             Spacer(Modifier.height(4.dp))
-                            Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                            Box((if (landscape) Modifier else Modifier.weight(1f)).verticalScroll(rememberScrollState())) {
                                 LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
                                     max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
-                                    locationBadgeWidth, banner, onOpenDebug)
+                                    locationBadgeWidth, banner, onOpenDebug, compact = landscape)
                             }
                         }
                         if (previewPresentation.isAttached) RecorderPreviewWorkspace(
@@ -577,7 +591,7 @@ private fun MainScreen(
                             onDismiss = { previewSelected = false },
                         )
                     }
-                    if (recorderVisible) RecorderModuleStrip(
+                    if (recorderVisible && !landscape) RecorderModuleStrip(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
@@ -1107,6 +1121,7 @@ private fun LocationStatusBlock(
     locationBadgeWidth: androidx.compose.ui.unit.Dp,
     runtimeBanner: RuntimeBanner?,
     onOpenDebug: () -> Unit,
+    compact: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -1130,6 +1145,7 @@ private fun LocationStatusBlock(
                 badgeWidth = locationBadgeWidth,
                 foreground = foreground,
                 onOpenDebug = onOpenDebug,
+                compact = compact,
             )
             } else {
                 Column(
@@ -1197,6 +1213,7 @@ private fun CityBadge(
     badgeWidth: androidx.compose.ui.unit.Dp,
     foreground: Color,
     onOpenDebug: () -> Unit,
+    compact: Boolean = false,
 ) {
     Card(
         modifier = Modifier
@@ -1215,8 +1232,8 @@ private fun CityBadge(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    horizontal = CITY_BADGE_HORIZONTAL_PADDING,
-                    vertical = CITY_BADGE_VERTICAL_PADDING,
+                    horizontal = if (compact) 8.dp else CITY_BADGE_HORIZONTAL_PADDING,
+                    vertical = if (compact) 5.dp else CITY_BADGE_VERTICAL_PADDING,
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(CITY_BADGE_LINE_SPACING),
@@ -1225,19 +1242,19 @@ private fun CityBadge(
                 text = streetName,
                 color = if (highlighted) Color.Black else foreground,
                 fontWeight = FontWeight.Bold,
-                fontSize = CITY_BADGE_STREET_TEXT_SIZE,
+                fontSize = if (compact) 15.sp else CITY_BADGE_STREET_TEXT_SIZE,
             )
             CityBadgeLine(
                 text = placeName,
                 color = if (highlighted) Color.Black else foreground,
                 fontWeight = FontWeight.Bold,
-                fontSize = CITY_BADGE_PLACE_TEXT_SIZE,
+                fontSize = if (compact) 14.sp else CITY_BADGE_PLACE_TEXT_SIZE,
             )
             CityBadgeLine(
                 text = districtName,
                 color = if (highlighted) Color.Black else foreground,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = CITY_BADGE_DISTRICT_TEXT_SIZE,
+                fontSize = if (compact) 13.sp else CITY_BADGE_DISTRICT_TEXT_SIZE,
             )
         }
     }

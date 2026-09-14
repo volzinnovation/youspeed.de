@@ -159,7 +159,7 @@ struct MainView: View {
             // well, so the sign is centered in the left half of the display.
             let paneWidth = (proxy.size.width - sectionGap) / 2
             let horizontalPadding = max(12, paneWidth * 0.04)
-            let controlDiameter: CGFloat = 44
+            let controlDiameter: CGFloat = landscape ? 40 : 44
             let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
@@ -167,7 +167,7 @@ struct MainView: View {
             let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? (landscape ? 56 : 68) : 0
             let contentBottomInset = bottomPadding + controlDiameter + recorderStatusReserve + 10
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
-                : (landscape ? cityBadgeSlotMinHeight : max(cityBadgeSlotMinHeight, minDimension * 0.225))
+                : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
                 - locationReserve - sectionGap * 2) / 1.78
@@ -252,19 +252,22 @@ struct MainView: View {
                             debugFont: debugFont,
                             debugSpacing: debugSpacing,
                             reservedHeight: locationReserve,
-                            sectionGap: sectionGap
+                            sectionGap: sectionGap,
+                            landscape: landscape
                         )
                         .padding(.horizontal, horizontalPadding)
-                        .padding(.top, landscape ? screenInset : 0)
+                        .padding(.top, landscape ? screenInset + recorderStatusReserve : 0)
 
                         if showsDriveRecorderStatusStrip {
                             driveRecorderStatusStrip
                                 .padding(.horizontal, max(8, horizontalPadding * 0.72))
-                                .padding(.bottom, bottomPadding + controlDiameter + 8)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                                .padding(.top, landscape ? screenInset : 0)
+                                .padding(.bottom, landscape ? 0 : bottomPadding + controlDiameter + 8)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: landscape ? .top : .bottom)
                         }
                         if landscape {
-                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true)
+                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
+                                                buttonDiameter: controlDiameter)
                                 .padding(.bottom, bottomPadding)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
@@ -278,7 +281,8 @@ struct MainView: View {
                 .environment(\.layoutDirection, .leftToRight)
             }
             if !landscape {
-                bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true)
+                bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true,
+                                    buttonDiameter: controlDiameter)
                     .padding(.bottom, bottomPadding)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
@@ -395,13 +399,13 @@ struct MainView: View {
         }
     }
 
-    private var localRecordingsButton: some View {
+    private func localRecordingsButton(diameter: CGFloat = 44) -> some View {
         RecordingSafeButton {
             showingLocalRecordings = true
         } label: {
             Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
                 .font(.title3.weight(.semibold))
-                .frame(width: 44, height: 44)
+                .frame(width: diameter, height: diameter)
         }
         .buttonStyle(.plain)
         .foregroundStyle(trafficSignDebugButtonColor)
@@ -425,7 +429,11 @@ struct MainView: View {
         return primaryForegroundColor
     }
 
-    private func bottomCornerButtons(horizontalPadding: CGFloat, includeLocalRecordings: Bool) -> some View {
+    private func bottomCornerButtons(
+        horizontalPadding: CGFloat,
+        includeLocalRecordings: Bool,
+        buttonDiameter: CGFloat = 44
+    ) -> some View {
         let recorderControl = DriveRecorderMainControlPresentation.resolve(
             for: viewModel.driveRecorderState
         )
@@ -440,7 +448,7 @@ struct MainView: View {
                 Image(systemName: recorderControl.systemImageName)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(recorderControl.usesRedIcon ? Color.red : Color.white)
-                    .frame(width: 44, height: 44)
+                    .frame(width: buttonDiameter, height: buttonDiameter)
             }
             .buttonStyle(.plain)
             .background(Color.black, in: Circle())
@@ -454,7 +462,7 @@ struct MainView: View {
 
             if includeLocalRecordings {
                 Spacer()
-                localRecordingsButton
+                localRecordingsButton(diameter: buttonDiameter)
             }
 
             Spacer()
@@ -466,7 +474,7 @@ struct MainView: View {
                 Image(systemName: "photo.on.rectangle")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(galleryControl.isEnabled ? primaryForegroundColor : Color.gray)
-                    .frame(width: 44, height: 44)
+                    .frame(width: buttonDiameter, height: buttonDiameter)
             }
             .buttonStyle(.plain)
             .background(
@@ -489,7 +497,7 @@ struct MainView: View {
             RecordingSafeButton { showingLegalInfo = true } label: {
                 Image(systemName: "info.circle.fill")
                     .font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44)
+                    .frame(width: buttonDiameter, height: buttonDiameter)
             }
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
@@ -500,7 +508,7 @@ struct MainView: View {
             RecordingSafeButton { showingSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3.weight(.semibold))
-                    .frame(width: 44, height: 44)
+                    .frame(width: buttonDiameter, height: buttonDiameter)
             }
             .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
             .accessibilityIdentifier("dashboard.settingsButton")
@@ -852,7 +860,8 @@ struct MainView: View {
         debugFont: CGFloat,
         debugSpacing: CGFloat,
         reservedHeight: CGFloat,
-        sectionGap: CGFloat
+        sectionGap: CGFloat,
+        landscape: Bool
     ) -> some View {
         let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
         let workspaceHeight = metricSlotMinHeight + reservedHeight + sectionGap
@@ -874,10 +883,14 @@ struct MainView: View {
                     badgeWidth: badgeWidth,
                     debugFont: debugFont,
                     debugSpacing: debugSpacing,
-                    reservedHeight: reservedHeight
+                    reservedHeight: reservedHeight,
+                    compact: landscape
                 )
             }
-            .frame(maxWidth: .infinity, minHeight: workspaceHeight)
+            .frame(maxWidth: .infinity, minHeight: workspaceHeight,
+                   maxHeight: landscape ? .infinity : nil,
+                   alignment: .center)
+            .offset(y: landscape ? workspaceHeight * 0.08 : 0)
             .contentShape(Rectangle())
             .opacity(showingPreview ? 0 : 1)
             .allowsHitTesting(!showingPreview)
@@ -984,7 +997,8 @@ struct MainView: View {
         badgeWidth: CGFloat,
         debugFont: CGFloat,
         debugSpacing: CGFloat,
-        reservedHeight: CGFloat
+        reservedHeight: CGFloat,
+        compact: Bool = false
     ) -> some View {
         Group {
             if viewModel.isInSpeedCaptureMode {
@@ -996,7 +1010,8 @@ struct MainView: View {
                     districtName: cityBadgeDistrictText ?? "",
                     highlighted: highlightsCityBadge,
                     foregroundColor: highlightsCityBadge ? .black : primaryForegroundColor,
-                    badgeWidth: badgeWidth
+                    badgeWidth: badgeWidth,
+                    compact: compact
                 )
                 .contentShape(Rectangle())
                 .onLongPressGesture {
@@ -2031,17 +2046,18 @@ private struct CityLimitBadgeView: View {
     let highlighted: Bool
     let foregroundColor: Color
     let badgeWidth: CGFloat
+    let compact: Bool
 
     var body: some View {
         VStack(spacing: 2) {
-            badgeLine(streetName, size: 18, weight: .bold)
-            badgeLine(placeName, size: 17, weight: .bold)
-            badgeLine(districtName, size: 16, weight: .semibold)
+            badgeLine(streetName, size: compact ? 15 : 18, weight: .bold)
+            badgeLine(placeName, size: compact ? 14 : 17, weight: .bold)
+            badgeLine(districtName, size: compact ? 13 : 16, weight: .semibold)
         }
         .foregroundStyle(foregroundColor)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, compact ? 8 : 12)
+        .padding(.vertical, compact ? 5 : 8)
         .frame(width: badgeWidth)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)

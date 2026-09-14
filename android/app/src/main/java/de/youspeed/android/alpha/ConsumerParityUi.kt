@@ -83,6 +83,7 @@ private fun cancelLabel() = parityText("Cancel", "Abbrechen", "Annuler", "Annule
 internal fun RecorderModuleStrip(
     controller: ConsumerSessionController,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
     onPreviewRequested: (() -> Unit)? = null,
 ) {
     val ui = controller.uiState
@@ -114,7 +115,62 @@ internal fun RecorderModuleStrip(
         contentColor = foreground,
         border = BorderStroke(1.dp, Color(0xFF74777B)),
     ) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        if (compact) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(
+                    Modifier.weight(0.8f).testTag("recorder-elapsed-time"),
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    Text(stateLabel, color = foreground, style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1)
+                    Text(elapsed, color = foreground, fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1)
+                }
+                RecorderModuleButton(
+                    label = "Dashcam", status = if (ui.driveRecorderDashcamTransitioning)
+                        parityText("Changing…", "Wird geändert…", "Modification…", "Wijzigen…") else onOff(ui.driveRecorderDashcamActive),
+                    selected = ui.driveRecorderDashcamActive || ui.driveRecorderDashcamTransitioning,
+                    enabled = canToggle && !ui.driveRecorderDashcamTransitioning,
+                    onClick = controller::toggleDriveRecorderDashcam,
+                    modifier = Modifier.weight(1f).testTag("recorder-dashcam-module"),
+                )
+                RecorderModuleButton(
+                    label = parityText("Signs", "Schilder", "Panneaux", "Borden"),
+                    status = if (ui.trafficSignRecognitionUnavailable)
+                        parityText("Unavailable", "Nicht verfügbar", "Indisponible", "Niet beschikbaar") else onOff(ui.trafficSignRecognitionEnabled),
+                    selected = ui.trafficSignRecognitionEnabled,
+                    enabled = canToggle,
+                    onClick = controller::toggleDriveRecorderTrafficSignRecognition,
+                    modifier = Modifier.weight(1f).testTag("recorder-tsr-module"),
+                )
+                Text(
+                    "Panoramax · ${ui.panoramaxCaptureCount}",
+                    modifier = Modifier.weight(0.85f),
+                    color = foreground,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                )
+                if (ui.driveRecorderDashcamActive) IconButton(
+                    onClick = { controller.performButtonAction { onPreviewRequested?.invoke() ?: run { previewDialog = true } } },
+                    modifier = Modifier.size(36.dp).testTag("recorder-show-preview"),
+                ) {
+                    Icon(Icons.Default.CameraAlt, tint = foreground,
+                        contentDescription = parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"))
+                }
+                if (ui.trafficSignRecognitionEnabled) IconButton(
+                    onClick = { controller.performButtonAction { details = true } },
+                    modifier = Modifier.size(36.dp).testTag("recorder-show-recognition-details"),
+                ) {
+                    Icon(Icons.Default.Info, tint = foreground,
+                        contentDescription = parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"))
+                }
+            }
+        } else Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f).testTag("recorder-elapsed-time"), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(stateLabel, color = foreground, style = MaterialTheme.typography.labelSmall)
