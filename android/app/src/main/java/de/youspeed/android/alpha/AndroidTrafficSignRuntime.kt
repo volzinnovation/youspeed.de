@@ -305,7 +305,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                     GpuConfiguration(
                         compatibility.bestOptionsForThisDevice
                             .setPrecisionLossAllowed(false)
-                            .setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED),
+                            // Exhaustive OpenCL tuning can block in the Mali driver's
+                            // profiling queue. Fast tuning avoids that startup path.
+                            .setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_FAST_SINGLE_ANSWER),
                         null,
                     )
                 } else GpuConfiguration(null, "GPU delegate is unsupported on this device")

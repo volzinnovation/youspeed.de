@@ -56,12 +56,11 @@ ownership.
 
 ## Validation boundary
 
-The device log establishes successful model execution, repeated provisional
-speed detections, excessive latency, and zero finalized passages. It does not
-establish the performance of a new GPU implementation. That requires the
-prepared instrumented tests on the actual phone, including model-output
-parity, processing time, and passage delivery. A subsequent road run is still
-needed to measure recognition accuracy in motion.
+The original device log establishes successful model execution, repeated
+provisional speed detections, excessive latency, and zero finalized passages.
+The authorized device tests recorded below subsequently verify model-output
+parity, processing time, and passage delivery on the Moto. A subsequent road
+run is still needed to measure recognition accuracy in motion.
 
 The repair keeps the shared models, input geometry, confidence thresholds,
 sighting counts, and speed-override admission rules unchanged. GPU
@@ -94,9 +93,8 @@ Stale results, failures, unprofiled runtimes, and GPU results cannot trigger
 that fallback adjustment. The effective window is included in inference logs.
 
 The phone itself reports `ARM, Mali-G615 MC2, OpenGL ES 3.2`, chipset `MT6878`,
-with Mali Vulkan and OpenCL libraries present. Hardware and driver presence are
-verified; successful model acceleration and its measured speed still require
-running the prepared APK on this phone.
+with Mali Vulkan and OpenCL libraries present. The authorized device run below
+also verifies actual model acceleration and processing time.
 
 ## Panoramax route comparison
 
@@ -127,13 +125,54 @@ and timing validation inputs based on unreviewed online annotations.
 - Attribution generation check and four attribution tests passed. Both APKs
   include the unchanged reference JPEG and GPU native libraries for all four
   existing supported ABIs.
-- Device instrumentation is compiled but has not been installed or run during
-  this task. It checks CPU/GPU predictions and timings, startup isolation, and
-  real model results reaching the passage forwarder after qualified negatives.
+- Device instrumentation checks CPU/GPU predictions and timings, startup
+  isolation, and real model results reaching the passage forwarder after
+  qualified negatives. Its subsequent device results are recorded below.
 
 Prepared debug APK SHA-256:
 `035fa359581b9b0867b195d31c1a22263a8bd8d5add235ccb01b3aef76e294cd`.
 
 Build evidence is in `/private/tmp/youspeed-tsr-validation-20260914.log` and
-`/private/tmp/youspeed-tsr-instrument-build-20260914.log`. No app deployment,
-commit, merge, or publication was performed.
+`/private/tmp/youspeed-tsr-instrument-build-20260914.log`.
+
+## Authorized installation and actual device validation
+
+After the user authorized commit, push, and phone installation, the repair was
+committed as `c59bb80` and pushed to `main`. Installation retained the existing
+debug app's maps, preferences, and recordings.
+
+The first device run exposed excessive GPU startup tuning: OpenCL detector
+initialization took approximately 175 seconds with `SUSTAINED_SPEED`.
+Switching to `FAST_SINGLE_ANSWER` avoided that expensive tuning path. The
+subsequent detector and classifier initialized in approximately one second
+each, with all 548 detector and 546 classifier graph operations delegated to
+the GPU. The corrected runtime was rebuilt and installed in place.
+
+All four recognition instrumented tests passed in 25.452 seconds:
+
+- Same-reference GPU warm inference: 519.91–528.33 ms, median 521.59 ms.
+  Forced CPU inference: 1,419.33 ms; GPU was approximately 2.72 times faster.
+  Class, semantic, and score-parity assertions passed.
+- GPU reference timings retained the 1,500 ms allowance. The forced CPU
+  reference produced a 2,849 ms allowance.
+- Actual model results reached the production passage forwarder: two 70 km/h
+  sightings, captured approximately 751 ms apart, progressed from provisional
+  to confirmed. Two genuinely analyzed blank images then produced exactly one
+  finalized 70 km/h passage. An additional blank did not duplicate it.
+- The reference startup check emitted no live events, pictograms, or passages.
+
+After removing only the temporary test package, YouSpeed was reopened. Normal
+startup verified the reference on GPU in 509.62 and 542.55 ms; live-camera
+inference continued at approximately 407–421 ms with current road context and
+no backend failure. This validates continued CameraX delivery after inference
+became faster than its base cadence interval.
+
+Installed debug APK SHA-256, verified against the phone's actual `base.apk`:
+`22deab8a34c3b3095ae894caee12459657cb61610e957fd1362f7b63df83bd85`.
+The app remains version `1.1-debug`, code `10007`.
+
+Final local unit tests, debug/release builds, and lint also passed. Device
+evidence remains local in `/private/tmp/youspeed-moto-tsr-final-tests-20260914.txt`,
+`/private/tmp/youspeed-moto-tsr-acceleration-parity-20260914.json`,
+`/private/tmp/youspeed-moto-tsr-model-passage-20260914.json`, and
+`/private/tmp/youspeed-moto-live-after-install-20260914.ndjson`.
