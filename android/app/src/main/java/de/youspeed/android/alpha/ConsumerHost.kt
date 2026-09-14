@@ -13,6 +13,8 @@ interface ConsumerHost {
 
     fun stopTrafficSignCamera()
 
+    fun applyManualOrientation(orientation: ManualOrientation) {}
+
     fun setDriveRecorderPreviewSurfaceProvider(provider: androidx.camera.core.Preview.SurfaceProvider?) {}
 
     fun capturePanoramaxPhoto(requestId: String)

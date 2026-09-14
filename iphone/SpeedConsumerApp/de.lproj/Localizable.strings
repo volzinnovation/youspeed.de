@@ -40,7 +40,7 @@
 "drive_recorder.status.toggle_hint" = "Zum Umschalten während der Aufnahme doppeltippen.";
 "drive_recorder.preview.live" = "Live";
 "drive_recorder.preview.show" = "Dashcam-Livebild anzeigen";
-"drive_recorder.preview.hide" = "Tippen für Tempo und Standort";
+"drive_recorder.preview.hide" = "Video beenden · Geschwindigkeit und Ort anzeigen";
 "drive_recorder.settings.section" = "Drive Recorder";
 "drive_recorder.settings.description" = "Die Hauptaufnahme startet immer die Dashcam. Aktivierte Verkehrszeichenerkennung und Panoramax-Aufnahme laufen mit; Dashcam und Verkehrszeichenerkennung lassen sich während der Aufnahme über die Chips ändern.";
 "drive_recorder.settings.status" = "Status";
@@ -355,3 +355,14 @@
 "onboarding.screenshot.title" = "Screenshot";
 "onboarding.screenshot.close" = "Schließen";
 "onboarding.panoramax.account_screenshot" = "Verbinde dein Panoramax-Konto in den Einstellungen, bevor du ausgewählte Fotos hochlädst.";
+
+// Manual mounting orientation and safe recorder actions.
+"settings.orientation.section" = "Bildschirmausrichtung";
+"settings.orientation.title" = "Einbauposition";
+"settings.orientation.portrait" = "Hochformat";
+"settings.orientation.landscape_camera_lower_right" = "Querformat · Kamera unten rechts";
+"settings.orientation.landscape_camera_upper_left" = "Querformat · Kamera oben links";
+"settings.orientation.description" = "Wähle die Einbauposition des Telefons. Der Bildschirm bleibt bis zur nächsten Auswahl in dieser Position. Im Querformat stehen das Tempolimit links und Geschwindigkeit oder Dashcam rechts.";
+"drive_recorder.action.saving" = "Dashcam-Video wird gespeichert …";
+"drive_recorder.action.failed_title" = "Dashcam-Video konnte nicht gespeichert werden";
+"drive_recorder.action.failed" = "Die Aktion wurde abgebrochen, weil das Dashcam-Video nicht abgeschlossen werden konnte. Bitte versuche es erneut.";

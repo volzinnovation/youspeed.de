@@ -99,6 +99,55 @@ class PanoramaxMetadataInstrumentedTest {
         assertNull(store.attachTrafficSignAnnotation(batch.batchId, draft.copy(sourceEventId = "stopped")))
     }
 
+    @Test fun orientationEpochFiltersPhotosBeforeChoosingNearestAnnotationTarget() = withDirectory { directory ->
+        val store = PanoramaxQueueStore(File(directory, "orientation-queue"))
+        val batch = store.createBatch("orientation-session", capturedAt)
+        fun addPhoto(id: String, time: Instant): PanoramaxItemRecord {
+            val jpeg = createJpeg(File(directory, "$id.jpg"))
+            val thumb = createJpeg(File(directory, "$id-thumb.jpg"))
+            return store.addJpeg(batch.batchId, jpeg, thumb, PanoramaxCaptureMetadata(
+                id, batch.captureSessionId, time, sample.copy(capturedAt = time),
+                PanoramaxQueueStore.sha256(jpeg), jpeg.length(), "test",
+            ))
+        }
+        val previousOrientation = addPhoto("previous-orientation", capturedAt)
+        // A capture that crossed the boundary is retained, but its coordinates
+        // are uncertain and its ID must not become eligible for annotations.
+        val crossingCapture = addPhoto("crossing-capture", capturedAt.plusSeconds(2))
+        val epochStartedAt = capturedAt.plusSeconds(1)
+        val eligibleIds = setOf(previousOrientation.itemId, "current-orientation")
+        val draft = PanoramaxTrafficSignAnnotationDraft(
+            "orientation-annotation", "orientation-event", capturedAt.plusSeconds(2),
+            NormalizedTrafficSignBoundingBox(0.1, 0.1, 0.3, 0.5),
+            listOf(PanoramaxSemanticTag("osm|traffic_sign", "DE:274-50")), 50, "orientation-track", 0.9, 0.95,
+            TrafficSignDetectionContext("way-1", sample.latitude, sample.longitude, 359.5, TrafficSignTravelDirection.UNKNOWN,
+                TrafficSignRuntimeSourceSignature("test", null)),
+        )
+        assertNull(store.attachTrafficSignAnnotation(batch.batchId, draft,
+            eligibleCaptureIds = eligibleIds, minimumCapturedAt = epochStartedAt))
+
+        val currentOrientation = addPhoto("current-orientation", capturedAt.plusSeconds(4))
+        assertEquals(currentOrientation.itemId, store.attachTrafficSignAnnotation(batch.batchId, draft,
+            eligibleCaptureIds = eligibleIds, minimumCapturedAt = epochStartedAt))
+        assertNull(store.attachTrafficSignAnnotation(batch.batchId, draft.copy(sourceEventId = "empty-epoch"),
+            eligibleCaptureIds = emptySet(), minimumCapturedAt = epochStartedAt))
+        assertNull(store.attachTrafficSignAnnotation(batch.batchId, draft.copy(sourceEventId = "future-epoch"),
+            eligibleCaptureIds = eligibleIds, minimumCapturedAt = capturedAt.plusSeconds(5)))
+
+        val photos = requireNotNull(store.getBatch(batch.batchId)).items.associateBy { it.itemId }
+        assertEquals(3, photos.size)
+        for (untouched in listOf(previousOrientation, crossingCapture)) {
+            val current = photos.getValue(untouched.itemId)
+            assertTrue(current.metadata.trafficSignAnnotations.isNullOrEmpty())
+            assertEquals(untouched.metadata.sha256, PanoramaxQueueStore.sha256(store.originalFile(current)))
+            assertTrue(store.thumbnailFile(current).isFile)
+        }
+        val annotated = photos.getValue(currentOrientation.itemId)
+        assertEquals("orientation-event", annotated.metadata.trafficSignAnnotations?.single()?.sourceEventId)
+        assertEquals(annotated.metadata.trafficSignAnnotations, PanoramaxExifUserCommentCodec.decode(
+            ExifInterface(store.originalFile(annotated).absolutePath).getAttribute(ExifInterface.TAG_USER_COMMENT)))
+    }
+
     @Test fun jpegDimensionsRespectCaptureOrientation() = withDirectory { directory ->
         // Distinct quadrants prove that pixels, not just reported dimensions, are upright.
         val expectedQuadrants = mapOf(

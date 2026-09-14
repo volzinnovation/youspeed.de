@@ -50,6 +50,17 @@
                ReferencedContainer = "container:SpeedDBBench.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6A3E65B4EDD5B8ECE361E751"
+               BuildableName = "SpeedConsumerUITests.xctest"
+               BlueprintName = "SpeedConsumerUITests"
+               ReferencedContainer = "container:SpeedDBBench.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

@@ -99,4 +99,13 @@
     <string name="onboarding_close_example">Fermer l’exemple</string>
     <string name="onboarding_threshold_decrease_label">Réduire le seuil d’alerte</string>
     <string name="onboarding_threshold_increase_label">Augmenter le seuil d’alerte</string>
+    <string name="ui_screen_orientation">Orientation de l’écran</string>
+    <string name="ui_screen_orientation_help">Choisissez manuellement la position de montage. L’écran ne suit pas le capteur d’orientation.</string>
+    <string name="ui_orientation_portrait">Portrait</string>
+    <string name="ui_orientation_landscape_lower_right">Paysage · caméra en bas à droite · connecteur à gauche</string>
+    <string name="ui_orientation_landscape_upper_left">Paysage · caméra en haut à gauche · connecteur à droite</string>
+    <string name="ui_video_saving">Enregistrement de la vidéo…</string>
+    <string name="ui_video_save_failed">Impossible d’enregistrer la vidéo</string>
+    <string name="ui_video_save_timeout">L’enregistreur n’a pas confirmé la sauvegarde de la vidéo. L’action demandée a été annulée.</string>
+    <string name="ui_correct_speed_limit">Corriger la limitation de vitesse</string>
 </resources>

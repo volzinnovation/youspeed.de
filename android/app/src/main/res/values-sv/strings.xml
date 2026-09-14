@@ -32,4 +32,13 @@
     <string name="ui_panoramax_include">Inkludera</string>
     <string name="ui_panoramax_exclude">Uteslut</string>
     <string name="ui_panoramax_no_camera">Kameran är inte tillgänglig</string>
+    <string name="ui_screen_orientation">Skärmorientering</string>
+    <string name="ui_screen_orientation_help">Välj monteringsläget manuellt. Skärmen följer inte orienteringssensorn.</string>
+    <string name="ui_orientation_portrait">Stående</string>
+    <string name="ui_orientation_landscape_lower_right">Liggande · kamera nere till höger · kontakt till vänster</string>
+    <string name="ui_orientation_landscape_upper_left">Liggande · kamera uppe till vänster · kontakt till höger</string>
+    <string name="ui_video_saving">Sparar video…</string>
+    <string name="ui_video_save_failed">Videon kunde inte sparas</string>
+    <string name="ui_video_save_timeout">Inspelaren bekräftade inte att videon sparades. Den begärda åtgärden avbröts.</string>
+    <string name="ui_correct_speed_limit">Korrigera hastighetsgräns</string>
 </resources>

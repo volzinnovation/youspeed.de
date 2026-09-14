@@ -260,6 +260,9 @@ data class ConsumerUiState(
     val audioAlertsEnabled: Boolean = true,
     val audioAlertThresholdKmh: Int = 8,
     val hideWelcomeScreen: Boolean = false,
+    val manualOrientation: ManualOrientation = ManualOrientation.PORTRAIT,
+    val dashcamButtonActionPending: Boolean = false,
+    val dashcamButtonActionError: String? = null,
     val onboardingCompleted: Boolean = false,
     val onboardingStep: Int = 0,
     val onboardingSelectedMapId: String? = null,
@@ -567,12 +570,26 @@ class ConsumerSessionController(
     @Volatile private var driveRecorderEnabled = false
     @Volatile private var applicationActive = true
     private val captureLock = Any()
+    private val cameraOrientationLock = Any()
+
+    internal fun <T> withCameraOrientation(block: () -> T): T = synchronized(cameraOrientationLock, block)
     private val feedbackGate = TrafficSignFeedbackGate()
     private var confirmationToneUntilMs = 0L
     private var activeDashcamPath: String? = null
+    private val dashcamButtonActionGate = DashcamButtonActionGate()
+    private val dashcamButtonActionTimeout = Runnable {
+        if (dashcamButtonActionGate.isWaiting) {
+            dashcamButtonActionGate.cancel()
+            updateState { copy(dashcamButtonActionPending = false,
+                dashcamButtonActionError = appContext.getString(R.string.ui_video_save_timeout)) }
+        }
+    }
     @Volatile private var latestDashcamEventPath: String? = null
-    private data class PendingPhoto(val requestId: String, val sessionId: String,
+    private data class PendingPhoto(val requestId: String, val sessionId: String, val orientationEpoch: Long,
         val sample: PanoramaxLocationSample, val drafts: List<PanoramaxTrafficSignAnnotationDraft>)
+    private var annotationOrientationEpoch = 0L
+    private var annotationOrientationStartedAt = Instant.MIN
+    private var annotationEligibleCaptureIds = emptySet<String>()
     private var pendingPhoto: PendingPhoto? = null
     private var latestAnnotationDrafts: List<PanoramaxTrafficSignAnnotationDraft> = emptyList()
     private var panoramaxCaptureSessionId: String? = null
@@ -635,6 +652,7 @@ class ConsumerSessionController(
             audioAlertsEnabled = preferences.getBoolean(KEY_AUDIO_ALERTS_ENABLED, true),
             audioAlertThresholdKmh = preferences.getInt(KEY_AUDIO_ALERT_THRESHOLD, 8).coerceIn(0, 80),
             hideWelcomeScreen = preferences.getBoolean(KEY_HIDE_WELCOME, false),
+            manualOrientation = ManualOrientation.fromStorageValue(preferences.getString(KEY_MANUAL_ORIENTATION, null)),
             onboardingCompleted = preferences.getBoolean(OnboardingPolicy.COMPLETED_KEY, false),
             onboardingStep = preferences.getInt(OnboardingPolicy.STEP_KEY, 0).coerceIn(0, OnboardingPolicy.LAST_STEP),
             onboardingSelectedMapId = preferences.getString("youspeed.onboarding.selected_map", null),
@@ -700,10 +718,13 @@ class ConsumerSessionController(
 
     fun bindHost(host: ConsumerHost) {
         this.host = host
+        host.applyManualOrientation(uiState.manualOrientation)
         reconcileTrafficSignCamera()
     }
 
     fun dispose() {
+        dashcamButtonActionGate.cancel()
+        mainHandler.removeCallbacks(dashcamButtonActionTimeout)
         mainHandler.removeCallbacks(penaltyCountryExpiry)
         if (!isDisposed.compareAndSet(false, true)) {
             return
@@ -1008,6 +1029,9 @@ class ConsumerSessionController(
         applicationActive = active
         invalidateTrafficSignGeneration(clearAssertion = true, reason = "application_lifecycle", permitWrites = active && isTrafficSignRecognitionRuntimeEnabled())
         if (!active) {
+            dashcamButtonActionGate.cancel()
+            mainHandler.removeCallbacks(dashcamButtonActionTimeout)
+            updateState { copy(dashcamButtonActionPending = false) }
             if (driveRecorderEnabled) stopDriveRecorder()
             if (uiState.onboardingLocating) {
                 locationSuggestionGeneration++
@@ -1015,6 +1039,53 @@ class ConsumerSessionController(
             }
         }
         reconcileTrafficSignCamera()
+    }
+
+    /** All dashboard buttons enter here, including accessibility and navigation. */
+    fun performButtonAction(action: () -> Unit) {
+        if (isDisposed.get() || dashcamButtonActionGate.isWaiting) return
+        val finalizingPath = activeDashcamPath
+        val stopVideo = {
+            // Only stop the movie consumer. Photo capture and sign recognition
+            // keep their session, camera graph and preferences.
+            updateState { copy(dashcamRecordingEnabled = false,
+                driveRecorderDashcamTransitioning = finalizingPath != null,
+                dashcamButtonActionPending = finalizingPath != null,
+                dashcamButtonActionError = null) }
+            if (finalizingPath != null) {
+                mainHandler.removeCallbacks(dashcamButtonActionTimeout)
+                mainHandler.postDelayed(dashcamButtonActionTimeout, 30_000)
+            }
+            reconcileTrafficSignCamera()
+        }
+        if (finalizingPath == null && uiState.dashcamRecordingEnabled) stopVideo()
+        dashcamButtonActionGate.submit(finalizingPath, stopVideo, action)
+    }
+
+    fun setManualOrientation(orientation: ManualOrientation) {
+        if (orientation == uiState.manualOrientation) return
+        performButtonAction {
+            withCameraOrientation {
+                val confirmedPictogram = uiState.lastTrafficSignPictogram
+                synchronized(captureLock) {
+                    annotationOrientationEpoch++
+                    annotationOrientationStartedAt = clock.instant()
+                    latestAnnotationDrafts = emptyList()
+                    annotationEligibleCaptureIds = emptySet()
+                }
+                invalidateTrafficSignGeneration(clearAssertion = false, reason = "manual_orientation",
+                    permitWrites = isTrafficSignRecognitionRuntimeEnabled(), preserveDisplay = true)
+                preferences.edit().putString(KEY_MANUAL_ORIENTATION, orientation.storageValue).apply()
+                // The generic generation guard clears old pictograms on road
+                // changes. Restore this semantic display only for a mount change.
+                updateState { copy(manualOrientation = orientation, lastTrafficSignPictogram = confirmedPictogram) }
+                host?.applyManualOrientation(orientation)
+            }
+        }
+    }
+
+    fun dismissDashcamButtonActionError() {
+        updateState { copy(dashcamButtonActionError = null) }
     }
 
     internal fun nextDashcamRecordingFile(): File {
@@ -1032,10 +1103,16 @@ class ConsumerSessionController(
             .map { file -> DashcamRecording(file.absolutePath, Instant.ofEpochMilli(file.lastModified()), file.length()) }
 
     fun toggleDriveRecorder() {
+        val stopRequested = driveRecorderEnabled
+        performButtonAction { setDriveRecorderEnabledFromButton(!stopRequested) }
+    }
+
+    private fun setDriveRecorderEnabledFromButton(enabled: Boolean) {
         if (shouldPresentOnboarding()) return
         if (uiState.appScreenshotState != null || uiState.startupDataState != StartupDataState.READY ||
             uiState.driveRecorderState == DriveRecorderState.STOPPING) return
-        if (driveRecorderEnabled) { stopDriveRecorder(); return }
+        if (!enabled) { if (driveRecorderEnabled) stopDriveRecorder(); return }
+        if (driveRecorderEnabled) return
         if (panoramaxCaptureEnabled && uiState.panoramaxMaintenanceInProgress) return
         stopPanoramaxUploads()
         latestDashcamEventPath = null
@@ -1060,13 +1137,22 @@ class ConsumerSessionController(
 
     fun toggleDriveRecorderDashcam() {
         if (uiState.driveRecorderState != DriveRecorderState.RECORDING || uiState.driveRecorderDashcamTransitioning) return
-        updateState { copy(dashcamRecordingEnabled = !dashcamRecordingEnabled, driveRecorderDashcamTransitioning = true) }
-        reconcileTrafficSignCamera()
+        // Capture the intent before the gate stops the current movie. Reading
+        // the toggled state afterward would accidentally start a new movie.
+        val enabled = !uiState.dashcamRecordingEnabled && activeDashcamPath == null
+        performButtonAction {
+            if (uiState.driveRecorderState == DriveRecorderState.RECORDING) {
+                updateState { copy(dashcamRecordingEnabled = enabled,
+                    driveRecorderDashcamTransitioning = enabled) }
+                reconcileTrafficSignCamera()
+            }
+        }
     }
 
     fun toggleDriveRecorderTrafficSignRecognition() {
         if (uiState.driveRecorderState != DriveRecorderState.RECORDING) return
-        setTrafficSignRecognitionEnabled(!uiState.trafficSignRecognitionEnabled)
+        val enabled = !uiState.trafficSignRecognitionEnabled
+        performButtonAction { setTrafficSignRecognitionEnabled(enabled) }
     }
 
     fun setPanoramaxCaptureEnabled(enabled: Boolean) {
@@ -1111,6 +1197,7 @@ class ConsumerSessionController(
             panoramaxLastCaptureSample = null
             panoramaxCaptureInFlight = false
             pendingPhoto = null
+            annotationEligibleCaptureIds = emptySet()
         }
         panoramaxQueueStore.listBatches().filter { it.state == PanoramaxBatchState.CAPTURING }.forEach { batch ->
             runCatching { panoramaxQueueStore.transitionBatch(batch.batchId, PanoramaxBatchState.AWAITING_REVIEW) }
@@ -1180,7 +1267,9 @@ class ConsumerSessionController(
                 val original = File(path)
                 val dimensions = PanoramaxJpegMetadata.pixelDimensions(original) ?: error("Could not decode Panoramax photo")
                 val drafts = synchronized(captureLock) {
-                    (request.drafts + latestAnnotationDrafts).distinctBy { it.sourceEventId }
+                    if (request.orientationEpoch != annotationOrientationEpoch) emptyList() else
+                        (request.drafts + latestAnnotationDrafts).filter { it.frameTimestampUtc >= annotationOrientationStartedAt }
+                            .distinctBy { it.sourceEventId }
                 }
                 val annotations = drafts.mapNotNull { it.projected(dimensions.first, dimensions.second, request.sample.capturedAt) }
                 PanoramaxJpegMetadata.write(original, request.sample, annotations)
@@ -1200,6 +1289,9 @@ class ConsumerSessionController(
                         it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == request.sessionId
                     } ?: return@synchronized
                     panoramaxQueueStore.addJpeg(batch.batchId, original, requireNotNull(thumbnailFile), metadata)
+                    if (request.orientationEpoch == annotationOrientationEpoch) {
+                        annotationEligibleCaptureIds = annotationEligibleCaptureIds + request.requestId
+                    }
                     panoramaxLastCaptureSample = request.sample
                     val attachedIds = annotations.map { it.sourceEventId }.toSet()
                     latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId in attachedIds }
@@ -1235,7 +1327,8 @@ class ConsumerSessionController(
                     now = clock.instant(), config = PanoramaxCadenceConfig(distanceMeters = uiState.panoramaxMinimumDistanceMeters,
                         fallbackInterval = Duration.ofMillis((uiState.panoramaxMinimumIntervalSeconds * 1000).toLong()),
                         triggerMode = uiState.panoramaxTriggerMode))) return
-            PendingPhoto(UUID.randomUUID().toString(), sessionId, sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList()).also {
+            PendingPhoto(UUID.randomUUID().toString(), sessionId, annotationOrientationEpoch,
+                sample.copy(capturedAt = clock.instant()), latestAnnotationDrafts.toList()).also {
                 pendingPhoto = it; panoramaxCaptureInFlight = true
             }
         }
@@ -1378,23 +1471,26 @@ class ConsumerSessionController(
             if (!isTrafficSignRecognitionRuntimeEnabled()) return@post
             PanoramaxTrafficSignAnnotationDraft.from(event)?.let { draft ->
                 val captureSession = synchronized(captureLock) {
+                    if (draft.frameTimestampUtc < annotationOrientationStartedAt) return@let
                     latestAnnotationDrafts = (latestAnnotationDrafts.filter { Duration.between(it.frameTimestampUtc, event.frameTimestampUtc).abs().toMillis() <= 5_000 &&
                         it.physicalSignTrackId != draft.physicalSignTrackId } + draft)
                     panoramaxCaptureSessionId
                 }
                 if (captureSession != null) submitBackgroundTask {
                     runCatching {
-                        val mayAttach = synchronized(captureLock) {
-                            generation == trafficSignGeneration.get() && captureSession == panoramaxCaptureSessionId && !panoramaxCaptureInFlight
+                        val eligibleCaptures = synchronized(captureLock) {
+                            if (generation != trafficSignGeneration.get() || captureSession != panoramaxCaptureSessionId || panoramaxCaptureInFlight)
+                                return@runCatching
+                            annotationEligibleCaptureIds to annotationOrientationStartedAt
                         }
-                        if (!mayAttach) return@runCatching
                         val batch = panoramaxQueueStore.listBatches().firstOrNull {
                             it.state == PanoramaxBatchState.CAPTURING && it.captureSessionId == captureSession
                         } ?: return@runCatching
                         if (generation != trafficSignGeneration.get()) return@runCatching
                         // The queue store serializes its own files. Do not hold
                         // the UI/capture lock while rewriting a JPEG annotation.
-                        if (panoramaxQueueStore.attachTrafficSignAnnotation(batch.batchId, draft) != null) {
+                        if (panoramaxQueueStore.attachTrafficSignAnnotation(batch.batchId, draft,
+                                eligibleCaptureIds = eligibleCaptures.first, minimumCapturedAt = eligibleCaptures.second) != null) {
                             synchronized(captureLock) {
                                 latestAnnotationDrafts = latestAnnotationDrafts.filterNot { it.sourceEventId == draft.sourceEventId }
                             }
@@ -1527,6 +1623,13 @@ class ConsumerSessionController(
     }
 
     fun onDashcamCameraReleased() {
+        mainHandler.post {
+            if (isDisposed.get() || !dashcamButtonActionGate.isWaiting) return@post
+            dashcamButtonActionGate.cancel()
+            mainHandler.removeCallbacks(dashcamButtonActionTimeout)
+            updateState { copy(dashcamButtonActionPending = false,
+                dashcamButtonActionError = appContext.getString(R.string.ui_video_save_failed)) }
+        }
         postState {
             if (driveRecorderEnabled) this else copy(driveRecorderState = DriveRecorderState.DISABLED,
                 driveRecorderDashcamActive = false, driveRecorderDashcamTransitioning = false,
@@ -1873,6 +1976,17 @@ class ConsumerSessionController(
                 dashcamRecordings = listDashcamRecordings(),
                 lastError = if (success) "" else detail.orEmpty())
         }
+        // State-change callbacks above are posted in order. Wait until the
+        // finalized movie is reflected in UI state before invoking the action.
+        mainHandler.post {
+            if (isDisposed.get() || path != latestDashcamEventPath) return@post
+            val wasWaiting = dashcamButtonActionGate.isWaiting
+            mainHandler.removeCallbacks(dashcamButtonActionTimeout)
+            if (wasWaiting) updateState { copy(dashcamButtonActionPending = false,
+                dashcamButtonActionError = if (success) null else detail?.takeIf(String::isNotBlank)
+                    ?: appContext.getString(R.string.ui_video_save_failed)) }
+            dashcamButtonActionGate.onFinalized(path, success)
+        }
     }
 
     fun currentSpeedMetersPerSecondForTrafficSignAnalysis(): Double =
@@ -2149,6 +2263,7 @@ class ConsumerSessionController(
         clearAssertion: Boolean,
         reason: String,
         permitWrites: Boolean,
+        preserveDisplay: Boolean = false,
     ) {
         val generation = trafficSignGeneration.incrementAndGet(permitWrites)
         feedbackGate.reset()
@@ -2165,7 +2280,15 @@ class ConsumerSessionController(
             latestTrafficSignBase.effective()
         }
         updateState {
-            copy(
+            if (preserveDisplay) copy(
+                // Mounting changes pixel coordinates, not the meaning/expiry of
+                // an already confirmed sign. Normal road and time invalidation
+                // continue to govern the retained resolver assertion.
+                trafficSignGeneration = generation,
+                trafficSignDebugRoadContextInvalid = false,
+                trafficSignDebugGenerationSessionContextMismatch = false,
+                trafficSignDebugRuntimeUnhealthy = false,
+            ) else copy(
                 trafficSignGeneration = generation,
                 lastTrafficSignPictogram = null,
                 isTrafficSignEndOverlayVisible = false,
@@ -5034,6 +5157,7 @@ class ConsumerSessionController(
         private const val KEY_BUNDLED_SEED_ASSET_SHA256 = "youspeed.bundled_seed_asset_sha256"
         private val VERIFIED_SHA256 = Regex("^[a-f0-9]{64}$")
         private const val KEY_HIDE_WELCOME = "youspeed.hide_welcome_screen"
+        private const val KEY_MANUAL_ORIENTATION = "youspeed.manual_orientation"
         private const val KEY_MATCHER_DEBUG_PROFILE = "youspeed.matcher_debug_profile"
         private const val KEY_MATCHER_DEBUG_PROFILE_FORCED_VERSION = "youspeed.matcher_debug_profile_forced_version"
         private const val DRIVING_BAN_WARNING_REMINDER_MS = 24_000L

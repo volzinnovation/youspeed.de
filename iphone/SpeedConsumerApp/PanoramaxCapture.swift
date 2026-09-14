@@ -95,6 +95,7 @@ struct PanoramaxTrafficSignAnnotation: Codable, Equatable, Sendable {
 /// Recognition coordinates are normalized to the oriented camera frame. They
 /// become Panoramax pixel coordinates only when associated with a JPEG.
 struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
+    var minimumImageTimestamp: Date? = nil
     let annotationID: String
     let sourceEventID: String
     let frameTimestampUTC: Date
@@ -206,7 +207,8 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
         imageTimestamp: Date,
         maximumTimeDelta: TimeInterval = 5
     ) -> PanoramaxTrafficSignAnnotation? {
-        guard normalizedShape.isValid,
+        guard minimumImageTimestamp.map({ imageTimestamp >= $0 }) ?? true,
+              normalizedShape.isValid,
               imageWidth > 0,
               imageHeight > 0,
               abs(imageTimestamp.timeIntervalSince(frameTimestampUTC)) <= maximumTimeDelta else {

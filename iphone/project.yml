@@ -19,6 +19,7 @@ targets:
           - "*.swift"
         excludes:
           - "SpeedConsumerTests.swift"
+          - "ScreenOrientationUITests.swift"
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
         buildPhase: resources
@@ -72,6 +73,7 @@ targets:
     scheme:
       testTargets:
         - SpeedConsumerTests
+        - SpeedConsumerUITests
 
   SpeedDBBench:
     type: application
@@ -149,16 +151,31 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_STYLE: Automatic
 
+  SpeedConsumerUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SpeedConsumerApp/ScreenOrientationUITests.swift
+    dependencies:
+      - target: SpeedConsumer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumerUITests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
 schemes:
   SpeedConsumer:
     build:
       targets:
         SpeedConsumer: all
         SpeedConsumerTests: [test]
+        SpeedConsumerUITests: [test]
     test:
       gatherCoverageData: false
       targets:
         - name: SpeedConsumerTests
+        - name: SpeedConsumerUITests
     management:
       isShown: true
       orderHint: 0

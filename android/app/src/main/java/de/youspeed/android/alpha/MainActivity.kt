@@ -2,6 +2,7 @@ package de.youspeed.android.alpha
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.view.WindowManager
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import java.io.File
@@ -55,6 +57,9 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
         sessionController.bindHost(this)
+        onBackPressedDispatcher.addCallback(this) {
+            sessionController.performButtonAction { finish() }
+        }
         setContent {
             ConsumerApp(sessionController)
         }
@@ -87,6 +92,20 @@ class MainActivity : ComponentActivity(), ConsumerHost {
     override fun onResume() {
         super.onResume()
         sessionController.refreshOnboardingPermissions()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // This is a manual mount setting. Resizing never stops the shared camera
+        // or changes its orientation in response to the physical sensor.
+        trafficSignCameraRuntime?.updateTargetRotation(sessionController.uiState.manualOrientation.targetRotation)
+    }
+
+    override fun applyManualOrientation(orientation: ManualOrientation) {
+        if (requestedOrientation != orientation.requestedOrientation) {
+            requestedOrientation = orientation.requestedOrientation
+        }
+        trafficSignCameraRuntime?.updateTargetRotation(orientation.targetRotation)
     }
 
     override fun openApplicationSettings() {

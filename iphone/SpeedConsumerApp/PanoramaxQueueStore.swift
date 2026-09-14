@@ -197,7 +197,9 @@ final class PanoramaxQueueStore: @unchecked Sendable {
     ) throws -> String? {
         try lock.withLock {
             guard var batch = try read(batchID) else { throw QueueError.unknownBatch }
-            guard let index = batch.items.indices.min(by: {
+            guard let index = batch.items.indices.filter({ index in
+                draft.minimumImageTimestamp.map { batch.items[index].metadata.capturedAt >= $0 } ?? true
+            }).min(by: {
                 abs(batch.items[$0].metadata.capturedAt.timeIntervalSince(draft.frameTimestampUTC))
                     < abs(batch.items[$1].metadata.capturedAt.timeIntervalSince(draft.frameTimestampUTC))
             }) else { return nil }

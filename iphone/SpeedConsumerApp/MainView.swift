@@ -131,6 +131,7 @@ enum LegalDisclaimerText {
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
+    @Environment(\.layoutDirection) private var textLayoutDirection
     var openSettingsOnAppear: Bool = false
     var onOpenSettingsConsumed: (() -> Void)?
     @State private var hasAutoTriggeredSyncForTests = false
@@ -150,122 +151,130 @@ struct MainView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let landscape = proxy.size.width > proxy.size.height
             let minDimension = min(proxy.size.width, proxy.size.height)
-            let screenInset = minDimension * 0.02
-            let horizontalPadding = max(12, proxy.size.width * 0.04)
+            let screenInset = max(8, minDimension * 0.02)
+            let sectionGap = landscape ? CGFloat(12) : max(14, minDimension * 0.04)
+            let paneWidth = landscape ? (proxy.size.width - sectionGap) / 2 : proxy.size.width
+            let horizontalPadding = max(12, paneWidth * 0.04)
             let controlDiameter: CGFloat = 44
-            let bottomButtonGapWidth = max(0, proxy.size.width - (screenInset * 2) - (controlDiameter * 2))
+            let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
             let topPadding = max(screenInset, proxy.safeAreaInsets.top * 0.28)
             let bottomPadding = max(screenInset, proxy.safeAreaInsets.bottom * 0.45)
-            let sectionGap = max(14, minDimension * 0.04)
-            let topControlBottom = topPadding + 62
-            let bottomControlTopInset = bottomPadding + controlDiameter
-            let contentTopInset = topControlBottom + max(10, minDimension * 0.028)
-            let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? 68 : 0
-            let contentBottomInset = bottomControlTopInset + recorderStatusReserve + max(10, minDimension * 0.03)
-            let locationReserve = viewModel.isInSpeedCaptureMode
-                ? CGFloat(0)
-                : max(cityBadgeSlotMinHeight, minDimension * 0.225)
-            let signWidthBudget = min(proxy.size.width * 0.82, proxy.size.width - (horizontalPadding * 2))
-            let signHeightBudget = (
-                proxy.size.height -
-                contentTopInset -
-                contentBottomInset -
-                locationReserve -
-                (sectionGap * 2)
-            ) / 1.78
-            let signSize = min(signWidthBudget, max(minDimension * 0.58, signHeightBudget))
-            let primaryMetricFontSize = signSize * speedLimitNumberScale
+            let contentTopInset = topPadding + (landscape ? 76 : 72)
+            let recorderStatusReserve: CGFloat = showsDriveRecorderStatusStrip ? (landscape ? 56 : 68) : 0
+            let contentBottomInset = bottomPadding + controlDiameter + recorderStatusReserve + 10
+            let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
+                : (landscape ? cityBadgeSlotMinHeight : max(cityBadgeSlotMinHeight, minDimension * 0.225))
+            let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
+            let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
+                - locationReserve - sectionGap * 2) / 1.78
+            let signSize = landscape
+                ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
+                : min(signWidthBudget, max(minDimension * 0.58, portraitSignHeight))
+            let workspaceBudget = max(60, proxy.size.height - contentBottomInset - screenInset)
+            let primaryMetricFontSize = landscape
+                ? min(signSize * speedLimitNumberScale,
+                      max(24, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
+                : signSize * speedLimitNumberScale
             let baseSecondaryFont = primaryMetricFontSize * secondaryTextRatio
-            let secondaryScale = sharedSecondaryScale(
-                baseSecondaryFont: baseSecondaryFont,
-                availableWidth: proxy.size.width - (horizontalPadding * 2)
-            )
-            let secondaryFont = baseSecondaryFont * secondaryScale
+            let secondaryFont = baseSecondaryFont * sharedSecondaryScale(
+                baseSecondaryFont: baseSecondaryFont, availableWidth: paneWidth - horizontalPadding * 2)
             let debugFont = secondaryFont * 0.6
             let debugSpacing = max(2, minDimension * 0.004)
+            let layout = landscape
+                ? AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
+                : AnyLayout(VStackLayout(spacing: sectionGap))
             ZStack {
-                screenBackgroundView
-                    .ignoresSafeArea()
-
-                VStack(spacing: sectionGap) {
-                    ZStack {
-                        if showsActiveCameraLimitIndicator {
-                            ActiveCameraSpeedLimitEye(
-                                signDiameter: signSize,
-                                tipInset: controlDiameter / 2
-                            )
-                            .stroke(
-                                .white,
-                                style: StrokeStyle(
-                                    lineWidth: max(4, signSize * 0.016),
-                                    lineCap: .round,
-                                    lineJoin: .miter,
-                                    miterLimit: 3
+                screenBackgroundView.ignoresSafeArea()
+                layout {
+                    ZStack(alignment: .top) {
+                        ZStack {
+                            if showsActiveCameraLimitIndicator {
+                                ActiveCameraSpeedLimitEye(
+                                    signDiameter: signSize,
+                                    tipInset: controlDiameter / 2
                                 )
+                                .stroke(
+                                    .white,
+                                    style: StrokeStyle(
+                                        lineWidth: max(4, signSize * 0.016),
+                                        lineCap: .round,
+                                        lineJoin: .miter,
+                                        miterLimit: 3
+                                    )
+                                )
+                                .accessibilityHidden(true)
+                            }
+
+                            SpeedLimitSignView(
+                                limitText: limitText,
+                                numberFontSize: signSize * speedLimitNumberScale,
+                                showsTunnelIcon: shouldShowTunnelSignIcon,
+                                showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
+                                showsPedestrianZoneIcon: showsPedestrianZoneSign,
+                                showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
+                                accessibilityDescription: speedLimitAccessibilityDescription
                             )
-                            .accessibilityHidden(true)
-                        }
+                            .frame(width: signSize, height: signSize)
 
-                        SpeedLimitSignView(
-                            limitText: limitText,
-                            numberFontSize: primaryMetricFontSize,
-                            showsTunnelIcon: shouldShowTunnelSignIcon,
-                            showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
-                            showsPedestrianZoneIcon: showsPedestrianZoneSign,
-                            showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
-                            accessibilityDescription: speedLimitAccessibilityDescription
+                            if viewModel.trafficSignEndOverlayVisible {
+                                EndOfSpeedLimitSignView()
+                                    .frame(width: signSize * 0.34, height: signSize * 0.34)
+                                    .offset(y: -signSize * 0.42)
+                                    .transition(.opacity)
+                                    .accessibilityLabel(NSLocalizedString("limit.accessibility.end", comment: ""))
+                            }
+                        }
+                        .frame(height: signSize)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, screenInset)
+                        .contentShape(Rectangle())
+                        .highPriorityGesture(
+                            TapGesture(count: 2).onEnded {
+                                viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
+                            }
                         )
-                        .frame(width: signSize, height: signSize)
-
-                        if viewModel.trafficSignEndOverlayVisible {
-                            EndOfSpeedLimitSignView()
-                                .frame(width: signSize * 0.34, height: signSize * 0.34)
-                                .offset(y: -signSize * 0.42)
-                                .transition(.opacity)
-                                .accessibilityLabel(NSLocalizedString("limit.accessibility.end", comment: ""))
-                        }
+                        .padding(.top, contentTopInset)
+                        topCornerButtons
+                            .padding(.horizontal, screenInset)
+                            .padding(.top, topPadding)
                     }
-                    .frame(height: signSize)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, screenInset)
-                    .contentShape(Rectangle())
-                    .highPriorityGesture(
-                        TapGesture(count: 2).onEnded {
-                            viewModel.beginSpeedLimitCapture()
+                    .frame(width: paneWidth, height: landscape ? proxy.size.height : signSize + contentTopInset)
+                    .environment(\.layoutDirection, textLayoutDirection)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("dashboard.limitPane")
+
+                    ZStack(alignment: .top) {
+                        driveStatusWorkspace(
+                            primaryFont: primaryMetricFontSize,
+                            secondaryFont: secondaryFont,
+                            badgeWidth: bottomButtonGapWidth,
+                            debugFont: debugFont,
+                            debugSpacing: debugSpacing,
+                            reservedHeight: locationReserve,
+                            sectionGap: sectionGap
+                        )
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, landscape ? screenInset : 0)
+
+                        if showsDriveRecorderStatusStrip {
+                            driveRecorderStatusStrip
+                                .padding(.horizontal, max(8, horizontalPadding * 0.72))
+                                .padding(.bottom, bottomPadding + controlDiameter + 8)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
-                    )
-
-                    driveStatusWorkspace(
-                        primaryFont: primaryMetricFontSize,
-                        secondaryFont: secondaryFont,
-                        badgeWidth: bottomButtonGapWidth,
-                        debugFont: debugFont,
-                        debugSpacing: debugSpacing,
-                        reservedHeight: locationReserve,
-                        sectionGap: sectionGap
-                    )
-                    .padding(.horizontal, horizontalPadding)
+                        bottomCornerButtons(horizontalPadding: screenInset)
+                            .padding(.bottom, bottomPadding)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    }
+                    .frame(width: paneWidth)
+                    .frame(maxHeight: .infinity)
+                    .environment(\.layoutDirection, textLayoutDirection)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("dashboard.workspacePane")
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.top, contentTopInset)
-                .padding(.bottom, contentBottomInset)
-
-                topCornerButtons
-                    .padding(.horizontal, screenInset)
-                    .padding(.top, topPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-                if showsDriveRecorderStatusStrip {
-                    driveRecorderStatusStrip
-                        .padding(.horizontal, max(12, horizontalPadding * 0.72))
-                        .padding(.bottom, bottomPadding + controlDiameter + 8)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                }
-
-                bottomCornerButtons(horizontalPadding: screenInset)
-                    .padding(.bottom, bottomPadding)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .environment(\.layoutDirection, .leftToRight)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -381,7 +390,7 @@ struct MainView: View {
     }
 
     private var localRecordingsButton: some View {
-        Button {
+        RecordingSafeButton {
             showingLocalRecordings = true
         } label: {
             Image(systemName: viewModel.isLowSpeedMatchingRuleActive ? "tortoise.fill" : "ladybug.fill")
@@ -419,7 +428,7 @@ struct MainView: View {
         )
 
         return HStack {
-            Button {
+            RecordingSafeButton {
                 viewModel.toggleDriveRecorder()
             } label: {
                 Image(systemName: recorderControl.systemImageName)
@@ -439,7 +448,7 @@ struct MainView: View {
 
             Spacer()
 
-            Button {
+            RecordingSafeButton {
                 guard galleryControl.isEnabled else { return }
                 showingPanoramaxGallery = true
             } label: {
@@ -466,7 +475,7 @@ struct MainView: View {
 
             Spacer()
 
-            Button { showingLegalInfo = true } label: {
+            RecordingSafeButton { showingLegalInfo = true } label: {
                 Image(systemName: "info.circle.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
@@ -477,11 +486,13 @@ struct MainView: View {
 
             Spacer()
 
-            Button { showingSettings = true } label: {
+            RecordingSafeButton { showingSettings = true } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
+            .accessibilityLabel(NSLocalizedString("settings.title", comment: ""))
+            .accessibilityIdentifier("dashboard.settingsButton")
             .buttonStyle(.plain)
             .background(actionButtonBackgroundColor, in: Circle())
             .overlay { Circle().strokeBorder(actionButtonBorderColor, lineWidth: 1.5) }
@@ -491,7 +502,7 @@ struct MainView: View {
     }
 
     private var trafficSignRecognitionBadge: some View {
-        Button {
+        RecordingSafeButton {
             showingTrafficSignDetails = true
         } label: {
             VStack(spacing: 1) {
@@ -627,7 +638,7 @@ struct MainView: View {
         transitioning: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        RecordingSafeButton(action: action) {
             VStack(spacing: 1) {
                 if transitioning {
                     ProgressView()
@@ -862,7 +873,7 @@ struct MainView: View {
             .accessibilityHidden(showingPreview)
             .onTapGesture {
                 guard canShowDriveRecorderPreview else { return }
-                setDriveRecorderPreviewVisible(true)
+                viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
             }
 
             // Keep this representable mounted even while telemetry is visible.
@@ -870,7 +881,7 @@ struct MainView: View {
             // during movie recording, which rebuilds the graph and terminates
             // the Dashcam file on physical devices.
             if previewPresentation.isAttached, let session = previewSession {
-                DriveCameraPreview(session: session)
+                DriveCameraPreview(session: session, orientation: viewModel.screenOrientation)
                     .frame(maxWidth: .infinity)
                     .frame(height: workspaceHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -912,14 +923,14 @@ struct MainView: View {
                             at: Date(),
                             notBefore: driveRecorderPreviewDismissalAllowedAt
                         ) else { return }
-                        setDriveRecorderPreviewVisible(false)
+                        viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(false) }
                     }
             }
         }
         .frame(maxWidth: .infinity, minHeight: workspaceHeight)
         .accessibilityAction(named: NSLocalizedString("drive_recorder.preview.show", comment: "")) {
             guard canShowDriveRecorderPreview, !showingPreview else { return }
-            setDriveRecorderPreviewVisible(true)
+            viewModel.performDriveInteraction { setDriveRecorderPreviewVisible(true) }
         }
     }
 
@@ -978,7 +989,7 @@ struct MainView: View {
                 )
                 .contentShape(Rectangle())
                 .onLongPressGesture {
-                    showingDebug = true
+                    viewModel.performDriveInteraction { showingDebug = true }
                 }
             } else {
                 VStack(spacing: debugSpacing) {
@@ -996,7 +1007,7 @@ struct MainView: View {
                 .multilineTextAlignment(.center)
                 .contentShape(Rectangle())
                 .onLongPressGesture {
-                    showingDebug = true
+                    viewModel.performDriveInteraction { showingDebug = true }
                 }
             }
         }
@@ -1462,7 +1473,7 @@ private struct TrafficSignRecognitionDetailsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(NSLocalizedString("common.done", comment: "")) {
+                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
                     dismiss()
                 }
             }
@@ -1896,7 +1907,7 @@ private struct LegalInformationView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(NSLocalizedString("common.done", comment: "")) {
+                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
                     dismiss()
                 }
             }
@@ -2163,7 +2174,7 @@ private struct LocalRecordingsView: View {
                                 .font(.subheadline.monospacedDigit())
                             }
                             Spacer(minLength: 0)
-                            Button(role: .destructive) {
+                            RecordingSafeButton(role: .destructive) {
                                 viewModel.deleteLocalObservation(observation.id)
                             } label: {
                                 Image(systemName: "trash")
@@ -2185,7 +2196,7 @@ private struct LocalRecordingsView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                Button {
+                RecordingSafeButton {
                     viewModel.exportAllLocalObservations()
                 } label: {
                     Text(NSLocalizedString("recordings.export_osc", comment: ""))
@@ -2193,7 +2204,7 @@ private struct LocalRecordingsView: View {
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button(role: .destructive) {
+                RecordingSafeButton(role: .destructive) {
                     viewModel.deleteAllLocalObservations()
                 } label: {
                     Label(NSLocalizedString("recordings.delete_all", comment: ""), systemImage: "trash")
@@ -2209,7 +2220,7 @@ private struct LocalRecordingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(NSLocalizedString("common.done", comment: "")) {
+                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
                     dismiss()
                 }
             }
@@ -2275,7 +2286,7 @@ private struct DashcamRecordingsView: View {
                         Section {
                             ForEach(viewModel.dashcamRecordings) { recording in
                                 HStack(spacing: 12) {
-                                    Button {
+                                    RecordingSafeButton {
                                         if selectedRecordingIDs.contains(recording.id) {
                                             selectedRecordingIDs.remove(recording.id)
                                         } else {
@@ -2300,7 +2311,7 @@ private struct DashcamRecordingsView: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Button {
+                            RecordingSafeButton {
                                 sharedRecording = recording
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
@@ -2319,14 +2330,14 @@ private struct DashcamRecordingsView: View {
 
             if !viewModel.dashcamRecordings.isEmpty {
                 HStack(spacing: 8) {
-                    Button {
+                    RecordingSafeButton {
                         selectedRecordingIDs = Set(viewModel.dashcamRecordings.map(\.id))
                     } label: {
                         Image(systemName: "checkmark.square.fill").frame(width: 24, height: 24)
                     }
                     .buttonStyle(.bordered)
                     .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_all", comment: ""))
-                    Button {
+                    RecordingSafeButton {
                         selectedRecordingIDs.removeAll()
                     } label: {
                         Image(systemName: "square.dashed").frame(width: 24, height: 24)
@@ -2334,7 +2345,7 @@ private struct DashcamRecordingsView: View {
                     .buttonStyle(.bordered)
                     .accessibilityLabel(NSLocalizedString("drive_recorder.library.select_none", comment: ""))
                     .disabled(selectedRecordingIDs.isEmpty)
-                    Button(role: .destructive) {
+                    RecordingSafeButton(role: .destructive) {
                         showingDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash").frame(width: 24, height: 24)
@@ -2357,8 +2368,8 @@ private struct DashcamRecordingsView: View {
             ShareSheet(activityItems: [recording.url])
         }
         .alert(NSLocalizedString("drive_recorder.library.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
-            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            RecordingSafeButton(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
                 viewModel.deleteDashcamRecordings(ids: selectedRecordingIDs)
                 selectedRecordingIDs.removeAll()
             }
@@ -2396,12 +2407,12 @@ private struct PanoramaxReviewView: View {
                             $0.state == .captured || $0.state == .included || $0.state == .retryableError
                         }.count
                         if batch.state == .awaitingReview, included > 0 {
-                            Button(NSLocalizedString("panoramax.review.approve", comment: "")) {
+                            RecordingSafeButton(NSLocalizedString("panoramax.review.approve", comment: "")) {
                                 viewModel.approvePanoramaxBatch(batchID: batch.batchID)
                             }
                             .disabled(!viewModel.canProcessPanoramaxUploads)
                         } else if DriveRecorderPolicy.canStartPanoramaxUpload(for: batch.state) {
-                            Button(NSLocalizedString("panoramax.gallery.upload", comment: "")) {
+                            RecordingSafeButton(NSLocalizedString("panoramax.gallery.upload", comment: "")) {
                                 Task { @MainActor in
                                     guard await viewModel.validatePanoramaxConnection() else { return }
                                     viewModel.uploadPanoramaxBatch(batchID: batch.batchID)
@@ -2452,12 +2463,12 @@ private struct PanoramaxReviewItemRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button { showingOriginal = true } label: {
+            RecordingSafeButton { showingOriginal = true } label: {
                 thumbnail.frame(width: 112, height: 64)
             }
             .buttonStyle(.plain)
             .overlay(alignment: .topTrailing) {
-                Button {
+                RecordingSafeButton {
                     viewModel.togglePanoramaxFavorite(batchID: batch.batchID, itemID: item.itemID)
                 } label: {
                     Image(systemName: item.isFavorite ? "star.fill" : "star")
@@ -2489,7 +2500,7 @@ private struct PanoramaxReviewItemRow: View {
                     .foregroundStyle(included ? .green : .secondary)
             }
             Spacer(minLength: 0)
-            Button {
+            RecordingSafeButton {
                 viewModel.setPanoramaxItemIncluded(batchID: batch.batchID, itemID: item.itemID, included: !included)
             } label: {
                 Image(systemName: included ? "checkmark.circle.fill" : "circle")
@@ -2498,7 +2509,7 @@ private struct PanoramaxReviewItemRow: View {
             }
             .buttonStyle(.plain)
             .disabled(!canEdit)
-            Button(role: .destructive) {
+            RecordingSafeButton(role: .destructive) {
                 viewModel.deletePanoramaxItem(batchID: batch.batchID, itemID: item.itemID)
             } label: {
                 Image(systemName: "trash")
@@ -2603,7 +2614,7 @@ private struct PictureGalleryView: View {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
                             ForEach(entries, id: \.item.itemID) { entry in
                             let galleryItem = GalleryItem(id: entry.item.itemID, batchID: entry.batch.batchID, item: entry.item)
-                            Button { selectedItem = galleryItem } label: {
+                            RecordingSafeButton { selectedItem = galleryItem } label: {
                                 thumbnail(for: entry.item)
                                     .frame(maxWidth: .infinity)
                                     .frame(height: 110)
@@ -2613,7 +2624,7 @@ private struct PictureGalleryView: View {
                             .buttonStyle(.plain)
                             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                             .overlay(alignment: .topLeading) {
-                                Button {
+                                RecordingSafeButton {
                                     if selectedItemIDs.contains(entry.item.itemID) {
                                         selectedItemIDs.remove(entry.item.itemID)
                                     } else if canSelectLocally(batch: entry.batch) {
@@ -2634,7 +2645,7 @@ private struct PictureGalleryView: View {
                                 .padding(6)
                             }
                             .overlay(alignment: .topTrailing) {
-                                Button {
+                                RecordingSafeButton {
                                     viewModel.togglePanoramaxFavorite(batchID: galleryItem.batchID, itemID: galleryItem.item.itemID)
                                 } label: {
                                     Image(systemName: entry.item.isFavorite ? "star.fill" : "star")
@@ -2719,7 +2730,7 @@ private struct PictureGalleryView: View {
                     }
                     HStack(spacing: 8) {
                         if !entries.isEmpty {
-                            Button {
+                            RecordingSafeButton {
                                 selectedItemIDs = Set(locallySelectableEntries.map { $0.item.itemID })
                             } label: {
                                 Image(systemName: "checkmark.square.fill")
@@ -2728,7 +2739,7 @@ private struct PictureGalleryView: View {
                             .buttonStyle(.bordered)
                             .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_all", comment: ""))
                             .disabled(locallySelectableEntries.isEmpty)
-                            Button {
+                            RecordingSafeButton {
                                 selectedItemIDs.removeAll()
                             } label: {
                                 Image(systemName: "square.dashed")
@@ -2737,7 +2748,7 @@ private struct PictureGalleryView: View {
                             .buttonStyle(.bordered)
                             .accessibilityLabel(NSLocalizedString("panoramax.gallery.select_none", comment: ""))
                             .disabled(selectedItemIDs.isEmpty)
-                            Button(role: .destructive) { showingDeleteConfirmation = true } label: {
+                            RecordingSafeButton(role: .destructive) { showingDeleteConfirmation = true } label: {
                                 Image(systemName: "trash")
                                     .frame(width: 24, height: 24)
                             }
@@ -2750,7 +2761,7 @@ private struct PictureGalleryView: View {
                         }
                         Spacer(minLength: 0)
                         if viewModel.activePanoramaxUploadBatchIDs.isEmpty, !entries.isEmpty {
-                            Button {
+                            RecordingSafeButton {
                                 Task { @MainActor in
                                     guard viewModel.canProcessPanoramaxUploads else { return }
                                     guard await viewModel.validatePanoramaxConnection() else {
@@ -2778,7 +2789,7 @@ private struct PictureGalleryView: View {
                                 || !viewModel.canProcessPanoramaxUploads
                             )
                         } else {
-                            Button(role: .destructive) {
+                            RecordingSafeButton(role: .destructive) {
                                 viewModel.stopPanoramaxUploads()
                             } label: {
                                 Image(systemName: "stop.circle.fill")
@@ -2819,8 +2830,8 @@ private struct PictureGalleryView: View {
             }
         }
         .alert(NSLocalizedString("panoramax.gallery.delete_title", comment: ""), isPresented: $showingDeleteConfirmation) {
-            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-            Button(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            RecordingSafeButton(NSLocalizedString("panoramax.gallery.delete_confirm", comment: ""), role: .destructive) {
                 viewModel.deletePanoramaxSelections(selectedEntries.map { (batchID: $0.batch.batchID, itemID: $0.item.itemID) })
                 selectedItemIDs.removeAll()
             }
@@ -2828,7 +2839,7 @@ private struct PictureGalleryView: View {
             Text(String(format: NSLocalizedString("panoramax.gallery.delete_message", comment: ""), selectedItemIDs.count))
         }
         .alert(NSLocalizedString("panoramax.gallery.account_required_title", comment: ""), isPresented: $showingAccountRequired) {
-            Button(NSLocalizedString("common.done", comment: ""), role: .cancel) {}
+            RecordingSafeButton(NSLocalizedString("common.done", comment: ""), role: .cancel) {}
         } message: {
             Text(NSLocalizedString("panoramax.gallery.upload_requires_account", comment: ""))
         }
@@ -2941,6 +2952,24 @@ private struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section(NSLocalizedString("settings.orientation.section", comment: "")) {
+                Picker(NSLocalizedString("settings.orientation.title", comment: ""), selection: Binding(
+                    get: { viewModel.screenOrientation },
+                    set: { viewModel.selectScreenOrientation($0) }
+                )) {
+                    ForEach(ScreenOrientation.allCases) { orientation in
+                        Text(NSLocalizedString(orientation.localizationKey, comment: "")).tag(orientation)
+                    }
+                }
+                .pickerStyle(.inline)
+                if let error = viewModel.screenOrientationError {
+                    Text(error).foregroundStyle(.red).font(.footnote)
+                }
+                Text(NSLocalizedString("settings.orientation.description", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section(NSLocalizedString("settings.audio.section", comment: "")) {
                 Toggle(NSLocalizedString("settings.audio.voice_output", comment: ""), isOn: $viewModel.audioAlertsEnabled)
 
@@ -3112,14 +3141,14 @@ private struct SettingsView: View {
                 LabeledContent(NSLocalizedString("panoramax.account.status", comment: ""), value: account.status)
 
                 if account.isConnected {
-                    Button(NSLocalizedString("panoramax.account.disconnect", comment: ""), role: .destructive) {
+                    RecordingSafeButton(NSLocalizedString("panoramax.account.disconnect", comment: ""), role: .destructive) {
                         account.disconnect()
                     }
                 } else {
-                    Button(NSLocalizedString("panoramax.account.connect", comment: "")) {
+                    RecordingSafeButton(NSLocalizedString("panoramax.account.connect", comment: "")) {
                         account.connect()
                     }
-                    Button(NSLocalizedString("panoramax.account.validate", comment: "")) {
+                    RecordingSafeButton(NSLocalizedString("panoramax.account.validate", comment: "")) {
                         account.validateConnection()
                     }
                 }
@@ -3146,7 +3175,7 @@ private struct SettingsView: View {
                 } else {
                     Text(viewModel.firstLocationPackStatus).font(.footnote)
                     Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
-                    Button(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
+                    RecordingSafeButton(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
                     ForEach(viewModel.bundleDownloadSections) { country in
                         if country.options.count == 1, let option = country.options.first {
                             bundleOptionRow(option, title: country.countryName)
@@ -3165,7 +3194,7 @@ private struct SettingsView: View {
                     }
                 }
 
-                Button(role: .destructive) {
+                RecordingSafeButton(role: .destructive) {
                     showingDeleteDownloadedBundlesConfirm = true
                 } label: {
                     Text(NSLocalizedString("settings.maps.delete_downloads", comment: ""))
@@ -3235,7 +3264,7 @@ private struct SettingsView: View {
             }
 
             Section(NSLocalizedString("onboarding.settings.section", comment: "")) {
-                Button(NSLocalizedString("onboarding.settings.replay", comment: "")) {
+                RecordingSafeButton(NSLocalizedString("onboarding.settings.replay", comment: "")) {
                     viewModel.replayOnboarding()
                 }
                 .disabled(viewModel.isDriveRecorderActive)
@@ -3253,8 +3282,8 @@ private struct SettingsView: View {
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
         .alert(NSLocalizedString("settings.maps.delete_title", comment: ""), isPresented: $showingDeleteDownloadedBundlesConfirm) {
-            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-            Button(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            RecordingSafeButton(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
                 viewModel.deleteDownloadedBundlesKeepingSeed()
             }
         } message: {
@@ -3425,7 +3454,7 @@ private struct SettingsView: View {
             Spacer(minLength: 8)
 
             if downloaded {
-                Button(role: .destructive) {
+                RecordingSafeButton(role: .destructive) {
                     viewModel.deleteSelectedBundle(option)
                 } label: {
                     Image(systemName: "trash")
@@ -3441,7 +3470,7 @@ private struct SettingsView: View {
                         .frame(width: 30, height: 30)
                         .foregroundStyle(.secondary)
                 } else {
-                    Button {
+                    RecordingSafeButton {
                         viewModel.downloadSelectedBundle(option)
                     } label: {
                         Image(systemName: "arrow.down.circle")
@@ -3487,22 +3516,22 @@ private struct DebugInformationView: View {
 
             Section("Logs") {
                 if let gpsLogURL {
-                    Button("GPS-CSV teilen") {
+                    RecordingSafeButton("GPS-CSV teilen") {
                         shareItem = LocalDebugShareItem(url: gpsLogURL)
                     }
                 }
                 if let matchLogURL {
-                    Button("Matcher-Log teilen") {
+                    RecordingSafeButton("Matcher-Log teilen") {
                         shareItem = LocalDebugShareItem(url: matchLogURL)
                     }
                 }
                 if let tsrLogURL {
-                    Button("TSR-Log teilen") {
+                    RecordingSafeButton("TSR-Log teilen") {
                         shareItem = LocalDebugShareItem(url: tsrLogURL)
                     }
                 }
                 if gpsLogURL != nil || matchLogURL != nil || tsrLogURL != nil {
-                    Button("Fahrlog leeren", role: .destructive) {
+                    RecordingSafeButton("Fahrlog leeren", role: .destructive) {
                         showingClearDrivingLogConfirm = true
                     }
                 }
@@ -3576,7 +3605,7 @@ private struct DebugInformationView: View {
                         Link("Im Browser öffnen", destination: target.url)
                             .buttonStyle(.bordered)
 
-                        Button("In App-Browser") {
+                        RecordingSafeButton("In App-Browser") {
                             showingOSMBrowser = true
                         }
                         .buttonStyle(.borderedProminent)
@@ -3595,8 +3624,8 @@ private struct DebugInformationView: View {
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Fahrlog leeren?", isPresented: $showingClearDrivingLogConfirm) {
-            Button(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
-            Button("Leeren", role: .destructive) {
+            RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
+            RecordingSafeButton("Leeren", role: .destructive) {
                 viewModel.clearDrivingLogs()
             }
         } message: {

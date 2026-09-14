@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
+import android.media.MediaMetadataRetriever
 import android.os.SystemClock
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -36,7 +37,7 @@ class DriveRecorderInstrumentedTest {
         Manifest.permission.ACCESS_COARSE_LOCATION,
     )
 
-    @Test fun liveModuleChangesPreserveMovieAndPhotoSession() {
+    @Test fun liveButtonsFinalizeMovieAndPreservePhotoSession() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val preferences = context.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
         val previous = preferences.all
@@ -90,6 +91,16 @@ class DriveRecorderInstrumentedTest {
                     }
                     fail("$label: ${state().driveRecorderState}, ${state().trafficSignCameraRuntimeDetail}")
                 }
+                fun startMovieWithFrames(label: String) {
+                    val movies = File(context.filesDir, "dashcam")
+                    val previousNames = movies.listFiles().orEmpty().map { it.name }.toSet()
+                    act { it.toggleDriveRecorderDashcam() }
+                    // CameraX Start precedes the first encoder frame. A stop at
+                    // that instant correctly reports ERROR_NO_VALID_DATA; this
+                    // success-path test must wait for actual movie output.
+                    awaitState(label) { state -> state.driveRecorderDashcamActive &&
+                        movies.listFiles().orEmpty().any { it.name !in previousNames && it.length() > 1_024 } }
+                }
                 awaitState("Startup") { it.startupDataState == StartupDataState.READY && !it.panoramaxMaintenanceInProgress }
                 act {
                     assertTrue("Recorder test requires a real road database", it.hasUsableOnboardingMap())
@@ -110,19 +121,20 @@ class DriveRecorderInstrumentedTest {
                 }
                 awaitState("Movie and photos active") { it.driveRecorderDashcamActive && it.driveRecorderPanoramaxActive }
                 awaitState("First Panoramax photo saved") { it.panoramaxCaptureCount > 0 }
-                assertPreviewHideShowPreservesSurface(scenario, context, ::state)
+                assertPreviewButtonFinalizesMovieAndPreservesSurface(scenario, context, ::state)
+                startMovieWithFrames("Explicit movie restart")
                 act { it.toggleDriveRecorderTrafficSignRecognition() }
-                // Incremental CameraX graph changes previously stopped the movie here.
-                SystemClock.sleep(2_000)
-                assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
-                assertTrue(state().driveRecorderDashcamActive)
-                assertFalse(state().trafficSignRecognitionEnabled)
-                act { it.toggleDriveRecorderDashcam() }
-                awaitState("Movie off") { !it.driveRecorderDashcamActive && !it.driveRecorderDashcamTransitioning }
+                awaitState("TSR button finalizes video before changing recognition") {
+                    !it.driveRecorderDashcamActive && !it.driveRecorderDashcamTransitioning && !it.trafficSignRecognitionEnabled
+                }
                 assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
                 assertTrue(state().driveRecorderPanoramaxActive)
+                startMovieWithFrames("Explicit movie restart before stop intent")
                 act { it.toggleDriveRecorderDashcam() }
-                awaitState("Movie restarted") { it.driveRecorderDashcamActive }
+                awaitState("Dashcam stop intent remains off") { !it.driveRecorderDashcamActive && !it.driveRecorderDashcamTransitioning }
+                assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
+                assertTrue(state().driveRecorderPanoramaxActive)
+                startMovieWithFrames("Movie restarted")
                 act { it.toggleDriveRecorder() }
                 awaitState("Recorder stopped") { it.driveRecorderState == DriveRecorderState.DISABLED }
                 assertFalse(queue.listBatches().any { it.state == PanoramaxBatchState.CAPTURING })
@@ -161,7 +173,7 @@ class DriveRecorderInstrumentedTest {
         }
     }
 
-    private fun assertPreviewHideShowPreservesSurface(
+    private fun assertPreviewButtonFinalizesMovieAndPreservesSurface(
         scenario: ActivityScenario<MainActivity>,
         context: Context,
         state: () -> ConsumerUiState,
@@ -195,7 +207,7 @@ class DriveRecorderInstrumentedTest {
             error("No attached preview surface with visible=$visible")
         }
 
-        click("recorder-show-preview")
+        // Showing the movie preview on start is automatic, not a button action.
         val initial = awaitPreview(visible = true)
         val movieNames = File(context.filesDir, "dashcam").listFiles().orEmpty().map { it.name }.toSet()
         val recordingStartedAt = state().driveRecorderStartedAt
@@ -208,27 +220,35 @@ class DriveRecorderInstrumentedTest {
         }
         scenario.onActivity { holder?.addCallback(callback) }
         try {
-            repeat(2) {
-                click("recorder-hide-preview")
-                val hidden = awaitPreview(visible = false)
-                assertSame("Hiding keeps the preview mounted", initial.preview, hidden.preview)
-                assertSame("Hiding keeps the camera surface", initial.surface, hidden.surface)
-                SystemClock.sleep(250)
-                assertTrue("Movie continues while preview is hidden", state().driveRecorderDashcamActive)
-
-                click("recorder-show-preview")
-                val shown = awaitPreview(visible = true)
-                assertSame("Showing reuses the existing preview", initial.preview, shown.preview)
-                assertSame("Showing reuses the existing output view", initial.output, shown.output)
-                assertSame("Showing reuses the camera surface", initial.surface, shown.surface)
-                SystemClock.sleep(250)
-                assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
-                assertTrue(state().driveRecorderDashcamActive)
-                assertEquals(recordingStartedAt, state().driveRecorderStartedAt)
-                assertEquals("Preview toggles must not split the movie", movieNames,
-                    File(context.filesDir, "dashcam").listFiles().orEmpty().map { it.name }.toSet())
+            val cameraState = state().trafficSignCameraRuntimeState
+            val recognitionEnabled = state().trafficSignRecognitionEnabled
+            SystemClock.sleep(1_000)
+            click("recorder-hide-preview")
+            val deadline = SystemClock.uptimeMillis() + 30_000
+            while ((state().driveRecorderDashcamActive || state().driveRecorderDashcamTransitioning ||
+                    state().dashcamButtonActionPending) && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
+            assertFalse(state().driveRecorderDashcamActive)
+            assertFalse(state().driveRecorderDashcamTransitioning)
+            assertFalse(state().dashcamButtonActionPending)
+            assertNull(state().dashcamButtonActionError)
+            val hidden = awaitPreview(visible = false)
+            assertSame("Stopping video keeps preview mounted for the photo/TSR session", initial.preview, hidden.preview)
+            assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
+            assertTrue(state().driveRecorderPanoramaxActive)
+            assertEquals(recognitionEnabled, state().trafficSignRecognitionEnabled)
+            assertEquals(cameraState, state().trafficSignCameraRuntimeState)
+            assertEquals(recordingStartedAt, state().driveRecorderStartedAt)
+            assertEquals("The button must not create a replacement movie", movieNames,
+                File(context.filesDir, "dashcam").listFiles().orEmpty().map { it.name }.toSet())
+            val movie = state().dashcamRecordings.maxByOrNull { it.createdAt }
+            assertNotNull("Finalized movie is listed before the button action completes", movie)
+            MediaMetadataRetriever().use { retriever ->
+                retriever.setDataSource(requireNotNull(movie).path)
+                assertTrue("Finalized movie is playable", (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0) > 0)
             }
-            assertEquals("Hide/show must not destroy a SurfaceView surface", 0, destroyed.get())
+            SystemClock.sleep(500)
+            assertFalse("A user action never restarts video automatically", state().driveRecorderDashcamActive)
+            assertEquals("Stopping only the video consumer keeps the preview surface", 0, destroyed.get())
         } finally {
             scenario.onActivity { holder?.removeCallback(callback) }
         }

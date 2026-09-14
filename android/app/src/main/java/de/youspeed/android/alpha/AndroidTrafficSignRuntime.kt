@@ -1,7 +1,6 @@
 package de.youspeed.android.alpha
 
 import android.content.Context
-import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -17,7 +16,6 @@ import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
 import android.util.Log
-import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -718,6 +716,9 @@ internal class AndroidTrafficSignCameraRuntime(
     private val cameraResourcesReleased = AtomicBoolean(false)
     private val cameraReleaseCallbacks = mutableListOf<() -> Unit>()
     private var cameraProvider: ProcessCameraProvider? = null
+    private var boundCamera: androidx.camera.core.Camera? = null
+    @Volatile private var expectedAnalysisRotation: Int? = null
+    @Volatile private var analysisOrientationEpoch = 0L
     private var imageAnalysis: ImageAnalysis? = null
     private var analyzerAttached = false
     private var imageCapture: ImageCapture? = null
@@ -775,6 +776,23 @@ internal class AndroidTrafficSignCameraRuntime(
         preview?.setSurfaceProvider(mainExecutor, provider ?: offscreenPreviewProvider)
     }
 
+    /** Update the selected mount without unbinding the photo/recognition graph. */
+    fun updateTargetRotation(rotation: Int) {
+        if (closed.get()) return
+        analysisOrientationEpoch++
+        expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
+        // Discard buffered frames; the analyzer also checks each frame's actual
+        // rotation before it can acquire the new recognition generation.
+        imageAnalysis?.clearAnalyzer()
+        analyzerAttached = false
+        preview?.targetRotation = rotation
+        imageAnalysis?.targetRotation = rotation
+        imageCapture?.targetRotation = rotation
+        // Button actions finalize an existing movie before changing this value.
+        videoCapture?.targetRotation = rotation
+        refreshAnalysisConsumer()
+    }
+
     /** Module changes preserve the camera and any independently running movie. */
     fun refreshConfiguration() {
         if (closed.get()) return
@@ -800,9 +818,14 @@ internal class AndroidTrafficSignCameraRuntime(
         if (needed == analyzerAttached) return
         analyzerAttached = needed
         if (needed) {
+            val orientationEpoch = analysisOrientationEpoch
             analysis.setAnalyzer(cameraExecutor) { image ->
-                val current = bridge
-                if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
+                controller.withCameraOrientation {
+                    val current = bridge
+                    if (current == null || orientationEpoch != analysisOrientationEpoch ||
+                        image.imageInfo.rotationDegrees != expectedAnalysisRotation) image.close()
+                    else current.submit(CameraXTrafficSignFrame(image))
+                }
             }
         } else analysis.clearAnalyzer()
     }
@@ -902,7 +925,7 @@ internal class AndroidTrafficSignCameraRuntime(
             }
             runCatching {
                 val provider = providerFuture.get()
-                val rotation = (lifecycleOwner as? Activity)?.display?.rotation ?: Surface.ROTATION_0
+                val rotation = controller.uiState.manualOrientation.targetRotation
                 val analysis = imageAnalysis ?: run {
                     ImageAnalysis.Builder()
                         .setTargetRotation(rotation)
@@ -954,7 +977,8 @@ internal class AndroidTrafficSignCameraRuntime(
                 val oldUseCases = listOfNotNull(preview, imageAnalysis, imageCapture, videoCapture)
                 if (cameraBound) provider.unbind(*oldUseCases.toTypedArray())
                 val useCases = listOfNotNull(currentPreview, analysis, capture, video)
-                provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
+                expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
                 cameraProvider = provider
                 imageAnalysis = analysis
                 imageCapture = capture
@@ -1131,6 +1155,8 @@ internal class AndroidTrafficSignCameraRuntime(
         videoCapture = null
         preview = null
         cameraProvider = null
+        boundCamera = null
+        expectedAnalysisRotation = null
         cameraExecutor.shutdown()
         controller.onDashcamCameraReleased()
         val completions = cameraReleaseCallbacks.toList()

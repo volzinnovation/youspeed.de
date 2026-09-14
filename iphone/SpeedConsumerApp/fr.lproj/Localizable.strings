@@ -40,7 +40,7 @@
 "drive_recorder.status.toggle_hint" = "Touchez deux fois pour changer ce module pendant l’enregistrement.";
 "drive_recorder.preview.live" = "En direct";
 "drive_recorder.preview.show" = "Afficher l’image en direct de la dashcam";
-"drive_recorder.preview.hide" = "Touchez pour voir la vitesse et le lieu";
+"drive_recorder.preview.hide" = "Arrêter la vidéo · afficher la vitesse et le lieu";
 "drive_recorder.settings.section" = "Enregistreur de trajet";
 "drive_recorder.settings.description" = "L’enregistreur principal démarre toujours la dashcam. La reconnaissance des panneaux et la capture Panoramax activées s’y ajoutent ; utilisez les puces pendant l’enregistrement pour modifier la dashcam ou la reconnaissance.";
 "drive_recorder.settings.status" = "État";
@@ -355,3 +355,14 @@
 "onboarding.screenshot.title" = "Capture d’écran";
 "onboarding.screenshot.close" = "Fermer";
 "onboarding.panoramax.account_screenshot" = "Connectez votre compte Panoramax dans les réglages avant d’envoyer les photos sélectionnées.";
+
+// Manual mounting orientation and safe recorder actions.
+"settings.orientation.section" = "Orientation de l’écran";
+"settings.orientation.title" = "Position du téléphone";
+"settings.orientation.portrait" = "Portrait";
+"settings.orientation.landscape_camera_lower_right" = "Paysage · caméra en bas à droite";
+"settings.orientation.landscape_camera_upper_left" = "Paysage · caméra en haut à gauche";
+"settings.orientation.description" = "Choisissez la position du téléphone. L’écran reste dans cette position jusqu’à votre prochaine sélection. En paysage, la limitation est à gauche et la vitesse ou la Dashcam à droite.";
+"drive_recorder.action.saving" = "Enregistrement de la vidéo Dashcam…";
+"drive_recorder.action.failed_title" = "Impossible d’enregistrer la vidéo Dashcam";
+"drive_recorder.action.failed" = "L’action a été annulée car la vidéo Dashcam n’a pas pu être finalisée. Veuillez réessayer.";

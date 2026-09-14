@@ -40,7 +40,7 @@
 "drive_recorder.status.toggle_hint" = "Tik tweemaal om deze module tijdens de opname te schakelen.";
 "drive_recorder.preview.live" = "Live";
 "drive_recorder.preview.show" = "Livebeeld van dashcam tonen";
-"drive_recorder.preview.hide" = "Tik voor snelheid en locatie";
+"drive_recorder.preview.hide" = "Video stoppen · snelheid en locatie tonen";
 "drive_recorder.settings.section" = "Ritrecorder";
 "drive_recorder.settings.description" = "De hoofdopname start altijd de dashcam. Ingeschakelde verkeersbordherkenning en Panoramax-opname doen mee; wijzig dashcam of verkeersbordherkenning tijdens de opname met de chips.";
 "drive_recorder.settings.status" = "Status";
@@ -355,3 +355,14 @@
 "onboarding.screenshot.title" = "Schermafbeelding";
 "onboarding.screenshot.close" = "Sluiten";
 "onboarding.panoramax.account_screenshot" = "Verbind je Panoramax-account in Instellingen voordat je geselecteerde foto’s uploadt.";
+
+// Manual mounting orientation and safe recorder actions.
+"settings.orientation.section" = "Schermoriëntatie";
+"settings.orientation.title" = "Montagepositie";
+"settings.orientation.portrait" = "Staand";
+"settings.orientation.landscape_camera_lower_right" = "Liggend · camera rechtsonder";
+"settings.orientation.landscape_camera_upper_left" = "Liggend · camera linksboven";
+"settings.orientation.description" = "Kies hoe de telefoon is gemonteerd. Het scherm blijft in deze positie tot je een andere kiest. Liggend staat de snelheidslimiet links en de snelheid of Dashcam rechts.";
+"drive_recorder.action.saving" = "Dashcam-video opslaan…";
+"drive_recorder.action.failed_title" = "Dashcam-video kon niet worden opgeslagen";
+"drive_recorder.action.failed" = "De actie is geannuleerd omdat de Dashcam-video niet kon worden afgerond. Probeer het opnieuw.";

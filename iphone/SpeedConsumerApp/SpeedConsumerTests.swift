@@ -18971,3 +18971,197 @@ private final class TrafficSignShadowQARecorder: TrafficSignQAEventSinkV2, @unch
         events.append(event)
     }
 }
+
+extension SpeedConsumerTests {
+    func testManualScreenOrientationDefaultsAndPersistence() throws {
+        let suiteName = "youspeed.orientation.test.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        XCTAssertEqual(ScreenOrientation.load(from: defaults), .portrait)
+        defaults.set("automatic", forKey: ScreenOrientation.defaultsKey)
+        XCTAssertEqual(ScreenOrientation.load(from: defaults), .portrait)
+        for orientation in ScreenOrientation.allCases {
+            defaults.set(orientation.rawValue, forKey: ScreenOrientation.defaultsKey)
+            XCTAssertEqual(ScreenOrientation.load(from: defaults), orientation)
+        }
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.interfaceMask, .landscapeRight)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.interfaceMask, .landscapeLeft)
+        XCTAssertEqual(ScreenOrientation.portrait.captureRotationAngle, 90)
+        XCTAssertEqual(ScreenOrientation.portrait.frameOrientation, .right)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.captureRotationAngle, 0)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.frameOrientation, .up)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.captureRotationAngle, 180)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.frameOrientation, .down)
+    }
+
+    @MainActor
+    func testDriveInteractionWaitsForFinalizationAndIgnoresRepeatedPresses() {
+        let gate = DriveInteractionGate()
+        var completion: ((Result<Void, Error>) -> Void)?
+        var events: [String] = []
+        gate.perform(needsFinalization: true, finalize: { completion = $0 }, changed: {
+            events.append($0 ? "saving" : "saved")
+        }, failed: { _ in XCTFail("Unexpected failure") }, action: {
+            XCTAssertTrue(gate.didFinalizeForCurrentAction)
+            events.append("open settings")
+        })
+        gate.perform(needsFinalization: true, finalize: { _ in XCTFail("Duplicate stop") }, changed: { _ in },
+                     failed: { _ in XCTFail("Duplicate error") }, action: { XCTFail("Duplicate action") })
+        XCTAssertEqual(events, ["saving"])
+        XCTAssertTrue(gate.isFinalizing)
+        completion?(.success(()))
+        completion?(.success(()))
+        XCTAssertEqual(events, ["saving", "saved", "open settings"])
+        XCTAssertFalse(gate.isFinalizing)
+        XCTAssertFalse(gate.didFinalizeForCurrentAction)
+    }
+
+    @MainActor
+    func testDriveInteractionFailureBlocksActionAndAllowsRetry() {
+        let gate = DriveInteractionGate()
+        var completion: ((Result<Void, Error>) -> Void)?
+        var errors = 0
+        var actions = 0
+        gate.perform(needsFinalization: true, finalize: { completion = $0 }, changed: { _ in },
+                     failed: { _ in errors += 1 }, action: { actions += 1 })
+        completion?(.failure(DriveInteractionError.finalizationFailed))
+        XCTAssertEqual(errors, 1)
+        XCTAssertEqual(actions, 0)
+        gate.perform(needsFinalization: false, finalize: { _ in XCTFail("Photos/TSR must not be stopped") },
+                     changed: { _ in }, failed: { _ in XCTFail("Unexpected failure") }, action: { actions += 1 })
+        XCTAssertEqual(actions, 1)
+    }
+
+    @MainActor
+    func testDriveInteractionCancellationRejectsLateCallbackAndKeepsNewRequest() {
+        let gate = DriveInteractionGate()
+        var oldCompletion: ((Result<Void, Error>) -> Void)?
+        var newCompletion: ((Result<Void, Error>) -> Void)?
+        var actions = 0
+        gate.perform(needsFinalization: true, finalize: { oldCompletion = $0 }, changed: { _ in },
+                     failed: { _ in XCTFail("Unexpected failure") }, action: { XCTFail("Cancelled navigation") })
+        gate.cancel()
+        gate.perform(needsFinalization: true, finalize: { newCompletion = $0 }, changed: { _ in },
+                     failed: { _ in XCTFail("Unexpected failure") }, action: { actions += 1 })
+        oldCompletion?(.success(()))
+        XCTAssertTrue(gate.isFinalizing)
+        XCTAssertEqual(actions, 0)
+        newCompletion?(.success(()))
+        XCTAssertEqual(actions, 1)
+        XCTAssertFalse(gate.isFinalizing)
+    }
+
+    func testPanoramaxOrientationBoundaryRejectsOlderStillAndSelectsEligiblePicture() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try PanoramaxQueueStore(root: root)
+        let boundary = Date(timeIntervalSince1970: 1_000)
+        let batch = try store.createBatch(captureSessionID: "orientation-session", createdAt: boundary)
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 200, height: 100))
+        let jpeg = renderer.jpegData(withCompressionQuality: 0.9) { context in
+            UIColor.gray.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        }
+        var ids: [String] = []
+        for (index, offset) in [-0.1, 2.0].enumerated() {
+            let timestamp = boundary.addingTimeInterval(offset)
+            let metadata = PanoramaxCaptureMetadata(
+                captureID: "orientation-image-\(index)", captureSessionID: batch.captureSessionID,
+                capturedAt: timestamp,
+                location: PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: timestamp,
+                    accuracyMeters: 5, altitudeMeters: nil, headingDegrees: 82),
+                sha256: PanoramaxQueueStore.sha256(jpeg), byteSize: Int64(jpeg.count), software: "YouSpeed/test")
+            ids.append(try store.addJPEG(batchID: batch.batchID, jpeg: jpeg, thumbnail: jpeg, metadata: metadata).itemID)
+        }
+        var draft = PanoramaxTrafficSignAnnotationDraft(
+            annotationID: "orientation-annotation", sourceEventID: "orientation-event", frameTimestampUTC: boundary,
+            normalizedShape: TrafficSignNormalizedRect(x: 0.1, y: 0.2, width: 0.3, height: 0.4),
+            semantics: [PanoramaxSemanticTag(key: "osm|traffic_sign", value: "DE:274-70")], speedLimitKmh: 70,
+            physicalSignTrackID: nil, detectionConfidence: 0.99, classificationConfidence: 1,
+            context: makeTrafficSignDetectionContext())
+        draft.minimumImageTimestamp = boundary
+        XCTAssertNil(draft.projected(imageWidth: 200, imageHeight: 100, imageTimestamp: boundary.addingTimeInterval(-0.1)))
+        XCTAssertNotNil(draft.projected(imageWidth: 200, imageHeight: 100, imageTimestamp: boundary))
+        // The nearer old-orientation picture must not win nearest-image selection.
+        XCTAssertEqual(try store.attachTrafficSignAnnotation(batchID: batch.batchID, draft: draft), ids[1])
+        let items = try XCTUnwrap(store.getBatch(batch.batchID)).items
+        XCTAssertNil(items.first(where: { $0.itemID == ids[0] })?.metadata.trafficSignAnnotations)
+        XCTAssertEqual(items.first(where: { $0.itemID == ids[1] })?.metadata.trafficSignAnnotations?.count, 1)
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testDriveInteractionHandlesSynchronousFinalizationOnce() {
+        let gate = DriveInteractionGate()
+        var events: [String] = []
+        gate.perform(needsFinalization: true, finalize: { completion in
+            completion(.success(()))
+            completion(.failure(DriveInteractionError.finalizationFailed))
+        }, changed: { events.append($0 ? "saving" : "saved") },
+        failed: { _ in XCTFail("A duplicate callback must be ignored") }, action: {
+            XCTAssertTrue(gate.didFinalizeForCurrentAction)
+            events.append("stop intent")
+        })
+        XCTAssertEqual(events, ["saving", "saved", "stop intent"])
+        XCTAssertFalse(gate.isFinalizing)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testDashcamOnlyFinalizationRetainsCameraForPendingTSREnableAction() {
+        XCTAssertTrue(DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+            panoramaxActive: false, trafficSignRecognitionActive: false, successful: true, actionPending: true))
+        XCTAssertFalse(DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+            panoramaxActive: false, trafficSignRecognitionActive: false, successful: true, actionPending: false))
+        XCTAssertFalse(DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+            panoramaxActive: false, trafficSignRecognitionActive: false, successful: false, actionPending: true))
+        XCTAssertTrue(DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+            panoramaxActive: true, trafficSignRecognitionActive: false, successful: false, actionPending: true))
+        XCTAssertTrue(DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+            panoramaxActive: false, trafficSignRecognitionActive: true, successful: true, actionPending: false))
+    }
+}
+
+private final class BlockingOrientationFrameConsumer: DriveVideoFrameConsumer, @unchecked Sendable {
+    let entered = DispatchSemaphore(value: 0)
+    let release = DispatchSemaphore(value: 0)
+    func consumeVideoFrame(_ sampleBuffer: CMSampleBuffer, orientation: CGImagePropertyOrientation) {
+        entered.signal()
+        _ = release.wait(timeout: .now() + 2)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testMountChangeWaitsForPreviousFrameAdmissionToComplete() throws {
+        var pixelBuffer: CVPixelBuffer?
+        XCTAssertEqual(CVPixelBufferCreate(kCFAllocatorDefault, 2, 2, kCVPixelFormatType_32BGRA, nil, &pixelBuffer), kCVReturnSuccess)
+        let pixels = try XCTUnwrap(pixelBuffer)
+        var format: CMVideoFormatDescription?
+        XCTAssertEqual(CMVideoFormatDescriptionCreateForImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixels,
+            formatDescriptionOut: &format), noErr)
+        var timing = CMSampleTimingInfo(duration: .invalid, presentationTimeStamp: .zero, decodeTimeStamp: .invalid)
+        var sample: CMSampleBuffer?
+        XCTAssertEqual(CMSampleBufferCreateReadyWithImageBuffer(allocator: kCFAllocatorDefault, imageBuffer: pixels,
+            formatDescription: try XCTUnwrap(format), sampleTiming: &timing, sampleBufferOut: &sample), noErr)
+        let frame = try XCTUnwrap(sample)
+        let dispatcher = DriveVideoFrameDispatcher()
+        let consumer = BlockingOrientationFrameConsumer()
+        dispatcher.setConsumer(consumer)
+        dispatcher.setEnabled(true)
+        DispatchQueue.global().async { dispatcher.dispatch(frame) }
+        XCTAssertEqual(consumer.entered.wait(timeout: .now() + 1), .success)
+        let updated = DispatchSemaphore(value: 0)
+        let setterEntered = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            setterEntered.signal()
+            dispatcher.setOrientation(.down)
+            updated.signal()
+        }
+        XCTAssertEqual(setterEntered.wait(timeout: .now() + 1), .success)
+        XCTAssertEqual(updated.wait(timeout: .now() + 0.05), .timedOut,
+                       "A mount change must not overtake a frame that is acquiring its context")
+        consumer.release.signal()
+        XCTAssertEqual(updated.wait(timeout: .now() + 1), .success)
+    }
+}

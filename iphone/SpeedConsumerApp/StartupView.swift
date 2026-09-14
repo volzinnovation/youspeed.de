@@ -42,7 +42,7 @@ struct StartupView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    Button("startup.retry") {
+                    RecordingSafeButton("startup.retry") {
                         viewModel.retryStartupDataPreparation()
                     }
                     .font(.system(size: 17, weight: .bold, design: .rounded))
@@ -149,11 +149,11 @@ struct FirstUserWelcomeView: View {
 
             HStack(spacing: 16) {
                 if step > 0 {
-                    Button("onboarding.back") { viewModel.goBackInOnboarding() }
+                    RecordingSafeButton("onboarding.back") { viewModel.goBackInOnboarding() }
                         .buttonStyle(.bordered)
                         .accessibilityIdentifier("onboarding.back")
                 }
-                Button(LocalizedStringKey(step == 4 ? "onboarding.finish" : "onboarding.next")) {
+                RecordingSafeButton(LocalizedStringKey(step == 4 ? "onboarding.finish" : "onboarding.next")) {
                     viewModel.advanceOnboarding()
                 }
                 .frame(maxWidth: .infinity)
@@ -184,7 +184,7 @@ struct FirstUserWelcomeView: View {
 
     private var mapStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Button("onboarding.map.locate", systemImage: "location") {
+            RecordingSafeButton("onboarding.map.locate", systemImage: "location") {
                 if locationNeedsSettings { openSystemSettings() }
                 else {
                     selectedOptionID = ""
@@ -197,7 +197,7 @@ struct FirstUserWelcomeView: View {
 
             if let recommendedID = viewModel.recommendedBundleOptionID,
                let option = viewModel.bundleDownloadSections.flatMap(\.options).first(where: { $0.id == recommendedID }) {
-                Button {
+                RecordingSafeButton {
                     selectedOptionID = option.id
                     viewModel.selectOnboardingMap(option.id)
                 } label: {
@@ -236,7 +236,7 @@ struct FirstUserWelcomeView: View {
                     Text(viewModel.activeBundleDownloadBytesText(option)).font(.caption)
                     Text(viewModel.syncProgressDetail).font(.caption).foregroundStyle(.secondary)
                 } else {
-                    Button(LocalizedStringKey(viewModel.syncStatus == "sync_failed" ? "onboarding.map.retry" : "onboarding.map.download"), systemImage: "arrow.down.circle") {
+                    RecordingSafeButton(LocalizedStringKey(viewModel.syncStatus == "sync_failed" ? "onboarding.map.retry" : "onboarding.map.download"), systemImage: "arrow.down.circle") {
                         viewModel.downloadSelectedBundle(option, firstLocationSetup: true)
                     }
                     .buttonStyle(.borderedProminent).tint(.red).controlSize(.large)
@@ -263,7 +263,7 @@ struct FirstUserWelcomeView: View {
                 Label("onboarding.driving.ready", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
             } else {
                 Text("onboarding.driving.permission").font(.callout)
-                Button(LocalizedStringKey(locationNeedsSettings ? "onboarding.driving.settings" : "onboarding.driving.allow")) {
+                RecordingSafeButton(LocalizedStringKey(locationNeedsSettings ? "onboarding.driving.settings" : "onboarding.driving.allow")) {
                     if locationNeedsSettings { openSystemSettings() }
                     else { viewModel.requestOnboardingLocation() }
                 }
@@ -318,7 +318,7 @@ struct FirstUserWelcomeView: View {
             information("onboarding.panoramax.progress", icon: "arrow.clockwise")
             if !viewModel.onboardingHasPreciseLocation {
                 Text("onboarding.driving.permission").font(.footnote)
-                Button(LocalizedStringKey(locationNeedsSettings ? "onboarding.driving.settings" : "onboarding.driving.allow")) {
+                RecordingSafeButton(LocalizedStringKey(locationNeedsSettings ? "onboarding.driving.settings" : "onboarding.driving.allow")) {
                     if locationNeedsSettings { openSystemSettings() }
                     else { viewModel.requestOnboardingLocation() }
                 }
@@ -332,7 +332,7 @@ struct FirstUserWelcomeView: View {
     private func screenshot(_ name: String, caption: String) -> some View {
         if let image = UIImage(named: name) {
             VStack(alignment: .leading, spacing: 10) {
-                Button {
+                RecordingSafeButton {
                     enlargedScreenshot = OnboardingScreenshotSelection(name: name, caption: caption)
                 } label: {
                     Image(uiImage: image)
@@ -394,7 +394,7 @@ private struct OnboardingScreenshotViewer: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("onboarding.screenshot.close") { dismiss() }
+                    RecordingSafeButton("onboarding.screenshot.close") { dismiss() }
                 }
             }
         }

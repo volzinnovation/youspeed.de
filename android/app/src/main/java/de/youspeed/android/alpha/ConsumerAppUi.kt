@@ -2,6 +2,7 @@
 
 package de.youspeed.android.alpha
 
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Checkbox
 
 import android.content.Context
@@ -42,6 +43,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -93,6 +95,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -101,6 +104,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -123,6 +128,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -227,13 +233,13 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     MainScreen(
                         controller = controller,
                         ui = ui,
-                        onOpenSettings = { openSettings = true },
-                        onOpenLegal = { openLegal = true },
-                        onOpenDebug = { openDebug = true },
-                        onOpenLocalRecordings = { openLocalRecordings = true },
-                        onOpenPanoramaxGallery = { openPanoramaxGallery = true },
+                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
+                        onOpenLegal = { controller.performButtonAction { openLegal = true } },
+                        onOpenDebug = { controller.performButtonAction { openDebug = true } },
+                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
+                        onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
                         onToggleDriveRecorder = controller::toggleDriveRecorder,
-                        onCapture = controller::beginSpeedCapture,
+                        onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
                     )
                 }
 
@@ -263,13 +269,13 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                     MainScreen(
                         controller = controller,
                         ui = ui,
-                        onOpenSettings = { openSettings = true },
-                        onOpenLegal = { openLegal = true },
-                        onOpenDebug = { openDebug = true },
-                        onOpenLocalRecordings = { openLocalRecordings = true },
-                        onOpenPanoramaxGallery = { openPanoramaxGallery = true },
+                        onOpenSettings = { controller.performButtonAction { openSettings = true } },
+                        onOpenLegal = { controller.performButtonAction { openLegal = true } },
+                        onOpenDebug = { controller.performButtonAction { openDebug = true } },
+                        onOpenLocalRecordings = { controller.performButtonAction { openLocalRecordings = true } },
+                        onOpenPanoramaxGallery = { controller.performButtonAction { openPanoramaxGallery = true } },
                         onToggleDriveRecorder = controller::toggleDriveRecorder,
-                        onCapture = controller::beginSpeedCapture,
+                        onCapture = { controller.performButtonAction(controller::beginSpeedCapture) },
                     )
                 }
 
@@ -281,11 +287,25 @@ fun ConsumerApp(controller: ConsumerSessionController) {
                 }
             }
 
+            if (ui.dashcamButtonActionPending) {
+                AlertDialog(onDismissRequest = {}, confirmButton = {},
+                    title = { Text(stringResource(R.string.ui_video_saving)) },
+                    text = { LinearProgressIndicator(Modifier.fillMaxWidth()) })
+            }
+            ui.dashcamButtonActionError?.let { error ->
+                AlertDialog(onDismissRequest = controller::dismissDashcamButtonActionError,
+                    title = { Text(stringResource(R.string.ui_video_save_failed)) },
+                    text = { Text(error) },
+                    confirmButton = { Button(onClick = controller::dismissDashcamButtonActionError) {
+                        Text(stringResource(R.string.ui_done))
+                    } })
+            }
+
             if (openSettings) {
                 SettingsSheet(
                     controller = controller,
                     onDismiss = { openSettings = false },
-                    onOpenDebug = { openDebug = true },
+                    onOpenDebug = { controller.performButtonAction { openDebug = true } },
                 )
             }
             if (openLegal) {
@@ -414,8 +434,6 @@ private fun MainScreen(
     onCapture: () -> Unit,
 ) {
     var previewSelected by rememberSaveable { mutableStateOf(true) }
-    var recorderStripHeight by remember { mutableStateOf(90.dp) }
-    val density = LocalDensity.current
     val recorderVisible = ui.driveRecorderState != DriveRecorderState.DISABLED
     LaunchedEffect(ui.driveRecorderState, ui.driveRecorderDashcamActive) {
         if (ui.driveRecorderDashcamActive) previewSelected = true
@@ -447,195 +465,146 @@ private fun MainScreen(
     val foreground = if (usesDarkForeground) Color.Black else Color.White
     val buttonBg = if (usesDarkForeground) Color.Black.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.14f)
     val buttonBorder = foreground.copy(alpha = 0.95f)
-    val insets = WindowInsets.systemBars.asPaddingValues()
     val primaryMetric = ConsumerMainScreenLogic.primaryMetricText(ui)
     val secondaryMetric = ConsumerMainScreenLogic.secondaryMetricText(ui)
     val limitText = ConsumerMainScreenLogic.limitText(ui)
-    val runtimeBanner = runtimeBanner(ui)
+    val banner = runtimeBanner(ui)
     val showsPedestrianZoneSign = ConsumerMainScreenLogic.showsPedestrianZoneSign(ui)
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(background)
-            .testTag("main-root")
-            .padding(top = insets.calculateTopPadding(), bottom = insets.calculateBottomPadding()),
+        Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
-        val minDimensionDp = min(maxWidth.value, maxHeight.value).dp
-        val compactPhoneLayout = maxHeight.value < 780f
-        val screenInset = (minDimensionDp.value * 0.02f).dp
-        val signWidthFactor = if (compactPhoneLayout) 0.60f else 0.72f
-        val preferredSignSize = min(maxWidth.value * signWidthFactor, maxWidth.value - (screenInset.value * 2f))
-        val signSize = (if (recorderVisible) min(preferredSignSize, maxHeight.value * 0.30f) else preferredSignSize).dp
-        val primaryMetricScale = if (compactPhoneLayout) 0.42f else SPEED_LIMIT_NUMBER_SCALE
-        val primaryMetricFont = (signSize.value * primaryMetricScale).sp
+        val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
+        val signPaneWidth = if (landscape) maxWidth * 0.45f else maxWidth
+        val workspaceWidth = if (landscape) maxWidth - signPaneWidth else maxWidth
+        val minDimension = min(maxWidth.value, maxHeight.value)
+        val screenInset = max(8f, minDimension * 0.02f).dp
+        val compact = maxHeight.value < 780f
+        val preferredSignSize = signPaneWidth * if (compact) 0.60f else 0.72f
+        val signSize = min(preferredSignSize.value,
+            if (landscape) max(48f, maxHeight.value - 104f)
+            else if (recorderVisible) maxHeight.value * 0.30f else maxHeight.value * 0.40f).dp
+        val portraitTopHeight = min(maxHeight.value * 0.57f,
+            signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 28f).dp
+        val primaryMetricFont = (signSize.value * if (compact) 0.42f else SPEED_LIMIT_NUMBER_SCALE).sp
         val secondaryScale = sharedSecondaryScale(
-            baseSecondaryFontSp = primaryMetricFont.value * SECONDARY_TEXT_RATIO,
-            availableWidthSp = maxWidth.value - (max(12f, maxWidth.value * 0.04f) * 2f),
+            primaryMetricFont.value * SECONDARY_TEXT_RATIO,
+            workspaceWidth.value - max(12f, workspaceWidth.value * 0.04f) * 2f,
         )
         val secondaryFont = primaryMetricFont * (SECONDARY_TEXT_RATIO * secondaryScale)
         val debugFont = secondaryFont * 0.6f
-        val metricDebugGap = max(12f, minDimensionDp.value * 0.024f).dp
-        val debugSpacing = max(2f, minDimensionDp.value * 0.004f).dp
         val metricSlotMinHeight = with(LocalDensity.current) {
-            (primaryMetricFont.toDp() * 1.05f) + (secondaryFont.toDp() * 1.2f)
+            primaryMetricFont.toDp() * 1.05f + secondaryFont.toDp() * 1.2f
         }
-        // Keep the location slot stable when a GPS fix arrives. The bottom
-        // photo controls remain a separate, always-present layer.
-        val locationSlotMinHeight = max(LOCATION_SLOT_MIN_HEIGHT.value, minDimensionDp.value * 0.225f).dp
-        val contentHorizontalPadding = max(12f, maxWidth.value * 0.04f).dp
-        val bottomButtonGapWidth = max(
-            0f,
-            maxWidth.value - (screenInset.value * 2f) - (CONTROL_BUTTON_DIAMETER.value * 2f),
-        ).dp
+        val horizontalPadding = max(12f, workspaceWidth.value * 0.04f).dp
+        val locationHeight = max(LOCATION_SLOT_MIN_HEIGHT.value, minDimension * 0.225f).dp
+        val locationBadgeWidth = max(0f, workspaceWidth.value - screenInset.value * 2f - CONTROL_BUTTON_DIAMETER.value * 2f).dp
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = screenInset, bottom = CONTROL_BUTTON_DIAMETER + if (recorderVisible) recorderStripHeight + 34.dp else 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TopCornerButtons(
-                screenInset = screenInset,
-                foreground = foreground,
-                buttonBg = buttonBg,
-                buttonBorder = buttonBorder,
-                bugTint = trafficSignBugButtonTint(ui, foreground),
-                pictogram = ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
-                gpsSignalBars = ui.gpsSignalBars,
-                gpsHorizontalAccuracyM = ui.gpsHorizontalAccuracyM,
-                coarseLocationAvailable = ConsumerMainScreenLogic.hasUsableCoarseLocation(ui),
-                coarseHorizontalAccuracyM = ui.coarseHorizontalAccuracyM,
-                onOpenLocalRecordings = onOpenLocalRecordings,
-            )
-
-            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 0.6f))
-
-            val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
-                isInSpeedCaptureMode = ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
-                source = ui.effectiveSpeedLimitSource,
-                hasResolvedValue = ui.speedLimitKmh != null || ui.speedLimitDisplayText != null ||
-                    ui.isUnlimitedSpeedLimitActive,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(signSize),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (showsActiveCameraLimitIndicator) {
-                    ActiveCameraSpeedLimitEye(
-                        signSize = signSize,
-                        screenInset = screenInset,
+        // Keep both subtrees mounted. Only their measured size and placement
+        // change, so the live PreviewView and its surface provider survive.
+        Layout(
+            modifier = Modifier.fillMaxSize(),
+            content = {
+                Column(
+                    Modifier.fillMaxSize().padding(top = screenInset, bottom = 8.dp).testTag("main-sign-pane"),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    TopCornerButtons(
+                        screenInset, foreground, buttonBg, buttonBorder,
+                        trafficSignBugButtonTint(ui, foreground),
+                        ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
+                        ui.gpsSignalBars, ui.gpsHorizontalAccuracyM,
+                        ConsumerMainScreenLogic.hasUsableCoarseLocation(ui), ui.coarseHorizontalAccuracyM,
+                        onOpenLocalRecordings,
                     )
-                }
-                SpeedLimitSign(
-                    limitText = limitText,
-                    signSize = signSize,
-                    numberFontSize = primaryMetricFont,
-                    showsUnlimitedIcon = !showsPedestrianZoneSign &&
-                        ui.isUnlimitedSpeedLimitActive &&
-                        !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
-                    showsPedestrianZoneIcon = showsPedestrianZoneSign,
-                    showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
-                    cameraSourceStateDescription = when {
-                        ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
-                        ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
-                        ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
-                        else -> stringResource(R.string.ui_camera_sign)
-                    },
-                    onDoubleTap = onCapture,
-                )
-                if (ui.isTrafficSignEndOverlayVisible) {
-                    EndOfSpeedLimitSign(
-                        modifier = Modifier
-                            .offset(y = -(signSize * 0.42f))
-                            .testTag("speed-limit-end-overlay"),
-                        signSize = signSize * 0.34f,
+                    Spacer(Modifier.weight(1f))
+                    val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
+                        ConsumerMainScreenLogic.isInSpeedCaptureMode(ui), ui.effectiveSpeedLimitSource,
+                        ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
                     )
-                }
-            }
-
-            // Keep the sign separate from the preview even when the weighted space is small.
-            Spacer(modifier = Modifier.height(14.dp))
-            Spacer(modifier = Modifier.weight(if (recorderVisible) 0.15f else 0.6f))
-
-            BoxWithConstraints(modifier = Modifier.weight(3f).fillMaxWidth()) {
-                val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
-                val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
-                val fittedLocationHeight = min(locationSlotMinHeight.value, maxHeight.value * 0.30f).dp
-                Box(Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .alpha(if (previewVisible) 0f else 1f),
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        MetricStatusBlock(
-                            displayedPrimaryMetric = primaryMetric,
-                            secondaryMetric = secondaryMetric,
-                            foreground = foreground,
-                            ui = ui,
-                            primaryMetricFont = primaryMetricFont * metricScale,
-                            secondaryFont = secondaryFont * metricScale,
-                            metricSlotMinHeight = fittedMetricHeight,
+                    Box(Modifier.fillMaxWidth().height(signSize), contentAlignment = Alignment.Center) {
+                        if (showsActiveCameraLimitIndicator) ActiveCameraSpeedLimitEye(signSize, screenInset)
+                        SpeedLimitSign(
+                            limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
+                            showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
+                                !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
+                            showsPedestrianZoneIcon = showsPedestrianZoneSign,
+                            showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
+                            cameraSourceStateDescription = when {
+                                ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
+                                ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
+                                ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
+                                else -> stringResource(R.string.ui_camera_sign)
+                            },
+                            onDoubleTap = onCapture,
                         )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                            LocationStatusBlock(
-                                ui = ui,
-                                foreground = foreground,
-                                debugFont = debugFont,
-                                debugSpacing = debugSpacing,
-                                metricDebugGap = metricDebugGap,
-                                locationSlotMinHeight = fittedLocationHeight,
-                                contentHorizontalPadding = contentHorizontalPadding,
-                                locationBadgeWidth = bottomButtonGapWidth,
-                                runtimeBanner = runtimeBanner,
-                                onOpenDebug = onOpenDebug,
-                            )
-                        }
+                        if (ui.isTrafficSignEndOverlayVisible) EndOfSpeedLimitSign(
+                            modifier = Modifier.offset(y = -(signSize * 0.42f)).testTag("speed-limit-end-overlay"),
+                            signSize = signSize * 0.34f,
+                        )
                     }
-                    if (previewPresentation.isAttached) {
-                        RecorderPreviewWorkspace(
-                            controller,
-                            Modifier.fillMaxSize().padding(horizontal = contentHorizontalPadding),
+                    Spacer(Modifier.weight(1f))
+                }
+                Column(
+                    Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = 12.dp)
+                        .testTag("main-workspace-pane"),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                        val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
+                        val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
+                        val fittedLocationHeight = min(locationHeight.value, maxHeight.value * 0.30f).dp
+                        Column(
+                            Modifier.fillMaxSize().alpha(if (previewVisible) 0f else 1f),
+                            verticalArrangement = Arrangement.SpaceEvenly,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            MetricStatusBlock(primaryMetric, secondaryMetric, foreground, ui,
+                                primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight)
+                            Spacer(Modifier.height(4.dp))
+                            Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                                LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
+                                    max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
+                                    locationBadgeWidth, banner, onOpenDebug)
+                            }
+                        }
+                        if (previewPresentation.isAttached) RecorderPreviewWorkspace(
+                            controller, Modifier.fillMaxSize().padding(horizontal = horizontalPadding),
                             visible = previewVisible,
                             onDismiss = { previewSelected = false },
                         )
                     }
+                    if (recorderVisible) RecorderModuleStrip(
+                        controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
+                        onPreviewRequested = { previewSelected = true },
+                    )
+                    BottomCornerButtons(
+                        horizontalPadding = screenInset, foreground = foreground,
+                        buttonBg = buttonBg, buttonBorder = buttonBorder,
+                        onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+                        onOpenPanoramaxGallery = onOpenPanoramaxGallery,
+                        onToggleDriveRecorder = onToggleDriveRecorder,
+                        driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+                        modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
+                    )
                 }
+            },
+        ) { measurables, constraints ->
+            val width = constraints.maxWidth
+            val height = constraints.maxHeight
+            val upperWidth = if (landscape) (width * 0.45f).toInt() else width
+            val upperHeight = if (landscape) height else portraitTopHeight.roundToPx().coerceIn(0, height)
+            val upper = measurables[0].measure(Constraints.fixed(upperWidth, upperHeight))
+            val lower = measurables[1].measure(Constraints.fixed(
+                if (landscape) width - upperWidth else width,
+                if (landscape) height else height - upperHeight,
+            ))
+            layout(width, height) {
+                upper.place(0, 0)
+                // Absolute placement makes the requested left/right invariant
+                // independent of interface language and mounting direction.
+                lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
             }
-        }
-
-        BottomCornerButtons(
-            horizontalPadding = screenInset,
-            foreground = foreground,
-            buttonBg = buttonBg,
-            buttonBorder = buttonBorder,
-            onOpenLegal = onOpenLegal,
-            onOpenSettings = onOpenSettings,
-            onOpenPanoramaxGallery = onOpenPanoramaxGallery,
-            onToggleDriveRecorder = onToggleDriveRecorder,
-            driveRecorderState = ui.driveRecorderState,
-            panoramaxCaptureCount = ui.panoramaxCaptureCount,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp),
-        )
-        if (ui.driveRecorderState != DriveRecorderState.DISABLED) {
-            RecorderModuleStrip(
-                controller = controller,
-                onPreviewRequested = { previewSelected = true },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = CONTROL_BUTTON_DIAMETER + 22.dp)
-                    .onSizeChanged { recorderStripHeight = with(density) { it.height.toDp() } }
-                    .testTag("drive-recorder-status"),
-            )
         }
     }
 }
@@ -946,6 +915,8 @@ private fun SpeedLimitSign(
     cameraSourceStateDescription: String?,
     onDoubleTap: () -> Unit,
 ) {
+    val currentCaptureAction by rememberUpdatedState(onDoubleTap)
+    val captureLabel = stringResource(R.string.ui_correct_speed_limit)
     val density = LocalDensity.current
     val numberFontPx = with(density) { numberFontSize.toPx() }
     val trafficSignTypeface = rememberTrafficSignTypeface()
@@ -958,9 +929,10 @@ private fun SpeedLimitSign(
         modifier = Modifier
             .then(modifier)
             .size(signSize)
-            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleTap() }) }
+            .pointerInput(Unit) { detectTapGestures(onDoubleTap = { currentCaptureAction() }) }
             .semantics {
                 contentDescription = signDescription
+                onClick(label = captureLabel) { currentCaptureAction(); true }
             }
             .testTag("speed-sign"),
         contentAlignment = Alignment.Center,
@@ -1341,6 +1313,27 @@ private fun SettingsSheet(
     var confirmDeleteDownloaded by rememberSaveable { mutableStateOf(false) }
     SheetScaffold(title = stringResource(R.string.ui_settings_title), onDismiss = onDismiss, testTag = "settings-sheet") {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize()) {
+            item {
+                SectionCard(stringResource(R.string.ui_screen_orientation)) {
+                    Text(stringResource(R.string.ui_screen_orientation_help), color = Color(0xFF555555), fontSize = 13.sp)
+                    ManualOrientation.entries.forEach { orientation ->
+                        val label = stringResource(when (orientation) {
+                            ManualOrientation.PORTRAIT -> R.string.ui_orientation_portrait
+                            ManualOrientation.LANDSCAPE_CAMERA_LOWER_RIGHT -> R.string.ui_orientation_landscape_lower_right
+                            ManualOrientation.LANDSCAPE_CAMERA_UPPER_LEFT -> R.string.ui_orientation_landscape_upper_left
+                        })
+                        Row(
+                            Modifier.fillMaxWidth().testTag("orientation-${orientation.storageValue}")
+                                .clickable { controller.setManualOrientation(orientation) }.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = ui.manualOrientation == orientation,
+                                onClick = { controller.setManualOrientation(orientation) })
+                            Text(label, color = Color.Black)
+                        }
+                    }
+                }
+            }
             item { RecorderParitySettings(controller) }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
@@ -1886,6 +1879,7 @@ internal fun SheetScaffold(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
+                .safeDrawingPadding()
                 .padding(12.dp)
                 .semantics { testTagsAsResourceId = true }
                 .testTag(testTag),

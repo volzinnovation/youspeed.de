@@ -32,4 +32,13 @@
     <string name="ui_panoramax_include">Incluir</string>
     <string name="ui_panoramax_exclude">Excluir</string>
     <string name="ui_panoramax_no_camera">La cámara no está disponible</string>
+    <string name="ui_screen_orientation">Orientación de la pantalla</string>
+    <string name="ui_screen_orientation_help">Elige manualmente la posición de montaje. La pantalla no sigue el sensor de orientación.</string>
+    <string name="ui_orientation_portrait">Vertical</string>
+    <string name="ui_orientation_landscape_lower_right">Horizontal · cámara abajo a la derecha · conector a la izquierda</string>
+    <string name="ui_orientation_landscape_upper_left">Horizontal · cámara arriba a la izquierda · conector a la derecha</string>
+    <string name="ui_video_saving">Guardando vídeo…</string>
+    <string name="ui_video_save_failed">No se pudo guardar el vídeo</string>
+    <string name="ui_video_save_timeout">La grabadora no confirmó que el vídeo se guardara. Se canceló la acción solicitada.</string>
+    <string name="ui_correct_speed_limit">Corregir límite de velocidad</string>
 </resources>

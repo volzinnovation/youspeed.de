@@ -143,13 +143,13 @@ internal fun RecorderModuleStrip(
                     modifier = Modifier.weight(1f).padding(vertical = 5.dp).testTag("recorder-panoramax-module"),
                     color = foreground, style = MaterialTheme.typography.labelMedium)
                 if (ui.driveRecorderDashcamActive) IconButton(
-                    onClick = { onPreviewRequested?.invoke() ?: run { previewDialog = true } },
+                    onClick = { controller.performButtonAction { onPreviewRequested?.invoke() ?: run { previewDialog = true } } },
                     modifier = Modifier.testTag("recorder-show-preview"),
                 ) {
                     Icon(Icons.Default.CameraAlt, tint = foreground,
                         contentDescription = parityText("Camera preview", "Kameravorschau", "Aperçu caméra", "Cameravoorbeeld"))
                 }
-                if (ui.trafficSignRecognitionEnabled) IconButton(onClick = { details = true },
+                if (ui.trafficSignRecognitionEnabled) IconButton(onClick = { controller.performButtonAction { details = true } },
                     modifier = Modifier.testTag("recorder-show-recognition-details")) {
                     Icon(Icons.Default.Info, tint = foreground,
                         contentDescription = parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"))
@@ -250,7 +250,7 @@ internal fun RecorderPreviewWorkspace(
                 }
             },
         )
-        if (visible && onDismiss != null) TextButton(onClick = onDismiss,
+        if (visible && onDismiss != null) TextButton(onClick = { controller.performButtonAction(onDismiss) },
             modifier = Modifier.align(Alignment.TopEnd).testTag("recorder-hide-preview")) {
             Text(doneLabel(), color = Color.White)
         }

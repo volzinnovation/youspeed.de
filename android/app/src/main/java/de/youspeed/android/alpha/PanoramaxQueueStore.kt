@@ -189,10 +189,17 @@ class PanoramaxQueueStore(private val appRoot: File) {
         batchId: String,
         draft: PanoramaxTrafficSignAnnotationDraft,
         maximumTimeDelta: java.time.Duration = java.time.Duration.ofSeconds(5),
+        eligibleCaptureIds: Set<String>? = null,
+        minimumCapturedAt: Instant? = null,
     ): String? {
         val batch = getBatch(batchId) ?: return null
         if (batch.state != PanoramaxBatchState.CAPTURING) return null
-        val item = batch.items.minByOrNull { java.time.Duration.between(it.metadata.capturedAt, draft.frameTimestampUtc).abs() } ?: return null
+        // Selection is restricted before finding the nearest photo. An image
+        // from another mount position can be closer in time to this result.
+        val item = batch.items.asSequence()
+            .filter { eligibleCaptureIds == null || it.itemId in eligibleCaptureIds }
+            .filter { minimumCapturedAt == null || !it.metadata.capturedAt.isBefore(minimumCapturedAt) }
+            .minByOrNull { java.time.Duration.between(it.metadata.capturedAt, draft.frameTimestampUtc).abs() } ?: return null
         if (java.time.Duration.between(item.metadata.capturedAt, draft.frameTimestampUtc).abs() > maximumTimeDelta) return null
         val original = originalFile(item)
         if (!original.isFile) return null

@@ -99,4 +99,13 @@
     <string name="onboarding_close_example">Beispiel schließen</string>
     <string name="onboarding_threshold_decrease_label">Warnschwelle senken</string>
     <string name="onboarding_threshold_increase_label">Warnschwelle erhöhen</string>
+    <string name="ui_screen_orientation">Bildschirmausrichtung</string>
+    <string name="ui_screen_orientation_help">Montageposition manuell auswählen. Der Bildschirm folgt nicht dem Lagesensor.</string>
+    <string name="ui_orientation_portrait">Hochformat</string>
+    <string name="ui_orientation_landscape_lower_right">Querformat · Kamera unten rechts · Anschluss links</string>
+    <string name="ui_orientation_landscape_upper_left">Querformat · Kamera oben links · Anschluss rechts</string>
+    <string name="ui_video_saving">Video wird gespeichert…</string>
+    <string name="ui_video_save_failed">Video konnte nicht gespeichert werden</string>
+    <string name="ui_video_save_timeout">Die Aufnahme hat das Speichern des Videos nicht bestätigt. Die angeforderte Aktion wurde abgebrochen.</string>
+    <string name="ui_correct_speed_limit">Tempolimit korrigieren</string>
 </resources>

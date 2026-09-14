@@ -37,6 +37,14 @@ struct DriveRecorderStartConfiguration: Equatable {
 }
 
 enum DriveRecorderPolicy {
+    static func shouldKeepCameraAfterMovieFinalization(
+        panoramaxActive: Bool,
+        trafficSignRecognitionActive: Bool,
+        successful: Bool,
+        actionPending: Bool
+    ) -> Bool {
+        panoramaxActive || trafficSignRecognitionActive || (successful && actionPending)
+    }
     /// The main recorder control always starts a Dashcam movie. The other
     /// consumers retain their independent selections and share the same fixed
     /// capture graph, so enabling video must never switch TSR or Panoramax off.
@@ -221,10 +229,11 @@ protocol DriveVideoFrameConsumer: AnyObject {
     func consumeVideoFrame(_ sampleBuffer: CMSampleBuffer, orientation: CGImagePropertyOrientation)
 }
 
-private final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let lock = NSLock()
     private weak var consumer: (any DriveVideoFrameConsumer)?
     private var enabled = false
+    private var orientation: CGImagePropertyOrientation = .right
 
     var hasConsumer: Bool {
         lock.lock()
@@ -244,15 +253,28 @@ private final class DriveVideoFrameDispatcher: NSObject, AVCaptureVideoDataOutpu
         lock.unlock()
     }
 
+    func setOrientation(_ orientation: CGImagePropertyOrientation) {
+        lock.lock()
+        self.orientation = orientation
+        lock.unlock()
+    }
+
     func captureOutput(
         _ output: AVCaptureOutput,
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
+        dispatch(sampleBuffer)
+    }
+
+    func dispatch(_ sampleBuffer: CMSampleBuffer) {
         lock.lock()
+        defer { lock.unlock() }
+        // Admission is bounded: the consumer captures its context and schedules
+        // inference asynchronously. Keep it atomic with setOrientation so an
+        // old orientation cannot acquire a new context after a mount change.
         let activeConsumer = enabled ? consumer : nil
-        lock.unlock()
-        activeConsumer?.consumeVideoFrame(sampleBuffer, orientation: .right)
+        activeConsumer?.consumeVideoFrame(sampleBuffer, orientation: orientation)
     }
 }
 
@@ -321,6 +343,62 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private var activeDashcamRecordingURL: URL?
     private var dashcamTransition: DashcamTransition?
     private var latestTrafficSignAnnotationDraft: PanoramaxTrafficSignAnnotationDraft?
+    private var screenOrientation = ScreenOrientation.load()
+    private var orientationChangedAt = Date.distantPast
+    private var orientationEpoch: UInt64 = 0
+    private var pendingPhotoOrientationEpoch: UInt64?
+    private var interactionFinalization: ((Result<Void, Error>) -> Void)?
+    private var interactionFinalizationTimeout: Task<Void, Never>?
+
+    var needsDashcamFinalization: Bool {
+        activeDashcamEnabled || dashcamTransitionInFlight || activeDashcamRecordingURL != nil
+    }
+
+    func setScreenOrientation(_ orientation: ScreenOrientation) {
+        guard !needsDashcamFinalization else { return }
+        screenOrientation = orientation
+        orientationEpoch &+= 1
+        orientationChangedAt = Date()
+        latestTrafficSignAnnotationDraft = nil
+        // No graph mutation: every camera consumer remains attached.
+        frameDispatcher.setOrientation(orientation.frameOrientation)
+    }
+
+    func finalizeDashcamForInteraction(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard interactionFinalization == nil else {
+            completion(.failure(DriveInteractionError.finalizationFailed))
+            return
+        }
+        guard needsDashcamFinalization else { completion(.success(())); return }
+        interactionFinalization = completion
+        interactionFinalizationTimeout = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(18))
+            guard !Task.isCancelled, let self else { return }
+            completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
+        }
+        stopDashcamForPendingInteraction()
+    }
+
+    private func stopDashcamForPendingInteraction() {
+        guard interactionFinalization != nil else { return }
+        // Startup's movie delegate resumes this request once its URL is live.
+        guard state != .preparing, !dashcamTransitionInFlight else { return }
+        guard state == .recording,
+              setDashcamEnabledDuringRecording(false) else {
+            if state != .stopping {
+                completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
+            }
+            return
+        }
+    }
+
+    private func completeInteractionFinalization(_ result: Result<Void, Error>) {
+        let completion = interactionFinalization
+        interactionFinalization = nil
+        interactionFinalizationTimeout?.cancel()
+        interactionFinalizationTimeout = nil
+        completion?(result)
+    }
 
     var isDashcamModuleActive: Bool { activeDashcamEnabled }
     var isPanoramaxModuleActive: Bool { activePanoramaxEnabled }
@@ -345,6 +423,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         startTimeoutTask?.cancel()
         stopTimeoutTask?.cancel()
         dashcamTransitionTimeoutTask?.cancel()
+        interactionFinalizationTimeout?.cancel()
         notificationTokens.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -374,9 +453,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     /// Retains the newest confirmed result for the next still and, when there
     /// is no still in flight, also tries the most recent picture from this drive.
     func recordTrafficSignRecognition(_ emission: TrafficSignRuntimeEmission) {
-        guard let draft = PanoramaxTrafficSignAnnotationDraft(emission: emission),
+        guard var draft = PanoramaxTrafficSignAnnotationDraft(emission: emission),
+              draft.frameTimestampUTC >= orientationChangedAt,
               let captureSessionID,
               emission.captureSessionId == captureSessionID else { return }
+        draft.minimumImageTimestamp = orientationChangedAt
         latestTrafficSignAnnotationDraft = draft
         guard !photoInFlight, let batch, let queueStore else { return }
         let batchID = batch.batchID
@@ -507,7 +588,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
 
             let movieURL = dashcamFileURL
+            let movieAngle = screenOrientation.captureRotationAngle
             let trafficSignFramesEnabled = activeTSREnabled
+            frameDispatcher.setOrientation(screenOrientation.frameOrientation)
             frameDispatcher.setEnabled(activeTSREnabled)
             scheduleStartTimeout(generation: requestedGeneration)
             sessionQueue.async { [weak self] in
@@ -515,7 +598,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 self.videoOutput.connection(with: .video)?.isEnabled = trafficSignFramesEnabled
                 self.session.startRunning()
                 if let movieURL {
-                    self.configureMovieCodecIfPossible()
+                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
                     self.movieOutput.startRecording(to: movieURL, recordingDelegate: self)
                 } else {
                     Task { @MainActor [weak self] in
@@ -548,6 +631,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 let fileURL = try Self.makeDashcamFileURL(captureSessionID: captureSessionID)
                 let token = UUID()
                 dashcamFileURL = fileURL
+                let movieAngle = screenOrientation.captureRotationAngle
                 beginDashcamTransition(.starting(url: fileURL, token: token))
                 lastCaptureDetail = "Dashcam wird gestartet"
                 notifyChange()
@@ -562,7 +646,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                         }
                         return
                     }
-                    self.configureMovieCodecIfPossible()
+                    self.configureMovieCodecIfPossible(rotationAngle: movieAngle)
                     self.movieOutput.startRecording(to: fileURL, recordingDelegate: self)
                 }
             } catch {
@@ -704,6 +788,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         pendingSample = sample
+        pendingPhotoOrientationEpoch = orientationEpoch
+        let photoAngle = screenOrientation.captureRotationAngle
         photoInFlight = true
         let settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
         let maximumDimensions = photoOutput.maxPhotoDimensions
@@ -713,6 +799,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         pendingPhotoUniqueID = settings.uniqueID
         sessionQueue.async { [weak self] in
             guard let self else { return }
+            if let connection = self.photoOutput.connection(with: .video),
+               connection.isVideoRotationAngleSupported(photoAngle) {
+                connection.videoRotationAngle = photoAngle
+            }
             self.photoOutput.capturePhoto(with: settings, delegate: self)
         }
     }
@@ -821,6 +911,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             videoOutput.videoSettings = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
             ]
+            if let connection = videoOutput.connection(with: .video),
+               connection.isVideoRotationAngleSupported(0) {
+                connection.videoRotationAngle = 0
+            }
             videoOutput.setSampleBufferDelegate(frameDispatcher, queue: videoQueue)
             videoOutputAvailable = true
         }
@@ -851,8 +945,11 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
     }
 
-    nonisolated private func configureMovieCodecIfPossible() {
+    nonisolated private func configureMovieCodecIfPossible(rotationAngle: CGFloat) {
         guard let connection = movieOutput.connection(with: .video) else { return }
+        if connection.isVideoRotationAngleSupported(rotationAngle) {
+            connection.videoRotationAngle = rotationAngle
+        }
         let codec: AVVideoCodecType = movieOutput.availableVideoCodecTypes.contains(.hevc) ? .hevc : .h264
         movieOutput.setOutputSettings([AVVideoCodecKey: codec], for: connection)
     }
@@ -876,7 +973,8 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             return
         }
         let storageLimit = storageLimitBytes
-        let annotationDraft = latestTrafficSignAnnotationDraft
+        let annotationDraft = pendingPhotoOrientationEpoch == orientationEpoch
+            ? latestTrafficSignAnnotationDraft : nil
         latestTrafficSignAnnotationDraft = nil
         photoProcessingQueue.async { [weak self] in
             let result = Self.persistPanoramaxPhoto(
@@ -917,6 +1015,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if let token {
             guard dashcamTransition?.token == token else { return }
         }
+        completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
         activeDashcamEnabled = false
         activeDashcamRecordingURL = nil
         dashcamFileURL = nil
@@ -931,6 +1030,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private func finishDashcamDisableWithoutCallback(token: UUID) {
         guard dashcamTransition?.token == token else { return }
+        completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
         activeDashcamEnabled = false
         activeDashcamRecordingURL = nil
         clearDashcamTransition()
@@ -962,10 +1062,9 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 }
             case .stopping:
                 clearDashcamTransition()
-                beginStopping(
-                    resultState: .failed,
-                    detail: "Dashcam konnte nicht sicher beendet werden"
-                )
+                lastCaptureDetail = "Dashcam konnte nicht sicher beendet werden"
+                completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
+                notifyChange()
             }
         }
     }
@@ -978,6 +1077,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func resetActiveModulesAfterFailure() {
+        completeInteractionFinalization(.failure(DriveInteractionError.finalizationFailed))
         activeDashcamEnabled = false
         activePanoramaxEnabled = false
         activeTSREnabled = false
@@ -1075,6 +1175,17 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
 
     private func finishStarting(generation requestedGeneration: Int) {
         guard generation == requestedGeneration, state == .preparing else { return }
+        defer {
+            if interactionFinalization != nil {
+                if needsDashcamFinalization {
+                    stopDashcamForPendingInteraction()
+                } else if state == .recording {
+                    // The camera may have fallen back to stills/TSR before an
+                    // encoder was created. There is then no movie to finalize.
+                    completeInteractionFinalization(.success(()))
+                }
+            }
+        }
         guard activeDashcamEnabled || activePanoramaxEnabled || activeTSREnabled else {
             beginStopping(
                 resultState: .unavailable,
@@ -1176,6 +1287,10 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             }
             return
         }
+        defer {
+            completeInteractionFinalization(successful
+                ? .success(()) : .failure(DriveInteractionError.finalizationFailed))
+        }
         if successful {
             dashcamFileURL = url
             Self.protectRecordedFile(at: url)
@@ -1192,6 +1307,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         if activeDashcamRecordingURL?.standardizedFileURL == url.standardizedFileURL {
             activeDashcamRecordingURL = nil
         }
+        activeDashcamEnabled = false
         if state == .stopping {
             finishStoppingAfterSessionQueue(generation: generation)
         } else if state == .preparing {
@@ -1199,9 +1315,16 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             beginStopping(resultState: .failed, detail: "Dashcam-Aufnahme konnte nicht gestartet werden")
         } else if state == .recording {
             activeDashcamEnabled = false
-            if activePanoramaxEnabled || activeTSREnabled {
+            if DriveRecorderPolicy.shouldKeepCameraAfterMovieFinalization(
+                panoramaxActive: activePanoramaxEnabled,
+                trafficSignRecognitionActive: activeTSREnabled,
+                successful: successful,
+                actionPending: interactionFinalization != nil
+            ) {
                 if wasLiveToggle, successful {
-                    lastCaptureDetail = "Dashcam-Aufnahme gespeichert; andere Kameramodule laufen weiter"
+                    lastCaptureDetail = activePanoramaxEnabled || activeTSREnabled
+                        ? "Dashcam-Aufnahme gespeichert; andere Kameramodule laufen weiter"
+                        : "Dashcam-Aufnahme gespeichert"
                 } else {
                     lastCaptureDetail = successful
                         ? "Dashcam-Dateigrenze erreicht; andere Kameramodule laufen weiter"
@@ -1220,6 +1343,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     }
 
     private func handleMovieStarted(url: URL) {
+        defer { stopDashcamForPendingInteraction() }
         guard dashcamFileURL?.standardizedFileURL == url.standardizedFileURL else {
             sessionQueue.async { [weak self] in
                 guard let self,
@@ -1457,9 +1581,11 @@ typealias PanoramaxRecorder = DriveCaptureCoordinator
 
 struct DriveCameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
+    var orientation: ScreenOrientation = .portrait
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
+        view.orientation = orientation
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
         view.updateVideoRotation()
@@ -1467,6 +1593,7 @@ struct DriveCameraPreview: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: PreviewView, context: Context) {
+        uiView.orientation = orientation
         if uiView.videoPreviewLayer.session !== session {
             uiView.videoPreviewLayer.session = session
         }
@@ -1478,6 +1605,7 @@ struct DriveCameraPreview: UIViewRepresentable {
     }
 
     final class PreviewView: UIView {
+        var orientation: ScreenOrientation = .portrait
         override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
         var videoPreviewLayer: AVCaptureVideoPreviewLayer {
             guard let layer = layer as? AVCaptureVideoPreviewLayer else {
@@ -1497,21 +1625,8 @@ struct DriveCameraPreview: UIViewRepresentable {
         }
 
         func updateVideoRotation() {
-            guard let orientation = window?.windowScene?.interfaceOrientation,
-                  let connection = videoPreviewLayer.connection else { return }
-            let angle: CGFloat
-            switch orientation {
-            case .portrait:
-                angle = 90
-            case .portraitUpsideDown:
-                angle = 270
-            case .landscapeLeft:
-                angle = 180
-            case .landscapeRight:
-                angle = 0
-            default:
-                return
-            }
+            guard let connection = videoPreviewLayer.connection else { return }
+            let angle = orientation.captureRotationAngle
             guard connection.isVideoRotationAngleSupported(angle) else { return }
             guard connection.videoRotationAngle != angle else { return }
             connection.videoRotationAngle = angle

@@ -41,6 +41,7 @@
 		548B98D7421B783B3A752FFA /* SpeedDBBenchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */; };
 		5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 734BE1C063C1A673E23AE2B7 /* Assets.xcassets */; };
 		5D7F2E497654C1FF8CB167EF /* sign-pictograms in Resources */ = {isa = PBXBuildFile; fileRef = 9AE19896C9567940AD3237DC /* sign-pictograms */; };
+		5DB1AC8BEAB4B43223C85CD7 /* ScreenOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8ABDD7FDF0FBA9F194D4E506 /* ScreenOrientation.swift */; };
 		5F554FF958BBABA79B8DD61D /* country-pack-registry-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = 5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */; };
 		63A1FDBA6F50BAF6E0D5A450 /* replay_track.kml in Resources */ = {isa = PBXBuildFile; fileRef = 9555D2DA081CCC7879470683 /* replay_track.kml */; };
 		6585DC782BAD25DF008F4257 /* ISL-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 91B1B7ECB133C4AB02844194 /* ISL-rules.json */; };
@@ -55,6 +56,7 @@
 		828070161944FD011DF0C9BE /* baden-wuerttemberg.poly in Resources */ = {isa = PBXBuildFile; fileRef = 68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */; };
 		83D2D9CBFC7A54D8A7C7DC9B /* SpeedDBBenchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */; };
 		87705B3C550857EC8BE703D6 /* karlsruhe_v3_B_waylinks.sqlite in Resources */ = {isa = PBXBuildFile; fileRef = FB2521825812DB4BA5E1D984 /* karlsruhe_v3_B_waylinks.sqlite */; };
+		8AD0BA1C7889B65F2BEE8BAF /* ScreenOrientationUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */; };
 		8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */; };
 		90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */; };
 		928F5C48A6B186706C9C300C /* berlin.poly in Resources */ = {isa = PBXBuildFile; fileRef = 898DCF45AF918F33ECAF906A /* berlin.poly */; };
@@ -103,6 +105,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		07CE4ED76D7F3B68253BF25C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 15731F4FC38E207B32918BE3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D578EAD00603963ADC4656D4;
+			remoteInfo = SpeedConsumer;
+		};
 		45D9B23C7AE04B1C24431C95 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 15731F4FC38E207B32918BE3 /* Project object */;
@@ -150,6 +159,7 @@
 		35751CA31400D0ACB6FC9A0E /* sweden.poly */ = {isa = PBXFileReference; path = sweden.poly; sourceTree = "<group>"; };
 		360D323F4A434E6359337C9F /* ROU-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "ROU-rules.json"; sourceTree = "<group>"; };
 		3A73CDF8C3D4A7F7690153AA /* luxembourg.poly */ = {isa = PBXFileReference; path = luxembourg.poly; sourceTree = "<group>"; };
+		414061DF5847B08592B3C7D2 /* SpeedConsumerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		451AB91452C045D0505BEBD1 /* TrafficSignCountryPackRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignCountryPackRegistry.swift; sourceTree = "<group>"; };
 		47046B94A6EDE1D906F83F16 /* saarland.poly */ = {isa = PBXFileReference; path = saarland.poly; sourceTree = "<group>"; };
 		485C60A9FAC79B491934A959 /* SpeedDBBenchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchTests.swift; sourceTree = "<group>"; };
@@ -180,6 +190,7 @@
 		874EA64854A26F82F3A96D84 /* RegionalCoverage */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RegionalCoverage; path = ../shared/RegionalCoverage; sourceTree = SOURCE_ROOT; };
 		881D085EDE2D348B7DF817C8 /* fr.lproj */ = {isa = PBXFileReference; path = fr.lproj; sourceTree = "<group>"; };
 		898DCF45AF918F33ECAF906A /* berlin.poly */ = {isa = PBXFileReference; path = berlin.poly; sourceTree = "<group>"; };
+		8ABDD7FDF0FBA9F194D4E506 /* ScreenOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenOrientation.swift; sourceTree = "<group>"; };
 		8BABF9699F30E53D125F3E9A /* CHE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "CHE-rules.json"; sourceTree = "<group>"; };
 		8C96B1695E93488607A5558F /* attributions */ = {isa = PBXFileReference; lastKnownFileType = folder; name = attributions; path = ../shared/attributions; sourceTree = SOURCE_ROOT; };
 		8DEC815A724E0702C9E8EC7B /* replay_expected.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = replay_expected.json; sourceTree = "<group>"; };
@@ -219,6 +230,7 @@
 		E1EF5534FE6EF8015DB05730 /* nl.lproj */ = {isa = PBXFileReference; path = nl.lproj; sourceTree = "<group>"; };
 		EA8D2A4EA6770F7FE7041A11 /* LIE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LIE-rules.json"; sourceTree = "<group>"; };
 		F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenOrientationUITests.swift; sourceTree = "<group>"; };
 		F649DB2DD9AFA048F046113B /* karlsruhe_v3_A_geom16.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = karlsruhe_v3_A_geom16.sqlite; sourceTree = "<group>"; };
 		FA7B3A780871037A868C74EA /* SQLiteBenchmarkRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteBenchmarkRunner.swift; sourceTree = "<group>"; };
 		FB2521825812DB4BA5E1D984 /* karlsruhe_v3_B_waylinks.sqlite */ = {isa = PBXFileReference; lastKnownFileType = file; path = karlsruhe_v3_B_waylinks.sqlite; sourceTree = "<group>"; };
@@ -248,6 +260,8 @@
 				9A2F4102E4235FC0D1C10EE1 /* PanoramaxUploadClient.swift */,
 				0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */,
 				BC4FBAA4D4D2DDF2468DB698 /* RegionalPackDiscovery.swift */,
+				8ABDD7FDF0FBA9F194D4E506 /* ScreenOrientation.swift */,
+				F279F32CF2B1BE105A935A81 /* ScreenOrientationUITests.swift */,
 				6E3C55C0CB5CEEEF45D3AEBA /* SourceAttributions.swift */,
 				4BE51D1D2475550C6B5CBBC6 /* SpeedConsumerApp.swift */,
 				08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */,
@@ -302,6 +316,7 @@
 			children = (
 				C30AA5A019882EBB0B4B0DA3 /* SpeedConsumer.app */,
 				F0573EE16EFF1B84A789F493 /* SpeedConsumerTests.xctest */,
+				414061DF5847B08592B3C7D2 /* SpeedConsumerUITests.xctest */,
 				2FDCAD97D5DBC71DEBDC7D35 /* SpeedDBBench.app */,
 				842C85ABC573B8DFE3005109 /* SpeedDBBenchTests.xctest */,
 				5749BF3469AD1328573C4223 /* SpeedDBBenchUITests.xctest */,
@@ -468,6 +483,24 @@
 			productReference = 2FDCAD97D5DBC71DEBDC7D35 /* SpeedDBBench.app */;
 			productType = "com.apple.product-type.application";
 		};
+		6A3E65B4EDD5B8ECE361E751 /* SpeedConsumerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8F925C1B8EC1EA4CE43C4239 /* Build configuration list for PBXNativeTarget "SpeedConsumerUITests" */;
+			buildPhases = (
+				7230287AAFBD9C64DE6164DF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				68058E84958CE3B4813CFBF3 /* PBXTargetDependency */,
+			);
+			name = SpeedConsumerUITests;
+			packageProductDependencies = (
+			);
+			productName = SpeedConsumerUITests;
+			productReference = 414061DF5847B08592B3C7D2 /* SpeedConsumerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		D578EAD00603963ADC4656D4 /* SpeedConsumer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3A7AC18D607C4D044195A90A /* Build configuration list for PBXNativeTarget "SpeedConsumer" */;
@@ -524,6 +557,10 @@
 					66DD0F1FD88DC5377112DF40 = {
 						ProvisioningStyle = Automatic;
 					};
+					6A3E65B4EDD5B8ECE361E751 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = D578EAD00603963ADC4656D4;
+					};
 					D578EAD00603963ADC4656D4 = {
 						DevelopmentTeam = F4CT29PZS5;
 						ProvisioningStyle = Automatic;
@@ -549,6 +586,7 @@
 			targets = (
 				D578EAD00603963ADC4656D4 /* SpeedConsumer */,
 				F0D9CF38B4EDF73811C68270 /* SpeedConsumerTests */,
+				6A3E65B4EDD5B8ECE361E751 /* SpeedConsumerUITests */,
 				66DD0F1FD88DC5377112DF40 /* SpeedDBBench */,
 				0A786A9BBC0984CC419D8621 /* SpeedDBBenchTests */,
 				2DF2E7D828D4D2E4D2090029 /* SpeedDBBenchUITests */,
@@ -640,6 +678,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7230287AAFBD9C64DE6164DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8AD0BA1C7889B65F2BEE8BAF /* ScreenOrientationUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9CDD076D821987C8D704F332 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -654,6 +700,7 @@
 				D6FFB2D51E09A1FD34FD07B5 /* PanoramaxRecorder.swift in Sources */,
 				3D0DF63AA1C368A285F7954A /* PanoramaxUploadClient.swift in Sources */,
 				F4B34C3BA2DFAA8D971C9D4F /* RegionalPackDiscovery.swift in Sources */,
+				5DB1AC8BEAB4B43223C85CD7 /* ScreenOrientation.swift in Sources */,
 				3C73A3DCE26AB7A90E4EA23C /* SourceAttributions.swift in Sources */,
 				F5FB0BA9CF92051C17E8285A /* SpeedConsumerApp.swift in Sources */,
 				260CAE5EB44878D86FBB618F /* SpeedConsumerAppDelegate.swift in Sources */,
@@ -721,6 +768,11 @@
 			isa = PBXTargetDependency;
 			target = 66DD0F1FD88DC5377112DF40 /* SpeedDBBench */;
 			targetProxy = 6A9E8B5EFD402C8E1E3FAAED /* PBXContainerItemProxy */;
+		};
+		68058E84958CE3B4813CFBF3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D578EAD00603963ADC4656D4 /* SpeedConsumer */;
+			targetProxy = 07CE4ED76D7F3B68253BF25C /* PBXContainerItemProxy */;
 		};
 		8E96064FD444CB98BA146A10 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -999,6 +1051,24 @@
 			};
 			name = Debug;
 		};
+		C748A1329AC86BB8AC2CB6F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedConsumerUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpeedConsumer;
+			};
+			name = Release;
+		};
 		E26589034D9E161825CD6B84 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1065,6 +1135,24 @@
 			};
 			name = Debug;
 		};
+		FD5513756513F4443522D93B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedConsumerUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = SpeedConsumer;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1118,6 +1206,15 @@
 			buildConfigurations = (
 				C3B216081F1A16B1F2FF928A /* Debug */,
 				31895F4F6A8493F3860AE3DB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8F925C1B8EC1EA4CE43C4239 /* Build configuration list for PBXNativeTarget "SpeedConsumerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FD5513756513F4443522D93B /* Debug */,
+				C748A1329AC86BB8AC2CB6F3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

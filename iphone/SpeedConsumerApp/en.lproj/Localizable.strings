@@ -40,7 +40,7 @@
 "drive_recorder.status.toggle_hint" = "Double-tap to switch this module while recording.";
 "drive_recorder.preview.live" = "Live";
 "drive_recorder.preview.show" = "Show live Dashcam view";
-"drive_recorder.preview.hide" = "Tap for speed and location";
+"drive_recorder.preview.hide" = "Stop video · show speed and location";
 "drive_recorder.settings.section" = "Drive Recorder";
 "drive_recorder.settings.description" = "The main recorder always starts Dashcam. Enabled speed-sign recognition and Panoramax capture join the same recording; use the recording chips to change Dashcam or speed-sign recognition while recording.";
 "drive_recorder.settings.status" = "Status";
@@ -355,3 +355,14 @@
 "onboarding.screenshot.title" = "Screenshot";
 "onboarding.screenshot.close" = "Close";
 "onboarding.panoramax.account_screenshot" = "Connect your Panoramax account in Settings before uploading selected photos.";
+
+// Manual mounting orientation and safe recorder actions.
+"settings.orientation.section" = "Screen orientation";
+"settings.orientation.title" = "Mounting position";
+"settings.orientation.portrait" = "Portrait";
+"settings.orientation.landscape_camera_lower_right" = "Landscape · camera lower right";
+"settings.orientation.landscape_camera_upper_left" = "Landscape · camera upper left";
+"settings.orientation.description" = "Choose how the phone is mounted. The screen stays in this position until you change it. In landscape, the speed limit stays on the left and speed or Dashcam stays on the right.";
+"drive_recorder.action.saving" = "Saving Dashcam video…";
+"drive_recorder.action.failed_title" = "Dashcam video could not be saved";
+"drive_recorder.action.failed" = "The action was cancelled because Dashcam video could not be finalized. Please try again.";

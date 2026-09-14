@@ -32,4 +32,13 @@
     <string name="ui_panoramax_include">Uwzględnij</string>
     <string name="ui_panoramax_exclude">Wyklucz</string>
     <string name="ui_panoramax_no_camera">Kamera jest niedostępna</string>
+    <string name="ui_screen_orientation">Orientacja ekranu</string>
+    <string name="ui_screen_orientation_help">Wybierz ręcznie pozycję montażu. Ekran nie reaguje na czujnik orientacji.</string>
+    <string name="ui_orientation_portrait">Pionowa</string>
+    <string name="ui_orientation_landscape_lower_right">Pozioma · aparat na dole po prawej · złącze po lewej</string>
+    <string name="ui_orientation_landscape_upper_left">Pozioma · aparat u góry po lewej · złącze po prawej</string>
+    <string name="ui_video_saving">Zapisywanie filmu…</string>
+    <string name="ui_video_save_failed">Nie udało się zapisać filmu</string>
+    <string name="ui_video_save_timeout">Rejestrator nie potwierdził zapisania filmu. Żądana czynność została anulowana.</string>
+    <string name="ui_correct_speed_limit">Popraw ograniczenie prędkości</string>
 </resources>

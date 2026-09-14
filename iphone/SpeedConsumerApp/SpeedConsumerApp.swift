@@ -22,6 +22,28 @@ struct SpeedConsumerApp: App {
                     MainView(viewModel: viewModel)
                 }
             }
+            .environment(\.driveInteraction, DriveInteraction(perform: viewModel.performDriveInteraction))
+            .background(ManualOrientationSceneBridge(selection: viewModel.screenOrientation) { error in
+                viewModel.screenOrientationError = error.localizedDescription
+            })
+            .disabled(viewModel.driveInteractionPending)
+            .overlay(alignment: .top) {
+                if viewModel.driveInteractionPending {
+                    Text(NSLocalizedString("drive_recorder.action.saving", comment: ""))
+                        .font(.callout.weight(.semibold))
+                        .padding(12)
+                        .background(.regularMaterial, in: Capsule())
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
+            }
+            .alert(NSLocalizedString("drive_recorder.action.failed_title", comment: ""), isPresented: Binding(
+                get: { viewModel.driveInteractionError != nil },
+                set: { if !$0 { viewModel.driveInteractionError = nil } }
+            )) {
+                Button(NSLocalizedString("common.done", comment: ""), role: .cancel) {}
+            } message: {
+                Text(viewModel.driveInteractionError ?? "")
+            }
             .onAppear { updateLifecycle(for: scenePhase) }
             .onChange(of: viewModel.hasOnboardingMap) { _, _ in
                 viewModel.normalizeOnboardingState()
@@ -33,6 +55,7 @@ struct SpeedConsumerApp: App {
     }
 
     private func updateLifecycle(for phase: ScenePhase) {
+        if phase != .active { viewModel.cancelPendingDriveInteraction() }
         if phase == .active { viewModel.refreshOnboardingLocationPermission() }
         viewModel.setTrafficSignApplicationActive(phase == .active)
         #if canImport(UIKit)

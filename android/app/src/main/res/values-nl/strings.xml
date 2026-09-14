@@ -99,4 +99,13 @@
     <string name="onboarding_close_example">Voorbeeld sluiten</string>
     <string name="onboarding_threshold_decrease_label">Waarschuwingsdrempel verlagen</string>
     <string name="onboarding_threshold_increase_label">Waarschuwingsdrempel verhogen</string>
+    <string name="ui_screen_orientation">Schermoriëntatie</string>
+    <string name="ui_screen_orientation_help">Kies de montagepositie handmatig. Het scherm volgt de oriëntatiesensor niet.</string>
+    <string name="ui_orientation_portrait">Staand</string>
+    <string name="ui_orientation_landscape_lower_right">Liggend · camera rechtsonder · aansluiting links</string>
+    <string name="ui_orientation_landscape_upper_left">Liggend · camera linksboven · aansluiting rechts</string>
+    <string name="ui_video_saving">Video opslaan…</string>
+    <string name="ui_video_save_failed">Video kon niet worden opgeslagen</string>
+    <string name="ui_video_save_timeout">De recorder heeft niet bevestigd dat de video is opgeslagen. De aangevraagde actie is geannuleerd.</string>
+    <string name="ui_correct_speed_limit">Snelheidslimiet corrigeren</string>
 </resources>

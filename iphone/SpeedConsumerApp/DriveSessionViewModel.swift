@@ -699,6 +699,61 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(panoramaxCaptureEnabled, forKey: Self.panoramaxCaptureEnabledDefaultsKey)
         }
     }
+    @Published private(set) var screenOrientation = ScreenOrientation.load()
+    @Published var screenOrientationError: String?
+    @Published private(set) var driveInteractionPending = false
+    @Published var driveInteractionError: String?
+    private let driveInteractionGate = DriveInteractionGate()
+
+    func performDriveInteraction(_ action: @escaping () -> Void) {
+        driveInteractionGate.perform(
+            needsFinalization: driveCaptureCoordinator?.needsDashcamFinalization ?? false,
+            finalize: { [weak self] completion in
+                guard let self, let coordinator = driveCaptureCoordinator else {
+                    completion(.failure(DriveInteractionError.finalizationFailed))
+                    return
+                }
+                coordinator.finalizeDashcamForInteraction(completion: completion)
+            },
+            changed: { [weak self] pending in self?.driveInteractionPending = pending },
+            failed: { [weak self] error in self?.driveInteractionError = error.localizedDescription },
+            action: { [weak self] in
+                guard let self else { return }
+                if driveInteractionGate.didFinalizeForCurrentAction {
+                    dashcamRecordingEnabled = false
+                    syncDriveRecorderState()
+                }
+                action()
+            }
+        )
+    }
+
+    func cancelPendingDriveInteraction() {
+        driveInteractionGate.cancel()
+        driveInteractionPending = false
+    }
+
+    func selectScreenOrientation(_ selection: ScreenOrientation) {
+        guard selection != screenOrientation else { return }
+        performDriveInteraction { [weak self] in
+            guard let self else { return }
+            // Reject work still in flight under the previous frame coordinates.
+            trafficSignContextGeneration &+= 1
+            trafficSignDebugGenerationSessionContextMismatch = false
+            trafficSignFrameContextIsCurrent = false
+            latestTrafficSignDetectionContext = nil
+            trafficSignFrameState.update(nil)
+            updateTrafficSignWriteGate()
+            // Already confirmed limits and pictograms retain their ordinary
+            // road/expiry rules; changing the mount only invalidates frames.
+            driveCaptureCoordinator?.setScreenOrientation(selection)
+            screenOrientationError = nil
+            screenOrientation = selection
+            UserDefaults.standard.set(selection.rawValue, forKey: ScreenOrientation.defaultsKey)
+            ManualScreenOrientationController.shared.selection = selection
+        }
+    }
+
     @Published private(set) var driveRecorderState: DriveRecorderState = .disabled
     @Published private(set) var driveRecorderStartedAt: Date?
     @Published private(set) var dashcamFileURL: URL?
@@ -1467,6 +1522,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         panoramaxQueueStore = try? PanoramaxQueueStore(performStartupMaintenance: false)
         startPanoramaxQueueMaintenance()
         driveCaptureCoordinator = DriveCaptureCoordinator(queueStore: panoramaxQueueStore)
+        driveCaptureCoordinator?.setScreenOrientation(screenOrientation)
         applyPanoramaxConfiguration()
         driveCaptureCoordinator?.onChange = { [weak self] in
             self?.syncDriveRecorderState()
@@ -1652,6 +1708,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func toggleDriveRecorder() {
+        if driveInteractionGate.didFinalizeForCurrentAction {
+            // The main control was Stop when tapped, even if finalizing the
+            // only camera consumer has already moved the recorder to idle.
+            driveCaptureCoordinator?.stop()
+            return
+        }
         if driveRecorderStartPending {
             driveRecorderStartPending = false
             syncDriveRecorderState()
@@ -2691,6 +2753,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// drive time, TSR, and Panoramax capture stay untouched.
     @discardableResult
     func toggleDriveRecorderDashcam() -> Bool {
+        if driveInteractionGate.didFinalizeForCurrentAction { return true }
         guard canToggleDriveRecorderModules,
               !driveRecorderDashcamTransitioning,
               let driveCaptureCoordinator else { return false }

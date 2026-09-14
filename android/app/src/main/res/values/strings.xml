@@ -101,4 +101,13 @@
     <string name="onboarding_close_example" tools:ignore="MissingTranslation">Close example</string>
     <string name="onboarding_threshold_decrease_label" tools:ignore="MissingTranslation">Lower the warning threshold</string>
     <string name="onboarding_threshold_increase_label" tools:ignore="MissingTranslation">Raise the warning threshold</string>
+    <string name="ui_screen_orientation">Screen orientation</string>
+    <string name="ui_screen_orientation_help">Choose the mounting position manually. The screen does not follow the orientation sensor.</string>
+    <string name="ui_orientation_portrait">Portrait</string>
+    <string name="ui_orientation_landscape_lower_right">Landscape · camera lower right · connector left</string>
+    <string name="ui_orientation_landscape_upper_left">Landscape · camera upper left · connector right</string>
+    <string name="ui_video_saving">Saving video…</string>
+    <string name="ui_video_save_failed">Video could not be saved</string>
+    <string name="ui_video_save_timeout">The recorder did not confirm that the video was saved. The requested action was cancelled.</string>
+    <string name="ui_correct_speed_limit">Correct speed limit</string>
 </resources>
