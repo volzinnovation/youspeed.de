@@ -128,6 +128,7 @@ class BundleDeltaTests {
             override fun fetch(url: String): ByteArray { requests += url; return responses[url] ?: throw IOException("Unavailable $url") }
             override fun fetchToFile(url: String, destination: File, onProgress: ((Long, Long?) -> Unit)?) { destination.writeBytes(fetch(url)) }
         }, deltaDatabase = object : BundleDeltaDatabase {
+            override fun validateSettlementCapability(database: File) = Unit
             override fun applyPatch(database: File, sql: String) {
                 if (failApply) throw IOException("synthetic SQL failure")
                 applied += sql

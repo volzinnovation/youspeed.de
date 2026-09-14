@@ -23,7 +23,7 @@ require(releaseAbi == null || releaseAbi in releaseAbiCodes) {
 
 android {
     namespace = "de.youspeed.android.alpha"
-    compileSdk = 35
+    compileSdk = 36
 
     dependenciesInfo {
         // F-Droid rejects AGP's Google-encrypted dependency metadata block.
@@ -34,10 +34,11 @@ android {
     defaultConfig {
         applicationId = "de.youspeed.android"
         minSdk = 34
-        targetSdk = 35
+        targetSdk = 36
         versionCode = releaseAbi?.let { releaseBaseVersionCode * 10 + releaseAbiCodes.getValue(it) }
             ?: releaseBaseVersionCode
         versionName = releaseVersionName
+        buildConfigField("String", "MAP_COMPATIBILITY_APP_VERSION", "\"$releaseVersionName\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
@@ -117,8 +118,8 @@ android {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
-    // CameraX 1.5+ requires AGP 8.6; 1.4.2 is the latest release compatible
-    // with this app's AGP 8.5 / compileSdk 35 baseline.
+    // CameraX 1.5+ requires AGP 8.6; 1.4.2 remains compatible with this app's
+    // AGP 8.5 / Kotlin 1.9 toolchain.
     val cameraXVersion = "1.4.2"
 
     implementation("androidx.core:core-ktx:1.13.1")

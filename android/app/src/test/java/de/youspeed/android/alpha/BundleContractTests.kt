@@ -212,6 +212,7 @@ class BundleContractTests {
         )
 
         val bootstrapper = BundleBootstrapper(
+            deltaDatabase = ContractTestDatabase,
             rootDir = tempRoot,
             httpFetcher = fetcher,
             clock = Clock.fixed(Instant.parse("2026-03-12T08:00:00Z"), ZoneOffset.UTC),
@@ -264,7 +265,7 @@ class BundleContractTests {
             )
         )
 
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = fetcher)
         val progressEvents = mutableListOf<BundleSyncProgress>()
 
         bootstrapper.syncFromManifestUrl(manifestUrl) { progress ->
@@ -317,7 +318,7 @@ class BundleContractTests {
             )
         )
 
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = fetcher)
         val result = bootstrapper.syncFromManifestUrl(manifestUrl)
 
         assertEquals(BundleSyncMode.FULL_DOWNLOAD, result.mode)
@@ -380,7 +381,7 @@ class BundleContractTests {
             )
         )
 
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = fetcher)
 
         val result = bootstrapper.syncFromManifestUrl(manifestUrl)
 
@@ -444,7 +445,7 @@ class BundleContractTests {
             )
         )
 
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = fetcher)
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = fetcher)
         val result = bootstrapper.syncFromManifestUrl(manifestUrl)
 
         assertEquals(BundleSyncMode.FULL_DOWNLOAD, result.mode)
@@ -477,6 +478,7 @@ class BundleContractTests {
         )
 
         val bootstrapper = BundleBootstrapper(
+            deltaDatabase = ContractTestDatabase,
             rootDir = tempRoot,
             httpFetcher = FakeHttpFetcher(emptyMap()),
             assetReader = FileAppAssetReader(bundledSharedAssetsRoot()),
@@ -506,7 +508,7 @@ class BundleContractTests {
             bbox = BundleCoverageBBox(minLon = 8.0, minLat = 48.0, maxLon = 9.0, maxLat = 49.0),
             polyFileName = "missing.poly",
         )
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
 
         val route = bootstrapper.resolveLocalBundleRoute(lat = 48.5, lon = 8.5, fallbackDBPath = null)
 
@@ -528,7 +530,7 @@ class BundleContractTests {
             bbox = BundleCoverageBBox(minLon = 8.0, minLat = 48.0, maxLon = 9.0, maxLat = 49.0),
             polyFileName = null,
         )
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
         assertNotNull(bootstrapper.resolveLocalBundleRoute(48.5, 8.5, fallbackDBPath = null)?.dbSha256)
 
         dbFile.writeBytes(byteArrayOf())
@@ -559,7 +561,7 @@ class BundleContractTests {
             bbox = BundleCoverageBBox(minLon = 8.2, minLat = 48.6, maxLon = 8.7, maxLat = 49.0),
             polyFileName = null,
         )
-        val bootstrapper = BundleBootstrapper(rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
+        val bootstrapper = BundleBootstrapper(deltaDatabase = ContractTestDatabase, rootDir = tempRoot, httpFetcher = FakeHttpFetcher(emptyMap()))
 
         val route = bootstrapper.resolveLocalBundleRoute(
             lat = 48.80117,
@@ -720,4 +722,10 @@ private fun gzip(bytes: ByteArray): ByteArray {
         gzip.write(bytes)
     }
     return out.toByteArray()
+}
+
+internal object ContractTestDatabase : BundleDeltaDatabase {
+    override fun applyPatch(database: File, sql: String) = error("Unexpected delta")
+    override fun validate(database: File) = Unit
+    override fun validateSettlementCapability(database: File) = Unit
 }

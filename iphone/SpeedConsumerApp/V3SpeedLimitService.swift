@@ -846,13 +846,6 @@ final class V3SpeedLimitService {
     private static let miniHMMEndpointConnectionPenaltyM: Double = 2.0
     private static let miniHMMEndpointConnectionThresholdM: Double = 20.0
     private static let miniHMMEndpointCandidateThresholdM: Double = 24.0
-    private static let inCityHighwayClasses: Set<String> = [
-        "residential",
-        "service",
-        "crossing",
-        "living_street",
-    ]
-
     init(
         dbPath: String,
         countryCode: String? = nil,
@@ -1106,51 +1099,14 @@ final class V3SpeedLimitService {
                 }
             }
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
-            let insideCityDecision: (insideCity: Bool?, source: String?)
-            let residentialContext: ResidentialContext
-            if highwayImpliesInsideCity(finalSelected?.highway) {
-                insideCityDecision = (true, "highway_class_in_city")
-                residentialContext = ResidentialContext(
-                    insideCity: nil,
-                    candidatePolygons: 0,
-                    containingPolygons: 0,
-                    resolveMs: 0.0
-                )
-            } else {
-                residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
-                if let insideCity = residentialContext.insideCity {
-                    insideCityDecision = (insideCity, "residential_polygon")
-                } else {
-                    insideCityDecision = (cityContext.insideCity, cityContext.citySource)
-                }
-            }
-
-            let t1 = DispatchTime.now().uptimeNanoseconds
-            let elapsedMs = Double(t1 - t0) / 1_000_000.0
-            let effectiveSpeed: Int?
-            if finalSelected?.isUnlimitedSpeedLimit == true {
-                effectiveSpeed = nil
-            } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
-                if finalSelected.speedSource == .highwayClass,
-                   Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-                   let insideCity = insideCityDecision.insideCity {
-                    effectiveSpeed = insideCity ? 50 : 100
-                } else {
-                    effectiveSpeed = matchedSpeed
-                }
-            } else if let finalSelected,
-                      Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-                      let insideCity = insideCityDecision.insideCity {
-                effectiveSpeed = insideCity ? 50 : 100
-            } else if insideCityDecision.insideCity == true {
-                effectiveSpeed = 50
-            } else {
-                effectiveSpeed = nil
-            }
-            let resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
-                insideCityDecision: insideCityDecision,
-                speedKmh: effectiveSpeed
+            let settlementStarted = DispatchTime.now().uptimeNanoseconds
+            let settlement = resolveSettlementContext(
+                db: db, wayID: finalSelected?.wayID, lat: lat, lon: lon,
+                headingDeg: headingDeg, headingAccuracyDeg: headingAccuracyDeg, speedKmh: speedKmh
             )
+            let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
+            let effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement)
+            let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - t0) / 1_000_000.0
             let selectedRouteContinuity = loadSelectedRouteContinuity(
                 db: db,
                 wayID: finalSelected?.wayID
@@ -1206,9 +1162,9 @@ final class V3SpeedLimitService {
                 cityName: cityContext.cityName,
                 cityPlaceName: cityContext.cityPlaceName,
                 cityDistrictName: cityContext.cityDistrictName,
-                insideCity: resolvedInsideCityDecision.insideCity,
-                citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
-                cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
+                insideCity: settlement.insideCity,
+                citySource: settlement.citySource,
+                cityResolveMs: cityContext.resolveMs + settlementResolveMs,
                 cityCandidateBoundaries: cityContext.candidateBoundaries,
                 cityContainingBoundaries: cityContext.containingBoundaries,
                 cityPlaceCandidates: cityContext.placeCandidates,
@@ -1732,55 +1688,14 @@ final class V3SpeedLimitService {
             selectionTrace: [MatchSelectionTrace]
         ) -> SpeedLimitResult {
             let cityContext = resolveCityContext(db: db, lat: lat, lon: lon)
-            let insideCityDecision: (insideCity: Bool?, source: String?)
-            let residentialContext: ResidentialContext
-            if highwayImpliesInsideCity(finalSelected?.highway) {
-                insideCityDecision = (true, "highway_class_in_city")
-                residentialContext = ResidentialContext(
-                    insideCity: nil,
-                    candidatePolygons: 0,
-                    containingPolygons: 0,
-                    resolveMs: 0.0
-                )
-            } else {
-                residentialContext = resolveResidentialContext(db: db, lat: lat, lon: lon)
-                if let insideCity = residentialContext.insideCity {
-                    insideCityDecision = (insideCity, "residential_polygon")
-                } else {
-                    insideCityDecision = (cityContext.insideCity, cityContext.citySource)
-                }
-            }
-
-            let t1 = DispatchTime.now().uptimeNanoseconds
-            let elapsedMs = Double(t1 - t0) / 1_000_000.0
-
-            let effectiveSpeed: Int?
-            if finalSelected?.isUnlimitedSpeedLimit == true {
-                effectiveSpeed = nil
-            } else if let finalSelected, let matchedSpeed = finalSelected.speedKmh {
-                if finalSelected.speedSource == .highwayClass,
-                   Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-                   let insideCity = insideCityDecision.insideCity {
-                    // Highway class alone is weaker than explicit city/rural context.
-                    effectiveSpeed = insideCity ? 50 : 100
-                } else {
-                    effectiveSpeed = matchedSpeed
-                }
-            } else if let finalSelected,
-                      Self.allowsResidentialAreaFallback(highway: finalSelected.highway),
-                      let insideCity = insideCityDecision.insideCity {
-                // Keep inherited defaults only when a way match exists.
-                effectiveSpeed = insideCity ? 50 : 100
-            } else if insideCityDecision.insideCity == true {
-                // Residential polygon containment can still provide a safe inner-city fallback.
-                effectiveSpeed = 50
-            } else {
-                effectiveSpeed = nil
-            }
-            let resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
-                insideCityDecision: insideCityDecision,
-                speedKmh: effectiveSpeed
+            let settlementStarted = DispatchTime.now().uptimeNanoseconds
+            let settlement = resolveSettlementContext(
+                db: db, wayID: finalSelected?.wayID, lat: lat, lon: lon,
+                headingDeg: headingDeg, headingAccuracyDeg: headingAccuracyDeg, speedKmh: speedKmh
             )
+            let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
+            let effectiveSpeed = settlementSpeedLimit(candidate: finalSelected, settlement: settlement)
+            let elapsedMs = Double(DispatchTime.now().uptimeNanoseconds - t0) / 1_000_000.0
             let selectedRouteContinuity = loadSelectedRouteContinuity(
                 db: db,
                 wayID: finalSelected?.wayID
@@ -1837,9 +1752,9 @@ final class V3SpeedLimitService {
                 cityName: cityContext.cityName,
                 cityPlaceName: cityContext.cityPlaceName,
                 cityDistrictName: cityContext.cityDistrictName,
-                insideCity: resolvedInsideCityDecision.insideCity,
-                citySource: resolvedInsideCityDecision.source ?? cityContext.citySource,
-                cityResolveMs: cityContext.resolveMs + residentialContext.resolveMs,
+                insideCity: settlement.insideCity,
+                citySource: settlement.citySource,
+                cityResolveMs: cityContext.resolveMs + settlementResolveMs,
                 cityCandidateBoundaries: cityContext.candidateBoundaries,
                 cityContainingBoundaries: cityContext.containingBoundaries,
                 cityPlaceCandidates: cityContext.placeCandidates,
@@ -2196,16 +2111,6 @@ final class V3SpeedLimitService {
         ).speed
     }
 
-    static func germanLowSpeedLimitImpliesInsideCity(countryCode: String?, speedKmh: Int?) -> Bool {
-        guard normalizedCountryCode(countryCode) == "DEU",
-              let speedKmh,
-              speedKmh > 0,
-              speedKmh < 50 else {
-            return false
-        }
-        return true
-    }
-
     private static func allowsResidentialAreaFallback(highway: String?) -> Bool {
         switch highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "motorway", "motorway_link":
@@ -2239,7 +2144,7 @@ final class V3SpeedLimitService {
             return (nil, .inheritedTag, false)
         }
 
-        switch highway?.lowercased() {
+        switch highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "motorway", "motorway_link":
             return (nil, .highwayClass, false)
         case "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link":
@@ -9098,6 +9003,196 @@ final class V3SpeedLimitService {
         return false
     }
 
+    struct SettlementDecision: Equatable {
+        let insideCity: Bool?
+        let source: String
+        let confidence: String
+        var citySource: String { "settlement:\(source):\(confidence)" }
+        static let missing = SettlementDecision(insideCity: nil, source: "missing", confidence: "unknown")
+        static let conflict = SettlementDecision(insideCity: nil, source: "conflict", confidence: "unknown")
+    }
+
+    struct SettlementSegment {
+        let direction: Int
+        let insideCity: Bool?
+        let source: String
+        let confidence: String
+        // This is the same latitude/longitude order as way_geom, unlike city_ring.
+        let points: [(Double, Double)]
+    }
+
+    private func settlementSpeedLimit(candidate: WayCandidate?, settlement: SettlementDecision) -> Int? {
+        guard let candidate else { return nil }
+        if candidate.isUnlimitedSpeedLimit { return nil }
+        if candidate.speedSource == .explicitTag { return candidate.speedKmh }
+        if candidate.highway?.lowercased() == "living_street" { return candidate.speedKmh }
+        if !Self.allowsResidentialAreaFallback(highway: candidate.highway) { return candidate.speedKmh }
+        if settlement.confidence == "high", let inside = settlement.insideCity {
+            return inside ? 50 : 100
+        }
+        let highway = candidate.highway?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if candidate.speedSource == .highwayClass, highway == "residential" || highway == "service" {
+            // A road-class speed default does not establish settlement context.
+            return 50
+        }
+        return nil
+    }
+
+    private func metadataValue(db: OpaquePointer, key: String) -> String? {
+        guard tableExists(db: db, name: "metadata") else { return nil }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT value FROM metadata WHERE key=?1 LIMIT 1", -1, &statement, nil) == SQLITE_OK,
+              let statement else { return nil }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, key, -1, SQLITE_TRANSIENT)
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        return cStringOptional(sqlite3_column_text(statement, 0)) ?? ""
+    }
+
+    private func resolveSettlementContext(
+        db: OpaquePointer, wayID: String?, lat: Double, lon: Double,
+        headingDeg: Double?, headingAccuracyDeg: Double?, speedKmh: Double?
+    ) -> SettlementDecision {
+        guard let wayID else { return .missing }
+        if let version = metadataValue(db: db, key: "settlement_context_version") {
+            // Unknown capabilities never silently reuse the legacy geographic heuristics.
+            guard version == "1", tableExists(db: db, name: "settlement_segment") else { return .missing }
+            let sql = "SELECT direction,inside_city,source,confidence,points_json FROM settlement_segment WHERE way_id=?1 ORDER BY segment_index,direction,segment_id"
+            var statement: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK,
+                  let statement else { return .missing }
+            defer { sqlite3_finalize(statement) }
+            sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
+            var segments: [SettlementSegment] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let insideStorageType = sqlite3_column_type(statement, 1)
+                let insideValue = sqlite3_column_int64(statement, 1)
+                let insideCity: Bool? = insideStorageType == SQLITE_INTEGER && (0...1).contains(insideValue)
+                    ? insideValue == 1 : nil
+                segments.append(SettlementSegment(
+                    direction: Int(sqlite3_column_int(statement, 0)),
+                    insideCity: insideCity,
+                    source: cStringOptional(sqlite3_column_text(statement, 2)) ?? "missing",
+                    confidence: cStringOptional(sqlite3_column_text(statement, 3)) ?? "unknown",
+                    points: Self.parseSettlementPoints(cStringOptional(sqlite3_column_text(statement, 4)))
+                ))
+            }
+            return Self.selectSettlementSegment(
+                segments, lat: lat, lon: lon, headingDeg: headingDeg,
+                headingAccuracyDeg: headingAccuracyDeg, speedKmh: speedKmh
+            )
+        }
+
+        // Road semantics remain meaningful even when a numeric maxspeed is present.
+        let keys = ["zone_traffic", "maxspeed_type", "source_maxspeed", "maxspeed"]
+        let columns = keys.map { columnExists(db: db, table: "ways", column: $0) ? $0 : "NULL" }
+        var statement: OpaquePointer?
+        let sql = "SELECT \(columns.joined(separator: ",")) FROM ways WHERE way_id=?1 LIMIT 1"
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement {
+            defer { sqlite3_finalize(statement) }
+            sqlite3_bind_text(statement, 1, wayID, -1, SQLITE_TRANSIENT)
+            if sqlite3_step(statement) == SQLITE_ROW {
+                let tags = keys.enumerated().map { ($0.element, cStringOptional(sqlite3_column_text(statement, Int32($0.offset)))) }
+                let decision = Self.legacySettlementDecision(tags: tags)
+                if decision != .missing { return decision }
+            }
+        }
+        let residential = resolveResidentialContext(db: db, lat: lat, lon: lon)
+        return residential.insideCity == true
+            ? SettlementDecision(insideCity: true, source: "landuse", confidence: "low")
+            : .missing
+    }
+
+    static func legacySettlementDecision(tags: [(String, String?)]) -> SettlementDecision {
+        var evidence: [(Bool, String)] = []
+        for (key, value) in tags {
+            let tokens = (value ?? "").lowercased().split(whereSeparator: { $0 == ";" || $0.isWhitespace })
+            for token in tokens {
+                if token == "urban" || token.hasSuffix(":urban") {
+                    evidence.append((true, key == "maxspeed" ? "maxspeed_type" : key))
+                } else if token == "rural" || token.hasSuffix(":rural") {
+                    evidence.append((false, key == "maxspeed" ? "maxspeed_type" : key))
+                }
+            }
+        }
+        guard let first = evidence.first else { return .missing }
+        guard evidence.allSatisfy({ $0.0 == first.0 }) else { return .conflict }
+        return SettlementDecision(insideCity: first.0, source: first.1, confidence: "high")
+    }
+
+    private static func parseSettlementPoints(_ raw: String?) -> [(Double, Double)] {
+        guard let data = raw?.data(using: .utf8),
+              let points = try? JSONDecoder().decode([[Double]].self, from: data),
+              points.count >= 2,
+              points.allSatisfy({ $0.count == 2 && $0[0].isFinite && $0[1].isFinite
+                  && (-90...90).contains($0[0]) && (-180...180).contains($0[1]) }) else { return [] }
+        return points.map { ($0[0], $0[1]) }
+    }
+
+    static func selectSettlementSegment(
+        _ segments: [SettlementSegment], lat: Double, lon: Double,
+        headingDeg: Double?, headingAccuracyDeg: Double?, speedKmh: Double?
+    ) -> SettlementDecision {
+        guard lat.isFinite, lon.isFinite else { return .missing }
+        let reliableHeading: Double?
+        if let headingDeg, headingDeg.isFinite, (0..<360).contains(headingDeg),
+           let headingAccuracyDeg, headingAccuracyDeg.isFinite, (0...45).contains(headingAccuracyDeg),
+           let speedKmh, speedKmh.isFinite, speedKmh >= 8 {
+            reliableHeading = headingDeg
+        } else {
+            reliableHeading = nil
+        }
+        let longitudeScale = 111_320.0 * max(0.01, cos(lat * .pi / 180))
+        var candidates: [(distance: Double, tangent: Double, segment: SettlementSegment)] = []
+        for segment in segments where (-1...1).contains(segment.direction) {
+            var bestDistance = Double.infinity
+            var tangent: Double?
+            guard segment.points.count >= 2,
+                  segment.points.allSatisfy({ $0.0.isFinite && $0.1.isFinite }) else { continue }
+            for index in 0..<(segment.points.count - 1) {
+                let a = segment.points[index], b = segment.points[index + 1]
+                let ax = (a.1 - lon) * longitudeScale, ay = (a.0 - lat) * 111_132.0
+                let dx = (b.1 - a.1) * longitudeScale, dy = (b.0 - a.0) * 111_132.0
+                let lengthSquared = dx * dx + dy * dy
+                guard lengthSquared > 0 else { continue }
+                let fraction = min(1.0, max(0.0, -(ax * dx + ay * dy) / lengthSquared))
+                let distance = hypot(ax + fraction * dx, ay + fraction * dy)
+                if distance < bestDistance {
+                    bestDistance = distance
+                    tangent = (atan2(dx, dy) * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+                }
+            }
+            guard bestDistance.isFinite else { continue }
+            guard let tangent else { continue }
+            candidates.append((bestDistance, tangent, segment))
+        }
+        guard let minimum = candidates.map(\.distance).min() else { return .missing }
+        let nearest = candidates.filter { $0.distance <= minimum + 0.05 }
+        let closest = nearest.filter { candidate in
+            guard candidate.segment.direction != 0, let heading = reliableHeading else { return true }
+            let target = (candidate.tangent + (candidate.segment.direction == -1 ? 180 : 0)).truncatingRemainder(dividingBy: 360)
+            let delta = abs(heading - target)
+            return min(delta, 360 - delta) <= 45
+        }.map(\.segment)
+        guard !closest.isEmpty else { return .missing }
+        let supportedSources: Set<String> = ["zone_traffic", "maxspeed_type", "source_maxspeed", "traffic_sign", "urban_polygon", "landuse", "conflict", "missing"]
+        guard closest.allSatisfy({ supportedSources.contains($0.source) }) else { return .missing }
+        if reliableHeading == nil {
+            let directions = Set(closest.map(\.direction))
+            guard directions.contains(0) || (directions.contains(-1) && directions.contains(1)) else { return .missing }
+        }
+        // A boundary tie or unresolved direction cannot assert either side of a boundary.
+        let states = Set(closest.map(\.insideCity))
+        guard states.count == 1 else { return .conflict }
+        guard let insideCity = closest.first?.insideCity else {
+            return closest.contains(where: { $0.source == "conflict" }) ? .conflict : .missing
+        }
+        guard closest.allSatisfy({ ["high", "low"].contains($0.confidence) }) else { return .missing }
+        let confidence = closest.allSatisfy { $0.confidence == "high" } ? "high" : "low"
+        guard let best = closest.sorted(by: { $0.source < $1.source }).first else { return .missing }
+        return SettlementDecision(insideCity: insideCity, source: best.source, confidence: confidence)
+    }
+
     private func resolveCityContext(db: OpaquePointer, lat: Double, lon: Double) -> CityContext {
         let startNs = DispatchTime.now().uptimeNanoseconds
 
@@ -9240,26 +9335,6 @@ final class V3SpeedLimitService {
             containingPolygons: containing,
             resolveMs: elapsed
         )
-    }
-
-    private func highwayImpliesInsideCity(_ highway: String?) -> Bool {
-        guard let highway else {
-            return false
-        }
-        return Self.inCityHighwayClasses.contains(
-            highway.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        )
-    }
-
-    private func applyGermanLowSpeedInCityHeuristic(
-        insideCityDecision: (insideCity: Bool?, source: String?),
-        speedKmh: Int?
-    ) -> (insideCity: Bool?, source: String?) {
-        guard insideCityDecision.insideCity != true,
-              Self.germanLowSpeedLimitImpliesInsideCity(countryCode: countryCode, speedKmh: speedKmh) else {
-            return insideCityDecision
-        }
-        return (true, "de_speed_limit_lt_50")
     }
 
     private func resolveCityContextWithPolygons(
@@ -9476,8 +9551,10 @@ final class V3SpeedLimitService {
                let level = area.adminLevel,
                Self.cityBoundaryLevelPriority[level] != nil,
                inside {
-                if Self.isClosedAreaRing(area.points), pointInRing(lon: lon, lat: lat, ring: area.points) {
-                    containingAdminExact.append((adminLevel: level, bboxArea: areaSize, name: name))
+                if Self.isClosedAreaRing(area.points) {
+                    if pointInRing(lon: lon, lat: lat, ring: area.points) {
+                        containingAdminExact.append((adminLevel: level, bboxArea: areaSize, name: name))
+                    }
                 } else {
                     containingAdminBBox.append((adminLevel: level, bboxArea: areaSize, name: name))
                 }
@@ -9679,6 +9756,10 @@ final class V3SpeedLimitService {
 
     private func pointOnSegment(px: Double, py: Double, x1: Double, y1: Double, x2: Double, y2: Double) -> Bool {
         let eps = 1e-12
+        let squaredLength = (x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)
+        if squaredLength == 0 {
+            return abs(px - x1) <= eps && abs(py - y1) <= eps
+        }
         let cross = (px - x1) * (y2 - y1) - (py - y1) * (x2 - x1)
         if abs(cross) > eps {
             return false

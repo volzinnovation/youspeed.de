@@ -160,8 +160,8 @@ class V3SpeedLimitLookupInstrumentedTest {
 
             assertEquals("4101", result.wayId)
             assertEquals(30, result.speedLimitKmh)
-            assertEquals(true, result.insideCity)
-            assertEquals("de_speed_limit_lt_50", result.citySource)
+            assertEquals(null, result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 

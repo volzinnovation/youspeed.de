@@ -4613,12 +4613,6 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(V3SpeedLimitService.deriveSpeedLimitKmh(maxspeed: nil, maxspeedType: nil, sourceMaxspeed: nil, highway: "motorway"))
     }
 
-    func testGermanLowSpeedLimitImpliesInsideCity() {
-        XCTAssertTrue(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "DEU", speedKmh: 30))
-        XCTAssertFalse(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "DEU", speedKmh: 50))
-        XCTAssertFalse(V3SpeedLimitService.germanLowSpeedLimitImpliesInsideCity(countryCode: "NLD", speedKmh: 30))
-    }
-
     func testDeriveSpeedLimitDoesNotInventMandatoryMotorwayLimitFromInheritedTags() {
         XCTAssertNil(
             V3SpeedLimitService.deriveSpeedLimitKmh(
@@ -6918,7 +6912,7 @@ final class SpeedConsumerTests: XCTestCase {
 
         XCTAssertEqual(result.wayID, "100")
         XCTAssertEqual(result.highway, "motorway")
-        XCTAssertEqual(result.insideCity, false)
+        XCTAssertNil(result.insideCity)
         XCTAssertNil(result.speedLimitKmh)
         XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
     }
@@ -7851,8 +7845,6 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.cityName, "Gernsbach (Landkreis Rastatt)")
         XCTAssertEqual(result.cityPlaceName, "Gernsbach")
         XCTAssertEqual(result.cityDistrictName, "Landkreis Rastatt")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
     }
 
     func testBundledLookupResolvesLoffenauViaAdminPolygon() throws {
@@ -7871,8 +7863,6 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.cityName, "Loffenau (Landkreis Rastatt)")
         XCTAssertEqual(result.cityPlaceName, "Loffenau")
         XCTAssertEqual(result.cityDistrictName, "Landkreis Rastatt")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
     }
 
     func testBundledDriveLogsAcrossAllInspectorLogsMeetHindsightThresholds() throws {
@@ -11636,7 +11626,7 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(inner.wayID, "3001")
         XCTAssertNil(inner.insideCity)
-        XCTAssertEqual(inner.speedLimitKmh, 100)
+        XCTAssertNil(inner.speedLimitKmh)
 
         let outer = try service.lookupSpeedLimit(
             lat: 52.0000,
@@ -11651,10 +11641,10 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(outer.wayID, "3001")
         XCTAssertNil(outer.insideCity)
-        XCTAssertEqual(outer.speedLimitKmh, 100)
+        XCTAssertNil(outer.speedLimitKmh)
     }
 
-    func testLookupCityClassificationPrefersInCityHighwayOverResidentialPolygon() throws {
+    func testLookupServiceRoadDoesNotOverrideOutsideResidentialPolygon() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-precedence-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -11678,12 +11668,12 @@ final class SpeedConsumerTests: XCTestCase {
             horizontalAccuracyM: 5.0
         )
         XCTAssertEqual(result.wayID, "4001")
-        XCTAssertEqual(result.citySource, "highway_class_in_city")
-        XCTAssertEqual(result.insideCity, true)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.insideCity)
         XCTAssertEqual(result.speedLimitKmh, 50)
     }
 
-    func testLookupCityClassificationUsesResidentialPolygonForOtherHighways() throws {
+    func testLookupResidentialPolygonProvidesOnlyLowConfidenceContext() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-precedence-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -11707,12 +11697,12 @@ final class SpeedConsumerTests: XCTestCase {
             horizontalAccuracyM: 5.0
         )
         XCTAssertEqual(result.wayID, "4002")
-        XCTAssertEqual(result.citySource, "residential_polygon")
+        XCTAssertEqual(result.citySource, "settlement:landuse:low")
         XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.speedLimitKmh)
     }
 
-    func testLookupGermanBelow50SpeedLimitMarksInsideCity() throws {
+    func testLookupGermanBelow50SpeedLimitLeavesSettlementUnknown() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-low-speed-\(UUID().uuidString)", isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -11738,8 +11728,8 @@ final class SpeedConsumerTests: XCTestCase {
 
         XCTAssertEqual(result.wayID, "4101")
         XCTAssertEqual(result.speedLimitKmh, 30)
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "de_speed_limit_lt_50")
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
     }
 
     func testLookupCityNearestFallbackPrefersCityOverCloserVillage() throws {
@@ -11774,8 +11764,8 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Pforzheim")
-        XCTAssertEqual(result.insideCity, false)
-        XCTAssertEqual(result.citySource, "place_nearest")
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
     }
 
     func testLookupCityNearestFallbackPrefersTownOverCloserHamlet() throws {
@@ -11810,8 +11800,8 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Bad Herrenalb")
-        XCTAssertEqual(result.insideCity, false)
-        XCTAssertEqual(result.citySource, "place_nearest")
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
     }
 
     func testLookupCityPolygonUsesAdminLevel6BoundaryWhenNoLevel8Exists() throws {
@@ -11839,9 +11829,9 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Pforzheim")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupCityPolygonFormatsAdminLevel8WithAdminLevel6Qualifier() throws {
@@ -11872,9 +11862,9 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.cityName, "Ispringen (Enzkreis)")
         XCTAssertEqual(result.cityPlaceName, "Ispringen")
         XCTAssertEqual(result.cityDistrictName, "Enzkreis")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupCityPolygonFormatsAdminLevel9WithAdminLevel6Qualifier() throws {
@@ -11906,9 +11896,9 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.cityName, "Pforzheim - Buechenbronn (Enzkreis)")
         XCTAssertEqual(result.cityPlaceName, "Pforzheim - Buechenbronn")
         XCTAssertEqual(result.cityDistrictName, "Enzkreis")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupCityPolygonUsesAdminLevel9WhenNoAdminLevel8Exists() throws {
@@ -11943,9 +11933,9 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(result.cityName, "Kullenmühle")
         XCTAssertEqual(result.cityPlaceName, "Kullenmühle")
         XCTAssertNil(result.cityDistrictName)
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupCityPolygonFallsBackToAreasWhenPolygonTablesAreEmpty() throws {
@@ -11975,9 +11965,9 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Pforzheim")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupCityPolygonFallsBackToAreasWhenPolygonRowsHaveNoRings() throws {
@@ -12007,9 +11997,9 @@ final class SpeedConsumerTests: XCTestCase {
         )
 
         XCTAssertEqual(result.cityName, "Pforzheim")
-        XCTAssertEqual(result.insideCity, true)
-        XCTAssertEqual(result.citySource, "admin_polygon")
-        XCTAssertEqual(result.speedLimitKmh, 50)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+        XCTAssertNil(result.speedLimitKmh)
     }
 
     func testLookupFailsForLegacySchemaWithoutWayGeomAndApproxHeading() throws {
@@ -16108,23 +16098,106 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertEqual(fallback.source, .localCorrection)
     }
 
-    func testOnlyOutsideToInsideBundleTransitionInvalidatesCameraContext() {
-        XCTAssertTrue(TrafficSignBundleContextPolicy.enteredCity(
-            previousInsideCity: false,
-            currentInsideCity: true
-        ))
-        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
-            previousInsideCity: true,
-            currentInsideCity: true
-        ))
-        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
-            previousInsideCity: nil,
-            currentInsideCity: true
-        ))
-        XCTAssertFalse(TrafficSignBundleContextPolicy.enteredCity(
-            previousInsideCity: false,
-            currentInsideCity: false
-        ))
+    func testSettlementCameraEntryRetainsConfirmationAcrossWeakGaps() {
+        var tracker = TrafficSignBundleContextTracker()
+        let high = "settlement:traffic_sign:high"
+        let low = "settlement:landuse:low"
+        let coordinate = TrafficSignCoordinate(latitude: 48, longitude: 8)
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: low,
+            timestamp: baseTime.addingTimeInterval(2), coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: nil, citySource: "settlement:missing:unknown",
+            timestamp: baseTime.addingTimeInterval(4), coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(8), coordinate: coordinate))
+
+        tracker.reset()
+        XCTAssertFalse(tracker.observe(insideCity: false, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: low,
+            timestamp: baseTime.addingTimeInterval(2), coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: nil, citySource: "settlement:missing:unknown",
+            timestamp: baseTime.addingTimeInterval(4), coordinate: coordinate))
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(8), coordinate: coordinate))
+    }
+
+    func testSettlementCameraEntryExpiresByTimeAndDistanceWithoutWeakRefresh() {
+        var tracker = TrafficSignBundleContextTracker()
+        let high = "settlement:traffic_sign:high"
+        let coordinate = TrafficSignCoordinate(latitude: 48, longitude: 8)
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: nil, citySource: nil,
+            timestamp: baseTime.addingTimeInterval(7), coordinate: coordinate))
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(8.001), coordinate: coordinate))
+
+        tracker.reset()
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        let near = TrafficSignCoordinate(latitude: 48 + 159 / 6_371_000 * 180 / .pi, longitude: 8)
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: "settlement:landuse:low",
+            timestamp: baseTime.addingTimeInterval(1), coordinate: near))
+        let far = TrafficSignCoordinate(latitude: 48 + 161 / 6_371_000 * 180 / .pi, longitude: 8)
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(2), coordinate: far))
+    }
+
+    func testSettlementCameraEntryRejectsInvalidSamplesAndResetsLifecycle() {
+        var tracker = TrafficSignBundleContextTracker()
+        let high = "settlement:traffic_sign:high"
+        let coordinate = TrafficSignCoordinate(latitude: 48, longitude: 8)
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: nil, citySource: nil,
+            timestamp: baseTime.addingTimeInterval(2), coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(1), coordinate: coordinate))
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(3), coordinate: coordinate))
+        XCTAssertFalse(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(4), coordinate: nil))
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(5), coordinate: coordinate))
+        tracker.reset()
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(6), coordinate: coordinate))
+    }
+
+    @MainActor
+    func testSettlementCameraThirtySurvivesShortUnknownAndLowConfidenceGaps() {
+        let model = DriveSessionViewModel()
+        let context = makeContext(wayID: "95002", direction: .forward, groups: [95])
+        let coordinate = TrafficSignCoordinate(latitude: context.latitude, longitude: context.longitude)
+        let high = "settlement:traffic_sign:high"
+        XCTAssertTrue(model.testApplySettlementContext(insideCity: true, source: high,
+            timestamp: baseTime, coordinate: coordinate))
+        model.testConfigureCurrentTrafficSignBase(context: context, bundledSpeedKmh: 50)
+        _ = model.testApplyTrafficSignPassage(makePassage(action: .postedMaximum(30), context: context))
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(30))
+        XCTAssertTrue(model.testHasActiveTrafficSignPassage)
+        XCTAssertFalse(model.testApplySettlementContext(insideCity: nil, source: "settlement:missing:unknown",
+            timestamp: baseTime.addingTimeInterval(2), coordinate: coordinate))
+        XCTAssertNil(model.lastLookupInsideCity)
+        XCTAssertNil(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: model.lastLookupInsideCity,
+            citySource: model.lastLookupCitySource))
+        XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: "settlement:landuse:low",
+            timestamp: baseTime.addingTimeInterval(4), coordinate: coordinate))
+        XCTAssertEqual(model.lastLookupInsideCity, true)
+        XCTAssertNil(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: model.lastLookupInsideCity,
+            citySource: model.lastLookupCitySource))
+        XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: high,
+            timestamp: baseTime.addingTimeInterval(8), coordinate: coordinate))
+        XCTAssertTrue(model.testHasActiveTrafficSignPassage, "Reacquiring city evidence must preserve the camera 30")
+        XCTAssertFalse(model.testApplySettlementContext(insideCity: false, source: high,
+            timestamp: baseTime.addingTimeInterval(9), coordinate: coordinate))
+        XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: "settlement:landuse:low",
+            timestamp: baseTime.addingTimeInterval(10), coordinate: coordinate))
+        XCTAssertTrue(model.testApplySettlementContext(insideCity: true, source: high,
+            timestamp: baseTime.addingTimeInterval(11), coordinate: coordinate))
+        XCTAssertFalse(model.testHasActiveTrafficSignPassage, "A confirmed outside-to-inside transition clears camera evidence")
     }
 
     func testRecognitionTimeRelationSetIsNotPreNarrowed() {
@@ -19167,5 +19240,414 @@ extension SpeedConsumerTests {
                        "A mount change must not overtake a frame that is acquiring its context")
         consumer.release.signal()
         XCTAssertEqual(updated.wait(timeout: .now() + 1), .success)
+    }
+}
+
+extension SpeedConsumerTests {
+    func testInstalledBadenWuerttembergPilotRoadDefaults_whenExplicitlyEnabled() async throws {
+        let expectedVersion = "2026-09-14-settlement-pilot"
+        guard ProcessInfo.processInfo.environment["SPEEDCONSUMER_VERIFY_INSTALLED_BW_PILOT"] == expectedVersion else {
+            throw XCTSkip("Set SPEEDCONSUMER_VERIFY_INSTALLED_BW_PILOT=\(expectedVersion) to verify the installed pilot without replacing it")
+        }
+        #if targetEnvironment(simulator)
+        throw XCTSkip("The installed-pilot verification runs on the attached physical iPhone")
+        #else
+        let expectedSHA = "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183"
+        let fm = FileManager.default
+        let support = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        let stateURL = support.appendingPathComponent("active_bundle.json")
+        let stateBefore = try Data(contentsOf: stateURL)
+        let manager = V3BundleManager(fileManager: fm)
+        let loadedState = try await manager.activeState()
+        let state = try XCTUnwrap(loadedState, "Stage and activate the actual pilot before running this read-only verification")
+        XCTAssertEqual(state.region, "baden-wuerttemberg")
+        XCTAssertEqual(state.bundleVersion, expectedVersion)
+        XCTAssertEqual(state.dbSHA256, expectedSHA)
+        let loadedURL = try await manager.activeDatabaseURL()
+        let dbURL = try XCTUnwrap(loadedURL)
+        XCTAssertTrue(dbURL.resolvingSymlinksInPath().path.hasPrefix(support.resolvingSymlinksInPath().path + "/"))
+
+        let file = try FileHandle(forReadingFrom: dbURL)
+        defer { try? file.close() }
+        var hasher = SHA256()
+        var byteCount = 0
+        while let chunk = try file.read(upToCount: 8 * 1024 * 1024), !chunk.isEmpty {
+            hasher.update(data: chunk)
+            byteCount += chunk.count
+        }
+        let actualSHA = hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        XCTAssertEqual(byteCount, 1_273_720_832)
+        XCTAssertEqual(actualSHA, expectedSHA)
+        print("INSTALLED_BW_PILOT_ARTIFACT version=\(state.bundleVersion) bytes=\(byteCount) sha256=\(actualSHA)")
+
+        var db: OpaquePointer?
+        guard sqlite3_open_v2(dbURL.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK, let db else {
+            throw ConsumerAppError.sqlite("Could not read the installed pilot for capability validation")
+        }
+        defer { sqlite3_close(db) }
+        try BundleCompatibility.validateSettlementCapability(db: db)
+
+        // Exact midpoint coordinates of the eight displayed unknown portions in the September 14 map.
+        let examples: [(index: Int, wayID: String, lat: Double, lon: Double)] = [
+            (1, "251051581", 48.79660110525675, 8.437240933320787),
+            (2, "368645193", 48.80192816202721, 8.438886642937886),
+            (3, "194023781", 48.80058864058573, 8.434069583995925),
+            (4, "39139814", 48.80549985825686, 8.440913103128983),
+            (5, "794416091", 48.80466440108594, 8.441709470989498),
+            (6, "149763928", 48.793426404992864, 8.428457284611383),
+            (7, "28509574", 48.80576816879914, 8.449880214406669),
+            (8, "39139816", 48.8095379693432, 8.441947091815235)
+        ]
+        var records: [[String: Any]] = []
+        for example in examples {
+            let loadedRoute = try await manager.resolveLocalBundleRoute(lat: example.lat, lon: example.lon, fallbackDBPath: dbURL.path)
+            let route = try XCTUnwrap(loadedRoute)
+            XCTAssertEqual(route.region, "baden-wuerttemberg", "Example \(example.index) must use the pilot through normal bundle routing")
+            XCTAssertEqual(route.bundleVersion, expectedVersion)
+            XCTAssertEqual(URL(fileURLWithPath: route.dbPath).resolvingSymlinksInPath(), dbURL.resolvingSymlinksInPath())
+            for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+                let result = try V3SpeedLimitService(dbPath: route.dbPath, countryCode: route.countryCode, matchingModel: model)
+                    .lookupSpeedLimit(lat: example.lat, lon: example.lon, horizontalAccuracyM: 5)
+                // Schweizerwiese has another unsigned/unknown service way only 3.05 m away.
+                let permittedWays = example.index == 5 ? [example.wayID, "33969657"] : [example.wayID]
+                XCTAssertTrue(permittedWays.contains(result.wayID ?? ""), "Example \(example.index), \(model): selected \(result.wayID ?? "nil"), expected \(permittedWays)")
+                XCTAssertEqual(result.speedLimitKmh, 50, "Example \(example.index), \(model)")
+                XCTAssertNil(result.insideCity, "A 50 default must preserve NULL city state: example \(example.index), \(model)")
+                XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+                XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
+                var record: [String: Any] = [
+                    "map_index": example.index, "expected_way_id": example.wayID,
+                    "selected_way_id": result.wayID ?? "nil", "matching_model": String(describing: model),
+                    "latitude": example.lat, "longitude": example.lon,
+                    "speed_limit_kmh": NSNull(), "inside_city": NSNull(),
+                    "city_source": result.citySource ?? "nil", "route_version": route.bundleVersion
+                ]
+                if let speed = result.speedLimitKmh { record["speed_limit_kmh"] = speed }
+                if let insideCity = result.insideCity { record["inside_city"] = insideCity }
+                records.append(record)
+                print("INSTALLED_BW_PILOT_LOOKUP \(String(data: try JSONSerialization.data(withJSONObject: record, options: .sortedKeys), encoding: .utf8)!)")
+            }
+        }
+        XCTAssertEqual(try Data(contentsOf: stateURL), stateBefore, "Verification must not change active bundle state")
+        let report: [String: Any] = [
+            "verified_at_utc": ISO8601DateFormatter().string(from: Date()),
+            "bundle_version": state.bundleVersion, "database_sha256": actualSHA,
+            "database_bytes": byteCount, "lookups": records
+        ]
+        let diagnostics = try fm.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+            .appendingPathComponent("Diagnostics", isDirectory: true)
+        try fm.createDirectory(at: diagnostics, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+            .write(to: diagnostics.appendingPathComponent("installed-bw-pilot-road-defaults.json"), options: .atomic)
+        #endif
+    }
+
+    func testSettlementLegacyTagsPreserveRuralThirtyAndUrbanSeventy() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-legacy-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            let service = V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+            try executeSQL(at: url, sql: "UPDATE ways SET maxspeed='30', maxspeed_type='DE:rural', source_maxspeed=NULL")
+            let rural = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+            XCTAssertEqual(rural.speedLimitKmh, 30)
+            XCTAssertEqual(rural.insideCity, false)
+            XCTAssertEqual(rural.citySource, "settlement:maxspeed_type:high")
+            try executeSQL(at: url, sql: "UPDATE ways SET maxspeed='70', maxspeed_type='DE:urban'")
+            let urban = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+            XCTAssertEqual(urban.speedLimitKmh, 70)
+            XCTAssertEqual(urban.insideCity, true)
+            try executeSQL(at: url, sql: "UPDATE ways SET source_maxspeed='DE:rural'")
+            let conflict = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+            XCTAssertNil(conflict.insideCity)
+            XCTAssertEqual(conflict.speedLimitKmh, 70)
+            XCTAssertEqual(conflict.citySource, "settlement:conflict:unknown")
+        }
+    }
+
+    private func addSettlementSchema(at url: URL) throws {
+        try executeSQL(at: url, sql: """
+        CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT);
+        INSERT INTO metadata VALUES('settlement_context_version','1');
+        CREATE TABLE settlement_segment(
+          segment_id INTEGER PRIMARY KEY, way_id INTEGER, segment_index INTEGER, direction INTEGER,
+          inside_city INTEGER, source TEXT, confidence TEXT, evidence_json TEXT, points_json TEXT
+        );
+        CREATE INDEX settlement_segment_way_idx ON settlement_segment(way_id);
+        """)
+    }
+
+    func testSettlementUnknownDoesNotFallbackToLegacyTags() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-unknown-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try addSettlementSchema(at: url)
+        try executeSQL(at: url, sql: """
+        UPDATE ways SET highway='service', maxspeed_type='DE:urban';
+        INSERT INTO settlement_segment VALUES(1,4101,0,0,NULL,'conflict','unknown','[]','[[52,13],[52,13.004]]');
+        """)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            let service = V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+            let result = try service.lookupSpeedLimit(lat: 52, lon: 13.002)
+            XCTAssertNil(result.insideCity)
+            XCTAssertEqual(result.citySource, "settlement:conflict:unknown")
+            XCTAssertEqual(result.speedLimitKmh, 30)
+        }
+        try executeSQL(at: url, sql: "UPDATE ways SET maxspeed=NULL")
+        let unknown = try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52, lon: 13.002)
+        XCTAssertNil(unknown.speedLimitKmh)
+        try executeSQL(at: url, sql: "DELETE FROM settlement_segment")
+        let absent = try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52, lon: 13.002)
+        XCTAssertNil(absent.insideCity)
+        XCTAssertNil(absent.speedLimitKmh)
+        XCTAssertEqual(absent.citySource, "settlement:missing:unknown")
+        try executeSQL(at: url, sql: "INSERT INTO settlement_segment VALUES(1,4101,0,0,2,'traffic_sign','high','[]','[[52,13],[52,13.004]]')")
+        XCTAssertNil(try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52, lon: 13.002).insideCity)
+        try executeSQL(at: url, sql: "UPDATE metadata SET value='2'")
+        let unsupported = try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52, lon: 13.002)
+        XCTAssertNil(unsupported.insideCity)
+        XCTAssertNil(unsupported.speedLimitKmh)
+    }
+
+    func testSettlementResidentialAndServiceDefaultToFiftyWithoutAssertingCity() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-road-default-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try executeSQL(at: url, sql: "UPDATE ways SET maxspeed=NULL")
+        for hasSettlementSchema in [false, true] {
+            if hasSettlementSchema { try addSettlementSchema(at: url) }
+            for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+                for highway in ["residential", "service", " ReSiDeNtIaL ", " SeRvIcE "] {
+                    try executeSQL(at: url, sql: "UPDATE ways SET highway='\(highway)'")
+                    if hasSettlementSchema { try executeSQL(at: url, sql: "DELETE FROM settlement_segment") }
+                    let unknown = try V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+                        .lookupSpeedLimit(lat: 52, lon: 13.002)
+                    XCTAssertEqual(unknown.speedLimitKmh, 50, "\(highway), \(model), schema=\(hasSettlementSchema)")
+                    XCTAssertNil(unknown.insideCity)
+                    XCTAssertEqual(unknown.citySource, "settlement:missing:unknown")
+                    if hasSettlementSchema {
+                        try executeSQL(at: url, sql: """
+                        INSERT INTO settlement_segment VALUES(1,4101,0,0,1,'landuse','low','[]','[[52,13],[52,13.004]]');
+                        """)
+                        let low = try V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+                            .lookupSpeedLimit(lat: 52, lon: 13.002)
+                        XCTAssertEqual(low.speedLimitKmh, 50)
+                        XCTAssertEqual(low.insideCity, true)
+                        XCTAssertEqual(low.citySource, "settlement:landuse:low")
+                    }
+                }
+            }
+        }
+    }
+
+    func testSettlementResidentialAndServiceDefaultYieldsToSpeedEvidence() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-road-priority-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try addSettlementSchema(at: url)
+        try executeSQL(at: url, sql: """
+        INSERT INTO settlement_segment VALUES(1,4101,0,0,NULL,'missing','unknown','[]','[[52,13],[52,13.004]]');
+        """)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            for highway in ["residential", "service"] {
+                try executeSQL(at: url, sql: "UPDATE ways SET highway='\(highway)'")
+                for insideCity in [nil, false, true] as [Bool?] {
+                    let state = insideCity.map { $0 ? "1" : "0" } ?? "NULL"
+                    let evidence = insideCity == nil ? "source='missing',confidence='unknown'" : "source='traffic_sign',confidence='high'"
+                    try executeSQL(at: url, sql: "UPDATE settlement_segment SET inside_city=\(state),\(evidence)")
+                    for (tag, expectedSpeed, unlimited) in [("NULL", insideCity == false ? 100 : 50, false),
+                                                           ("'30'", 30, false), ("'none'", nil, true)] as [(String, Int?, Bool)] {
+                        try executeSQL(at: url, sql: "UPDATE ways SET maxspeed=\(tag)")
+                        let result = try V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+                            .lookupSpeedLimit(lat: 52, lon: 13.002)
+                        XCTAssertEqual(result.speedLimitKmh, expectedSpeed, "\(highway), \(model), tag=\(tag), city=\(state)")
+                        XCTAssertEqual(result.isUnlimitedSpeedLimit == true, unlimited)
+                        XCTAssertEqual(result.insideCity, insideCity)
+                    }
+                }
+            }
+        }
+    }
+
+    func testSettlementRoadDefaultDoesNotExpandToOtherClasses() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-other-road-default-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try addSettlementSchema(at: url)
+        try executeSQL(at: url, sql: "UPDATE ways SET maxspeed=NULL")
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            for (highway, expectedSpeed) in [("unclassified", nil), ("road", nil), ("secondary", nil),
+                                              ("living_street", 10), ("motorway", nil), ("motorway_link", nil)] as [(String, Int?)] {
+                try executeSQL(at: url, sql: "UPDATE ways SET highway='\(highway)'")
+                let result = try V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+                    .lookupSpeedLimit(lat: 52, lon: 13.002)
+                XCTAssertEqual(result.speedLimitKmh, expectedSpeed, "\(highway), \(model)")
+                XCTAssertNil(result.insideCity)
+                XCTAssertNotEqual(result.isUnlimitedSpeedLimit, true)
+            }
+        }
+    }
+
+    func testSettlementDirectedDatabaseSegmentsAndBoundaryDefaults() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-directed-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createGermanLowSpeedHeuristicFixtureDB(at: url)
+        try addSettlementSchema(at: url)
+        try executeSQL(at: url, sql: """
+        UPDATE ways SET maxspeed=NULL;
+        INSERT INTO settlement_segment VALUES
+          (1,4101,0,0,0,'traffic_sign','high','[]','[[52,13],[52,13.002]]'),
+          (2,4101,1,1,1,'traffic_sign','high','[]','[[52,13.002],[52,13.004]]'),
+          (3,4101,1,-1,0,'traffic_sign','high','[]','[[52,13.002],[52,13.004]]');
+        """)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            let service = V3SpeedLimitService(dbPath: url.path, countryCode: "DEU", matchingModel: model)
+            func lookup(_ longitude: Double, _ heading: Double?) throws -> SpeedLimitResult {
+                try service.lookupSpeedLimit(lat: 52, lon: longitude, headingDeg: heading, headingAccuracyDeg: 5, speedKmh: 30)
+            }
+            XCTAssertEqual(try lookup(13.001, 90).speedLimitKmh, 100)
+            XCTAssertNil(try lookup(13.002, 90).insideCity)
+            XCTAssertNil(try lookup(13.002, 90).speedLimitKmh)
+            XCTAssertEqual(try lookup(13.003, 90).speedLimitKmh, 50)
+            XCTAssertEqual(try lookup(13.003, 270).insideCity, false)
+            XCTAssertEqual(try lookup(13.003, 270).speedLimitKmh, 100)
+            XCTAssertNil(try lookup(13.003, nil).insideCity)
+        }
+        try executeSQL(at: url, sql: "UPDATE settlement_segment SET direction=0,confidence='low',source='landuse' WHERE segment_id=2; DELETE FROM settlement_segment WHERE segment_id=3")
+        let low = try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52, lon: 13.003)
+        XCTAssertEqual(low.insideCity, true)
+        XCTAssertNil(low.speedLimitKmh)
+    }
+
+    func testSettlementSegmentProjectionRejectsUnreliableOrPerpendicularHeading() {
+        typealias Segment = V3SpeedLimitService.SettlementSegment
+        let points: [(Double, Double)] = [(52, 13), (52, 13.01)]
+        let segments = [Segment(direction: 1, insideCity: true, source: "traffic_sign", confidence: "high", points: points),
+                        Segment(direction: -1, insideCity: false, source: "traffic_sign", confidence: "high", points: points)]
+        for (heading, accuracy, speed) in [(90.0, 90.0, 30.0), (90, 5, 0), (0, 5, 30)] {
+            let result = V3SpeedLimitService.selectSettlementSegment(segments, lat: 52, lon: 13.005,
+                headingDeg: heading, headingAccuracyDeg: accuracy, speedKmh: speed)
+            XCTAssertNil(result.insideCity)
+        }
+        let noAccuracy = V3SpeedLimitService.selectSettlementSegment(segments, lat: 52, lon: 13.005,
+            headingDeg: 90, headingAccuracyDeg: nil, speedKmh: 30)
+        XCTAssertNil(noAccuracy.insideCity)
+    }
+
+    func testSettlementManifestCompatibilityAndSemanticVersions() throws {
+        let raw = """
+        {"format":"youspeed.v3.bundle.manifest","schema_version":1,"variant":"v3","region":"test",
+         "bundle_version":"2026-09-14","created_at_utc":"2026-09-14T00:00:00Z","min_app_version":"1.1.0",
+         "db":{"file":"fixture.sqlite","bytes":1,"sha256":"abc"}}
+        """
+        let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: Data(raw.utf8))
+        XCTAssertNoThrow(try BundleCompatibility.validate(manifest, appVersion: "1.1"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(manifest, appVersion: "1.0.9"))
+        XCTAssertThrowsError(try BundleCompatibility.validate(manifest, appVersion: nil))
+        let future = try JSONDecoder().decode(V3BundleManifest.self, from: Data(raw.replacingOccurrences(of: "\"schema_version\":1", with: "\"schema_version\":2").utf8))
+        XCTAssertThrowsError(try BundleCompatibility.validate(future, appVersion: "99.0.0"))
+        XCTAssertTrue(BundleCompatibility.version("1.10", satisfiesMinimum: "1.2.0"))
+        XCTAssertFalse(BundleCompatibility.version("1.1.0-beta.2", satisfiesMinimum: "1.1.0"))
+        XCTAssertTrue(BundleCompatibility.version("1.1.0-beta.10", satisfiesMinimum: "1.1.0-beta.2"))
+        XCTAssertTrue(BundleCompatibility.version("1.1.0+build.7", satisfiesMinimum: "1.1.0"))
+        XCTAssertFalse(BundleCompatibility.version("1.1", satisfiesMinimum: "garbage"))
+        XCTAssertFalse(BundleCompatibility.version("01.1.0", satisfiesMinimum: "1.1.0"))
+        XCTAssertFalse(BundleCompatibility.version("1.1.0", satisfiesMinimum: "1.01.0"))
+    }
+
+    func testSettlementCapabilityRejectsFutureOrIncompleteSchema() throws {
+        var database: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(":memory:", &database), SQLITE_OK)
+        let db = try XCTUnwrap(database)
+        defer { sqlite3_close(db) }
+        XCTAssertNoThrow(try BundleCompatibility.validateSettlementCapability(db: db))
+        XCTAssertEqual(sqlite3_exec(db, "CREATE TABLE metadata(key TEXT,value TEXT); INSERT INTO metadata VALUES('settlement_context_version','2')", nil, nil, nil), SQLITE_OK)
+        XCTAssertThrowsError(try BundleCompatibility.validateSettlementCapability(db: db))
+        XCTAssertEqual(sqlite3_exec(db, "UPDATE metadata SET value='1'", nil, nil, nil), SQLITE_OK)
+        XCTAssertThrowsError(try BundleCompatibility.validateSettlementCapability(db: db))
+        XCTAssertEqual(sqlite3_exec(db, "CREATE TABLE settlement_segment(segment_id INTEGER, way_id INTEGER,segment_index INTEGER,direction INTEGER,inside_city INTEGER,source TEXT,confidence TEXT,evidence_json TEXT,points_json TEXT)", nil, nil, nil), SQLITE_OK)
+        XCTAssertNoThrow(try BundleCompatibility.validateSettlementCapability(db: db))
+    }
+}
+
+extension SpeedConsumerTests {
+    func testSettlementAdminPolygonAndDuplicateVertexDoNotFillBoundingBox() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("settlement-geometry-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createCityPolygonFixtureDB(at: url, fixLat: 52.0015, fixLon: 13.0015,
+            adminLevel8Name: "Triangle municipality", includeAreaAdminRows: true)
+        for ring in ["[[13,52],[13.002,52],[13,52.002],[13,52]]",
+                     "[[13,52],[13.002,52],[13.002,52],[13,52.002],[13,52]]"] {
+            try executeSQL(at: url, sql: "UPDATE city_ring SET points_json='\(ring)'; UPDATE areas SET points_json='\(ring)'")
+            let outside = try V3SpeedLimitService(dbPath: url.path).lookupSpeedLimit(lat: 52.0015, lon: 13.0015)
+            XCTAssertNil(outside.cityName, "A polygon miss must not fall back to its bbox")
+            XCTAssertNil(outside.insideCity)
+        }
+    }
+
+    func testSettlementCameraEndFallbackRequiresHighConfidence() {
+        XCTAssertNil(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: true, citySource: "settlement:landuse:low"))
+        XCTAssertNil(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: nil, citySource: "settlement:missing:unknown"))
+        XCTAssertEqual(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: false, citySource: "settlement:maxspeed_type:high"), 100)
+        XCTAssertEqual(TrafficSignBundleContextPolicy.defaultSpeedKmh(insideCity: true, citySource: "settlement:traffic_sign:high"), 50)
+    }
+}
+
+extension SpeedConsumerTests {
+    @MainActor
+    func testSettlementWeakEvidenceDoesNotSelectPenaltyLocality() {
+        let model = DriveSessionViewModel()
+        model.speedLimitKmh = 50
+        model.currentSpeedKmh = 62
+        for timestamp in [100.0, 107, 115] {
+            model.updatePenaltyCountry(latitude: 49.0102, longitude: 8.4266, accuracy: 5,
+                timestamp: timestamp, now: timestamp)
+        }
+        XCTAssertTrue(model.penaltyRulesAreApplicable)
+        let unknown = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 12,
+            rules: model.activePenaltyRules, insideCity: nil, postedLimitKmh: 50)
+        let outside = SpeedPenaltyRuleEngine.resolveNotice(overspeedKmh: 12,
+            rules: model.activePenaltyRules, insideCity: false, postedLimitKmh: 50)
+        XCTAssertNotEqual(unknown?.moneyFineEUR, outside?.moneyFineEUR)
+        model.lastLookupInsideCity = false
+        model.lastLookupCitySource = "settlement:landuse:low"
+        XCTAssertEqual(model.currentPenaltyNotice?.moneyFineEUR, unknown?.moneyFineEUR)
+        model.lastLookupCitySource = "settlement:traffic_sign:high"
+        XCTAssertEqual(model.currentPenaltyNotice?.moneyFineEUR, outside?.moneyFineEUR)
+        model.lastLookupInsideCity = true
+        model.lastLookupCitySource = "settlement:landuse:low"
+        XCTAssertEqual(model.currentPenaltyNotice?.moneyFineEUR, unknown?.moneyFineEUR)
+        XCTAssertEqual(model.lastLookupInsideCity, true, "The approximate badge retains the nullable classification")
+    }
+}
+
+extension SpeedConsumerTests {
+    func testSettlementUnrecognizedEvidenceSourceCannotAssertContext() {
+        let segment = V3SpeedLimitService.SettlementSegment(direction: 0, insideCity: true,
+            source: "future_source", confidence: "high", points: [(52, 13), (52, 13.01)])
+        let result = V3SpeedLimitService.selectSettlementSegment([segment], lat: 52, lon: 13.005,
+            headingDeg: nil, headingAccuracyDeg: nil, speedKmh: nil)
+        XCTAssertNil(result.insideCity)
+        XCTAssertEqual(result.citySource, "settlement:missing:unknown")
+    }
+
+    @MainActor
+    func testSettlementConfidenceLossReachesDrivingBanWarningBeforeEvaluation() {
+        let model = DriveSessionViewModel()
+        model.audioAlertsEnabled = false
+        model.driveStatus = "running"
+        model.speedLimitKmh = 50
+        model.currentSpeedKmh = 85
+        for timestamp in [100.0, 107, 115] {
+            model.updatePenaltyCountry(latitude: 49.0102, longitude: 8.4266, accuracy: 5,
+                timestamp: timestamp, now: timestamp)
+        }
+        model.lastLookupInsideCity = true
+        model.lastLookupCitySource = "settlement:traffic_sign:high"
+        XCTAssertEqual(model.currentPenaltyNotice?.drivingBanMonths, 1)
+        XCTAssertFalse(model.testApplySettlementContextAndEvaluateDrivingBan(insideCity: true,
+            source: "settlement:landuse:low"), "The old confirmed locality must not trigger a warning for the new weak context")
+        XCTAssertNil(model.currentPenaltyNotice?.drivingBanMonths)
+        XCTAssertEqual(model.lastLookupInsideCity, true)
     }
 }

@@ -126,7 +126,7 @@ class BundleOfflineAccessTests {
                 destination.writeBytes(fetch(url))
             }
         }
-        val bootstrapper = BundleBootstrapper(root, fetcher, clock)
+        val bootstrapper = BundleBootstrapper(root, fetcher, clock, deltaDatabase = ContractTestDatabase)
 
         fun install(): BundleSyncResult = bootstrapper.syncFromManifestUrl(manifestUrl).also { requests.clear() }
     }

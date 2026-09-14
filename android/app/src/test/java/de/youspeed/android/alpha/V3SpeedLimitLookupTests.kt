@@ -70,16 +70,10 @@ class V3SpeedLimitLookupTests {
     }
 
     @Test
-    fun germanBelow50SpeedLimitImpliesInsideCity() {
-        assertTrue(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "DEU", speedKmh = 30))
-        assertFalse(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "DEU", speedKmh = 50))
-        assertFalse(V3SpeedLimitLookup.germanLowSpeedLimitImpliesInsideCity(countryCode = "NLD", speedKmh = 30))
-    }
-
-    @Test
     fun derivesFallbackHighwayClassValuesLikeIphone() {
         assertEquals(10, V3SpeedLimitLookup.deriveSpeedLimitKmh(null, null, null, "living_street"))
         assertEquals(50, V3SpeedLimitLookup.deriveSpeedLimitKmh(null, null, null, "residential"))
+        assertEquals(50, V3SpeedLimitLookup.deriveSpeedLimitKmh(null, null, null, "service"))
         assertEquals(100, V3SpeedLimitLookup.deriveSpeedLimitKmh(null, null, null, "trunk"))
         assertNull(V3SpeedLimitLookup.deriveSpeedLimitKmh(null, null, null, "motorway"))
     }

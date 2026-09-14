@@ -508,6 +508,7 @@ class BundleBootstrapper(
 
     private fun activatePreparedDatabase(stagingDb: File, bundleDir: File, manifest: V3BundleManifest,
         manifestRaw: String, manifestUrl: String, dbArtifact: MaterializedDatabaseArtifact): File {
+        deltaDatabase.validateSettlementCapability(stagingDb)
         if (!bundleDir.exists() && !bundleDir.mkdirs()) throw IOException("Cannot create bundle directory")
         val finalDb = File(bundleDir, manifest.db.file)
         val prepared = File(bundleDir, manifest.db.file + ".tmp")
@@ -871,6 +872,7 @@ class BundleBootstrapper(
         y2: Double,
     ): Boolean {
         val epsilon = 1e-12
+        if (x1 == x2 && y1 == y2) return abs(px - x1) <= epsilon && abs(py - y1) <= epsilon
         val cross = ((px - x1) * (y2 - y1)) - ((py - y1) * (x2 - x1))
         if (abs(cross) > epsilon) {
             return false

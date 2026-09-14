@@ -77,8 +77,8 @@ class CityContextInstrumentedTest {
             assertEquals("Pforzheim - Buechenbronn (Enzkreis)", result.cityName)
             assertEquals("Pforzheim - Buechenbronn", result.cityPlaceName)
             assertEquals("Enzkreis", result.cityDistrictName)
-            assertTrue(result.insideCity == true)
-            assertEquals("admin_polygon", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -123,8 +123,8 @@ class CityContextInstrumentedTest {
             assertEquals("Kullenmühle", result.cityName)
             assertEquals("Kullenmühle", result.cityPlaceName)
             assertNull(result.cityDistrictName)
-            assertEquals(true, result.insideCity)
-            assertEquals("admin_polygon", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -161,8 +161,8 @@ class CityContextInstrumentedTest {
             assertEquals("Pforzheim", result.cityName)
             assertEquals("Pforzheim", result.cityPlaceName)
             assertNull(result.cityDistrictName)
-            assertTrue(result.insideCity == true)
-            assertEquals("admin_polygon", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -215,8 +215,8 @@ class CityContextInstrumentedTest {
             assertEquals("Ispringen (Enzkreis)", result.cityName)
             assertEquals("Ispringen", result.cityPlaceName)
             assertEquals("Enzkreis", result.cityDistrictName)
-            assertTrue(result.insideCity == true)
-            assertEquals("admin_polygon", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -251,8 +251,8 @@ class CityContextInstrumentedTest {
             )
 
             assertEquals("Pforzheim", result.cityName)
-            assertEquals(false, result.insideCity)
-            assertEquals("place_fallback", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -287,8 +287,8 @@ class CityContextInstrumentedTest {
             )
 
             assertEquals("Bad Herrenalb", result.cityName)
-            assertEquals(false, result.insideCity)
-            assertEquals("place_fallback", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -323,8 +323,8 @@ class CityContextInstrumentedTest {
             )
 
             assertEquals("Bad Herrenalb", result.cityName)
-            assertEquals(false, result.insideCity)
-            assertEquals("place_fallback", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 
@@ -351,8 +351,8 @@ class CityContextInstrumentedTest {
             )
 
             assertNull(result.cityName)
-            assertEquals(false, result.insideCity)
-            assertEquals("admin_polygons_plus_places", result.citySource)
+            assertNull(result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 

@@ -974,6 +974,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var activeLocalSpeedCorrection: ActiveLocalSpeedCorrection?
     private var trafficSignOverridePolicy = TrafficSignTransientOverridePolicy()
     private var trafficSignEffectiveLimitResolver = TrafficSignEffectiveLimitResolver()
+    private var trafficSignBundleContextTracker = TrafficSignBundleContextTracker()
     private var trafficSignTraversalTracker = TrafficSignTraversalTracker()
     private let trafficSignWriteGate = TrafficSignWriteGate()
     private let trafficSignProcessingGate = TrafficSignWriteGate()
@@ -1533,7 +1534,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         clearDrivingLogsOnAppLaunch()
         syncDriveRecorderState()
-        prepareTrafficSignRecognitionRuntime()
         refreshDashcamRecordings()
         refreshPanoramaxBatches()
         if storedMatcherForcedVersion < MatcherDebugProfile.forcedProfileVersion
@@ -1549,6 +1549,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             configureForScreenshotMode(screenshotState)
             return
         }
+        prepareTrafficSignRecognitionRuntime()
         bundleDownloadSections = buildBundleDownloadSections()
         locationManager.delegate = self
         speechSynthesizer.delegate = self
@@ -1795,6 +1796,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// Keeps lifecycle state in the same atomic snapshot as the map context.
     /// The camera queue never reaches into this MainActor-owned view model.
     func setTrafficSignApplicationActive(_ isActive: Bool) {
+        if trafficSignApplicationIsActive != isActive { trafficSignBundleContextTracker.reset() }
         trafficSignApplicationIsActive = isActive
         updateTrafficSignWriteGate()
         refreshTrafficSignFrameSnapshot()
@@ -1828,6 +1830,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func handleTrafficSignRecognitionSettingChange() {
+        trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         trafficSignRecorderGeneration &+= 1
         trafficSignContextGeneration &+= 1
@@ -1904,8 +1907,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func speedLimitFallbackAfterEnd() -> EffectiveSpeedLimitValue? {
-        if let insideCity = lastLookupInsideCity {
-            return .numeric(insideCity ? 50 : 100)
+        if let speed = TrafficSignBundleContextPolicy.defaultSpeedKmh(
+            insideCity: lastLookupInsideCity, citySource: lastLookupCitySource
+        ) {
+            return .numeric(speed)
         }
         let base = currentBaseEffectiveSpeedLimitState().value
         return base == .unknown ? nil : base
@@ -2283,6 +2288,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// from retaining a detection after a bundle activation or a correction
     /// edit while leaving both durable sources untouched.
     private func invalidateTrafficSignOverrideForBaseSourceMutation() {
+        trafficSignBundleContextTracker.reset()
         let hadPublishedTrafficSignState = currentTrafficSignSourceSignature != nil
             || latestTrafficSignDetectionContext != nil
             || trafficSignOverridePolicy.activeOverride != nil
@@ -2334,6 +2340,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             "assertion_invalidated reason=bundle_city_entry base_source=\(base.source.rawValue) base_kmh=\(base.value.speedKmh.map(String.init) ?? "non_numeric")",
             timestamp: timestamp
         )
+    }
+
+    private func applyBundledSettlementContext(
+        insideCity: Bool?, source: String?, timestamp: Date, coordinate: TrafficSignCoordinate?
+    ) {
+        let enteredCity = trafficSignBundleContextTracker.observe(
+            insideCity: insideCity, citySource: source, timestamp: timestamp, coordinate: coordinate
+        )
+        // Publish context before the new speed or alerts can consult its locality.
+        lastLookupInsideCity = insideCity
+        lastLookupCitySource = source ?? "n/a"
+        if enteredCity { invalidateTrafficSignStateForBundledCityEntry(timestamp: timestamp) }
     }
 
     private func invalidateTrafficSignOverrideIfBundleWillChange(
@@ -2922,6 +2940,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if trafficSignSessionEnded
             || trafficSignModuleBecameInactive
             || !trafficSignRecognitionEnabled {
+            trafficSignBundleContextTracker.reset()
             trafficSignOverridePolicy.clear()
             trafficSignTraversalTracker.reset()
             trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState())
@@ -4416,6 +4435,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let fixture = screenshotState.fixture
         if screenshotState != .countryPenalty { applyBundledPenaltyRules(countryCode: "DEU") }
         appScreenshotState = screenshotState
+        // Exercise the real recorder layout in simulator screenshots without
+        // starting a camera or writing a recording. The preview uses the idle
+        // session already owned by the capture coordinator.
+        if ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_DASHCAM"] == "1" {
+            driveCaptureCoordinator?.onChange = nil
+            driveRecorderState = .recording
+            driveRecorderDashcamActive = true
+            driveRecorderStartedAt = Date()
+        }
         driveStatus = "running"
         invalidateTrafficSignOverrideIfBundleWillChange(
             bundleVersion: "screenshot",
@@ -4442,7 +4470,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         gpsHorizontalAccuracyM = fixture.gpsHorizontalAccuracyM
         gpsSignalBars = fixture.gpsSignalBars
         lastLookupInsideCity = fixture.insideCity
-        lastLookupCitySource = fixture.insideCity ? "residential_polygon" : "road_class"
+        lastLookupCitySource = "settlement:maxspeed_type:high"
         gpsFixCount = 24
         startupDataState = .ready
         startupProgress = 1
@@ -4694,6 +4722,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     func startDriving() {
         guard isScreenshotMode || (onboardingStateLoaded && !shouldPresentOnboarding) else { return }
+        trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         if speedLimitService == nil && startupDataState != .ready {
             ensureSeedBootstrapIfNeeded()
@@ -4730,6 +4759,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func stopDriving() {
+        trafficSignBundleContextTracker.reset()
         resetTrafficSignPictogram()
         isDriving = false
         driveCaptureCoordinator?.stop()
@@ -4782,6 +4812,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func resetDiagnostics() {
+        trafficSignBundleContextTracker.reset()
         lookupEventLog.removeAll(keepingCapacity: false)
         gpsFixCount = 0
         gpsHorizontalAccuracyM = nil
@@ -6362,14 +6393,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.currentBaseSpeedLimitDisplayText = baseSpeedLimitDisplayText
                     self.currentBundledUnlimitedSpeedLimitActive = bundledUnlimitedMatch
                     self.currentBaseUnlimitedSpeedLimitActive = baseUnlimitedMatch
-                    if TrafficSignBundleContextPolicy.enteredCity(
-                        previousInsideCity: self.lastLookupInsideCity,
-                        currentInsideCity: result.insideCity
-                    ) {
-                        self.invalidateTrafficSignStateForBundledCityEntry(
-                            timestamp: location.timestamp
-                        )
-                    }
+                    self.applyBundledSettlementContext(
+                        insideCity: result.insideCity, source: result.citySource, timestamp: location.timestamp,
+                        coordinate: TrafficSignCoordinate(latitude: lat, longitude: lon)
+                    )
                     self.currentTrafficSignSourceSignature = sourceSignature
                     let nextTrafficSignContext: TrafficSignDetectionContext?
                     if let wayID = result.wayID?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -6452,8 +6479,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     self.lastLookupSpeedCandidateCount = result.speedCandidateCount
                     self.lastLookupNearestCandidateM = result.nearestCandidateDistanceM
                     self.lastLookupNearestSpeedCandidateM = result.nearestSpeedCandidateDistanceM
-                    self.lastLookupInsideCity = result.insideCity
-                    self.lastLookupCitySource = result.citySource ?? "n/a"
                     self.lastLookupCityResolveMs = result.cityResolveMs
                     self.lastLookupCityCandidateBoundaries = result.cityCandidateBoundaries
                     self.lastLookupCityContainingBoundaries = result.cityContainingBoundaries
@@ -6933,7 +6958,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh: currentOverspeedKmh,
             rules: activePenaltyRules,
-            insideCity: lastLookupInsideCity,
+            insideCity: lastLookupCitySource.hasPrefix("settlement:") && lastLookupCitySource.hasSuffix(":high")
+                ? lastLookupInsideCity : nil,
             postedLimitKmh: speedLimitKmh
         )
     }
@@ -7048,6 +7074,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
 #if DEBUG
 extension DriveSessionViewModel {
+    var testHasActiveTrafficSignPassage: Bool { trafficSignEffectiveLimitResolver.activePassage != nil }
+
+    func testApplySettlementContextAndEvaluateDrivingBan(insideCity: Bool?, source: String?) -> Bool {
+        applyBundledSettlementContext(insideCity: insideCity, source: source, timestamp: Date(),
+            coordinate: currentCoordinateForTrafficSignEvaluation)
+        maybeNotifyDrivingBanWarning()
+        return wasDrivingBanWarningActive
+    }
+
+    func testApplySettlementContext(
+        insideCity: Bool?, source: String?, timestamp: Date, coordinate: TrafficSignCoordinate?
+    ) -> Bool {
+        let previousGeneration = trafficSignContextGeneration
+        applyBundledSettlementContext(insideCity: insideCity, source: source, timestamp: timestamp,
+            coordinate: coordinate)
+        return trafficSignContextGeneration != previousGeneration
+    }
+
     func testWaitForStartupDataLoad(timeout: TimeInterval = 5) async throws {
         let deadline = Date().addingTimeInterval(timeout)
         while startupDataState == .loading, Date() < deadline {

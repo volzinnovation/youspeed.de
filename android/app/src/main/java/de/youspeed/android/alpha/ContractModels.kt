@@ -46,9 +46,13 @@ data class V3BundleManifest(
     val penaltyRules: BundleArtifact?,
     val coverage: BundleCoverage?,
 ) {
-    fun validateLaunchContract() {
+    fun validateLaunchContract(currentAppVersion: String = BuildConfig.MAP_COMPATIBILITY_APP_VERSION) {
         require(format == "youspeed.v3.bundle.manifest") { "Unexpected manifest format: $format" }
         require(variant == "v3") { "Unexpected manifest variant: $variant" }
+        require(schemaVersion == 1) { "Unsupported manifest schema version: $schemaVersion" }
+        require(BundleAppVersion.isAtLeast(currentAppVersion, minAppVersion)) {
+            "Bundle requires app $minAppVersion; current app is $currentAppVersion"
+        }
     }
 }
 

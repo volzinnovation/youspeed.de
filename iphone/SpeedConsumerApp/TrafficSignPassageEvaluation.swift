@@ -1697,10 +1697,70 @@ struct TrafficSignCoordinate: Codable, Equatable, Sendable {
 }
 
 enum TrafficSignBundleContextPolicy {
-    /// A bundle-confirmed entry into a built-up area starts a new statutory
-    /// speed context. Camera evidence captured outside that area ends there.
-    static func enteredCity(previousInsideCity: Bool?, currentInsideCity: Bool?) -> Bool {
-        previousInsideCity == false && currentInsideCity == true
+    static func defaultSpeedKmh(insideCity: Bool?, citySource: String?) -> Int? {
+        guard let insideCity, citySource?.hasPrefix("settlement:") == true,
+              citySource?.hasSuffix(":high") == true else { return nil }
+        return insideCity ? 50 : 100
+    }
+
+}
+
+/// Retains confirmation only for camera-entry transitions. Callers must continue
+/// publishing the current nullable context for badges, defaults, and penalties.
+struct TrafficSignBundleContextTracker {
+    private struct Confirmation {
+        let insideCity: Bool
+        let timestamp: Date
+        let coordinate: TrafficSignCoordinate
+    }
+
+    private var confirmation: Confirmation?
+    private var lastObservationAt: Date?
+    private let maximumGapSeconds: TimeInterval
+    private let maximumGapMeters: Double
+
+    init(maximumGapSeconds: TimeInterval = 8, maximumGapMeters: Double = 160) {
+        self.maximumGapSeconds = max(0, maximumGapSeconds)
+        self.maximumGapMeters = max(0, maximumGapMeters)
+    }
+
+    mutating func reset() {
+        confirmation = nil
+        lastObservationAt = nil
+    }
+
+    mutating func observe(
+        insideCity: Bool?, citySource: String?, timestamp: Date,
+        coordinate: TrafficSignCoordinate?
+    ) -> Bool {
+        guard timestamp.timeIntervalSinceReferenceDate.isFinite,
+              let coordinate, coordinate.latitude.isFinite, coordinate.longitude.isFinite,
+              (-90...90).contains(coordinate.latitude), (-180...180).contains(coordinate.longitude),
+              lastObservationAt.map({ timestamp >= $0 }) ?? true else {
+            reset()
+            return false
+        }
+        lastObservationAt = timestamp
+        if let confirmed = confirmation,
+           timestamp.timeIntervalSince(confirmed.timestamp) > maximumGapSeconds
+            || Self.distanceMeters(from: confirmed.coordinate, to: coordinate) > maximumGapMeters {
+            confirmation = nil
+        }
+        guard let insideCity, citySource?.hasPrefix("settlement:") == true,
+              citySource?.hasSuffix(":high") == true else { return false }
+        let enteredCity = insideCity && confirmation?.insideCity != true
+        confirmation = Confirmation(insideCity: insideCity, timestamp: timestamp, coordinate: coordinate)
+        return enteredCity
+    }
+
+    private static func distanceMeters(from: TrafficSignCoordinate, to: TrafficSignCoordinate) -> Double {
+        let lat1 = from.latitude * .pi / 180
+        let lat2 = to.latitude * .pi / 180
+        let deltaLat = (to.latitude - from.latitude) * .pi / 180
+        let deltaLon = (to.longitude - from.longitude) * .pi / 180
+        let a = sin(deltaLat / 2) * sin(deltaLat / 2)
+            + cos(lat1) * cos(lat2) * sin(deltaLon / 2) * sin(deltaLon / 2)
+        return 6_371_000 * 2 * atan2(sqrt(a), sqrt(max(0, 1 - a)))
     }
 }
 

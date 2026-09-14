@@ -614,9 +614,7 @@ actor V3BundleManager {
         )
         let manifestData = try await downloadData(from: manifestURL)
         let manifest = try decoder.decode(V3BundleManifest.self, from: manifestData)
-        guard manifest.format == "youspeed.v3.bundle.manifest", manifest.variant == "v3" else {
-            throw ConsumerAppError.invalidManifest("Unexpected manifest format or variant")
-        }
+        try validateManifestCompatibility(manifest)
         Self.logger.notice(
             "sync manifest loaded version=\(manifest.bundleVersion, privacy: .public) region=\(manifest.region, privacy: .public) has_parts=\((manifest.dbParts?.isEmpty == false), privacy: .public)"
         )
@@ -1001,6 +999,7 @@ actor V3BundleManager {
         details: String,
         verifiedDatabaseSHA256: String? = nil
     ) throws -> String {
+        try validateManifestCompatibility(manifest)
         // Persist the digest of the final SQLite bytes. Downloads and inflation
         // already verified those bytes; delta output is verified here.
         let verifiedSHA = try validatePreparedDatabase(
@@ -1150,6 +1149,7 @@ actor V3BundleManager {
                 Self.logger.error("startup_recovery bundles manifest_missing_or_invalid version=\(versionName, privacy: .public)")
                 continue
             }
+            guard (try? validateManifestCompatibility(manifest)) != nil else { continue }
             let dbFileName = manifest.db.file
             guard !dbFileName.isEmpty else {
                 Self.logger.error("startup_recovery bundles no_sqlite version=\(versionName, privacy: .public) removing_dir")
@@ -1163,6 +1163,7 @@ actor V3BundleManager {
                 continue
             }
 
+            guard (try? quickValidateDB(at: dbURL, runQuickCheck: false)) != nil else { continue }
             Self.logger.notice("startup_recovery bundles available version=\(versionName, privacy: .public) db=\(dbFileName, privacy: .public)")
 
             let state = ActiveBundleState(
@@ -2728,6 +2729,13 @@ actor V3BundleManager {
         return formatter.string(fromByteCount: bytes)
     }
 
+    private func validateManifestCompatibility(_ manifest: V3BundleManifest) throws {
+        try BundleCompatibility.validate(
+            manifest, appVersion: resourceBundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+                ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        )
+    }
+
     private func quickValidateDB(at url: URL, runQuickCheck: Bool = true) throws {
         var db: OpaquePointer?
         let encodedPath = url.path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? url.path
@@ -2737,6 +2745,7 @@ actor V3BundleManager {
         }
         defer { sqlite3_close(db) }
 
+        try BundleCompatibility.validateSettlementCapability(db: db)
         let required = ["ways", "ways_rtree", "way_geom"]
         for table in required {
             let escaped = table.replacingOccurrences(of: "'", with: "''")

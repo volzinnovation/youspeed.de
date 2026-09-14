@@ -30,8 +30,11 @@ internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
 }
 
 internal object TrafficSignBundleContextPolicy {
-    fun enteredCity(previousInsideCity: Boolean?, currentInsideCity: Boolean?): Boolean =
-        previousInsideCity == false && currentInsideCity == true
+    fun enteredCity(previousInsideCity: Boolean?, currentInsideCity: Boolean?,
+                    previousCitySource: String? = null, currentCitySource: String? = null): Boolean =
+        currentInsideCity == true && currentCitySource?.startsWith("settlement:") == true &&
+            currentCitySource.endsWith(":high") &&
+            !(previousInsideCity == true && previousCitySource?.startsWith("settlement:") == true && previousCitySource.endsWith(":high"))
 }
 
 /** A structural sign operation. Display values are deliberately kept separate. */

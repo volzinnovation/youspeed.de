@@ -124,6 +124,93 @@ struct V3BundleManifest: Codable {
     }
 }
 
+enum BundleCompatibility {
+    static func validate(_ manifest: V3BundleManifest, appVersion: String?) throws {
+        guard manifest.format == "youspeed.v3.bundle.manifest", manifest.variant == "v3",
+              manifest.schemaVersion == 1 else {
+            throw ConsumerAppError.invalidManifest("Unsupported bundle manifest format, variant, or schema version")
+        }
+        guard let appVersion, version(appVersion, satisfiesMinimum: manifest.minAppVersion) else {
+            throw ConsumerAppError.invalidManifest("Bundle requires app version \(manifest.minAppVersion)")
+        }
+    }
+
+    /// Apple marketing versions may omit minor/patch components. Prereleases
+    /// precede the corresponding release; build metadata does not affect precedence.
+    static func version(_ current: String, satisfiesMinimum minimum: String) -> Bool {
+        func parse(_ value: String) -> ([UInt64], [String])? {
+            let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            let build = value.split(separator: "+", omittingEmptySubsequences: false)
+            guard build.count <= 2 else { return nil }
+            func validIdentifiers(_ raw: Substring) -> Bool {
+                raw.split(separator: ".", omittingEmptySubsequences: false).allSatisfy {
+                    !$0.isEmpty && $0.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 }
+                }
+            }
+            if build.count == 2, !validIdentifiers(build[1]) { return nil }
+            let parts = build[0].split(separator: "-", maxSplits: 1, omittingEmptySubsequences: false)
+            let rawCore = parts[0].split(separator: ".", omittingEmptySubsequences: false)
+            guard (1...3).contains(rawCore.count), rawCore.allSatisfy({ !$0.isEmpty
+                && ($0.count == 1 || $0.first != "0")
+                && $0.utf8.allSatisfy { (48...57).contains($0) } }) else { return nil }
+            var core = rawCore.compactMap { UInt64($0) }
+            guard core.count == rawCore.count else { return nil }
+            while core.count < 3 { core.append(0) }
+            var prerelease: [String] = []
+            if parts.count == 2 {
+                guard validIdentifiers(parts[1]) else { return nil }
+                prerelease = parts[1].split(separator: ".").map(String.init)
+                guard prerelease.allSatisfy({ !($0.allSatisfy(\.isNumber) && $0.count > 1 && $0.first == "0") }) else { return nil }
+            }
+            return (core, prerelease)
+        }
+        guard let lhs = parse(current), let rhs = parse(minimum) else { return false }
+        for (a, b) in zip(lhs.0, rhs.0) where a != b { return a > b }
+        if lhs.1.isEmpty || rhs.1.isEmpty { return lhs.1.isEmpty }
+        for (a, b) in zip(lhs.1, rhs.1) where a != b {
+            let aNumeric = a.utf8.allSatisfy { (48...57).contains($0) }
+            let bNumeric = b.utf8.allSatisfy { (48...57).contains($0) }
+            if aNumeric != bNumeric { return !aNumeric }
+            if aNumeric && a.count != b.count { return a.count > b.count }
+            return a > b
+        }
+        return lhs.1.count >= rhs.1.count
+    }
+
+    static func validateSettlementCapability(db: OpaquePointer) throws {
+        var statement: OpaquePointer?
+        let existsSQL = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='metadata'"
+        guard sqlite3_prepare_v2(db, existsSQL, -1, &statement, nil) == SQLITE_OK else {
+            throw ConsumerAppError.invalidManifest("Cannot inspect settlement capability")
+        }
+        let hasMetadata = sqlite3_step(statement) == SQLITE_ROW
+        sqlite3_finalize(statement)
+        guard hasMetadata else { return }
+        guard sqlite3_prepare_v2(db, "SELECT value FROM metadata WHERE key='settlement_context_version'", -1, &statement, nil) == SQLITE_OK else {
+            throw ConsumerAppError.invalidManifest("Cannot read settlement capability")
+        }
+        let present = sqlite3_step(statement) == SQLITE_ROW
+        let version = sqlite3_column_text(statement, 0).map { String(cString: $0) }
+        sqlite3_finalize(statement)
+        guard present else { return }
+        guard version == "1" else {
+            throw ConsumerAppError.invalidManifest("Unsupported settlement context version: \(version ?? "null")")
+        }
+        guard sqlite3_prepare_v2(db, "PRAGMA table_info(settlement_segment)", -1, &statement, nil) == SQLITE_OK else {
+            throw ConsumerAppError.invalidManifest("Cannot inspect settlement segments")
+        }
+        defer { sqlite3_finalize(statement) }
+        var columns = Set<String>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if let name = sqlite3_column_text(statement, 1) { columns.insert(String(cString: name)) }
+        }
+        let required: Set<String> = ["segment_id", "way_id", "segment_index", "direction", "inside_city", "source", "confidence", "evidence_json", "points_json"]
+        guard required.isSubset(of: columns) else {
+            throw ConsumerAppError.invalidManifest("Incomplete settlement segment schema")
+        }
+    }
+}
+
 struct V3CountryBundleCatalogRegion: Codable, Sendable {
     let region: String
     let name: String

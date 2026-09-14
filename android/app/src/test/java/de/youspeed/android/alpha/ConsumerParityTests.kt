@@ -78,7 +78,7 @@ class ConsumerParityTests {
 
     @Test
     fun onlyAnExplicitOutsideToInsideTransitionInvalidatesTsr() {
-        assertTrue(TrafficSignBundleContextPolicy.enteredCity(false, true))
+        assertTrue(TrafficSignBundleContextPolicy.enteredCity(false, true, "settlement:zone_traffic:high", "settlement:zone_traffic:high"))
         assertFalse(TrafficSignBundleContextPolicy.enteredCity(null, true))
         assertFalse(TrafficSignBundleContextPolicy.enteredCity(true, true))
         assertFalse(TrafficSignBundleContextPolicy.enteredCity(true, false))
@@ -392,12 +392,36 @@ class ConsumerParityTests {
                 ),
             ),
             lastLookupInsideCity = true,
+            lastLookupCitySource = "settlement:zone_traffic:high",
         )
 
         assertEquals(36, ConsumerMainScreenLogic.currentOverspeedKmh(state))
         assertEquals("1", ConsumerMainScreenLogic.primaryMetricText(state))
         assertEquals("Monat Fahrverbot", ConsumerMainScreenLogic.secondaryMetricText(state))
         assertTrue(ConsumerMainScreenLogic.isDrivingBanWarningActive(state))
+    }
+
+    @Test
+    fun lowConfidenceSettlementDoesNotChooseAnUrbanOrRuralPenaltyVariant() {
+        val rules = PenaltyRulesParser.parse("""
+            {"format":"youspeed.penalty.rules","schema_version":1,"land_code":"DEU",
+             "land_name":"Deutschland","waehrung_code":"EUR","stufen":[
+             {"min_ueber_kmh":31,"max_ueber_kmh":40,"schweregrad":"punkte_und_geldbusse",
+              "titel_vorlage":"Verstoss","detail_vorlage":"Unbekannter Ortskontext",
+              "geldbusse_eur":200,"punkte":1,"ortsvarianten":{
+                "innerorts":{"geldbusse_eur":260,"punkte":2},
+                "ausserorts":{"geldbusse_eur":150,"punkte":1}}}]}
+        """.trimIndent())
+        val state = ConsumerUiState(currentSpeedKmh = 86.0, speedLimitKmh = 50,
+            activePenaltyRules = ActivePenaltyRules("DEU-rules.json", rules),
+            lastLookupInsideCity = false, lastLookupCitySource = "settlement:landuse:low")
+        val unknown = ConsumerMainScreenLogic.currentPenaltyNotice(state.copy(lastLookupInsideCity = null))
+        assertEquals(unknown, ConsumerMainScreenLogic.currentPenaltyNotice(state))
+        assertEquals(200, unknown?.moneyFineEUR)
+        assertEquals(150, ConsumerMainScreenLogic.currentPenaltyNotice(state.copy(lastLookupCitySource = "settlement:zone_traffic:high"))?.moneyFineEUR)
+        assertEquals(260, ConsumerMainScreenLogic.currentPenaltyNotice(state.copy(lastLookupInsideCity = true,
+            lastLookupCitySource = "settlement:zone_traffic:high"))?.moneyFineEUR)
+        assertTrue(ConsumerMainScreenLogic.shouldHighlightCityBadge(state.copy(lastLookupInsideCity = true)))
     }
 
     @Test

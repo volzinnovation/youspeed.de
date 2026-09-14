@@ -9,6 +9,7 @@ import java.time.temporal.ChronoUnit
 interface BundleDeltaDatabase {
     fun applyPatch(database: File, sql: String)
     fun validate(database: File)
+    fun validateSettlementCapability(database: File)
 }
 
 internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
@@ -17,6 +18,31 @@ internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
             for (statement in DeltaUpdatePolicy.sqlStatements(sql)) db.execSQL(statement)
             db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { cursor ->
                 check(cursor.moveToFirst() && cursor.getInt(0) == 0) { "Delta checkpoint failed" }
+            }
+        }
+    }
+
+    override fun validateSettlementCapability(database: File) {
+        SQLiteDatabase.openDatabase(database.path, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+            val hasMetadata = db.rawQuery("SELECT 1 FROM sqlite_master WHERE type='table' AND name='metadata'", null).use { it.moveToFirst() }
+            val version = if (hasMetadata) db.rawQuery("SELECT value FROM metadata WHERE key='settlement_context_version'", null).use {
+                if (it.moveToFirst()) it.getString(0) ?: "" else null
+            } else null
+            if (version == null) return
+            require(version == "1") { "Unsupported settlement context version: $version" }
+            val columns = db.rawQuery("PRAGMA table_info(settlement_segment)", null).use { cursor ->
+                buildSet { while (cursor.moveToNext()) add(cursor.getString(1)) }
+            }
+            require(columns.containsAll(setOf("segment_id", "way_id", "segment_index", "direction", "inside_city", "source", "confidence", "evidence_json", "points_json"))) {
+                "Missing settlement segment capability columns"
+            }
+            // This one-time install check must never run on every location lookup or startup.
+            db.rawQuery("""SELECT 1 FROM settlement_segment WHERE direction NOT IN (-1,0,1)
+                OR direction IS NULL OR (inside_city IS NOT NULL AND (typeof(inside_city) != 'integer' OR inside_city NOT IN (0,1)))
+                OR source NOT IN ('zone_traffic','maxspeed_type','source_maxspeed','traffic_sign','urban_polygon','landuse','conflict','missing')
+                OR source IS NULL OR confidence NOT IN ('high','low','unknown') OR confidence IS NULL
+                OR (inside_city IS NULL AND confidence != 'unknown') OR (inside_city IS NOT NULL AND confidence = 'unknown') LIMIT 1""", null).use {
+                require(!it.moveToFirst()) { "Invalid settlement context evidence" }
             }
         }
     }

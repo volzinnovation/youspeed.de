@@ -128,8 +128,8 @@ class V3ReplayInstrumentedTest {
             assertEquals("Loffenau (Landkreis Rastatt)", result.cityName)
             assertEquals("Loffenau", result.cityPlaceName)
             assertEquals("Landkreis Rastatt", result.cityDistrictName)
-            assertEquals(true, result.insideCity)
-            assertEquals("admin_polygon", result.citySource)
+            assertEquals(null, result.insideCity)
+            assertEquals("settlement:missing:unknown", result.citySource)
         }
     }
 

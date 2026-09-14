@@ -549,6 +549,8 @@ class ConsumerSessionController(
     private var coarseLocationSequence = 0L
     private var latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
     private var latestTrafficSignInsideCity: Boolean? = null
+    private var latestTrafficSignCitySource: String? = null
+    private val trafficSignCityEntryTracker = TrafficSignCityEntryTracker()
     private val trafficSignTraversalTracker = TrafficSignTraversalTracker()
     private var trafficSignTraversalEpoch = 1L
     private var lastTrafficSignInferenceLogAtMs = 0L
@@ -2276,6 +2278,9 @@ class ConsumerSessionController(
             latestResolverLocation = null
             latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
             latestTrafficSignInsideCity = null
+            latestTrafficSignCitySource = null
+            // Mount changes retain the camera assertion and its confirmed city context.
+            if (clearAssertion || !preserveDisplay) trafficSignCityEntryTracker.reset()
             resetTrafficSignTraversalLocked()
             latestTrafficSignBase.effective()
         }
@@ -3124,6 +3129,7 @@ class ConsumerSessionController(
             hideWelcomeScreen = true,
             appScreenshotState = state,
             lastLookupInsideCity = fixture.insideCity,
+            lastLookupCitySource = "settlement:maxspeed_type:high",
             effectiveSpeedLimitSource = if (cameraFixture) {
                 EffectiveSpeedLimitSource.CAMERA
             } else {
@@ -3563,6 +3569,7 @@ class ConsumerSessionController(
                     base = baseLimit,
                     bundleVersion = effectiveBundleVersion,
                     bundleSha256 = effectiveBundleSha256,
+                    bundleDbPath = effectiveDBPath,
                     countryCode = effectiveCountryCode ?: "ZZZ",
                     localCorrectionRevision = indexedCorrection?.observationId,
                     headingDegrees = trafficSignHeadingDegrees,
@@ -4252,7 +4259,9 @@ class ConsumerSessionController(
     }
 
     private fun speedLimitFallbackAfterEnd(): TrafficSignResolvedLimit? =
-        latestTrafficSignInsideCity?.let { insideCity ->
+        latestTrafficSignInsideCity?.takeIf {
+            latestTrafficSignCitySource?.startsWith("settlement:") == true && latestTrafficSignCitySource?.endsWith(":high") == true
+        }?.let { insideCity ->
             TrafficSignResolvedLimit(TrafficSignResolvedLimitKind.NUMERIC, if (insideCity) 50 else 100)
         } ?: latestTrafficSignBase.resolution
 
@@ -4277,6 +4286,7 @@ class ConsumerSessionController(
         base: TrafficSignBaseLimit,
         bundleVersion: String,
         bundleSha256: String?,
+        bundleDbPath: String,
         countryCode: String,
         localCorrectionRevision: String?,
         headingDegrees: Double?,
@@ -4287,9 +4297,11 @@ class ConsumerSessionController(
             !TrafficSignRoadContextFreshness.accepts(position, latestTrafficSignPosition, clock.millis())
         ) return@synchronized null
         var (evaluationGeneration, writePermitActive) = trafficSignGeneration.snapshot()
-        val enteredCity = TrafficSignBundleContextPolicy.enteredCity(
-            previousInsideCity = latestTrafficSignInsideCity,
-            currentInsideCity = result.insideCity,
+        val enteredCity = trafficSignCityEntryTracker.observe(
+            insideCity = result.insideCity,
+            citySource = result.citySource,
+            position = position,
+            revision = "bundle:$bundleVersion|path:$bundleDbPath|sha:${bundleSha256?.trim()?.lowercase(Locale.US).orEmpty()}",
         )
         if (enteredCity) {
             evaluationGeneration = trafficSignGeneration.incrementAndGet(writePermitActive)
@@ -4301,6 +4313,7 @@ class ConsumerSessionController(
             resetTrafficSignTraversalLocked()
         }
         latestTrafficSignInsideCity = result.insideCity
+        latestTrafficSignCitySource = result.citySource
         val tsrEnabledForEvaluation = writePermitActive && uiState.trafficSignRecognitionEnabled && isDriving
         val previousContext = latestTrafficSignContext
         val previousWayId = normalizeTrafficSignWayId(previousContext?.wayId)

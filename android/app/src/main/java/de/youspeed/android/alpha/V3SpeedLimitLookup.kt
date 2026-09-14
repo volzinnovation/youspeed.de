@@ -60,7 +60,7 @@ internal data class CityContextLookupResult(
     val cityPlaceName: String?,
     val cityDistrictName: String?,
     val citySource: String?,
-    val insideCity: Boolean,
+    val insideCity: Boolean?,
 )
 
 internal class V3SpeedLimitLookup(
@@ -79,6 +79,7 @@ internal class V3SpeedLimitLookup(
 
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
     private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+    private val settlementContextResolver = SettlementContextResolver(db)
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
     private val hasCityBoundaryTable = tableExists("city_boundary")
@@ -274,33 +275,22 @@ internal class V3SpeedLimitLookup(
             normalizedMatchContext.matchedFixCount > 0 &&
             normalizedWayId(normalizedMatchContext.preferredWayId) == selectedWayId
         val routeMembership = loadRouteRelationMembership(best?.wayId)
-        val insideCityDecision = when {
-            highwayImpliesInsideCity(best?.highway) -> true to "highway_class_in_city"
-            else -> {
-                val residential = resolveResidentialContext(lat = lat, lon = lon, areas = areaCandidates)
-                if (residential.insideCity != null) {
-                    residential.insideCity to "residential_polygon"
-                } else {
-                    cityContext.insideCity to cityContext.citySource
-                }
-            }
-        }
+        val residential = resolveResidentialContext(lat = lat, lon = lon, areas = areaCandidates)
+        val settlement = settlementContextResolver.resolve(
+            wayId = best?.wayId, lat = lat, lon = lon,
+            heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
+            residentialInside = residential.insideCity,
+        )
         val effectiveSpeed = when {
-            best?.isUnlimitedSpeedLimit == true -> null
-            best?.speedLimitKmh != null && best.speedSource == DerivedSpeedSource.HIGHWAY_CLASS && allowsResidentialAreaFallback(best.highway) -> {
-                if (insideCityDecision.first == true) 50 else 100
-            }
-            best?.speedLimitKmh != null -> best.speedLimitKmh
-            best != null && allowsResidentialAreaFallback(best.highway) -> {
-                if (insideCityDecision.first == true) 50 else 100
-            }
-            insideCityDecision.first == true -> 50
+            best == null || best.isUnlimitedSpeedLimit -> null
+            best.speedSource == DerivedSpeedSource.EXPLICIT_TAG -> best.speedLimitKmh
+            best.highway?.lowercase() == "living_street" -> best.speedLimitKmh
+            !allowsResidentialAreaFallback(best.highway) -> best.speedLimitKmh
+            settlement.isHighConfidence -> if (settlement.insideCity == true) 50 else 100
+            best.speedSource == DerivedSpeedSource.HIGHWAY_CLASS &&
+                best.highway?.trim()?.lowercase() in setOf("residential", "service") -> 50
             else -> null
         }
-        val resolvedInsideCityDecision = applyGermanLowSpeedInCityHeuristic(
-            insideCityDecision = insideCityDecision,
-            speedKmh = effectiveSpeed,
-        )
 
         return SpeedLookupResult(
             wayId = best?.wayId,
@@ -313,8 +303,8 @@ internal class V3SpeedLimitLookup(
             cityName = cityContext.cityName,
             cityPlaceName = cityContext.cityPlaceName,
             cityDistrictName = cityContext.cityDistrictName,
-            insideCity = resolvedInsideCityDecision.first,
-            citySource = resolvedInsideCityDecision.second,
+            insideCity = settlement.insideCity,
+            citySource = settlement.citySource,
             queryTimeMs = elapsedMs(startedAtNs),
             candidateCount = candidates.size,
             speedCandidateCount = candidates.count { it.speedLimitKmh != null || it.isUnlimitedSpeedLimit },
@@ -385,7 +375,7 @@ internal class V3SpeedLimitLookup(
             cityPlaceName = context.cityPlaceName,
             cityDistrictName = context.cityDistrictName,
             citySource = context.citySource,
-            insideCity = context.insideCity,
+            insideCity = null,
         )
     }
 
@@ -469,19 +459,6 @@ internal class V3SpeedLimitLookup(
         if (db.isOpen) {
             db.close()
         }
-    }
-
-    private fun applyGermanLowSpeedInCityHeuristic(
-        insideCityDecision: Pair<Boolean?, String?>,
-        speedKmh: Int?,
-    ): Pair<Boolean?, String?> {
-        if (insideCityDecision.first == true) {
-            return insideCityDecision
-        }
-        if (!germanLowSpeedLimitImpliesInsideCity(countryCode = countryCode, speedKmh = speedKmh)) {
-            return insideCityDecision
-        }
-        return true to "de_speed_limit_lt_50"
     }
 
     private fun selectCandidate(
@@ -5989,7 +5966,7 @@ internal class V3SpeedLimitLookup(
                 containingPolygons += 1
             }
         }
-        val insideCity = if (candidatePolygons > 0) containingPolygons > 0 else null
+        val insideCity = if (containingPolygons > 0) true else null
         return ResidentialContext(
             insideCity = insideCity,
             candidatePolygons = candidatePolygons,
@@ -6028,8 +6005,8 @@ internal class V3SpeedLimitLookup(
                     bboxArea = areaSize,
                     name = name,
                 )
-                if (isClosedAreaRing(area.points) && pointInRing(lon = lon, lat = lat, ring = area.points)) {
-                    containingAdminExact.add(adminBoundary)
+                if (isClosedAreaRing(area.points)) {
+                    if (pointInRing(lon = lon, lat = lat, ring = area.points)) containingAdminExact.add(adminBoundary)
                 } else {
                     containingAdminBBox.add(adminBoundary)
                 }
@@ -6274,7 +6251,6 @@ internal class V3SpeedLimitLookup(
         private const val CORRIDOR_STATE_TUNNEL_CHAIN_SLACK_BONUS_M = 6.0
         private const val CORRIDOR_STATE_TUNNEL_OUTPUT_SCORE_SLACK_M = 8.0
         private const val CORRIDOR_STATE_MOTORWAY_OUTPUT_SCORE_SLACK_M = 6.0
-        private val inCityHighwayClasses = setOf("residential", "service", "crossing", "living_street")
 
         fun deriveSpeedLimitKmh(
             maxspeed: String?,
@@ -6283,16 +6259,6 @@ internal class V3SpeedLimitLookup(
             highway: String?,
         ): Int? {
             return deriveSpeedLimitWithSource(maxspeed, maxspeedType, sourceMaxspeed, highway).speed
-        }
-
-        internal fun germanLowSpeedLimitImpliesInsideCity(
-            countryCode: String?,
-            speedKmh: Int?,
-        ): Boolean {
-            return normalizedCountryCode(countryCode) == "DEU" &&
-                speedKmh != null &&
-                speedKmh > 0 &&
-                speedKmh < 50
         }
 
         internal fun deriveSpeedLimitWithSource(
@@ -6361,10 +6327,6 @@ internal class V3SpeedLimitLookup(
                 "motorway", "motorway_link" -> false
                 else -> true
             }
-        }
-
-        private fun highwayImpliesInsideCity(highway: String?): Boolean {
-            return highway?.trim()?.lowercase() in inCityHighwayClasses
         }
 
         private fun formattedStreetDisplay(streetName: String?, ref: String?): String? {
@@ -6744,6 +6706,7 @@ internal class V3SpeedLimitLookup(
             y2: Double,
         ): Boolean {
             val epsilon = 1e-12
+            if (x1 == x2 && y1 == y2) return abs(px - x1) <= epsilon && abs(py - y1) <= epsilon
             val cross = ((px - x1) * (y2 - y1)) - ((py - y1) * (x2 - x1))
             if (abs(cross) > epsilon) {
                 return false

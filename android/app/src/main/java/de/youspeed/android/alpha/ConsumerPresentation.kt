@@ -34,7 +34,9 @@ object ConsumerMainScreenLogic {
         return SpeedPenaltyRuleEngine.resolveNotice(
             overspeedKmh = currentOverspeedKmh(state),
             rules = state.activePenaltyRules.ruleSet,
-            insideCity = state.lastLookupInsideCity,
+            insideCity = state.lastLookupInsideCity.takeIf {
+                state.lastLookupCitySource.startsWith("settlement:") && state.lastLookupCitySource.endsWith(":high")
+            },
             postedSpeedLimitKmh = state.speedLimitKmh,
         )
     }
