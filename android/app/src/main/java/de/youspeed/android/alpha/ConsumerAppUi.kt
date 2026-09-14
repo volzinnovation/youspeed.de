@@ -479,7 +479,7 @@ private fun MainScreen(
     BoxWithConstraints(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
-        val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
+        val landscape = ui.manualOrientation.isLandscape
         // Portrait keeps the speed-limit pane on the viewer's left as well.
         // Use the selected mode for control placement so a transient window
         // measurement cannot put the debug shortcut back in the top corner.

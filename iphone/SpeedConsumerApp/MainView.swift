@@ -151,7 +151,7 @@ struct MainView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let landscape = proxy.size.width > proxy.size.height
+            let landscape = viewModel.screenOrientation.isLandscape
             let minDimension = min(proxy.size.width, proxy.size.height)
             let screenInset = max(8, minDimension * 0.02)
             let sectionGap = landscape ? CGFloat(12) : max(14, minDimension * 0.04)
