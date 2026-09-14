@@ -1,0 +1,38 @@
+{
+  "bundle_version": "2026-09-14-settlement-pilot",
+  "country_code": "DEU",
+  "coverage": {
+    "bbox": {
+      "max_lat": 49.79456,
+      "max_lon": 10.51495,
+      "min_lat": 47.53076,
+      "min_lon": 7.506494
+    },
+    "poly": {
+      "bytes": 11113,
+      "file": "baden-wuerttemberg.poly",
+      "sha256": "7f6efa982f9e22cad15bba8b01120c2ff61f8d45c40e9e0c8d6d77c2e81af541",
+      "url": null
+    }
+  },
+  "created_at_utc": "2026-09-14T15:22:53Z",
+  "db": {
+    "bytes": 419711862,
+    "compression": "gzip",
+    "file": "baden-wuerttemberg_speeds.sqlite",
+    "sha256": "e991b66b8807bff4d53a395ddedc3158b253233431ea98f49b292d6fcfdb3954",
+    "uncompressed_bytes": 1273720832,
+    "uncompressed_sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183",
+    "url": "baden-wuerttemberg_speeds.sqlite.gz"
+  },
+  "delta_index": null,
+  "format": "youspeed.v3.bundle.manifest",
+  "min_app_version": "1.1",
+  "region": "baden-wuerttemberg",
+  "schema_version": 1,
+  "self": {
+    "file": "baden-wuerttemberg_manifest.json",
+    "url": null
+  },
+  "variant": "v3"
+}

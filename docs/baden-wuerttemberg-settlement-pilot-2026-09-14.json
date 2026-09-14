@@ -1,0 +1,684 @@
+{
+  "area_components": {
+    "areas": 40188,
+    "holes": 3748,
+    "relations": 1868,
+    "rings": 44226
+  },
+  "bundle": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite",
+  "bundle_bytes": 1273720832,
+  "bundle_sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183",
+  "checks": {
+    "duplicate_way_interval_direction": 0,
+    "foreign_key_violations": 0,
+    "integrity": [
+      "ok"
+    ],
+    "invalid_area_boolean": 0,
+    "invalid_segment_id": 0,
+    "invalid_segment_json": 0,
+    "invalid_sign_boolean": 0,
+    "rings_without_area": 0,
+    "short_segment_geometry": 0,
+    "signs_without_associated_way": 0
+  },
+  "examples": {
+    "conflicts": [
+      {
+        "direction": 1,
+        "evidence": [
+          {
+            "confidence": "high",
+            "inside_city": 1,
+            "source": "maxspeed_type",
+            "tag": "maxspeed:type",
+            "value": "DE:urban"
+          },
+          {
+            "confidence": "high",
+            "inside_city": 1,
+            "source": "source_maxspeed",
+            "tag": "source:maxspeed",
+            "value": "DE:urban"
+          },
+          {
+            "confidence": "high",
+            "inside_city": 0,
+            "sign_id": "n:12229309582:main",
+            "source": "traffic_sign"
+          }
+        ],
+        "segment_index": 1,
+        "way_id": 4345942
+      },
+      {
+        "direction": 0,
+        "evidence": [
+          {
+            "direction": 1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:rural"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "sign_id": "n:4425328262:backward:end:w:4550809",
+                "source": "traffic_sign"
+              }
+            ]
+          },
+          {
+            "direction": -1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:rural"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "sign_id": "n:4425328262:backward:begin:w:4550809",
+                "source": "traffic_sign"
+              }
+            ]
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 4550809
+      },
+      {
+        "direction": 0,
+        "evidence": [
+          {
+            "direction": 1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "zone_traffic",
+                "tag": "zone:traffic",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "maxspeed_type",
+                "tag": "maxspeed:type",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:980318410:main:begin",
+                "source": "traffic_sign"
+              }
+            ]
+          },
+          {
+            "direction": -1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "zone_traffic",
+                "tag": "zone:traffic",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "maxspeed_type",
+                "tag": "maxspeed:type",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:980318410:main:end",
+                "source": "traffic_sign"
+              }
+            ]
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 4557429
+      },
+      {
+        "direction": 0,
+        "evidence": [
+          {
+            "direction": 1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:7255779160:main:end",
+                "source": "traffic_sign"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:3440695728:main:begin",
+                "source": "traffic_sign"
+              }
+            ]
+          },
+          {
+            "direction": -1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "source_maxspeed",
+                "tag": "source:maxspeed",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:7255779160:main:begin",
+                "source": "traffic_sign"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:3440695728:main:end",
+                "source": "traffic_sign"
+              }
+            ]
+          }
+        ],
+        "segment_index": 2,
+        "way_id": 4626482
+      },
+      {
+        "direction": 1,
+        "evidence": [
+          {
+            "confidence": "high",
+            "inside_city": 0,
+            "source": "zone_traffic",
+            "tag": "zone:traffic",
+            "value": "DE:rural"
+          },
+          {
+            "confidence": "high",
+            "inside_city": 0,
+            "source": "source_maxspeed",
+            "tag": "source:maxspeed",
+            "value": "DE:rural"
+          },
+          {
+            "confidence": "high",
+            "inside_city": 1,
+            "sign_id": "n:1123743561:forward",
+            "source": "traffic_sign"
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 4836667
+      },
+      {
+        "direction": 0,
+        "evidence": [
+          {
+            "direction": 1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "maxspeed_type",
+                "tag": "maxspeed:type",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:29366827:main:begin",
+                "source": "traffic_sign"
+              }
+            ]
+          },
+          {
+            "direction": -1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "source": "maxspeed_type",
+                "tag": "maxspeed:type",
+                "value": "DE:urban"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "sign_id": "n:29366827:main:end",
+                "source": "traffic_sign"
+              }
+            ]
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 4846031
+      },
+      {
+        "direction": 0,
+        "evidence": [
+          {
+            "direction": 1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "source": "zone_traffic",
+                "tag": "zone:traffic",
+                "value": "DE:rural"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "sign_id": "n:8557512789:main:end",
+                "source": "traffic_sign"
+              }
+            ]
+          },
+          {
+            "direction": -1,
+            "evidence": [
+              {
+                "confidence": "high",
+                "inside_city": 0,
+                "source": "zone_traffic",
+                "tag": "zone:traffic",
+                "value": "DE:rural"
+              },
+              {
+                "confidence": "high",
+                "inside_city": 1,
+                "sign_id": "n:8557512789:main:begin",
+                "source": "traffic_sign"
+              }
+            ]
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 4985365
+      },
+      {
+        "direction": -1,
+        "evidence": [
+          {
+            "confidence": "high",
+            "inside_city": 1,
+            "source": "zone_traffic",
+            "tag": "zone:traffic",
+            "value": "DE:urban"
+          },
+          {
+            "confidence": "high",
+            "inside_city": 0,
+            "source": "source_maxspeed",
+            "tag": "source:maxspeed:backward",
+            "value": "DE:rural"
+          }
+        ],
+        "segment_index": 0,
+        "way_id": 5117948
+      }
+    ],
+    "rural_30": [
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "unclassified",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 0,
+        "source": "zone_traffic",
+        "street_name": "Schwetzinger Stra\u00dfe",
+        "way_id": 3788449
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "residential",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": "M\u00e4urachsteige",
+        "way_id": 4298030
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "residential",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 1,
+        "source": "traffic_sign",
+        "street_name": "M\u00e4urachsteige",
+        "way_id": 4298030
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "residential",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 2,
+        "source": "traffic_sign",
+        "street_name": "M\u00e4urachsteige",
+        "way_id": 4298030
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "service",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 0,
+        "source": "zone_traffic",
+        "street_name": null,
+        "way_id": 4298250
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "residential",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 2,
+        "source": "traffic_sign",
+        "street_name": "Weimarer Stra\u00dfe",
+        "way_id": 4322524
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "residential",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 3,
+        "source": "traffic_sign",
+        "street_name": "Weimarer Stra\u00dfe",
+        "way_id": 4322524
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "primary",
+        "inside_city": 0,
+        "maxspeed": "30",
+        "segment_index": 0,
+        "source": "zone_traffic",
+        "street_name": null,
+        "way_id": 4490079
+      }
+    ],
+    "urban_70": [
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "primary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": "Wachbacher Stra\u00dfe",
+        "way_id": 4246403
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "secondary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": "Schwieberdinger Stra\u00dfe",
+        "way_id": 4297874
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": null,
+        "way_id": 5037240
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "source_maxspeed",
+        "street_name": "Marsweilerstra\u00dfe",
+        "way_id": 5123820
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 1,
+        "source": "source_maxspeed",
+        "street_name": "Marsweilerstra\u00dfe",
+        "way_id": 5123820
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 2,
+        "source": "source_maxspeed",
+        "street_name": "Marsweilerstra\u00dfe",
+        "way_id": 5123820
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": "Franz-Gurk-Stra\u00dfe",
+        "way_id": 17213974
+      },
+      {
+        "confidence": "high",
+        "direction": 0,
+        "highway": "tertiary",
+        "inside_city": 1,
+        "maxspeed": "70",
+        "segment_index": 0,
+        "source": "traffic_sign",
+        "street_name": "Dellmensinger Stra\u00dfe",
+        "way_id": 24736364
+      }
+    ]
+  },
+  "manifest": "/Users/raphaelvolz/Github/youspeed.de/mapdata/bundles/v3/baden-wuerttemberg/2026-09-14-settlement-pilot/baden-wuerttemberg_manifest.json",
+  "method": "Full generated-table counts and integrity/contract checks. These are not surveyed driving accuracy rates.",
+  "packaging": {
+    "compressed_bytes": 419711862,
+    "compressed_sha256": "e991b66b8807bff4d53a395ddedc3158b253233431ea98f49b292d6fcfdb3954",
+    "coverage_verified": true,
+    "gzip_roundtrip_verified": true,
+    "uncompressed_bytes": 1273720832,
+    "uncompressed_sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183"
+  },
+  "query_plan": [
+    {
+      "detail": "SEARCH settlement_segment USING INDEX idx_settlement_segment_way (way_id=?)",
+      "id": 4,
+      "notused": 0,
+      "parent": 0
+    },
+    {
+      "detail": "USE TEMP B-TREE FOR ORDER BY",
+      "id": 19,
+      "notused": 0,
+      "parent": 0
+    }
+  ],
+  "settlement_context": {
+    "area_kinds": {
+      "landuse": 39955,
+      "urban_polygon": 233
+    },
+    "by_value_and_evidence": [
+      {
+        "confidence": "unknown",
+        "inside_city": null,
+        "segments": 528,
+        "source": "conflict"
+      },
+      {
+        "confidence": "unknown",
+        "inside_city": null,
+        "segments": 422742,
+        "source": "missing"
+      },
+      {
+        "confidence": "high",
+        "inside_city": false,
+        "segments": 5516,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "high",
+        "inside_city": false,
+        "segments": 7606,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "inside_city": false,
+        "segments": 4474,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "inside_city": false,
+        "segments": 3,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "inside_city": false,
+        "segments": 21330,
+        "source": "zone_traffic"
+      },
+      {
+        "confidence": "low",
+        "inside_city": true,
+        "segments": 745551,
+        "source": "landuse"
+      },
+      {
+        "confidence": "high",
+        "inside_city": true,
+        "segments": 14876,
+        "source": "maxspeed_type"
+      },
+      {
+        "confidence": "high",
+        "inside_city": true,
+        "segments": 20256,
+        "source": "source_maxspeed"
+      },
+      {
+        "confidence": "high",
+        "inside_city": true,
+        "segments": 5497,
+        "source": "traffic_sign"
+      },
+      {
+        "confidence": "high",
+        "inside_city": true,
+        "segments": 334,
+        "source": "urban_polygon"
+      },
+      {
+        "confidence": "high",
+        "inside_city": true,
+        "segments": 45485,
+        "source": "zone_traffic"
+      }
+    ],
+    "invalid_boolean_values": 0,
+    "metadata": {
+      "settlement_context_version": "1",
+      "settlement_country_code": "DE",
+      "settlement_fallback_way_count": "0",
+      "settlement_geometry_tolerance_m": "2.0",
+      "settlement_incomplete_way_count": "0",
+      "settlement_invalid_area_count": "0",
+      "settlement_segment_count": "1294198",
+      "settlement_sign_association_counts": "{\"ambiguous_ways\":665,\"collinear_way_split\":15304,\"direction_unknown\":11962,\"node_membership\":2565,\"unassociated\":2385,\"way_tag_location_unknown\":5}",
+      "settlement_source_way_count": "1085790",
+      "settlement_state_counts": "{\"inside_high\":86448,\"inside_low\":745551,\"outside_high\":38929,\"unknown_unknown\":423270}",
+      "settlement_zero_length_way_count": "0"
+    },
+    "segments": 1294198,
+    "segments_without_way": 0,
+    "sign_associations": {
+      "ambiguous_ways": 665,
+      "collinear_way_split": 15304,
+      "direction_unknown": 11962,
+      "node_membership": 2565,
+      "unassociated": 2385,
+      "way_tag_location_unknown": 5
+    },
+    "version": "1",
+    "ways_with_context": 1085790,
+    "ways_without_context": 0
+  },
+  "source": {
+    "bytes": 647326315,
+    "md5": "ce50bb515641808835a7e3c1430ae5de",
+    "sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+    "timestamp_utc": "2026-09-13T20:21:20Z",
+    "url": "https://download.geofabrik.de/europe/germany/baden-wuerttemberg-260913.osm.pbf"
+  },
+  "total_ways": 1085790
+}

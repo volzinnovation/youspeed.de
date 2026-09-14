@@ -1,0 +1,4528 @@
+{
+  "caveats": [
+    "Conservative tag-absence filter: provenance-only, advisory, vehicle-specific, variable or malformed speed values still exclude the road; tagged is not synonymous with usable passenger-car speed.",
+    "A speed tag for one direction excludes the complete OSM way.",
+    "Town-limit signs and polygon-based settlement evidence remain in the evaluated outcome to avoid circular filtering.",
+    "OSM ways are map pieces, not unique street names. Segment records may split ways and directions; percentages by records are not distance-weighted.",
+    "This evaluates the September 13 source snapshot and generated coverage, not surveyed driving accuracy or live camera evidence."
+  ],
+  "checks": {
+    "bundle_ways_missing_raw_tags": 0,
+    "database_ways": 1085790,
+    "eligible_ways_without_segments": 0,
+    "raw_tag_ways": 1085790,
+    "raw_ways_missing_in_bundle": 0
+  },
+  "database": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite",
+  "database_sha256": "1938df90ffa6b9ff0f5dfb2b4f09c622f4208cb03102fc5fb2c2f5ebc531a183",
+  "definition": "Whole OSM ways with no nonempty speed-family, traffic-context, or recognized speed-sign tag in either direction, excluding motorway/motorway_link/living_street independent class rules. New settlement decisions are the outcome, not an exclusion.",
+  "eligible_highways": {
+    "primary": 1051,
+    "primary_link": 1273,
+    "residential": 97892,
+    "road": 27,
+    "secondary": 6503,
+    "secondary_link": 777,
+    "service": 491351,
+    "tertiary": 15136,
+    "tertiary_link": 640,
+    "trunk": 16,
+    "trunk_link": 1258,
+    "unclassified": 32295
+  },
+  "excluded_evidence_reasons_overlapping": {
+    "speed_sign_tag:traffic_sign": 6999,
+    "speed_sign_tag:traffic_sign:backward": 14,
+    "speed_sign_tag:traffic_sign:forward": 40,
+    "speed_tag:maxspeed": 397753,
+    "speed_tag:maxspeed:advised": 12,
+    "speed_tag:maxspeed:advisory": 350,
+    "speed_tag:maxspeed:advisory:variable": 21,
+    "speed_tag:maxspeed:backward": 7218,
+    "speed_tag:maxspeed:backward:conditional": 53,
+    "speed_tag:maxspeed:backward:reason": 13,
+    "speed_tag:maxspeed:bicycle": 1,
+    "speed_tag:maxspeed:bus": 1,
+    "speed_tag:maxspeed:check_date": 44,
+    "speed_tag:maxspeed:conditional": 3906,
+    "speed_tag:maxspeed:default": 1,
+    "speed_tag:maxspeed:forward": 7381,
+    "speed_tag:maxspeed:forward:conditional": 51,
+    "speed_tag:maxspeed:forward:note": 1,
+    "speed_tag:maxspeed:forward:reason": 4,
+    "speed_tag:maxspeed:hazmat": 103,
+    "speed_tag:maxspeed:hazmat:backward": 17,
+    "speed_tag:maxspeed:hazmat:forward": 30,
+    "speed_tag:maxspeed:hazmat:water": 8,
+    "speed_tag:maxspeed:hgv": 646,
+    "speed_tag:maxspeed:hgv:backward": 36,
+    "speed_tag:maxspeed:hgv:backward:conditional": 2,
+    "speed_tag:maxspeed:hgv:conditional": 61,
+    "speed_tag:maxspeed:hgv:forward": 47,
+    "speed_tag:maxspeed:hgv:forward:conditional": 6,
+    "speed_tag:maxspeed:hgv:trailer": 5,
+    "speed_tag:maxspeed:hgv:trailer:forward": 6,
+    "speed_tag:maxspeed:lanes": 36,
+    "speed_tag:maxspeed:lanes:backward": 22,
+    "speed_tag:maxspeed:lanes:conditional": 2,
+    "speed_tag:maxspeed:lanes:forward": 21,
+    "speed_tag:maxspeed:max": 190,
+    "speed_tag:maxspeed:motor_vehicle": 1,
+    "speed_tag:maxspeed:motorcar": 3,
+    "speed_tag:maxspeed:motorcar:type": 3,
+    "speed_tag:maxspeed:motorcycle": 66,
+    "speed_tag:maxspeed:motorcycle:backward": 1,
+    "speed_tag:maxspeed:note": 312,
+    "speed_tag:maxspeed:opposite": 3,
+    "speed_tag:maxspeed:practical": 52,
+    "speed_tag:maxspeed:reason": 393,
+    "speed_tag:maxspeed:reason:backward": 4,
+    "speed_tag:maxspeed:reason:conditional": 8,
+    "speed_tag:maxspeed:reason:de": 53,
+    "speed_tag:maxspeed:reason:forward": 1,
+    "speed_tag:maxspeed:signed": 9,
+    "speed_tag:maxspeed:source": 193,
+    "speed_tag:maxspeed:tilting": 5,
+    "speed_tag:maxspeed:type": 50346,
+    "speed_tag:maxspeed:type:backward": 169,
+    "speed_tag:maxspeed:type:forward": 172,
+    "speed_tag:maxspeed:variable": 1550,
+    "speed_tag:maxspeed:variable:backward": 9,
+    "speed_tag:maxspeed:variable:default": 75,
+    "speed_tag:maxspeed:variable:default:forward": 1,
+    "speed_tag:maxspeed:variable:default:lanes": 3,
+    "speed_tag:maxspeed:variable:forward": 15,
+    "speed_tag:maxspeed:variable:lanes": 1,
+    "speed_tag:maxspeed:variable:max": 67,
+    "speed_tag:maxspeed:variable:max:forward": 1,
+    "speed_tag:maxspeed:variable:min": 9,
+    "speed_tag:maxspeed:variable:min:forward": 1,
+    "speed_tag:maxspeed:variable:values": 9,
+    "speed_tag:maxspeed:variable:values:forward": 1,
+    "speed_tag:maxspeed:zone": 7,
+    "speed_tag:source:maxspeed": 114082,
+    "speed_tag:source:maxspeed:backward": 1945,
+    "speed_tag:source:maxspeed:conditional": 24,
+    "speed_tag:source:maxspeed:forward": 1955,
+    "speed_tag:source:maxspeed:hazmat:forward": 3,
+    "speed_tag:source:maxspeed:hgv": 52,
+    "speed_tag:source:maxspeed:hgv:forward": 3,
+    "speed_tag:source:maxspeed:lanes:forward:hgv": 1,
+    "speed_tag:source:maxspeed:type:forward": 5,
+    "speed_tag:zone:maxspeed": 20218,
+    "speed_tag:zone:maxspeed:backward": 1,
+    "traffic_context_tag:zone:traffic": 56179,
+    "traffic_context_tag:zone:traffic:backward": 2,
+    "traffic_context_tag:zone:traffic:forward": 2,
+    "traffic_context_tag:zone:traffic:lanes": 1
+  },
+  "excluded_independent_classes": {
+    "living_street": 17030,
+    "motorway": 11,
+    "motorway_link": 2165
+  },
+  "excluded_tag_values": [
+    {
+      "key": "maxspeed",
+      "value": "10",
+      "ways": 4687
+    },
+    {
+      "key": "maxspeed",
+      "value": "100",
+      "ways": 28339
+    },
+    {
+      "key": "maxspeed",
+      "value": "110",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed",
+      "value": "12",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "120",
+      "ways": 2969
+    },
+    {
+      "key": "maxspeed",
+      "value": "130",
+      "ways": 159
+    },
+    {
+      "key": "maxspeed",
+      "value": "15",
+      "ways": 695
+    },
+    {
+      "key": "maxspeed",
+      "value": "17",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed",
+      "value": "2",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed",
+      "value": "20",
+      "ways": 5986
+    },
+    {
+      "key": "maxspeed",
+      "value": "25",
+      "ways": 66
+    },
+    {
+      "key": "maxspeed",
+      "value": "29",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "3",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed",
+      "value": "3.5",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed",
+      "value": "30",
+      "ways": 205294
+    },
+    {
+      "key": "maxspeed",
+      "value": "32",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed",
+      "value": "35",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed",
+      "value": "4",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "40",
+      "ways": 5852
+    },
+    {
+      "key": "maxspeed",
+      "value": "5",
+      "ways": 403
+    },
+    {
+      "key": "maxspeed",
+      "value": "5 mph",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "50",
+      "ways": 104948
+    },
+    {
+      "key": "maxspeed",
+      "value": "50; 100",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed",
+      "value": "6",
+      "ways": 76
+    },
+    {
+      "key": "maxspeed",
+      "value": "60",
+      "ways": 4560
+    },
+    {
+      "key": "maxspeed",
+      "value": "7",
+      "ways": 1114
+    },
+    {
+      "key": "maxspeed",
+      "value": "70",
+      "ways": 22380
+    },
+    {
+      "key": "maxspeed",
+      "value": "8",
+      "ways": 30
+    },
+    {
+      "key": "maxspeed",
+      "value": "80",
+      "ways": 3713
+    },
+    {
+      "key": "maxspeed",
+      "value": "90",
+      "ways": 97
+    },
+    {
+      "key": "maxspeed",
+      "value": "CH:rural",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "DE:living_street",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed",
+      "value": "DE:rural",
+      "ways": 146
+    },
+    {
+      "key": "maxspeed",
+      "value": "DE:urban",
+      "ways": 56
+    },
+    {
+      "key": "maxspeed",
+      "value": "DE:walk",
+      "ways": 49
+    },
+    {
+      "key": "maxspeed",
+      "value": "FR:rural",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "implicit",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "none",
+      "ways": 4340
+    },
+    {
+      "key": "maxspeed",
+      "value": "sign",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed",
+      "value": "signals",
+      "ways": 715
+    },
+    {
+      "key": "maxspeed",
+      "value": "walk",
+      "ways": 1020
+    },
+    {
+      "key": "maxspeed:advised",
+      "value": "15",
+      "ways": 12
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "10",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "100",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "15",
+      "ways": 108
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "18",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "30",
+      "ways": 53
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "40",
+      "ways": 57
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "5",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "50",
+      "ways": 16
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "60",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "7",
+      "ways": 101
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "70",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:advisory",
+      "value": "rural",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:advisory:variable",
+      "value": "green_wave",
+      "ways": 21
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "10",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "100",
+      "ways": 2532
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "20",
+      "ways": 15
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "30",
+      "ways": 330
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "40",
+      "ways": 54
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "50",
+      "ways": 1216
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "60",
+      "ways": 288
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "70",
+      "ways": 2407
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "80",
+      "ways": 361
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "90",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "DE:rural",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "none",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:backward",
+      "value": "walk",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ (22:00-06:00)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ (Mo-Fr 06:00-19:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00)",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ hazmat",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ weight > 7.5",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "30@22:00-06:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "50 @ (22:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "50 @ (maxweight > 2.8)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "50 @ (wet)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "50 @ 22:00-06:00",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "50 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "60 @ (22:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "70 @ (22:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "70 @ (wet)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:backward:conditional",
+      "value": "70 @ wet",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:backward:reason",
+      "value": "L\u00e4rmschutz",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:bicycle",
+      "value": "walk",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:bus",
+      "value": "30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2018-03-14",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2018-03-31",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2018-09",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2019-02",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2022-05-26",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2022-10-09",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:check_date",
+      "value": "2025-12-02",
+      "ways": 16
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "*",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "10 @ (07:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "10 @ (Mo-Fr 07:00-16:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "10 @ (Mo-Fr 07:00-17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "10 @ (Mo-Fr 07:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ (06:00-21:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ (22:00-06:00)",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ (Mo-Fr 16:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ (wet)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ 20:00-08:00",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "100 @ wet",
+      "ways": 87
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "120 @ (06:00-21:00)",
+      "ways": 63
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "120 @ (22:00-06:00)",
+      "ways": 14
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "120 @ (Oct-Apr)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "120 @ (wet)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "120 @ wet",
+      "ways": 108
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "20 @ (Mo-Fr 07:00-10:00, 12:00-17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "20 @ (Mo-Fr 07:00-16:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "20 @ (Mo-Fr 07:00-17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "20 @ wet",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (00:00-06:00,22:00-24:00)",
+      "ways": 344
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (06:00-17:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (06:00-18:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (06:00-20:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (06:00-21:00)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-16:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-16:30 AND Mo-Fr)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-17:00)",
+      "ways": 35
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-17:30)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-18:00)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-20:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-21:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (07:00-22:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (08:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (08:00-20:00)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (19:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (20:00-06:00)",
+      "ways": 88
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (22:00 - 06:00)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (22:00 - 6:00)",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (22:00-06:00 AND Mo-Fr 07:00-18:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (22:00-06:00)",
+      "ways": 1735
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (22:00-24:00, 0:00-6:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Fr 20:00-02:00)",
+      "ways": 24
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo - Fr 07:00-17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr  07:00-19:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-11:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-14:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-17:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-17:030;PH off;SH off)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-18:00)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:00-19:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:30-16:30)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:30-17:30)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 06:30-18:00)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00 - 17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-13:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-13:00))",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-14:00)",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-14:30)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-15:00)",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-16:00)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-16:30)",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00)",
+      "ways": 350
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00; PH off; SH off)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00; PH, SH off )",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00; PH, SH off)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-18:00)",
+      "ways": 80
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-18:00; SH off)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:00-19:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:30-15:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 07:30-16:30)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 08:00-17:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 08:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 14:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 7:00 - 14:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 7:00-14:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 7:00-17:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 7:00-17:30)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Fr 7:00-18:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Sa 07:00-18:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Su 22:00-06:00)",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Su,PH 19:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Mo-Su,PH 22:00-06:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Sa,Su,PH)",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (Sa-So; PH)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (hgv AND maxweight>7.5)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (weight>3.5)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ (weight>7.5)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ 22:00-06:00",
+      "ways": 80
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ Mo-Fr 07:00-16:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ Mo-Fr 07:00-16:30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ Mo-Fr 07:00-17:00",
+      "ways": 21
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ hazmat",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ hgv",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30 @ wet",
+      "ways": 24
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@ (Mo-Fr 07:00-17:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@ (Mo-Fr 07:00-19:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@ Mo-Fr 07:00-17:00",
+      "ways": 12
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@(22:00-6:00)",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@(Mo-Fr 07:00-17:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@22:00-06:00",
+      "ways": 19
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@Mo-Fr 07:00-17:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "30@Mo-Fr 22:00-06:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "40 @ (22:00-06:00)",
+      "ways": 47
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "5 @ (23:00-05:00)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (17:00-07:00)",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (22:00-06:00)",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (Aug 15 - Oct 31)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (Mo-Fr 06:00-19:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (Mo-Fr 17:00-07:00)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (hgv)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (lanes=1)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (weight > 7.5 )",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (weight > 7.5)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (weight>7.5)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ (wet)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ 20:00-06:00",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ 22:00 - 06:00",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ Mo-Fr 09:00-14:00, Sa, Su, PH",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50 @ wet",
+      "ways": 21
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "50@(06:00-10:00,18:00-22:00)",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ (21:00-7:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ (22:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ (Mo-Fr 16:00-18:00)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ (Mo-Sa 06:00-20:00)",
+      "ways": 14
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ hgv",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "60 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (08:00-20:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (09:00-21:00)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (20:00-06:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (22:00-06:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (22:00-07:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (22:00-6:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (Apr 01-Oct 01)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ (Aug 15 - Oct 31)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "70 @ wet",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "80 @ (06:00-21:00)",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "80 @ (Mo-Fr 16:00-18:00)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "80 @ (wet)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "80 @ wet",
+      "ways": 223
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "no @ (agricultural AND hazmat:water)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "none @ (19:00-06:00)",
+      "ways": 25
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "none @ (22:00-06:00)",
+      "ways": 18
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "none @ (agricultural;forestry)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "none @ (destination)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:conditional",
+      "value": "none @ bicycle",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:default",
+      "value": "none",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "10",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "100",
+      "ways": 2487
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "120",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "15",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "20",
+      "ways": 28
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "30",
+      "ways": 349
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "40",
+      "ways": 51
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "50",
+      "ways": 1238
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "60",
+      "ways": 297
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "70",
+      "ways": 2558
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "80",
+      "ways": 339
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "90",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "DE:rural",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "none",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:forward",
+      "value": "signals",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "20 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ (22:00 - 06:00)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ (22:00-06:00)",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ (Mo-Fr 06:00-19:00)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ (Mo-Fr 07:00-10:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ (Mo-Fr 07:00-17:00)",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ Mo-Fr 07:00-15:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ hazmat",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ hgv",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "30 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "40 @ wet",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "50 @ (lanes=1)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "50 @ (wet)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "50 @ 22:00-06:00",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "50 @ wet",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "70 @ (wet)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:forward:conditional",
+      "value": "70 @ wet",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:note",
+      "value": "50 wenn nur ein Fahrstreifen Richtung Rust",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:forward:reason",
+      "value": "L\u00e4rmschutz",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:hazmat",
+      "value": "30",
+      "ways": 98
+    },
+    {
+      "key": "maxspeed:hazmat",
+      "value": "50",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:hazmat:backward",
+      "value": "30",
+      "ways": 17
+    },
+    {
+      "key": "maxspeed:hazmat:forward",
+      "value": "20",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:hazmat:forward",
+      "value": "30",
+      "ways": 19
+    },
+    {
+      "key": "maxspeed:hazmat:forward",
+      "value": "50",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:hazmat:water",
+      "value": "30",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:hazmat:water",
+      "value": "40",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "10",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "20",
+      "ways": 18
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "25",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "30",
+      "ways": 110
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "30 @ (maxweightrating>7.5)",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "50",
+      "ways": 45
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "60",
+      "ways": 453
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "7.5",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:hgv",
+      "value": "80",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:hgv:backward",
+      "value": "25",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:hgv:backward",
+      "value": "30",
+      "ways": 20
+    },
+    {
+      "key": "maxspeed:hgv:backward",
+      "value": "50",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:hgv:backward",
+      "value": "60",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:hgv:backward:conditional",
+      "value": "30 @ (weight>3.8)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "10 @ (weight>2.8)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "30 @ (22:00-06:00)",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "30 @ (weight > 7.5 AND (22:00-06:00)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "30 @ (weight>7.5)",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "40 @ (weight > 6)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "60 @ (maxweightrating>7.5)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:conditional",
+      "value": "60 @ weight>7.5",
+      "ways": 44
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "10",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "25",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "30",
+      "ways": 23
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "30 @ (weight>7.5)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "50",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "60",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:hgv:forward",
+      "value": "destination @ (weight > 7.5)",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:forward:conditional",
+      "value": "10 @ trailor",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:hgv:forward:conditional",
+      "value": "60 @ (weight>7.5)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:hgv:trailer",
+      "value": "30",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:hgv:trailer:forward",
+      "value": "30",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "100|100|30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "100|100|50",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "100|100|70",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "100|80",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "120|120|70",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "120|120|80",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "50|50|30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "50|50|50",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "70|70|30",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "70|70|50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "80|80|60",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "none|none|50",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "none|none|60",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "none|none|70",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:lanes",
+      "value": "||70",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "100",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "100|70",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "50",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "70",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:lanes:backward",
+      "value": "80",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:conditional",
+      "value": "80 @ wet|80 @ wet|",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "100",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "50",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "70",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "70|50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "80",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:lanes:forward",
+      "value": "|70",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:max",
+      "value": "100",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:max",
+      "value": "120",
+      "ways": 179
+    },
+    {
+      "key": "maxspeed:motor_vehicle",
+      "value": "walk",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:motorcar",
+      "value": "10",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:motorcar:type",
+      "value": "sign",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:motorcycle",
+      "value": "50",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:motorcycle",
+      "value": "70",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:motorcycle",
+      "value": "80",
+      "ways": 57
+    },
+    {
+      "key": "maxspeed:motorcycle:backward",
+      "value": "50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "50 wenn nur ein Fahrstreifen Richtung Rust",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "60km/h \"L\u00e4rmschutz\"",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "70 Richtung Wiesental gilt nur f\u00fcr Linkskurve, da Zeichen 274 zusammen mit Zeichen 103-10",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Am Jahresanfang 2011 von 70 auf 50 reduziert wegen Stra\u00dfensch\u00e4den. Soll Ende 2011 wieder aufgehoben werden.",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Fahrtrichtung Heilbronn gilt hier dauerhaft 30 km/h (L\u00e4rmschutz), Fahrtrichtung Leingarten gilt das 30 km/h nur 22-6h (L\u00e4rmschutz)",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "In KW 13/2019 wurden in beide Richtungen alle 60er Schilder abmontiert und entfernt.",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Source of maxspeed values: https://wiki.openstreetmap.org/wiki/Key:maxspeed:type",
+      "ways": 14
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Stauwarnanlage, zeigt bei flie\u00dfendem Verkehr 100 km/h",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Stauwarnanlage, zeigt bei flie\u00dfendem Verkehr 120 km/h",
+      "ways": 22
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Stauwarnanlage, zeigt bei flie\u00dfendem Verkehr 120 km/h mit 80 km/h bei N\u00e4sse",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Stauwarnanlage, zeigt bei flie\u00dfendem Verkehr 80 km/h",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Variable Verkehrszeichen sind standardm\u00e4\u00dfig aus und werden nur bei St\u00f6rungen angeschaltet, sonst gilt hier Tempo 100!",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Variable Verkehrszeichen zeigen standardm\u00e4\u00dfig 100 km/h, bei St\u00f6rungen und viel Verkehr werden nur geringere Geschwindigkeiten angezeigt.",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "Vorheriges Tempo 50 gemeinsam mit Achtungszeichen Kurve, damit nur bis Ende der Kurve g\u00fcltig.",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "digitale Schilder zeigen w\u00e4hrend Baustelle maxspeed=60 bei flie\u00dfendem Verkehr",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "digitale Schilder zeigen w\u00e4hrend Baustelle maxspeed=80 bei flie\u00dfendem Verkehr",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "keine Geschwindigkeitsbegrenzung, da Zeichen 274 am gleichen Pfosten wie Gefahrschild angebracht.",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "maxspeed=30 seit ca. M\u00e4rz/April 2018",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "maxspeed=60 wegen Stra\u00dfensch\u00e4den",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "verkehrsrechtlich angeordnete H\u00f6chstgeschwindigkeit: 100 km/h ab km 579.080 (AQ S 17)",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "verkehrsrechtlich angeordnete H\u00f6chstgeschwindigkeit: 120 km/h ab km 560.050 (AQ S 5 bis AQ S 17)",
+      "ways": 96
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "verkehrsrechtlich angeordnete H\u00f6chstgeschwindigkeit: 120 km/h ab km 580.0",
+      "ways": 57
+    },
+    {
+      "key": "maxspeed:note",
+      "value": "verkehrsrechtlich angeordnete H\u00f6chstgeschwindigkeit: 120 km/h ab km 580.0 (AQ N 1 bis AQ N 13)",
+      "ways": 26
+    },
+    {
+      "key": "maxspeed:opposite",
+      "value": "70",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "20",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "30",
+      "ways": 17
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "40",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "50",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "60",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:practical",
+      "value": "70",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "Altenheim",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "Br\u00fcckensch\u00e4den",
+      "ways": 24
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "Children",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "Kurort",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "L\u00e4rmschutz",
+      "ways": 294
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "damaged_bridge",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "kindergarten",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "noise",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "noise_protection",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "school",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:reason",
+      "value": "zone30",
+      "ways": 44
+    },
+    {
+      "key": "maxspeed:reason:backward",
+      "value": "Gef\u00e4hrliche Ausfahrt",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:reason:backward",
+      "value": "L\u00e4rmschutz",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:reason:conditional",
+      "value": "school @ (Mo-Fr 07:00-17:00)",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:reason:de",
+      "value": "Br\u00fcckensch\u00e4den",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:reason:de",
+      "value": "L\u00e4rmschutz",
+      "ways": 48
+    },
+    {
+      "key": "maxspeed:reason:forward",
+      "value": "L\u00e4rmschutz",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:signed",
+      "value": "no",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "DE:living_street",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "DE:rural",
+      "ways": 17
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "DE:urban",
+      "ways": 81
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "DE:zone30",
+      "ways": 22
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "DE:zone:30",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "MapDust",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "Mapillary",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "de:rural",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "sign",
+      "ways": 36
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "taffic_sign",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "traffic sign",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "traffic_sign",
+      "ways": 11
+    },
+    {
+      "key": "maxspeed:source",
+      "value": "zone",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:tilting",
+      "value": "100",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "30",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "CH:rural",
+      "ways": 17
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "CH:urban",
+      "ways": 48
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "CH:zone30",
+      "ways": 115
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:30",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:bicycle_road",
+      "ways": 119
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:living_street",
+      "ways": 569
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:motorway",
+      "ways": 7
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:rural",
+      "ways": 4694
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:sign",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:trunk",
+      "ways": 15
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:urban",
+      "ways": 11794
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:walk",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone",
+      "ways": 325
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone10",
+      "ways": 47
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone20",
+      "ways": 278
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone30",
+      "ways": 25835
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone40",
+      "ways": 8
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone50",
+      "ways": 22
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone60",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone7",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE:zone70",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "DE;zone30",
+      "ways": 31
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "E:urban",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "FR:urban",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "FR:zone20",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "FR:zone30",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "living_street",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "road_marking",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "rural",
+      "ways": 10
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "sign",
+      "ways": 6353
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "weather;peak_traffic",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:type",
+      "value": "zone",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:type:backward",
+      "value": "DE:rural",
+      "ways": 90
+    },
+    {
+      "key": "maxspeed:type:backward",
+      "value": "DE:urban",
+      "ways": 16
+    },
+    {
+      "key": "maxspeed:type:backward",
+      "value": "DE:zone",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type:backward",
+      "value": "DE:zone:30",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:type:backward",
+      "value": "sign",
+      "ways": 60
+    },
+    {
+      "key": "maxspeed:type:forward",
+      "value": "DE.rural",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:type:forward",
+      "value": "DE:rural",
+      "ways": 86
+    },
+    {
+      "key": "maxspeed:type:forward",
+      "value": "DE:urban",
+      "ways": 13
+    },
+    {
+      "key": "maxspeed:type:forward",
+      "value": "DE:zone20",
+      "ways": 4
+    },
+    {
+      "key": "maxspeed:type:forward",
+      "value": "sign",
+      "ways": 68
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "60",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "80",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "lane_signalling",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "no",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "obstruction",
+      "ways": 292
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "peak_traffic",
+      "ways": 601
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "peak_traffic;obstruction",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "peak_traffic;weather",
+      "ways": 17
+    },
+    {
+      "key": "maxspeed:variable",
+      "value": "yes",
+      "ways": 620
+    },
+    {
+      "key": "maxspeed:variable:backward",
+      "value": "obstruction",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:variable:default",
+      "value": "100",
+      "ways": 6
+    },
+    {
+      "key": "maxspeed:variable:default",
+      "value": "120",
+      "ways": 55
+    },
+    {
+      "key": "maxspeed:variable:default",
+      "value": "70",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:variable:default",
+      "value": "80",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:variable:default:forward",
+      "value": "70",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable:default:lanes",
+      "value": "120|120|100|100",
+      "ways": 3
+    },
+    {
+      "key": "maxspeed:variable:forward",
+      "value": "lane_signalling",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable:forward",
+      "value": "obstruction",
+      "ways": 14
+    },
+    {
+      "key": "maxspeed:variable:lanes",
+      "value": "peak_traffic|no|no",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable:max",
+      "value": "100",
+      "ways": 5
+    },
+    {
+      "key": "maxspeed:variable:max",
+      "value": "120",
+      "ways": 53
+    },
+    {
+      "key": "maxspeed:variable:max",
+      "value": "70",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:variable:max:forward",
+      "value": "70",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable:min",
+      "value": "50",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:variable:min:forward",
+      "value": "50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:variable:values",
+      "value": "70;50",
+      "ways": 9
+    },
+    {
+      "key": "maxspeed:variable:values:forward",
+      "value": "70;50",
+      "ways": 1
+    },
+    {
+      "key": "maxspeed:zone",
+      "value": "20",
+      "ways": 2
+    },
+    {
+      "key": "maxspeed:zone",
+      "value": "DE:rural",
+      "ways": 5
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "100",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "30",
+      "ways": 8
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "70",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "AT:rural",
+      "ways": 18
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "AT:urban",
+      "ways": 13
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "Bing 2012",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "CH:rural",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "CH:urban",
+      "ways": 29
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "CH:zone30",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE-zone:30",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE.urban",
+      "ways": 10
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:20",
+      "ways": 6
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:274-30",
+      "ways": 7
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:274[30]",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:30",
+      "ways": 35
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:Zone30",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:bicycle_road",
+      "ways": 832
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:bicycle_zone",
+      "ways": 123
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:implicit",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:living_street",
+      "ways": 493
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:motorway",
+      "ways": 3487
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:motorway;sign",
+      "ways": 24
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:parking_lot",
+      "ways": 19
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:rural",
+      "ways": 10665
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:rural;sign",
+      "ways": 5
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:sign",
+      "ways": 19
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:trunk",
+      "ways": 8
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:urban",
+      "ways": 31380
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:urban; sign",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:urban;sign",
+      "ways": 79
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:urban;signals",
+      "ways": 7
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:walk",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone",
+      "ways": 324
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone10",
+      "ways": 74
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone20",
+      "ways": 489
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone30",
+      "ways": 25070
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone30;sign",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone:10",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone:15",
+      "ways": 32
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone:20",
+      "ways": 66
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "DE:zone:30",
+      "ways": 6352
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "FR:rural",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "FR:urban",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "GPS survey 08.2017",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "MapDust",
+      "ways": 39
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "Ortskenntnisse",
+      "ways": 7
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "Photo",
+      "ways": 6
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "Survey",
+      "ways": 8
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "de:rural",
+      "ways": 10
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "de:urban",
+      "ways": 11
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "de:zone30",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "estimation",
+      "ways": 7
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "guess (position)",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "http://www.oestringen.de/buergerinfo/detail.php?rubric=7&nr=18770",
+      "ways": 11
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "https://www.openstreetmap.org/note/147100",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "https://www.openstreetmap.org/note/448082",
+      "ways": 7
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "https://www.svz-bw.de/fileadmin/vba/Anlagensteckbrief_SBA_A81_Leonberg_Mundelsheim.pdf",
+      "ways": 71
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "implicit",
+      "ways": 819
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "knowledge",
+      "ways": 21
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "living_street",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "mapillary",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "maxspeed:zone(30)",
+      "ways": 12
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "painted on road",
+      "ways": 5
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "rural",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sigh",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign",
+      "ways": 32201
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign at entrance",
+      "ways": 27
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign at entrance door",
+      "ways": 14
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign:implicit",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign;DE:rural",
+      "ways": 6
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign;DE:urban",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign;DE:zone30",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "sign;implicit",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "signals",
+      "ways": 753
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "signed",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "survey",
+      "ways": 200
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "temporary fixed limit during construcion works",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "traffic_sign",
+      "ways": 22
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "traffic_sign=DE:274:80",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "urban",
+      "ways": 43
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "walk",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "www.openstreetmap.org/browse/changeset/8913447",
+      "ways": 8
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "yes",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed",
+      "value": "zone",
+      "ways": 27
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "50",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE.rural",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE:motorway",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE:rual",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE:rural",
+      "ways": 732
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE:sign",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "DE:urban",
+      "ways": 128
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "de:rural",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "implicit",
+      "ways": 27
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "sign",
+      "ways": 1049
+    },
+    {
+      "key": "source:maxspeed:backward",
+      "value": "urban",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed:conditional",
+      "value": "sign",
+      "ways": 24
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "DE:motorway",
+      "ways": 4
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "DE:rual",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "DE:rural",
+      "ways": 780
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "DE:urban",
+      "ways": 101
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "DE:zone30",
+      "ways": 6
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "FR:rural",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "de:rural",
+      "ways": 6
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "de:urban",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "implicit",
+      "ways": 41
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "mapillary",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "s",
+      "ways": 2
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "sign",
+      "ways": 1008
+    },
+    {
+      "key": "source:maxspeed:forward",
+      "value": "signals",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:hazmat:forward",
+      "value": "sign",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed:hgv",
+      "value": "sign",
+      "ways": 52
+    },
+    {
+      "key": "source:maxspeed:hgv:forward",
+      "value": "sign",
+      "ways": 3
+    },
+    {
+      "key": "source:maxspeed:lanes:forward:hgv",
+      "value": "sign",
+      "ways": 1
+    },
+    {
+      "key": "source:maxspeed:type:forward",
+      "value": "implicit",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:1020-30;DE:262[7.5];DE:274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:1020-30;DE:274.1[30];DE:262[3.5]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:1022-10;250,1026-37;274[40]",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:103;274-40",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:103;DE:274[40]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:112,274[70],1053-35",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:136-10;274-30,1042-33[Mo-Fr 7-14]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:136-10;274[30],1042-33[Mo-Fr 07-17]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:240,DE:1020-30;DE:274.1[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250,1020-30;274[20]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250,1020-30;274[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250,1020-30;DE:274-20",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250,1020-30;DE:274[10]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250,1026-36;274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:250;274[30],1020-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:251,1020-30;274.1",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:251;274[10];262[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,1020-30;DE:274.1",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1020-30,DE:1026-35;DE:274.1[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1020-30;DE:274.1[30]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1020-30;DE:274[10]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1026-35;DE:274.1[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1026-36;DE:274.1[30]",
+      "ways": 8
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253,DE:1026-36;DE:274[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253;274[30]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253;274[50],1026-36",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:253;DE:274.1[30]",
+      "ways": 10
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:254;DE:121-20;DE:274-40",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:255;DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260, 274.1[30], 1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30,1042-51;274[50]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30,274.1[30]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30;274.1;262[6]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30;274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30;DE:274-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1020-30;DE:274:30",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,1026-32,1026-31,1026-36;DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,DE:1020-30,274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,DE:1020-30;DE:262[10];DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,DE:1020-30;DE:274.1[30]",
+      "ways": 6
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,DE:1020-30;DE:274[30]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260,DE:1026-36;DE:262[12];DE:274[20]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:260;DE:1020-30;DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:261;269;274[10]",
+      "ways": 17
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262:6;DE:1026-36;DE:1020-30;DE:274:50",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262:6;DE:261;DE:274:30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[12];251,1020-30;274.1",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[16];265[3.8];274-50",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[16];265[3.8];274.1[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[16];265[3.8];274[50]",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[16];274[50]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[2.4];DE:274[30]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[2.8];DE:274[20]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[3.5];274[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[3.5];DE:274[20]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[3.5];DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[6],1026-38;274[30];136-20",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[6];DE:1020-30;DE:1026-32;DE:274:50",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[6];DE:274.1[30]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[6];DE:274[50]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[7.5],DE:1024-14;DE:274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[7.5],DE:1026-36;DE:274[10]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[7.5],DE:1026-36;DE:274[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[7.5];274-70",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:262[7.5];DE:274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:265[2.9];101,1007-34;274[10];250,1024-10",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:265[2];257-56;255;274[10]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:265[3.1],274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:266; DE:274.1",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:266[12],1026-32,1026-38;274-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-10",
+      "ways": 67
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-10;262[15]",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30",
+      "ways": 28
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30,1040-30[22-6]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30,1040-30[22:00-06:00]",
+      "ways": 9
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30,1040-30[7-17]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30,1042-33[Mo-Fr 7:00-17:30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-30;265[4.0]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40,1010-51",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40,1012-36",
+      "ways": 24
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40,DE:1012-36",
+      "ways": 6
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40;265[4]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-40;DE:1012-36",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-50",
+      "ways": 14
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-50,1010-51",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-50;253",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-50;265[4]",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-60",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-70",
+      "ways": 24
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-70,276",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-70;262[7.5]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-70;276",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274-70;276,1049-11",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1",
+      "ways": 138
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1-20",
+      "ways": 15
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1-20;290.1,1053-53",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1-20;DE:265[4]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1:30",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1:30;DE:253",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1:30;DE:260,1020-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1;262[18]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1;262[6],1020-30",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1;DE:357",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[10]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[20]",
+      "ways": 126
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30]",
+      "ways": 5482
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30],260,1042-35,1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30],DE:250,1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];220-20",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];244.1,1020-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];253",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];253,1020-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];253,1026-35",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];260,1020-30",
+      "ways": 12
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];262[3.5],1020-30",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:250,1020-30",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:250,DE:1020-30",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:253",
+      "ways": 8
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:253,DE:1020-30",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:253,DE:1026-35",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:253,DE:1026-36",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:253;DE:262[7.5]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:260,1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:260,DE:1020-30",
+      "ways": 12
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:260,DE:1020-30,DE:1026-36",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:260,DE:1026-38",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[12]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[3.5]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[3.5],DE:1020-30",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[3.5],DE:1020-30; DE:244.1",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[6.5]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:262[7.5]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:264[2.1]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:264[2]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.1[30];DE:265[3.9]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274.2",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274:30",
+      "ways": 10
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274:40",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274:50;DE:262:6",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274:50;DE:262:6;DE:1026-36",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[100]",
+      "ways": 21
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10]",
+      "ways": 27
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10],DE:136",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10];262[2.8];265[2.1];259",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10];262[8.5];264[2.3]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10];264[2];265[2];255;DE:274[10];264[2];265[2];255;257-56;259",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10];265[2.5];264[2]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[10];DE:136",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[120]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[20]",
+      "ways": 10
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[20];260,1020-30,1028-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[20];DE:259",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[20];DE:260,DE:1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30]",
+      "ways": 129
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1012-36",
+      "ways": 24
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1040-30[07:00-17:00]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1040-30[22-06]",
+      "ways": 24
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1040-30[22-6 h]",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1040-30[22:00-06:00]",
+      "ways": 21
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1040-30[22:00-06:00],1042-33[Mo-Fr 07:00-18:00]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1042-33[Mo-Fr 07-17]",
+      "ways": 6
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1042-33[Mo-Fr 07:00-17:00]",
+      "ways": 14
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],1042-33[Mo-Fr 07:00-17:30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30],DE:1048-12",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];1012-51;1001-30[50]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];1040-30[22-6h];\"L\u00e4rmschutz\"",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];253",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];253,1020-30",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];253,1053-33",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];254;265[2.0]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];254;265[4.0]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];254;265[4]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];260,1020-30,1026-36",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];262[5],1026-38",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];357",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];DE:260",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];DE:260,DE:1020-30",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];DE:262[16]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];DE:264[1.8]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[30];DE:266[10]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[40",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[40]",
+      "ways": 117
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[40];1012-36",
+      "ways": 99
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[40];262[3.5]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50]",
+      "ways": 83
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50],1028[Unfallstrecke]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50],1053-35",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];260,1020-30,1022-11,1026-38",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];260,1020-30,1026-36,1042-35[Sa 13:00-24:00;Su;PH]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];260,1026-38,1022-11",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];262[6,5]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];262[6],1020-30",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];262[6],1026-36",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];DE262[40]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];DE:262[6.0]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[50];DE:262[6]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[5]",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[60]",
+      "ways": 6
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[70]",
+      "ways": 22
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[70];DE:103-10",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:274[80]",
+      "ways": 8
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:282;331.1;306",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign",
+      "value": "DE:286-50,274-53",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign",
+      "value": "maxspeed",
+      "ways": 4
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:101,274[80],Vz-Zusatzschild \"Feldweg-einm\u00fcndung\"",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274-20",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274-20;325.1",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274-50",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274-80;276",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274.1[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274[30]",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274[30]1040-30[22-6h];\"L\u00e4rmschutz\"",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:backward",
+      "value": "DE:274[60],1040-30[22-6 h],[L\u00e4rmschutz]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:103-10;274-40",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:250,1020-30;DE:274.1",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:253,1026-35;DE:274[60];DE:276,1049-11;DE:261",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274-70",
+      "ways": 5
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274.1[30]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274.2[30]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[100]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[30]",
+      "ways": 7
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[30],DE:1048-12,DE:1052-35[7.5]",
+      "ways": 2
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[50]",
+      "ways": 3
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[70]",
+      "ways": 12
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:274[70];DE:276",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:278[70]",
+      "ways": 1
+    },
+    {
+      "key": "traffic_sign:forward",
+      "value": "DE:278[80]",
+      "ways": 1
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "20",
+      "ways": 15
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "30",
+      "ways": 106
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "CH:30",
+      "ways": 7
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE.30",
+      "ways": 1
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:10",
+      "ways": 71
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:15",
+      "ways": 31
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:20",
+      "ways": 368
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:30",
+      "ways": 16839
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:40",
+      "ways": 5
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:motorway",
+      "ways": 39
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:rural",
+      "ways": 94
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:urban",
+      "ways": 2549
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:zone20",
+      "ways": 28
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "DE:zone30",
+      "ways": 63
+    },
+    {
+      "key": "zone:maxspeed",
+      "value": "sign",
+      "ways": 2
+    },
+    {
+      "key": "zone:maxspeed:backward",
+      "value": "DE:30",
+      "ways": 1
+    },
+    {
+      "key": "zone:traffic",
+      "value": "CH:rural",
+      "ways": 5
+    },
+    {
+      "key": "zone:traffic",
+      "value": "CH:urban",
+      "ways": 1
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE.rural",
+      "ways": 9
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE.urban",
+      "ways": 4
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:30",
+      "ways": 126
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:bicycle_road",
+      "ways": 2
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:fahrradstra\u00dfe",
+      "ways": 8
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:living_street",
+      "ways": 3
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:motorroad",
+      "ways": 11
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:motorway",
+      "ways": 1383
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:rural",
+      "ways": 18709
+    },
+    {
+      "key": "zone:traffic",
+      "value": "DE:urban",
+      "ways": 35825
+    },
+    {
+      "key": "zone:traffic",
+      "value": "De:urban",
+      "ways": 2
+    },
+    {
+      "key": "zone:traffic",
+      "value": "FR:rural",
+      "ways": 1
+    },
+    {
+      "key": "zone:traffic",
+      "value": "FR:urban",
+      "ways": 1
+    },
+    {
+      "key": "zone:traffic",
+      "value": "de:urban",
+      "ways": 1
+    },
+    {
+      "key": "zone:traffic",
+      "value": "rural",
+      "ways": 6
+    },
+    {
+      "key": "zone:traffic",
+      "value": "urban",
+      "ways": 82
+    },
+    {
+      "key": "zone:traffic:backward",
+      "value": "DE:urban",
+      "ways": 2
+    },
+    {
+      "key": "zone:traffic:forward",
+      "value": "DE:rural",
+      "ways": 2
+    },
+    {
+      "key": "zone:traffic:lanes",
+      "value": "DE:urban|DE:urban|DE:urban|DE:rural",
+      "ways": 1
+    }
+  ],
+  "executed_at_utc": "2026-09-14T15:35:09.775959+00:00",
+  "filter_counts": {
+    "all_ways": 1085790,
+    "eligible_ways": 648219,
+    "excluded_independent_class_after_tag_filter": 19206,
+    "excluded_recorded_speed_evidence": 418365,
+    "ways_without_recorded_speed_tags": 667425
+  },
+  "segment_results": [
+    {
+      "confidence": "unknown",
+      "inside_city": null,
+      "segments": 14,
+      "source": "conflict"
+    },
+    {
+      "confidence": "unknown",
+      "inside_city": null,
+      "segments": 259334,
+      "source": "missing"
+    },
+    {
+      "confidence": "high",
+      "inside_city": false,
+      "segments": 1697,
+      "source": "traffic_sign"
+    },
+    {
+      "confidence": "high",
+      "inside_city": false,
+      "segments": 3,
+      "source": "urban_polygon"
+    },
+    {
+      "confidence": "high",
+      "inside_city": true,
+      "segments": 1473,
+      "source": "traffic_sign"
+    },
+    {
+      "confidence": "high",
+      "inside_city": true,
+      "segments": 238,
+      "source": "urban_polygon"
+    },
+    {
+      "confidence": "low",
+      "inside_city": true,
+      "segments": 497747,
+      "source": "landuse"
+    }
+  ],
+  "segments": 760506,
+  "sql": {
+    "segment_results": "SELECT s.inside_city,s.confidence,s.source,count(*) AS segments\nFROM settlement_segment s JOIN evidence_filter f USING(way_id)\nWHERE f.eligible=1\nGROUP BY s.inside_city,s.confidence,s.source\nORDER BY s.inside_city,s.confidence,s.source",
+    "way_results": "WITH per_way AS (\n SELECT f.way_id,\n   sum(s.inside_city IS NULL) AS unknown_count,\n   sum(s.inside_city=1) AS inside_count,\n   sum(s.inside_city=0) AS outside_count,\n   sum(s.confidence='low') AS low_count,\n   count(*) AS segments\n FROM evidence_filter f JOIN settlement_segment s USING(way_id)\n WHERE f.eligible=1 GROUP BY f.way_id\n), classified AS (\n SELECT CASE\n  WHEN unknown_count=segments THEN 'unknown_everywhere'\n  WHEN unknown_count>0 THEN 'partly_unknown'\n  WHEN inside_count>0 AND outside_count>0 THEN 'inside_and_outside'\n  WHEN inside_count>0 AND low_count>0 THEN 'inside_with_low_confidence'\n  WHEN inside_count>0 THEN 'inside_high'\n  ELSE 'outside_high' END AS category\n FROM per_way\n)\nSELECT category,count(*) AS ways FROM classified GROUP BY category ORDER BY category"
+  },
+  "way_results": {
+    "inside_and_outside": 426,
+    "inside_high": 636,
+    "inside_with_low_confidence": 404443,
+    "outside_high": 865,
+    "partly_unknown": 73980,
+    "unknown_everywhere": 167869
+  },
+  "ways_meta": "/Users/raphaelvolz/Github/youspeed.de/mapdata/dist/baden-wuerttemberg-settlement-pilot/ways.meta",
+  "ways_meta_sha256": "ba5efb698e12f76a9a719d756e64911f010c7ed6bc53f5d842738d9433ad9969"
+}
