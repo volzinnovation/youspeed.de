@@ -28,6 +28,16 @@ on:
         required: false
         default: false
         type: boolean
+      include_settlement_context:
+        description: "Enable settlement context for every selected country bundle"
+        required: false
+        default: false
+        type: boolean
+      force_publish:
+        description: "Force a full bundle rebuild and publication for every selected country"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: write
@@ -73,6 +83,14 @@ jobs:
 
           if [[ "${{ github.event.inputs.skip_bundle_step || 'false' }}" == "true" ]]; then
             cmd+=(--skip-bundle-step)
+          fi
+
+          if [[ "${{ github.event.inputs.include_settlement_context || 'false' }}" == "true" ]]; then
+            cmd+=(--include-settlement-context)
+          fi
+
+          if [[ "${{ github.event.inputs.force_publish || 'false' }}" == "true" ]]; then
+            cmd+=(--force-publish)
           fi
 
           "${cmd[@]}"

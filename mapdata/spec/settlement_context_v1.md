@@ -1,6 +1,6 @@
 # Additive settlement context, version 1
 
-This extension is opt-in for the Baden-Württemberg / Germany pilot. The existing
+This extension is opt-in for regional and country bundle generation. The existing
 SQLite `metadata.schema_version=1` and legacy tables remain available. Consumers
 detect `metadata.settlement_context_version=1` before querying these tables.
 
@@ -57,14 +57,14 @@ invented position: their coordinates are null and their association is
 
 - Numeric limits, road class, municipal boundaries, and missing landuse never
   establish inside/outside state.
-- Typed DE urban/rural tags are read from `zone:traffic`, `maxspeed:type`, and
-  `source:maxspeed`, including `:forward` / `:backward` variants. Bare `urban` and
-  `rural` are accepted in the latter two fields only in this DE-gated builder.
-  Symbolic `maxspeed=DE:urban`/`DE:rural` (including directional variants) carries
-  the same typed context and uses `maxspeed_type` provenance; numeric maxspeed
-  values never establish settlement state.
-- DE:310/311 node signs constrain only an explicitly associated way and OSM
-  direction. Generic `traffic_sign=city_limit` supports documented
+- Country-prefixed `<ISO2>:urban`/`rural` tags are read from `zone:traffic`,
+  `maxspeed:type`, and `source:maxspeed`, including `:forward` / `:backward`
+  variants. Bare `urban` and `rural` are also accepted in these fields.
+  Symbolic `maxspeed=<ISO2>:urban`/`<ISO2>:rural` carries the same typed context
+  and uses `maxspeed_type` provenance; numeric maxspeed values never establish
+  settlement state.
+- Recognized `<ISO2>:310`/`<ISO2>:311` node signs constrain only an explicitly
+  associated way and OSM direction. Generic `traffic_sign=city_limit` supports documented
   `city_limit=begin`, `end`, and default/`both`; direction on a double-sided sign
   identifies entering traffic. Undirected/numeric-bearing signs remain raw
   unresolved observations. Direction is never guessed from driving history.
@@ -73,8 +73,9 @@ invented position: their coordinates are null and their association is
   through it, and their continuation turns by less than 30 degrees. Branches,
   reversed orientations, and ambiguous nodes remain unresolved. There is no
   road-network flooding.
-- Explicit polygon `zone:traffic=DE:urban`/`DE:rural` and `boundary=urban` provide
-  high-confidence polygon evidence. `boundary=administrative` is excluded.
+- Explicit country-prefixed polygon `zone:traffic=<ISO2>:urban`/`<ISO2>:rural` and
+  `boundary=urban` provide high-confidence polygon evidence.
+  `boundary=administrative` is excluded.
 - Residential, commercial, retail, and industrial landuse provide low-confidence
   inside context only when the road lies within the original polygon. Parcel
   gaps and roads beside landuse remain unknown: no uncalibrated buffer is used.
@@ -94,7 +95,7 @@ The opt-in builder requires pyosmium and Shapely >= 2. Existing generation witho
 the flag does not require Shapely; the legacy packer keeps exact vertices when it
 is unavailable instead of applying a vertex-count polygon cap.
 
-The pilot's tested versions are pinned in
+The tested versions are pinned in
 `scripts/map/requirements-settlement.txt`. Install them in the Python environment
 used for packing, generation, and the settlement regression tests:
 
@@ -104,10 +105,10 @@ python -m pip install -r scripts/map/requirements-settlement.txt
 
 ```sh
 python scripts/map/build_spatialite_v3.py \
-  --v1-dist mapdata/dist/baden-wuerttemberg-settlement-pilot \
-  --out-db mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite \
-  --input-pbf mapdata/raw/baden-wuerttemberg-260913.osm.pbf \
-  --build-settlement-context --country-code DE
+  --v1-dist mapdata/dist/<target> \
+  --out-db mapdata/dist-v3/<target>/speeds_v3.sqlite \
+  --input-pbf mapdata/raw/<target>.osm.pbf \
+  --build-settlement-context --country-code <ISO2>
 
 python -m unittest discover -s tests/map -p test_settlement_context.py -v
 ```
@@ -158,14 +159,15 @@ settlement capability, table availability, or schema require a full bundle.
 Run delta generation with `--target-db` and `--validate-on-copy`; context-only
 changes must be included even when the legacy road rows are identical.
 
-`generate_v3_country_bundles.py --build-settlement-context` restricts the pilot to
-one Baden-Württemberg target and requires `--skip-release-urls`. It writes a
-versioned directory, preserving the current `latest` bundle. Other regions remain
-deferred. To inspect generated coverage without legacy polygon sampling:
+`generate_v3_country_bundles.py --build-settlement-context` accepts every selected
+target with a two-letter ISO country code. It writes a versioned directory,
+preserving the current `latest` bundle. Capability or schema transitions require
+a full bundle publication; later context-only changes must be included in rebuilt
+target databases. To inspect generated coverage without legacy polygon sampling:
 
 ```sh
 python scripts/map/audit_city_context.py --settlement-only \
-  mapdata/dist-v3/baden-wuerttemberg-settlement-pilot/speeds_v3.sqlite
+  mapdata/dist-v3/<target>/speeds_v3.sqlite
 ```
 
 Coverage and evidence consistency are diagnostics, not measured driving accuracy.

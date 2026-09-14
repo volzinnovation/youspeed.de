@@ -678,7 +678,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-geom-points", type=int, default=24)
     parser.add_argument(
         "--build-settlement-context", action="store_true",
-        help="Opt into the additive nullable settlement context (Baden-Württemberg pilot only)",
+        help="Opt into the additive nullable settlement context for every selected target",
     )
     parser.add_argument(
         "--db-compression",
@@ -730,13 +730,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _validate_settlement_pilot(targets, *, enabled, skip_release_urls):
+def _validate_settlement_context(targets, *, enabled):
     if not enabled:
         return
-    if len(targets) != 1 or targets[0].iso2 != "DE" or targets[0].region_id.split("/")[-1] != "baden-wuerttemberg":
-        raise SystemExit("Settlement pilot is limited to one Baden-Württemberg bundle; other regions are deferred")
-    if not skip_release_urls:
-        raise SystemExit("Use --skip-release-urls for the settlement pilot; keep it separate from the live release")
+    if not targets or any(len(str(target.iso2).strip()) != 2 for target in targets):
+        raise SystemExit("Settlement context requires a two-letter ISO country code for every target")
 
 
 def main() -> int:
@@ -867,9 +865,7 @@ def main() -> int:
                 force_single_country=bool(args.force_single_country),
             )
 
-    _validate_settlement_pilot(
-        targets, enabled=args.build_settlement_context, skip_release_urls=args.skip_release_urls,
-    )
+    _validate_settlement_context(targets, enabled=args.build_settlement_context)
     print(f"Bundle version: {bundle_version}")
     print(f"Targets: {len(targets)}")
     for idx, target in enumerate(targets, start=1):

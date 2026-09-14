@@ -28,6 +28,9 @@ Options:
                               (default: false)
   --force-publish <bool>      true/false, passed to bundle workflow input
                               (default: false)
+  --include-settlement-context
+                              Enable settlement context for every bundle
+                              dispatched by this sequence
   --skip-pbf-step             Skip the PBF snapshot workflow
   --skip-bundle-step          Skip the bundle workflow
   -h, --help                  Show this help
@@ -45,6 +48,7 @@ countries_csv=""
 git_ref="main"
 skip_release_urls="false"
 force_publish="false"
+include_settlement_context="false"
 run_pbf_step="true"
 run_bundle_step="true"
 
@@ -93,6 +97,10 @@ while [[ $# -gt 0 ]]; do
     --force-publish)
       force_publish="${2:-}"
       shift 2
+      ;;
+    --include-settlement-context)
+      include_settlement_context="true"
+      shift
       ;;
     --skip-pbf-step)
       run_pbf_step="false"
@@ -235,6 +243,7 @@ echo "Workflow: $workflow_file"
 echo "Countries (${#countries[@]}): ${countries[*]}"
 echo "Cooldown: ${cooldown_sec}s, retries: ${retry_attempts}, retry delay: ${retry_delay_sec}s"
 echo "Force publish: ${force_publish}"
+echo "Settlement context: ${include_settlement_context}"
 
 failed_countries=()
 successful_countries=()
@@ -279,11 +288,16 @@ for country in "${countries[@]}"; do
 
   if [[ "$run_bundle_step" == "true" ]]; then
     run_id=""
-    if ! run_id="$(dispatch_workflow "$workflow_file" \
-      "bundle_country=$country" \
-      "execute=true" \
-      "skip_release_urls=$skip_release_urls" \
-      "force_publish=$force_publish")"; then
+    bundle_fields=(
+      "bundle_country=$country"
+      "execute=true"
+      "skip_release_urls=$skip_release_urls"
+      "force_publish=$force_publish"
+    )
+    if [[ "$include_settlement_context" == "true" ]]; then
+      bundle_fields+=("build_settlement_context=true")
+    fi
+    if ! run_id="$(dispatch_workflow "$workflow_file" "${bundle_fields[@]}")"; then
       echo "[result] $country bundle dispatch failed"
       failed_countries+=("$country")
       bundle_failed_countries+=("$country")

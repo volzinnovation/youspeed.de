@@ -24,17 +24,17 @@ MODULE = _load_module(
 
 
 class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
-    def _pilot_target(self, region="baden-wuerttemberg"):
+    def _target(self, region="baden-wuerttemberg", country_name="Germany", iso2="DE", iso3="DEU"):
         return MODULE.BundleTarget(
-            country_name="Germany", country_id="germany", iso2="DE", iso3="DEU",
+            country_name=country_name, country_id=country_name.lower(), iso2=iso2, iso3=iso3,
             region_id=region,
-            pbf_url=f"https://download.geofabrik.de/europe/germany/{region}-latest.osm.pbf",
-            poly_url=f"https://download.geofabrik.de/europe/germany/{region}.poly", is_shard=True,
+            pbf_url=f"https://download.geofabrik.de/europe/{country_name.lower()}/{region}-latest.osm.pbf",
+            poly_url=f"https://download.geofabrik.de/europe/{country_name.lower()}/{region}.poly", is_shard=True,
         )
 
-    def test_settlement_pilot_is_separate_from_live_latest(self):
-        target = self._pilot_target()
-        MODULE._validate_settlement_pilot([target], enabled=True, skip_release_urls=True)
+    def test_settlement_context_is_separate_from_live_latest(self):
+        target = self._target()
+        MODULE._validate_settlement_context([target], enabled=True)
         commands = MODULE._bundle_commands(
             repo_root=REPO_ROOT, target=target, bundle_version="2026-09-14-settlement-pilot",
             max_geom_points=24, db_compression="gzip", release_tag="",
@@ -45,14 +45,12 @@ class GenerateV3CountryBundlesPlanTests(unittest.TestCase):
         self.assertEqual(commands[2][commands[2].index("--bundle-dir-name") + 1], "2026-09-14-settlement-pilot")
         self.assertNotIn("--github-release-tag", commands[2])
 
-    def test_settlement_pilot_rejects_other_regions_and_fanout(self):
-        for targets in ([self._pilot_target("bayern")], [self._pilot_target(), self._pilot_target("bayern")]):
-            with self.assertRaisesRegex(SystemExit, "Baden-Württemberg"):
-                MODULE._validate_settlement_pilot(targets, enabled=True, skip_release_urls=True)
-
-    def test_settlement_pilot_requires_local_release_urls(self):
-        with self.assertRaisesRegex(SystemExit, "skip-release-urls"):
-            MODULE._validate_settlement_pilot([self._pilot_target()], enabled=True, skip_release_urls=False)
+    def test_settlement_context_accepts_multiple_regions_and_countries(self):
+        targets = [
+            self._target("bayern"),
+            self._target("utrecht", "Netherlands", "NL", "NLD"),
+        ]
+        MODULE._validate_settlement_context(targets, enabled=True)
 
     def test_plan_targets_splits_large_country_into_children(self) -> None:
         index_payload = {

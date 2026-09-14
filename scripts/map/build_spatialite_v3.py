@@ -1102,7 +1102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon tables")
     parser.add_argument("--build-settlement-context", action="store_true", help="Build opt-in directed settlement context from original PBF")
-    parser.add_argument("--country-code", default="DE", help="Settlement pilot jurisdiction (currently DE only)")
+    parser.add_argument("--country-code", default="DE", help="Two-letter ISO country code for settlement context")
     parser.add_argument("--settlement-geometry-tolerance-m", type=float, default=2.0, help="Metric topology-preserving polygon simplification tolerance")
     parser.add_argument("--batch-size", type=int, default=20000, help="Insert batch size (default: 20000)")
     parser.add_argument("--progress-every", type=int, default=250000, help="Progress logging interval")

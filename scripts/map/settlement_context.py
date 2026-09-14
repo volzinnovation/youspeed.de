@@ -1,4 +1,4 @@
-"""Opt-in, source-backed settlement context for the German generation pilot.
+"""Opt-in, source-backed settlement context for regional bundle generation.
 
 Legal road context is independent of numeric limits and municipal labels. Signs
 only constrain their explicitly associated way/direction; there is no graph fill.
@@ -23,7 +23,7 @@ from settlement_geometry import simplify_polygon
 
 VERSION = "1"
 LANDUSES = {"residential", "commercial", "retail", "industrial"}
-SIGN_RE = re.compile(r"(?:^|[;,|\s])DE:(310|311)(?=[^0-9]|$)", re.I)
+SIGN_CODE_RE = re.compile(r"(?:^|[;,|\s])([A-Z]{2}):(310|311)(?=[^0-9]|$)", re.I)
 SCHEMA = """
 CREATE TABLE settlement_area (
  area_id TEXT PRIMARY KEY, osm_type TEXT NOT NULL, osm_id INTEGER NOT NULL,
@@ -75,15 +75,22 @@ def _evidence_json(value):
     return json.dumps(convert(value), separators=(",", ":"), sort_keys=True)
 
 
-def _state(value):
-    return {"de:urban": "inside", "de:rural": "outside"}.get(str(value or "").strip().lower())
+def _state(value, country_code=None):
+    normalized = str(value or "").strip().lower()
+    if normalized in ("urban", "rural"):
+        return {"urban": "inside", "rural": "outside"}[normalized]
+    if country_code:
+        prefix = f"{str(country_code).strip().lower()}:"
+        if normalized.startswith(prefix):
+            return {"urban": "inside", "rural": "outside"}.get(normalized[len(prefix):])
+    return None
 
 
 def _opposite(state):
     return {"inside": "outside", "outside": "inside"}.get(state, "unknown")
 
 
-def _signs(tags):
+def _signs(tags, country_code="DE"):
     """Return explicitly directed sign observations; numeric bearings stay raw.
 
     Forward/backward here means OSM-way direction, not camera heading. A generic
@@ -101,7 +108,8 @@ def _signs(tags):
         directional.append(("main", raw, direction))
     out = []
     for suffix, raw, direction in directional:
-        codes = sorted(set(SIGN_RE.findall(raw)))
+        codes = sorted({match.group(2) for match in SIGN_CODE_RE.finditer(raw)
+                        if match.group(1).upper() == str(country_code).upper()})
         if not codes:
             if raw.strip().lower() == "city_limit":
                 kind = tags.get("city_limit", "both").strip().lower()
@@ -116,20 +124,16 @@ def _signs(tags):
             continue
         states = {"inside" if code == "310" else "outside" for code in codes}
         state = next(iter(states)) if len(states) == 1 else "unknown"
-        out.append((suffix, ";".join(f"DE:{c}" for c in codes), state, direction))
+        out.append((suffix, ";".join(f"{str(country_code).upper()}:{c}" for c in codes), state, direction))
     return out
 
 
-def typed_evidence(tags, direction):
+def typed_evidence(tags, direction, country_code="DE"):
     out = []
     suffix = "forward" if direction == 1 else "backward"
     for tag, source in (("zone:traffic", "zone_traffic"), ("maxspeed:type", "maxspeed_type"), ("source:maxspeed", "source_maxspeed"), ("maxspeed", "maxspeed_type")):
         key = f"{tag}:{suffix}" if f"{tag}:{suffix}" in tags else tag
-        state = _state(tags.get(key))
-        if state is None and source in ("maxspeed_type", "source_maxspeed"):
-            # Bare semantic values occur in German legacy tagging. The builder
-            # explicitly gates this interpretation to the DE jurisdiction.
-            state = {"urban": "inside", "rural": "outside"}.get(str(tags.get(key, "")).strip().lower())
+        state = _state(tags.get(key), country_code)
         if state:
             out.append({"source": source, "state": state, "confidence": "high", "tag": key, "value": tags[key]})
     return out
@@ -150,10 +154,11 @@ def resolve(evidence):
 
 
 class Extractor(osmium.SimpleHandler):
-    def __init__(self, conn, tolerance_m):
+    def __init__(self, conn, tolerance_m, country_code="DE"):
         super().__init__()
         self.conn = conn
         self.tolerance_m = tolerance_m
+        self.country_code = country_code
         self.signs = []
         self.sign_node_ids = set()
         self.sign_ways = defaultdict(set)
@@ -175,7 +180,7 @@ class Extractor(osmium.SimpleHandler):
         if not node.location.valid():
             return
         tags = dict(node_tags)
-        for suffix, code, state, direction in _signs(tags):
+        for suffix, code, state, direction in _signs(tags, self.country_code):
             self.sign_node_ids.add(node.id)
             self.signs.append({"sign_id": f"n:{node.id}:{suffix}", "osm_type": "node", "osm_id": node.id,
                                "sign_code": code, "state": state, "direction": direction,
@@ -192,7 +197,7 @@ class Extractor(osmium.SimpleHandler):
             return
         coords = [[n.location.lon, n.location.lat] for n in nodes]
         tags = dict(way.tags)
-        for suffix, code, state, direction in _signs(tags):
+        for suffix, code, state, direction in _signs(tags, self.country_code):
             # Way tags contain no physical crossing position. Preserve them for
             # inspection without inventing a sign coordinate or split location.
             self.signs.append({"sign_id": f"w:{way.id}:{suffix}", "osm_type": "way", "osm_id": way.id,
@@ -217,7 +222,7 @@ class Extractor(osmium.SimpleHandler):
         # Municipality membership never establishes urban traffic rules.
         if tags.get("boundary") == "administrative":
             return
-        state = _state(tags.get("zone:traffic"))
+        state = _state(tags.get("zone:traffic"), self.country_code)
         if state is None and tags.get("boundary") == "urban":
             state = "inside"
         if state:
@@ -313,12 +318,13 @@ def _consistent_split_ways(details):
 
 
 def build_settlement_context(conn: sqlite3.Connection, input_pbf, country_code="DE", tolerance_m=2.0):
-    if country_code != "DE":
-        raise ValueError("settlement context v1 supports the DE pilot only")
+    country_code = str(country_code).strip().upper()
+    if not re.fullmatch(r"[A-Z]{2}", country_code):
+        raise ValueError("settlement context requires a two-letter ISO country code")
     if tolerance_m < 0 or not math.isfinite(tolerance_m):
         raise ValueError("settlement geometry tolerance must be finite and nonnegative")
     conn.executescript(SCHEMA)
-    extractor = Extractor(conn, tolerance_m)
+    extractor = Extractor(conn, tolerance_m, country_code)
     print(f"Extracting settlement evidence from original source: {input_pbf}", file=sys.stderr, flush=True)
     extractor.apply_file(str(input_pbf), locations=True)
     print(f"Settlement source extracted: roads={extractor.way_count} valid_areas={len(extractor.area_geometries)} invalid_areas={extractor.invalid_areas} sign_observations={len(extractor.signs)}", file=sys.stderr, flush=True)
@@ -381,7 +387,7 @@ def build_settlement_context(conn: sqlite3.Connection, input_pbf, country_code="
             area_evidence = [extractor.area_evidence[index] for index in candidates if extractor.area_geometries[index].contains(point)]
             outcomes = []
             for direction in (1, -1):
-                evidence = typed_evidence(tags, direction) + _sign_evidence(signs, midpoint, direction) + area_evidence
+                evidence = typed_evidence(tags, direction, country_code) + _sign_evidence(signs, midpoint, direction) + area_evidence
                 outcomes.append((direction, resolve(evidence), evidence))
             if outcomes[0][1] == outcomes[1][1]:
                 # Keep directional evidence in the explanation even when states agree.

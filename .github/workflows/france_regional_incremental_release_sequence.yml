@@ -33,6 +33,11 @@ on:
         required: false
         default: false
         type: boolean
+      include_settlement_context:
+        description: "Enable settlement context for every selected French regional bundle"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   actions: write
@@ -84,6 +89,10 @@ jobs:
             --skip-release-urls "${{ github.event.inputs.skip_release_urls || 'false' }}"
             --force-publish "${{ github.event.inputs.force_publish || 'false' }}"
           )
+
+          if [[ "${{ github.event.inputs.include_settlement_context || 'false' }}" == "true" ]]; then
+            cmd+=(--include-settlement-context)
+          fi
 
           if [[ "${{ github.event.inputs.skip_pbf_step || 'false' }}" == "true" ]]; then
             cmd+=(--skip-pbf-step)

@@ -1,4 +1,4 @@
-"""Source-to-bundle regressions for the opt-in German settlement pilot."""
+"""Source-to-bundle regressions for opt-in settlement context bundles."""
 
 import io
 import json
@@ -91,7 +91,7 @@ class SettlementContextTests(unittest.TestCase):
         self.assertEqual(node.tags.requested, ["traffic_sign", "traffic_sign:forward", "traffic_sign:backward"])
         self.assertEqual(handler.signs, [])
 
-    def build(self, fixture):
+    def build(self, fixture, country_code="DE"):
         ctx = tempfile.TemporaryDirectory()
         self.addCleanup(ctx.cleanup)
         path = Path(ctx.name) / "fixture.osm"
@@ -102,8 +102,16 @@ class SettlementContextTests(unittest.TestCase):
         for way_id, coords in fixture.roads:
             conn.execute("INSERT INTO ways VALUES(?)", (way_id,))
             conn.execute("INSERT INTO way_geom VALUES(?,?)", (way_id, json.dumps([[lat, lon] for lon, lat in coords])))
-        build_settlement_context(conn, path)
+        build_settlement_context(conn, path, country_code=country_code)
         return conn, path
+
+    def test_country_prefixed_context_is_supported_outside_germany(self):
+        f = Fixture()
+        urban = f.way([(8, 49), (8.01, 49)], highway="secondary", maxspeed="NL:urban")
+        rural = f.way([(8, 49.1), (8.01, 49.1)], highway="secondary", **{"zone:traffic": "NL:rural"})
+        conn, _ = self.build(f, country_code="NL")
+        self.assertEqual(self.rows(conn, urban), [(0, 0, 1, "maxspeed_type", "high")])
+        self.assertEqual(self.rows(conn, rural), [(0, 0, 0, "zone_traffic", "high")])
 
     def rows(self, conn, way_id):
         return conn.execute("SELECT segment_index,direction,inside_city,source,confidence FROM settlement_segment WHERE way_id=? ORDER BY segment_index,direction", (way_id,)).fetchall()
