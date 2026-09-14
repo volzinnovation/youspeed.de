@@ -38,8 +38,9 @@ Unknown saved values fall back to portrait.
 Portrait uses the same left/right pane order as landscape. The speed-limit
 sign is centered horizontally and vertically in the left half of the display;
 the speed, location and dashcam workspace occupies the right half. The action
-row spans the full width along the bottom so all controls remain reachable on
-narrow phones.
+row, including the debug/local-recordings button, spans the full width along
+the bottom in every orientation so all controls remain reachable on narrow
+phones.
 
 All full-screen sheets share a 48 dp close button to the left of the title.
 The dialog window follows the current display size, including rotation while a

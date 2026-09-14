@@ -161,7 +161,7 @@ class ManualOrientationLayoutInstrumentedTest {
         }
         val footer = bounds("dashboard-bottom-controls")
         val footerTags = mutableListOf("drive-recorder-toggle-button")
-        if (!orientation.isLandscape) footerTags += "local-recordings-button"
+        footerTags += "local-recordings-button"
         footerTags += listOf("panoramax-gallery-button", "legal-button", "settings-button")
         val buttons = footerTags.map { tag ->
             bounds(tag).also { button ->
@@ -175,9 +175,6 @@ class ManualOrientationLayoutInstrumentedTest {
             assertTrue("All five controls have generous spacing", gaps.all { it >= 8 * density - 1 })
             assertTrue("The five controls are evenly spaced", requireNotNull(gaps.maxOrNull()) - requireNotNull(gaps.minOrNull()) <= 2)
             assertTrue("Every portrait control is on one row", buttons.all { kotlin.math.abs(it.top - buttons.first().top) <= 1 })
-        } else {
-            val signPane = bounds("main-sign-pane")
-            assertTrue("Landscape keeps the local-recordings control in the left pane", signPane.contains(bounds("local-recordings-button")))
         }
         bounds("last-traffic-sign-pictogram")
         bounds("camera-speed-source-marker")

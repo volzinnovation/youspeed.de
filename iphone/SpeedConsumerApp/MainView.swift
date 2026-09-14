@@ -264,7 +264,7 @@ struct MainView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
                         if landscape {
-                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: false)
+                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true)
                                 .padding(.bottom, bottomPadding)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
@@ -356,10 +356,6 @@ struct MainView: View {
 
     private func topCornerButtons(landscape: Bool) -> some View {
         HStack(alignment: .top) {
-            if landscape {
-                localRecordingsButton
-            }
-
             if landscape {
                 Spacer()
             }

@@ -518,7 +518,7 @@ private fun MainScreen(
                         screenInset, foreground, buttonBg, buttonBorder,
                         trafficSignBugButtonTint(ui, foreground),
                         ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
-                        showLocalRecordings = landscape,
+                        showLocalRecordings = false,
                         onOpenLocalRecordings = onOpenLocalRecordings,
                         modifier = Modifier.align(Alignment.TopStart),
                     )
@@ -587,7 +587,7 @@ private fun MainScreen(
                         onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
                         onOpenPanoramaxGallery = onOpenPanoramaxGallery,
                         onToggleDriveRecorder = onToggleDriveRecorder,
-                        onOpenLocalRecordings = null,
+                        onOpenLocalRecordings = onOpenLocalRecordings,
                         localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
                         driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
                         modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
