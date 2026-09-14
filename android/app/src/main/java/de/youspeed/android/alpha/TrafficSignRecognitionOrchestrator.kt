@@ -58,6 +58,9 @@ data class TrafficSignInferenceDiagnostics(
     val detectorPreprocessingMs: Double? = null,
     val detectorInferenceMs: Double? = null,
     val classifierInferenceMs: Double? = null,
+    val backendQueueWaitMs: Double? = null,
+    val frameConversionMs: Double? = null,
+    val cameraReceiptToResultMs: Double? = null,
 ) {
     init {
         require(inferenceMs.isFinite() && inferenceMs >= 0.0)
@@ -73,7 +76,8 @@ data class TrafficSignInferenceDiagnostics(
         require(sourceWidthPixels >= 0)
         require(sourceHeightPixels >= 0)
         require(sourceLumaMean == null || sourceLumaMean.isFinite())
-        require(listOf(detectorPreprocessingMs, detectorInferenceMs, classifierInferenceMs)
+        require(listOf(detectorPreprocessingMs, detectorInferenceMs, classifierInferenceMs,
+            backendQueueWaitMs, frameConversionMs, cameraReceiptToResultMs)
             .all { it == null || (it.isFinite() && it >= 0.0) })
     }
 }

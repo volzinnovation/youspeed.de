@@ -5,14 +5,24 @@ import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.os.SystemClock
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.TextureView
+import android.view.View
+import android.view.ViewGroup
+import androidx.camera.view.PreviewView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.Until
 import java.io.File
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -100,6 +110,7 @@ class DriveRecorderInstrumentedTest {
                 }
                 awaitState("Movie and photos active") { it.driveRecorderDashcamActive && it.driveRecorderPanoramaxActive }
                 awaitState("First Panoramax photo saved") { it.panoramaxCaptureCount > 0 }
+                assertPreviewHideShowPreservesSurface(scenario, context, ::state)
                 act { it.toggleDriveRecorderTrafficSignRecognition() }
                 // Incremental CameraX graph changes previously stopped the movie here.
                 SystemClock.sleep(2_000)
@@ -148,6 +159,97 @@ class DriveRecorderInstrumentedTest {
                 assertTrue("Restore recorder test preferences", editor.commit())
             }
         }
+    }
+
+    private fun assertPreviewHideShowPreservesSurface(
+        scenario: ActivityScenario<MainActivity>,
+        context: Context,
+        state: () -> ConsumerUiState,
+    ) {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        fun click(tag: String) {
+            val button = device.wait(Until.findObject(By.res(tag)), 10_000)
+            assertNotNull("Preview control $tag", button)
+            button!!.click()
+        }
+        fun awaitPreview(visible: Boolean): PreviewSnapshot {
+            val deadline = SystemClock.uptimeMillis() + 10_000
+            while (SystemClock.uptimeMillis() < deadline) {
+                var snapshot: PreviewSnapshot? = null
+                scenario.onActivity { activity ->
+                    val preview = findPreviewView(activity.window.decorView)
+                    if (preview != null && preview.isAttachedToWindow &&
+                        preview.alpha == (if (visible) 1f else 0f)) {
+                        val output = findPreviewOutput(preview)
+                        val surface = when (output) {
+                            is SurfaceView -> output.holder.surface.takeIf { it.isValid }
+                            is TextureView -> output.surfaceTexture.takeIf { output.isAvailable }
+                            else -> null
+                        }
+                        if (output != null && surface != null) snapshot = PreviewSnapshot(preview, output, surface)
+                    }
+                }
+                snapshot?.let { return it }
+                SystemClock.sleep(50)
+            }
+            error("No attached preview surface with visible=$visible")
+        }
+
+        click("recorder-show-preview")
+        val initial = awaitPreview(visible = true)
+        val movieNames = File(context.filesDir, "dashcam").listFiles().orEmpty().map { it.name }.toSet()
+        val recordingStartedAt = state().driveRecorderStartedAt
+        val destroyed = AtomicInteger()
+        val holder = (initial.output as? SurfaceView)?.holder
+        val callback = object : SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder) = Unit
+            override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) = Unit
+            override fun surfaceDestroyed(holder: SurfaceHolder) { destroyed.incrementAndGet() }
+        }
+        scenario.onActivity { holder?.addCallback(callback) }
+        try {
+            repeat(2) {
+                click("recorder-hide-preview")
+                val hidden = awaitPreview(visible = false)
+                assertSame("Hiding keeps the preview mounted", initial.preview, hidden.preview)
+                assertSame("Hiding keeps the camera surface", initial.surface, hidden.surface)
+                SystemClock.sleep(250)
+                assertTrue("Movie continues while preview is hidden", state().driveRecorderDashcamActive)
+
+                click("recorder-show-preview")
+                val shown = awaitPreview(visible = true)
+                assertSame("Showing reuses the existing preview", initial.preview, shown.preview)
+                assertSame("Showing reuses the existing output view", initial.output, shown.output)
+                assertSame("Showing reuses the camera surface", initial.surface, shown.surface)
+                SystemClock.sleep(250)
+                assertEquals(DriveRecorderState.RECORDING, state().driveRecorderState)
+                assertTrue(state().driveRecorderDashcamActive)
+                assertEquals(recordingStartedAt, state().driveRecorderStartedAt)
+                assertEquals("Preview toggles must not split the movie", movieNames,
+                    File(context.filesDir, "dashcam").listFiles().orEmpty().map { it.name }.toSet())
+            }
+            assertEquals("Hide/show must not destroy a SurfaceView surface", 0, destroyed.get())
+        } finally {
+            scenario.onActivity { holder?.removeCallback(callback) }
+        }
+    }
+
+    private data class PreviewSnapshot(val preview: PreviewView, val output: View, val surface: Any)
+
+    private fun findPreviewView(view: View): PreviewView? {
+        if (view is PreviewView) return view
+        if (view is ViewGroup) for (index in 0 until view.childCount) {
+            findPreviewView(view.getChildAt(index))?.let { return it }
+        }
+        return null
+    }
+
+    private fun findPreviewOutput(view: View): View? {
+        if (view is SurfaceView || view is TextureView) return view
+        if (view is ViewGroup) for (index in 0 until view.childCount) {
+            findPreviewOutput(view.getChildAt(index))?.let { return it }
+        }
+        return null
     }
 
     private fun createRecorderMapFixture(file: File) {

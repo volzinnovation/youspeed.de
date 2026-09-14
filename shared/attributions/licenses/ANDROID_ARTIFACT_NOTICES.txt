@@ -6,6 +6,7 @@ androidx.camera:camera-camera2:1.4.2 META-INF/androidx/camera/camera-camera2/LIC
 androidx.camera:camera-core:1.4.2 META-INF/androidx/camera/camera-core/LICENSE.txt
 androidx.camera:camera-lifecycle:1.4.2 META-INF/androidx/camera/camera-lifecycle/LICENSE.txt
 androidx.camera:camera-video:1.4.2 META-INF/androidx/camera/camera-video/LICENSE.txt
+androidx.camera:camera-view:1.4.2 META-INF/androidx/camera/camera-view/LICENSE.txt
 
 
                                  Apache License

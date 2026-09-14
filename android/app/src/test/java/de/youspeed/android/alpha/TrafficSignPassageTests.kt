@@ -389,6 +389,34 @@ class TrafficSignPassageTests {
     }
 
     @Test
+    fun cameraGenerationSnapshotDoesNotWaitForDurableWrite() {
+        val gate = TrafficSignWriteGate()
+        val generation = gate.incrementAndGet(permitWrites = true)
+        val writing = CountDownLatch(1)
+        val releaseWrite = CountDownLatch(1)
+        val read = CountDownLatch(1)
+        val snapshot = java.util.concurrent.atomic.AtomicReference<Pair<Long, Boolean>>()
+        val writer = Thread {
+            gate.withPermit(generation) {
+                writing.countDown()
+                releaseWrite.await(5, TimeUnit.SECONDS)
+            }
+        }
+        val reader = Thread { snapshot.set(gate.snapshot()); read.countDown() }
+        try {
+            writer.start()
+            assertTrue(writing.await(1, TimeUnit.SECONDS))
+            reader.start()
+            assertTrue("Camera admission waited for storage", read.await(1, TimeUnit.SECONDS))
+            assertEquals(generation to true, snapshot.get())
+        } finally {
+            releaseWrite.countDown()
+            writer.join(2_000)
+            reader.join(2_000)
+        }
+    }
+
+    @Test
     fun differentVisibleCandidateFinalizesArmedOldTrackAndRetainsNewTrack() {
         val finalizer = TrafficSignPassageFinalizer()
         finalizer.observe(recognition(t0, "old", 0.85), 0.85, 1, true, true)
@@ -749,6 +777,30 @@ class TrafficSignPassageTests {
         assertTrue(failures.isEmpty())
         forwarder.onRecognition(TrafficSignOrchestrationOutput(event, null, backendFailureReason = "stopped", terminalBackendFailure = true, contextGeneration = 8))
         assertEquals(listOf("stopped" to 8L), failures)
+    }
+
+    @Test
+    fun slowDiagnosticsCannotHoldBackThePrimaryPassage() {
+        val primaryDelivered = CountDownLatch(1)
+        val logging = CountDownLatch(1)
+        val releaseLog = CountDownLatch(1)
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            onInferenceDiagnostics = {
+                logging.countDown()
+                releaseLog.await(5, TimeUnit.SECONDS)
+            },
+            submitFinalizedPassage = { primaryDelivered.countDown(); true },
+        )
+        val output = TrafficSignOrchestrationOutput(recognition(t0), null, passage())
+        val worker = Thread { forwarder.onRecognition(output) }
+        try {
+            worker.start()
+            assertTrue(logging.await(1, TimeUnit.SECONDS))
+            assertEquals("Primary delivery waited for the diagnostic sink", 0L, primaryDelivered.count)
+        } finally {
+            releaseLog.countDown()
+            worker.join(2_000)
+        }
     }
 
     @Test

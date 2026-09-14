@@ -66,17 +66,20 @@ internal class TrafficSignFinalizedPassageForwarder(
     private val submitFinalizedPassage: (TrafficSignPassageEvent) -> Boolean,
 ) : TrafficSignRecognitionObserver {
     override fun onRecognition(output: TrafficSignOrchestrationOutput) {
-        onInferenceDiagnostics(output)
         if (!output.contextIsCurrent) {
             onContextMismatch(output.contextGeneration)
         }
         if (output.terminalBackendFailure) {
             onRuntimeUnavailable(requireNotNull(output.backendFailureReason), output.contextGeneration)
-        } else if (output.backendFailureReason == null) {
+        }
+        // Primary speed delivery precedes annotations, secondary pictograms and
+        // diagnostics. Only the finalized passage can change the speed limit.
+        output.passageEvent?.let(submitFinalizedPassage)
+        if (!output.terminalBackendFailure && output.backendFailureReason == null) {
             submitRecognitionEvent(output.event, output.contextGeneration)
         }
-        output.passageEvent?.let(submitFinalizedPassage)
         output.displayObservation?.let(submitDisplayObservation)
+        onInferenceDiagnostics(output)
     }
 
     override fun onSpeedOverrideChanged(current: TrafficSignSpeedOverride?) {

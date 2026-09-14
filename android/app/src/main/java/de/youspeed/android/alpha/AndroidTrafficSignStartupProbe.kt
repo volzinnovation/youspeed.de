@@ -9,6 +9,7 @@ internal data class AndroidTrafficSignStartupResult(
     val warmInferenceTimesMs: List<Double>,
     val executionBackend: String,
     val accelerationFallbackReason: String?,
+    val gpuPrecisionLossAllowed: Boolean? = null,
 )
 
 /** Functional and timing check only. Reference detections never enter the live event pipeline. */
@@ -58,6 +59,9 @@ internal object AndroidTrafficSignStartupProbe {
                 warmInferenceTimesMs = timings,
                 executionBackend = warmResults.last().executionBackend,
                 accelerationFallbackReason = warmResults.last().accelerationFallbackReason,
+                gpuPrecisionLossAllowed = engine.gpuPrecisionLossAllowed.takeIf {
+                    warmResults.last().executionBackend in setOf("gpu", "mixed")
+                },
             )
         } finally {
             bitmap.recycle()

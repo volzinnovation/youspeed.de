@@ -11,21 +11,21 @@ import kotlin.math.sqrt
 /** Linearizes generation invalidation with durable CV observation writes. */
 internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
     private val lock = Any()
-    private var generation = initialGeneration
-    private var writesPermitted = false
+    @Volatile private var state = State(initialGeneration, false)
+    private data class State(val generation: Long, val writesPermitted: Boolean)
 
-    fun get(): Long = synchronized(lock) { generation }
+    // Camera admission must not wait for an observation's disk transaction.
+    // A single immutable snapshot keeps both values coherent without that lock.
+    fun get(): Long = state.generation
 
-    fun snapshot(): Pair<Long, Boolean> = synchronized(lock) { generation to writesPermitted }
+    fun snapshot(): Pair<Long, Boolean> = state.let { it.generation to it.writesPermitted }
 
     fun incrementAndGet(permitWrites: Boolean): Long = synchronized(lock) {
-        generation += 1L
-        writesPermitted = permitWrites
-        generation
+        State(state.generation + 1L, permitWrites).also { state = it }.generation
     }
 
     fun <T> withPermit(expectedGeneration: Long, block: () -> T): T? = synchronized(lock) {
-        if (!writesPermitted || expectedGeneration != generation) null else block()
+        if (!state.writesPermitted || expectedGeneration != state.generation) null else block()
     }
 }
 

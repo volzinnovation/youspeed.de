@@ -5,7 +5,6 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
@@ -152,6 +151,7 @@ internal object AndroidTrafficSignModelPackLoader {
 internal class CameraXTrafficSignFrame(
     private val image: ImageProxy,
 ) : TrafficSignNormalizedFrameHandle {
+    val receivedAtNanos: Long = System.nanoTime()
     private val released = AtomicBoolean(false)
     private val rotationDegrees = image.imageInfo.rotationDegrees
 
@@ -162,21 +162,13 @@ internal class CameraXTrafficSignFrame(
     override val widthPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.height else image.width
     override val heightPixels: Int = if (rotationDegrees == 90 || rotationDegrees == 270) image.width else image.height
 
-    fun orientedBitmap(): Bitmap {
+    fun <T> withOrientedBitmap(rotationBuffer: AndroidTrafficSignBitmapRotation, consume: (Bitmap) -> T): T {
         check(!released.get()) { "Camera frame was already released" }
         val sourceBitmap = image.toBitmap()
-        if (rotationDegrees == 0) return sourceBitmap
-        val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
-        return Bitmap.createBitmap(
-            sourceBitmap,
-            0,
-            0,
-            sourceBitmap.width,
-            sourceBitmap.height,
-            matrix,
-            true,
-        ).also { rotated ->
-            if (rotated !== sourceBitmap) sourceBitmap.recycle()
+        try {
+            return consume(rotationBuffer.orient(sourceBitmap, rotationDegrees))
+        } finally {
+            sourceBitmap.recycle()
         }
     }
 
@@ -285,6 +277,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val verifiedPack: AndroidTrafficSignVerifiedPack,
     // CPU mode is a fixture-parity test control, not a user setting.
     allowGpu: Boolean = true,
+    // Keep the production precision until device fixture and preview benchmarks approve a change.
+    val gpuPrecisionLossAllowed: Boolean = true,
 ) : AutoCloseable {
     private class InterpreterResources(val interpreter: Interpreter, private val delegate: GpuDelegate?) : AutoCloseable {
         override fun close() {
@@ -304,7 +298,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 if (compatibility.isDelegateSupportedOnThisDevice) {
                     GpuConfiguration(
                         compatibility.bestOptionsForThisDevice
-                            .setPrecisionLossAllowed(false)
+                            .setPrecisionLossAllowed(gpuPrecisionLossAllowed)
                             // Exhaustive OpenCL tuning can block in the Mali driver's
                             // profiling queue. Fast tuning avoids that startup path.
                             .setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_FAST_SINGLE_ANSWER),
@@ -409,19 +403,12 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             inputSize = DETECTOR_SIZE,
             minimumScore = verifiedPack.modelPack.thresholds.unknown,
         )
-        var rawSignTopScore: Double? = null
-        var rawGlobalTopScore: Double? = null
-        var rawSignScoresAboveThreshold = 0
-        for (index in 0 until AndroidYoloSignDecoder.OUTPUT_ELEMENTS) {
-            val signScore = detectorOutputFloats[AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS + index]
-            if (signScore.isFinite()) {
-                rawSignTopScore = maxOf(rawSignTopScore ?: Double.NEGATIVE_INFINITY, signScore.toDouble())
-                if (signScore >= verifiedPack.modelPack.thresholds.unknown) rawSignScoresAboveThreshold += 1
-            }
-        }
-        detectorOutputFloats.forEach { value ->
-            if (value.isFinite()) rawGlobalTopScore = maxOf(rawGlobalTopScore ?: Double.NEGATIVE_INFINITY, value.toDouble())
-        }
+        val rawOutput = TrafficSignTensorDiagnostics.summarize(
+            detectorOutputFloats,
+            signOffset = AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
+            signCount = AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
+            minimumScore = verifiedPack.modelPack.thresholds.unknown,
+        )
         val lumaMean = sourceLumaMean(source)
 
         val classified = proposals.map { proposal -> classify(source, proposal) }
@@ -434,9 +421,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             classifiedDetectionCount = detections.size,
             classifierTopScore = classified.mapNotNull { it.classifierScore }.maxOrNull(),
             inferenceMs = (System.nanoTime() - startedAtNanos).coerceAtLeast(0L) / 1_000_000.0,
-            detectorRawSignTopScore = rawSignTopScore,
-            detectorRawGlobalTopScore = rawGlobalTopScore,
-            detectorRawSignScoresAboveThreshold = rawSignScoresAboveThreshold,
+            detectorRawSignTopScore = rawOutput.signTopScore,
+            detectorRawGlobalTopScore = rawOutput.globalTopScore,
+            detectorRawSignScoresAboveThreshold = rawOutput.signScoresAboveThreshold,
             sourceWidthPixels = source.width,
             sourceHeightPixels = source.height,
             sourceLumaMean = lumaMean,
@@ -614,12 +601,31 @@ internal class AndroidLiteRtTrafficSignBackend(
     // block camera delivery or the UI thread.
     private val initialized = try {
         executor.submit<Pair<AndroidLiteRtTrafficSignInferenceEngine, AndroidTrafficSignStartupResult>> {
-            val engine = AndroidLiteRtTrafficSignInferenceEngine(verifiedPack)
+            fun initialize(reducedPrecision: Boolean): Pair<AndroidLiteRtTrafficSignInferenceEngine, AndroidTrafficSignStartupResult> {
+                val engine = AndroidLiteRtTrafficSignInferenceEngine(verifiedPack, gpuPrecisionLossAllowed = reducedPrecision)
+                try {
+                    return engine to AndroidTrafficSignStartupProbe.run(context, engine, verifiedPack.modelPack)
+                } catch (failure: Throwable) {
+                    engine.close()
+                    throw failure
+                }
+            }
             try {
-                engine to AndroidTrafficSignStartupProbe.run(context, engine, verifiedPack.modelPack)
-            } catch (failure: Throwable) {
-                engine.close()
-                throw failure
+                initialize(true)
+            } catch (reducedPrecisionFailure: RuntimeException) {
+                // Android GPUs vary. A reduced-precision startup must pass the
+                // known-sign check; otherwise verify the previous precision mode.
+                // Both modes retain the existing GPU-to-CPU runtime fallback.
+                try {
+                    val (engine, measured) = initialize(false)
+                    engine to measured.copy(accelerationFallbackReason = listOfNotNull(
+                        "Reduced-precision startup failed: ${reducedPrecisionFailure.message}",
+                        measured.accelerationFallbackReason,
+                    ).joinToString("; "))
+                } catch (fullPrecisionFailure: RuntimeException) {
+                    fullPrecisionFailure.addSuppressed(reducedPrecisionFailure)
+                    throw fullPrecisionFailure
+                }
             }
         }.get()
     } catch (failure: Exception) {
@@ -627,24 +633,28 @@ internal class AndroidLiteRtTrafficSignBackend(
         throw (failure.cause ?: failure)
     }
     private val engine = initialized.first
+    private val rotationBuffer = AndroidTrafficSignBitmapRotation()
     val startupResult: AndroidTrafficSignStartupResult = initialized.second
 
     override fun recognize(
         frame: CameraXTrafficSignFrame,
         completion: (TrafficSignBackendResult) -> Unit,
     ) {
+        val queuedAtNanos = System.nanoTime()
         if (closed.get()) {
             completion(TrafficSignBackendResult.Unavailable("Android LiteRT TSR backend is closed", thermalState()))
             return
         }
         executor.execute {
+            val conversionStartedAtNanos = System.nanoTime()
             val result = runCatching {
-                val bitmap = frame.orientedBitmap()
-                try {
+                frame.withOrientedBitmap(rotationBuffer) { bitmap ->
+                    val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
                     val inference = engine.recognizeAllWithDiagnostics(bitmap)
                     val detections = inference.detections
+                    val primary = primaryDetection(detections)
                     TrafficSignBackendResult.Recognition(
-                        detection = primaryDetection(detections),
+                        detection = primary,
                         displayDetections = detections,
                         thermalState = thermalState(),
                         strongPassGeometry = false,
@@ -655,8 +665,8 @@ internal class AndroidLiteRtTrafficSignBackend(
                             classifierInvocationCount = inference.classifierInvocationCount,
                             classifiedDetectionCount = inference.classifiedDetectionCount,
                             classifierTopScore = inference.classifierTopScore,
-                            primaryClassId = primaryDetection(detections)?.candidate?.rawClassId,
-                            primaryScore = primaryDetection(detections)?.candidate?.rawScore,
+                            primaryClassId = primary?.candidate?.rawClassId,
+                            primaryScore = primary?.candidate?.rawScore,
                             detectorRawSignTopScore = inference.detectorRawSignTopScore,
                             detectorRawGlobalTopScore = inference.detectorRawGlobalTopScore,
                             detectorRawSignScoresAboveThreshold = inference.detectorRawSignScoresAboveThreshold,
@@ -668,10 +678,11 @@ internal class AndroidLiteRtTrafficSignBackend(
                             detectorPreprocessingMs = inference.detectorPreprocessingMs,
                             detectorInferenceMs = inference.detectorInferenceMs,
                             classifierInferenceMs = inference.classifierInferenceMs,
+                            backendQueueWaitMs = (conversionStartedAtNanos - queuedAtNanos) / 1_000_000.0,
+                            frameConversionMs = conversionMs,
+                            cameraReceiptToResultMs = (System.nanoTime() - frame.receivedAtNanos) / 1_000_000.0,
                         ),
                     )
-                } finally {
-                    bitmap.recycle()
                 }
             }.getOrElse { failure ->
                 TrafficSignBackendResult.Unavailable(
@@ -685,7 +696,9 @@ internal class AndroidLiteRtTrafficSignBackend(
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
-        executor.execute(engine::close)
+        executor.execute {
+            try { engine.close() } finally { rotationBuffer.close() }
+        }
         executor.shutdown()
     }
 }
@@ -706,6 +719,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private val cameraReleaseCallbacks = mutableListOf<() -> Unit>()
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalysis: ImageAnalysis? = null
+    private var analyzerAttached = false
     private var imageCapture: ImageCapture? = null
     private var videoCapture: VideoCapture<Recorder>? = null
     private var preview: Preview? = null
@@ -774,8 +788,23 @@ internal class AndroidTrafficSignCameraRuntime(
         } else if (bridge == null && !modelLoading && !recognitionUnavailable) {
             loadRecognitionRuntime()
         }
+        refreshAnalysisConsumer()
         bindCamera(generation.get())
         setDashcamRecordingEnabled(videoRequested)
+    }
+
+    /** Suspend delivery while recognition is disabled/loading without interrupting a movie. */
+    private fun refreshAnalysisConsumer() {
+        val analysis = imageAnalysis ?: return
+        val needed = bridge != null
+        if (needed == analyzerAttached) return
+        analyzerAttached = needed
+        if (needed) {
+            analysis.setAnalyzer(cameraExecutor) { image ->
+                val current = bridge
+                if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
+            }
+        } else analysis.clearAnalyzer()
     }
 
     private fun loadRecognitionRuntime() {
@@ -827,6 +856,7 @@ internal class AndroidTrafficSignCameraRuntime(
                     runtime.backend?.startupResult?.let(controller::onTrafficSignStartupMeasured)
                     backend = runtime.backend
                     bridge = runtime.bridge
+                    refreshAnalysisConsumer()
                     bindCamera(startGeneration)
                 }
             }
@@ -842,6 +872,7 @@ internal class AndroidTrafficSignCameraRuntime(
             bridge = null
             backend?.close()
             backend = null
+            refreshAnalysisConsumer()
             recognitionUnavailable = false
             if (controller.isTrafficSignRecognitionRuntimeEnabled() && !modelLoading) loadRecognitionRuntime()
             return
@@ -851,13 +882,16 @@ internal class AndroidTrafficSignCameraRuntime(
         bridge = null
         backend?.close()
         backend = null
+        refreshAnalysisConsumer()
         controller.onTrafficSignRecognitionUnavailable(detail, recognitionGeneration)
     }
 
     private fun bindCamera(startGeneration: Long) {
         val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
+        val stillCaptureNeeded = recorderOutputsNeeded && controller.isPanoramaxCaptureEnabled()
         if (cameraBindingInProgress ||
-            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs))
+            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs) &&
+                (!stillCaptureNeeded || imageCapture != null))
         ) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -888,12 +922,6 @@ internal class AndroidTrafficSignCameraRuntime(
                         )
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                        .also { imageAnalysis ->
-                            imageAnalysis.setAnalyzer(cameraExecutor) { image ->
-                                val current = bridge
-                                if (current == null) image.close() else current.submit(CameraXTrafficSignFrame(image))
-                            }
-                        }
                 }
                 // Standalone TSR only needs image analysis. Some Android
                 // devices reject the four-output graph (Preview, analysis,
@@ -902,7 +930,10 @@ internal class AndroidTrafficSignCameraRuntime(
                 // Once the recorder is active, the graph is kept intact while
                 // its individual consumers are toggled.
                 val includeRecorderOutputs = recorderOutputsNeeded || graphIncludesRecorderOutputs
-                val capture = if (includeRecorderOutputs) imageCapture ?: run {
+                // Match iPhone's conditional photo output. A disabled Panoramax
+                // session must not reserve a JPEG stream; keep an existing output
+                // until the session ends so movie recording is never rebound for a toggle.
+                val capture = if (includeRecorderOutputs && (stillCaptureNeeded || imageCapture != null)) imageCapture ?: run {
                     ImageCapture.Builder()
                         .setTargetRotation(rotation)
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -930,6 +961,7 @@ internal class AndroidTrafficSignCameraRuntime(
                 videoCapture = video
                 preview = currentPreview
                 graphIncludesRecorderOutputs = includeRecorderOutputs
+                refreshAnalysisConsumer()
             }.onFailure { failure ->
                 cameraBindingInProgress = false
                 onStateChanged(

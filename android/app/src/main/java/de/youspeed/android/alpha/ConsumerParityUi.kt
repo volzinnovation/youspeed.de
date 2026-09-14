@@ -3,14 +3,12 @@ package de.youspeed.android.alpha
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.graphics.RectF
-import android.graphics.SurfaceTexture
-import android.view.Surface
-import android.view.TextureView
+import android.graphics.Outline
+import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.MediaController
 import android.widget.VideoView
-import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -57,7 +55,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -207,11 +204,24 @@ internal fun RecorderPreviewWorkspace(
 ) {
     if (!attached) return
     val context = LocalContext.current
-    val texture = remember(context) { TextureView(context) }
-    val owner = remember(texture) { RecorderPreviewSurface(texture) }
-    DisposableEffect(controller, owner) {
-        controller.setDriveRecorderPreviewSurfaceProvider(owner.provider)
-        onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null); owner.close() }
+    val preview = remember(context) {
+        PreviewView(context).apply {
+            // Like AVCaptureVideoPreviewLayer on iPhone, use a separately
+            // composed camera surface when available. CameraX owns rotation,
+            // mirroring, crop and the TextureView fallback for device quirks.
+            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+            clipToOutline = true
+            outlineProvider = object : ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, 16f * resources.displayMetrics.density)
+                }
+            }
+        }
+    }
+    DisposableEffect(controller, preview) {
+        controller.setDriveRecorderPreviewSurfaceProvider(preview.surfaceProvider)
+        onDispose { controller.setDriveRecorderPreviewSurfaceProvider(null) }
     }
     Box(
         modifier
@@ -221,83 +231,29 @@ internal fun RecorderPreviewWorkspace(
             .background(Color.Black)
             .testTag("recorder-camera-preview"),
     ) {
-        AndroidView(factory = { texture }, modifier = Modifier.fillMaxSize())
-        if (visible && onDismiss != null) TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopEnd)) {
+        AndroidView(
+            factory = { preview },
+            modifier = Modifier.fillMaxSize(),
+            update = { view ->
+                // Keep VISIBLE and attached: hiding must not destroy a surface
+                // or rebuild the active recording graph. Our API 34 minimum
+                // supports SurfaceView alpha as well as the TextureView fallback.
+                val targetAlpha = if (visible) 1f else 0f
+                if (view.alpha != targetAlpha) {
+                    view.alpha = targetAlpha
+                    view.parent?.requestTransparentRegion(view)
+                }
+                view.importantForAccessibility = if (visible) {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+                } else {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                }
+            },
+        )
+        if (visible && onDismiss != null) TextButton(onClick = onDismiss,
+            modifier = Modifier.align(Alignment.TopEnd).testTag("recorder-hide-preview")) {
             Text(doneLabel(), color = Color.White)
         }
-    }
-}
-
-private class RecorderPreviewSurface(private val view: TextureView) : TextureView.SurfaceTextureListener, AutoCloseable {
-    private val executor = ContextCompat.getMainExecutor(view.context)
-    private var pending: SurfaceRequest? = null
-    private var activeRequest: SurfaceRequest? = null
-    private var info: SurfaceRequest.TransformationInfo? = null
-    private var bufferWidth = 1
-    private var bufferHeight = 1
-    private var closed = false
-    private val uses = mutableMapOf<SurfaceTexture, Int>()
-    private val destroyed = mutableSetOf<SurfaceTexture>()
-    val provider = Preview.SurfaceProvider { request ->
-        if (closed) request.willNotProvideSurface() else {
-            pending?.willNotProvideSurface()
-            pending = request
-            request.setTransformationInfoListener(executor) { value -> info = value; transform() }
-            supply()
-        }
-    }
-    init { view.surfaceTextureListener = this }
-    private fun supply() {
-        val texture = view.surfaceTexture ?: return
-        val request = pending ?: return
-        if (!view.isAvailable || closed) return
-        pending = null
-        activeRequest = request
-        bufferWidth = request.resolution.width
-        bufferHeight = request.resolution.height
-        texture.setDefaultBufferSize(bufferWidth, bufferHeight)
-        val surface = Surface(texture)
-        uses[texture] = (uses[texture] ?: 0) + 1
-        request.provideSurface(surface, executor) {
-            surface.release()
-            uses[texture] = (uses[texture] ?: 1) - 1
-            if (texture in destroyed && uses[texture] == 0) { texture.release(); uses.remove(texture); destroyed.remove(texture) }
-        }
-        transform()
-    }
-    private fun transform() {
-        if (view.width == 0 || view.height == 0) return
-        val rotation = info?.rotationDegrees ?: 0
-        val crop = info?.cropRect ?: android.graphics.Rect(0, 0, bufferWidth, bufferHeight)
-        // TextureView first stretches the buffer to its bounds. Undo that,
-        // rotate the crop around its centre, then centre-crop to the workspace.
-        val matrix = Matrix().apply {
-            setScale(bufferWidth.toFloat() / view.width, bufferHeight.toFloat() / view.height)
-            postTranslate(-crop.exactCenterX(), -crop.exactCenterY())
-            postRotate(rotation.toFloat())
-            val rotatedWidth = if (rotation % 180 == 0) crop.width() else crop.height()
-            val rotatedHeight = if (rotation % 180 == 0) crop.height() else crop.width()
-            val scale = max(view.width.toFloat() / rotatedWidth, view.height.toFloat() / rotatedHeight)
-            postScale(if (info?.isMirroring == true) -scale else scale, scale)
-            postTranslate(view.width / 2f, view.height / 2f)
-        }
-        view.setTransform(matrix)
-    }
-    override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) = supply()
-    override fun onSurfaceTextureSizeChanged(texture: SurfaceTexture, width: Int, height: Int) = transform()
-    override fun onSurfaceTextureUpdated(texture: SurfaceTexture) = Unit
-    override fun onSurfaceTextureDestroyed(texture: SurfaceTexture): Boolean {
-        destroyed += texture
-        activeRequest?.invalidate()
-        if ((uses[texture] ?: 0) == 0) { texture.release(); destroyed.remove(texture) }
-        return false
-    }
-    override fun close() {
-        closed = true
-        pending?.willNotProvideSurface()
-        pending = null
-        activeRequest?.clearTransformationInfoListener()
-        activeRequest?.invalidate()
     }
 }
 

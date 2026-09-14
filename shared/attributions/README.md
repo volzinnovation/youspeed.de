@@ -30,9 +30,10 @@ It also reads national rule citations, `additional-sources.json`, and
 the two generated files.
 
 `android-components.json` records the resolved `releaseRuntimeClasspath`
-artifacts, not just direct dependencies: 74 artifacts representing 73 unique
-Maven coordinates at the 2026-09-14 dependency review. One coordinate has more
-than one resolved artifact. APK shrinking can remove unused parts. The inventory deliberately
+artifacts, not just direct dependencies: 85 distinct artifacts representing 85
+unique Maven coordinates at the 2026-09-14 dependency review. Repeated resolution
+rows with the same coordinate, artifact name and SHA-256 are collapsed; distinct
+artifacts for one coordinate remain separate. APK shrinking can remove unused parts. The inventory deliberately
 credits the full resolved set. Artifact hashes and hashes of embedded notices
 are retained; local Gradle cache paths are not.
 
