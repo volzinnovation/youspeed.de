@@ -90,7 +90,7 @@ jobs:
           fi
 
           if [[ "${{ github.event.inputs.force_publish || 'false' }}" == "true" ]]; then
-            cmd+=(--force-publish)
+            cmd+=(--force-publish true)
           fi
 
           "${cmd[@]}"
