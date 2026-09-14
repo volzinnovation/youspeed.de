@@ -18,6 +18,8 @@ import sys
 from collections import defaultdict
 from typing import Dict, Iterable, List, TextIO, Tuple
 
+from settlement_geometry import simplify_ring
+
 try:
     import osmium
 except ImportError as exc:
@@ -274,6 +276,8 @@ class ArtifactHandler(osmium.SimpleHandler):
                 "maxspeed": tags.get("maxspeed"),
                 "maxspeed_type": tags.get("maxspeed:type"),
                 "source_maxspeed": tags.get("source:maxspeed"),
+                "zone_traffic": tags.get("zone:traffic"),
+                "raw_tags": dict(tags),
                 "maxspeed_conditional": tags.get("maxspeed:conditional"),
                 "zone_maxspeed": tags.get("zone:maxspeed"),
                 "traffic_sign": tags.get("traffic_sign"),
@@ -315,105 +319,55 @@ class ArtifactHandler(osmium.SimpleHandler):
             self.ways_geom_file.write("\n")
             self.ways_count += 1
 
-        if is_residential_polygon and bbox is not None and _is_closed_ring(coords):
-            min_lon, min_lat, max_lon, max_lat = bbox
-            sampled_area = _downsample_coords(coords, self.max_geom_points)
-            self._append_area(
-                area_id=f"w:{way.id}",
-                geometry_type="Polygon",
-                name=tags.get("name"),
-                place=tags.get("place"),
-                boundary=tags.get("boundary"),
-                admin_level=tags.get("admin_level"),
-                residential=residential_value,
-                parking=parking_value,
-                traffic_sign=city_sign,
-                points=[[lon, lat] for lon, lat in sampled_area],
-                min_lon=min_lon,
-                min_lat=min_lat,
-                max_lon=max_lon,
-                max_lat=max_lat,
-            )
-
-        if is_parking_polygon and bbox is not None and _is_closed_ring(coords):
-            min_lon, min_lat, max_lon, max_lat = bbox
-            sampled_area = _downsample_coords(coords, self.max_geom_points)
-            self._append_area(
-                area_id=f"w:{way.id}:parking",
-                geometry_type="Polygon",
-                name=tags.get("name"),
-                place=tags.get("place"),
-                boundary=tags.get("boundary"),
-                admin_level=tags.get("admin_level"),
-                residential=residential_value,
-                parking=parking_value,
-                traffic_sign=city_sign,
-                points=[[lon, lat] for lon, lat in sampled_area],
-                min_lon=min_lon,
-                min_lat=min_lat,
-                max_lon=max_lon,
-                max_lat=max_lat,
-            )
-
     def area(self, area: osmium.osm.Area) -> None:
         tags = area.tags
-        if tags.get("boundary") != "administrative":
+        residential = tags.get("residential")
+        if residential is None and tags.get("landuse") == "residential":
+            residential = "landuse"
+        parking = tags.get("parking")
+        if parking is None and tags.get("amenity") == "parking":
+            parking = "amenity"
+        is_admin = tags.get("boundary") == "administrative" and tags.get("admin_level") in {"6", "8", "9"}
+        if is_admin and residential is None and parking is None and not (tags.get("name") or "").strip():
             return
-        if tags.get("admin_level") not in {"6", "8", "9"}:
+        if residential is None and parking is None and not is_admin:
             return
-        name = (tags.get("name") or "").strip()
-        if not name:
-            return
-
-        min_lon = float("inf")
-        min_lat = float("inf")
-        max_lon = float("-inf")
-        max_lat = float("-inf")
-        outer_rings: List[List[Tuple[float, float]]] = []
+        rings = []
+        all_points = []
+        outer_count = 0
         has_holes = False
-
         for outer in area.outer_rings():
-            outer_pts: List[Tuple[float, float]] = []
-            for node in outer:
-                outer_pts.append((float(node.lon), float(node.lat)))
-            if len(outer_pts) < 4:
+            points = [(float(n.lon), float(n.lat)) for n in outer]
+            if len(points) < 4:
                 continue
-            if outer_pts[0] != outer_pts[-1]:
-                outer_pts.append(outer_pts[0])
-            for lon, lat in outer_pts:
-                min_lon = min(min_lon, lon)
-                min_lat = min(min_lat, lat)
-                max_lon = max(max_lon, lon)
-                max_lat = max(max_lat, lat)
-            outer_rings.append(_downsample_closed_ring(outer_pts, self.max_geom_points))
+            all_points.extend(points)
+            rings.append({"outer_index": outer_count, "is_hole": False,
+                          "points": [list(p) for p in simplify_ring(points)]})
             for inner in area.inner_rings(outer):
-                inner_pts = [(float(node.lon), float(node.lat)) for node in inner]
-                if len(inner_pts) >= 4:
+                inner_points = [(float(n.lon), float(n.lat)) for n in inner]
+                if len(inner_points) >= 4:
                     has_holes = True
-
-        if not outer_rings or not math.isfinite(min_lon) or not math.isfinite(min_lat):
+                    # Preserve source holes; independent simplification can cross an outer.
+                    rings.append({"outer_index": outer_count, "is_hole": True,
+                                  "points": [list(p) for p in inner_points]})
+            outer_count += 1
+        bbox = _bbox_from_coords(all_points)
+        if bbox is None:
             return
-
-        exact_points = None
-        if len(outer_rings) == 1 and not has_holes:
-            exact_points = [[lon, lat] for lon, lat in outer_rings[0]]
-
+        # The legacy field can express one simple polygon only. Full rings remain
+        # in the artifact; opt-in settlement tables preserve multipolygon topology.
+        points = rings[0]["points"] if outer_count == 1 and not has_holes else None
         self._append_area(
             area_id=f"{'w' if area.from_way() else 'r'}:{area.orig_id()}",
-            geometry_type="Polygon" if len(outer_rings) == 1 else "MultiPolygon",
-            name=name,
-            place=tags.get("place"),
-            boundary=tags.get("boundary"),
-            admin_level=tags.get("admin_level"),
-            residential=tags.get("residential"),
-            parking=tags.get("parking"),
-            traffic_sign=_canonical_city_sign(tags.get("traffic_sign")),
-            points=exact_points,
-            min_lon=min_lon,
-            min_lat=min_lat,
-            max_lon=max_lon,
-            max_lat=max_lat,
+            geometry_type="Polygon" if outer_count == 1 else "MultiPolygon",
+            name=tags.get("name"), place=tags.get("place"),
+            boundary=tags.get("boundary"), admin_level=tags.get("admin_level"),
+            residential=residential, parking=parking,
+            traffic_sign=_canonical_city_sign(tags.get("traffic_sign")), points=points,
+            min_lon=bbox[0], min_lat=bbox[1], max_lon=bbox[2], max_lat=bbox[3],
         )
+        self.areas[-1]["rings"] = rings
+        self.areas[-1]["raw_tags"] = dict(tags)
 
     def node(self, node: osmium.osm.Node) -> None:
         place = node.tags.get("place")

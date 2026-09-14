@@ -42,6 +42,7 @@ mapdata/dist-v2/**
 mapdata/dist-v3/**
 mapdata/dist-v4/**
 mapdata/bundles/**/*.sqlite
+mapdata/bundles/**/*.sqlite.gz
 mapdata/bundles/**/*.sql
 mapdata/bundles/**/*.sql.gz
 mapdata/bundles/**/deltas/

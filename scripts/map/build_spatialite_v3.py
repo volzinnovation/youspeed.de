@@ -1101,6 +1101,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--v1-dist", required=True, help="Path to mapdata/dist/<region>")
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon tables")
+    parser.add_argument("--build-settlement-context", action="store_true", help="Build opt-in directed settlement context from original PBF")
+    parser.add_argument("--country-code", default="DE", help="Settlement pilot jurisdiction (currently DE only)")
+    parser.add_argument("--settlement-geometry-tolerance-m", type=float, default=2.0, help="Metric topology-preserving polygon simplification tolerance")
     parser.add_argument("--batch-size", type=int, default=20000, help="Insert batch size (default: 20000)")
     parser.add_argument("--progress-every", type=int, default=250000, help="Progress logging interval")
     parser.add_argument("--city-tile-size-m", type=int, default=4096, help="Tile size in EPSG:3857 meters for city boundary prefiltering")
@@ -1174,6 +1177,25 @@ def main() -> int:
     if input_pbf and osmium is None:
         print("pyosmium is required to build exact city polygon tables", file=sys.stderr)
         return 1
+
+    if args.build_settlement_context:
+        if input_pbf is None:
+            print("--build-settlement-context requires --input-pbf", file=sys.stderr)
+            return 1
+        if args.country_code != "DE":
+            print("settlement context v1 supports --country-code DE only", file=sys.stderr)
+            return 1
+        if not math.isfinite(args.settlement_geometry_tolerance_m) or args.settlement_geometry_tolerance_m < 0:
+            print("settlement geometry tolerance must be finite and nonnegative", file=sys.stderr)
+            return 1
+        try:
+            import shapely
+            if int(shapely.__version__.split(".")[0]) < 2:
+                raise ImportError("Shapely 2 or newer required")
+            from settlement_context import build_settlement_context
+        except ImportError as exc:
+            print(f"Settlement context requires Shapely >= 2 and pyosmium: {exc}", file=sys.stderr)
+            return 1
 
     out_db.parent.mkdir(parents=True, exist_ok=True)
     if out_db.exists():
@@ -1851,6 +1873,12 @@ def main() -> int:
         ("city_places", str(city_stats["city_places"])),
     ):
         conn.execute("INSERT OR REPLACE INTO metadata(key, value) VALUES(?, ?)", (key, value))
+
+    if args.build_settlement_context:
+        settlement_metadata = build_settlement_context(
+            conn, input_pbf, args.country_code, args.settlement_geometry_tolerance_m
+        )
+        print(f"Settlement context: {settlement_metadata}", file=sys.stderr)
 
     conn.commit()
     conn.close()

@@ -1,0 +1,3 @@
+# Versions used for the Baden-Württemberg settlement-context pilot.
+osmium==4.3.0
+shapely==2.1.2
