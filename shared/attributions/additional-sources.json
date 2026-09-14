@@ -171,12 +171,12 @@
   },
   {
     "id": "photo-0906fc23-7175-430e-acc0-106e7d45eca7",
-    "title": "Test reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7",
+    "title": "Recognition reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7",
     "attribution": "youspeed DOT de - mapping speed limits",
     "license": "CC BY-SA 4.0",
     "source_url": "https://panoramax.openstreetmap.fr/?pic=0906fc23-7175-430e-acc0-106e7d45eca7",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-    "changes": "Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.",
+    "changes": "Unchanged reference photograph bundled in Android for the startup recognition functional and timing check, and used in model-conversion and recognition tests. Diagnostic crops and resizing occur in memory.",
     "category": "reference"
   },
   {

@@ -83,7 +83,46 @@ class TrafficSignFramePolicyTests {
 
         val paused = TrafficSignAnalysisConditions(thermalPressure = TrafficSignThermalPressure.CRITICAL)
         assertNull(slot.takeIfDue(nowNanos = 10L, conditions = paused))
-        assertEquals(listOf(1), discarded)
-        assertTrue(slot.hasPendingFrame())
+        assertEquals(listOf(1, 2), discarded)
+        assertFalse(slot.hasPendingFrame())
+    }
+
+    @Test
+    fun cadenceRejectionReleasesTheCameraFrameBeforeTheNextFrameIsDue() {
+        val discarded = mutableListOf<String>()
+        val slot = TrafficSignLatestFrameSlot<String>(discarded::add)
+        val conditions = TrafficSignAnalysisConditions()
+        slot.offer("first", capturedAtNanos = 0L)
+        assertEquals("first", slot.takeIfDue(0L, conditions)?.value)
+        slot.markAnalysisComplete()
+
+        slot.offer("early", capturedAtNanos = 20_000_000L)
+        assertNull(slot.takeIfDue(20_000_000L, conditions))
+        assertEquals(listOf("early"), discarded)
+        assertFalse(slot.hasPendingFrame())
+        assertFalse(slot.isAnalysisInFlight())
+
+        // CameraX can only supply this frame after the early frame is closed.
+        slot.offer("due", capturedAtNanos = 500_000_000L)
+        assertEquals("due", slot.takeIfDue(500_000_000L, conditions)?.value)
+    }
+
+    @Test
+    fun pausedFramesAreReleasedSoTheCameraCanDeliverAFrameAfterResume() {
+        val active = TrafficSignAnalysisConditions()
+        listOf(
+            active.copy(thermalPressure = TrafficSignThermalPressure.CRITICAL),
+            active.copy(applicationIsActive = false),
+        ).forEach { paused ->
+            val discarded = mutableListOf<String>()
+            val slot = TrafficSignLatestFrameSlot<String>(discarded::add)
+            slot.offer("paused", capturedAtNanos = 0L)
+            assertNull(slot.takeIfDue(0L, paused))
+            assertEquals(listOf("paused"), discarded)
+            assertFalse(slot.hasPendingFrame())
+
+            slot.offer("resumed", capturedAtNanos = 500_000_000L)
+            assertEquals("resumed", slot.takeIfDue(500_000_000L, active)?.value)
+        }
     }
 }

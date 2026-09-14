@@ -17,6 +17,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.util.Size
+import android.util.Log
 import android.view.Surface
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -51,6 +52,9 @@ import kotlin.math.max
 import kotlin.math.min
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.gpu.CompatibilityList
+import org.tensorflow.lite.gpu.GpuDelegate
+import org.tensorflow.lite.gpu.GpuDelegateFactory
 
 enum class TrafficSignCameraRuntimeState {
     DISABLED,
@@ -270,17 +274,55 @@ internal data class AndroidTrafficSignInferenceResult(
     val sourceWidthPixels: Int,
     val sourceHeightPixels: Int,
     val sourceLumaMean: Double?,
+    val executionBackend: String,
+    val accelerationFallbackReason: String?,
+    val detectorPreprocessingMs: Double,
+    val detectorInferenceMs: Double,
+    val classifierInferenceMs: Double,
 )
 
 internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val verifiedPack: AndroidTrafficSignVerifiedPack,
+    // CPU mode is a fixture-parity test control, not a user setting.
+    allowGpu: Boolean = true,
 ) : AutoCloseable {
-    private val interpreterOptions = Interpreter.Options().apply {
-        setNumThreads(4)
-        setUseXNNPACK(true)
+    private class InterpreterResources(val interpreter: Interpreter, private val delegate: GpuDelegate?) : AutoCloseable {
+        override fun close() {
+            try {
+                interpreter.close()
+            } finally {
+                delegate?.close()
+            }
+        }
     }
-    private val detector = Interpreter(verifiedPack.detectorModel, interpreterOptions)
-    private val classifier = Interpreter(verifiedPack.classifierModel, interpreterOptions)
+
+    private data class GpuConfiguration(val options: GpuDelegateFactory.Options?, val unavailableReason: String?)
+
+    private val gpuConfiguration = if (!allowGpu) GpuConfiguration(null, null) else {
+        try {
+            CompatibilityList().use { compatibility ->
+                if (compatibility.isDelegateSupportedOnThisDevice) {
+                    GpuConfiguration(
+                        compatibility.bestOptionsForThisDevice
+                            .setPrecisionLossAllowed(false)
+                            .setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_SUSTAINED_SPEED),
+                        null,
+                    )
+                } else GpuConfiguration(null, "GPU delegate is unsupported on this device")
+            }
+        } catch (failure: RuntimeException) {
+            GpuConfiguration(null, "GPU compatibility check failed: ${failure.message ?: failure.javaClass.simpleName}")
+        } catch (failure: LinkageError) {
+            GpuConfiguration(null, "GPU runtime unavailable: ${failure.message ?: failure.javaClass.simpleName}")
+        }
+    }
+    private val detector = createInterpreter(verifiedPack.detectorModel, "detector")
+    private val classifier = try {
+        createInterpreter(verifiedPack.classifierModel, "classifier")
+    } catch (failure: Throwable) {
+        detector.close()
+        throw failure
+    }
     private val detectorInput = directFloatBuffer(DETECTOR_SIZE * DETECTOR_SIZE * RGB_CHANNELS)
     private val detectorOutput = directFloatBuffer(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
     private val detectorOutputFloats = FloatArray(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
@@ -291,17 +333,52 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val detectorPixels = IntArray(DETECTOR_SIZE * DETECTOR_SIZE)
     private val classifierPixels = IntArray(CLASSIFIER_SIZE * CLASSIFIER_SIZE)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private val rgbTensorEncoder = TrafficSignRgbTensorEncoder()
     private val mappingsByClassId = verifiedPack.modelPack.classMapping.associateBy(TrafficSignClassMapping::classId)
 
+    private fun createInterpreter(model: ByteBuffer, role: String): TrafficSignInferenceFallback<InterpreterResources> {
+        fun options() = Interpreter.Options().apply {
+            setNumThreads(4)
+            setUseXNNPACK(true)
+        }
+        return TrafficSignInferenceFallback(
+            createCpu = { InterpreterResources(Interpreter(model.duplicate(), options()), null) },
+            createAccelerated = gpuConfiguration.options?.let { gpuOptions ->
+                {
+                    val delegate = GpuDelegate(gpuOptions)
+                    try {
+                        InterpreterResources(Interpreter(model.duplicate(), options().addDelegate(delegate)), delegate)
+                    } catch (failure: Throwable) {
+                        delegate.close()
+                        throw failure
+                    }
+                }
+            },
+            unavailableReason = gpuConfiguration.unavailableReason,
+            onCpuFallback = { reason -> Log.w("YouSpeedTSR", "$role uses CPU fallback: $reason") },
+        )
+    }
+
     init {
-        require(detector.getInputTensor(0).shape().contentEquals(intArrayOf(1, DETECTOR_SIZE, DETECTOR_SIZE, RGB_CHANNELS)))
-        require(detector.getInputTensor(0).dataType() == DataType.FLOAT32)
-        require(detector.getOutputTensor(0).shape().contentEquals(intArrayOf(1, 7, 33_600)))
-        require(detector.getOutputTensor(0).dataType() == DataType.FLOAT32)
-        require(classifier.getInputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_SIZE, CLASSIFIER_SIZE, RGB_CHANNELS)))
-        require(classifier.getInputTensor(0).dataType() == DataType.FLOAT32)
-        require(classifier.getOutputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_CLASS_COUNT)))
-        require(classifier.getOutputTensor(0).dataType() == DataType.FLOAT32)
+        try {
+            detector.run { resource ->
+                val interpreter = resource.interpreter
+                require(interpreter.getInputTensor(0).shape().contentEquals(intArrayOf(1, DETECTOR_SIZE, DETECTOR_SIZE, RGB_CHANNELS)))
+                require(interpreter.getInputTensor(0).dataType() == DataType.FLOAT32)
+                require(interpreter.getOutputTensor(0).shape().contentEquals(intArrayOf(1, 7, 33_600)))
+                require(interpreter.getOutputTensor(0).dataType() == DataType.FLOAT32)
+            }
+            classifier.run { resource ->
+                val interpreter = resource.interpreter
+                require(interpreter.getInputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_SIZE, CLASSIFIER_SIZE, RGB_CHANNELS)))
+                require(interpreter.getInputTensor(0).dataType() == DataType.FLOAT32)
+                require(interpreter.getOutputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_CLASS_COUNT)))
+                require(interpreter.getOutputTensor(0).dataType() == DataType.FLOAT32)
+            }
+        } catch (failure: Throwable) {
+            close()
+            throw failure
+        }
     }
 
     fun recognize(source: Bitmap): TrafficSignDetection? = primaryDetection(recognizeAll(source))
@@ -313,8 +390,14 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     fun recognizeAllWithDiagnostics(source: Bitmap): AndroidTrafficSignInferenceResult {
         val startedAtNanos = System.nanoTime()
         prepareDetectorInput(source)
-        detectorOutput.clear()
-        detector.run(detectorInput, detectorOutput)
+        val detectorPreprocessingMs = elapsedMs(startedAtNanos)
+        val detectorStartedAtNanos = System.nanoTime()
+        detector.run { resource ->
+            detectorInput.rewind()
+            detectorOutput.clear()
+            resource.interpreter.run(detectorInput, detectorOutput)
+        }
+        val detectorInferenceMs = elapsedMs(detectorStartedAtNanos)
         detectorOutput.rewind()
         detectorOutput.asFloatBuffer().get(detectorOutputFloats)
         val proposals = AndroidYoloSignDecoder.decode(
@@ -355,6 +438,14 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             sourceWidthPixels = source.width,
             sourceHeightPixels = source.height,
             sourceLumaMean = lumaMean,
+            executionBackend = if (detector.executionBackend == classifier.executionBackend) detector.executionBackend else "mixed",
+            accelerationFallbackReason = listOfNotNull(
+                detector.accelerationFallbackReason?.let { "detector: $it" },
+                classifier.accelerationFallbackReason?.let { "classifier: $it" },
+            ).takeIf { it.isNotEmpty() }?.joinToString("; "),
+            detectorPreprocessingMs = detectorPreprocessingMs,
+            detectorInferenceMs = detectorInferenceMs,
+            classifierInferenceMs = classified.sumOf(ClassificationResult::inferenceMs),
         )
     }
 
@@ -398,6 +489,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private data class ClassificationResult(
         val detection: TrafficSignDetection?,
         val classifierScore: Double?,
+        val inferenceMs: Double = 0.0,
     )
 
     private fun classify(source: Bitmap, proposal: AndroidYoloProposal, minimumScore: Double = verifiedPack.modelPack.thresholds.unknown): ClassificationResult {
@@ -434,8 +526,13 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             CLASSIFIER_SIZE,
         )
         writeRgbFloats(classifierInput, classifierPixels)
-        classifierOutput.clear()
-        classifier.run(classifierInput, classifierOutput)
+        val classifierStartedAtNanos = System.nanoTime()
+        classifier.run { resource ->
+            classifierInput.rewind()
+            classifierOutput.clear()
+            resource.interpreter.run(classifierInput, classifierOutput)
+        }
+        val classifierInferenceMs = elapsedMs(classifierStartedAtNanos)
         classifierOutput.rewind()
         val scores = classifierOutput.asFloatBuffer()
         var bestIndex = -1
@@ -447,7 +544,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 bestScore = score
             }
         }
-        if (bestIndex < 0) return ClassificationResult(null, null)
+        if (bestIndex < 0) return ClassificationResult(null, null, classifierInferenceMs)
         val classId = verifiedPack.displayCatalog.classId(bestIndex)
         val mapping = mappingsByClassId[classId]
         val combinedScore = min(proposal.score.toDouble(), bestScore.toDouble())
@@ -471,6 +568,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         return ClassificationResult(
             detection = detection.takeIf { bestScore >= minimumScore },
             classifierScore = bestScore.toDouble(),
+            inferenceMs = classifierInferenceMs,
         )
     }
 
@@ -482,17 +580,14 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     }
 
     private fun writeRgbFloats(buffer: ByteBuffer, pixels: IntArray) {
-        buffer.clear()
-        pixels.forEach { color ->
-            buffer.putFloat(Color.red(color) / 255f)
-            buffer.putFloat(Color.green(color) / 255f)
-            buffer.putFloat(Color.blue(color) / 255f)
-        }
-        buffer.rewind()
+        rgbTensorEncoder.write(buffer, pixels)
     }
 
     private fun directFloatBuffer(elementCount: Int): ByteBuffer =
         ByteBuffer.allocateDirect(elementCount * Float.SIZE_BYTES).order(ByteOrder.nativeOrder())
+
+    private fun elapsedMs(startedAtNanos: Long): Double =
+        (System.nanoTime() - startedAtNanos).coerceAtLeast(0L) / 1_000_000.0
 
     private companion object {
         const val DETECTOR_SIZE = 1280
@@ -508,10 +603,29 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
 internal class AndroidLiteRtTrafficSignBackend(
     verifiedPack: AndroidTrafficSignVerifiedPack,
     private val thermalState: () -> String?,
+    context: Context,
 ) : TrafficSignRecognitionBackend<CameraXTrafficSignFrame>, AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val engine = AndroidLiteRtTrafficSignInferenceEngine(verifiedPack)
+    // GPU delegates require initialization, every invocation and disposal on one thread.
+    // Construction already runs on the camera's startup executor, so waiting here cannot
+    // block camera delivery or the UI thread.
+    private val initialized = try {
+        executor.submit<Pair<AndroidLiteRtTrafficSignInferenceEngine, AndroidTrafficSignStartupResult>> {
+            val engine = AndroidLiteRtTrafficSignInferenceEngine(verifiedPack)
+            try {
+                engine to AndroidTrafficSignStartupProbe.run(context, engine, verifiedPack.modelPack)
+            } catch (failure: Throwable) {
+                engine.close()
+                throw failure
+            }
+        }.get()
+    } catch (failure: Exception) {
+        executor.shutdown()
+        throw (failure.cause ?: failure)
+    }
+    private val engine = initialized.first
+    val startupResult: AndroidTrafficSignStartupResult = initialized.second
 
     override fun recognize(
         frame: CameraXTrafficSignFrame,
@@ -547,6 +661,11 @@ internal class AndroidLiteRtTrafficSignBackend(
                             sourceWidthPixels = inference.sourceWidthPixels,
                             sourceHeightPixels = inference.sourceHeightPixels,
                             sourceLumaMean = inference.sourceLumaMean,
+                            executionBackend = inference.executionBackend,
+                            accelerationFallbackReason = inference.accelerationFallbackReason,
+                            detectorPreprocessingMs = inference.detectorPreprocessingMs,
+                            detectorInferenceMs = inference.detectorInferenceMs,
+                            classifierInferenceMs = inference.classifierInferenceMs,
                         ),
                     )
                 } finally {
@@ -665,13 +784,14 @@ internal class AndroidTrafficSignCameraRuntime(
         startupExecutor.execute {
             val loaded = runCatching {
                     val pack = AndroidTrafficSignModelPackLoader.load(context)
-                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState)
+                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context)
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         controller = controller,
                         modelPack = pack.modelPack,
                         runtimeArtifact = pack.detectorArtifact,
                         backend = runtimeBackend,
                         conditionsSnapshot = ::analysisConditions,
+                        confirmationWindowMsOverride = runtimeBackend.startupResult.timingProfile.confirmationWindowMs,
                         onRuntimeUnavailable = { detail, failedGeneration -> mainExecutor.execute {
                             if (!closed.get() && generation.get() == startGeneration && recognitionRuntimeSerial == runtimeSerial) {
                                 stopRecognitionAfterFailure(
@@ -702,6 +822,7 @@ internal class AndroidTrafficSignCameraRuntime(
                     else stopRecognitionAfterFailure(failure.message?.takeIf(String::isNotBlank) ?: failure.javaClass.simpleName,
                         recognitionGeneration)
                 }.onSuccess { runtime ->
+                    runtime.backend?.startupResult?.let(controller::onTrafficSignStartupMeasured)
                     backend = runtime.backend
                     bridge = runtime.bridge
                     bindCamera(startGeneration)

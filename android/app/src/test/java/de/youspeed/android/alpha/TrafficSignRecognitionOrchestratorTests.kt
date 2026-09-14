@@ -252,11 +252,34 @@ class TrafficSignRecognitionOrchestratorTests {
         harness.orchestrator.submit(harness.frame("baseline", capturedAtNanos = harness.clockNanos))
         harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
         harness.clockNanos = 1_600_000_000L
-        harness.orchestrator.submit(harness.frame("throttled", capturedAtNanos = harness.clockNanos))
+        val throttled = harness.frame("throttled", capturedAtNanos = harness.clockNanos)
+        harness.orchestrator.submit(throttled)
         assertTrue(harness.backend.activeFrameIds().isEmpty())
+        assertEquals(1, throttled.releaseCount)
         harness.clockNanos = 2_000_000_000L
-        harness.orchestrator.tick()
-        assertEquals(listOf("throttled"), harness.backend.activeFrameIds())
+        harness.orchestrator.submit(harness.frame("next-due", capturedAtNanos = harness.clockNanos))
+        assertEquals(listOf("next-due"), harness.backend.activeFrameIds())
+    }
+
+    @Test
+    fun fastInferenceKeepsCameraFramesFlowingWithoutAnExternalTick() {
+        val harness = Harness()
+        var previousFrame: FakeFrame? = null
+        repeat(61) { index ->
+            // KEEP_ONLY_LATEST supplies another analyzer frame only after the
+            // previous ImageProxy closes, including a cadence-rejected frame.
+            previousFrame?.let { assertEquals("Camera frame $index is blocked", 1, it.releaseCount) }
+            harness.clockNanos = index * 50_000_000L
+            val frame = harness.frame("camera-$index", capturedAtNanos = harness.clockNanos)
+            harness.orchestrator.submit(frame)
+            if (harness.backend.activeFrameIds().isNotEmpty()) {
+                harness.clockNanos += 10_000_000L
+                harness.backend.completeNext(TrafficSignBackendResult.Recognition(null))
+            }
+            previousFrame = frame
+        }
+        assertEquals(7, harness.observer.outputs.size)
+        assertEquals(1, previousFrame?.releaseCount)
     }
 
     @Test

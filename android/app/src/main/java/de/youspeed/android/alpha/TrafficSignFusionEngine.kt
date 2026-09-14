@@ -35,6 +35,8 @@ class TrafficSignFusionEngine(
     private val classThresholds = classThresholds.toMap()
     private val tracks = mutableListOf<Track>()
     private var lastObservedAtMs: Long? = null
+    internal var confirmationWindowMs: Long = thresholds.confirmationWindowMs
+        private set
 
     init {
         require(thresholds.confirmationFrames >= 2)
@@ -89,7 +91,7 @@ class TrafficSignFusionEngine(
             ).also(tracks::add)
 
         matchingTrack.observations += TimedDetection(observedAtMs, primaryDetection)
-        matchingTrack.observations.removeAll { observedAtMs - it.observedAtMs > thresholds.confirmationWindowMs }
+        matchingTrack.observations.removeAll { observedAtMs - it.observedAtMs > confirmationWindowMs }
 
         val fusedScore = matchingTrack.weightedScore(::effectiveScore)
         val hasConfirmedEvidence = matchingTrack.observations.any {
@@ -129,8 +131,17 @@ class TrafficSignFusionEngine(
         lastObservedAtMs = null
     }
 
+    /** Retain current evidence when a verified runtime falls back to slower CPU inference. */
+    internal fun extendConfirmationWindowTo(windowMs: Long) {
+        require(windowMs in confirmationWindowMs..maxOf(
+            thresholds.confirmationWindowMs,
+            TrafficSignInferenceTimingPolicy.MAXIMUM_CONFIRMATION_WINDOW_MS,
+        )) { "Timing updates must be monotonic and bounded" }
+        confirmationWindowMs = windowMs
+    }
+
     private fun expireTracks(observedAtMs: Long) {
-        tracks.removeAll { observedAtMs - it.observations.last().observedAtMs > thresholds.confirmationWindowMs }
+        tracks.removeAll { observedAtMs - it.observations.last().observedAtMs > confirmationWindowMs }
     }
 
     private fun effectiveScore(candidate: TrafficSignCandidate): Double = when (scoreSource) {

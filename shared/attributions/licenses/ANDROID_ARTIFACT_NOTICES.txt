@@ -5,6 +5,7 @@
 androidx.camera:camera-camera2:1.4.2 META-INF/androidx/camera/camera-camera2/LICENSE.txt
 androidx.camera:camera-core:1.4.2 META-INF/androidx/camera/camera-core/LICENSE.txt
 androidx.camera:camera-lifecycle:1.4.2 META-INF/androidx/camera/camera-lifecycle/LICENSE.txt
+androidx.camera:camera-video:1.4.2 META-INF/androidx/camera/camera-video/LICENSE.txt
 
 
                                  Apache License
@@ -187,6 +188,8 @@ androidx.camera:camera-lifecycle:1.4.2 META-INF/androidx/camera/camera-lifecycle
 
 
 com.google.ai.edge.litert:litert-api:1.4.2 LICENSE
+com.google.ai.edge.litert:litert-gpu-api:1.4.2 LICENSE
+com.google.ai.edge.litert:litert-gpu:1.4.2 LICENSE
 com.google.ai.edge.litert:litert:1.4.2 LICENSE
 
                                  Apache License

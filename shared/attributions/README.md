@@ -7,8 +7,11 @@ retain their published spelling and language.
 
 `THIRD_PARTY_NOTICES.txt` contains the shared image/mapping, font and software
 notices and the app's AGPL text. The existing model-pack notice is additionally
-available from Info on both platforms. Test-photo credits identify photographs
-used in development; those photographs are not production app resources.
+available from Info on both platforms. Reference-photo credits identify each
+photograph's use: Panoramax `0906fc23-7175-430e-acc0-106e7d45eca7` is bundled
+unchanged in Android for the startup recognition functional and timing check,
+with crops and resizing performed in memory. Other test photographs are
+development resources and are not bundled in the production apps.
 
 ## Updating credits
 
@@ -27,9 +30,9 @@ It also reads national rule citations, `additional-sources.json`, and
 the two generated files.
 
 `android-components.json` records the resolved `releaseRuntimeClasspath`
-artifacts, not just direct dependencies: 71 artifacts representing 70 unique
-Maven coordinates at this review. One coordinate has more than one resolved
-artifact. APK shrinking can remove unused parts. The inventory deliberately
+artifacts, not just direct dependencies: 74 artifacts representing 73 unique
+Maven coordinates at the 2026-09-14 dependency review. One coordinate has more
+than one resolved artifact. APK shrinking can remove unused parts. The inventory deliberately
 credits the full resolved set. Artifact hashes and hashes of embedded notices
 are retained; local Gradle cache paths are not.
 

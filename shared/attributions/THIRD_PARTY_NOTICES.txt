@@ -164,12 +164,12 @@ Changes: None: unchanged downloaded HD image. Crops are created in memory during
 
 ================================================================================
 
-Test reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7
+Recognition reference · Panoramax 0906fc23-7175-430e-acc0-106e7d45eca7
 youspeed DOT de - mapping speed limits
 CC BY-SA 4.0
 Source: https://panoramax.openstreetmap.fr/?pic=0906fc23-7175-430e-acc0-106e7d45eca7
 Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
-Changes: Model-conversion and recognition test frame; diagnostic crops/resizing may be used. Not a bundled production-app photograph.
+Changes: Unchanged reference photograph bundled in Android for the startup recognition functional and timing check, and used in model-conversion and recognition tests. Diagnostic crops and resizing occur in memory.
 
 ================================================================================
 
@@ -408,6 +408,15 @@ Changes: Bundled dependency; Android build processing and shrinking may apply. U
 ================================================================================
 
 Android · androidx.camera:camera-lifecycle:1.4.2
+The Android Open Source Project contributors
+Apache-2.0
+Source: https://android.googlesource.com/platform/frameworks/support/
+Licence / legal basis: https://www.apache.org/licenses/LICENSE-2.0
+Changes: Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text.
+
+================================================================================
+
+Android · androidx.camera:camera-video:1.4.2
 The Android Open Source Project contributors
 Apache-2.0
 Source: https://android.googlesource.com/platform/frameworks/support/
@@ -831,6 +840,24 @@ Changes: Bundled dependency; Android build processing and shrinking may apply. U
 ================================================================================
 
 Android · com.google.ai.edge.litert:litert-api:1.4.2
+Google and TensorFlow/LiteRT contributors
+Apache-2.0
+Source: https://github.com/google-ai-edge/LiteRT
+Licence / legal basis: https://www.apache.org/licenses/LICENSE-2.0
+Changes: Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text.
+
+================================================================================
+
+Android · com.google.ai.edge.litert:litert-gpu-api:1.4.2
+Google and TensorFlow/LiteRT contributors
+Apache-2.0
+Source: https://github.com/google-ai-edge/LiteRT
+Licence / legal basis: https://www.apache.org/licenses/LICENSE-2.0
+Changes: Bundled dependency; Android build processing and shrinking may apply. Upstream notices are retained in the offline licence text.
+
+================================================================================
+
+Android · com.google.ai.edge.litert:litert-gpu:1.4.2
 Google and TensorFlow/LiteRT contributors
 Apache-2.0
 Source: https://github.com/google-ai-edge/LiteRT
@@ -2303,6 +2330,7 @@ Android dependency notices extracted from resolved release artifacts
 androidx.camera:camera-camera2:1.4.2 META-INF/androidx/camera/camera-camera2/LICENSE.txt
 androidx.camera:camera-core:1.4.2 META-INF/androidx/camera/camera-core/LICENSE.txt
 androidx.camera:camera-lifecycle:1.4.2 META-INF/androidx/camera/camera-lifecycle/LICENSE.txt
+androidx.camera:camera-video:1.4.2 META-INF/androidx/camera/camera-video/LICENSE.txt
 
 
                                  Apache License
@@ -2485,6 +2513,8 @@ androidx.camera:camera-lifecycle:1.4.2 META-INF/androidx/camera/camera-lifecycle
 
 
 com.google.ai.edge.litert:litert-api:1.4.2 LICENSE
+com.google.ai.edge.litert:litert-gpu-api:1.4.2 LICENSE
+com.google.ai.edge.litert:litert-gpu:1.4.2 LICENSE
 com.google.ai.edge.litert:litert:1.4.2 LICENSE
 
                                  Apache License

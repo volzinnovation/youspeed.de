@@ -1,4 +1,5 @@
 <resources>
+    <string name="ui_camera_speed_limit_end">Fin de la restricción de velocidad detectado</string>
     <string name="ui_country_germany">Alemania</string>
     <string name="ui_camera_unlimited">Cámara: sin límite de velocidad</string>
     <string name="ui_camera_walking">Cámara: velocidad de paso</string>

@@ -1,4 +1,5 @@
 <resources>
+    <string name="ui_camera_speed_limit_end">Wykryto koniec ograniczenia prędkości</string>
     <string name="ui_country_germany">Niemcy</string>
     <string name="ui_camera_unlimited">Wykryto kamerą: brak ograniczenia prędkości</string>
     <string name="ui_camera_walking">Wykryto kamerą: prędkość pieszego</string>

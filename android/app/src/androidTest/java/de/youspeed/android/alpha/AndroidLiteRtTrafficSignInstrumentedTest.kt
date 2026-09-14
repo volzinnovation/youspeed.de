@@ -2,10 +2,13 @@ package de.youspeed.android.alpha
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.time.Instant
+import java.util.concurrent.TimeUnit
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -18,6 +21,211 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class AndroidLiteRtTrafficSignInstrumentedTest {
+    @Test
+    fun measuredCameraCadenceCarriesRealModelResultsThroughTheFinalizedPassageForwarder() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
+        val sign = requireNotNull(instrumentation.context.assets
+            .open("tsr-panoramax-0906fc23.jpg").use(BitmapFactory::decodeStream))
+        val blank = Bitmap.createBitmap(sign.width, sign.height, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.rgb(114, 114, 114))
+        }
+        val passages = mutableListOf<TrafficSignPassageEvent>()
+        val displays = mutableListOf<TrafficSignDisplayObservation>()
+        val outputs = mutableListOf<TrafficSignOrchestrationOutput>()
+        val frames = mutableListOf<BitmapFrame>()
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitDisplayObservation = { displays += it },
+            onInferenceDiagnostics = { outputs += it },
+            submitFinalizedPassage = { passages += it; true },
+        )
+        try {
+            AndroidLiteRtTrafficSignInferenceEngine(pack).use { engine ->
+                val startup = AndroidTrafficSignStartupProbe.run(instrumentation.targetContext, engine, pack.modelPack)
+                assertTrue("Startup reference predictions must not publish live passages", passages.isEmpty())
+                assertTrue("Startup reference predictions must not publish pictograms", displays.isEmpty())
+                assertTrue(outputs.isEmpty())
+                val conditions = TrafficSignAnalysisConditions(speedMetersPerSecond = 10.0)
+                val context = TrafficSignDetectionContext(
+                    wayId = "100",
+                    latitude = 0.0,
+                    longitude = 0.0,
+                    headingDegrees = 90.0,
+                    travelDirection = TrafficSignTravelDirection.FORWARD,
+                    sourceSignature = TrafficSignRuntimeSourceSignature("bundle:model-passage-fixture", null),
+                    bundleSha256 = "a".repeat(64),
+                    countryCode = "DE",
+                    matchedWayStable = true,
+                    speedMetersPerSecond = 10.0,
+                )
+                val orchestrator = TrafficSignRecognitionOrchestrator(
+                    modelPack = pack.modelPack,
+                    runtimeArtifact = pack.detectorArtifact,
+                    backend = TrafficSignRecognitionBackend<BitmapFrame> { frame, completion ->
+                        val result = engine.recognizeAllWithDiagnostics(frame.bitmap)
+                        val detection = primaryDetection(result.detections)
+                        if (frame.expectsSign) assertEquals("maxspeed:70", detection?.candidate?.rawClassId)
+                        else assertTrue("Missing evidence must come from an analyzed blank image", result.detections.isEmpty())
+                        completion(TrafficSignBackendResult.Recognition(
+                            detection = detection,
+                            displayDetections = result.detections,
+                            diagnostics = TrafficSignInferenceDiagnostics(
+                                inferenceMs = result.inferenceMs,
+                                detectorProposalCount = result.detectorProposalCount,
+                                detectorTopScore = result.detectorTopScore,
+                                classifierInvocationCount = result.classifierInvocationCount,
+                                classifiedDetectionCount = result.classifiedDetectionCount,
+                                classifierTopScore = result.classifierTopScore,
+                                primaryClassId = detection?.candidate?.rawClassId,
+                                primaryScore = detection?.candidate?.rawScore,
+                                executionBackend = result.executionBackend,
+                                accelerationFallbackReason = result.accelerationFallbackReason,
+                                detectorPreprocessingMs = result.detectorPreprocessingMs,
+                                detectorInferenceMs = result.detectorInferenceMs,
+                                classifierInferenceMs = result.classifierInferenceMs,
+                            ),
+                        ))
+                    },
+                    contextSnapshot = TrafficSignDetectionContextSnapshot {
+                        TrafficSignDetectionContextSnapshotValue(context, 1L, true, "model-passage-fixture")
+                    },
+                    conditionsSnapshot = { conditions },
+                    monotonicClockNanos = System::nanoTime,
+                    observer = forwarder,
+                    confirmationWindowMsOverride = startup.timingProfile.confirmationWindowMs,
+                )
+                try {
+                    val interval = requireNotNull(TrafficSignAdaptiveFramePolicy.decide(conditions).minimumIntervalNanos)
+                    fun analyze(bitmap: Bitmap, expectsSign: Boolean) {
+                        // Use real elapsed time, including model execution; never manufacture a faster cadence.
+                        // Wait after completion: capture precedes dispatch by a small amount,
+                        // so sleeping to capture+interval alone can still hit the cadence gate.
+                        if (frames.isNotEmpty()) TimeUnit.NANOSECONDS.sleep(interval)
+                        val frame = BitmapFrame("model-frame-${frames.size}", bitmap, expectsSign)
+                        frames += frame
+                        val previousOutputs = outputs.size
+                        assertTrue(orchestrator.submit(frame))
+                        assertEquals("Every supplied evidence frame must actually be analyzed", previousOutputs + 1, outputs.size)
+                        assertEquals(1, frame.releases)
+                    }
+                    analyze(sign, true)
+                    assertTrue(passages.isEmpty())
+                    analyze(sign, true)
+                    assertEquals(TrafficSignRecognitionState.CONFIRMED, outputs.last().event.state)
+                    assertEquals(2, outputs.last().event.candidate?.evidenceFrames)
+                    assertEquals(2, displays.size)
+                    assertTrue("Seeing a sign alone must not finalize its passage", passages.isEmpty())
+                    analyze(blank, false)
+                    assertTrue(passages.isEmpty())
+                    analyze(blank, false)
+                    val passage = passages.single()
+                    assertEquals(70, passage.resolution.speedKmh)
+                    assertEquals(2, passage.framesSeen)
+                    assertEquals(2, passage.negativeFramesToCommit)
+                    assertEquals(2, passage.lossEvidence.size)
+                    assertEquals(70, orchestrator.effectiveSpeedKmh(null, 50))
+                    assertTrue(outputs.all { it.contextIsCurrent && it.backendFailureReason == null })
+                    analyze(blank, false)
+                    assertEquals("Additional missing frames must not duplicate the passage", 1, passages.size)
+                    val report = JSONObject()
+                        .put("startupBackend", startup.executionBackend)
+                        .put("confirmationWindowMs", startup.timingProfile.confirmationWindowMs)
+                        .put("finalizedSpeedKmh", passage.resolution.speedKmh)
+                        .put("frames", JSONArray(outputs.mapIndexed { index, output -> JSONObject()
+                            .put("expectsSign", frames[index].expectsSign)
+                            .put("capturedAtMonotonicNanos", frames[index].capturedAtMonotonicNanos)
+                            .put("inferenceMs", output.inferenceDiagnostics?.inferenceMs)
+                            .put("executionBackend", output.inferenceDiagnostics?.executionBackend)
+                            .put("state", output.event.state.toString())
+                            .put("passageFinalized", output.passageEvent != null)
+                        }))
+                    File(instrumentation.targetContext.cacheDir, "tsr-model-passage.json").writeText(report.toString())
+                    Log.i("YouSpeedTSR", "Measured model-to-passage evidence: $report")
+                } finally {
+                    orchestrator.close()
+                    assertTrue(frames.all { it.releases == 1 })
+                }
+            }
+        } finally {
+            sign.recycle()
+            blank.recycle()
+        }
+    }
+
+    private class BitmapFrame(
+        override val frameId: String,
+        val bitmap: Bitmap,
+        val expectsSign: Boolean,
+    ) : TrafficSignNormalizedFrameHandle {
+        override val source = TrafficSignInputSource.LIVE_FRAME
+        override val capturedAtUtc: Instant = Instant.now()
+        override val capturedAtMonotonicNanos = System.nanoTime()
+        override val widthPixels = bitmap.width
+        override val heightPixels = bitmap.height
+        var releases = 0
+        override fun release() { releases += 1 }
+    }
+
+    @Test
+    fun acceleratedRuntimePreservesCpuPredictionAndReportsMeasuredStageTiming() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
+        val bitmap = requireNotNull(instrumentation.context.assets
+            .open("tsr-panoramax-0906fc23.jpg").use(BitmapFactory::decodeStream))
+        try {
+            val (cpu, cpuProbe) = AndroidLiteRtTrafficSignInferenceEngine(pack, allowGpu = false).use { engine ->
+                val probe = AndroidTrafficSignStartupProbe.run(instrumentation.targetContext, engine, pack.modelPack)
+                engine.recognizeAllWithDiagnostics(bitmap) to probe
+            }
+            assertEquals("cpu", cpu.executionBackend)
+            assertEquals("cpu", cpuProbe.executionBackend)
+            assertTrue(cpuProbe.warmInferenceTimesMs.all { it < cpuProbe.timingProfile.confirmationWindowMs })
+            val cpuDetection = requireNotNull(primaryDetection(cpu.detections))
+            assertEquals("maxspeed:70", cpuDetection.candidate.rawClassId)
+            AndroidLiteRtTrafficSignInferenceEngine(pack).use { engine ->
+                val probe = AndroidTrafficSignStartupProbe.run(instrumentation.targetContext, engine, pack.modelPack)
+                val samples = List(3) { engine.recognizeAllWithDiagnostics(bitmap) }
+                samples.forEach { sample ->
+                    val detection = requireNotNull(primaryDetection(sample.detections))
+                    assertEquals(cpuDetection.candidate.rawClassId, detection.candidate.rawClassId)
+                    assertEquals(cpuDetection.candidate.semantic, detection.candidate.semantic)
+                    assertEquals(requireNotNull(cpuDetection.candidate.proposalRawScore),
+                        requireNotNull(detection.candidate.proposalRawScore), 0.05)
+                    assertEquals(requireNotNull(cpuDetection.candidate.classifierRawScore),
+                        requireNotNull(detection.candidate.classifierRawScore), 0.02)
+                    assertTrue(sample.detectorPreprocessingMs > 0)
+                    assertTrue(sample.detectorInferenceMs > 0)
+                    assertTrue(sample.classifierInferenceMs > 0)
+                    assertTrue("Measured runtime must fit its startup-derived confirmation allowance",
+                        sample.inferenceMs < probe.timingProfile.confirmationWindowMs)
+                    assertTrue(sample.inferenceMs >= sample.detectorPreprocessingMs +
+                        sample.detectorInferenceMs + sample.classifierInferenceMs)
+                    if (sample.executionBackend != "gpu") {
+                        assertTrue(!sample.accelerationFallbackReason.isNullOrBlank())
+                    }
+                }
+                val report = JSONObject()
+                    .put("cpuInferenceMs", cpu.inferenceMs)
+                    .put("cpuConfirmationWindowMs", cpuProbe.timingProfile.confirmationWindowMs)
+                    .put("startupExecutionBackend", probe.executionBackend)
+                    .put("startupWarmInferenceTimesMs", JSONArray(probe.warmInferenceTimesMs))
+                    .put("confirmationWindowMs", probe.timingProfile.confirmationWindowMs)
+                    .put("warmSamples", JSONArray(samples.map { sample -> JSONObject()
+                        .put("executionBackend", sample.executionBackend)
+                        .put("accelerationFallbackReason", sample.accelerationFallbackReason)
+                        .put("inferenceMs", sample.inferenceMs)
+                        .put("detectorPreprocessingMs", sample.detectorPreprocessingMs)
+                        .put("detectorInferenceMs", sample.detectorInferenceMs)
+                        .put("classifierInferenceMs", sample.classifierInferenceMs)
+                    }))
+                Log.i("YouSpeedTSR", "Acceleration parity and timing: $report")
+                File(instrumentation.targetContext.cacheDir, "tsr-acceleration-parity.json").writeText(report.toString())
+            }
+        } finally {
+            bitmap.recycle()
+        }
+    }
+
     @Test
     fun cityEntryReferenceReportsActualFullFrameAndCropPredictions() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

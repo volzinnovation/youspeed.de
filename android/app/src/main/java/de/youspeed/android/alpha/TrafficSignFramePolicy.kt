@@ -100,7 +100,8 @@ data class PendingTrafficSignFrame<T>(
 /**
  * Single-flight mailbox used in addition to CameraX KEEP_ONLY_LATEST. At most
  * one frame waits while inference is running; replacing or clearing it invokes
- * [onDiscard] so a future ImageProxy adapter can always close dropped frames.
+ * [onDiscard]. Once idle, frames rejected by cadence or pause are released
+ * immediately: CameraX cannot deliver another frame until its ImageProxy closes.
  */
 class TrafficSignLatestFrameSlot<T>(
     private val onDiscard: (T) -> Unit = {},
@@ -130,10 +131,19 @@ class TrafficSignLatestFrameSlot<T>(
         require(nowNanos >= 0L) { "Current timestamp must not be negative" }
         if (analysisInFlight) return null
         val decision = TrafficSignAdaptiveFramePolicy.decide(conditions)
-        if (decision.paused) return null
+        if (decision.paused) {
+            clear()
+            return null
+        }
         val interval = requireNotNull(decision.minimumIntervalNanos)
         val previousDispatch = lastDispatchAtNanos
-        if (previousDispatch != null && nowNanos - previousDispatch < interval) return null
+        if (previousDispatch != null && nowNanos - previousDispatch < interval) {
+            // Match iPhone's cadence rejection before retaining work. Holding
+            // an idle CameraX frame here would prevent the next analyzer call
+            // that could otherwise advance the clock and resume recognition.
+            clear()
+            return null
+        }
         val next = pending ?: return null
         pending = null
         analysisInFlight = true

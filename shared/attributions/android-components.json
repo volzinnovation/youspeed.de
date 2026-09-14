@@ -1,6 +1,6 @@
 {
   "configuration": "releaseRuntimeClasspath",
-  "reviewed_at": "2026-09-10",
+  "reviewed_at": "2026-09-14",
   "components": [
     {
       "coordinate": "androidx.activity:activity-compose:1.9.1",
@@ -70,6 +70,14 @@
       "coordinate": "androidx.camera:camera-lifecycle:1.4.2",
       "artifact": "camera-lifecycle-1.4.2.aar",
       "sha256": "8355383d86060ba2ac260f749305b7a3bcc9fa80b534b46e814e2140871998ce",
+      "notice_sha256": [
+        "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
+      ]
+    },
+    {
+      "coordinate": "androidx.camera:camera-video:1.4.2",
+      "artifact": "camera-video-1.4.2.aar",
+      "sha256": "f26d4a7a0cc63b40b71854b7c0d702ed50cf2bbf2a843f40bb3d7231f0360479",
       "notice_sha256": [
         "809fa1ed21450f59827d1e9aec720bbc4b687434fa22283c6cb5dd82a47ab9c0"
       ]
@@ -360,6 +368,22 @@
       "coordinate": "com.google.ai.edge.litert:litert-api:1.4.2",
       "artifact": "litert-api-1.4.2.aar",
       "sha256": "66c2ba8086bd5cbf89bec2bd81c3de6c1a852312829cd55bc30c9dd26ffa357c",
+      "notice_sha256": [
+        "71c6915d04265772a0339bed47276942c678b45cc01534210ebe6984fd1aec65"
+      ]
+    },
+    {
+      "coordinate": "com.google.ai.edge.litert:litert-gpu-api:1.4.2",
+      "artifact": "litert-gpu-api-1.4.2.aar",
+      "sha256": "365c3860171401ea989b3412db04ed70ba0b9360660fea793363785907ae5c43",
+      "notice_sha256": [
+        "71c6915d04265772a0339bed47276942c678b45cc01534210ebe6984fd1aec65"
+      ]
+    },
+    {
+      "coordinate": "com.google.ai.edge.litert:litert-gpu:1.4.2",
+      "artifact": "litert-gpu-1.4.2.aar",
+      "sha256": "8ab4874ed6d1e028e2e4640176c35af6e92fcec4d1d8fbbb12dd9a38196eb224",
       "notice_sha256": [
         "71c6915d04265772a0339bed47276942c678b45cc01534210ebe6984fd1aec65"
       ]

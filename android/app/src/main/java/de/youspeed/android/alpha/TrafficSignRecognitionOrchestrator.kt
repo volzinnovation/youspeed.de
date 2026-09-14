@@ -53,6 +53,11 @@ data class TrafficSignInferenceDiagnostics(
     val sourceWidthPixels: Int = 0,
     val sourceHeightPixels: Int = 0,
     val sourceLumaMean: Double? = null,
+    val executionBackend: String? = null,
+    val accelerationFallbackReason: String? = null,
+    val detectorPreprocessingMs: Double? = null,
+    val detectorInferenceMs: Double? = null,
+    val classifierInferenceMs: Double? = null,
 ) {
     init {
         require(inferenceMs.isFinite() && inferenceMs >= 0.0)
@@ -68,6 +73,8 @@ data class TrafficSignInferenceDiagnostics(
         require(sourceWidthPixels >= 0)
         require(sourceHeightPixels >= 0)
         require(sourceLumaMean == null || sourceLumaMean.isFinite())
+        require(listOf(detectorPreprocessingMs, detectorInferenceMs, classifierInferenceMs)
+            .all { it == null || (it.isFinite() && it >= 0.0) })
     }
 }
 
@@ -114,6 +121,7 @@ data class TrafficSignOrchestrationOutput(
     val contextIsCurrent: Boolean = true,
     val displayObservation: TrafficSignDisplayObservation? = null,
     val inferenceDiagnostics: TrafficSignInferenceDiagnostics? = null,
+    val effectiveConfirmationWindowMs: Long? = null,
 )
 
 interface TrafficSignRecognitionObserver {
@@ -141,9 +149,11 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
     private val conditionsSnapshot: () -> TrafficSignAnalysisConditions,
     private val monotonicClockNanos: () -> Long,
     private val observer: TrafficSignRecognitionObserver,
+    confirmationWindowMsOverride: Long? = null,
 ) {
     private val lock = Any()
     private val fusionEngine: TrafficSignFusionEngine
+    private val startupTimingVerified = confirmationWindowMsOverride != null
     private val passageFinalizer = TrafficSignPassageFinalizer()
     private val frameSlot = TrafficSignLatestFrameSlot<AcceptedFrame<F>> { accepted ->
         accepted.frame.releaseSafely()
@@ -178,8 +188,13 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 modelPack.classifier?.artifacts?.contains(runtimeArtifact) == true,
         ) { "Traffic-sign runtime artifact does not belong to the model pack" }
 
+        val confirmationWindowMs = confirmationWindowMsOverride ?: modelPack.thresholds.confirmationWindowMs
+        require(confirmationWindowMs in modelPack.thresholds.confirmationWindowMs..maxOf(
+            modelPack.thresholds.confirmationWindowMs,
+            TrafficSignInferenceTimingPolicy.MAXIMUM_CONFIRMATION_WINDOW_MS,
+        )) { "Device timing must preserve the manifest window and stay within the bounded allowance" }
         fusionEngine = TrafficSignFusionEngine(
-            thresholds = modelPack.thresholds,
+            thresholds = modelPack.thresholds.copy(confirmationWindowMs = confirmationWindowMs),
             scoreSource = modelPack.calibration.runtimeOutput,
             classThresholds = modelPack.classMapping.associate { it.classId to it.threshold },
         )
@@ -458,7 +473,10 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         var overrideNotification: OverrideNotification? = null
 
         synchronized(lock) {
-            val active = activeInference?.takeIf { it.inferenceId == inferenceId } ?: return
+            val active = activeInference
+            if (active == null || active.inferenceId != inferenceId) {
+                return
+            }
             activeInference = null
             frameSlot.markAnalysisComplete()
             active.accepted.frame.releaseSafely()
@@ -474,8 +492,12 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     }
                 } else if (created.contextIsCurrent) {
                     consecutiveBackendFailures = 0
-                    if (event.state in setOf(TrafficSignRecognitionState.PROVISIONAL,
-                            TrafficSignRecognitionState.CONFIRMED, TrafficSignRecognitionState.UNKNOWN)) {
+                    val candidateSeen = event.state in setOf(
+                        TrafficSignRecognitionState.PROVISIONAL,
+                        TrafficSignRecognitionState.CONFIRMED,
+                        TrafficSignRecognitionState.UNKNOWN,
+                    )
+                    if (candidateSeen) {
                         candidateBurstUntilNanos = monotonicClockNanos() + CANDIDATE_BURST_NANOS
                     }
                 }
@@ -535,6 +557,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     contextGeneration = active.accepted.contextGeneration,
                     contextIsCurrent = created.contextIsCurrent,
                     inferenceDiagnostics = (backendResult as? TrafficSignBackendResult.Recognition)?.diagnostics,
+                    effectiveConfirmationWindowMs = fusionEngine.confirmationWindowMs,
                 )
                 dispatch = takeDispatchLocked()
             }
@@ -561,6 +584,27 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 eligibleRouteRelationGroupIds = active.accepted.eligibleRouteRelationGroupIds,
             ) &&
             active.accepted.context.sourceSignature.bundleRevision == currentSourceSignature?.bundleRevision
+        if (sourceIsCurrent && startupTimingVerified &&
+            active.accepted.metadata.source == TrafficSignInputSource.LIVE_FRAME &&
+            backendResult is TrafficSignBackendResult.Recognition
+        ) {
+            val diagnostics = backendResult.diagnostics
+            if (diagnostics?.executionBackend in setOf("cpu", "mixed") &&
+                !diagnostics?.accelerationFallbackReason.isNullOrBlank()
+            ) {
+                val measured = TrafficSignInferenceTimingPolicy.profile(
+                    manifestConfirmationWindowMs = modelPack.thresholds.confirmationWindowMs,
+                    referenceVerified = true,
+                    warmInferenceTimesMs = listOf(requireNotNull(diagnostics).inferenceMs),
+                )
+                if (measured != null && measured.confirmationWindowMs > fusionEngine.confirmationWindowMs) {
+                    // A runtime GPU failure can make the startup GPU timing
+                    // obsolete. Keep the same scores and evidence, allowing
+                    // only the bounded time needed by successful CPU frames.
+                    fusionEngine.extendConfirmationWindowTo(measured.confirmationWindowMs)
+                }
+            }
+        }
         val fusion = when (backendResult) {
             is TrafficSignBackendResult.Recognition -> if (sourceIsCurrent) {
                 fusionEngine.observe(

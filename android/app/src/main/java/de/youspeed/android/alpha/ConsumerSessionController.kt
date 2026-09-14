@@ -1395,6 +1395,22 @@ class ConsumerSessionController(
         }
     }
 
+    internal fun onTrafficSignStartupMeasured(result: AndroidTrafficSignStartupResult) {
+        appendRuntimeDiagnosticEvent(
+            event = "traffic_sign_startup_reference",
+            details = mapOf(
+                "referenceClassId" to AndroidTrafficSignStartupProbe.REFERENCE_CLASS_ID,
+                "referenceSha256" to AndroidTrafficSignStartupProbe.REFERENCE_SHA256,
+                "referenceVerified" to true,
+                "warmInferenceTimesMs" to result.warmInferenceTimesMs,
+                "measuredWarmMaxMs" to result.timingProfile.measuredWarmMaxMs,
+                "confirmationWindowMs" to result.timingProfile.confirmationWindowMs,
+                "executionBackend" to result.executionBackend,
+                "accelerationFallbackReason" to result.accelerationFallbackReason,
+            ),
+        )
+    }
+
     /** Writes bounded stage-level evidence for the Android camera lane. */
     fun onTrafficSignInferenceDiagnostics(output: TrafficSignOrchestrationOutput) {
         val diagnostics = output.inferenceDiagnostics ?: return
@@ -1412,6 +1428,12 @@ class ConsumerSessionController(
                 put("frameId", output.event.frameId)
                 put("source", output.event.source.wireValue)
                 put("inferenceMs", diagnostics.inferenceMs)
+                put("confirmationWindowMs", output.effectiveConfirmationWindowMs)
+                put("executionBackend", diagnostics.executionBackend)
+                put("accelerationFallbackReason", diagnostics.accelerationFallbackReason)
+                put("detectorPreprocessingMs", diagnostics.detectorPreprocessingMs)
+                put("detectorInferenceMs", diagnostics.detectorInferenceMs)
+                put("classifierInferenceMs", diagnostics.classifierInferenceMs)
                 put("detectorProposalCount", diagnostics.detectorProposalCount)
                 put("detectorTopScore", diagnostics.detectorTopScore)
                 put("classifierInvocationCount", diagnostics.classifierInvocationCount)

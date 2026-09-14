@@ -1,4 +1,5 @@
 <resources>
+    <string name="ui_camera_speed_limit_end">Slut på hastighetsbegränsning upptäckt</string>
     <string name="ui_country_germany">Tyskland</string>
     <string name="ui_camera_unlimited">Kameran upptäckte: ingen hastighetsgräns</string>
     <string name="ui_camera_walking">Kameran upptäckte: gångfart</string>

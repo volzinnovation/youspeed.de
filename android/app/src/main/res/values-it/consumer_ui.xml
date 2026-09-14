@@ -1,4 +1,5 @@
 <resources>
+    <string name="ui_camera_speed_limit_end">Rilevata la fine della limitazione di velocità</string>
     <string name="ui_country_germany">Germania</string>
     <string name="ui_camera_unlimited">Rilevato dalla fotocamera: nessun limite di velocità</string>
     <string name="ui_camera_walking">Rilevato dalla fotocamera: passo d’uomo</string>

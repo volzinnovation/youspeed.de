@@ -43,8 +43,13 @@ photo contribution, settings, and map-update behavior covered by the September
   preview, elapsed time, and independent photo capture while video is off.
 - Recognition is opt-in, standalone recognition defaults off, and feedback
   defaults to sound. Stationary frames cannot activate speed-limit passages.
-  Inference uses the verified local LiteRT models, candidate bursts, thermal
-  caps, and visible terminal failure states.
+  Inference uses the verified local LiteRT models, supported GPU acceleration
+  with CPU fallback, candidate bursts, thermal caps, and visible terminal
+  failure states. A bundled 70 km/h reference image verifies the runtime at
+  recognition startup and measures two warm inferences. Its measured timing
+  sets a bounded 1.5–6 second confirmation allowance for this model pack;
+  confidence thresholds and sighting counts remain unchanged. The reference
+  never enters the live speed, feedback, or observation-store paths.
 - Photos default to distance mode, 25 m, 5 s, and a 1 GB quota. JPEGs and sidecars
   retain GPS, altitude/course when available, and confirmed sign annotations.
 - Panoramax account connection and explicit post-drive review/upload, progress,
@@ -58,6 +63,9 @@ photo contribution, settings, and map-update behavior covered by the September
 The packaged detector/classifier are sibling exports of the iPhone checkpoints.
 Model provenance does not establish accuracy on all road scenes; town-entry
 recognition remains limited on both platforms.
+
+See the [14 September device diagnosis](../docs/ANDROID_TSR_DEVICE_DIAGNOSIS_2026-09-14.md)
+for the slow-inference failure, iPhone comparison, and validation boundary.
 
 ## Local verification
 
