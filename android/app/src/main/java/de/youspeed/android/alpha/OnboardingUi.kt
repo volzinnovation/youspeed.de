@@ -144,6 +144,10 @@ internal fun OnboardingScreen(
                         SetupInfo(R.string.onboarding_dashcam_permission_title, R.string.onboarding_dashcam_permission_body)
                     }
                     3 -> {
+                        SetupToggle(R.string.onboarding_recognition, ui.trafficSignRecognitionEnabled,
+                            onRecognitionEnabled, "onboarding-recognition-toggle")
+                        SetupToggle(R.string.onboarding_independent, ui.trafficSignRecognitionIndependentEnabled,
+                            onIndependentRecognitionEnabled, "onboarding-independent-toggle", ui.trafficSignRecognitionEnabled)
                         SetupBody(R.string.onboarding_sources_body)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             SetupScreenshot(R.drawable.onboarding_limit_map, R.string.onboarding_normal_limit_caption, Modifier.weight(1f))
@@ -152,10 +156,6 @@ internal fun OnboardingScreen(
                         SetupInfo(R.string.onboarding_source_map_title, R.string.onboarding_source_map_body)
                         SetupInfo(R.string.onboarding_source_correction_title, R.string.onboarding_source_correction_body)
                         SetupInfo(R.string.onboarding_source_camera_title, R.string.onboarding_source_camera_body)
-                        SetupToggle(R.string.onboarding_recognition, ui.trafficSignRecognitionEnabled,
-                            onRecognitionEnabled, "onboarding-recognition-toggle")
-                        SetupToggle(R.string.onboarding_independent, ui.trafficSignRecognitionIndependentEnabled,
-                            onIndependentRecognitionEnabled, "onboarding-independent-toggle", ui.trafficSignRecognitionEnabled)
                         SetupBody(R.string.onboarding_independent_body)
                     }
                     else -> {

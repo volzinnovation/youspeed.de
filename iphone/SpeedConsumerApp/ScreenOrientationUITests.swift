@@ -47,7 +47,7 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertTrue(workspace.waitForExistence(timeout: 5))
             let landscape = mount != "portrait"
             let settled = NSPredicate { _, _ in
-                landscape ? sign.frame.maxX <= workspace.frame.minX : sign.frame.maxY <= workspace.frame.minY
+                sign.frame.maxX <= workspace.frame.minX && abs(sign.frame.midY - workspace.frame.midY) < 2
             }
             expectation(for: settled, evaluatedWith: nil)
             waitForExpectations(timeout: 10)
@@ -58,12 +58,12 @@ final class ScreenOrientationUITests: XCTestCase {
             XCTAssertGreaterThanOrEqual(sign.frame.minY, screen.minY)
             XCTAssertLessThanOrEqual(workspace.frame.maxX, screen.maxX + 1)
             XCTAssertLessThanOrEqual(workspace.frame.maxY, screen.maxY + 1)
-            let buttons = workspace.buttons.allElementsBoundByIndex.filter { $0.isHittable }
+            let buttons = app.buttons.allElementsBoundByIndex.filter { $0.isHittable }
             XCTAssertGreaterThanOrEqual(buttons.count, 4)
             for (index, button) in buttons.enumerated() {
-                XCTAssertGreaterThanOrEqual(button.frame.minX, workspace.frame.minX - 1)
-                XCTAssertLessThanOrEqual(button.frame.maxX, workspace.frame.maxX + 1)
-                XCTAssertLessThanOrEqual(button.frame.maxY, workspace.frame.maxY + 1)
+                XCTAssertGreaterThanOrEqual(button.frame.minX, screen.minX - 1)
+                XCTAssertLessThanOrEqual(button.frame.maxX, screen.maxX + 1)
+                XCTAssertLessThanOrEqual(button.frame.maxY, screen.maxY + 1)
                 for other in buttons.dropFirst(index + 1) {
                     XCTAssertFalse(button.frame.intersects(other.frame), "Dashboard buttons overlap")
                 }

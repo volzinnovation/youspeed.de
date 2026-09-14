@@ -88,6 +88,14 @@ class OnboardingInstrumentedTest {
         ui.value = ConsumerUiState(onboardingStep = 3, preciseLocationGranted = true)
         mapReady.value = true
         render()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val title = compose.onNodeWithTag("onboarding-title").fetchSemanticsNode()
+        val recognitionToggle = compose.onNodeWithTag("onboarding-recognition-toggle").fetchSemanticsNode()
+        val body = compose.onNodeWithText(context.getString(R.string.onboarding_sources_body)).fetchSemanticsNode()
+        assertTrue("Step 4 recognition setting follows its title",
+            recognitionToggle.positionInRoot.y >= title.positionInRoot.y + title.size.height)
+        assertTrue("Step 4 settings appear before the explanatory body",
+            recognitionToggle.positionInRoot.y < body.positionInRoot.y)
         compose.onNodeWithTag("onboarding-recognition-toggle").performScrollTo().assertIsOff().performClick()
         compose.onNodeWithTag("onboarding-recognition-toggle").assertIsOn()
         compose.onNodeWithTag("onboarding-independent-toggle").performScrollTo().assertIsOff().performClick()

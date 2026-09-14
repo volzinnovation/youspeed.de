@@ -155,7 +155,9 @@ struct MainView: View {
             let minDimension = min(proxy.size.width, proxy.size.height)
             let screenInset = max(8, minDimension * 0.02)
             let sectionGap = landscape ? CGFloat(12) : max(14, minDimension * 0.04)
-            let paneWidth = landscape ? (proxy.size.width - sectionGap) / 2 : proxy.size.width
+            // Keep the speed-limit pane on the viewer's left in portrait as
+            // well, so the sign is centered in the left half of the display.
+            let paneWidth = (proxy.size.width - sectionGap) / 2
             let horizontalPadding = max(12, paneWidth * 0.04)
             let controlDiameter: CGFloat = 44
             let bottomButtonGapWidth = max(0, paneWidth - screenInset * 2 - controlDiameter * 2)
@@ -171,7 +173,7 @@ struct MainView: View {
                 - locationReserve - sectionGap * 2) / 1.78
             let signSize = landscape
                 ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
-                : min(signWidthBudget, max(minDimension * 0.58, portraitSignHeight))
+                : min(signWidthBudget, max(60, portraitSignHeight))
             let workspaceBudget = max(60, proxy.size.height - contentBottomInset - screenInset)
             let primaryMetricFontSize = landscape
                 ? min(signSize * speedLimitNumberScale,
@@ -182,9 +184,7 @@ struct MainView: View {
                 baseSecondaryFont: baseSecondaryFont, availableWidth: paneWidth - horizontalPadding * 2)
             let debugFont = secondaryFont * 0.6
             let debugSpacing = max(2, minDimension * 0.004)
-            let layout = landscape
-                ? AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
-                : AnyLayout(VStackLayout(spacing: sectionGap))
+            let layout = AnyLayout(HStackLayout(alignment: .center, spacing: sectionGap))
             ZStack {
                 screenBackgroundView.ignoresSafeArea()
                 layout {
@@ -226,8 +226,8 @@ struct MainView: View {
                                     .accessibilityLabel(NSLocalizedString("limit.accessibility.end", comment: ""))
                             }
                         }
-                        .frame(height: signSize)
-                        .frame(maxWidth: .infinity)
+                        .frame(width: signSize, height: signSize)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                         .padding(.horizontal, screenInset)
                         .contentShape(Rectangle())
                         .highPriorityGesture(
@@ -235,12 +235,11 @@ struct MainView: View {
                                 viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
                             }
                         )
-                        .padding(.top, contentTopInset)
-                        topCornerButtons
+                        topCornerButtons(landscape: landscape)
                             .padding(.horizontal, screenInset)
                             .padding(.top, topPadding)
                     }
-                    .frame(width: paneWidth, height: landscape ? proxy.size.height : signSize + contentTopInset)
+                    .frame(width: paneWidth, height: proxy.size.height)
                     .environment(\.layoutDirection, textLayoutDirection)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("dashboard.limitPane")
@@ -264,9 +263,11 @@ struct MainView: View {
                                 .padding(.bottom, bottomPadding + controlDiameter + 8)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         }
-                        bottomCornerButtons(horizontalPadding: screenInset)
-                            .padding(.bottom, bottomPadding)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        if landscape {
+                            bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: false)
+                                .padding(.bottom, bottomPadding)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        }
                     }
                     .frame(width: paneWidth)
                     .frame(maxHeight: .infinity)
@@ -275,6 +276,11 @@ struct MainView: View {
                     .accessibilityIdentifier("dashboard.workspacePane")
                 }
                 .environment(\.layoutDirection, .leftToRight)
+            }
+            if !landscape {
+                bottomCornerButtons(horizontalPadding: screenInset, includeLocalRecordings: true)
+                    .padding(.bottom, bottomPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
         }
         .sheet(isPresented: $showingSettings) {
@@ -348,11 +354,15 @@ struct MainView: View {
         )
     }
 
-    private var topCornerButtons: some View {
+    private func topCornerButtons(landscape: Bool) -> some View {
         HStack(alignment: .top) {
-            localRecordingsButton
+            if landscape {
+                localRecordingsButton
+            }
 
-            Spacer()
+            if landscape {
+                Spacer()
+            }
 
             if viewModel.trafficSignPictogramEnabled,
                let sign = viewModel.trafficSignPictogram {
@@ -419,7 +429,7 @@ struct MainView: View {
         return primaryForegroundColor
     }
 
-    private func bottomCornerButtons(horizontalPadding: CGFloat) -> some View {
+    private func bottomCornerButtons(horizontalPadding: CGFloat, includeLocalRecordings: Bool) -> some View {
         let recorderControl = DriveRecorderMainControlPresentation.resolve(
             for: viewModel.driveRecorderState
         )
@@ -445,6 +455,11 @@ struct MainView: View {
             .contentShape(Circle())
             .accessibilityLabel(NSLocalizedString(recorderControl.accessibilityLocalizationKey, comment: ""))
             .disabled(!recorderControl.isEnabled)
+
+            if includeLocalRecordings {
+                Spacer()
+                localRecordingsButton
+            }
 
             Spacer()
 

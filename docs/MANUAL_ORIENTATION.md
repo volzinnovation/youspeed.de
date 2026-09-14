@@ -7,7 +7,7 @@ saved user choice, not a response to the device's orientation sensor.
 
 | Saved value | Setting | Layout |
 | --- | --- | --- |
-| `portrait` | Portrait (default) | Existing top and bottom arrangement |
+| `portrait` | Portrait (default) | Speed-limit pane centered on the left; dashboard workspace on the right |
 | `landscape_camera_lower_right` | Landscape — camera lower right | Existing top/sign area on the viewer's left; speed/location or dashcam workspace on the right |
 | `landscape_camera_upper_left` | Landscape — camera upper left | The same left/right arrangement |
 
@@ -33,7 +33,13 @@ The choice persists across app launches and applies to settings and galleries
 as well as the driving screen. Controls respect side cutouts and system bars.
 Unknown saved values fall back to portrait.
 
-## Android portrait layout
+## Portrait layout
+
+Portrait uses the same left/right pane order as landscape. The speed-limit
+sign is centered horizontally and vertically in the left half of the display;
+the speed, location and dashcam workspace occupies the right half. The action
+row spans the full width along the bottom so all controls remain reachable on
+narrow phones.
 
 All full-screen sheets share a 48 dp close button to the left of the title.
 The dialog window follows the current display size, including rotation while a

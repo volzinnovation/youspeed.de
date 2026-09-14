@@ -59,8 +59,7 @@ class ManualOrientationLayoutInstrumentedTest {
                         val workspace = compose.onAllNodesWithTag("main-workspace-pane").fetchSemanticsNodes()
                             .singleOrNull()?.boundsInWindow
                         val arranged = sign != null && workspace != null &&
-                            if (orientation.isLandscape) sign.right <= workspace.left && sign.center.x < workspace.center.x
-                            else sign.bottom <= workspace.top && sign.center.y < workspace.center.y
+                            sign.right <= workspace.left && sign.center.y >= workspace.top && sign.center.y <= workspace.bottom
                         ready = device.displayRotation == orientation.targetRotation && arranged
                         ready
                     }

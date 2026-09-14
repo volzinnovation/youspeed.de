@@ -291,6 +291,9 @@ struct FirstUserWelcomeView: View {
 
     private var sourcesStep: some View {
         VStack(alignment: .leading, spacing: 18) {
+            Toggle("drive_recorder.settings.tsr", isOn: $viewModel.trafficSignRecognitionEnabled)
+            Toggle("drive_recorder.settings.tsr_independent", isOn: $viewModel.trafficSignRecognitionIndependentEnabled)
+                .disabled(!viewModel.trafficSignRecognitionEnabled)
             HStack(alignment: .top, spacing: 16) {
                 screenshot("onboarding-map-limit", caption: "onboarding.sources.map_screenshot")
                 screenshot("onboarding-camera-limit", caption: "onboarding.sources.camera_screenshot")
@@ -299,9 +302,6 @@ struct FirstUserWelcomeView: View {
             information("onboarding.sources.map", icon: "map")
             information("onboarding.sources.voice", icon: "mic")
             information("onboarding.sources.camera", icon: "camera.viewfinder")
-            Toggle("drive_recorder.settings.tsr", isOn: $viewModel.trafficSignRecognitionEnabled)
-            Toggle("drive_recorder.settings.tsr_independent", isOn: $viewModel.trafficSignRecognitionIndependentEnabled)
-                .disabled(!viewModel.trafficSignRecognitionEnabled)
             Text("onboarding.sources.independent").font(.footnote).foregroundStyle(.secondary)
         }
     }

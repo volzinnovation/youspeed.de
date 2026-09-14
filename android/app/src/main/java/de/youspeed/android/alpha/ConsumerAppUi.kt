@@ -480,17 +480,18 @@ private fun MainScreen(
         Modifier.fillMaxSize().background(background).testTag("main-root").safeDrawingPadding(),
     ) {
         val landscape = ui.manualOrientation.isLandscape && maxWidth > maxHeight
-        val signPaneWidth = if (landscape) maxWidth * 0.45f else maxWidth
-        val workspaceWidth = if (landscape) maxWidth - signPaneWidth else maxWidth
+        // Portrait keeps the speed-limit pane on the viewer's left as well.
+        // Use the selected mode for control placement so a transient window
+        // measurement cannot put the debug shortcut back in the top corner.
+        val signPaneWidth = if (landscape) maxWidth * 0.45f else maxWidth * 0.5f
+        val workspaceWidth = maxWidth - signPaneWidth
         val minDimension = min(maxWidth.value, maxHeight.value)
         val screenInset = max(8f, minDimension * 0.02f).dp
         val compact = maxHeight.value < 780f
         val preferredSignSize = signPaneWidth * if (compact) 0.60f else 0.72f
         val signSize = min(preferredSignSize.value,
             if (landscape) max(48f, maxHeight.value - 104f)
-            else if (recorderVisible) maxHeight.value * 0.30f else maxHeight.value * 0.40f).dp
-        val portraitTopHeight = min(maxHeight.value * 0.57f,
-            signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 28f).dp
+            else maxHeight.value * 0.40f).dp
         val primaryMetricFont = (signSize.value * if (compact) 0.42f else SPEED_LIMIT_NUMBER_SCALE).sp
         val secondaryScale = sharedSecondaryScale(
             primaryMetricFont.value * SECONDARY_TEXT_RATIO,
@@ -510,9 +511,8 @@ private fun MainScreen(
         Layout(
             modifier = Modifier.fillMaxSize(),
             content = {
-                Column(
+                Box(
                     Modifier.fillMaxSize().padding(top = screenInset, bottom = 8.dp).testTag("main-sign-pane"),
-                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     TopCornerButtons(
                         screenInset, foreground, buttonBg, buttonBorder,
@@ -520,13 +520,13 @@ private fun MainScreen(
                         ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
                         showLocalRecordings = landscape,
                         onOpenLocalRecordings = onOpenLocalRecordings,
+                        modifier = Modifier.align(Alignment.TopStart),
                     )
-                    Spacer(Modifier.weight(1f))
                     val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
                         ConsumerMainScreenLogic.isInSpeedCaptureMode(ui), ui.effectiveSpeedLimitSource,
                         ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,
                     )
-                    Box(Modifier.fillMaxWidth().height(signSize), contentAlignment = Alignment.Center) {
+                    Box(Modifier.align(Alignment.Center).size(signSize), contentAlignment = Alignment.Center) {
                         if (showsActiveCameraLimitIndicator) ActiveCameraSpeedLimitEye(signSize, screenInset)
                         SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
@@ -547,7 +547,6 @@ private fun MainScreen(
                             signSize = signSize * 0.34f,
                         )
                     }
-                    Spacer(Modifier.weight(1f))
                 }
                 Column(
                     Modifier.fillMaxSize().padding(top = if (landscape) screenInset else 0.dp, bottom = 12.dp)
@@ -582,13 +581,13 @@ private fun MainScreen(
                         controller, Modifier.padding(top = 6.dp).testTag("drive-recorder-status"),
                         onPreviewRequested = { previewSelected = true },
                     )
-                    BottomCornerButtons(
+                    if (landscape) BottomCornerButtons(
                         horizontalPadding = screenInset, foreground = foreground,
                         buttonBg = buttonBg, buttonBorder = buttonBorder,
                         onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
                         onOpenPanoramaxGallery = onOpenPanoramaxGallery,
                         onToggleDriveRecorder = onToggleDriveRecorder,
-                        onOpenLocalRecordings = onOpenLocalRecordings.takeUnless { landscape },
+                        onOpenLocalRecordings = null,
                         localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
                         driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
                         modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
@@ -598,20 +597,31 @@ private fun MainScreen(
         ) { measurables, constraints ->
             val width = constraints.maxWidth
             val height = constraints.maxHeight
-            val upperWidth = if (landscape) (width * 0.45f).toInt() else width
-            val upperHeight = if (landscape) height else portraitTopHeight.roundToPx().coerceIn(0, height)
+            val upperWidth = if (landscape) (width * 0.45f).toInt() else (width * 0.5f).toInt()
+            val upperHeight = height
             val upper = measurables[0].measure(Constraints.fixed(upperWidth, upperHeight))
             val lower = measurables[1].measure(Constraints.fixed(
-                if (landscape) width - upperWidth else width,
-                if (landscape) height else height - upperHeight,
+                width - upperWidth,
+                height,
             ))
             layout(width, height) {
                 upper.place(0, 0)
                 // Absolute placement makes the requested left/right invariant
                 // independent of interface language and mounting direction.
-                lower.place(if (landscape) upperWidth else 0, if (landscape) 0 else upperHeight)
+                lower.place(upperWidth, 0)
             }
         }
+        if (!landscape) BottomCornerButtons(
+            horizontalPadding = screenInset, foreground = foreground,
+            buttonBg = buttonBg, buttonBorder = buttonBorder,
+            onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
+            onOpenPanoramaxGallery = onOpenPanoramaxGallery,
+            onToggleDriveRecorder = onToggleDriveRecorder,
+            onOpenLocalRecordings = onOpenLocalRecordings,
+            localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
+            driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+        )
     }
 }
 
@@ -625,10 +635,11 @@ private fun TopCornerButtons(
     pictogram: TrafficSignPictogram?,
     showLocalRecordings: Boolean,
     onOpenLocalRecordings: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (!showLocalRecordings && pictogram == null) return
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = screenInset),
         verticalAlignment = Alignment.Top,
@@ -642,7 +653,7 @@ private fun TopCornerButtons(
                 tint = bugTint,
             )
         }
-        Spacer(modifier = Modifier.weight(1f))
+        if (showLocalRecordings) Spacer(modifier = Modifier.weight(1f))
         pictogram?.let { RecognizedTrafficSignPictogram(it) }
     }
 }
