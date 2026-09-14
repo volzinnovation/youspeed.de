@@ -1,0 +1,52 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # A handful of tests assert on locale-formatted strings (e.g. "Monat Fahrverbot") without
+      # pinning the JVM locale themselves, so they pass or fail depending on the host's default
+      # locale rather than the code under test. Forcing it here at the JVM level (not via
+      # LANG/locale-gen, which isn't guaranteed present on a fresh runner) makes the result
+      # deterministic without touching application or test code.
+      - name: Run Android unit tests
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest -Duser.language=de -Duser.country=DE
+
+  ios-tests:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build consumer app
+        run: ./scripts/iphone/build_consumer_app.sh
+
+      - name: Run iOS simulator tests
+        run: |
+          xcodebuild test \
+            -project iphone/SpeedDBBench.xcodeproj \
+            -scheme SpeedConsumer \
+            -destination 'platform=iOS Simulator,name=iPhone 16'
