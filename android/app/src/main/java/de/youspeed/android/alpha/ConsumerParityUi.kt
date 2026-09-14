@@ -46,7 +46,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
@@ -384,35 +386,50 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
 }
 
 @Composable
-private fun GalleryActionBar(content: @Composable RowScope.() -> Unit) {
+@OptIn(ExperimentalLayoutApi::class)
+private fun GalleryActionBar(content: @Composable FlowRowScope.() -> Unit) {
     Surface(tonalElevation = 3.dp) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            content = content,
-        )
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+            // Wrap whole actions on narrow phones. Larger system text gets
+            // at most two columns; labels can grow without being clipped.
+            val minimumActionWidth = 112.dp
+            val spacing = 4.dp
+            val maximumColumns = if (LocalDensity.current.fontScale > 1.3f) 2 else 4
+            val columns = ((maxWidth + spacing) / (minimumActionWidth + spacing)).toInt().coerceIn(1, maximumColumns)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                maxItemsInEachRow = columns,
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+                verticalArrangement = Arrangement.spacedBy(spacing),
+                content = content,
+            )
+        }
     }
 }
 
 @Composable
-private fun GalleryAction(
+@OptIn(ExperimentalLayoutApi::class)
+private fun FlowRowScope.GalleryAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
     Column(
-        Modifier.width(76.dp).clickable(enabled = enabled, onClick = onClick).padding(vertical = 2.dp),
+        Modifier.weight(1f).heightIn(min = 64.dp).testTag("gallery-action")
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Icon(icon, contentDescription = label, tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
-        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+        Icon(icon, contentDescription = null, tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+        Text(label, style = MaterialTheme.typography.labelSmall, minLines = 2, textAlign = TextAlign.Center,
             color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
     }
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun DashcamLibraryContent(controller: ConsumerSessionController) {
     val recordings = controller.uiState.dashcamRecordings
     val context = LocalContext.current
@@ -492,6 +509,7 @@ private fun ParityDeleteConfirmation(count: Int, onDismiss: () -> Unit, onDelete
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
     val ui = controller.uiState
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
@@ -606,7 +624,6 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController) {
                     selected.keys.none { it in ui.panoramaxActiveUploadBatchIds },
                 onClick = { deleteConfirmation = true },
             )
-            Spacer(Modifier.weight(1f))
             if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
                 GalleryAction(
                     icon = Icons.Default.Upload,
@@ -680,7 +697,9 @@ private fun LocalPhoto(file: File, modifier: Modifier, maximumDimension: Int, co
     }
     if (bitmap != null) Image(requireNotNull(bitmap).asImageBitmap(), parityText("Captured photo", "Aufgenommenes Foto", "Photo capturée", "Gemaakte foto"), modifier, contentScale = contentScale)
     else Box(modifier.background(Color.DarkGray), contentAlignment = Alignment.Center) {
-        Text(parityText("Photo unavailable", "Foto nicht verfügbar", "Photo indisponible", "Foto niet beschikbaar"), color = Color.White)
+        Text(parityText("Photo unavailable", "Foto nicht verfügbar", "Photo indisponible", "Foto niet beschikbaar"),
+            modifier = Modifier.padding(6.dp), color = Color.White,
+            style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center)
     }
 }
 

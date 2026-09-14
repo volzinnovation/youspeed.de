@@ -33,6 +33,21 @@ The choice persists across app launches and applies to settings and galleries
 as well as the driving screen. Controls respect side cutouts and system bars.
 Unknown saved values fall back to portrait.
 
+## Android portrait layout
+
+All full-screen sheets share a 48 dp close button to the left of the title.
+The dialog window follows the current display size, including rotation while a
+sheet stays open. Sheet borders and content stay inside system bars, cutouts and
+the on-screen keyboard; long content scrolls beneath the fixed header.
+
+Gallery actions and local-recording actions wrap onto additional rows when
+space is limited. Their labels remain readable with enlarged system text.
+Dashboard controls have 48 dp targets. In portrait, the recorder, gallery, local
+recordings, legal notices and settings controls share the bottom row. Android's
+dashboard omits the GPS marker and accuracy readout, matching iPhone; GPS data
+remains available in diagnostics. Startup messages scroll so that Retry remains
+reachable on a narrow portrait screen, including long failure messages.
+
 ## Dashcam action ordering
 
 Any enabled in-app button pressed while dashcam video is active first requests
@@ -83,6 +98,13 @@ Automated coverage lives in iPhone's `SpeedConsumerTests` and
 `DashcamButtonActionGateTests`, `ManualOrientationInstrumentedTest`,
 `ManualOrientationLayoutInstrumentedTest`, `PanoramaxMetadataInstrumentedTest`
 and `DriveRecorderInstrumentedTest`.
+
+Android portrait regression coverage also includes
+`SheetBoundsInstrumentedTest` and `PortraitContentLayoutInstrumentedTest`.
+These check unclipped bounds, close-button placement, both landscape-to-portrait
+transitions with Settings open, the real keyboard, gallery and recording
+actions, long startup errors, and all five onboarding steps. Narrow-screen
+coverage includes 320/360 dp widths and text enlarged to 150%.
 
 Implementation validation (14 September 2026): Android passed 291 unit tests,
 13 emulator layout/controller/metadata tests, and the live CameraX button test,

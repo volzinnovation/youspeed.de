@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Paint as AndroidPaint
 import android.graphics.Typeface
 import android.text.format.Formatter
+import android.view.WindowManager
 import androidx.core.content.res.ResourcesCompat
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -29,6 +30,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -62,14 +65,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.LocationSearching
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.AlertDialog
@@ -92,6 +92,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -123,6 +124,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -141,6 +143,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.abs
@@ -187,9 +190,8 @@ private val CITY_BADGE_DISTRICT_TEXT_SIZE = 16.sp
 private val CITY_BADGE_LINE_SPACING = 2.dp
 private val CITY_BADGE_HORIZONTAL_PADDING = 12.dp
 private val CITY_BADGE_VERTICAL_PADDING = 8.dp
-private val GPS_BADGE_MIN_HEIGHT = 58.dp
 private val LOCATION_SLOT_MIN_HEIGHT = 84.dp
-private val CONTROL_BUTTON_DIAMETER = 44.dp
+private val CONTROL_BUTTON_DIAMETER = 48.dp
 private val TrafficSignFontFamily = FontFamily(
     Font(R.font.u_din_1451_mittelschrift_regular, weight = FontWeight.Normal),
 )
@@ -325,7 +327,7 @@ fun ConsumerApp(controller: ConsumerSessionController) {
 }
 
 @Composable
-private fun StartupScreen(
+internal fun StartupScreen(
     ui: ConsumerUiState,
     onRetry: () -> Unit,
 ) {
@@ -334,13 +336,16 @@ private fun StartupScreen(
             .fillMaxSize()
             .background(Color.Black)
             .testTag("startup-root")
+            .safeDrawingPadding()
             .padding(24.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(18.dp),
-            modifier = Modifier.widthIn(max = 420.dp),
+            modifier = Modifier.widthIn(max = 420.dp)
+                .verticalScroll(rememberScrollState())
+                .testTag("startup-content"),
         ) {
             Text("YouSpeed", color = Color.White, style = roundedUiTextStyle(size = 42.sp, weight = FontWeight.Bold))
             Text(stringResource(R.string.startup_loading_map_data), color = Color.White, style = roundedUiTextStyle(size = 20.sp, weight = FontWeight.SemiBold))
@@ -366,7 +371,7 @@ private fun StartupScreen(
                 Button(
                     onClick = onRetry,
                     colors = ButtonDefaults.buttonColors(containerColor = SoftRed),
-                    modifier = Modifier.testTag("startup-retry-button"),
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("startup-retry-button"),
                 ) {
                     Text(stringResource(R.string.startup_retry), style = roundedUiTextStyle(size = 17.sp, weight = FontWeight.Bold))
                 }
@@ -513,9 +518,8 @@ private fun MainScreen(
                         screenInset, foreground, buttonBg, buttonBorder,
                         trafficSignBugButtonTint(ui, foreground),
                         ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
-                        ui.gpsSignalBars, ui.gpsHorizontalAccuracyM,
-                        ConsumerMainScreenLogic.hasUsableCoarseLocation(ui), ui.coarseHorizontalAccuracyM,
-                        onOpenLocalRecordings,
+                        showLocalRecordings = landscape,
+                        onOpenLocalRecordings = onOpenLocalRecordings,
                     )
                     Spacer(Modifier.weight(1f))
                     val showsActiveCameraLimitIndicator = CameraSpeedLimitUsePresentation.isVisible(
@@ -584,6 +588,8 @@ private fun MainScreen(
                         onOpenLegal = onOpenLegal, onOpenSettings = onOpenSettings,
                         onOpenPanoramaxGallery = onOpenPanoramaxGallery,
                         onToggleDriveRecorder = onToggleDriveRecorder,
+                        onOpenLocalRecordings = onOpenLocalRecordings.takeUnless { landscape },
+                        localRecordingsTint = trafficSignBugButtonTint(ui, foreground),
                         driveRecorderState = ui.driveRecorderState, panoramaxCaptureCount = ui.panoramaxCaptureCount,
                         modifier = Modifier.padding(top = if (recorderVisible) 8.dp else 16.dp),
                     )
@@ -617,36 +623,27 @@ private fun TopCornerButtons(
     buttonBorder: Color,
     bugTint: Color,
     pictogram: TrafficSignPictogram?,
-    gpsSignalBars: Int,
-    gpsHorizontalAccuracyM: Double?,
-    coarseLocationAvailable: Boolean,
-    coarseHorizontalAccuracyM: Double?,
+    showLocalRecordings: Boolean,
     onOpenLocalRecordings: () -> Unit,
 ) {
+    if (!showLocalRecordings && pictogram == null) return
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = screenInset),
         verticalAlignment = Alignment.Top,
     ) {
-        LocalRecordingsButton(
-            onClick = onOpenLocalRecordings,
-            foreground = foreground,
-            buttonBg = buttonBg,
-            buttonBorder = buttonBorder,
-            tint = bugTint,
-        )
-        Spacer(modifier = Modifier.weight(1f))
-        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            GpsSignalBadge(
-                bars = gpsSignalBars,
-                accuracyM = gpsHorizontalAccuracyM,
-                coarseLocationAvailable = coarseLocationAvailable,
-                coarseAccuracyM = coarseHorizontalAccuracyM,
+        if (showLocalRecordings) {
+            LocalRecordingsButton(
+                onClick = onOpenLocalRecordings,
                 foreground = foreground,
+                buttonBg = buttonBg,
+                buttonBorder = buttonBorder,
+                tint = bugTint,
             )
-            pictogram?.let { RecognizedTrafficSignPictogram(it) }
         }
+        Spacer(modifier = Modifier.weight(1f))
+        pictogram?.let { RecognizedTrafficSignPictogram(it) }
     }
 }
 
@@ -792,6 +789,8 @@ private fun BottomCornerButtons(
     onOpenSettings: () -> Unit,
     onOpenPanoramaxGallery: () -> Unit,
     onToggleDriveRecorder: () -> Unit,
+    onOpenLocalRecordings: (() -> Unit)?,
+    localRecordingsTint: Color,
     driveRecorderState: DriveRecorderState,
     panoramaxCaptureCount: Int,
     modifier: Modifier = Modifier,
@@ -799,7 +798,8 @@ private fun BottomCornerButtons(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = horizontalPadding),
+            .padding(horizontal = horizontalPadding)
+            .testTag("dashboard-bottom-controls"),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         PillIconButton(
@@ -816,7 +816,15 @@ private fun BottomCornerButtons(
                 tint = Color(0xFFEF4444),
             )
         }
-        Spacer(modifier = Modifier.weight(1f))
+        if (onOpenLocalRecordings != null) {
+            LocalRecordingsButton(
+                onClick = onOpenLocalRecordings,
+                foreground = foreground,
+                buttonBg = buttonBg,
+                buttonBorder = buttonBorder,
+                tint = localRecordingsTint,
+            )
+        }
         PillIconButton(
             onClick = { if (DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState)) onOpenPanoramaxGallery() },
             enabled = DriveRecorderPolicy.canProcessPanoramaxUploads(driveRecorderState),
@@ -844,7 +852,6 @@ private fun BottomCornerButtons(
                 }
             }
         }
-        Spacer(modifier = Modifier.weight(1f))
         PillIconButton(
             onClick = onOpenLegal,
             background = buttonBg,
@@ -1247,60 +1254,6 @@ private fun CityBadgeLine(
 }
 
 @Composable
-private fun GpsSignalBadge(
-    bars: Int,
-    accuracyM: Double?,
-    coarseLocationAvailable: Boolean,
-    coarseAccuracyM: Double?,
-    foreground: Color,
-) {
-    val hasGps = bars > 0 && accuracyM != null
-    val shownAccuracyM = if (hasGps) accuracyM else coarseAccuracyM
-    val accuracyText = shownAccuracyM?.let { String.format(Locale.US, "%.0f m", it) }
-    Column(
-        modifier = Modifier
-            .heightIn(min = GPS_BADGE_MIN_HEIGHT)
-            .testTag("gps-badge"),
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = when {
-                    hasGps -> Icons.Default.LocationOn
-                    coarseLocationAvailable -> Icons.Default.Wifi
-                    else -> Icons.Default.LocationSearching
-                },
-                contentDescription = null,
-                tint = foreground,
-                modifier = Modifier.size(44.dp),
-            )
-            if (bars == 2) {
-                Text(
-                    "!",
-                    color = foreground,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.align(Alignment.BottomCenter),
-                )
-            }
-        }
-        Text(
-            accuracyText ?: " ",
-            color = foreground.copy(alpha = if (accuracyText == null) 0f else 0.82f),
-            fontSize = 11.sp,
-            fontFamily = FontFamily.Monospace,
-        )
-        Text(
-            if (hasGps) "GPS" else if (coarseLocationAvailable) "WLAN" else "GPS",
-            color = foreground.copy(alpha = if (hasGps || coarseLocationAvailable) 0.82f else 0f),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
 private fun SettingsSheet(
     controller: ConsumerSessionController,
     onDismiss: () -> Unit,
@@ -1615,6 +1568,7 @@ private fun DebugSheet(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LocalRecordingsSheet(
     controller: ConsumerSessionController,
@@ -1699,7 +1653,8 @@ private fun LocalRecordingsSheet(
                                 when (observation.state) {
                                     LocalObservationState.LOCAL_ONLY,
                                     LocalObservationState.NEEDS_REVIEW -> {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             OutlinedButton(onClick = { controller.approveLocalObservation(observation.id) }) {
                                                 Text(stringResource(R.string.ui_approve))
                                             }
@@ -1710,7 +1665,8 @@ private fun LocalRecordingsSheet(
                                     }
 
                                     LocalObservationState.APPROVED_FOR_EXPORT -> {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Button(
                                                 onClick = { controller.exportLocalObservation(observation.id) },
                                                 colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
@@ -1736,11 +1692,15 @@ private fun LocalRecordingsSheet(
             if (ui.lastExportDirectoryPath.isNotBlank()) {
                 Text(stringResource(R.string.ui_export_directory, ui.lastExportDirectoryPath), color = Color(0xFF555555), fontSize = 12.sp)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth().testTag("local-recordings-actions"),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Button(
                     onClick = controller::exportAllLocalObservations,
                     colors = ButtonDefaults.buttonColors(containerColor = SignalGreen),
-                    modifier = Modifier.testTag("local-export-button"),
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("local-export-button"),
                 ) {
                     Icon(Icons.Default.Download, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1748,7 +1708,7 @@ private fun LocalRecordingsSheet(
                 }
                 OutlinedButton(
                     onClick = controller::deleteAllLocalObservations,
-                    modifier = Modifier.testTag("local-delete-all-button"),
+                    modifier = Modifier.heightIn(min = 48.dp).testTag("local-delete-all-button"),
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -1874,8 +1834,18 @@ internal fun SheetScaffold(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        // Compose 1.6's non-default width mode ignores the window's measure limits
+        // and fixes its size from a retained themed context. Let WindowManager
+        // resize the dialog instead, including when this open sheet rotates.
+        properties = DialogProperties(usePlatformDefaultWidth = true, decorFitsSystemWindows = false),
     ) {
+        val window = (LocalView.current.parent as DialogWindowProvider).window
+        SideEffect {
+            if (window.attributes.width != WindowManager.LayoutParams.MATCH_PARENT ||
+                window.attributes.height != WindowManager.LayoutParams.MATCH_PARENT) {
+                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            }
+        }
         Surface(
             modifier = Modifier
                 .fillMaxSize()
@@ -1890,18 +1860,23 @@ internal fun SheetScaffold(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .testTag("$testTag-header")
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
                     }
+                    Spacer(Modifier.width(8.dp))
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).testTag("$testTag-title"))
                 }
                 HorizontalDivider()
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .testTag("$testTag-content")
                         .padding(16.dp),
                     content = content,
                 )
