@@ -18,30 +18,30 @@ enum ScreenOrientation: String, CaseIterable, Identifiable {
     var interfaceOrientation: UIInterfaceOrientation {
         switch self {
         case .portrait: .portrait
-        case .landscapeCameraLowerRight: .landscapeRight
-        case .landscapeCameraUpperLeft: .landscapeLeft
+        case .landscapeCameraLowerRight: .landscapeLeft
+        case .landscapeCameraUpperLeft: .landscapeRight
         }
     }
     var interfaceMask: UIInterfaceOrientationMask {
         switch self {
         case .portrait: .portrait
-        case .landscapeCameraLowerRight: .landscapeRight
-        case .landscapeCameraUpperLeft: .landscapeLeft
+        case .landscapeCameraLowerRight: .landscapeLeft
+        case .landscapeCameraUpperLeft: .landscapeRight
         }
     }
     var captureRotationAngle: CGFloat {
         switch self {
         case .portrait: 90
-        case .landscapeCameraLowerRight: 0
-        case .landscapeCameraUpperLeft: 180
+        case .landscapeCameraLowerRight: 180
+        case .landscapeCameraUpperLeft: 0
         }
     }
     /// Video-data buffers retain the rear sensor's native orientation.
     var frameOrientation: CGImagePropertyOrientation {
         switch self {
         case .portrait: .right
-        case .landscapeCameraLowerRight: .up
-        case .landscapeCameraUpperLeft: .down
+        case .landscapeCameraLowerRight: .down
+        case .landscapeCameraUpperLeft: .up
         }
     }
 }

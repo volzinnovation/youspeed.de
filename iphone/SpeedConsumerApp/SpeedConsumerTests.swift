@@ -18984,14 +18984,18 @@ extension SpeedConsumerTests {
             defaults.set(orientation.rawValue, forKey: ScreenOrientation.defaultsKey)
             XCTAssertEqual(ScreenOrientation.load(from: defaults), orientation)
         }
-        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.interfaceMask, .landscapeRight)
-        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.interfaceMask, .landscapeLeft)
+        XCTAssertEqual(ScreenOrientation.portrait.interfaceOrientation, .portrait)
+        XCTAssertEqual(ScreenOrientation.portrait.interfaceMask, .portrait)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.interfaceOrientation, .landscapeLeft)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.interfaceMask, .landscapeLeft)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.interfaceOrientation, .landscapeRight)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.interfaceMask, .landscapeRight)
         XCTAssertEqual(ScreenOrientation.portrait.captureRotationAngle, 90)
         XCTAssertEqual(ScreenOrientation.portrait.frameOrientation, .right)
-        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.captureRotationAngle, 0)
-        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.frameOrientation, .up)
-        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.captureRotationAngle, 180)
-        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.frameOrientation, .down)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.captureRotationAngle, 180)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraLowerRight.frameOrientation, .down)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.captureRotationAngle, 0)
+        XCTAssertEqual(ScreenOrientation.landscapeCameraUpperLeft.frameOrientation, .up)
     }
 
     @MainActor

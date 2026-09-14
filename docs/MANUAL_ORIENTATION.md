@@ -11,11 +11,18 @@ saved user choice, not a response to the device's orientation sensor.
 | `landscape_camera_lower_right` | Landscape — camera lower right | Existing top/sign area on the viewer's left; speed/location or dashcam workspace on the right |
 | `landscape_camera_upper_left` | Landscape — camera upper left | The same left/right arrangement |
 
-The landscape labels describe the rear-camera position as projected from the
-screen side on a phone whose rear camera is at the upper left when looking at
-its back. Lower right has the charging connector on the viewer's left; upper
-left has it on the right. Camera placement varies between Android models; the
-connector direction and selected screen rotation determine the mounting mode.
+The landscape labels describe the physical camera mounting position. Map these
+labels independently on each platform; native orientation names do not express
+the camera corner. Physical-device feedback confirmed the Android choices and
+identified the reversed iPhone choices, which are corrected by this mapping:
+
+| Mount | iPhone interface / capture angle | Android requested orientation / CameraX target |
+| --- | --- | --- |
+| Camera lower right | `landscapeLeft` / 180° | `REVERSE_LANDSCAPE` / `ROTATION_270` |
+| Camera upper left | `landscapeRight` / 0° | `LANDSCAPE` / `ROTATION_90` |
+
+Preview, photos, video and recognition frames use the corresponding platform
+mapping together. The saved values and user-facing labels remain stable.
 
 Text and controls are upright for the selected mounting position. Changing
 between the two landscape settings changes the physical display orientation by
@@ -81,6 +88,8 @@ Implementation validation (14 September 2026): Android passed 291 unit tests,
 13 emulator layout/controller/metadata tests, and the live CameraX button test,
 plus the debug build and lint (no errors). iPhone passed 12 focused unit tests
 and both UI flows on an iPhone 16e simulator, including changing mounts with
-Settings open. Both landscape layouts were inspected visually. Real-device
-camera orientation and capture output checks remain part of hardware validation;
-the implementation was not deployed to physical phones.
+Settings open. Both landscape layouts were inspected visually. The builds were
+subsequently installed and launched on the attached iPhone 14 Pro and Moto g86
+5G. The user confirmed Android mounting choices and reported the reversed iPhone
+choices addressed above. Real-device capture output checks remain part of
+hardware validation.
