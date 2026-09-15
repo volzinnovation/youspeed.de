@@ -182,7 +182,14 @@ class ManualOrientationLayoutInstrumentedTest {
             assertTrue("The five controls are evenly spaced", requireNotNull(gaps.maxOrNull()) - requireNotNull(gaps.minOrNull()) <= 2)
             assertTrue("Every portrait control is on one row", buttons.all { kotlin.math.abs(it.top - buttons.first().top) <= 1 })
         }
-        bounds("last-traffic-sign-pictogram")
+        val pictogram = bounds("last-traffic-sign-pictogram")
+        val signPane = bounds("main-sign-pane")
+        val minDimensionDp = minOf(device.displayWidth, device.displayHeight) / density
+        val screenInsetDp = maxOf(8f, minDimensionDp * 0.02f)
+        val cornerTolerance = 2 * screenInsetDp * density + 1
+        assertTrue("Secondary traffic sign stays at the top-left in $orientation",
+            pictogram.left <= signPane.left + cornerTolerance &&
+                pictogram.top <= signPane.top + cornerTolerance)
         bounds("camera-speed-source-marker")
     }
 }

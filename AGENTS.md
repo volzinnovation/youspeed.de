@@ -3,6 +3,8 @@
 ## Cross-platform feature parity
 
 - iPhone is the behavioral reference for the Android app. When a feature exists on iPhone, Android must provide the same user-visible behavior, controls, settings, defaults, capture outputs, and important runtime states unless a platform limitation is documented.
+- Traffic-sign pictograms must use the shared `shared/tsr/sign-pictograms/` asset set. Every display-eligible sign has an official-source SVG in `originals/` and its transparent PNG rendition in `png/`; both apps consume those shared bytes. Do not draw or substitute sign artwork in platform UI code.
+- Numeric speed-limit signs are the explicit exception: their platform UI is intentionally schematic, and the numeric value is interpreted against the penalty classes and displayed speed rather than sourced as a pictogram asset.
 - Before changing Android behavior, inspect the corresponding iPhone implementation and keep both implementations aligned. New Android-only features, settings, or download behavior require explicit product approval.
 - Validate parity on the attached Android device when device deployment is requested. Exercise the equivalent iPhone flow where practical, and use tests for state transitions and platform-specific fallbacks.
 - Bundle schemas, matchers, camera recognition, speed-limit presentation, recording, Panoramax capture, and network gating are shared product behavior. A schema or platform implementation change must be checked against both clients.

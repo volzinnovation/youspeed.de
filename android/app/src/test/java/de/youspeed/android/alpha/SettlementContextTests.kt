@@ -57,6 +57,14 @@ class SettlementContextTests {
         assertTrue(TrafficSignBundleContextPolicy.enteredCity(false, true, high, high))
         assertFalse(TrafficSignBundleContextPolicy.enteredCity(true, true, high, high))
         assertFalse(TrafficSignBundleContextPolicy.enteredCity(false, true, high, "admin_polygon"))
+        assertEquals(
+            TrafficSignBundleContextTransition.EXITED_CITY,
+            TrafficSignBundleContextPolicy.transition(true, false, high, high),
+        )
+        assertEquals(
+            TrafficSignBundleContextTransition.NONE,
+            TrafficSignBundleContextPolicy.transition(true, false, high, "settlement:landuse:low"),
+        )
     }
 
     @Test fun appVersionComparisonAndManifestSchemaAreEnforced() {

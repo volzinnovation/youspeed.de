@@ -266,7 +266,7 @@ struct MainView: View {
                                 viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
                             }
                         )
-                        topCornerButtons(landscape: landscape)
+                        topCornerButtons
                             .padding(.horizontal, screenInset)
                             .padding(.top, topPadding)
                     }
@@ -390,12 +390,8 @@ struct MainView: View {
         )
     }
 
-    private func topCornerButtons(landscape: Bool) -> some View {
+    private var topCornerButtons: some View {
         HStack(alignment: .top) {
-            if landscape {
-                Spacer()
-            }
-
             if viewModel.trafficSignPictogramEnabled,
                let sign = viewModel.trafficSignPictogram {
                 TrafficSignPictogramView(sign: sign)
@@ -405,6 +401,7 @@ struct MainView: View {
                 trafficSignRecognitionBadge
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(primaryForegroundColor)
     }
 
@@ -412,22 +409,13 @@ struct MainView: View {
         let sign: TrafficSignPresentationCatalog.Sign
 
         var body: some View {
-            Group {
-                if sign.classID == "hazard:school" {
-                    SchoolWarningSignView()
-                } else if sign.classID == "hazard:bicycle" {
-                    HazardSymbolWarningSignView(symbolName: "bicycle")
-                } else if sign.classID == "hazard:wild_animals" {
-                    HazardSymbolWarningSignView(symbolName: "hare.fill")
-                } else if sign.classID == "hazard:wind" {
-                    HazardSymbolWarningSignView(symbolName: "wind")
-                } else if let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                }
+            if let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
             }
             .accessibilityLabel(sign.localizedLabel())
+            .accessibilityIdentifier("dashboard.trafficSignPictogram")
         }
     }
 
@@ -1721,90 +1709,6 @@ private struct EndOfSpeedLimitSignView: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .accessibilityElement(children: .ignore)
-    }
-}
-
-private struct SchoolWarningSignView: View {
-    var body: some View {
-        GeometryReader { proxy in
-            let size = min(proxy.size.width, proxy.size.height)
-            ZStack {
-                WarningTriangle()
-                    .fill(Color.yellow)
-                WarningTriangle()
-                    .stroke(Color.red, style: StrokeStyle(lineWidth: size * 0.09, lineJoin: .round))
-                HStack(alignment: .bottom, spacing: size * 0.06) {
-                    WarningPerson(scale: size * 0.34)
-                    WarningPerson(scale: size * 0.27)
-                }
-                .offset(y: size * 0.04)
-            }
-            .frame(width: size, height: size)
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-}
-
-private struct HazardSymbolWarningSignView: View {
-    let symbolName: String
-
-    var body: some View {
-        GeometryReader { proxy in
-            let size = min(proxy.size.width, proxy.size.height)
-            ZStack {
-                WarningTriangle()
-                    .fill(Color.yellow)
-                WarningTriangle()
-                    .stroke(Color.red, style: StrokeStyle(lineWidth: size * 0.09, lineJoin: .round))
-                Image(systemName: symbolName)
-                    .font(.system(size: size * 0.32, weight: .bold))
-                    .foregroundStyle(.black)
-                    .offset(y: size * 0.08)
-            }
-            .frame(width: size, height: size)
-        }
-        .aspectRatio(1, contentMode: .fit)
-    }
-}
-
-private struct WarningPerson: View {
-    let scale: CGFloat
-
-    var body: some View {
-        VStack(spacing: -scale * 0.03) {
-            Circle()
-                .fill(.black)
-                .frame(width: scale * 0.22, height: scale * 0.22)
-            ZStack {
-                Capsule()
-                    .fill(.black)
-                    .frame(width: scale * 0.16, height: scale * 0.42)
-                HStack(spacing: scale * 0.16) {
-                    Capsule()
-                        .fill(.black)
-                        .frame(width: scale * 0.09, height: scale * 0.42)
-                        .rotationEffect(.degrees(35))
-                    Capsule()
-                        .fill(.black)
-                        .frame(width: scale * 0.09, height: scale * 0.42)
-                        .rotationEffect(.degrees(-35))
-                }
-                .offset(y: scale * 0.25)
-            }
-            .frame(width: scale * 0.48, height: scale * 0.68)
-        }
-        .frame(width: scale * 0.48, height: scale)
-    }
-}
-
-private struct WarningTriangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
     }
 }
 

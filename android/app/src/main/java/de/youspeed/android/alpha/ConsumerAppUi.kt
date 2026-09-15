@@ -690,103 +690,18 @@ private fun TopCornerButtons(
 private fun RecognizedTrafficSignPictogram(pictogram: TrafficSignPictogram) {
     val modifier = Modifier.size(72.dp)
         .padding(5.dp).testTag("last-traffic-sign-pictogram")
-    val description = stringResource(R.string.ui_last_recognized_sign, pictogram.label())
-    if (pictogram.classId in setOf("hazard:school", "hazard:bicycle", "hazard:wild_animals", "hazard:wind")) {
-        HazardWarningSign(modifier, pictogram.classId, description)
-    } else {
-        val context = LocalContext.current
-        val bitmap = remember(pictogram.imagePath) {
-            pictogram.imagePath?.let { path ->
-                runCatching { context.assets.open(path).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
-            }
-        }
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
-                modifier = modifier,
-            )
+    val context = LocalContext.current
+    val bitmap = remember(pictogram.imagePath) {
+        pictogram.imagePath?.let { path ->
+            runCatching { context.assets.open(path).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull()
         }
     }
-}
-
-@Composable
-private fun HazardWarningSign(modifier: Modifier, classId: String, description: String) {
-    Canvas(modifier.semantics { contentDescription = description }) {
-        val border = size.minDimension * 0.09f
-        val triangle = Path().apply {
-            moveTo(size.width / 2f, border)
-            lineTo(size.width - border, size.height - border)
-            lineTo(border, size.height - border)
-            close()
-        }
-        drawPath(triangle, Color.Yellow)
-        drawPath(triangle, Color.Red, style = Stroke(width = border, cap = StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
-        when (classId) {
-            "hazard:school" -> {
-                val figureScale = size.minDimension * 0.3f
-                drawWarningPerson(Offset(size.width * 0.4f, size.height * 0.56f), figureScale)
-                drawWarningPerson(Offset(size.width * 0.61f, size.height * 0.64f), figureScale * 0.78f)
-            }
-            "hazard:bicycle" -> drawBicycleWarningSymbol()
-            "hazard:wild_animals" -> drawWildAnimalWarningSymbol()
-            "hazard:wind" -> drawWindWarningSymbol()
-        }
-    }
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWarningPerson(anchor: Offset, scale: Float) {
-    val headRadius = scale * 0.11f
-    drawCircle(Color.Black, headRadius, Offset(anchor.x, anchor.y - scale * 0.32f))
-    drawLine(Color.Black, Offset(anchor.x, anchor.y - scale * 0.18f), Offset(anchor.x, anchor.y + scale * 0.2f), strokeWidth = scale * 0.12f, cap = StrokeCap.Round)
-    drawLine(Color.Black, Offset(anchor.x - scale * 0.22f, anchor.y - scale * 0.02f), Offset(anchor.x + scale * 0.22f, anchor.y - scale * 0.02f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
-    drawLine(Color.Black, Offset(anchor.x, anchor.y + scale * 0.2f), Offset(anchor.x - scale * 0.18f, anchor.y + scale * 0.48f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
-    drawLine(Color.Black, Offset(anchor.x, anchor.y + scale * 0.2f), Offset(anchor.x + scale * 0.18f, anchor.y + scale * 0.48f), strokeWidth = scale * 0.09f, cap = StrokeCap.Round)
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBicycleWarningSymbol() {
-    val radius = size.minDimension * 0.11f
-    val left = Offset(size.width * 0.37f, size.height * 0.67f)
-    val right = Offset(size.width * 0.63f, size.height * 0.67f)
-    drawCircle(Color.Black, radius, left, style = Stroke(width = size.minDimension * 0.045f))
-    drawCircle(Color.Black, radius, right, style = Stroke(width = size.minDimension * 0.045f))
-    drawLine(Color.Black, left, Offset(size.width * 0.49f, size.height * 0.49f), strokeWidth = size.minDimension * 0.045f)
-    drawLine(Color.Black, Offset(size.width * 0.49f, size.height * 0.49f), right, strokeWidth = size.minDimension * 0.045f)
-    drawLine(Color.Black, left, right, strokeWidth = size.minDimension * 0.045f)
-    drawLine(Color.Black, Offset(size.width * 0.49f, size.height * 0.49f), Offset(size.width * 0.59f, size.height * 0.49f), strokeWidth = size.minDimension * 0.045f)
-    drawCircle(Color.Black, size.minDimension * 0.045f, Offset(size.width * 0.49f, size.height * 0.49f))
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWildAnimalWarningSymbol() {
-    val center = Offset(size.width * 0.5f, size.height * 0.58f)
-    val radius = size.minDimension * 0.14f
-    drawCircle(Color.Black, radius, center)
-    val ear = Path().apply {
-        moveTo(center.x - radius * 0.8f, center.y - radius * 0.5f)
-        lineTo(center.x - radius * 1.35f, center.y - radius * 1.7f)
-        lineTo(center.x - radius * 0.2f, center.y - radius * 1.0f)
-        close()
-    }
-    drawPath(ear, Color.Black)
-    val otherEar = Path().apply {
-        moveTo(center.x + radius * 0.8f, center.y - radius * 0.5f)
-        lineTo(center.x + radius * 1.35f, center.y - radius * 1.7f)
-        lineTo(center.x + radius * 0.2f, center.y - radius * 1.0f)
-        close()
-    }
-    drawPath(otherEar, Color.Black)
-    drawLine(Color.Black, center, Offset(center.x - radius * 1.8f, center.y - radius * 2.0f), strokeWidth = radius * 0.18f, cap = StrokeCap.Round)
-    drawLine(Color.Black, center, Offset(center.x + radius * 1.8f, center.y - radius * 2.0f), strokeWidth = radius * 0.18f, cap = StrokeCap.Round)
-}
-
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawWindWarningSymbol() {
-    repeat(3) { index ->
-        val y = size.height * (0.45f + index * 0.11f)
-        val path = Path().apply {
-            moveTo(size.width * 0.28f, y)
-            cubicTo(size.width * 0.46f, y - size.height * 0.1f, size.width * 0.6f, y + size.height * 0.1f, size.width * 0.76f, y)
-        }
-        drawPath(path, Color.Black, style = Stroke(width = size.minDimension * 0.045f, cap = StrokeCap.Round))
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
+            modifier = modifier,
+        )
     }
 }
 

@@ -52,7 +52,7 @@ Mediatus; German official traffic-sign artwork
 Public domain (Commons PD-GermanGov / PD-VzKat)
 Source: https://commons.wikimedia.org/w/index.php?curid=61869818&oldid=1165662360
 Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
-Changes: Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 107 shared TSR pictograms.
+Changes: Existing iPhone SVG and Android VectorDrawable adaptation. Separate from the 111 shared TSR pictograms.
 
 ================================================================================
 
@@ -1446,6 +1446,42 @@ DE:131 · Zeichen 131 - Lichtzeichenanlage, StVO 1970.svg
 first upload: Cfaerber; new upload with original datas by Mediatus; siehe oben!
 Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
 Source: https://commons.wikimedia.org/w/index.php?curid=320591&oldid=906770545
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:136 · Zeichen 136-10 - Kinder, Aufstellung rechts, StVO 1992.svg
+Bundesministerium für Verkehr, Bau- und Wohnungswesen; digital revision by Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=995414&oldid=876088558
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:142 · Zeichen 142-10 - Wildwechsel, Aufstellung rechts, StVO 1992.svg
+Bundesanstalt für Straßenwesen (Germany); digital revision by Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=995439&oldid=886910173
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:138 · Zeichen 138-10 - Radverkehr, StVO 2013.svg
+MarianSigler; digital revision by Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=786598&oldid=877389656
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
+
+================================================================================
+
+DE:117 · Zeichen 117-10 - Seitenwind von rechts, StVO 1992.svg
+Andreas06, Bigbossfarin and Mediatus; Elfte Verordnung zur Änderung der Straßenverkehrs-Ordnung; Bundesgesetzblatt 16, Teil I, S. 681
+Public domain · German official work; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)
+Source: https://commons.wikimedia.org/w/index.php?curid=995340&oldid=1215249177
 Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
 Changes: Unmodified original SVG; Original SVG rasterized locally to fit 256 × 256 pixels, aspect ratio preserved, metadata stripped.
 

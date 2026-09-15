@@ -1697,6 +1697,27 @@ struct TrafficSignCoordinate: Codable, Equatable, Sendable {
 }
 
 enum TrafficSignBundleContextPolicy {
+    static func transition(
+        previousInsideCity: Bool?, currentInsideCity: Bool?,
+        previousCitySource: String? = nil, currentCitySource: String? = nil
+    ) -> TrafficSignBundleContextTransition {
+        guard let currentInsideCity,
+              currentCitySource?.hasPrefix("settlement:") == true,
+              currentCitySource?.hasSuffix(":high") == true else {
+            return .none
+        }
+        let previousWasHighConfidence = previousInsideCity != nil
+            && previousCitySource?.hasPrefix("settlement:") == true
+            && previousCitySource?.hasSuffix(":high") == true
+        if currentInsideCity && !(previousInsideCity == true && previousWasHighConfidence) {
+            return .enteredCity
+        }
+        if !currentInsideCity && previousInsideCity == true && previousWasHighConfidence {
+            return .exitedCity
+        }
+        return .none
+    }
+
     static func defaultSpeedKmh(insideCity: Bool?, citySource: String?) -> Int? {
         guard let insideCity, citySource?.hasPrefix("settlement:") == true,
               citySource?.hasSuffix(":high") == true else { return nil }
@@ -1705,7 +1726,13 @@ enum TrafficSignBundleContextPolicy {
 
 }
 
-/// Retains confirmation only for camera-entry transitions. Callers must continue
+enum TrafficSignBundleContextTransition: Equatable, Sendable {
+    case none
+    case enteredCity
+    case exitedCity
+}
+
+/// Retains confirmation only for high-confidence city-boundary transitions. Callers must continue
 /// publishing the current nullable context for badges, defaults, and penalties.
 struct TrafficSignBundleContextTracker {
     private struct Confirmation {
@@ -1733,12 +1760,22 @@ struct TrafficSignBundleContextTracker {
         insideCity: Bool?, citySource: String?, timestamp: Date,
         coordinate: TrafficSignCoordinate?
     ) -> Bool {
+        observeTransition(
+            insideCity: insideCity, citySource: citySource,
+            timestamp: timestamp, coordinate: coordinate
+        ) == .enteredCity
+    }
+
+    mutating func observeTransition(
+        insideCity: Bool?, citySource: String?, timestamp: Date,
+        coordinate: TrafficSignCoordinate?
+    ) -> TrafficSignBundleContextTransition {
         guard timestamp.timeIntervalSinceReferenceDate.isFinite,
               let coordinate, coordinate.latitude.isFinite, coordinate.longitude.isFinite,
               (-90...90).contains(coordinate.latitude), (-180...180).contains(coordinate.longitude),
               lastObservationAt.map({ timestamp >= $0 }) ?? true else {
             reset()
-            return false
+            return .none
         }
         lastObservationAt = timestamp
         if let confirmed = confirmation,
@@ -1747,10 +1784,17 @@ struct TrafficSignBundleContextTracker {
             confirmation = nil
         }
         guard let insideCity, citySource?.hasPrefix("settlement:") == true,
-              citySource?.hasSuffix(":high") == true else { return false }
-        let enteredCity = insideCity && confirmation?.insideCity != true
+              citySource?.hasSuffix(":high") == true else { return .none }
+        let transition: TrafficSignBundleContextTransition
+        if insideCity && confirmation?.insideCity != true {
+            transition = .enteredCity
+        } else if !insideCity && confirmation?.insideCity == true {
+            transition = .exitedCity
+        } else {
+            transition = .none
+        }
         confirmation = Confirmation(insideCity: insideCity, timestamp: timestamp, coordinate: coordinate)
-        return enteredCity
+        return transition
     }
 
     private static func distanceMeters(from: TrafficSignCoordinate, to: TrafficSignCoordinate) -> Double {

@@ -443,7 +443,7 @@
     {
       "class_id": "hazard:bicycle",
       "sign_code": "DE:138",
-      "image_path": null,
+      "image_path": "tsr/sign-pictograms/png/de-138-10.png",
       "label": {
         "de": "Radverkehr",
         "en": "Cyclists",
@@ -451,7 +451,7 @@
         "nl": "Fietsers"
       },
       "display_eligible": true,
-      "notes": "Rendered as the generic DE:138 cyclist warning sign; the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:138-10 bicycle warning sign (bicycle traffic crossing from the right); the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:bothways",
@@ -692,7 +692,7 @@
     {
       "class_id": "hazard:school",
       "sign_code": "DE:136",
-      "image_path": null,
+      "image_path": "tsr/sign-pictograms/png/de-136-10.png",
       "label": {
         "de": "Kinder",
         "en": "Children",
@@ -700,7 +700,7 @@
         "nl": "Kinderen"
       },
       "display_eligible": true,
-      "notes": "Rendered as the generic DE:136 children warning sign; the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:136-10 children warning sign (children crossing from the right); the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:slippery",
@@ -766,7 +766,7 @@
     {
       "class_id": "hazard:wild_animals",
       "sign_code": "DE:142",
-      "image_path": null,
+      "image_path": "tsr/sign-pictograms/png/de-142-10.png",
       "label": {
         "de": "Wildwechsel",
         "en": "Wild animals",
@@ -774,12 +774,12 @@
         "nl": "Overstekend wild"
       },
       "display_eligible": true,
-      "notes": "Rendered as the generic DE:142 wild-animal warning sign; the classifier does not identify the left/right pictogram variant."
+      "notes": "Uses the official DE:142-10 wild-animal warning sign (wildlife crossing from the right); the classifier does not identify the left/right pictogram variant."
     },
     {
       "class_id": "hazard:wind",
       "sign_code": "DE:117",
-      "image_path": null,
+      "image_path": "tsr/sign-pictograms/png/de-117-10.png",
       "label": {
         "de": "Seitenwind",
         "en": "Crosswinds",
@@ -787,7 +787,7 @@
         "nl": "Zijwind"
       },
       "display_eligible": true,
-      "notes": "Rendered as the generic DE:117 crosswind warning sign; the classifier does not identify the left/right direction variant."
+      "notes": "Uses the official DE:117-10 crosswind warning sign (wind from the right); the classifier does not identify the left/right direction variant."
     },
     {
       "class_id": "hazard:zigzag",

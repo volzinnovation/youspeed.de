@@ -1,7 +1,7 @@
 package de.youspeed.android.alpha
 
 /**
- * Remembers only a camera-entry confirmation across short gaps in map evidence.
+ * Remembers only a high-confidence city-boundary confirmation across short gaps in map evidence.
  * This memory never supplies the displayed city flag, statutory default, or penalty context.
  * Call under the controller's traffic-sign state lock.
  */
@@ -28,24 +28,34 @@ internal class TrafficSignCityEntryTracker {
         position: TrafficSignPositionSample,
         revision: String,
     ): Boolean {
+        return observeTransition(insideCity, citySource, position, revision) ==
+            TrafficSignBundleContextTransition.ENTERED_CITY
+    }
+
+    fun observeTransition(
+        insideCity: Boolean?,
+        citySource: String?,
+        position: TrafficSignPositionSample,
+        revision: String,
+    ): TrafficSignBundleContextTransition {
         if (revision != bundleRevision) reset()
         bundleRevision = revision
         if (!position.latitude.isFinite() || position.latitude !in -90.0..90.0 ||
             !position.longitude.isFinite() || position.longitude !in -180.0..180.0
         ) {
             reset()
-            return false
+            return TrafficSignBundleContextTransition.NONE
         }
         if (lastObservedTimestampMs?.let { position.timestampMs < it } == true) {
             reset()
-            return false
+            return TrafficSignBundleContextTransition.NONE
         }
         lastObservedTimestampMs = position.timestampMs
         confirmation?.let { previous ->
             val elapsedMs = position.timestampMs - previous.position.timestampMs
             if (elapsedMs < 0L) {
                 reset()
-                return false
+                return TrafficSignBundleContextTransition.NONE
             }
             if (elapsedMs > MAXIMUM_GAP_MS || distanceMeters(
                     previous.position.latitude, previous.position.longitude,
@@ -54,16 +64,16 @@ internal class TrafficSignCityEntryTracker {
             ) confirmation = null
         }
         if (insideCity == null || citySource?.startsWith("settlement:") != true || !citySource.endsWith(":high")) {
-            return false
+            return TrafficSignBundleContextTransition.NONE
         }
-        val entered = TrafficSignBundleContextPolicy.enteredCity(
+        val transition = TrafficSignBundleContextPolicy.transition(
             previousInsideCity = confirmation?.insideCity,
             currentInsideCity = insideCity,
             previousCitySource = confirmation?.source,
             currentCitySource = citySource,
         )
         confirmation = Confirmation(insideCity, citySource, position)
-        return entered
+        return transition
     }
 
     companion object {

@@ -2314,7 +2314,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
-    private func invalidateTrafficSignStateForBundledCityEntry(timestamp: Date) {
+    private func invalidateTrafficSignStateForBundledCityContextTransition(
+        _ transition: TrafficSignBundleContextTransition,
+        timestamp: Date
+    ) {
+        guard transition != .none else { return }
         resetTrafficSignPictogram()
         let base = currentBaseEffectiveSpeedLimitState()
         trafficSignContextGeneration &+= 1
@@ -2337,7 +2341,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             trafficSignRecognitionState = .noRecognition
         }
         appendTSRLog(
-            "assertion_invalidated reason=bundle_city_entry base_source=\(base.source.rawValue) base_kmh=\(base.value.speedKmh.map(String.init) ?? "non_numeric")",
+            "assertion_invalidated reason=bundle_city_\(transition == .enteredCity ? "entry" : "exit") base_source=\(base.source.rawValue) base_kmh=\(base.value.speedKmh.map(String.init) ?? "non_numeric")",
             timestamp: timestamp
         )
     }
@@ -2345,13 +2349,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private func applyBundledSettlementContext(
         insideCity: Bool?, source: String?, timestamp: Date, coordinate: TrafficSignCoordinate?
     ) {
-        let enteredCity = trafficSignBundleContextTracker.observe(
+        let transition = trafficSignBundleContextTracker.observeTransition(
             insideCity: insideCity, citySource: source, timestamp: timestamp, coordinate: coordinate
         )
         // Publish context before the new speed or alerts can consult its locality.
         lastLookupInsideCity = insideCity
         lastLookupCitySource = source ?? "n/a"
-        if enteredCity { invalidateTrafficSignStateForBundledCityEntry(timestamp: timestamp) }
+        invalidateTrafficSignStateForBundledCityContextTransition(transition, timestamp: timestamp)
     }
 
     private func invalidateTrafficSignOverrideIfBundleWillChange(

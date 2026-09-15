@@ -40,7 +40,10 @@ class TrafficSignCityEntryTrackerTests {
     @Test fun explicitExitLifecycleAndBundleChangeEndTheOldConfirmation() {
         val tracker = TrafficSignCityEntryTracker()
         assertTrue(tracker.observe(true, high, position(10_000), "bundle-a"))
-        assertFalse(tracker.observe(false, high, position(11_000), "bundle-a"))
+        assertEquals(
+            TrafficSignBundleContextTransition.EXITED_CITY,
+            tracker.observeTransition(false, high, position(11_000), "bundle-a"),
+        )
         assertTrue(tracker.observe(true, high, position(12_000), "bundle-a"))
         tracker.reset()
         assertTrue(tracker.observe(true, high, position(13_000), "bundle-a"))

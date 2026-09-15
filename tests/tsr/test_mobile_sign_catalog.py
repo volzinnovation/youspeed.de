@@ -55,6 +55,11 @@ def test_shared_catalog_preserves_every_classifier_index_and_real_capabilities()
     assert signs["pedestrian_crossing"]["sign_code"] == "DE:350"
     assert signs["pedestrian_crossing"]["image_path"] == "tsr/sign-pictograms/png/de-350.png"
     assert signs["pedestrian_crossing"]["display_eligible"] is True
+    assert signs["hazard:school"]["image_path"] == "tsr/sign-pictograms/png/de-136-10.png"
+    assert signs["hazard:bicycle"]["image_path"] == "tsr/sign-pictograms/png/de-138-10.png"
+    assert signs["hazard:wild_animals"]["image_path"] == "tsr/sign-pictograms/png/de-142-10.png"
+    assert signs["hazard:wind"]["image_path"] == "tsr/sign-pictograms/png/de-117-10.png"
+    assert all(sign["image_path"] for sign in catalog["signs"] if sign["display_eligible"])
     for label in ("DE:310", "DE:311", "no_overtaking:end:hgv"):
         assert label not in catalog["class_labels"]
 

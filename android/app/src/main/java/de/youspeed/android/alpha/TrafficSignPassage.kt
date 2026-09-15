@@ -30,11 +30,32 @@ internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
 }
 
 internal object TrafficSignBundleContextPolicy {
+    fun transition(previousInsideCity: Boolean?, currentInsideCity: Boolean?,
+                   previousCitySource: String? = null, currentCitySource: String? = null): TrafficSignBundleContextTransition {
+        if (currentInsideCity == null || currentCitySource?.startsWith("settlement:") != true ||
+            !currentCitySource.endsWith(":high")
+        ) return TrafficSignBundleContextTransition.NONE
+        val previousWasHighConfidence = previousInsideCity != null &&
+            previousCitySource?.startsWith("settlement:") == true && previousCitySource.endsWith(":high")
+        return when {
+            currentInsideCity && !(previousInsideCity == true && previousWasHighConfidence) ->
+                TrafficSignBundleContextTransition.ENTERED_CITY
+            !currentInsideCity && previousInsideCity == true && previousWasHighConfidence ->
+                TrafficSignBundleContextTransition.EXITED_CITY
+            else -> TrafficSignBundleContextTransition.NONE
+        }
+    }
+
     fun enteredCity(previousInsideCity: Boolean?, currentInsideCity: Boolean?,
                     previousCitySource: String? = null, currentCitySource: String? = null): Boolean =
-        currentInsideCity == true && currentCitySource?.startsWith("settlement:") == true &&
-            currentCitySource.endsWith(":high") &&
-            !(previousInsideCity == true && previousCitySource?.startsWith("settlement:") == true && previousCitySource.endsWith(":high"))
+        transition(previousInsideCity, currentInsideCity, previousCitySource, currentCitySource) ==
+            TrafficSignBundleContextTransition.ENTERED_CITY
+}
+
+internal enum class TrafficSignBundleContextTransition {
+    NONE,
+    ENTERED_CITY,
+    EXITED_CITY,
 }
 
 /** A structural sign operation. Display values are deliberately kept separate. */

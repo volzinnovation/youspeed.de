@@ -198,7 +198,7 @@ private data class TrafficSignEvaluationOutcome(
     val generation: Long,
     val revision: Long,
     val tsrWasEnabled: Boolean,
-    val invalidatedByCityEntry: Boolean = false,
+    val invalidatedByCityContextTransition: Boolean = false,
 )
 
 private data class PendingStartupData(
@@ -3653,11 +3653,11 @@ class ConsumerSessionController(
                     matchContext = matchContext,
                     overrideSpeedKmh = effectiveSpeed,
                 )
-                if (evaluation.invalidatedByCityEntry) {
+                if (evaluation.invalidatedByCityContextTransition) {
                     appendRuntimeDiagnosticEvent(
                         event = "assertion_invalidated",
                         details = mapOf(
-                            "reason" to "bundle_city_entry",
+                            "reason" to "bundle_city_context_transition",
                             "baseSource" to baseLimit.source.wireValue,
                             "baseKmh" to baseLimit.resolution?.speedKmh,
                             "wayId" to result.wayId,
@@ -4297,13 +4297,13 @@ class ConsumerSessionController(
             !TrafficSignRoadContextFreshness.accepts(position, latestTrafficSignPosition, clock.millis())
         ) return@synchronized null
         var (evaluationGeneration, writePermitActive) = trafficSignGeneration.snapshot()
-        val enteredCity = trafficSignCityEntryTracker.observe(
+        val cityTransition = trafficSignCityEntryTracker.observeTransition(
             insideCity = result.insideCity,
             citySource = result.citySource,
             position = position,
             revision = "bundle:$bundleVersion|path:$bundleDbPath|sha:${bundleSha256?.trim()?.lowercase(Locale.US).orEmpty()}",
         )
-        if (enteredCity) {
+        if (cityTransition != TrafficSignBundleContextTransition.NONE) {
             evaluationGeneration = trafficSignGeneration.incrementAndGet(writePermitActive)
             trafficSignResolver.clear()
             latestTrafficSignContext = null
@@ -4393,7 +4393,7 @@ class ConsumerSessionController(
                 generation = evaluationGeneration,
                 revision = trafficSignStateRevision.incrementAndGet(),
                 tsrWasEnabled = tsrEnabledForEvaluation,
-                invalidatedByCityEntry = enteredCity,
+                invalidatedByCityContextTransition = cityTransition != TrafficSignBundleContextTransition.NONE,
             )
             outcome.persistablePassage?.let { passage ->
                 submitBackgroundTask {

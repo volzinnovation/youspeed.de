@@ -1007,21 +1007,18 @@ final class SpeedConsumerTests: XCTestCase {
         for alias in ["DE:278-50", "DE:281", "DE:310", "DE:311", "city:start"] {
             XCTAssertFalse(catalog.canRecognize(alias), "Reference aliases must not claim recognition capability")
         }
-        let customPictogramClasses: Set<String> = [
-            "hazard:school", "hazard:bicycle", "hazard:wild_animals", "hazard:wind"
-        ]
         for sign in catalog.signs where sign.displayEligible {
-            if customPictogramClasses.contains(sign.classID) {
-                XCTAssertNil(sign.imageURL(), "Custom pictograms must not require a packaged image")
-            } else {
-                XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
-            }
+            XCTAssertNotNil(sign.imageURL(), "Missing packaged pictogram for \(sign.classID)")
             XCTAssertEqual(Set(sign.label.keys), ["de", "en", "fr", "nl"])
         }
         let pedestrianCrossing = try XCTUnwrap(catalog.sign(for: "pedestrian_crossing"))
         XCTAssertEqual(pedestrianCrossing.signCode, "DE:350")
         XCTAssertTrue(pedestrianCrossing.displayEligible)
         XCTAssertNotNil(pedestrianCrossing.imageURL())
+        XCTAssertEqual(catalog.sign(for: "hazard:school")?.imagePath, "tsr/sign-pictograms/png/de-136-10.png")
+        XCTAssertEqual(catalog.sign(for: "hazard:bicycle")?.imagePath, "tsr/sign-pictograms/png/de-138-10.png")
+        XCTAssertEqual(catalog.sign(for: "hazard:wild_animals")?.imagePath, "tsr/sign-pictograms/png/de-142-10.png")
+        XCTAssertEqual(catalog.sign(for: "hazard:wind")?.imagePath, "tsr/sign-pictograms/png/de-117-10.png")
     }
 
     func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
@@ -16145,6 +16142,18 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             timestamp: baseTime.addingTimeInterval(2), coordinate: far))
     }
 
+    func testSettlementCameraContextReportsHighConfidenceExitAndReentry() {
+        var tracker = TrafficSignBundleContextTracker()
+        let high = "settlement:traffic_sign:high"
+        let coordinate = TrafficSignCoordinate(latitude: 48, longitude: 8)
+        XCTAssertTrue(tracker.observe(insideCity: true, citySource: high,
+            timestamp: baseTime, coordinate: coordinate))
+        XCTAssertEqual(tracker.observeTransition(insideCity: false, citySource: high,
+            timestamp: baseTime.addingTimeInterval(1), coordinate: coordinate), .exitedCity)
+        XCTAssertEqual(tracker.observeTransition(insideCity: true, citySource: high,
+            timestamp: baseTime.addingTimeInterval(2), coordinate: coordinate), .enteredCity)
+    }
+
     func testSettlementCameraEntryRejectsInvalidSamplesAndResetsLifecycle() {
         var tracker = TrafficSignBundleContextTracker()
         let high = "settlement:traffic_sign:high"
@@ -16193,6 +16202,10 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertTrue(model.testHasActiveTrafficSignPassage, "Reacquiring city evidence must preserve the camera 30")
         XCTAssertFalse(model.testApplySettlementContext(insideCity: false, source: high,
             timestamp: baseTime.addingTimeInterval(9), coordinate: coordinate))
+        XCTAssertFalse(model.testHasActiveTrafficSignPassage,
+            "A confirmed city exit must clear the camera assertion")
+        XCTAssertEqual(model.effectiveSpeedLimitState.value, .numeric(50),
+            "A city exit must expose the current database/base limit")
         XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: "settlement:landuse:low",
             timestamp: baseTime.addingTimeInterval(10), coordinate: coordinate))
         XCTAssertTrue(model.testApplySettlementContext(insideCity: true, source: high,

@@ -141,4 +141,34 @@ final class ScreenOrientationUITests: XCTestCase {
         }
         XCUIDevice.shared.orientation = .portrait
     }
+
+    func testSecondaryTrafficSignStaysAtTopLeftInEveryManualOrientation() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "traffic-sign-pictogram"
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_SIGNS"] = "give_way"
+
+        for mount in ["portrait", "landscape_camera_lower_right", "landscape_camera_upper_left"] {
+            app.launchArguments = ["-youspeed.screen_orientation", mount, "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+            app.launch()
+
+            let pane = app.otherElements["dashboard.limitPane"]
+            let pictogram = app.descendants(matching: .any)
+                .matching(identifier: "dashboard.trafficSignPictogram").firstMatch
+            XCTAssertTrue(pane.waitForExistence(timeout: 15))
+            XCTAssertTrue(pictogram.waitForExistence(timeout: 15))
+
+            let settled = NSPredicate { _, _ in
+                pictogram.frame.minX <= pane.frame.minX + 100
+                    && pictogram.frame.minY <= pane.frame.minY + 100
+            }
+            expectation(for: settled, evaluatedWith: nil)
+            waitForExpectations(timeout: 10)
+
+            XCTAssertLessThanOrEqual(pictogram.frame.minX, pane.frame.minX + 100)
+            XCTAssertLessThanOrEqual(pictogram.frame.minY, pane.frame.minY + 100)
+            app.terminate()
+        }
+        XCUIDevice.shared.orientation = .portrait
+    }
 }
