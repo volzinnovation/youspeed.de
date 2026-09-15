@@ -28,11 +28,11 @@ on:
         required: false
         default: false
         type: boolean
-      include_settlement_context:
-        description: "Enable settlement context for every selected country bundle"
+      settlement_context_countries:
+        description: "Optional comma-separated country ids that need settlement context"
         required: false
-        default: false
-        type: boolean
+        default: "switzerland"
+        type: string
       force_publish:
         description: "Force a full bundle rebuild and publication for every selected country"
         required: false
@@ -85,8 +85,8 @@ jobs:
             cmd+=(--skip-bundle-step)
           fi
 
-          if [[ "${{ github.event.inputs.include_settlement_context || 'false' }}" == "true" ]]; then
-            cmd+=(--include-settlement-context)
+          if [[ -n "${{ github.event.inputs.settlement_context_countries || '' }}" ]]; then
+            cmd+=(--settlement-context-countries "${{ github.event.inputs.settlement_context_countries }}")
           fi
 
           if [[ "${{ github.event.inputs.force_publish || 'false' }}" == "true" ]]; then

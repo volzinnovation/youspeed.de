@@ -31,6 +31,9 @@ Options:
   --include-settlement-context
                               Enable settlement context for every bundle
                               dispatched by this sequence
+  --settlement-context-countries <csv>
+                              Enable settlement context only for these country ids
+                              (for example: switzerland)
   --skip-pbf-step             Skip the PBF snapshot workflow
   --skip-bundle-step          Skip the bundle workflow
   -h, --help                  Show this help
@@ -49,6 +52,7 @@ git_ref="main"
 skip_release_urls="false"
 force_publish="false"
 include_settlement_context="false"
+settlement_context_countries_csv=""
 run_pbf_step="true"
 run_bundle_step="true"
 
@@ -101,6 +105,10 @@ while [[ $# -gt 0 ]]; do
     --include-settlement-context)
       include_settlement_context="true"
       shift
+      ;;
+    --settlement-context-countries)
+      settlement_context_countries_csv="${2:-}"
+      shift 2
       ;;
     --skip-pbf-step)
       run_pbf_step="false"
@@ -244,6 +252,24 @@ echo "Countries (${#countries[@]}): ${countries[*]}"
 echo "Cooldown: ${cooldown_sec}s, retries: ${retry_attempts}, retry delay: ${retry_delay_sec}s"
 echo "Force publish: ${force_publish}"
 echo "Settlement context: ${include_settlement_context}"
+echo "Settlement context countries: ${settlement_context_countries_csv:-none}"
+
+should_build_settlement_context() {
+  local country_name="$1"
+  local requested
+  if [[ "$include_settlement_context" == "true" ]]; then
+    return 0
+  fi
+  [[ -n "$settlement_context_countries_csv" ]] || return 1
+  IFS=',' read -r -a settlement_context_countries <<< "$settlement_context_countries_csv"
+  for requested in "${settlement_context_countries[@]}"; do
+    requested="$(echo "$requested" | xargs)"
+    if [[ "${requested,,}" == "${country_name,,}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
 
 failed_countries=()
 successful_countries=()
@@ -294,7 +320,7 @@ for country in "${countries[@]}"; do
       "skip_release_urls=$skip_release_urls"
       "force_publish=$force_publish"
     )
-    if [[ "$include_settlement_context" == "true" ]]; then
+    if should_build_settlement_context "$country"; then
       bundle_fields+=("build_settlement_context=true")
     fi
     if ! run_id="$(dispatch_workflow "$workflow_file" "${bundle_fields[@]}")"; then
