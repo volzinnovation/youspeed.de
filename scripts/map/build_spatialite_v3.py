@@ -1182,8 +1182,9 @@ def main() -> int:
         if input_pbf is None:
             print("--build-settlement-context requires --input-pbf", file=sys.stderr)
             return 1
-        if args.country_code != "DE":
-            print("settlement context v1 supports --country-code DE only", file=sys.stderr)
+        country_code = str(args.country_code).strip().upper()
+        if not re.fullmatch(r"[A-Z]{2}", country_code):
+            print("settlement context requires a two-letter ISO country code", file=sys.stderr)
             return 1
         if not math.isfinite(args.settlement_geometry_tolerance_m) or args.settlement_geometry_tolerance_m < 0:
             print("settlement geometry tolerance must be finite and nonnegative", file=sys.stderr)
@@ -1876,7 +1877,7 @@ def main() -> int:
 
     if args.build_settlement_context:
         settlement_metadata = build_settlement_context(
-            conn, input_pbf, args.country_code, args.settlement_geometry_tolerance_m
+            conn, input_pbf, country_code, args.settlement_geometry_tolerance_m
         )
         print(f"Settlement context: {settlement_metadata}", file=sys.stderr)
 
