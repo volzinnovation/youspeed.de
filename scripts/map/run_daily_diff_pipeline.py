@@ -216,7 +216,8 @@ def main() -> int:
             )
 
         print(f"{reason}; downloading latest Geofabrik PBF for a clean reseed", file=sys.stderr)
-        tmp_pbf = input_pbf.with_name(input_pbf.name + ".reseed.tmp")
+        # Keep the .osm.pbf suffix so pyosmium can detect the downloaded format.
+        tmp_pbf = input_pbf.with_name(f".{input_pbf.name}.reseed.osm.pbf")
         try:
             _download_file(args.latest_pbf_url, tmp_pbf)
             latest_metadata = _pbf_metadata(tmp_pbf)

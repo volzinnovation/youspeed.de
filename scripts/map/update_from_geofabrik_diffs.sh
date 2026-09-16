@@ -464,6 +464,11 @@ else
   if [[ "$force_old" == "1" ]]; then
     update_cmd+=(--force-update-of-old-planet)
   fi
+  # pyosmium compares replication URLs literally. Geofabrik headers sometimes
+  # omit the trailing slash even though the endpoint is the same.
+  if [[ -n "$before_base_url" && "${before_base_url%/}" == "${updates_url%/}" && "$before_base_url" != "$updates_url" ]]; then
+    update_cmd+=(--ignore-osmosis-headers)
+  fi
   if [[ -n "$tmpdir" ]]; then
     mkdir -p "$tmpdir"
     update_cmd+=(--tmpdir "$tmpdir")
