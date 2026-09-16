@@ -18,6 +18,21 @@ data class TrafficSignPictogram(
     fun label(locale: Locale = Locale.getDefault()): String = labels[locale.language] ?: labels.getValue("en")
 }
 
+/** Country packs that are physically bundled in both mobile applications. */
+internal object AndroidTrafficSignModelPackSelection {
+    val bundledCountryCodes: Set<String> = setOf("DE", "FR", "NL", "BE")
+
+    fun availableCountryCode(raw: String?): String? {
+        val country = PenaltyCountryCodes.alpha2(raw) ?: return null
+        return country.takeIf(bundledCountryCodes::contains)
+    }
+
+    fun assetRoot(raw: String?): String {
+        val country = availableCountryCode(raw) ?: error("Unsupported bundled TSR country: $raw")
+        return "tsr/$country.panoramax-bootstrap.tsrmodelpack"
+    }
+}
+
 internal class TrafficSignDisplayCatalog private constructor(
     val checkpointSha256: String,
     val classLabels: List<String>,
@@ -29,12 +44,19 @@ internal class TrafficSignDisplayCatalog private constructor(
     companion object {
         const val ASSET_PATH = "tsr/prolix-de-class-catalog-v1.json"
 
-        fun decode(raw: String): TrafficSignDisplayCatalog {
+        fun assetPath(countryCode: String): String {
+            val alpha2 = PenaltyCountryCodes.alpha2(countryCode)
+                ?: error("Unsupported TSR catalog country: $countryCode")
+            return "tsr/prolix-${alpha2.lowercase(Locale.ROOT)}-class-catalog-v1.json"
+        }
+
+        fun decode(raw: String, expectedCountryCode: String? = null): TrafficSignDisplayCatalog {
             val root = Json.parseToJsonElement(raw).jsonObject
             require(root.getValue("schema_version").jsonPrimitive.int == 1)
-            require(root.getValue("country").jsonPrimitive.content == "DE")
+            val country = root.getValue("country").jsonPrimitive.content
+            require(expectedCountryCode == null || PenaltyCountryCodes.alpha2(country) == PenaltyCountryCodes.alpha2(expectedCountryCode))
             val labels = root.getValue("class_labels").jsonArray.map { it.jsonPrimitive.content }
-            require(labels.size == 134 && labels.distinct().size == labels.size)
+            require(labels.isNotEmpty() && labels.distinct().size == labels.size)
             val signs = root.getValue("signs").jsonArray.map { it.jsonObject }
             val pictograms = signs.mapNotNull { sign ->
                 val classId = sign.getValue("class_id").jsonPrimitive.content
@@ -95,7 +117,7 @@ internal object TrafficSignDisplayPolicy {
     }
 }
 
-/** Explicit reference aliases do not add visual classes to the bundled 134-class model. */
+/** Explicit reference aliases do not add visual classes to a national model vocabulary. */
 internal fun TrafficSignCandidate.normalizedPrimarySemantic(): TrafficSignSemantic {
     val token = rawClassId.trim().lowercase(Locale.ROOT)
     val numericEnd = Regex("^(?:de:)?278(?:-([0-9]{1,3}))?$").matchEntire(token)

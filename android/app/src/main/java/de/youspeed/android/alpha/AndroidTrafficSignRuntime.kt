@@ -76,12 +76,19 @@ internal object AndroidTrafficSignModelPackLoader {
     const val PACK_ASSET_ROOT = "tsr/DE.panoramax-bootstrap.tsrmodelpack"
     const val MANIFEST_ASSET_PATH = "$PACK_ASSET_ROOT/manifest.json"
 
-    fun load(context: Context): AndroidTrafficSignVerifiedPack {
+    fun load(context: Context, countryCode: String = "DE"): AndroidTrafficSignVerifiedPack {
+        val normalizedCountry = AndroidTrafficSignModelPackSelection.availableCountryCode(countryCode)
+            ?: error("No bundled Android TSR pack for country $countryCode")
+        val packAssetRoot = AndroidTrafficSignModelPackSelection.assetRoot(normalizedCountry)
+        val manifestAssetPath = "$packAssetRoot/manifest.json"
         val assets = context.assets
-        val modelPack = assets.open(MANIFEST_ASSET_PATH).bufferedReader().use { reader ->
+        val modelPack = assets.open(manifestAssetPath).bufferedReader().use { reader ->
             TrafficSignModelPackJson.decode(reader.readText())
         }
         TrafficSignModelPackValidator.requireValid(modelPack)
+        require(modelPack.countries.any { PenaltyCountryCodes.alpha2(it) == normalizedCountry }) {
+            "The bundled Android TSR pack does not support $normalizedCountry"
+        }
         require(modelPack.pipeline == TrafficSignPipeline.PROPOSAL_CLASSIFICATION) {
             "The bundled Android TSR pack must use proposal classification"
         }
@@ -101,14 +108,14 @@ internal object AndroidTrafficSignModelPackLoader {
         require(detectorArtifact.outputSchema == "yolo_raw_xywh_class_scores_v1")
         require(classifierArtifact.outputSchema == "classification_probabilities_v1")
 
-        val displayCatalog = assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
-            TrafficSignDisplayCatalog.decode(it.readText())
+        val displayCatalog = assets.open(TrafficSignDisplayCatalog.assetPath(normalizedCountry)).bufferedReader().use {
+            TrafficSignDisplayCatalog.decode(it.readText(), expectedCountryCode = normalizedCountry)
         }
         require(displayCatalog.checkpointSha256 == classifierComponent.sourceCheckpoint.sha256) {
             "TSR class catalog does not match the classifier checkpoint"
         }
-        val detectorModel = mapAndVerify(context, detectorArtifact)
-        val classifierModel = mapAndVerify(context, classifierArtifact)
+        val detectorModel = mapAndVerify(context, packAssetRoot, detectorArtifact)
+        val classifierModel = mapAndVerify(context, packAssetRoot, classifierArtifact)
         return AndroidTrafficSignVerifiedPack(
             modelPack = modelPack,
             detectorArtifact = detectorArtifact,
@@ -119,8 +126,8 @@ internal object AndroidTrafficSignModelPackLoader {
         )
     }
 
-    private fun mapAndVerify(context: Context, artifact: TrafficSignArtifact): MappedByteBuffer {
-        val assetPath = "$PACK_ASSET_ROOT/${artifact.path}"
+    private fun mapAndVerify(context: Context, packAssetRoot: String, artifact: TrafficSignArtifact): MappedByteBuffer {
+        val assetPath = "$packAssetRoot/${artifact.path}"
         val mapped = context.assets.openFd(assetPath).use { descriptor ->
             FileInputStream(descriptor.fileDescriptor).channel.use { channel ->
                 channel.map(
@@ -321,7 +328,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val detectorOutput = directFloatBuffer(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
     private val detectorOutputFloats = FloatArray(AndroidYoloSignDecoder.OUTPUT_CHANNELS * AndroidYoloSignDecoder.OUTPUT_ELEMENTS)
     private val classifierInput = directFloatBuffer(CLASSIFIER_SIZE * CLASSIFIER_SIZE * RGB_CHANNELS)
-    private val classifierOutput = directFloatBuffer(CLASSIFIER_CLASS_COUNT)
+    private val classifierClassCount = verifiedPack.displayCatalog.classLabels.size
+    private val classifierOutput = directFloatBuffer(classifierClassCount)
     private val detectorBitmap = Bitmap.createBitmap(DETECTOR_SIZE, DETECTOR_SIZE, Bitmap.Config.ARGB_8888)
     private val classifierBitmap = Bitmap.createBitmap(CLASSIFIER_SIZE, CLASSIFIER_SIZE, Bitmap.Config.ARGB_8888)
     private val detectorPixels = IntArray(DETECTOR_SIZE * DETECTOR_SIZE)
@@ -366,7 +374,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
                 val interpreter = resource.interpreter
                 require(interpreter.getInputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_SIZE, CLASSIFIER_SIZE, RGB_CHANNELS)))
                 require(interpreter.getInputTensor(0).dataType() == DataType.FLOAT32)
-                require(interpreter.getOutputTensor(0).shape().contentEquals(intArrayOf(1, CLASSIFIER_CLASS_COUNT)))
+                require(interpreter.getOutputTensor(0).shape().contentEquals(intArrayOf(1, classifierClassCount)))
                 require(interpreter.getOutputTensor(0).dataType() == DataType.FLOAT32)
             }
         } catch (failure: Throwable) {
@@ -524,7 +532,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         val scores = classifierOutput.asFloatBuffer()
         var bestIndex = -1
         var bestScore = Float.NEGATIVE_INFINITY
-        for (index in 0 until CLASSIFIER_CLASS_COUNT) {
+        for (index in 0 until classifierClassCount) {
             val score = scores.get(index)
             if (score.isFinite() && score > bestScore) {
                 bestIndex = index
@@ -579,7 +587,6 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private companion object {
         const val DETECTOR_SIZE = 1280
         const val CLASSIFIER_SIZE = 224
-        const val CLASSIFIER_CLASS_COUNT = 134
         const val RGB_CHANNELS = 3
         const val HORIZONTAL_CROP_PADDING = 0.10
         const val TOP_CROP_PADDING = 0.05
@@ -707,6 +714,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private val lifecycleOwner: LifecycleOwner,
     private val controller: ConsumerSessionController,
     private val onStateChanged: (TrafficSignCameraRuntimeState, String) -> Unit,
+    private val onModelPackLoaded: (AndroidTrafficSignVerifiedPack) -> Unit = {},
 ) : AutoCloseable {
     private val mainExecutor = ContextCompat.getMainExecutor(context)
     private val cameraExecutor = Executors.newSingleThreadExecutor()
@@ -738,6 +746,8 @@ internal class AndroidTrafficSignCameraRuntime(
     private var activeRecordingFile: File? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
     @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
+    @Volatile private var requestedModelCountryCode: String = controller.trafficSignModelCountryCode()
+    @Volatile private var loadedModelCountryCode: String? = null
 
     // A hidden preview still supplies a surface. Removing the UI must never
     // suspend analysis or movie recording while CameraX waits for its surface.
@@ -811,6 +821,33 @@ internal class AndroidTrafficSignCameraRuntime(
         setDashcamRecordingEnabled(videoRequested)
     }
 
+    /** Select the bundled model for the current route without rebinding CameraX. */
+    fun selectModelPack(countryCode: String?, reason: String = "bundle_selection") {
+        val selected = AndroidTrafficSignModelPackSelection.availableCountryCode(countryCode) ?: return
+        mainExecutor.execute {
+            if (closed.get()) return@execute
+            if (requestedModelCountryCode == selected &&
+                (modelLoading || (loadedModelCountryCode == selected && bridge != null))
+            ) return@execute
+            requestedModelCountryCode = selected
+            recognitionRuntimeSerial++
+            modelLoading = false
+            bridge?.close()
+            bridge = null
+            backend?.close()
+            backend = null
+            loadedModelCountryCode = null
+            recognitionUnavailable = false
+            refreshAnalysisConsumer()
+            appendModelSwitchDiagnostic(selected, reason)
+            if (controller.isTrafficSignRecognitionRuntimeEnabled()) loadRecognitionRuntime()
+        }
+    }
+
+    private fun appendModelSwitchDiagnostic(countryCode: String, reason: String) {
+        controller.onTrafficSignModelPackSwitchRequested(countryCode, reason)
+    }
+
     /** Suspend delivery while recognition is disabled/loading without interrupting a movie. */
     private fun refreshAnalysisConsumer() {
         val analysis = imageAnalysis ?: return
@@ -834,10 +871,11 @@ internal class AndroidTrafficSignCameraRuntime(
         val startGeneration = generation.get()
         val recognitionGeneration = controller.uiState.trafficSignGeneration
         val runtimeSerial = ++recognitionRuntimeSerial
+        val countryCode = requestedModelCountryCode
         modelLoading = true
         startupExecutor.execute {
             val loaded = runCatching {
-                    val pack = AndroidTrafficSignModelPackLoader.load(context)
+                    val pack = AndroidTrafficSignModelPackLoader.load(context, countryCode)
                     val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context)
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         controller = controller,
@@ -862,11 +900,11 @@ internal class AndroidTrafficSignCameraRuntime(
                     LoadedRuntime(pack, runtimeBackend, runtimeBridge)
             }
             mainExecutor.execute main@{
-                modelLoading = false
-                if (closed.get() || generation.get() != startGeneration) {
+                if (closed.get() || generation.get() != startGeneration || recognitionRuntimeSerial != runtimeSerial) {
                     loaded.getOrNull()?.close()
                     return@main
                 }
+                modelLoading = false
                 if (!controller.isTrafficSignRecognitionRuntimeEnabled()) {
                     loaded.getOrNull()?.close()
                     return@main
@@ -877,6 +915,12 @@ internal class AndroidTrafficSignCameraRuntime(
                         recognitionGeneration)
                 }.onSuccess { runtime ->
                     runtime.backend?.startupResult?.let(controller::onTrafficSignStartupMeasured)
+                    runtime.pack?.let {
+                        loadedModelCountryCode = AndroidTrafficSignModelPackSelection.availableCountryCode(
+                            it.modelPack.countries.firstOrNull()
+                        )
+                        onModelPackLoaded(it)
+                    }
                     backend = runtime.backend
                     bridge = runtime.bridge
                     refreshAnalysisConsumer()

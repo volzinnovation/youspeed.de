@@ -10,6 +10,7 @@ internal data class AndroidTrafficSignStartupResult(
     val executionBackend: String,
     val accelerationFallbackReason: String?,
     val gpuPrecisionLossAllowed: Boolean? = null,
+    val referenceClassId: String? = null,
 )
 
 /** Functional and timing check only. Reference detections never enter the live event pipeline. */
@@ -32,16 +33,28 @@ internal object AndroidTrafficSignStartupProbe {
         val bitmap = checkNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size)) {
             "Traffic-sign startup reference could not be decoded"
         }
-        val threshold = pack.classMapping.single { it.classId == REFERENCE_CLASS_ID }.threshold
+        val referenceMapping = pack.classMapping.firstOrNull {
+            it.classId == REFERENCE_CLASS_ID
+        }?.takeIf { pack.countries.any { country -> country.equals("DE", ignoreCase = true) } }
         fun checkRecognition(result: AndroidTrafficSignInferenceResult) {
-            check(result.detections.any { detection ->
-                val candidate = detection.candidate
-                candidate.rawClassId == REFERENCE_CLASS_ID &&
-                    candidate.semantic.kind == TrafficSignSemanticKind.MAXIMUM_SPEED &&
-                    candidate.semantic.value == 70 &&
-                    candidate.rawScore >= maxOf(threshold, pack.thresholds.confirmed) &&
-                    (candidate.classifierRawScore ?: 0.0) >= TrafficSignDisplayPolicy.MINIMUM_SCORE
-            }) { "Traffic-sign startup check could not recognize the reference 70 km/h sign" }
+            if (referenceMapping != null) {
+                check(result.detections.any { detection ->
+                    val candidate = detection.candidate
+                    candidate.rawClassId == referenceMapping.classId &&
+                        candidate.semantic.kind == TrafficSignSemanticKind.MAXIMUM_SPEED &&
+                        candidate.semantic.value == 70 &&
+                        candidate.rawScore >= maxOf(referenceMapping.threshold, pack.thresholds.confirmed) &&
+                        (candidate.classifierRawScore ?: 0.0) >= TrafficSignDisplayPolicy.MINIMUM_SCORE
+                }) { "Traffic-sign startup check could not recognize the reference 70 km/h sign" }
+            } else {
+                // The shared German reference frame is still useful for a
+                // foreign pack's tensor-shape/delegate/timing smoke test, but
+                // its national class vocabulary may not contain a 70 km/h
+                // mapping. Do not invent a semantic match in that case.
+                check(engine.classifyCropForDiagnostic(bitmap) != null) {
+                    "Traffic-sign startup check could not execute the foreign classifier"
+                }
+            }
         }
         try {
             // Compilation/cold caches are excluded from the allowance for steady live frames.
@@ -62,6 +75,7 @@ internal object AndroidTrafficSignStartupProbe {
                 gpuPrecisionLossAllowed = engine.gpuPrecisionLossAllowed.takeIf {
                     warmResults.last().executionBackend in setOf("gpu", "mixed")
                 },
+                referenceClassId = referenceMapping?.classId,
             )
         } finally {
             bitmap.recycle()

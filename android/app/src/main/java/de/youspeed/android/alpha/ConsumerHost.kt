@@ -11,6 +11,8 @@ interface ConsumerHost {
 
     fun startTrafficSignCamera()
 
+    fun selectTrafficSignModel(countryCode: String?, reason: String = "bundle_selection") {}
+
     fun stopTrafficSignCamera()
 
     fun applyManualOrientation(orientation: ManualOrientation) {}

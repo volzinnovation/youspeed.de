@@ -1021,6 +1021,22 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(catalog.sign(for: "hazard:wind")?.imagePath, "tsr/sign-pictograms/png/de-117-10.png")
     }
 
+    @MainActor
+    func testNationalTrafficSignModelSelectionLoadsTheBundledCatalogForEachCountry() throws {
+        XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("DEU"), "DE")
+        XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("FRA"), "FR")
+        XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("NLD"), "NL")
+        XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("BEL"), "BE")
+        XCTAssertNil(TrafficSignModelPackSelection.availableCountryCode("LUX"))
+
+        for (country, classCount) in [("DE", 134), ("FR", 256), ("NL", 160), ("BE", 143)] {
+            let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(countryCode: country))
+            XCTAssertEqual(catalog.country, country)
+            XCTAssertEqual(catalog.classLabels.count, classCount)
+            XCTAssertTrue(catalog.signs.filter(\.displayEligible).allSatisfy { $0.imageURL() != nil })
+        }
+    }
+
     func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
         let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
         let now = Date(timeIntervalSince1970: 1_500)

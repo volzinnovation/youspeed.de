@@ -450,11 +450,10 @@ class ConsumerSessionController(
     private val trafficSignDiagnosticsLock = Any()
     private val isDisposed = AtomicBoolean(false)
     private val assetReader = AndroidAssetReader(appContext)
-    private val trafficSignDisplayCatalog by lazy {
-        appContext.assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
-            TrafficSignDisplayCatalog.decode(it.readText())
-        }
+    private var trafficSignDisplayCatalog = appContext.assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
+        TrafficSignDisplayCatalog.decode(it.readText(), expectedCountryCode = "DE")
     }
+    private var activeMapCountryCode: String? = null
     private val bootstrapper = BundleBootstrapper(
         rootDir = rootDir,
         httpFetcher = HttpUrlFetcher(),
@@ -1509,7 +1508,7 @@ class ConsumerSessionController(
         appendRuntimeDiagnosticEvent(
             event = "traffic_sign_startup_reference",
             details = mapOf(
-                "referenceClassId" to AndroidTrafficSignStartupProbe.REFERENCE_CLASS_ID,
+                "referenceClassId" to result.referenceClassId,
                 "referenceSha256" to AndroidTrafficSignStartupProbe.REFERENCE_SHA256,
                 "referenceVerified" to true,
                 "warmInferenceTimesMs" to result.warmInferenceTimesMs,
@@ -1519,6 +1518,68 @@ class ConsumerSessionController(
                 "gpuPrecisionLossAllowed" to result.gpuPrecisionLossAllowed,
                 "accelerationFallbackReason" to result.accelerationFallbackReason,
             ),
+        )
+    }
+
+    /** The route country is also the source of truth for the bundled TSR pack. */
+    internal fun trafficSignModelCountryCode(): String {
+        return AndroidTrafficSignModelPackSelection.availableCountryCode(
+            activeMapCountryCode
+                ?: normalizedCountryCode(bootstrapper.activeState()?.countryCode)
+                ?: inferCountryCodeFromDBPath(uiState.activeDBPath)
+        ) ?: "DE"
+    }
+
+    internal fun onTrafficSignModelPackLoaded(pack: AndroidTrafficSignVerifiedPack) {
+        mainHandler.post {
+            if (isDisposed.get()) return@post
+            val country = AndroidTrafficSignModelPackSelection.availableCountryCode(
+                pack.modelPack.countries.firstOrNull()
+            ) ?: return@post
+            trafficSignDisplayCatalog = pack.displayCatalog
+            updateState {
+                copy(
+                    lastTrafficSignPictogram = null,
+                    isTrafficSignEndOverlayVisible = false,
+                    countryModelPackStatus = ConsumerRuntimeText.MODEL_COUNTRY_PREFIX.text(country) + "ready",
+                )
+            }
+            appendRuntimeDiagnosticEvent(
+                event = "traffic_sign_model_loaded",
+                details = mapOf("countryCode" to country, "packId" to pack.modelPack.packId),
+            )
+        }
+    }
+
+    internal fun onTrafficSignModelPackSwitchRequested(countryCode: String, reason: String) {
+        appendRuntimeDiagnosticEvent(
+            event = "traffic_sign_model_switch_requested",
+            details = mapOf("countryCode" to countryCode, "reason" to reason),
+        )
+    }
+
+    /** Couples route-country, legal rules, and model selection on the main lane. */
+    internal fun onTrafficSignBundleSelected(rawCountryCode: String?, reason: String) {
+        if (isDisposed.get()) return
+        val countryCode = normalizedCountryCode(rawCountryCode) ?: return
+        val previousCountryCode = activeMapCountryCode
+        activeMapCountryCode = countryCode
+        if (previousCountryCode != null && previousCountryCode != countryCode && reason != "bundle_route_switch") {
+            invalidateTrafficSignGeneration(
+                clearAssertion = true,
+                reason = "bundle_country_switch",
+                permitWrites = isDriving && isTrafficSignRecognitionRuntimeEnabled(),
+            )
+        }
+        val evidenceCountryCode = penaltyCountrySelection.countryCode
+        val rules = evidenceCountryCode
+            ?.takeIf { it == countryCode }
+            ?.let(::loadPenaltyRules)
+            ?: ActivePenaltyRules.unavailable()
+        updateState { copy(activePenaltyRules = rules) }
+        host?.selectTrafficSignModel(
+            AndroidTrafficSignModelPackSelection.availableCountryCode(countryCode),
+            reason,
         )
     }
 
@@ -2570,6 +2631,12 @@ class ConsumerSessionController(
                     preferredCountryCode = active?.countryCode ?: option.countryCode,
                     reason = "download_selected_bundle",
                 )
+                mainHandler.post {
+                    onTrafficSignBundleSelected(
+                        active?.countryCode ?: option.countryCode,
+                        reason = "bundle_download_selection",
+                    )
+                }
                 if (firstLocationSetup) preferences.edit().putBoolean("youspeed.first_location_map_complete", true).apply()
                 postState {
                     copy(
@@ -2606,6 +2673,11 @@ class ConsumerSessionController(
                     preferredCountryCode = active?.countryCode,
                     reason = "delete_selected_bundle",
                 )
+                mainHandler.post {
+                    active?.countryCode?.let { countryCode ->
+                        onTrafficSignBundleSelected(countryCode, reason = "bundle_active_state_selection")
+                    }
+                }
                 postState {
                     copy(
                         activeBundleVersion = active?.bundleVersion ?: "none",
@@ -3486,6 +3558,17 @@ class ConsumerSessionController(
             )
 
             if (!lookupIsFresh()) return@lookup
+
+            // Keep the country-specific legal rules and the bundled TSR model
+            // on the same route-selection event. The callback is posted to
+            // the main lane because it also controls the CameraX runtime.
+            if (effectiveCountryCode != null) {
+                val selectionReason = if (routeChanged) "bundle_route_switch" else "first_location_bundle_selection"
+                mainHandler.post {
+                    if (isDisposed.get() || sessionId != trafficSignDriveSessionId || !lookupToken.isCurrent(token)) return@post
+                    onTrafficSignBundleSelected(effectiveCountryCode, selectionReason)
+                }
+            }
 
             if (routeChanged && effectiveDBPath != null) {
                 lookupToken.mutateIfCurrent(token) {

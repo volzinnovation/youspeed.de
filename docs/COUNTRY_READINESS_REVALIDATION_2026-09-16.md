@@ -13,7 +13,7 @@ for the full product until all three are ready on both mobile clients.
 | iPhone offline speech input | Uses `fr-FR` and requires an available Apple on-device locale | Uses `nl-NL` and requires an available Apple on-device locale | Uses the selected Dutch/French profile and the same on-device requirement |
 | Speech generation | Localized TTS profile | Localized TTS profile | Localized Dutch/French profile |
 | Traffic-sign pictograms | Expanded reviewed set: 114 SVG/PNG pairs (111 Panoramax-linked + 3 preserved core) | Expanded reviewed set: 111 SVG/PNG pairs | Expanded reviewed set: 115 SVG/PNG pairs (111 Panoramax-linked + 4 preserved core/transition); B7 retained only as legacy/transition artwork |
-| Country TSR model pack | Not ready; registry has no reviewed runtime manifest | Not ready; registry has no reviewed runtime manifest | Not ready; registry has no reviewed runtime manifest |
+| Country TSR model pack | Evaluation pack bundled and route-selectable; production release not ready | Evaluation pack bundled and route-selectable; production release not ready | Evaluation pack bundled and route-selectable; production release not ready |
 
 The legal JSON files are byte-identical between iPhone and Android and now carry
 `source_checked_at: 2026-09-16`. France uses the current standard fine and
@@ -27,6 +27,13 @@ the v3 publisher; the manifest carries the checksum-pinned `penalty_rules`
 artifact, both clients download and verify it with the bundle, and the active
 country uses that installed file when available. The bundled rule file remains
 the offline fallback.
+
+At runtime the first accepted route country is the shared transition key on
+iPhone and Android: it selects the country model pack and display catalog in
+parallel with the applicable penalty-rule context. A subsequent country change
+stops the old recognizer before loading the new pack. The French, Dutch and
+Belgian packs are currently evaluation/raw-score artifacts, so this behavior
+does not by itself promote them into the signed production registry.
 
 ## Official legal sources checked
 

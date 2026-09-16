@@ -3,8 +3,9 @@
 This checklist is the handoff boundary for activating France (`FR`), the
 Netherlands (`NL`) and Belgium (`BE`). Speech, legal warning rules, bundle rule
 linkage and core artwork are already implemented. The foreign traffic-sign
-recognition packs remain disabled until the evidence below exists for each
-country.
+recognition packs are bundled and route-selectable as evaluation/raw-score
+artifacts, but remain outside the signed production registry until the evidence
+below exists for each country.
 
 ## Owner decision recorded
 
@@ -111,9 +112,9 @@ country registry remains the target.
 
 | Country | Core artwork | Reviewed mapping | Calibrated model | Runtime manifest | Release state |
 | --- | --- | --- | --- | --- | --- |
-| FR | 114 SVG/PNG pairs (111 Panoramax-linked + 3 preserved core) | code-level reviewed | missing | missing | blocked |
-| NL | 111 SVG/PNG pairs | code-level reviewed | missing | missing | blocked |
-| BE | 115 SVG/PNG pairs (111 Panoramax-linked + 4 preserved core/transition) | code-level reviewed (B7 legacy/transition-only) | missing | missing | blocked |
+| FR | 114 SVG/PNG pairs (111 Panoramax-linked + 3 preserved core) | code-level reviewed | operational benchmark; not device-calibrated | evaluation pack bundled; production registry unlinked | blocked |
+| NL | 111 SVG/PNG pairs | code-level reviewed | operational benchmark; not device-calibrated | evaluation pack bundled; production registry unlinked | blocked |
+| BE | 115 SVG/PNG pairs (111 Panoramax-linked + 4 preserved core/transition) | code-level reviewed (B7 legacy/transition-only) | operational benchmark; not device-calibrated | evaluation pack bundled; production registry unlinked | blocked |
 
 The country registry intentionally keeps all three foreign manifests null and
 `calibrated: false` until the technical evidence and automated acceptance

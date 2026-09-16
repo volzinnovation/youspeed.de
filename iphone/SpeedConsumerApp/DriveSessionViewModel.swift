@@ -675,7 +675,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
     @Published private(set) var trafficSignPictogram: TrafficSignPresentationCatalog.Sign?
     @Published private(set) var trafficSignEndOverlayVisible = false
-    private let trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
+    private var trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled()
     private var trafficSignDisplayState = TrafficSignDisplayState()
     var trafficSignCityEntryRecognitionAvailable: Bool {
         ["city:start", "city_entry", "DE:310"].contains { trafficSignPresentationCatalog?.canRecognize($0) == true }
@@ -895,6 +895,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let trafficSignFrameState = TrafficSignAtomicFrameState()
     private var trafficSignRuntime: TrafficSignRuntime?
     private var trafficSignRuntimeLoadTask: Task<Void, Never>?
+    private var trafficSignRuntimeRequestedCountryCode: String?
+    private var trafficSignRuntimeCountryCode: String?
     private var trafficSignApplicationIsActive = true
     private var trafficSignRecorderGeneration: UInt64 = 0
     private var trafficSignContextGeneration: UInt64 = 0
@@ -1985,9 +1987,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return URL(fileURLWithPath: configuredPath, isDirectory: true)
         }
         #endif
-        let normalizedCountry = countryCode
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .uppercased()
+        let normalizedCountry = TrafficSignModelPackSelection.availableCountryCode(countryCode)
+            ?? countryCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if let bundledPackURL = bundle.url(
             forResource: "\(normalizedCountry).panoramax-bootstrap",
             withExtension: "tsrmodelpack",
@@ -2182,12 +2183,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
-    private func prepareTrafficSignRecognitionRuntime() {
+    private func prepareTrafficSignRecognitionRuntime(for requestedCountryCode: String? = nil) {
         guard trafficSignRuntime == nil, trafficSignRuntimeLoadTask == nil else { return }
+
+        let countryCode = TrafficSignModelPackSelection.availableCountryCode(
+            requestedCountryCode ?? activeMapCountryCode ?? Self.defaultTrafficSignCountryCode
+        ) ?? Self.defaultTrafficSignCountryCode
+        trafficSignRuntimeRequestedCountryCode = countryCode
+        trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled(countryCode: countryCode)
 
         let directoryURL: URL
         do {
-            directoryURL = try Self.trafficSignModelPackDirectoryURL()
+            directoryURL = try Self.trafficSignModelPackDirectoryURL(countryCode: countryCode)
         } catch let reason as TrafficSignRuntimeUnavailability {
             handleTrafficSignRuntimeUnavailability(reason)
             return
@@ -2204,7 +2211,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             frameState.snapshot()
         }
         let runtimeVersion = UIDevice.current.systemVersion
-        let countryCode = Self.defaultTrafficSignCountryCode
         let appVersion = (Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
         ) as? String) ?? "0.0.0"
@@ -2253,6 +2259,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if case .ready(let runtime) = result { runtime.stop() }
                 return
             }
+            guard self.trafficSignRuntimeRequestedCountryCode == countryCode else {
+                if case .ready(let runtime) = result { runtime.stop() }
+                return
+            }
             self.trafficSignRuntimeLoadTask = nil
             guard !Task.isCancelled else {
                 if case .ready(let runtime) = result { runtime.stop() }
@@ -2262,6 +2272,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             switch result {
             case .ready(let runtime):
                 self.trafficSignRuntime = runtime
+                self.trafficSignRuntimeCountryCode = countryCode
                 self.trafficSignDebugRuntimeUnhealthy = false
                 self.trafficSignRecognitionModelPackID = runtime.verifiedPack.manifest.packId
                 Self.tsrLogger.notice(
@@ -2287,6 +2298,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 self.handleTrafficSignRuntimeUnavailability(reason)
             }
         }
+    }
+
+    /// Replaces the complete TSR runtime only when the selected map bundle's
+    /// country changes. Stopping the old consumer before loading the new pack
+    /// prevents frames from crossing model generations.
+    private func switchTrafficSignModelIfNeeded(for rawCountryCode: String?, reason: String) {
+        guard let countryCode = TrafficSignModelPackSelection.availableCountryCode(rawCountryCode) else {
+            return
+        }
+        let activeCountryCode = trafficSignRuntimeCountryCode
+            ?? trafficSignRuntime?.verifiedPack.manifest.countries.first
+        if activeCountryCode == countryCode,
+           trafficSignRuntimeLoadTask == nil,
+           trafficSignRuntime != nil {
+            return
+        }
+        if trafficSignRuntimeRequestedCountryCode == countryCode,
+           trafficSignRuntimeLoadTask != nil {
+            return
+        }
+
+        trafficSignRuntimeLoadTask?.cancel()
+        trafficSignRuntimeLoadTask = nil
+        driveCaptureCoordinator?.setVideoFrameConsumer(nil)
+        trafficSignRuntime?.stop()
+        trafficSignRuntime = nil
+        trafficSignRuntimeCountryCode = nil
+        trafficSignRuntimeRequestedCountryCode = countryCode
+        trafficSignRecognitionModelPackID = nil
+        trafficSignPresentationCatalog = TrafficSignPresentationCatalog.bundled(countryCode: countryCode)
+        invalidateTrafficSignOverrideForBaseSourceMutation()
+        let detail = "lifecycle=switch country=\(countryCode) reason=\(reason)"
+        Self.tsrLogger.notice(
+            "timestamp=\(Self.trafficSignTimestamp(Date()), privacy: .public) \(detail, privacy: .public)"
+        )
+        appendTSRLog(detail)
+        prepareTrafficSignRecognitionRuntime(for: countryCode)
     }
 
     private func handleTrafficSignRuntimeUnavailability(
@@ -4187,6 +4235,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     preferredCountryCode: option.countryCode
                 )
                 await applyPenaltyRulesForActiveBundle(preferredCountryCode: option.countryCode)
+                switchTrafficSignModelIfNeeded(
+                    for: option.countryCode,
+                    reason: "bundle_download_selection"
+                )
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
                 syncProgressDetail = "Sync completed"
@@ -6454,28 +6506,47 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             guard fixID == latestTrafficSignLookupFixID,
                   routingContextGeneration == trafficSignContextGeneration else { return }
-            guard route.dbPath != activeDBPath
-                    || route.bundleVersion != activeBundleVersion
-                    || route.dbSHA256?.lowercased() != activeBundleDBSHA256?.lowercased() else {
+            let routeCountryCode = normalizedCountryCode(route.countryCode)
+            let routeChanged = route.dbPath != activeDBPath
+                || route.bundleVersion != activeBundleVersion
+                || route.dbSHA256?.lowercased() != activeBundleDBSHA256?.lowercased()
+            let mapCountryChanged = routeCountryCode != nil && routeCountryCode != activeMapCountryCode
+            guard routeChanged || mapCountryChanged else {
                 return
             }
-            invalidateTrafficSignOverrideIfBundleWillChange(
-                bundleVersion: route.bundleVersion,
-                dbPath: route.dbPath,
-                dbSHA256: route.dbSHA256
-            )
-            activeDBPath = route.dbPath
-            activeBundleVersion = route.bundleVersion
-            activeBundleDBSHA256 = route.dbSHA256
-            speedLimitService = makeSpeedLimitService(
-                dbPath: route.dbPath,
-                preferredCountryCode: route.countryCode
-            )
-            await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
-            resetWayMatchContinuity()
-            appendLookupEvent(
-                "\(fixTimestamp) fix=\(fixID) db_switch region=\(route.region) version=\(route.bundleVersion) db=\(URL(fileURLWithPath: route.dbPath).lastPathComponent)"
-            )
+            if routeChanged {
+                invalidateTrafficSignOverrideIfBundleWillChange(
+                    bundleVersion: route.bundleVersion,
+                    dbPath: route.dbPath,
+                    dbSHA256: route.dbSHA256
+                )
+                activeDBPath = route.dbPath
+                activeBundleVersion = route.bundleVersion
+                activeBundleDBSHA256 = route.dbSHA256
+            }
+
+            // The country selected by the resolved map route is the common
+            // transition key for the map service, penalty rules, model pack,
+            // and presentation catalog. A country change must rebuild the
+            // service even when two adjacent routes happen to share a DB.
+            activeMapCountryCode = routeCountryCode ?? activeMapCountryCode
+            if routeChanged || mapCountryChanged {
+                speedLimitService = makeSpeedLimitService(
+                    dbPath: route.dbPath,
+                    preferredCountryCode: route.countryCode
+                )
+                await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
+                switchTrafficSignModelIfNeeded(
+                    for: routeCountryCode,
+                    reason: routeChanged ? "bundle_route_switch" : "first_location_bundle_selection"
+                )
+            }
+            if routeChanged {
+                resetWayMatchContinuity()
+                appendLookupEvent(
+                    "\(fixTimestamp) fix=\(fixID) db_switch region=\(route.region) version=\(route.bundleVersion) db=\(URL(fileURLWithPath: route.dbPath).lastPathComponent) country=\(route.countryCode ?? "unknown")"
+                )
+            }
         } catch {
             Self.logger.warning("regional db route failed: \(error.localizedDescription, privacy: .public)")
         }

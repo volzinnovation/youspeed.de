@@ -148,10 +148,15 @@ class MainActivity : ComponentActivity(), ConsumerHost {
             lifecycleOwner = this,
             controller = sessionController,
             onStateChanged = sessionController::onTrafficSignCameraRuntimeStateChanged,
+            onModelPackLoaded = sessionController::onTrafficSignModelPackLoaded,
         ).also {
             it.setPreviewSurfaceProvider(previewSurfaceProvider)
             it.start()
         }
+    }
+
+    override fun selectTrafficSignModel(countryCode: String?, reason: String) {
+        trafficSignCameraRuntime?.selectModelPack(countryCode, reason)
     }
 
     override fun stopTrafficSignCamera() {

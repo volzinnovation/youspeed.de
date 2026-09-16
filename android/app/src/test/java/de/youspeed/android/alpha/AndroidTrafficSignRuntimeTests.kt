@@ -12,6 +12,26 @@ import org.junit.Test
 
 class AndroidTrafficSignRuntimeTests {
     @Test
+    fun bundledModelSelectionNormalizesNationalCodes() {
+        assertEquals("DE", AndroidTrafficSignModelPackSelection.availableCountryCode("DEU"))
+        assertEquals("FR", AndroidTrafficSignModelPackSelection.availableCountryCode("FRA"))
+        assertEquals("NL", AndroidTrafficSignModelPackSelection.availableCountryCode("NLD"))
+        assertEquals("BE", AndroidTrafficSignModelPackSelection.availableCountryCode("BEL"))
+        assertEquals(null, AndroidTrafficSignModelPackSelection.availableCountryCode("LUX"))
+    }
+
+    @Test
+    fun nationalCatalogsUseTheirOwnClassifierVocabulary() {
+        val sharedRoot = listOf(File("../../shared"), File("../shared"), File("shared"))
+            .first(File::isDirectory)
+        mapOf("DE" to 134, "FR" to 256, "NL" to 160, "BE" to 143).forEach { (country, expectedClassCount) ->
+            val file = File(sharedRoot, TrafficSignDisplayCatalog.assetPath(country))
+            val catalog = TrafficSignDisplayCatalog.decode(file.readText(), expectedCountryCode = country)
+            assertEquals(expectedClassCount, catalog.classLabels.size)
+        }
+    }
+
+    @Test
     fun bundledPackDeclaresVerifiedAndroidLiteRtArtifacts() {
         val root = assetPackRoot()
         val pack = TrafficSignModelPackJson.decode(File(root, "manifest.json").readText())

@@ -21,11 +21,13 @@ and allow up to three attempts per launch, at least 60 seconds apart; the map
 settings provide a location retry and the existing individual map controls.
 No location coordinates are sent to a country lookup service.
 
-`shared/tsr/country-pack-registry-v1.json` is a **bundled availability inventory**.
-It deliberately has no downloadable model manifests. Germany records its
-pending leakage, parity, calibration and licensing work; France is the next
-country; Belgium and the Netherlands remain explicit follow-ons. First-location
-setup presents this model availability alongside the map status.
+`shared/tsr/country-pack-registry-v1.json` remains a **bundled availability
+inventory** for future signed production-manifest distribution. The mobile app
+also bundles the current German, French, Dutch and Belgian evaluation packs
+offline. Once the first valid route is resolved, both clients select the model
+pack, display catalog and penalty-rule context from the same country key; a
+route country change stops the old recognizer before the new pack is admitted.
+The production registry remains separate from this evaluation-pack path.
 
 The additive discovery schema and delivery-envelope schema keep the existing
 inference `model-pack.schema.json` unchanged. The envelope describes artifact
@@ -52,10 +54,10 @@ and suggest a model-pack country. Overlapping country candidates produce an
 unresolved country. The portable country selector accepts location/map context
 and an explicit override, suspends eligibility immediately during uncertainty,
 and requires three fixes over 15 seconds to change an established country.
-This slice does not connect that selector to the existing #4 runtime or expose
-a model-country override UI. A subsequent activation slice must supply reviewed
-administrative/map country context; an unambiguous extract alone is still not
-proof of the physical country, particularly outside supported coverage.
+The driving route resolver now supplies the selected country to both recognizer
+loaders and to penalty-rule applicability. An unambiguous extract alone is
+still not proof of the physical country, particularly outside supported
+coverage; location evidence continues to gate legal-rule activation.
 
 ## Maintaining regional polygons
 
@@ -88,12 +90,14 @@ Geofabrik GmbH and OpenStreetMap contributors under ODbL 1.0.
 
 - Remote registry retrieval, cached/offline refresh policy, signed rolling
   registry/key rotation and persistent anti-rollback state.
-- Verified resumable **model** transfer, safe artifact installation, atomic
-  activation, cache deletion, updates, rollback and offline notices presentation.
-  First-location setup currently downloads the map and reports the model as
-  unavailable; it does not yet transfer a model when the inventory is changed.
+- Verified resumable **production-model** transfer, safe artifact installation,
+  atomic activation, cache deletion, updates, rollback and offline notices
+  presentation. The current country packs are bundled evaluation artifacts;
+  they do not require a Panoramax dataset archive or a runtime model download.
 - Runtime country selection/override and adjacent-country preload, with
   authoritative country context and integration into both recognizer loaders.
+  The first-fix and route-switch selection path is implemented; explicit
+  manual bundle downloads use the same transition event.
 - German leakage-safe field evaluation and separately calibrated Core ML/LiteRT
   exports, plus actual parity and licensing acceptance evidence. The existing
   pinned leakage audit and grouped-split tooling remain the starting points.

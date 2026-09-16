@@ -42,11 +42,13 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
         case classLabels = "class_labels", signs
     }
 
-    static func bundled(bundle: Bundle = .main) -> Self? {
-        guard let url = bundle.url(forResource: "prolix-de-class-catalog-v1", withExtension: "json"),
+    static func bundled(countryCode: String = "DE", bundle: Bundle = .main) -> Self? {
+        let normalizedCountry = TrafficSignModelPackSelection.availableCountryCode(countryCode) ?? ""
+        guard !normalizedCountry.isEmpty,
+              let url = bundle.url(forResource: "prolix-\(normalizedCountry.lowercased())-class-catalog-v1", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let result = try? JSONDecoder().decode(Self.self, from: data),
-              result.schemaVersion == 1, result.country == "DE",
+              result.schemaVersion == 1, result.country == normalizedCountry,
               !result.classLabels.isEmpty, Set(result.classLabels).count == result.classLabels.count,
               result.classifierCheckpointSHA256.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil,
               Set(result.signs.map(\.classID)).count == result.signs.count else { return nil }
@@ -55,6 +57,20 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
 
     func canRecognize(_ classID: String) -> Bool { classLabels.contains(classID) }
     func sign(for classID: String) -> Sign? { signs.first { $0.classID == classID } }
+}
+
+/// Selects only model packs that are actually bundled in the app. The map
+/// bundle remains the authority for the active country; this helper only
+/// normalizes its ISO-2/ISO-3 country code to an embedded TSR pack.
+enum TrafficSignModelPackSelection {
+    static let bundledCountryCodes: Set<String> = ["DE", "FR", "NL", "BE"]
+
+    static func availableCountryCode(_ raw: String?) -> String? {
+        guard let country = PenaltyCountryCode.alpha2(raw), bundledCountryCodes.contains(country) else {
+            return nil
+        }
+        return country
+    }
 }
 
 /// A separate display stream uses classifier acceptance, before speed-oriented
