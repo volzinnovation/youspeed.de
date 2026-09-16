@@ -68,6 +68,13 @@ required Core ML/LiteRT shapes, and every missing evidence hash. It is a
 readiness manifest, not a runtime release manifest; the country registry stays
 unlinked until all gates pass.
 
+The observed export and server provenance is recorded in
+[`docs/TSR_EXPORT_AND_SOURCE_PROVENANCE.md`](TSR_EXPORT_AND_SOURCE_PROVENANCE.md)
+and `shared/tsr/export-environment-evidence-v1.json`. The KI server's Prolix
+image is an inference environment, not the German-compatible mobile export
+environment; its Blackwell GPU can still be used for isolated foreign model
+work once the export lock and calibration inputs are available.
+
 The foreign packs must use the existing two-stage production architecture:
 
 1. the shared Panoramax detector proposes candidate sign boxes;

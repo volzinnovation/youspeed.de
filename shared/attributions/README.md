@@ -54,5 +54,11 @@ dependencies identified in Vosk's binary and upstream build recipe.
 tool versions. Each includes original licence URLs, text hashes and a clear
 distinction between reviewed source revisions and attested binary provenance.
 
+`licenses/ULTRALYTICS_SOURCE_NOTICE.txt` records the AGPL source revision,
+corresponding-source offer, model-lineage boundary and no-endorsement wording
+for the build-time Ultralytics dependency. It is included in the generated
+catalog consumed by both apps and supplements the complete AGPL text retained
+in the model-pack notices.
+
 The source audit and remaining model-release review items are documented in
 `../../docs/license-audit-2026-09-10/README.md`.

@@ -1,7 +1,7 @@
 
 
 YOUSPEED — SOURCES AND THIRD-PARTY NOTICES
-Reviewed 2026-09-10.
+Reviewed 2026-09-16.
 
 This document records sources, authors, changes and licence notices. Individual components retain their own licences; original licence texts retain their publication language. Android-only dependencies and test-only reference photographs are identified below. Complete model, dataset and conversion-tool licence texts are also available from Info's traffic-sign model notices.
 
@@ -79,7 +79,7 @@ Panoramax; source last modified 2026-06-13
 Etalab Open Licence 2.0 (model-card declaration)
 Source: https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: Checkpoint converted into mobile Core ML and LiteRT artifacts. Ultralytics model lineage and training-data terms remain separate.
+Changes: Checkpoint converted into mobile Core ML and LiteRT artifacts. Panoramax model-card terms, dataset lineage and the Ultralytics AGPL/source record are preserved separately in the app notices.
 
 ================================================================================
 
@@ -88,7 +88,7 @@ Panoramax and contributing photographers; source last modified 2026-03-29
 CC BY-SA 4.0
 Source: https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13
 Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
-Changes: Training provenance of the classifier. The training dataset is not copied into the production app.
+Changes: Training provenance of the classifier. The training dataset is not copied into the production app; CC BY-SA attribution/share-alike obligations remain recorded in the source manifest.
 
 ================================================================================
 
@@ -97,7 +97,7 @@ Panoramax; source revision 7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f
 Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
 Source: https://huggingface.co/Panoramax/classify_fr_road_signs/tree/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+Changes: Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.
 
 ================================================================================
 
@@ -106,7 +106,7 @@ Panoramax; source revision 7a811057049f6de207f909c0f1be2905fa9baf01
 Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
 Source: https://huggingface.co/Panoramax/classify_nl_road_signs/tree/7a811057049f6de207f909c0f1be2905fa9baf01
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+Changes: Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.
 
 ================================================================================
 
@@ -115,7 +115,7 @@ Panoramax; source revision b31ee38e467a667073087aa86503e0afe9b0320f
 Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
 Source: https://huggingface.co/Panoramax/classify_be_road_signs/tree/b31ee38e467a667073087aa86503e0afe9b0320f
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+Changes: Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.
 
 ================================================================================
 
@@ -124,7 +124,7 @@ Panoramax and contributing photographers; source revision ea75988e381f16e4677c5f
 Etalab Open Licence 2.0 (dataset-card declaration); commercial use approved under published terms
 Source: https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/tree/ea75988e381f16e4677c5f42aa5fedea005f23d6
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: Training provenance for the FR classifier; dataset archives are not copied into the production app and must be split by capture lineage before calibration.
+Changes: Training provenance for the FR classifier; the dataset archive is not an app input. Attribution and the published commercial-use basis are retained; any future calibration/retraining split must remain capture-grouped and leakage-safe.
 
 ================================================================================
 
@@ -133,7 +133,7 @@ Panoramax and contributing photographers; source revision 68c7c1bac103f7ed42440a
 CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations
 Source: https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/tree/68c7c1bac103f7ed42440af71536827dcada519c
 Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
-Changes: Training provenance for the NL classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.
+Changes: Training provenance for the NL classifier; the dataset archive is not an app input. Attribution/share-alike and the published commercial-use basis are retained; country-prefixed foreign examples require filtering before calibration.
 
 ================================================================================
 
@@ -142,7 +142,7 @@ Panoramax and contributing photographers; source revision 6479ab5a2a47629dc6e3a2
 CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations
 Source: https://huggingface.co/datasets/Panoramax/classified_be_road_signs/tree/6479ab5a2a47629dc6e3a242a177c2537d9cf378
 Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
-Changes: Training provenance for the BE classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.
+Changes: Training provenance for the BE classifier; the dataset archive is not an app input. Attribution/share-alike and the published commercial-use basis are retained; country-prefixed foreign examples require filtering before calibration against the new Belgian catalogue.
 
 ================================================================================
 
@@ -169,7 +169,7 @@ Ultralytics and contributors
 AGPL-3.0
 Source: https://github.com/ultralytics/ultralytics/tree/v8.4.56
 Licence / legal basis: https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE
-Changes: YOLO architecture and model export tooling used to produce mobile models. Full text is included in offline model notices.
+Changes: Build-time YOLO architecture and model export tooling used to produce mobile models. The app retains the source revision, full AGPL text, corresponding-source location, modification/source-offer record and no-endorsement boundary in offline notices; the Python package is not embedded.
 
 ================================================================================
 
@@ -4986,6 +4986,40 @@ Python ai_edge_litert 1.3.0 recorded in the Android export report. The separatel
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+
+================================================================================
+
+Ultralytics source and redistribution record
+
+Ultralytics source and redistribution record
+==============================================
+
+Component: Ultralytics 8.4.56
+Source: https://github.com/ultralytics/ultralytics/tree/v8.4.56
+Licence: GNU Affero General Public License, version 3 (AGPL-3.0-only)
+Licence text: https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE
+
+The Panoramax road-sign checkpoints and the German-compatible mobile export
+records identify Ultralytics YOLO architecture and export tooling in their
+lineage. The Python package is a build-time dependency; it is not embedded in
+the iPhone or Android runtime. Converted Core ML and LiteRT files remain
+identified by the model-pack manifest and provenance records, including the
+Ultralytics source revision and export configuration.
+
+YouSpeed is distributed under AGPL-3.0 in the repository root. For any public
+distribution that includes an Ultralytics-derived component, the release
+record must preserve this attribution, the complete AGPL text, the source
+revision, the corresponding-source offer required by the applicable AGPL
+terms, and a description of YouSpeed modifications. The corresponding source
+for this project is offered from:
+
+https://github.com/volzinnovation/youspeed.de
+
+This record does not grant an Ultralytics Enterprise licence, does not imply
+Ultralytics endorsement, and is not a legal opinion. The release gate remains
+explicitly recorded until the actual foreign model pack, source offer and
+runtime evidence are reviewed together.
 
 
 ================================================================================

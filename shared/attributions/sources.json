@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed_at": "2026-09-10",
+  "reviewed_at": "2026-09-16",
   "entries": [
     {
       "id": "youspeed",
@@ -79,7 +79,7 @@
       "license": "Etalab Open Licence 2.0 (model-card declaration)",
       "source_url": "https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "Checkpoint converted into mobile Core ML and LiteRT artifacts. Ultralytics model lineage and training-data terms remain separate.",
+      "changes": "Checkpoint converted into mobile Core ML and LiteRT artifacts. Panoramax model-card terms, dataset lineage and the Ultralytics AGPL/source record are preserved separately in the app notices.",
       "category": "model"
     },
     {
@@ -89,7 +89,7 @@
       "license": "CC BY-SA 4.0",
       "source_url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-      "changes": "Training provenance of the classifier. The training dataset is not copied into the production app.",
+      "changes": "Training provenance of the classifier. The training dataset is not copied into the production app; CC BY-SA attribution/share-alike obligations remain recorded in the source manifest.",
       "category": "data"
     },
     {
@@ -99,7 +99,7 @@
       "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
       "source_url": "https://huggingface.co/Panoramax/classify_fr_road_signs/tree/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "changes": "Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.",
       "category": "model"
     },
     {
@@ -109,7 +109,7 @@
       "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
       "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/tree/7a811057049f6de207f909c0f1be2905fa9baf01",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "changes": "Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.",
       "category": "model"
     },
     {
@@ -119,7 +119,7 @@
       "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
       "source_url": "https://huggingface.co/Panoramax/classify_be_road_signs/tree/b31ee38e467a667073087aa86503e0afe9b0320f",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "changes": "Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline. The checkpoint is converted only through the shared detector/country-classifier pipeline; Panoramax attribution, source lineage and the Ultralytics AGPL/source record remain in the app notices.",
       "category": "model"
     },
     {
@@ -129,7 +129,7 @@
       "license": "Etalab Open Licence 2.0 (dataset-card declaration); commercial use approved under published terms",
       "source_url": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/tree/ea75988e381f16e4677c5f42aa5fedea005f23d6",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "Training provenance for the FR classifier; dataset archives are not copied into the production app and must be split by capture lineage before calibration.",
+      "changes": "Training provenance for the FR classifier; the dataset archive is not an app input. Attribution and the published commercial-use basis are retained; any future calibration/retraining split must remain capture-grouped and leakage-safe.",
       "category": "data"
     },
     {
@@ -139,7 +139,7 @@
       "license": "CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations",
       "source_url": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/tree/68c7c1bac103f7ed42440af71536827dcada519c",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-      "changes": "Training provenance for the NL classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.",
+      "changes": "Training provenance for the NL classifier; the dataset archive is not an app input. Attribution/share-alike and the published commercial-use basis are retained; country-prefixed foreign examples require filtering before calibration.",
       "category": "data"
     },
     {
@@ -149,7 +149,7 @@
       "license": "CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations",
       "source_url": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/tree/6479ab5a2a47629dc6e3a242a177c2537d9cf378",
       "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
-      "changes": "Training provenance for the BE classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.",
+      "changes": "Training provenance for the BE classifier; the dataset archive is not an app input. Attribution/share-alike and the published commercial-use basis are retained; country-prefixed foreign examples require filtering before calibration against the new Belgian catalogue.",
       "category": "data"
     },
     {
@@ -179,7 +179,7 @@
       "license": "AGPL-3.0",
       "source_url": "https://github.com/ultralytics/ultralytics/tree/v8.4.56",
       "license_url": "https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE",
-      "changes": "YOLO architecture and model export tooling used to produce mobile models. Full text is included in offline model notices.",
+      "changes": "Build-time YOLO architecture and model export tooling used to produce mobile models. The app retains the source revision, full AGPL text, corresponding-source location, modification/source-offer record and no-endorsement boundary in offline notices; the Python package is not embedded.",
       "category": "software"
     },
     {

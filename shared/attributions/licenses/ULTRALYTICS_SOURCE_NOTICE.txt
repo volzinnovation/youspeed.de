@@ -1,0 +1,28 @@
+Ultralytics source and redistribution record
+==============================================
+
+Component: Ultralytics 8.4.56
+Source: https://github.com/ultralytics/ultralytics/tree/v8.4.56
+Licence: GNU Affero General Public License, version 3 (AGPL-3.0-only)
+Licence text: https://github.com/ultralytics/ultralytics/blob/v8.4.56/LICENSE
+
+The Panoramax road-sign checkpoints and the German-compatible mobile export
+records identify Ultralytics YOLO architecture and export tooling in their
+lineage. The Python package is a build-time dependency; it is not embedded in
+the iPhone or Android runtime. Converted Core ML and LiteRT files remain
+identified by the model-pack manifest and provenance records, including the
+Ultralytics source revision and export configuration.
+
+YouSpeed is distributed under AGPL-3.0 in the repository root. For any public
+distribution that includes an Ultralytics-derived component, the release
+record must preserve this attribution, the complete AGPL text, the source
+revision, the corresponding-source offer required by the applicable AGPL
+terms, and a description of YouSpeed modifications. The corresponding source
+for this project is offered from:
+
+https://github.com/volzinnovation/youspeed.de
+
+This record does not grant an Ultralytics Enterprise licence, does not imply
+Ultralytics endorsement, and is not a legal opinion. The release gate remains
+explicitly recorded until the actual foreign model pack, source offer and
+runtime evidence are reviewed together.

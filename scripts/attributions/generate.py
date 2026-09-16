@@ -65,8 +65,8 @@ def generate():
     for entry in entries:
         assert entry.keys() == required and all(isinstance(v, str) and v.strip() for v in entry.values()), entry
         assert entry["source_url"].startswith("https://") and entry["license_url"].startswith("https://"), entry
-    sources = json.dumps(dict(schema_version=1, reviewed_at="2026-09-10", entries=entries), ensure_ascii=False, indent=2) + "\n"
-    parts = ["YOUSPEED — SOURCES AND THIRD-PARTY NOTICES\nReviewed 2026-09-10.\n\nThis document records sources, authors, changes and licence notices. Individual components retain their own licences; original licence texts retain their publication language. Android-only dependencies and test-only reference photographs are identified below. Complete model, dataset and conversion-tool licence texts are also available from Info's traffic-sign model notices.\n\nYouSpeed source: " + REPO + "\nMap database downloads: " + REPO + "/releases\n"]
+    sources = json.dumps(dict(schema_version=1, reviewed_at="2026-09-16", entries=entries), ensure_ascii=False, indent=2) + "\n"
+    parts = ["YOUSPEED — SOURCES AND THIRD-PARTY NOTICES\nReviewed 2026-09-16.\n\nThis document records sources, authors, changes and licence notices. Individual components retain their own licences; original licence texts retain their publication language. Android-only dependencies and test-only reference photographs are identified below. Complete model, dataset and conversion-tool licence texts are also available from Info's traffic-sign model notices.\n\nYouSpeed source: " + REPO + "\nMap database downloads: " + REPO + "/releases\n"]
     for entry in entries:
         parts.append("\n".join([entry["title"], entry["attribution"], entry["license"], "Source: " + entry["source_url"], "Licence / legal basis: " + entry["license_url"], "Changes: " + entry["changes"]]))
     for label, path in [
@@ -75,6 +75,7 @@ def generate():
         ("Android dependency notices extracted from resolved release artifacts", OUT / "licenses/ANDROID_ARTIFACT_NOTICES.txt"),
         ("Vosk Android native dependencies", OUT / "licenses/VOSK_NATIVE_NOTICES.txt"),
         ("Android traffic-sign model conversion tools", OUT / "licenses/ANDROID_CONVERSION_NOTICES.txt"),
+        ("Ultralytics source and redistribution record", OUT / "licenses/ULTRALYTICS_SOURCE_NOTICE.txt"),
         ("Vosk German speech model: Apache License 2.0", ROOT / "android/app/src/main/assets/vosk-model-small-de-0.15/COPYING"),
         ("YouSpeed source code: GNU AGPL v3", ROOT / "LICENSE"),
     ]:

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "evidence_id": "youspeed-tsr-export-environment-evidence-v1",
+  "reviewed_at": "2026-09-16",
+  "purpose": "Record the observed German mobile-export provenance and the owner-controlled GPU environment available for foreign model work. This is evidence, not the missing digest-pinned export lock.",
+  "german_artifact_records": {
+    "coreml": {
+      "path": "iphone/.derived/SpeedConsumerBuild/Build/Products/Debug-iphoneos/SpeedConsumer.app/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/provenance/export-run.json",
+      "tracked": false,
+      "record_status": "observed_in_local_Xcode_derived_output",
+      "host_identity": "not_recorded",
+      "mode": "published_checkpoint_conversion_only",
+      "exporter": {
+        "ultralytics": "8.4.56",
+        "coremltools": "9.0",
+        "torch": "2.13.0"
+      },
+      "configurations": {
+        "detector": "imgsz=1280,batch=1,half=true,nms=true",
+        "classifier": "imgsz=224,batch=1,half=true,nms=false"
+      }
+    },
+    "litert": {
+      "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/provenance/android-export-report.json",
+      "tracked": true,
+      "record_status": "repository_record",
+      "exported_at_utc": "2026-09-05T19:30:00Z",
+      "runtime": "Google AI Edge LiteRT 1.4.2",
+      "exporter": {
+        "ultralytics": "8.4.56",
+        "onnx": "1.17.0",
+        "onnx2tf": "1.28.8",
+        "tensorflow": "2.19.0",
+        "ai_edge_litert": "1.3.0"
+      },
+      "calibration": "not_calibrated"
+    }
+  },
+  "ki_server": {
+    "host_reference": "owner-controlled KI server; SSH alias wingki01",
+    "inventory_date": "2026-09-16",
+    "role": "Panoramax/Prolix inference and foreign model-work environment",
+    "operating_system": "Ubuntu 24.04",
+    "docker": "29.6.1",
+    "cuda_base": "12.6.3",
+    "gpus": [
+      "NVIDIA RTX A5000 24 GiB",
+      "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition 96 GiB",
+      "NVIDIA RTX A5000 24 GiB"
+    ],
+    "driver": "590.48.01",
+    "prolix_image": {
+      "tag": "woladen-prolix:2ad3c2382d",
+      "digest": "sha256:c1e51a1cb1195b4471a530e7484f9bd8c3163ad7150c26207c077c1f93727607",
+      "code_revision": "2ad3c2382d95801955afc513e9194e01ef8e692e",
+      "role": "inference_only_observed",
+      "packages": {
+        "torch": "2.6.0+cu126",
+        "ultralytics": "8.4.49",
+        "numpy": "2.4.4"
+      },
+      "missing_mobile_export_packages": [
+        "coremltools",
+        "onnx",
+        "onnx2tf",
+        "tensorflow",
+        "ai-edge-litert"
+      ],
+      "artifacts_not_found": [
+        "Core ML .mlmodelc/.mlpackage exports",
+        "LiteRT/TFLite exports",
+        "export-run.json",
+        "android-export-report.json"
+      ]
+    },
+    "checkpoint_inventory": [
+      {
+        "country": "DE",
+        "role": "classifier",
+        "path": "/mnt/nvme/woladen-prolix/models/DE/classifier/classify_de_road_signs.pt",
+        "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7"
+      },
+      {
+        "country": "FR",
+        "role": "classifier",
+        "path": "/mnt/nvme/woladen-prolix/models/FR/classifier/best.pt",
+        "sha256": "5e70142feffd01ac15ce4f1fc2c3ce929a6dadb7c71ccf06ea20059ca5757641"
+      },
+      {
+        "country": "NL",
+        "role": "classifier",
+        "path": "/mnt/nvme/woladen-prolix/models/NL/classifier/classify_nl_road_signs.pt",
+        "sha256": "14c738b1d2b8d65af813f1d3cb20e50033274b481d02bbf062b8f714ed54bc53"
+      },
+      {
+        "country": "BE",
+        "role": "classifier",
+        "path": "/mnt/nvme/woladen-prolix/models/BE/classifier/classify_be_road_signs.pt",
+        "sha256": "d99c7ba6fdf2efa395b3100d02ef0670fdb3c3365527f7da9336793db0633c1b"
+      },
+      {
+        "country": "all",
+        "role": "shared_detector",
+        "path": "/mnt/nvme/woladen-prolix/models/{DE,FR,NL,BE}/detector/yolo11l_panoramax.pt",
+        "sha256": "a3205e4a92b3acdaa883c02e09dba439c48f6c5bc8c89aff44da7c2e79f140e7"
+      }
+    ]
+  },
+  "mobile_export_target": {
+    "architecture": "shared_detector_then_country_classifier_then_candidate_burst_then_validated_passage",
+    "iphone": "Core ML through the existing iPhone runtime path",
+    "android": "LiteRT/TFLite through CameraX and the existing Android runtime path",
+    "required_export_stack": {
+      "ultralytics": "8.4.56",
+      "torch": "2.13.0",
+      "coremltools": "9.0",
+      "onnx": "1.17.0",
+      "onnx2tf": "1.28.8",
+      "tensorflow": "2.19.0",
+      "ai_edge_litert": "1.3.0"
+    },
+    "lock_status": "pending_digest_pinned_network_disabled_environment",
+    "next_evidence": [
+      "foreign Core ML and LiteRT classifier artifacts with hashes",
+      "country calibration and untouched holdout evidence",
+      "reference/Core ML/LiteRT tensor parity",
+      "attached iPhone and Android device parity",
+      "signed runtime manifests"
+    ]
+  },
+  "non_requirements": [
+    "Panoramax dataset archives are lineage and retraining inputs, not app runtime inputs.",
+    "The app does not need a Panoramax archive bundle once the approved model, calibration, attribution and runtime evidence are recorded."
+  ]
+}

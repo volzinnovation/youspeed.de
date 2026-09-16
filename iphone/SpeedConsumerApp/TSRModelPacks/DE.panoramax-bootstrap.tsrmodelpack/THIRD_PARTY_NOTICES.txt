@@ -723,6 +723,13 @@ Core ML export tooling used for the bundled artifacts. The classifier metadata
 identifies the source architecture as Ultralytics YOLO26l-cls. The Ultralytics
 Python package is not embedded in the iOS runtime.
 
+YouSpeed is AGPL-3.0. This release preserves the Ultralytics source revision,
+the complete licence below, the corresponding-source location and the
+YouSpeed modification/source-offer record in the repository attribution
+catalog. This notice does not grant an Ultralytics Enterprise licence or imply
+Ultralytics endorsement. The same notice set is required for each foreign
+Core ML/LiteRT pack.
+
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 

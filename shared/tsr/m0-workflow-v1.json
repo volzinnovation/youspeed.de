@@ -267,7 +267,7 @@
         "state": "pending",
         "sha256": null,
         "byte_length": null,
-        "blocking_reason": "No digest-pinned network-disabled export environment is frozen."
+        "blocking_reason": "No digest-pinned network-disabled export environment is frozen. Observed German export versions and the KI-server inference inventory are recorded in shared/tsr/export-environment-evidence-v1.json, but that evidence is not an export lock."
       }
     },
     {
@@ -329,7 +329,7 @@
         "state": "pending",
         "sha256": null,
         "byte_length": null,
-        "blocking_reason": "The deterministic ONNX/Core ML/LiteRT export recipe is not frozen."
+        "blocking_reason": "The deterministic ONNX/Core ML/LiteRT export recipe is not frozen. The German reports record the tool versions, but foreign artifact conversion still needs a replayable recipe and hashes."
       }
     },
     {

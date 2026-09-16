@@ -152,7 +152,7 @@
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "foreign classifier export dependencies are not available in the current environment",
+        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
         "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
       ]
@@ -245,7 +245,7 @@
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "foreign classifier export dependencies are not available in the current environment",
+        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
         "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
       ]
@@ -338,7 +338,7 @@
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "foreign classifier export dependencies are not available in the current environment",
+        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
         "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
       ]
