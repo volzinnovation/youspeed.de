@@ -13,6 +13,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import java.io.File
 import java.time.Clock
 
@@ -56,6 +59,7 @@ class MainActivity : ComponentActivity(), ConsumerHost {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+        hideNavigationBar()
         sessionController.bindHost(this)
         onBackPressedDispatcher.addCallback(this) {
             sessionController.performButtonAction { finish() }
@@ -91,7 +95,20 @@ class MainActivity : ComponentActivity(), ConsumerHost {
 
     override fun onResume() {
         super.onResume()
+        hideNavigationBar()
         sessionController.refreshOnboardingPermissions()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideNavigationBar()
+    }
+
+    private fun hideNavigationBar() {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.navigationBars())
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
