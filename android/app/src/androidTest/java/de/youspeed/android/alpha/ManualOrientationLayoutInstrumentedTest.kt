@@ -184,12 +184,22 @@ class ManualOrientationLayoutInstrumentedTest {
         }
         val pictogram = bounds("last-traffic-sign-pictogram")
         val signPane = bounds("main-sign-pane")
+        val speedSign = bounds("speed-sign")
+        val eyeCanvas = bounds("camera-speed-source-marker")
         val minDimensionDp = minOf(device.displayWidth, device.displayHeight) / density
         val screenInsetDp = maxOf(8f, minDimensionDp * 0.02f)
-        val cornerTolerance = 2 * screenInsetDp * density + 1
-        assertTrue("Secondary traffic sign stays at the top-left in $orientation",
-            pictogram.left <= signPane.left + cornerTolerance &&
-                pictogram.top <= signPane.top + cornerTolerance)
-        bounds("camera-speed-source-marker")
+        val eyeTipInsetDp = if (orientation.isLandscape) {
+            maxOf(10f, (eyeCanvas.width() / density - speedSign.width() / density) / 4f)
+        } else {
+            screenInsetDp + 24f
+        }
+        val expectedEyeLeft = eyeCanvas.left + eyeTipInsetDp * density
+        val alignmentTolerance = 2 * density + 1
+        assertEquals("Secondary traffic sign left edge follows the eye in $orientation",
+            expectedEyeLeft, pictogram.left.toFloat(), alignmentTolerance)
+        assertEquals("Secondary traffic sign upper edge follows the speed circle in $orientation",
+            speedSign.top.toFloat(), pictogram.top.toFloat(), alignmentTolerance)
+        assertTrue("Secondary traffic sign remains inside the sign pane in $orientation",
+            signPane.contains(pictogram))
     }
 }

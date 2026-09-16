@@ -523,7 +523,6 @@ private fun MainScreen(
                     TopCornerButtons(
                         screenInset, foreground, buttonBg, buttonBorder,
                         trafficSignBugButtonTint(ui, foreground),
-                        ui.lastTrafficSignPictogram.takeIf { ui.otherTrafficSignDisplayEnabled },
                         showLocalRecordings = false,
                         onOpenLocalRecordings = onOpenLocalRecordings,
                         modifier = Modifier.align(Alignment.TopStart),
@@ -546,6 +545,21 @@ private fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
+                        if (ui.otherTrafficSignDisplayEnabled) {
+                            ui.lastTrafficSignPictogram?.let { pictogram ->
+                                val eyeTipInset = if (landscape) {
+                                    max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
+                                } else {
+                                    screenInset + CONTROL_BUTTON_DIAMETER / 2
+                                }
+                                RecognizedTrafficSignPictogram(
+                                    pictogram = pictogram,
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .offset(x = eyeTipInset),
+                                )
+                            }
+                        }
                         SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
@@ -660,12 +674,11 @@ private fun TopCornerButtons(
     buttonBg: Color,
     buttonBorder: Color,
     bugTint: Color,
-    pictogram: TrafficSignPictogram?,
     showLocalRecordings: Boolean,
     onOpenLocalRecordings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (!showLocalRecordings && pictogram == null) return
+    if (!showLocalRecordings) return
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -682,14 +695,18 @@ private fun TopCornerButtons(
             )
         }
         if (showLocalRecordings) Spacer(modifier = Modifier.weight(1f))
-        pictogram?.let { RecognizedTrafficSignPictogram(it) }
     }
 }
 
 @Composable
-private fun RecognizedTrafficSignPictogram(pictogram: TrafficSignPictogram) {
-    val modifier = Modifier.size(72.dp)
-        .padding(5.dp).testTag("last-traffic-sign-pictogram")
+private fun RecognizedTrafficSignPictogram(
+    pictogram: TrafficSignPictogram,
+    modifier: Modifier = Modifier,
+) {
+    val pictogramModifier = modifier
+        .size(72.dp)
+        .padding(5.dp)
+        .testTag("last-traffic-sign-pictogram")
     val context = LocalContext.current
     val bitmap = remember(pictogram.imagePath) {
         pictogram.imagePath?.let { path ->
@@ -700,7 +717,7 @@ private fun RecognizedTrafficSignPictogram(pictogram: TrafficSignPictogram) {
         Image(
             bitmap = bitmap,
             contentDescription = stringResource(R.string.ui_last_recognized_sign, pictogram.label()),
-            modifier = modifier,
+            modifier = pictogramModifier,
         )
     }
 }

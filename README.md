@@ -55,6 +55,20 @@ with a shared, feature-neutral rear-camera session on iPhone and Android:
   </tr>
 </table>
 
+### On-device TSR
+
+These screenshots show the camera-derived speed-limit state from the shared
+`camera-limit-active` fixture. The eye-shaped marker identifies the camera
+source around the active 30 km/h sign; the fixture is deterministic UI evidence
+and does not retain or publish a camera frame.
+
+<table>
+  <tr>
+    <td><img src="docs/tsr-camera-limit-active.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in portrait" width="240"></td>
+    <td><img src="docs/tsr-camera-limit-active-landscape.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in landscape" width="520"></td>
+  </tr>
+</table>
+
 
 ## Get YouSpeed
 

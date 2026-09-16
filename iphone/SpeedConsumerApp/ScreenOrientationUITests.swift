@@ -142,7 +142,7 @@ final class ScreenOrientationUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    func testSecondaryTrafficSignStaysAtTopLeftInEveryManualOrientation() {
+    func testSecondaryTrafficSignAlignsWithSpeedSignAndEyeInEveryManualOrientation() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "traffic-sign-pictogram"
@@ -153,20 +153,27 @@ final class ScreenOrientationUITests: XCTestCase {
             app.launch()
 
             let pane = app.otherElements["dashboard.limitPane"]
+            let speedSign = app.descendants(matching: .any)
+                .matching(identifier: "dashboard.speedSignGeometry").firstMatch
             let pictogram = app.descendants(matching: .any)
                 .matching(identifier: "dashboard.trafficSignPictogram").firstMatch
             XCTAssertTrue(pane.waitForExistence(timeout: 15))
+            XCTAssertTrue(speedSign.waitForExistence(timeout: 15))
             XCTAssertTrue(pictogram.waitForExistence(timeout: 15))
 
             let settled = NSPredicate { _, _ in
-                pictogram.frame.minX <= pane.frame.minX + 100
-                    && pictogram.frame.minY <= pane.frame.minY + 100
+                return abs(pictogram.frame.minY - speedSign.frame.minY) < 2
             }
             expectation(for: settled, evaluatedWith: nil)
             waitForExpectations(timeout: 10)
 
-            XCTAssertLessThanOrEqual(pictogram.frame.minX, pane.frame.minX + 100)
-            XCTAssertLessThanOrEqual(pictogram.frame.minY, pane.frame.minY + 100)
+            let landscape = mount != "portrait"
+            // In landscape the eye canvas is expanded through the horizontal
+            // safe area, placing its tip at the pane's leading edge. Portrait
+            // keeps the control-radius inset used by the eye renderer.
+            let expectedEyeLeft = landscape ? pane.frame.minX : pane.frame.minX + 22
+            XCTAssertEqual(pictogram.frame.minX, expectedEyeLeft, accuracy: 2)
+            XCTAssertEqual(pictogram.frame.minY, speedSign.frame.minY, accuracy: 2)
             app.terminate()
         }
         XCUIDevice.shared.orientation = .portrait

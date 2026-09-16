@@ -198,6 +198,10 @@ struct MainView: View {
             let eyeTipInset = landscape
                 ? max(10 / UIScreen.main.scale, (eyeCanvasWidth - signSize) / 4)
                 : controlDiameter / 2
+            let eyeLeft = landscape
+                ? (paneWidth - eyeCanvasWidth) / 2 + eyeTipInset
+                : eyeTipInset
+            let signTop = landscape ? (signPaneHeight - signSize) / 2 : contentTopInset
             let workspaceBudget = max(0, workspacePaneHeight - contentBottomInset - workspaceTopInset)
             let primaryMetricFontSize = min(signSize * speedLimitNumberScale,
                 max(0, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
@@ -224,6 +228,10 @@ struct MainView: View {
                                 accessibilityDescription: speedLimitAccessibilityDescription
                             )
                             .frame(width: signSize, height: signSize)
+                            Color.clear
+                                .frame(width: signSize, height: signSize)
+                                .allowsHitTesting(false)
+                                .accessibilityIdentifier("dashboard.speedSignGeometry")
 
                             if viewModel.trafficSignEndOverlayVisible {
                                 EndOfSpeedLimitSignView()
@@ -266,6 +274,21 @@ struct MainView: View {
                                 viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
                             }
                         )
+                        if viewModel.trafficSignPictogramEnabled,
+                           let sign = viewModel.trafficSignPictogram {
+                            ZStack(alignment: .topLeading) {
+                                TrafficSignPictogramView(sign: sign)
+                                    .frame(width: 76, height: 76)
+                                    .padding(5)
+                                Color.clear
+                                    .frame(width: 86, height: 86)
+                                    .allowsHitTesting(false)
+                                    .accessibilityLabel(Text(sign.localizedLabel()))
+                                    .accessibilityIdentifier("dashboard.trafficSignPictogram")
+                            }
+                            .frame(width: 86, height: 86)
+                                .position(x: eyeLeft + 43, y: signTop + 43)
+                        }
                         topCornerButtons
                             .padding(.horizontal, screenInset)
                             .padding(.top, topPadding)
@@ -392,12 +415,8 @@ struct MainView: View {
 
     private var topCornerButtons: some View {
         HStack(alignment: .top) {
-            if viewModel.trafficSignPictogramEnabled,
-               let sign = viewModel.trafficSignPictogram {
-                TrafficSignPictogramView(sign: sign)
-                    .frame(width: 76, height: 76)
-                    .padding(5)
-            } else if showsTrafficSignRecognitionDebugBadge {
+            if showsTrafficSignRecognitionDebugBadge,
+               !(viewModel.trafficSignPictogramEnabled && viewModel.trafficSignPictogram != nil) {
                 trafficSignRecognitionBadge
             }
         }
@@ -409,13 +428,14 @@ struct MainView: View {
         let sign: TrafficSignPresentationCatalog.Sign
 
         var body: some View {
-            if let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
+            Group {
+                if let url = sign.imageURL(), let image = UIImage(contentsOfFile: url.path) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                }
             }
-            .accessibilityLabel(sign.localizedLabel())
-            .accessibilityIdentifier("dashboard.trafficSignPictogram")
+            .accessibilityLabel(Text(sign.localizedLabel()))
         }
     }
 
