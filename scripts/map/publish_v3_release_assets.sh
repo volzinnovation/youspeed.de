@@ -5,7 +5,7 @@ usage() {
   cat <<USAGE
 Usage: $0 --repo <owner/repo> --tag <release_tag> --bundle-dir <dir> [--title <name>] [--notes <text>] [--draft]
 
-Uploads consumer bundle assets to a GitHub release.
+Recreates the rolling GitHub release, then uploads consumer bundle assets.
 Relative paths are attached as display labels; release asset names are basenames.
 
 Examples:
@@ -75,16 +75,20 @@ if [[ ! -d "$bundle_dir" ]]; then
   exit 1
 fi
 
-if ! gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
-  create_args=("$tag" --repo "$repo" --notes "$notes")
-  if [[ -n "$title" ]]; then
-    create_args+=(--title "$title")
-  fi
-  if [[ "$draft" == "1" ]]; then
-    create_args+=(--draft)
-  fi
-  gh release create "${create_args[@]}"
+if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+  # GitHub keeps publishedAt immutable for an existing release. These tags are
+  # stable download aliases, so recreate the release while retaining the tag.
+  gh release delete "$tag" --yes --repo "$repo"
 fi
+
+create_args=("$tag" --repo "$repo" --notes "$notes")
+if [[ -n "$title" ]]; then
+  create_args+=(--title "$title")
+fi
+if [[ "$draft" == "1" ]]; then
+  create_args+=(--draft)
+fi
+gh release create "${create_args[@]}"
 
 while IFS= read -r -d '' file; do
   rel="${file#${bundle_dir%/}/}"

@@ -250,12 +250,17 @@ jobs:
           shopt -s nullglob
           pbf_tag="${{ steps.params.outputs.pbf_release_tag }}"
 
-          if ! gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release create "${pbf_tag}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --title "${{ steps.plan.outputs.pbf_release_title_default }}" \
-              --notes "Rolling ${{ steps.plan.outputs.country_code }} PBF/state snapshot for downstream bundle builds."
+          if gh release view "${pbf_tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            # Keep the stable tag/download URLs, but recreate the release so
+            # GitHub records the current publication date instead of the date
+            # of the original rolling release.
+            gh release delete "${pbf_tag}" --yes --repo "${GITHUB_REPOSITORY}"
           fi
+
+          gh release create "${pbf_tag}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${{ steps.plan.outputs.pbf_release_title_default }}" \
+            --notes "Rolling ${{ steps.plan.outputs.country_code }} PBF/state snapshot for downstream bundle builds."
 
           test -f "${{ steps.plan.outputs.input_pbf_path }}"
           test -f "${{ steps.plan.outputs.state_file_path }}"
