@@ -11,6 +11,50 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 
 <img src="docs/2026-youspeed.de-demo.webp" alt="Animated demo of YouSpeed showing speed-limit detection and warning levels" width="320">
 
+## Recent development status
+
+The September 2026 development builds extend the map-matching speed display
+with a shared, feature-neutral rear-camera session on iPhone and Android:
+
+- **On-device traffic-sign recognition:** opt-in live recognition uses Core ML
+  on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
+  combines candidate bursts over time and only a validated sign passage may
+  affect the active speed context. The current field-test pack is
+  Germany-first and focused on primary speed-relevant signs; supplementary
+  plates are not interpreted in live inference and town-entry recognition is
+  still limited. Ordinary recognition keeps no frame stream and sends no video
+  or inference to the cloud. See the [TSR contracts](shared/tsr/README.md) and
+  [implementation specification](docs/VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md).
+- **Screenshots:** the public screenshot sets now cover safe-speed, fine,
+  points, driving-ban, pedestrian-zone, and autobahn states in multiple
+  locales. They are generated from reproducible simulator/emulator fixtures;
+  see the [Android listing assets](store/android/listing/en-US/phone-screenshots/),
+  [iPhone listing assets](store/apple/screenshots/en-US/iphone-6.9/),
+  [`android/scripts/recreate_store_screenshots.sh`](android/scripts/recreate_store_screenshots.sh),
+  and [`scripts/iphone/recreate_store_screenshots.sh`](scripts/iphone/recreate_store_screenshots.sh).
+- **Dashcam:** the same camera session can independently provide an explicit,
+  local-only dashcam recording, live preview, TSR frames, and Panoramax stills.
+  Recordings are playable, shareable, and deletable from the local library;
+  storage is capped at 5 GB per movie and 10 GB for the library. Controls wait
+  for successful video finalization before navigating or changing state.
+- **Panoramax upload:** distance- or time-sampled JPEGs are kept in a durable
+  local review queue with GPS metadata, optional altitude/course, and sign annotations. Users can
+  favorite, include or exclude, and inspect originals before explicitly
+  approving a batch for upload to the [YouSpeed Panoramax instance](https://panoramax.youspeed.de/).
+  Uploads support progress, cancellation, resumption, and server-processing
+  completion tracking. Upload never starts during or automatically after a
+  drive, and local images are retained unless the user enables cleanup after
+  successful remote completion. See the [Panoramax client contract](shared/PanoramaxUploadProtocol.md).
+
+<table>
+  <tr>
+    <td><img src="Web/assets/screenshots/warn-level-0-no-violation.png" alt="YouSpeed within the speed limit" width="180"></td>
+    <td><img src="Web/assets/screenshots/warn-level-1-money.png" alt="YouSpeed fine warning" width="180"></td>
+    <td><img src="Web/assets/screenshots/pedestrian-zone-schritt.png" alt="YouSpeed pedestrian-zone display" width="180"></td>
+    <td><img src="Web/assets/screenshots/autobahn-unlimited-over-130.png" alt="YouSpeed autobahn display" width="180"></td>
+  </tr>
+</table>
+
 
 ## Get YouSpeed
 
@@ -86,7 +130,8 @@ The software is provided without warranty and does not replace attentive driving
 
 ## Traffic-sign model attribution
 
-The selected two-stage traffic-sign recognition prototype uses these off-the-shelf Panoramax components:
+The current two-stage traffic-sign recognition field-test pack uses these
+off-the-shelf Panoramax components:
 
 - Detector: [`models/yolo11n_panoramax.pt`](https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/models/yolo11n_panoramax.pt) from [`cquest/sgblur`](https://github.com/cquest/sgblur/tree/169451970702aca0dde9ff3106dba0f67e0b88a8), pinned to commit `169451970702aca0dde9ff3106dba0f67e0b88a8` and provided under the [MIT License](https://github.com/cquest/sgblur/blob/169451970702aca0dde9ff3106dba0f67e0b88a8/LICENSE).
 - Classifier: [`Panoramax/classify_de_road_signs`](https://huggingface.co/Panoramax/classify_de_road_signs/tree/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790), pinned to commit `5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790`; its [model card](https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md) declares the Etalab Open License 2.0. It was trained from [`Panoramax/classified_de_road_signs`](https://huggingface.co/datasets/Panoramax/classified_de_road_signs/tree/b4856947ed7cb6312587258acc90e8cf88a4aa13), pinned to commit `b4856947ed7cb6312587258acc90e8cf88a4aa13` and published under CC BY-SA 4.0.
