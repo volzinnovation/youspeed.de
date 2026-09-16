@@ -34,6 +34,25 @@
         "ai_edge_litert": "1.3.0"
       },
       "calibration": "not_calibrated"
+    },
+    "calibration_benchmark": {
+      "record_path": "iphone/.derived/SpeedConsumerBuild/Build/Products/Debug-iphoneos/SpeedConsumer.app/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/provenance/classifier-calibration-report.json",
+      "tracked": false,
+      "source_record": "shared/tsr/panoramax-calibration-sources-v1.json",
+      "scope": "informational_benchmark_only",
+      "runtime_scores_calibrated": false,
+      "holdout": false,
+      "note": "The local report evaluates the published Panoramax validation split. It is not a runtime calibration artifact and is not an independent acceptance holdout."
+    },
+    "holdout": {
+      "status": "not_found",
+      "searched": [
+        "Panoramax classified road-sign dataset revisions",
+        "Panoramax Prolix repository and analyzer documentation",
+        "Ultralytics 8.4.56 repository and export/testing assets",
+        "local and KI-server model/provenance directories"
+      ],
+      "note": "The repository's holdout objects are schemas/fixtures and test scaffolding, not a released German holdout archive."
     }
   },
   "ki_server": {

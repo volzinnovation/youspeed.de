@@ -54,6 +54,22 @@ The Android export report is tracked at:
 It records Ultralytics `8.4.56`, ONNX `1.17.0`, onnx2tf `1.28.8`, TensorFlow
 `2.19.0`, Python `ai_edge_litert` `1.3.0`, and app runtime LiteRT `1.4.2`.
 
+The German classifier report found in the local derived output is more limited
+than its filename suggests. It benchmarks the Panoramax German validation
+archive at dataset revision
+`b4856947ed7cb6312587258acc90e8cf88a4aa13`, `val.zip`, SHA-256
+`13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea`, with
+6,944 samples and 134 classes. The report itself says
+`informational-benchmark-only`, leaves runtime output as `raw_score`, and does
+not claim per-device calibration. It is therefore reusable as a German
+baseline/procedure reference, not as foreign calibration or acceptance data.
+
+No separate German holdout archive was found. The Panoramax revision exposes
+`train.zip` and `val.zip` only; the repository's holdout names are schema and
+test-fixture terminology. The optional country validation-source locations and
+hashes are pinned in
+[`panoramax-calibration-sources-v1.json`](../shared/tsr/panoramax-calibration-sources-v1.json).
+
 Neither record contains a generating-host identifier. The evidence supports
 the statement that the Core ML output was observed in this Mac's derived
 Xcode output and that the Android export report is part of the repository. It
@@ -95,6 +111,11 @@ The latest recorded dataset revisions are:
 | FR | `ea75988e381f16e4677c5f42aa5fedea005f23d6` | Etalab Open Licence 2.0; attribution record retained |
 | NL | `68c7c1bac103f7ed42440af71536827dcada519c` | CC BY-SA 4.0; attribution/share-alike record retained |
 | BE | `6479ab5a2a47629dc6e3a242a177c2537d9cf378` | CC BY-SA 4.0; attribution/share-alike record retained |
+
+Each of those revisions also currently exposes a `val.zip`: FR
+`0b8e4b73…`, NL `b0f9ef49…`, and BE `f6bc5250…`. Those are candidate
+calibration sources only. We still need country-grouped extraction and a
+separate untouched holdout before accepting a foreign pack.
 
 The owner-approved commercial-use decisions are reflected in the source
 manifest. They do not waive attribution, share-alike, source, model-lineage

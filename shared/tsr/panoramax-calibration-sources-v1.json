@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "document_id": "youspeed-tsr-panoramax-calibration-sources-v1",
+  "reviewed_at": "2026-09-16",
+  "purpose": "Pin optional Panoramax validation archives that may be acquired for classifier calibration benchmarking. These archives are not app inputs and are not accepted holdouts.",
+  "source_policy": {
+    "runtime_bundle_requires_archives": false,
+    "published_validation_split_is_holdout": false,
+    "holdout_status": "no_separate_upstream_panoramax_holdout_found",
+    "required_before_acceptance": [
+      "Acquire only the selected country archive when calibration work is authorized.",
+      "Record the extracted-file inventory and capture/sequence grouping.",
+      "Rebuild leakage-safe calibration and untouched holdout splits; do not use the published validation archive as final acceptance evidence.",
+      "Keep all dataset archives outside iPhone and Android runtime bundles."
+    ]
+  },
+  "archives": [
+    {
+      "country": "DE",
+      "repository": "Panoramax/classified_de_road_signs",
+      "revision": "b4856947ed7cb6312587258acc90e8cf88a4aa13",
+      "role": "informational_classifier_benchmark_only",
+      "split": "validation",
+      "filename": "val.zip",
+      "uri": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/resolve/b4856947ed7cb6312587258acc90e8cf88a4aa13/val.zip",
+      "size_bytes": 29740678,
+      "sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea",
+      "sample_count_recorded_by_local_benchmark": 6944,
+      "class_count_recorded_by_local_benchmark": 134,
+      "local_report_scope": "informational_benchmark_only; runtime scores remain raw and the report does not claim per-device calibration"
+    },
+    {
+      "country": "FR",
+      "repository": "Panoramax/classified_fr_road_signs",
+      "revision": "ea75988e381f16e4677c5f42aa5fedea005f23d6",
+      "role": "candidate_country_calibration_source",
+      "split": "validation",
+      "filename": "val.zip",
+      "uri": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/resolve/ea75988e381f16e4677c5f42aa5fedea005f23d6/val.zip",
+      "size_bytes": 151845795,
+      "sha256": "0b8e4b73f872cf090777128ef81a44f039956cbc48033129087b66038b5963ec"
+    },
+    {
+      "country": "NL",
+      "repository": "Panoramax/classified_nl_road_signs",
+      "revision": "68c7c1bac103f7ed42440af71536827dcada519c",
+      "role": "candidate_country_calibration_source",
+      "split": "validation",
+      "filename": "val.zip",
+      "uri": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/resolve/68c7c1bac103f7ed42440af71536827dcada519c/val.zip",
+      "size_bytes": 32933347,
+      "sha256": "b0f9ef49088fe24b0550f2a19c902b5d703a3261986c2d69c333709e0d71c118"
+    },
+    {
+      "country": "BE",
+      "repository": "Panoramax/classified_be_road_signs",
+      "revision": "6479ab5a2a47629dc6e3a242a177c2537d9cf378",
+      "role": "candidate_country_calibration_source",
+      "split": "validation",
+      "filename": "val.zip",
+      "uri": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/resolve/6479ab5a2a47629dc6e3a242a177c2537d9cf378/val.zip",
+      "size_bytes": 19004548,
+      "sha256": "f6bc52508a01e1fdb8adf0501b88d914af590bd8b8b23eb422bd392471ee4db6"
+    }
+  ]
+}
