@@ -83,7 +83,11 @@ class GeofabrikDiffRunnerTests(unittest.TestCase):
               echo "missing --outfile" >&2
               exit 2
             fi
-            cp "$in" "$out"
+            if [[ "${PYOSMIUM_NO_OUTPUT:-}" != "1" ]]; then
+              cp "$in" "$out"
+            fi
+            echo "stub pyosmium failure" >&2
+            exit "${PYOSMIUM_EXIT_CODE:-0}"
             """
         )
         self._write_executable(self.bin_dir / "pyosmium-up-to-date", update_stub)
@@ -178,6 +182,38 @@ PY
         self.assertEqual(state_payload["last_applied_seq"], 101)
         self.assertEqual(state_payload["last_run_status"], "ok")
         self.assertEqual(state_payload["last_updates_url"], updates_url)
+
+    def test_partial_update_fails_and_surfaces_updater_output(self):
+        updates_url = f"file://{self.updates_dir}/"
+        env = self.env.copy()
+        env["PYOSMIUM_EXIT_CODE"] = "1"
+        env["PYOSMIUM_NO_OUTPUT"] = "1"
+
+        result = run_cmd(
+            [
+                str(RUNNER),
+                "--region",
+                "germany",
+                "--input-pbf",
+                str(self.input_pbf),
+                "--updates-url",
+                updates_url,
+                "--state-file",
+                str(self.state_file),
+                "--report-path",
+                str(self.report_path),
+                "--work-dir",
+                str(self.work_dir),
+                "--no-emit-delta",
+            ],
+            env=env,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 1)
+        report = json.loads(self.report_path.read_text(encoding="utf-8"))
+        self.assertEqual(report["status"], "partial")
+        self.assertIn("pyosmium-up-to-date output", result.stderr)
 
 
 if __name__ == "__main__":

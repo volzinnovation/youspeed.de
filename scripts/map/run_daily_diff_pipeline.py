@@ -66,6 +66,24 @@ def _latest_date_in_csv(csv_path: Path) -> Optional[str]:
     return latest
 
 
+def _pbf_metadata(path: Path) -> Dict[str, Optional[str]]:
+    """Read replication metadata embedded in a PBF header."""
+    result: Dict[str, Optional[str]] = {"sequence": None, "timestamp": None}
+    try:
+        import osmium
+
+        reader = osmium.io.Reader(str(path))
+        header = reader.header()
+        reader.close()
+        value = header.get("osmosis_replication_sequence_number")
+        result["sequence"] = str(int(value)) if value not in (None, "") else None
+        timestamp = header.get("osmosis_replication_timestamp")
+        result["timestamp"] = str(timestamp) if timestamp not in (None, "") else None
+    except Exception as exc:
+        print(f"Unable to read PBF replication metadata from {path}: {exc}", file=sys.stderr)
+    return result
+
+
 def _download_file(url: str, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_path.with_suffix(out_path.suffix + ".tmp")
@@ -112,6 +130,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--v4-max-way-tiles", type=int, default=1024)
     parser.add_argument("--skip-sql-if-missing", action="store_true", default=True)
     parser.add_argument("--no-skip-sql-if-missing", action="store_false", dest="skip_sql_if_missing")
+    parser.add_argument(
+        "--reseed-on-update-failure",
+        action="store_true",
+        help="Download the current latest PBF and reseed when an incremental update fails or remains behind",
+    )
     return parser.parse_args()
 
 
@@ -130,8 +153,21 @@ def main() -> int:
         return 1
     server_date = server_ts[:10]
     latest_csv_date = _latest_date_in_csv(csv_out)
+    server_seq = None
+    try:
+        server_seq = int(state["sequence"]) if state.get("sequence") else None
+    except (TypeError, ValueError):
+        pass
+    input_metadata = _pbf_metadata(input_pbf) if input_pbf.exists() else {}
+    try:
+        input_seq = int(input_metadata["sequence"]) if input_metadata.get("sequence") else None
+    except (TypeError, ValueError):
+        input_seq = None
+    snapshot_is_behind = input_seq is None or (
+        server_seq is not None and input_seq < server_seq
+    )
 
-    if latest_csv_date is not None and latest_csv_date >= server_date:
+    if latest_csv_date is not None and latest_csv_date >= server_date and not snapshot_is_behind:
         print(f"No new diff day yet (server={server_date}, csv_latest={latest_csv_date})", file=sys.stderr)
         _set_output("changed", "0")
         _set_output("reason", "already_processed")
@@ -170,13 +206,71 @@ def main() -> int:
     if update_proc.stderr:
         print(update_proc.stderr, end="", file=sys.stderr)
 
-    if update_proc.returncode != 0:
-        raise subprocess.CalledProcessError(
-            update_proc.returncode,
-            update_cmd,
-            output=update_proc.stdout,
-            stderr=update_proc.stderr,
+    def reseed_latest_snapshot(reason: str) -> None:
+        if not args.reseed_on_update_failure:
+            raise subprocess.CalledProcessError(
+                update_proc.returncode or 1,
+                update_cmd,
+                output=update_proc.stdout,
+                stderr=update_proc.stderr,
+            )
+
+        print(f"{reason}; downloading latest Geofabrik PBF for a clean reseed", file=sys.stderr)
+        tmp_pbf = input_pbf.with_name(input_pbf.name + ".reseed.tmp")
+        try:
+            _download_file(args.latest_pbf_url, tmp_pbf)
+            latest_metadata = _pbf_metadata(tmp_pbf)
+            try:
+                latest_seq = int(latest_metadata["sequence"]) if latest_metadata.get("sequence") else None
+            except (TypeError, ValueError):
+                latest_seq = None
+            if server_seq is not None and (latest_seq is None or latest_seq < server_seq):
+                raise RuntimeError(
+                    f"latest PBF sequence {latest_seq!r} is behind replication server sequence {server_seq}"
+                )
+            tmp_pbf.replace(input_pbf)
+        finally:
+            tmp_pbf.unlink(missing_ok=True)
+
+        reseed_cmd = [
+            "bash",
+            "scripts/map/update_from_geofabrik_diffs.sh",
+            "--region",
+            args.region,
+            "--updates-url",
+            args.updates_url,
+            "--state-file",
+            str(state_file),
+            "--report-path",
+            str(report_path),
+            "--work-dir",
+            args.work_dir,
+            "--dry-run",
+            "--no-emit-delta",
+            "--input-pbf",
+            str(input_pbf),
+        ]
+        reseed_proc = subprocess.run(reseed_cmd, text=True, capture_output=True)
+        if reseed_proc.stdout:
+            print(reseed_proc.stdout, end="")
+        if reseed_proc.stderr:
+            print(reseed_proc.stderr, end="", file=sys.stderr)
+        reseed_proc.check_returncode()
+
+        _set_output("changed", "1")
+        _set_output("reason", "reseeded")
+        _set_output("server_date", server_date)
+        _set_output(
+            "processed_date",
+            str(latest_metadata.get("timestamp") or server_date)[:10],
         )
+        _set_output("report_path", str(report_path))
+
+    if update_proc.returncode != 0:
+        reseed_latest_snapshot(
+            f"Incremental PBF update failed with exit code {update_proc.returncode}"
+        )
+        return 0
 
     if not report_path.exists():
         print(f"Expected report missing: {report_path}", file=sys.stderr)
@@ -186,6 +280,15 @@ def main() -> int:
     delta_status = delta.get("status")
     delta_path_raw = delta.get("path")
     pbf_after = report.get("pbf_after", {}) if isinstance(report, dict) else {}
+    after_seq = pbf_after.get("sequence_number")
+    if (
+        server_seq is not None
+        and (not isinstance(after_seq, int) or after_seq < server_seq)
+    ):
+        reseed_latest_snapshot(
+            f"Incremental update left PBF sequence {after_seq} behind server sequence {server_seq}"
+        )
+        return 0
     after_ts = pbf_after.get("timestamp") or server_ts
     day = str(after_ts)[:10]
 

@@ -732,7 +732,12 @@ echo "state=${state_file}"
 echo "updates_url=${updates_url}"
 echo "before_seq=${before_seq:-} after_seq=${after_seq:-} server_seq=${server_after_seq:-}"
 
-if [[ "$status" == "error" ]]; then
-  echo "Update failed. Inspect log: ${updater_log}" >&2
+if [[ "$status" == "error" || "$status" == "partial" ]]; then
+  echo "Update did not complete cleanly (status=${status}). Inspect log: ${updater_log}" >&2
+  if [[ -s "$updater_log" ]]; then
+    echo "--- pyosmium-up-to-date output (last 200 lines) ---" >&2
+    tail -n 200 "$updater_log" >&2
+    echo "--- end pyosmium-up-to-date output ---" >&2
+  fi
   exit 1
 fi

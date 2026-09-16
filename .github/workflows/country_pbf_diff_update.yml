@@ -209,7 +209,8 @@ jobs:
             --work-dir "${{ steps.plan.outputs.work_dir }}" \
             --daily-dir "${{ steps.plan.outputs.daily_dir }}" \
             --csv-out "${{ steps.plan.outputs.csv_out }}" \
-            --summary-json-out "${{ steps.plan.outputs.summary_json_out }}"
+            --summary-json-out "${{ steps.plan.outputs.summary_json_out }}" \
+            --reseed-on-update-failure
 
       - name: Check Whether Snapshot Release Needs Seeding
         id: release_check
