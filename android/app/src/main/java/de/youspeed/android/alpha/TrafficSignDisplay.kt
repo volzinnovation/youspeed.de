@@ -43,7 +43,13 @@ internal class TrafficSignDisplayCatalog private constructor(
                     null
                 } else {
                     imagePath?.let { path ->
-                        require(path.startsWith("tsr/sign-pictograms/png/") && !path.contains(".."))
+                        // National evaluation catalogs retain the shared
+                        // sign-pictograms/national/<CC>/... resource path.
+                        require(
+                            path.startsWith("tsr/sign-pictograms/") &&
+                                path.endsWith(".png") &&
+                                !path.split('/').contains(".."),
+                        )
                     }
                     val names = sign.getValue("label").jsonObject.mapValues { it.value.jsonPrimitive.content }
                     require(listOf("en", "de", "fr", "nl").all { !names[it].isNullOrBlank() })

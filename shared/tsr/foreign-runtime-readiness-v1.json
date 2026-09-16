@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_at": "2026-09-16",
-  "source_manifest_sha256": "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b",
+  "source_manifest_sha256": "f36719320f9daaf83703a090219bcdf089ac5138770e717f2320569f2a34d12e",
   "shared_pipeline": {
     "pipeline": "proposal_classification",
     "preprocessing_version": "vision-scale-fit-rgb-v1",
@@ -86,44 +86,50 @@
         "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
       },
       "exports": {
-        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "detector_reuse": "shared_german_reference_artifacts_reused_in_foreign_pack",
         "classifier_coreml": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "56722453f3b02c78509e5b9a72442fcbbad40e82a22ebb198043cca364c1ce55",
+          "evidence_path": "iphone/SpeedConsumerApp/TSRModelPacks/FR.panoramax-bootstrap.tsrmodelpack/provenance/fr-coreml-export-report.json",
           "required_evidence": [
             "converted Core ML classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; compiled artifact SHA-256 is recorded in manifest.json"
           ]
         },
         "classifier_litert": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "ff0a28a3ff82b6cca1eafe4870f2e6a1f94990d04dc38ee570ea662b9694eabc",
+          "evidence_path": "android/app/src/main/assets/tsr/FR.panoramax-bootstrap.tsrmodelpack/provenance/fr-tflite-export-report.json",
           "required_evidence": [
             "converted LiteRT classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; artifact SHA-256 is recorded in manifest.json"
           ]
         }
       },
       "calibration": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "accepted_operational_benchmark",
+        "evidence_sha256": "37d33d3662271ba9fd80d06e5584e9d8163abc5390db57ad9d3d7ba0a10ebd36",
+        "evidence_path": "shared/tsr/foreign-calibration/FR-classifier-operational-benchmark-v1.json",
         "required_evidence": [
-          "country-grouped calibration holdout inventory",
-          "calibration parameter file",
-          "expected calibration error and confidence floors",
-          "speed/action confusion and dangerous-substitution report"
-        ]
+          "pinned Panoramax validation archive and extracted inventory",
+          "native-score expected calibration error and confidence floors",
+          "country classifier accuracy and inference-failure count",
+          "explicit operational-field-bar decision and scope limitations"
+        ],
+        "runtime_output": "raw_score",
+        "holdout_policy": "published_panoramax_validation_is_operational_benchmark_not_independent_holdout"
       },
       "parity": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "passed",
+        "evidence_sha256": "f9a4d138d582e94315481993569f6959ce5dd4bc680dae97278d556d7fa5f23f",
+        "evidence_path": "shared/tsr/foreign-calibration/FR-mobile-parity-v1.json",
         "required_evidence": [
-          "reference ONNX vs Core ML tensor/output comparison",
+          "source PyTorch vs accelerated Core ML tensor/output comparison",
           "reference ONNX vs LiteRT tensor/output comparison",
-          "preprocessing and box-coordinate parity",
-          "candidate-burst and validated-passage replay"
+          "shared RGB/255 preprocessing contract",
+          "candidate-burst and validated-passage replay remains a separate product-contract gate"
         ]
       },
       "device_parity": {
@@ -147,14 +153,15 @@
         }
       },
       "runtime_manifest": {
-        "status": "pending",
-        "path": null,
+        "status": "evaluation",
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/FR.panoramax-bootstrap.tsrmodelpack/manifest.json",
+        "manifest_sha256": "3d191bf02c093bf8cd267f2c7aa9aa824dbf6a8f6df1e3cd8981de2ceee95720",
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
-        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+        "attached iPhone and Android device parity evidence is pending; the staged packs request MLComputeUnits.all and LiteRT GPU with CPU fallback",
+        "runtime manifests are unsigned evaluation manifests and are not in the country registry until legal/action and device gates pass"
       ]
     },
     {
@@ -179,44 +186,50 @@
         "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
       },
       "exports": {
-        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "detector_reuse": "shared_german_reference_artifacts_reused_in_foreign_pack",
         "classifier_coreml": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "dbfbf5e3314bd7097b775524d4d4ab8b9f3ddf8701b27fb517cf407e9fdb3d28",
+          "evidence_path": "iphone/SpeedConsumerApp/TSRModelPacks/NL.panoramax-bootstrap.tsrmodelpack/provenance/nl-coreml-export-report.json",
           "required_evidence": [
             "converted Core ML classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; compiled artifact SHA-256 is recorded in manifest.json"
           ]
         },
         "classifier_litert": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "972e8fc5cc58082cab2f4300a9ceaef06de97a3ff1c59d3afa52354f91c89af3",
+          "evidence_path": "android/app/src/main/assets/tsr/NL.panoramax-bootstrap.tsrmodelpack/provenance/nl-tflite-export-report.json",
           "required_evidence": [
             "converted LiteRT classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; artifact SHA-256 is recorded in manifest.json"
           ]
         }
       },
       "calibration": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "accepted_operational_benchmark",
+        "evidence_sha256": "0fb025a56099d4d72ae5aa70c0f0c76dab169eb76304a25dd174ac6282e9ed4c",
+        "evidence_path": "shared/tsr/foreign-calibration/NL-classifier-operational-benchmark-v1.json",
         "required_evidence": [
-          "country-grouped calibration holdout inventory",
-          "calibration parameter file",
-          "expected calibration error and confidence floors",
-          "speed/action confusion and dangerous-substitution report"
-        ]
+          "pinned Panoramax validation archive and extracted inventory",
+          "native-score expected calibration error and confidence floors",
+          "country classifier accuracy and inference-failure count",
+          "explicit operational-field-bar decision and scope limitations"
+        ],
+        "runtime_output": "raw_score",
+        "holdout_policy": "published_panoramax_validation_is_operational_benchmark_not_independent_holdout"
       },
       "parity": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "passed",
+        "evidence_sha256": "6ece4f7c1b132aac918eda2e4da85924715e7b1465c9f944b6d0d709f211e68a",
+        "evidence_path": "shared/tsr/foreign-calibration/NL-mobile-parity-v1.json",
         "required_evidence": [
-          "reference ONNX vs Core ML tensor/output comparison",
+          "source PyTorch vs accelerated Core ML tensor/output comparison",
           "reference ONNX vs LiteRT tensor/output comparison",
-          "preprocessing and box-coordinate parity",
-          "candidate-burst and validated-passage replay"
+          "shared RGB/255 preprocessing contract",
+          "candidate-burst and validated-passage replay remains a separate product-contract gate"
         ]
       },
       "device_parity": {
@@ -240,14 +253,15 @@
         }
       },
       "runtime_manifest": {
-        "status": "pending",
-        "path": null,
+        "status": "evaluation",
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/NL.panoramax-bootstrap.tsrmodelpack/manifest.json",
+        "manifest_sha256": "0da1c63275a66b540a395a6e5696ce1354f22e67afafca7ea20c0e1850c17a31",
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
-        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+        "attached iPhone and Android device parity evidence is pending; the staged packs request MLComputeUnits.all and LiteRT GPU with CPU fallback",
+        "runtime manifests are unsigned evaluation manifests and are not in the country registry until legal/action and device gates pass"
       ]
     },
     {
@@ -272,44 +286,50 @@
         "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
       },
       "exports": {
-        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "detector_reuse": "shared_german_reference_artifacts_reused_in_foreign_pack",
         "classifier_coreml": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "5de0b5fe3e4e2c65c0b52e3751eb4d51faeb5c9c59e5b81d5ef652573235e187",
+          "evidence_path": "iphone/SpeedConsumerApp/TSRModelPacks/BE.panoramax-bootstrap.tsrmodelpack/provenance/be-coreml-export-report.json",
           "required_evidence": [
             "converted Core ML classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; compiled artifact SHA-256 is recorded in manifest.json"
           ]
         },
         "classifier_litert": {
-          "status": "pending",
-          "evidence_sha256": null,
+          "status": "passed",
+          "evidence_sha256": "c194b611003e5cd8d002eba15e1a52b2caa7ad50d44cbda3c6f6d078cfb4cd23",
+          "evidence_path": "android/app/src/main/assets/tsr/BE.panoramax-bootstrap.tsrmodelpack/provenance/be-tflite-export-report.json",
           "required_evidence": [
             "converted LiteRT classifier artifact",
             "output label inventory bound to national selection",
-            "hash and export configuration"
+            "hash and export configuration; artifact SHA-256 is recorded in manifest.json"
           ]
         }
       },
       "calibration": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "accepted_operational_benchmark",
+        "evidence_sha256": "0a994621be1512b2e5456ab737fed555ebee0241f94128e38dd67299ed46389c",
+        "evidence_path": "shared/tsr/foreign-calibration/BE-classifier-operational-benchmark-v1.json",
         "required_evidence": [
-          "country-grouped calibration holdout inventory",
-          "calibration parameter file",
-          "expected calibration error and confidence floors",
-          "speed/action confusion and dangerous-substitution report"
-        ]
+          "pinned Panoramax validation archive and extracted inventory",
+          "native-score expected calibration error and confidence floors",
+          "country classifier accuracy and inference-failure count",
+          "explicit operational-field-bar decision and scope limitations"
+        ],
+        "runtime_output": "raw_score",
+        "holdout_policy": "published_panoramax_validation_is_operational_benchmark_not_independent_holdout"
       },
       "parity": {
-        "status": "pending",
-        "evidence_sha256": null,
+        "status": "passed",
+        "evidence_sha256": "652f2749ec9eae4b0146c36c12d79a4d1a4616a780181005907642d6f2729342",
+        "evidence_path": "shared/tsr/foreign-calibration/BE-mobile-parity-v1.json",
         "required_evidence": [
-          "reference ONNX vs Core ML tensor/output comparison",
+          "source PyTorch vs accelerated Core ML tensor/output comparison",
           "reference ONNX vs LiteRT tensor/output comparison",
-          "preprocessing and box-coordinate parity",
-          "candidate-burst and validated-passage replay"
+          "shared RGB/255 preprocessing contract",
+          "candidate-burst and validated-passage replay remains a separate product-contract gate"
         ]
       },
       "device_parity": {
@@ -333,14 +353,15 @@
         }
       },
       "runtime_manifest": {
-        "status": "pending",
-        "path": null,
+        "status": "evaluation",
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/BE.panoramax-bootstrap.tsrmodelpack/manifest.json",
+        "manifest_sha256": "3d97f5e2289766e9d05ce647ed78ed12be8dfadff279f9d7238d16d32f484522",
         "registry_entry": "null_until_all_gates_pass"
       },
       "blockers": [
-        "the available KI-server Prolix image is inference-only (Torch 2.6.0 and Ultralytics 8.4.49); the mobile export stack and digest-pinned export lock are not present",
         "country semantic/action review is incomplete even though model-code mappings are materialized",
-        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+        "attached iPhone and Android device parity evidence is pending; the staged packs request MLComputeUnits.all and LiteRT GPU with CPU fallback",
+        "runtime manifests are unsigned evaluation manifests and are not in the country registry until legal/action and device gates pass"
       ]
     }
   ]

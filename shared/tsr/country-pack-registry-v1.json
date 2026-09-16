@@ -58,7 +58,7 @@
         ]
       },
       "calibrated": false,
-      "reason": "French mappings, reviewed mobile exports, independent evaluation, calibration and notices pending.",
+      "reason": "French evaluation pack staged with passed offline export/parity evidence; device parity, legal/action review and signing remain pending.",
       "supersedes": [],
       "rollback_version": null
     },
@@ -87,7 +87,7 @@
         ]
       },
       "calibrated": false,
-      "reason": "Follow-on country: no reviewed runtime artifacts.",
+      "reason": "Belgian evaluation pack staged with passed offline export/parity evidence; device parity, legal/action review and signing remain pending.",
       "supersedes": [],
       "rollback_version": null
     },
@@ -116,7 +116,7 @@
         ]
       },
       "calibrated": false,
-      "reason": "Follow-on country: no reviewed runtime artifacts.",
+      "reason": "Dutch evaluation pack staged with passed offline export/parity evidence; device parity, legal/action review and signing remain pending.",
       "supersedes": [],
       "rollback_version": null
     }

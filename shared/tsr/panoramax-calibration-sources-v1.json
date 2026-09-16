@@ -2,15 +2,23 @@
   "schema_version": 1,
   "document_id": "youspeed-tsr-panoramax-calibration-sources-v1",
   "reviewed_at": "2026-09-16",
-  "purpose": "Pin optional Panoramax validation archives that may be acquired for classifier calibration benchmarking. These archives are not app inputs and are not accepted holdouts.",
+  "purpose": "Pin Panoramax validation archives used for the German-compatible operational classifier calibration benchmark. These archives are not app inputs and are not independent holdouts.",
   "source_policy": {
     "runtime_bundle_requires_archives": false,
     "published_validation_split_is_holdout": false,
-    "holdout_status": "no_separate_upstream_panoramax_holdout_found",
+    "holdout_status": "no_separate_upstream_panoramax_holdout_found_and_not_required_for_foreign_operational_gate",
+    "foreign_operational_gate": {
+      "policy_id": "german-operational-field-bar-v1",
+      "accepted_evidence": "country_classifier_native_score_reliability_benchmark",
+      "runtime_output": "raw_score",
+      "separate_holdout_required": false,
+      "follow_up": "retain independent route-held-out evaluation as a future model-quality and threshold-improvement work item"
+    },
     "required_before_acceptance": [
       "Acquire only the selected country archive when calibration work is authorized.",
       "Record the extracted-file inventory and capture/sequence grouping.",
-      "Rebuild leakage-safe calibration and untouched holdout splits; do not use the published validation archive as final acceptance evidence.",
+      "Run the country classifier with the German-compatible native-score reliability procedure and record ECE, confidence floors, accuracy and inference failures.",
+      "Do not describe the published validation archive as an independent route holdout.",
       "Keep all dataset archives outside iPhone and Android runtime bundles."
     ]
   },
@@ -33,34 +41,67 @@
       "country": "FR",
       "repository": "Panoramax/classified_fr_road_signs",
       "revision": "ea75988e381f16e4677c5f42aa5fedea005f23d6",
-      "role": "candidate_country_calibration_source",
+      "role": "accepted_foreign_operational_calibration_source",
       "split": "validation",
       "filename": "val.zip",
       "uri": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/resolve/ea75988e381f16e4677c5f42aa5fedea005f23d6/val.zip",
       "size_bytes": 151845795,
-      "sha256": "0b8e4b73f872cf090777128ef81a44f039956cbc48033129087b66038b5963ec"
+      "sha256": "0b8e4b73f872cf090777128ef81a44f039956cbc48033129087b66038b5963ec",
+      "local_report": {
+        "path": "shared/tsr/foreign-calibration/FR-classifier-operational-benchmark-v1.json",
+        "sha256": "37d33d3662271ba9fd80d06e5584e9d8163abc5390db57ad9d3d7ba0a10ebd36",
+        "sample_count": 13884,
+        "class_count": 258,
+        "top1_accuracy": 0.9168827427254393,
+        "expected_calibration_error": 0.039268230679958785,
+        "confidence_floor": 0.7,
+        "confidence_floor_accuracy": 0.9494097807757167,
+        "decision": "accepted_operational_benchmark"
+      }
     },
     {
       "country": "NL",
       "repository": "Panoramax/classified_nl_road_signs",
       "revision": "68c7c1bac103f7ed42440af71536827dcada519c",
-      "role": "candidate_country_calibration_source",
+      "role": "accepted_foreign_operational_calibration_source",
       "split": "validation",
       "filename": "val.zip",
       "uri": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/resolve/68c7c1bac103f7ed42440af71536827dcada519c/val.zip",
       "size_bytes": 32933347,
-      "sha256": "b0f9ef49088fe24b0550f2a19c902b5d703a3261986c2d69c333709e0d71c118"
+      "sha256": "b0f9ef49088fe24b0550f2a19c902b5d703a3261986c2d69c333709e0d71c118",
+      "local_report": {
+        "path": "shared/tsr/foreign-calibration/NL-classifier-operational-benchmark-v1.json",
+        "sha256": "0fb025a56099d4d72ae5aa70c0f0c76dab169eb76304a25dd174ac6282e9ed4c",
+        "sample_count": 6197,
+        "class_count": 166,
+        "top1_accuracy": 0.9254477973212845,
+        "expected_calibration_error": 0.046718682401869355,
+        "confidence_floor": 0.7,
+        "confidence_floor_accuracy": 0.9478450444407177,
+        "decision": "accepted_operational_benchmark"
+      }
     },
     {
       "country": "BE",
       "repository": "Panoramax/classified_be_road_signs",
       "revision": "6479ab5a2a47629dc6e3a242a177c2537d9cf378",
-      "role": "candidate_country_calibration_source",
+      "role": "accepted_foreign_operational_calibration_source",
       "split": "validation",
       "filename": "val.zip",
       "uri": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/resolve/6479ab5a2a47629dc6e3a242a177c2537d9cf378/val.zip",
       "size_bytes": 19004548,
-      "sha256": "f6bc52508a01e1fdb8adf0501b88d914af590bd8b8b23eb422bd392471ee4db6"
+      "sha256": "f6bc52508a01e1fdb8adf0501b88d914af590bd8b8b23eb422bd392471ee4db6",
+      "local_report": {
+        "path": "shared/tsr/foreign-calibration/BE-classifier-operational-benchmark-v1.json",
+        "sha256": "0a994621be1512b2e5456ab737fed555ebee0241f94128e38dd67299ed46389c",
+        "sample_count": 3614,
+        "class_count": 143,
+        "top1_accuracy": 0.9039845047039292,
+        "expected_calibration_error": 0.052456085312973404,
+        "confidence_floor": 0.7,
+        "confidence_floor_accuracy": 0.9363262910798122,
+        "decision": "accepted_operational_benchmark"
+      }
     }
   ]
 }

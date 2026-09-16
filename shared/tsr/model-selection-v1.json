@@ -7,7 +7,7 @@
   "selection_status": "not_evaluated",
   "evaluation_schema": "model-evaluation.schema.json",
   "source_manifest_id": "youspeed-tsr-training-sources-v1",
-  "source_manifest_sha256": "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b",
+  "source_manifest_sha256": "f36719320f9daaf83703a090219bcdf089ac5138770e717f2320569f2a34d12e",
   "scorecard_policy": {
     "scope": "internal_candidate_comparison",
     "authority": "engineering_evidence_only",

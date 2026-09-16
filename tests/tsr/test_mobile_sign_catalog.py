@@ -74,7 +74,7 @@ def test_display_artworks_are_local_and_all_labels_are_translated():
             assert sign["image_path"]
         if sign["image_path"]:
             image_path = SHARED / sign["image_path"]
-            assert image_path.resolve().is_relative_to((TSR / "sign-pictograms/png").resolve())
+            assert image_path.resolve().is_relative_to((TSR / "sign-pictograms").resolve())
             assert image_path.suffix == ".png"
             assert image_path.is_file(), sign["image_path"]
             assert image_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")

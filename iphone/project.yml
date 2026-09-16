@@ -51,6 +51,12 @@ targets:
         buildPhase: resources
       - path: ../shared/tsr/prolix-de-class-catalog-v1.json
         buildPhase: resources
+      - path: ../shared/tsr/prolix-fr-class-catalog-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/prolix-nl-class-catalog-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/prolix-be-class-catalog-v1.json
+        buildPhase: resources
       - path: ../shared/tsr/sign-pictograms
         type: folder
         buildPhase: resources

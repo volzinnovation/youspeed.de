@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "country": "FR",
+  "scope": "fixed RGB crop; source PyTorch vs Core ML and ONNX vs LiteRT",
+  "input": {
+    "sha256": "bc6ad29654c4a420f1f024fcb3d81b8b06d4bc1bde478a489b7f5612f2ec830e",
+    "shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "source_dtype": "uint8",
+    "coreml_input": "RGB pixel buffer; Core ML graph scale 1/255",
+    "litert_input": "RGB float32 tensor; runtime scale 1/255"
+  },
+  "source": {
+    "format": "pytorch",
+    "top_class": "Azz",
+    "top_score": 0.4569188952445984,
+    "class_count": 256
+  },
+  "coreml": {
+    "compute_units": "all",
+    "artifact_sha256": "d560e84f785f494ce9529cadf8a7576e316b81446a3c64b54941a4876c425568",
+    "top_class": "Azz",
+    "top_score": 0.472900390625,
+    "max_abs_difference": 0.01598149538040161,
+    "mean_abs_difference": 0.00012745149912696263,
+    "tolerance": 0.02,
+    "passed": true
+  },
+  "litert": {
+    "artifact_sha256": "a4652db06265013f10610b984bc7ab55d7ca32a5ec8e040785db47c276ae00ea",
+    "reference_format": "onnx",
+    "top1_reference": 48,
+    "top1_converted": 48,
+    "max_abs_difference": 0.000384598970413208,
+    "mean_abs_difference": 3.006627594004385e-06,
+    "tolerance": 0.02,
+    "passed": true
+  },
+  "passed": true,
+  "device_execution": {
+    "ios": "not measured on attached device",
+    "android": "not measured on attached device",
+    "runtime_acceleration_contract": {
+      "ios": "MLComputeUnits.all",
+      "android": "LiteRT GPU delegate with CPU fallback after GPU failure"
+    }
+  }
+}

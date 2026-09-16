@@ -1,0 +1,29 @@
+# The local KI image is not published to a registry, so Docker's builder cannot
+# resolve its digest in a FROM line. The exact image ID/digest is recorded in
+# export-environment-evidence-v1.json and is checked after build.
+FROM woladen-prolix:2ad3c2382d
+USER root
+
+ARG TORCH_VERSION=2.13.0+cpu
+ARG TORCHVISION_VERSION=0.28.0+cpu
+
+# Core ML conversion runs on the KI server; mlmodelc compilation remains on
+# macOS/Xcode. Keep the export image separate from the inference image so that
+# the installed versions and image digest can be attested independently.
+RUN python3 -m pip uninstall -y torch torchvision ultralytics \
+    && python3 -m pip install --no-cache-dir \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch==${TORCH_VERSION} \
+    torchvision==${TORCHVISION_VERSION} \
+    && python3 -m pip install --no-cache-dir \
+    ultralytics==8.4.56 \
+    coremltools==9.0 \
+    numpy==2.3.5
+
+LABEL org.opencontainers.image.base.name="woladen-prolix:2ad3c2382d" \
+      org.opencontainers.image.base.digest="sha256:c1e51a1cb1195b4471a530e7484f9bd8c3163ad7150c26207c077c1f93727607" \
+      org.opencontainers.image.source="https://github.com/volzinnovation/youspeed.de/tree/main/scripts/tsr/foreign-export"
+
+ENV YOLO_CONFIG_DIR=/tmp/Ultralytics
+WORKDIR /data
+USER 10001

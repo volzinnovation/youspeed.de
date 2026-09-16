@@ -141,7 +141,7 @@
     "lock_status": "pending_digest_pinned_network_disabled_environment",
     "next_evidence": [
       "foreign Core ML and LiteRT classifier artifacts with hashes",
-      "country calibration and untouched holdout evidence",
+      "foreign operational calibration reports are now recorded; future route-held-out quality evidence is non-blocking for this gate",
       "reference/Core ML/LiteRT tensor parity",
       "attached iPhone and Android device parity",
       "signed runtime manifests"

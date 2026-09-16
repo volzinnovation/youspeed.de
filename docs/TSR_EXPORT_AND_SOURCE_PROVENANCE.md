@@ -7,8 +7,10 @@ This document separates three things that were previously easy to conflate:
 1. the Panoramax/Prolix inference environment on the owner-controlled KI
    server;
 2. the mobile conversion records observed for the German bootstrap pack; and
-3. the export, calibration and release evidence still required for France,
-   the Netherlands and Belgium.
+3. the export, runtime-parity and release evidence for France, the Netherlands
+   and Belgium. Their conversion and offline parity gates are now complete;
+   device, legal/action and signing gates remain. The foreign calibration gate
+   follows the German operational field-calibration bar.
 
 ## What was found on the KI server
 
@@ -30,9 +32,12 @@ packages are recorded, but it is not the German mobile export environment:
   or LiteRT app artifacts or export reports.
 
 The Blackwell server is therefore ready to accelerate isolated Panoramax
-inference, training or calibration work. It does not, by itself, reproduce the
-German mobile exports. Core ML compilation and packaging also still need the
-existing Mac/Xcode side of the pipeline.
+inference, training or calibration work. For the foreign packs, the missing
+conversion environments were built as pinned Docker recipes on that server:
+the Core ML recipe uses the Torch 2.7/CoreMLTools 9 compatibility pair, while
+the LiteRT recipe uses the German-compatible ONNX/onnx2tf/TensorFlow/LiteRT
+chain. Core ML compilation and packaging still use the existing Mac/Xcode side
+of the pipeline.
 
 ## What can be proven about the German artifacts
 
@@ -91,9 +96,32 @@ Each foreign country must use the same production contract as Germany:
 The foreign `.pt` checkpoints are conversion inputs, not app assets. The
 required version set is pinned in the evidence file and the source/model
 lineage is pinned in [`training-sources-v1.json`](../shared/tsr/training-sources-v1.json).
-The current readiness manifest keeps FR, NL and BE packs disabled until the
-converted artifacts, calibration, parity, device evidence and signed runtime
-manifests exist.
+The current readiness manifest keeps FR, NL and BE packs disabled in the
+country registry, but evaluation packs are now staged in both app trees. Their
+classifier calibration gates are accepted as operational benchmarks, with
+native raw scores, just as in the German field reference; this does not claim
+per-device calibration or make a frame score change the active speed context.
+
+The staged packs use the same acceleration contract as Germany: iPhone asks
+Core ML for `MLComputeUnits.all`; Android attempts the LiteRT GPU delegate and
+falls back to CPU only if delegate creation or invocation fails. The foreign
+Core ML and ONNX/LiteRT probes were run against the same normalized RGB
+`uint8 / 255` contract used by the mobile encoders.
+
+The completed offline export/parity evidence is:
+
+| Country | Core ML artifact | LiteRT artifact | Runtime-linked classes / classifier classes | Mobile parity |
+| --- | --- | --- | ---: | --- |
+| FR | `d560e84f…2568` | `a4652db0…00ea` | 105 / 256 | passed |
+| NL | `f46367c6…6f5a` | `7fa821da…2193` | 82 / 160 | passed |
+| BE | `73b0d7bc…5f71` | `b8911e91…e312` | 90 / 143 | passed |
+
+National artwork coverage remains FR 114, NL 111 and BE 115. The lower
+runtime-linked counts are deliberate: an artwork entry is not linked to a
+classifier class unless the reviewed national mapping has an exact or
+unambiguous model-vocabulary match. The remaining unmapped classes require
+country mapping review or a retrained/updated Panoramax checkpoint; they are
+not silently treated as recognized signs.
 
 ## Panoramax datasets and archives
 
@@ -113,9 +141,29 @@ The latest recorded dataset revisions are:
 | BE | `6479ab5a2a47629dc6e3a242a177c2537d9cf378` | CC BY-SA 4.0; attribution/share-alike record retained |
 
 Each of those revisions also currently exposes a `val.zip`: FR
-`0b8e4b73…`, NL `b0f9ef49…`, and BE `f6bc5250…`. Those are candidate
-calibration sources only. We still need country-grouped extraction and a
-separate untouched holdout before accepting a foreign pack.
+`0b8e4b73…`, NL `b0f9ef49…`, and BE `f6bc5250…`. The archives were acquired on
+the KI server, hashed, and scored with the reproducible
+[`panoramax_classifier_benchmark.py`](../scripts/tsr/panoramax_classifier_benchmark.py)
+runner. They are accepted as operational classifier-calibration evidence,
+not relabelled as independent holdouts. The absence of a separate upstream
+Panoramax holdout is therefore no longer a foreign release-gate blocker; a
+route-held-out evaluation remains a follow-up quality improvement.
+
+The current benchmark records are:
+
+| Country | Samples / classes | Top-1 | ECE | Accuracy at raw-score floor 0.70 |
+| --- | ---: | ---: | ---: | ---: |
+| FR | 13,884 / 258 | 91.69% | 0.0393 | 94.94% |
+| NL | 6,197 / 166 | 92.54% | 0.0467 | 94.78% |
+| BE | 3,614 / 143 | 90.40% | 0.0525 | 93.63% |
+
+The signed evidence paths and hashes are in
+[`foreign-runtime-readiness-v1.json`](../shared/tsr/foreign-runtime-readiness-v1.json)
+and the full reports are in `shared/tsr/foreign-calibration/`. FR has 25
+validation samples in two labels absent from the published FR checkpoint;
+NL has 56 samples in six absent labels. Those coverage details remain visible
+in the reports and must be resolved during the pending national mapping/action
+review before a runtime pack is enabled.
 
 The owner-approved commercial-use decisions are reflected in the source
 manifest. They do not waive attribution, share-alike, source, model-lineage
@@ -141,13 +189,12 @@ Panoramax model/dataset records.
 No new Panoramax archive is needed merely to build or run the app. The remaining
 inputs that cannot be inferred safely are:
 
-- access to the country calibration/holdout files or a release containing them;
-- an export environment lock or approval to build one on the KI server and
-  complete Core ML packaging on the Mac;
 - an attached iPhone and Android device run for each foreign pack; and
-- the release decision after the legal/action mapping review and evidence
-  reports pass.
+- the country legal/action mapping review and release decision; and
+- signing/registry approval after those gates pass.
 
-Everything else in this record—the server inventory, checkpoint hashes, German
-export versions, source obligations and app notice wiring—has been recorded in
-the repository.
+No additional country calibration archive is needed for the formal foreign
+calibration gate at this point. Everything else in this record—the server
+inventory, checkpoint hashes, calibration reports, mobile exports, parity
+reports, acceleration contract, source obligations and app notice wiring—has
+been recorded in the repository.

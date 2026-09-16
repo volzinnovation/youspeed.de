@@ -66,6 +66,47 @@
         }
       }
     },
+    "completedGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_sha256", "evidence_path", "required_evidence"],
+      "properties": {
+        "status": { "const": "passed" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "evidence_path": { "type": "string", "minLength": 1 },
+        "required_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "acceptedOperationalBenchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidence_sha256",
+        "evidence_path",
+        "required_evidence",
+        "runtime_output",
+        "holdout_policy"
+      ],
+      "properties": {
+        "status": { "const": "accepted_operational_benchmark" },
+        "evidence_sha256": { "$ref": "#/$defs/sha256" },
+        "evidence_path": { "type": "string", "minLength": 1 },
+        "required_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime_output": { "const": "raw_score" },
+        "holdout_policy": {
+          "const": "published_panoramax_validation_is_operational_benchmark_not_independent_holdout"
+        }
+      }
+    },
     "sharedPipeline": {
       "type": "object",
       "additionalProperties": false,
@@ -173,13 +214,33 @@
           "additionalProperties": false,
           "required": ["detector_reuse", "classifier_coreml", "classifier_litert"],
           "properties": {
-            "detector_reuse": { "const": "shared_german_reference_artifacts_pending_foreign_pack_assembly" },
-            "classifier_coreml": { "$ref": "#/$defs/pendingGate" },
-            "classifier_litert": { "$ref": "#/$defs/pendingGate" }
+            "detector_reuse": { "const": "shared_german_reference_artifacts_reused_in_foreign_pack" },
+            "classifier_coreml": {
+              "oneOf": [
+                { "$ref": "#/$defs/pendingGate" },
+                { "$ref": "#/$defs/completedGate" }
+              ]
+            },
+            "classifier_litert": {
+              "oneOf": [
+                { "$ref": "#/$defs/pendingGate" },
+                { "$ref": "#/$defs/completedGate" }
+              ]
+            }
           }
         },
-        "calibration": { "$ref": "#/$defs/pendingGate" },
-        "parity": { "$ref": "#/$defs/pendingGate" },
+        "calibration": {
+          "oneOf": [
+            { "$ref": "#/$defs/pendingGate" },
+            { "$ref": "#/$defs/acceptedOperationalBenchmark" }
+          ]
+        },
+        "parity": {
+          "oneOf": [
+            { "$ref": "#/$defs/pendingGate" },
+            { "$ref": "#/$defs/completedGate" }
+          ]
+        },
         "device_parity": {
           "type": "object",
           "additionalProperties": false,
@@ -190,14 +251,29 @@
           }
         },
         "runtime_manifest": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["status", "path", "registry_entry"],
-          "properties": {
-            "status": { "const": "pending" },
-            "path": { "type": "null" },
-            "registry_entry": { "const": "null_until_all_gates_pass" }
-          }
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "path", "registry_entry"],
+              "properties": {
+                "status": { "const": "pending" },
+                "path": { "type": "null" },
+                "registry_entry": { "const": "null_until_all_gates_pass" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["status", "path", "manifest_sha256", "registry_entry"],
+              "properties": {
+                "status": { "const": "evaluation" },
+                "path": { "type": "string", "minLength": 1 },
+                "manifest_sha256": { "$ref": "#/$defs/sha256" },
+                "registry_entry": { "const": "null_until_all_gates_pass" }
+              }
+            }
+          ]
         },
         "blockers": {
           "type": "array",

@@ -1,0 +1,1963 @@
+{
+  "schema_version": 1,
+  "country": "BE",
+  "classifier_checkpoint_sha256": "d99c7ba6fdf2efa395b3100d02ef0670fdb3c3365527f7da9336793db0633c1b",
+  "class_labels": [
+    "arrow:other:red",
+    "arrow_left",
+    "arrow_left_down",
+    "arrow_right",
+    "arrow_right_down",
+    "arrow_through",
+    "arrow_turn_left",
+    "arrow_turn_left_through",
+    "arrow_turn_right",
+    "arrow_turn_right_through",
+    "bad",
+    "bad:back",
+    "bad:buildings",
+    "bad:round",
+    "bad:windows",
+    "bicycle:end",
+    "bicycle:priority",
+    "bicycle:priority:end",
+    "bicycle:start",
+    "bicycle_crossing",
+    "bike_route",
+    "bothways",
+    "bus:lane",
+    "city:end",
+    "city:start",
+    "give_way",
+    "hazard",
+    "hazard:airport",
+    "hazard:animals",
+    "hazard:bicycle",
+    "hazard:bothways",
+    "hazard:bump",
+    "hazard:bumps",
+    "hazard:crossing",
+    "hazard:gravel",
+    "hazard:incline",
+    "hazard:intersection",
+    "hazard:intersection:left",
+    "hazard:intersection:right",
+    "hazard:left_turn",
+    "hazard:level_crossing",
+    "hazard:moving_bridge",
+    "hazard:narrow_both",
+    "hazard:narrow_left",
+    "hazard:narrow_right",
+    "hazard:other",
+    "hazard:pedestrian_crossing",
+    "hazard:right_turn",
+    "hazard:road_works",
+    "hazard:rocks",
+    "hazard:roundabout",
+    "hazard:school",
+    "hazard:slippery",
+    "hazard:traffic_signal",
+    "hazard:train",
+    "hazard:wild_animals",
+    "hazard:wind",
+    "hazard:zigzag",
+    "hazard:zigzag:left",
+    "lanes",
+    "maxheight",
+    "maxlength",
+    "maxspeed:10",
+    "maxspeed:100",
+    "maxspeed:15",
+    "maxspeed:20",
+    "maxspeed:30",
+    "maxspeed:5",
+    "maxspeed:50",
+    "maxspeed:60",
+    "maxspeed:70",
+    "maxspeed:80",
+    "maxspeed:90",
+    "maxspeed:end",
+    "maxweight",
+    "maxwidth",
+    "motorway:end",
+    "motorway:start",
+    "no:end",
+    "no:other",
+    "no:other:dog",
+    "no:other:smoking",
+    "no_agriculture",
+    "no_bicycle",
+    "no_bus",
+    "no_car",
+    "no_car_bicycle",
+    "no_dangerous",
+    "no_entry",
+    "no_exit",
+    "no_hgv",
+    "no_horse",
+    "no_moped",
+    "no_motorcycle",
+    "no_overtaking",
+    "no_overtaking:end",
+    "no_overtaking:hgv",
+    "no_parking",
+    "no_parking:1-15",
+    "no_parking:16-31",
+    "no_pedestrian",
+    "no_stop",
+    "no_turn:left",
+    "no_turn:right",
+    "no_u_turn",
+    "no_way",
+    "oneway",
+    "other",
+    "other:multi",
+    "parking",
+    "parking:bus",
+    "parking:car",
+    "parking:charging",
+    "parking:disabled",
+    "parking:disc",
+    "parking:hgv",
+    "parking:motorhome",
+    "parking:sidewalk",
+    "pedestrian:start",
+    "pedestrian_bicycle:designated",
+    "pedestrian_bicycle:start",
+    "pedestrian_crossing",
+    "priority:backward",
+    "priority:end",
+    "priority:forward",
+    "priority:start",
+    "road_works:end",
+    "roundabout",
+    "stop",
+    "traffic_calming",
+    "traffic_signal",
+    "trunk:end",
+    "trunk:start",
+    "zone:30",
+    "zone:30:end",
+    "zone:50",
+    "zone:50:end",
+    "zone:low_emission",
+    "zone:no_hgv",
+    "zone:no_parking",
+    "zone:no_parking:end",
+    "zone:other",
+    "zone:other:end"
+  ],
+  "signs": [
+    {
+      "class_id": "arrow_left_down",
+      "sign_code": "D1c",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1c.png",
+      "label": {
+        "en": "D1c — arrow left down",
+        "de": "D1c — arrow left down",
+        "fr": "D1c — arrow left down",
+        "nl": "D1c — arrow left down"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1c",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1c KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1c_KB-AR_03-06-2024.svg",
+        "original_sha256": "a146266b08aa3a3df828b78e0c3b0100fa68a8b51592df67d053066f9cae407c",
+        "png_sha256": "3aa0ea8cb21e3e72eec1480c05a2aa61712f7dda2e93a9597b7acc4d82c48a2f"
+      }
+    },
+    {
+      "class_id": "arrow_left",
+      "sign_code": "D1g",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1g.png",
+      "label": {
+        "en": "D1g — arrow left",
+        "de": "D1g — arrow left",
+        "fr": "D1g — arrow left",
+        "nl": "D1g — arrow left"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1g",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1g KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1g_KB-AR_03-06-2024.svg",
+        "original_sha256": "6a18f530317e4f7e39c8d8245b54f8bb58c6e2e0bd00471a3bc14908095330c0",
+        "png_sha256": "0f8a60366b89e901ea0c09f1fcf0d7e1dae7a3d3d7093610dadb7c4751aa65c3"
+      }
+    },
+    {
+      "class_id": "arrow_right_down",
+      "sign_code": "D1d",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1d.png",
+      "label": {
+        "en": "D1d — arrow right down",
+        "de": "D1d — arrow right down",
+        "fr": "D1d — arrow right down",
+        "nl": "D1d — arrow right down"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1d",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1d KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1d_KB-AR_03-06-2024.svg",
+        "original_sha256": "d6821e34e47abfd6ab386f4f78a6963544d1c05b2ab866ba3c1f5af35145c553",
+        "png_sha256": "b7762324c23e117f25e495bcb74a9fae773eeaf376f403a066888ec56faaf48b"
+      }
+    },
+    {
+      "class_id": "arrow_right",
+      "sign_code": "D1f",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1f.png",
+      "label": {
+        "en": "D1f — arrow right",
+        "de": "D1f — arrow right",
+        "fr": "D1f — arrow right",
+        "nl": "D1f — arrow right"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1f",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1f KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1f_KB-AR_03-06-2024.svg",
+        "original_sha256": "54351003bd606ea5edc7467c59516c8a84a5520c582dec4085be43436621ef89",
+        "png_sha256": "51d42f8c49839c2de3590972b79871df80b6f9b5e912ed0aa609a83fe9e7ace9"
+      }
+    },
+    {
+      "class_id": "arrow_through",
+      "sign_code": "D1a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1a.png",
+      "label": {
+        "en": "D1a — arrow through",
+        "de": "D1a — arrow through",
+        "fr": "D1a — arrow through",
+        "nl": "D1a — arrow through"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1a KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1a_KB-AR_03-06-2024.svg",
+        "original_sha256": "30c67abb4ca80080e69aa524a9d8b6b75fb308afc8881ce8f453fd3003d41e71",
+        "png_sha256": "e3c68d237ff02e7a28b99c718a3103606e7fe67a6747b26b206448a681a516e3"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left_through",
+      "sign_code": "D3a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d3a.png",
+      "label": {
+        "en": "D3a — arrow turn left through",
+        "de": "D3a — arrow turn left through",
+        "fr": "D3a — arrow turn left through",
+        "nl": "D3a — arrow turn left through"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d3a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D3a KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D3a_KB-AR_03-06-2024.svg",
+        "original_sha256": "ad93214ba410e0d9e3973b50cc4260bf5fc87c922f2d79fa80adf1e75273823b",
+        "png_sha256": "fcf024d7609c665e57d0397d7bf2d5ca0e956b64f268ed212389ce3896730d10"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left",
+      "sign_code": "D1e",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d1e.png",
+      "label": {
+        "en": "D1e — arrow turn left",
+        "de": "D1e — arrow turn left",
+        "fr": "D1e — arrow turn left",
+        "nl": "D1e — arrow turn left"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d1e",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D1e KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D1e_KB-AR_03-06-2024.svg",
+        "original_sha256": "e1a78c9341d2f6224ff610131e2e96f5623d3358cf7329832a44f852c0d08f82",
+        "png_sha256": "0cc0f533cac5df3afebb4d1b3c0a3d07987b8e7626d483c812125e89efb19f4d"
+      }
+    },
+    {
+      "class_id": "arrow_turn_right_through",
+      "sign_code": "D3b",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d3b.png",
+      "label": {
+        "en": "D3b — arrow turn right through",
+        "de": "D3b — arrow turn right through",
+        "fr": "D3b — arrow turn right through",
+        "nl": "D3b — arrow turn right through"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d3b",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D3b KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D3b_KB-AR_03-06-2024.svg",
+        "original_sha256": "2ef0e6f1f13b22a7de164bd9232a02483df25a88bf65cb262e77527790c0d5bd",
+        "png_sha256": "aeafddc2a433bb4ace9cdb03af837838a9af474b8e13acbcdda3c8c1de6ed4d9"
+      }
+    },
+    {
+      "class_id": "bicycle:priority",
+      "sign_code": "F111",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f111.png",
+      "label": {
+        "en": "F111 — bicycle:priority",
+        "de": "F111 — bicycle:priority",
+        "fr": "F111 — bicycle:priority",
+        "nl": "F111 — bicycle:priority"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f111",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F111.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F111.svg",
+        "original_sha256": "56e42915d02aae1ff784ddedd83dadc1fa488cb8cc092c30b782485fbc63638f",
+        "png_sha256": "eef6322eea4f081224455f13e0b1eee36411cdef052f0552f1831242afc7f955"
+      }
+    },
+    {
+      "class_id": "bicycle:priority:end",
+      "sign_code": "F113",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f113.png",
+      "label": {
+        "en": "F113 — bicycle:priority:end",
+        "de": "F113 — bicycle:priority:end",
+        "fr": "F113 — bicycle:priority:end",
+        "nl": "F113 — bicycle:priority:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f113",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F113.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F113.svg",
+        "original_sha256": "a400396c9383db15cb589db659c99a671545efdeea3c08f85054455a35d375f6",
+        "png_sha256": "4f33f8fddc80da48ba1b7151ef3d0807087fef8d76e36c29d0106c9e9baf4965"
+      }
+    },
+    {
+      "class_id": "bicycle:start",
+      "sign_code": "D7",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d7.png",
+      "label": {
+        "en": "D7 — bicycle:start",
+        "de": "D7 — bicycle:start",
+        "fr": "D7 — bicycle:start",
+        "nl": "D7 — bicycle:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d7",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D7 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D7_KB-AR_03-06-2024.svg",
+        "original_sha256": "4e82d62f10127434031c05baa97beaf2428ca1628ae54a032d8d1d898f1e79b5",
+        "png_sha256": "15474890e4a2bbcdcacb3d6ac20b70405c9bb0e842f079d8a32c20f9ce800bd0"
+      }
+    },
+    {
+      "class_id": "city:end",
+      "sign_code": "F3",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f3.png",
+      "label": {
+        "en": "F3 — city:end",
+        "de": "F3 — city:end",
+        "fr": "F3 — city:end",
+        "nl": "F3 — city:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f3",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign F3.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_F3.svg",
+        "original_sha256": "994817ea45049cf93de8838aec0d9eb608da8a1fcdf3b53aa70b67d916da7db8",
+        "png_sha256": "cd5e3ab9567d6f31a7ca04b15db55a6fc732c29d78cde79c9da16e82322504cd"
+      }
+    },
+    {
+      "class_id": "city:start",
+      "sign_code": "F1",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f1.png",
+      "label": {
+        "en": "F1 — city:start",
+        "de": "F1 — city:start",
+        "fr": "F1 — city:start",
+        "nl": "F1 — city:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f1",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign F1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_F1.svg",
+        "original_sha256": "4adf963382ff469619c4b118e44f2e525a1b911bc114e0cedb61243222f48c32",
+        "png_sha256": "bee47e6806a5c625c3e6c3d4392a0ca115b00088dee5164d5e11f6b00489627e"
+      }
+    },
+    {
+      "class_id": "give_way",
+      "sign_code": "B1",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b1.png",
+      "label": {
+        "en": "B1 — give way",
+        "de": "B1 — give way",
+        "fr": "B1 — give way",
+        "nl": "B1 — give way"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b1",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign B1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_B1.svg",
+        "original_sha256": "a135fe284976f4dd905e6c0674476b1dc3ca59ed27b763f557003682927c1449",
+        "png_sha256": "7a722315d230b6a16d6b54d21ce2ea6d0b917c4e82d6a4e59e9adc46bff72fbd"
+      }
+    },
+    {
+      "class_id": "hazard",
+      "sign_code": "A51",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a51.png",
+      "label": {
+        "en": "A51 — hazard",
+        "de": "A51 — hazard",
+        "fr": "A51 — hazard",
+        "nl": "A51 — hazard"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a51",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A51 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A51_KB-AR_03-06-2024.svg",
+        "original_sha256": "4de53fa5b31498ba04cd152f5eb26cf2295712e288650c974cb005fbdc974929",
+        "png_sha256": "017db7c8dc0c885ce0dadcbf964f5603bab8f85db84c4c3c0c707769cc1a9be2"
+      }
+    },
+    {
+      "class_id": "hazard:airport",
+      "sign_code": "A35",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a35.png",
+      "label": {
+        "en": "A35 — hazard:airport",
+        "de": "A35 — hazard:airport",
+        "fr": "A35 — hazard:airport",
+        "nl": "A35 — hazard:airport"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a35",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A35 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A35_KB-AR_03-06-2024.svg",
+        "original_sha256": "f6ee71d715e941cbe91d35ecc11fb98e5cd9b4561ed0cfe265d153b29ec90fe1",
+        "png_sha256": "65ef02fd363275de03b83cc5d1363cf62ba4be29aeb1cc484682c0306f072766"
+      }
+    },
+    {
+      "class_id": "hazard:animals",
+      "sign_code": "A29",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a29.png",
+      "label": {
+        "en": "A29 — hazard:animals",
+        "de": "A29 — hazard:animals",
+        "fr": "A29 — hazard:animals",
+        "nl": "A29 — hazard:animals"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a29",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A29.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A29.svg",
+        "original_sha256": "538f05986c02bcefff894774d8bb178c553f2f2fb1f71da6fd15496e32d4ef6a",
+        "png_sha256": "1bc9f679c7d9464ba3051dc1f812e0dbf5149ca8d25ce02c264e808463c3660f"
+      }
+    },
+    {
+      "class_id": "hazard:bicycle",
+      "sign_code": "A25",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a25.png",
+      "label": {
+        "en": "A25 — hazard:bicycle",
+        "de": "A25 — hazard:bicycle",
+        "fr": "A25 — hazard:bicycle",
+        "nl": "A25 — hazard:bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a25",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A25 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A25_KB-AR_03-06-2024.svg",
+        "original_sha256": "19dd206766d77e8a92bd98954f3e04d603d68cb0a7bf01591bed53bebc22c965",
+        "png_sha256": "74767268c4c386b7ab6bc3ac14af7785aeec33966236f9560ebb80e8f489696b"
+      }
+    },
+    {
+      "class_id": "hazard:bothways",
+      "sign_code": "A39",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a39.png",
+      "label": {
+        "en": "A39 — hazard:bothways",
+        "de": "A39 — hazard:bothways",
+        "fr": "A39 — hazard:bothways",
+        "nl": "A39 — hazard:bothways"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a39",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A39 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A39_KB-AR_03-06-2024.svg",
+        "original_sha256": "7d18faeaa1d3dc7581608dc9a6ab21b72f7b5d460374d1129909a1d99ac73b56",
+        "png_sha256": "2ed46c0ce577d8e32002f56201186e285409282fb890446ba85fbe18e93100a0"
+      }
+    },
+    {
+      "class_id": "hazard:bump",
+      "sign_code": "A14",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a14.png",
+      "label": {
+        "en": "A14 — hazard:bump",
+        "de": "A14 — hazard:bump",
+        "fr": "A14 — hazard:bump",
+        "nl": "A14 — hazard:bump"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a14",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A14 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A14_KB-AR_03-06-2024.svg",
+        "original_sha256": "37fd2ef44cc53eb490932a1024cd67c8892d8274b7d4bf4fe3262e3c96d8d797",
+        "png_sha256": "75f64fcfbeda217a1b40af74b1a6520f8760b2eaa37ef8dc1ef14c6cc614f754"
+      }
+    },
+    {
+      "class_id": "hazard:bumps",
+      "sign_code": "A13",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a13.png",
+      "label": {
+        "en": "A13 — hazard:bumps",
+        "de": "A13 — hazard:bumps",
+        "fr": "A13 — hazard:bumps",
+        "nl": "A13 — hazard:bumps"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a13",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A13 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A13_KB-AR_03-06-2024.svg",
+        "original_sha256": "ee54940cc5554b607714de2a3bdb6ed4d35217c4d2db44b0eab75d314c6a5ce0",
+        "png_sha256": "b76daaa013f7694ab70293f571b24d6761d5c83eb8eedc3b5c482c969d77dddd"
+      }
+    },
+    {
+      "class_id": "hazard:gravel",
+      "sign_code": "A17",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a17.png",
+      "label": {
+        "en": "A17 — hazard:gravel",
+        "de": "A17 — hazard:gravel",
+        "fr": "A17 — hazard:gravel",
+        "nl": "A17 — hazard:gravel"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a17",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A17 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A17_KB-AR_03-06-2024.svg",
+        "original_sha256": "bf06d6776c2b10203fae7135a7ec4f7d546366d62ad3e5157fa104753cd7ff5d",
+        "png_sha256": "42003b13935d12dc5c2dbb55c1f37144621c7591c0f408c2bf39026c1b3266eb"
+      }
+    },
+    {
+      "class_id": "hazard:level_crossing",
+      "sign_code": "A41",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a41.png",
+      "label": {
+        "en": "A41 — hazard:level crossing",
+        "de": "A41 — hazard:level crossing",
+        "fr": "A41 — hazard:level crossing",
+        "nl": "A41 — hazard:level crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a41",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A41 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A41_KB-AR_03-06-2024.svg",
+        "original_sha256": "5456ddc0092b65917d82fc89d2d5aed833f8bc823cd2242a66e7b33cab41784a",
+        "png_sha256": "387e33ba8f27ceaa63d480e21f4c2fe6cf1bbb506887f5952100a8d7896f8b6d"
+      }
+    },
+    {
+      "class_id": "hazard:moving_bridge",
+      "sign_code": "A9",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a9.png",
+      "label": {
+        "en": "A9 — hazard:moving bridge",
+        "de": "A9 — hazard:moving bridge",
+        "fr": "A9 — hazard:moving bridge",
+        "nl": "A9 — hazard:moving bridge"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a9",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A9 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A9_KB-AR_03-06-2024.svg",
+        "original_sha256": "0116a3fa7e00d65fc1e42b2fe6758c724c8d5d8778505082f581cdfa9c3a9c08",
+        "png_sha256": "7d77154003e530f82910766e59b160972f86d6bfafc2db15eb7f2b36e17eab65"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_both",
+      "sign_code": "A7a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a7a.png",
+      "label": {
+        "en": "A7a — hazard:narrow both",
+        "de": "A7a — hazard:narrow both",
+        "fr": "A7a — hazard:narrow both",
+        "nl": "A7a — hazard:narrow both"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a7a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A7a KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A7a_KB-AR_03-06-2024.svg",
+        "original_sha256": "01fb76d5099bde738b18efabf04efdbe3719d0c055473022f479b60ba09dee09",
+        "png_sha256": "1e58077dbf94535564765f43d70dae3610b0548fa5d61fd4f4097d6aec09472e"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_left",
+      "sign_code": "A7b",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a7b.png",
+      "label": {
+        "en": "A7b — hazard:narrow left",
+        "de": "A7b — hazard:narrow left",
+        "fr": "A7b — hazard:narrow left",
+        "nl": "A7b — hazard:narrow left"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a7b",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A7b KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A7b_KB-AR_03-06-2024.svg",
+        "original_sha256": "12c17a9002bd9e33d2b82f511e949df8f781215b86624df3b585ccd4f2d1cf3e",
+        "png_sha256": "22f4ea24de049fd79a8fcf958269870c10a72da06e66f4e5dadc348f7a137f7b"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_right",
+      "sign_code": "A7c",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a7c.png",
+      "label": {
+        "en": "A7c — hazard:narrow right",
+        "de": "A7c — hazard:narrow right",
+        "fr": "A7c — hazard:narrow right",
+        "nl": "A7c — hazard:narrow right"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a7c",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A7c KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A7c_KB-AR_03-06-2024.svg",
+        "original_sha256": "f4c9dac503ac1dd9363d75136cfacc5236d55ddbb48d1dc3ea0a1b9d09cc6624",
+        "png_sha256": "d17470ec3f6e7c7a69b3e3a24e8f2e2fa56858b6f81336a923463e20462bb73e"
+      }
+    },
+    {
+      "class_id": "hazard:pedestrian_crossing",
+      "sign_code": "A21",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a21.png",
+      "label": {
+        "en": "A21 — hazard:pedestrian crossing",
+        "de": "A21 — hazard:pedestrian crossing",
+        "fr": "A21 — hazard:pedestrian crossing",
+        "nl": "A21 — hazard:pedestrian crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a21",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A21 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A21_KB-AR_03-06-2024.svg",
+        "original_sha256": "756e2a3136014628df496ac5d6f0c638ea1347aa44dc40019ef9061235f7ea45",
+        "png_sha256": "0c101135357c60f454b1ed885a627ad7333dcc67ae2d502ad9adf5e3598c591f"
+      }
+    },
+    {
+      "class_id": "hazard:road_works",
+      "sign_code": "A31",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a31.png",
+      "label": {
+        "en": "A31 — hazard:road works",
+        "de": "A31 — hazard:road works",
+        "fr": "A31 — hazard:road works",
+        "nl": "A31 — hazard:road works"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a31",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A31 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A31_KB-AR_03-06-2024.svg",
+        "original_sha256": "78f4d14ccc83ce98d478917c92e4fc9275ae2cf04c7977c09000e50cfbacb26b",
+        "png_sha256": "6e97ace047e7b26eda56eb416dfa24a66b6a3d197201f26f71240fa1f450eb54"
+      }
+    },
+    {
+      "class_id": "hazard:rocks",
+      "sign_code": "A19",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a19.png",
+      "label": {
+        "en": "A19 — hazard:rocks",
+        "de": "A19 — hazard:rocks",
+        "fr": "A19 — hazard:rocks",
+        "nl": "A19 — hazard:rocks"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a19",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A19 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A19_KB-AR_03-06-2024.svg",
+        "original_sha256": "3f4c257b1fae7ace1b6b32885ff0715ab26a8c77c73c2278666d738ab36e92c0",
+        "png_sha256": "7dac966f9da7c2d503b9725ccc14685a6c9f45433c5d0fd6ca17b498afc64400"
+      }
+    },
+    {
+      "class_id": "hazard:school",
+      "sign_code": "A23",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a23.png",
+      "label": {
+        "en": "A23 — hazard:school",
+        "de": "A23 — hazard:school",
+        "fr": "A23 — hazard:school",
+        "nl": "A23 — hazard:school"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a23",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A23 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A23_KB-AR_03-06-2024.svg",
+        "original_sha256": "9f126f78e5c897484c68568be4eb9ea99d715a48c70bb8b01fbf5652af168c20",
+        "png_sha256": "7ee7e5376735f5215aa966150835fdd76e2f4e41a2375449035ca2d78e118c9f"
+      }
+    },
+    {
+      "class_id": "hazard:slippery",
+      "sign_code": "A15",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a15.png",
+      "label": {
+        "en": "A15 — hazard:slippery",
+        "de": "A15 — hazard:slippery",
+        "fr": "A15 — hazard:slippery",
+        "nl": "A15 — hazard:slippery"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a15",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A15 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A15_KB-AR_03-06-2024.svg",
+        "original_sha256": "fb2cb6356333dc4664959934c09d57160622b9aa0abc90f3eec0faf9f249eb88",
+        "png_sha256": "03500c5da22c9e09d22c573e9a3f67b84a2f3fc96cb1414f57b5c2084c7dff3e"
+      }
+    },
+    {
+      "class_id": "hazard:traffic_signal",
+      "sign_code": "A33",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a33.png",
+      "label": {
+        "en": "A33 — hazard:traffic signal",
+        "de": "A33 — hazard:traffic signal",
+        "fr": "A33 — hazard:traffic signal",
+        "nl": "A33 — hazard:traffic signal"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a33",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A33 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A33_KB-AR_03-06-2024.svg",
+        "original_sha256": "15ba052505564522c577bca3c39baa385399685836743d7f2f6fa5d83f69a415",
+        "png_sha256": "0e09d9b6ba42b6c75a6b1248d586a80d97bcae5140fb1a497e0bfefd9369f4b1"
+      }
+    },
+    {
+      "class_id": "hazard:train",
+      "sign_code": "A43",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a43.png",
+      "label": {
+        "en": "A43 — hazard:train",
+        "de": "A43 — hazard:train",
+        "fr": "A43 — hazard:train",
+        "nl": "A43 — hazard:train"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a43",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A43 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A43_KB-AR_03-06-2024.svg",
+        "original_sha256": "0feb0c6357681cd51b72e2ed656cdaad6e7e0fc955cd4210d2c3873c059ddee0",
+        "png_sha256": "ff5a1fb2cfeb1373c859958b27583a8bb45c98291fb5b4f4edfe5ad6958124e7"
+      }
+    },
+    {
+      "class_id": "hazard:wild_animals",
+      "sign_code": "A27",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a27.png",
+      "label": {
+        "en": "A27 — hazard:wild animals",
+        "de": "A27 — hazard:wild animals",
+        "fr": "A27 — hazard:wild animals",
+        "nl": "A27 — hazard:wild animals"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a27",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A27.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A27.svg",
+        "original_sha256": "34a13df324fb248041e31261ccfceddfeb571dee588003927964b55ec9aab59a",
+        "png_sha256": "cb18a2c5410472115f8197da6020a96d299b37a88cc2b654a8ee784cfc95a355"
+      }
+    },
+    {
+      "class_id": "hazard:wind",
+      "sign_code": "A37",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a37.png",
+      "label": {
+        "en": "A37 — hazard:wind",
+        "de": "A37 — hazard:wind",
+        "fr": "A37 — hazard:wind",
+        "nl": "A37 — hazard:wind"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a37",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A37 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A37_KB-AR_03-06-2024.svg",
+        "original_sha256": "512ccc4d2ec8e3b0ca5310e6657db27d95948fd2dacd1e0926188917b1853c28",
+        "png_sha256": "ce9cc37c4e3274847b548dca44ae0d2303d2767bb8e54dd81b1cda4bc8bffb10"
+      }
+    },
+    {
+      "class_id": "hazard:zigzag",
+      "sign_code": "A1c",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a1c.png",
+      "label": {
+        "en": "A1c — hazard:zigzag",
+        "de": "A1c — hazard:zigzag",
+        "fr": "A1c — hazard:zigzag",
+        "nl": "A1c — hazard:zigzag"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a1c",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A1c KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A1c_KB-AR_03-06-2024.svg",
+        "original_sha256": "38ee781a1139482a4a2908fd6b50a6c59aa1056a7735d7684070ced97c7e3fad",
+        "png_sha256": "dacce25d008c1a9fbd8faefa3e7a29b016e185cfe1e6217798457d1312ce4ac2"
+      }
+    },
+    {
+      "class_id": "hazard:zigzag:left",
+      "sign_code": "A1d",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-a1d.png",
+      "label": {
+        "en": "A1d — hazard:zigzag:left",
+        "de": "A1d — hazard:zigzag:left",
+        "fr": "A1d — hazard:zigzag:left",
+        "nl": "A1d — hazard:zigzag:left"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-a1d",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign A1d KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_A1d_KB-AR_03-06-2024.svg",
+        "original_sha256": "826cbed1559222a047aec84451a64d001f03f852606c32e3890940dfc9ae7a30",
+        "png_sha256": "58cf2e435864f19f6e041277006f27aaf25f29c9b2d57bc53e2818bd2a3296e5"
+      }
+    },
+    {
+      "class_id": "maxheight",
+      "sign_code": "C27",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c27.png",
+      "label": {
+        "en": "C27 — maxheight",
+        "de": "C27 — maxheight",
+        "fr": "C27 — maxheight",
+        "nl": "C27 — maxheight"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c27",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C27.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C27.svg",
+        "original_sha256": "07e391297b739edeb6a7ba479473275df0c00e4e149f4fba757261468219f8ee",
+        "png_sha256": "ede4a31d82d41aa2577865070d542f96e77dd2daad0cd81207d5126d9217c0ec"
+      }
+    },
+    {
+      "class_id": "maxlength",
+      "sign_code": "C25",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c25.png",
+      "label": {
+        "en": "C25 — maxlength",
+        "de": "C25 — maxlength",
+        "fr": "C25 — maxlength",
+        "nl": "C25 — maxlength"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c25",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C25.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C25.svg",
+        "original_sha256": "94d4cb77073aaed80a52f50d9d90f2e27319381844e4573ba287bac54695d3cc",
+        "png_sha256": "216ea77813b7d8301f99476d29b3ebc2b2446386d1f0debed81694b91b2693c0"
+      }
+    },
+    {
+      "class_id": "maxspeed:100",
+      "sign_code": "C43[100]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-100.png",
+      "label": {
+        "en": "C43[100] — maxspeed:100",
+        "de": "C43[100] — maxspeed:100",
+        "fr": "C43[100] — maxspeed:100",
+        "nl": "C43[100] — maxspeed:100"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-100",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 100 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_100_KB-AR_03-06-2024.svg",
+        "original_sha256": "836b1143e61b7d8cd08e1e6177827a02564147e8c21f8709947a4e663e69fe8e",
+        "png_sha256": "3b378154a6078bec873fb7983b44fc52bc94671c492954e084a6114c27bb9c51"
+      }
+    },
+    {
+      "class_id": "maxspeed:20",
+      "sign_code": "C43[20]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-20.png",
+      "label": {
+        "en": "C43[20] — maxspeed:20",
+        "de": "C43[20] — maxspeed:20",
+        "fr": "C43[20] — maxspeed:20",
+        "nl": "C43[20] — maxspeed:20"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-20",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 20.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_20.svg",
+        "original_sha256": "d4582c25b8bfe38e995eeda3db79d08bd749d906581c3c964a2ba35ec73d784c",
+        "png_sha256": "b2ca54bea50257ffa4b8c63776885a36e6189053374cd1c2c32a9bc4533aee48"
+      }
+    },
+    {
+      "class_id": "maxspeed:30",
+      "sign_code": "C43[30]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-30.png",
+      "label": {
+        "en": "C43[30] — maxspeed:30",
+        "de": "C43[30] — maxspeed:30",
+        "fr": "C43[30] — maxspeed:30",
+        "nl": "C43[30] — maxspeed:30"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-30",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 30 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_30_KB-AR_03-06-2024.svg",
+        "original_sha256": "0881c14c89c24794fea4ee4a424101356436a90e86632e3bcf53a8640c4b72ba",
+        "png_sha256": "b9bfbb115ab8bd92cbace767cfc58a56e8de0e47a2a0db5c9826bea80bfea318"
+      }
+    },
+    {
+      "class_id": "maxspeed:50",
+      "sign_code": "C43[50]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-50.png",
+      "label": {
+        "en": "C43[50] — maxspeed:50",
+        "de": "C43[50] — maxspeed:50",
+        "fr": "C43[50] — maxspeed:50",
+        "nl": "C43[50] — maxspeed:50"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-50",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 50 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_50_KB-AR_03-06-2024.svg",
+        "original_sha256": "d683595500062e3444e1bede5530c3a58c95a297cac924c2ea73cbbd3e1bc246",
+        "png_sha256": "e2778da74c63c86f15cd6bcd6285571a5e792d151e3b14ce25f2921a7361a09f"
+      }
+    },
+    {
+      "class_id": "maxspeed:60",
+      "sign_code": "C43[60]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-60.png",
+      "label": {
+        "en": "C43[60] — maxspeed:60",
+        "de": "C43[60] — maxspeed:60",
+        "fr": "C43[60] — maxspeed:60",
+        "nl": "C43[60] — maxspeed:60"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-60",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 60.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_60.svg",
+        "original_sha256": "659a9051699961827f212042b9261473d9f2bdb8ca15de77766af69912c1aac7",
+        "png_sha256": "0b6203e8cb272d6891bfff9d0f3a3dc02eda4dc830cb02c487dcf12dfe950719"
+      }
+    },
+    {
+      "class_id": "maxspeed:70",
+      "sign_code": "C43[70]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-70.png",
+      "label": {
+        "en": "C43[70] — maxspeed:70",
+        "de": "C43[70] — maxspeed:70",
+        "fr": "C43[70] — maxspeed:70",
+        "nl": "C43[70] — maxspeed:70"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-70",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 70 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_70_KB-AR_03-06-2024.svg",
+        "original_sha256": "7f3cf946a064ed2b37b6318aa004e161a68eb1cab5610f81606212f8ebdb2dc8",
+        "png_sha256": "5fc34ce1fd1227aa8d5f0911958686879693dab654defe9759232c94d7eb160b"
+      }
+    },
+    {
+      "class_id": "maxspeed:80",
+      "sign_code": "C43[80]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-80.png",
+      "label": {
+        "en": "C43[80] — maxspeed:80",
+        "de": "C43[80] — maxspeed:80",
+        "fr": "C43[80] — maxspeed:80",
+        "nl": "C43[80] — maxspeed:80"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-80",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 80.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_80.svg",
+        "original_sha256": "b768fcb1e8dc250c3d97e9906438e3176c57912295ea02dec7f0282ef711c73e",
+        "png_sha256": "39716c6fbd80cc0e71f839cf0596b8b4154264aa644ff63177dec8527fe3b391"
+      }
+    },
+    {
+      "class_id": "maxspeed:90",
+      "sign_code": "C43[90]",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c43-90.png",
+      "label": {
+        "en": "C43[90] — maxspeed:90",
+        "de": "C43[90] — maxspeed:90",
+        "fr": "C43[90] — maxspeed:90",
+        "nl": "C43[90] — maxspeed:90"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c43-90",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C43 90 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C43_90_KB-AR_03-06-2024.svg",
+        "original_sha256": "b891bb0c31964e3a99df9b4da183806d9742a2c4fc3f1915fe59fc0ec15f8fe7",
+        "png_sha256": "6b076b0d3c9ab0f7c898b77faaffff647cc45f66947295165b931de9642a3556"
+      }
+    },
+    {
+      "class_id": "maxspeed:end",
+      "sign_code": "C45",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c45.png",
+      "label": {
+        "en": "C45 — maxspeed:end",
+        "de": "C45 — maxspeed:end",
+        "fr": "C45 — maxspeed:end",
+        "nl": "C45 — maxspeed:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c45",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign C45.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_C45.svg",
+        "original_sha256": "f4468b8c31a324efe62814f112e3e97823e60bd4a813d31e3f630e720cdb51e6",
+        "png_sha256": "02bd3910affa23712c16fca8e2b5ba1b1f82aebfb6f4fbc83a54d53a0490a701"
+      }
+    },
+    {
+      "class_id": "maxweight",
+      "sign_code": "C21",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c21.png",
+      "label": {
+        "en": "C21 — maxweight",
+        "de": "C21 — maxweight",
+        "fr": "C21 — maxweight",
+        "nl": "C21 — maxweight"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c21",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign C21.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_C21.svg",
+        "original_sha256": "6f88d3b8f7aebd4ef2c79a9a9785b714c0c0aea7d7358a57060c90368809dc51",
+        "png_sha256": "86b2688d1aeca2c9295e472b5486636ea5723db22d421f1dac506c13df9aabfc"
+      }
+    },
+    {
+      "class_id": "motorway:end",
+      "sign_code": "F7",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f7.png",
+      "label": {
+        "en": "F7 — motorway:end",
+        "de": "F7 — motorway:end",
+        "fr": "F7 — motorway:end",
+        "nl": "F7 — motorway:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f7",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F7.svg",
+        "original_sha256": "1967796087d039e04d98a659da24adf9e2a3c06843d19ab7e9c3c7b8b2d238ba",
+        "png_sha256": "b5bf5cf7fb5b8d48345862c5d2d409fc8039251ecd7377b63d2c808f2d3a1b37"
+      }
+    },
+    {
+      "class_id": "motorway:start",
+      "sign_code": "F5",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f5.png",
+      "label": {
+        "en": "F5 — motorway:start",
+        "de": "F5 — motorway:start",
+        "fr": "F5 — motorway:start",
+        "nl": "F5 — motorway:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f5",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F5.svg",
+        "original_sha256": "9fb14c041d65c25bc4da95052de4fae90ebdb3a1cb356fdce53cb456cb40c440",
+        "png_sha256": "6bca2547bc70fbd238a53f536a413ce5444c107cf0221ea9fec49e58338b9bb9"
+      }
+    },
+    {
+      "class_id": "no_agriculture",
+      "sign_code": "C8",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c8.png",
+      "label": {
+        "en": "C8 — no agriculture",
+        "de": "C8 — no agriculture",
+        "fr": "C8 — no agriculture",
+        "nl": "C8 — no agriculture"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c8",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C8 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C8_KB-AR_03-06-2024.svg",
+        "original_sha256": "719ccdc619d1f89afa60a0a219a0eabebedb95fe3910b32d0e66595bbacbef72",
+        "png_sha256": "1f7d02d30b2ea0da850f40361aaa93408fd35b6afca118fdc5e9c4d1eb8bcf53"
+      }
+    },
+    {
+      "class_id": "no_bicycle",
+      "sign_code": "C11",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c11.png",
+      "label": {
+        "en": "C11 — no bicycle",
+        "de": "C11 — no bicycle",
+        "fr": "C11 — no bicycle",
+        "nl": "C11 — no bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c11",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C11 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C11_KB-AR_03-06-2024.svg",
+        "original_sha256": "1697042f7daaa296fbcd1ef1e992f18f1eeac5abcead80cc7d77c1553922ae64",
+        "png_sha256": "dfdc0bc1ae1b29469451be6274e37fd9efceb211453512cb6e93acd6ed218335"
+      }
+    },
+    {
+      "class_id": "no_bus",
+      "sign_code": "C22",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c22.png",
+      "label": {
+        "en": "C22 — no bus",
+        "de": "C22 — no bus",
+        "fr": "C22 — no bus",
+        "nl": "C22 — no bus"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c22",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C22.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C22.svg",
+        "original_sha256": "d002fa3086d3074323b28a404301173953e20323ba907bb60e0fa21842426733",
+        "png_sha256": "e2c535db3a96bb80ab367602ac312130ea3164e8a49e5f6cfaecf53663ff5687"
+      }
+    },
+    {
+      "class_id": "no_car",
+      "sign_code": "C5",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c5.png",
+      "label": {
+        "en": "C5 — no car",
+        "de": "C5 — no car",
+        "fr": "C5 — no car",
+        "nl": "C5 — no car"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c5",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C5 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C5_KB-AR_03-06-2024.svg",
+        "original_sha256": "6082b1762921d21fd7b4a778e8153bef211d243693856313f36d54976157137b",
+        "png_sha256": "af34580469a9cb106495f4fe5b3346c8658d91241245872ad82ac55a6544cc3e"
+      }
+    },
+    {
+      "class_id": "no_dangerous",
+      "sign_code": "C24a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c24a.png",
+      "label": {
+        "en": "C24a — no dangerous",
+        "de": "C24a — no dangerous",
+        "fr": "C24a — no dangerous",
+        "nl": "C24a — no dangerous"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c24a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C24a.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C24a.svg",
+        "original_sha256": "0631eea22494b0453c15058bb9ae05626cc015df22c38771e62641d9de186440",
+        "png_sha256": "726a8c3f970b809cf86ae5028020cd70afc3a901adfc2e9c9616d66f3dfe0e8e"
+      }
+    },
+    {
+      "class_id": "no_entry",
+      "sign_code": "C1",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c1.png",
+      "label": {
+        "en": "C1 — no entry",
+        "de": "C1 — no entry",
+        "fr": "C1 — no entry",
+        "nl": "C1 — no entry"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c1",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign C1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_C1.svg",
+        "original_sha256": "889146de04e75ee520f3391487ab1bb52c389857f9751dcdd58df65ac75dc025",
+        "png_sha256": "bb6da0ece1aca5a171a3f368690f11f424c77aab6adbaa324a91692cc9903d09"
+      }
+    },
+    {
+      "class_id": "no_exit",
+      "sign_code": "F45",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f45.png",
+      "label": {
+        "en": "F45 — no exit",
+        "de": "F45 — no exit",
+        "fr": "F45 — no exit",
+        "nl": "F45 — no exit"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f45",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F45.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F45.svg",
+        "original_sha256": "523779f023b847e604a543c7624a6205e5b5770cbf7e74e36bbaedf7704168ac",
+        "png_sha256": "4a531f4a88933e3893844e2e626273d3d30f36d01d027995243626570c272673"
+      }
+    },
+    {
+      "class_id": "no_hgv",
+      "sign_code": "C23",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c23.png",
+      "label": {
+        "en": "C23 — no hgv",
+        "de": "C23 — no hgv",
+        "fr": "C23 — no hgv",
+        "nl": "C23 — no hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c23",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C23 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C23_KB-AR_03-06-2024.svg",
+        "original_sha256": "d30dc0dc82e32bf26d468bf62caec02ce4ffd1d35ad52e7d785dbbc0e13a5a93",
+        "png_sha256": "323b21a364d582746600e572ab852cac299f5112d7bb31e1fc35ade6fdc7ae1d"
+      }
+    },
+    {
+      "class_id": "no_horse",
+      "sign_code": "C15",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c15.png",
+      "label": {
+        "en": "C15 — no horse",
+        "de": "C15 — no horse",
+        "fr": "C15 — no horse",
+        "nl": "C15 — no horse"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c15",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C15 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C15_KB-AR_03-06-2024.svg",
+        "original_sha256": "0bc69ee1b3c1745443750f833ff90a008a31407dad479975716e8e92ffb132ad",
+        "png_sha256": "7799213eb6c43c3c3901034d2768b7f6b4a6f4cdc9ce1c75eade8ab773f6ed66"
+      }
+    },
+    {
+      "class_id": "no_moped",
+      "sign_code": "C9",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c9.png",
+      "label": {
+        "en": "C9 — no moped",
+        "de": "C9 — no moped",
+        "fr": "C9 — no moped",
+        "nl": "C9 — no moped"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c9",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C9 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C9_KB-AR_03-06-2024.svg",
+        "original_sha256": "8ea20c6ac0da7b350638be5549849cccd7e0c283c7267725b4031c14fc1a66ed",
+        "png_sha256": "c25fd5930ecbdccdbfff924374ee61bc337c53cee3590552f19bee08aba5eadc"
+      }
+    },
+    {
+      "class_id": "no_motorcycle",
+      "sign_code": "C7",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c7.png",
+      "label": {
+        "en": "C7 — no motorcycle",
+        "de": "C7 — no motorcycle",
+        "fr": "C7 — no motorcycle",
+        "nl": "C7 — no motorcycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c7",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C7 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C7_KB-AR_03-06-2024.svg",
+        "original_sha256": "5e0f221a3c3968b56a3c8f9a2f65b6653bbfb7d91d3392216443f5d48fc6a75c",
+        "png_sha256": "d210749cf45e52e063a230be0126dba842f7de5d44720b38469f96b25829cd8e"
+      }
+    },
+    {
+      "class_id": "no_overtaking",
+      "sign_code": "C35",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c35.png",
+      "label": {
+        "en": "C35 — no overtaking",
+        "de": "C35 — no overtaking",
+        "fr": "C35 — no overtaking",
+        "nl": "C35 — no overtaking"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c35",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C35 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C35_KB-AR_03-06-2024.svg",
+        "original_sha256": "b2b8be3fe684886d239922921b5589e671c77c106e12d615a4e462df39115308",
+        "png_sha256": "e148cae82e7e622ae478fd121fd2f3ad3d3e7b3d58c87849e53412661bda562c"
+      }
+    },
+    {
+      "class_id": "no_overtaking:end",
+      "sign_code": "C37",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c37.png",
+      "label": {
+        "en": "C37 — no overtaking:end",
+        "de": "C37 — no overtaking:end",
+        "fr": "C37 — no overtaking:end",
+        "nl": "C37 — no overtaking:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c37",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C37 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C37_KB-AR_03-06-2024.svg",
+        "original_sha256": "8691d36a0fbb699cd80ff5e6b5c90718461eccc6696187a9c03bcda0a7212b85",
+        "png_sha256": "4dd3e038fbd6d968e0c4271046056af6adc6ce55438af70b6d68f826aede246f"
+      }
+    },
+    {
+      "class_id": "no_overtaking:hgv",
+      "sign_code": "C39",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c39.png",
+      "label": {
+        "en": "C39 — no overtaking:hgv",
+        "de": "C39 — no overtaking:hgv",
+        "fr": "C39 — no overtaking:hgv",
+        "nl": "C39 — no overtaking:hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c39",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C39 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C39_KB-AR_03-06-2024.svg",
+        "original_sha256": "e0d9afa0145cf36d61318d6c93b346e2cc61372055ab0aeea890bdfaf09ee909",
+        "png_sha256": "454b43fefbcfd2140ba1a87308472aa98ff5f18326b7ebf983e26a78e458854b"
+      }
+    },
+    {
+      "class_id": "no_parking",
+      "sign_code": "E1",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e1.png",
+      "label": {
+        "en": "E1 — no parking",
+        "de": "E1 — no parking",
+        "fr": "E1 — no parking",
+        "nl": "E1 — no parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e1",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E1 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E1_KB-AR_03-06-2024.svg",
+        "original_sha256": "eb348ecb45bf39bde8c0cee4d042d199a2358c17944f4d06db85b6803133b927",
+        "png_sha256": "6369703db5310021d3cb60f7e8988185926d998557957515a34df2bcbe801fd6"
+      }
+    },
+    {
+      "class_id": "no_parking:1-15",
+      "sign_code": "E5",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e5.png",
+      "label": {
+        "en": "E5 — no parking:1-15",
+        "de": "E5 — no parking:1-15",
+        "fr": "E5 — no parking:1-15",
+        "nl": "E5 — no parking:1-15"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e5",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E5.svg",
+        "original_sha256": "e89e8650097556b4e841ce400d453a25e988bfccd5d540335fcec6318a305500",
+        "png_sha256": "ceb5769b1b605857707cf879045ab52d32a91d1448ab43bf17f8201ee9191919"
+      }
+    },
+    {
+      "class_id": "no_parking:16-31",
+      "sign_code": "E7",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e7.png",
+      "label": {
+        "en": "E7 — no parking:16-31",
+        "de": "E7 — no parking:16-31",
+        "fr": "E7 — no parking:16-31",
+        "nl": "E7 — no parking:16-31"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e7",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E7.svg",
+        "original_sha256": "f43940152a655d9e5a01e74e12a91199fb83f37cc614d2d426c0f4bd9f52e6ce",
+        "png_sha256": "3e6a0036681bdf23e8331f58df3ac6e41b7cb11a9b1e49360c031576c5ea5d3c"
+      }
+    },
+    {
+      "class_id": "no_pedestrian",
+      "sign_code": "C19",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c19.png",
+      "label": {
+        "en": "C19 — no pedestrian",
+        "de": "C19 — no pedestrian",
+        "fr": "C19 — no pedestrian",
+        "nl": "C19 — no pedestrian"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c19",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C19 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C19_KB-AR_03-06-2024.svg",
+        "original_sha256": "4ce02228f921f7184593320777605550d4c733b6a7da9b31864f24b2bebe5080",
+        "png_sha256": "fd88b24eaaf7d389d8e3210dc700d2c7c55dbef14df06563eedefe40825656cd"
+      }
+    },
+    {
+      "class_id": "no_stop",
+      "sign_code": "E3",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e3.png",
+      "label": {
+        "en": "E3 — no stop",
+        "de": "E3 — no stop",
+        "fr": "E3 — no stop",
+        "nl": "E3 — no stop"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e3",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E3 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E3_KB-AR_03-06-2024.svg",
+        "original_sha256": "dd449d3bcf48571c5cae29f747da7584839ce4523e3835d0d44a5ae07f5b75b2",
+        "png_sha256": "cd9f926f999c0860b013b6cdf932eab3cf8cb688302940e836c0e9e078c3e8c6"
+      }
+    },
+    {
+      "class_id": "no_turn:left",
+      "sign_code": "C31a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c31a.png",
+      "label": {
+        "en": "C31a — no turn:left",
+        "de": "C31a — no turn:left",
+        "fr": "C31a — no turn:left",
+        "nl": "C31a — no turn:left"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c31a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C31a.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C31a.svg",
+        "original_sha256": "41979b55535e5774a458d75a88bda6180b017c2b3c746b532d28c4c0fd90c585",
+        "png_sha256": "adccdc08decdf3d79dc1972651a52c14fff763ae8630bc9ba84d1ecdba820354"
+      }
+    },
+    {
+      "class_id": "no_turn:right",
+      "sign_code": "C31b",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c31b.png",
+      "label": {
+        "en": "C31b — no turn:right",
+        "de": "C31b — no turn:right",
+        "fr": "C31b — no turn:right",
+        "nl": "C31b — no turn:right"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c31b",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C31b.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C31b.svg",
+        "original_sha256": "0641b1ecc545bf6d3e4fac36bd6ae735bdbe9b5446b57f17c2963461224600b8",
+        "png_sha256": "022c1e2f47959fd2be6630091ea542fe0c5be95e65b625db7bde417432a164d0"
+      }
+    },
+    {
+      "class_id": "no_way",
+      "sign_code": "C3",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c3.png",
+      "label": {
+        "en": "C3 — no way",
+        "de": "C3 — no way",
+        "fr": "C3 — no way",
+        "nl": "C3 — no way"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c3",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C3 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C3_KB-AR_03-06-2024.svg",
+        "original_sha256": "bc1bd5e5d983bb96851f38fe9593d35d6b6213e3da8e9ce2468866cc35667279",
+        "png_sha256": "f120a50ae7b63d5f8905db9a95bddfc46dee317aedd94eca2faedb3b8f379a73"
+      }
+    },
+    {
+      "class_id": "no:end",
+      "sign_code": "C46",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-c46.png",
+      "label": {
+        "en": "C46 — no:end",
+        "de": "C46 — no:end",
+        "fr": "C46 — no:end",
+        "nl": "C46 — no:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-c46",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign C46 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_C46_KB-AR_03-06-2024.svg",
+        "original_sha256": "5fb9d7246ac2f1f56b2aa0288cac00aff5039992574b03883bc0061fd195b04e",
+        "png_sha256": "531c6e3d3b7aa531af8adfe6cc2c5911d5d053099a9f3a346c4c3f520160cc49"
+      }
+    },
+    {
+      "class_id": "oneway",
+      "sign_code": "F19",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-f19.png",
+      "label": {
+        "en": "F19 — oneway",
+        "de": "F19 — oneway",
+        "fr": "F19 — oneway",
+        "nl": "F19 — oneway"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-f19",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign F19.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_F19.svg",
+        "original_sha256": "f87b07dd6fe3cf603843e07946ba04693c1a35ed2a6517ae8c1c63d31d57a55f",
+        "png_sha256": "458f0555f85460a84198064d1418bd9371fe94f4271fcf3a0941a7ef8fc0342a"
+      }
+    },
+    {
+      "class_id": "parking",
+      "sign_code": "E9a",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e9a.png",
+      "label": {
+        "en": "E9a — parking",
+        "de": "E9a — parking",
+        "fr": "E9a — parking",
+        "nl": "E9a — parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e9a",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E9a.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E9a.svg",
+        "original_sha256": "7c0025690eb9cf246b27c62a229b98855439df69b2e2f7fa2912417fc0be6178",
+        "png_sha256": "56e2afde8b247d6f89a0decb3ba7376a610ae7691132ca8fa9405f018115bcbb"
+      }
+    },
+    {
+      "class_id": "parking:bus",
+      "sign_code": "E9d",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e9d.png",
+      "label": {
+        "en": "E9d — parking:bus",
+        "de": "E9d — parking:bus",
+        "fr": "E9d — parking:bus",
+        "nl": "E9d — parking:bus"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e9d",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E9d.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E9d.svg",
+        "original_sha256": "6d459948b69399451d4bd6c5055c891d2b2355efdaf22254474a288f0e41da09",
+        "png_sha256": "042959490dae902ef57ee98cb992d3ac2a63781d277ac7a2b4f51ba94dae4d55"
+      }
+    },
+    {
+      "class_id": "parking:car",
+      "sign_code": "E9b",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e9b.png",
+      "label": {
+        "en": "E9b — parking:car",
+        "de": "E9b — parking:car",
+        "fr": "E9b — parking:car",
+        "nl": "E9b — parking:car"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e9b",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E9b.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E9b.svg",
+        "original_sha256": "d830e359dc156d7a18ed62eb0bc2d5e851df392c999a40f0e0508f747d98a3b6",
+        "png_sha256": "0d5c7ea3d4176c32e8c3858871b1731c0487a945d75e764398ed733a2a31d289"
+      }
+    },
+    {
+      "class_id": "parking:hgv",
+      "sign_code": "E9c",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e9c.png",
+      "label": {
+        "en": "E9c — parking:hgv",
+        "de": "E9c — parking:hgv",
+        "fr": "E9c — parking:hgv",
+        "nl": "E9c — parking:hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e9c",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E9c.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E9c.svg",
+        "original_sha256": "2318f5d61cdbbc0a051e6207ed127d13c31abfd50b5079516fe8349e2f8a539c",
+        "png_sha256": "c6c922fd47dcd5adc1b0f25f4793874f3be39b64ae0f9559d63d248250f6376a"
+      }
+    },
+    {
+      "class_id": "parking:motorhome",
+      "sign_code": "E9h",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-e9h.png",
+      "label": {
+        "en": "E9h — parking:motorhome",
+        "de": "E9h — parking:motorhome",
+        "fr": "E9h — parking:motorhome",
+        "nl": "E9h — parking:motorhome"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-e9h",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign E9h.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_E9h.svg",
+        "original_sha256": "ac78e269073d323bc203d589e59aab4106fd6c223629bd844b3e60b072b95e36",
+        "png_sha256": "2edafb134f279457b18dad74abdb595838de3dfb395c1587429b53fa1cc343be"
+      }
+    },
+    {
+      "class_id": "pedestrian_bicycle:designated",
+      "sign_code": "D9",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d9.png",
+      "label": {
+        "en": "D9 — pedestrian bicycle:designated",
+        "de": "D9 — pedestrian bicycle:designated",
+        "fr": "D9 — pedestrian bicycle:designated",
+        "nl": "D9 — pedestrian bicycle:designated"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d9",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D9 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D9_KB-AR_03-06-2024.svg",
+        "original_sha256": "5a15d24ae2c3cd8068d9d61350cfc69ab6cdc609ec2c1ba7a256e5d762edac19",
+        "png_sha256": "85c2152b74466f6fafd99e9864eb94a22625c7ee3613b53a447dac034b921564"
+      }
+    },
+    {
+      "class_id": "pedestrian_bicycle:start",
+      "sign_code": "D10",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d10.png",
+      "label": {
+        "en": "D10 — pedestrian bicycle:start",
+        "de": "D10 — pedestrian bicycle:start",
+        "fr": "D10 — pedestrian bicycle:start",
+        "nl": "D10 — pedestrian bicycle:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d10",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D10 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D10_KB-AR_03-06-2024.svg",
+        "original_sha256": "2753c809d07e5a891679a44436a41f1e3b665226896a3318c9baf7678fa5d514",
+        "png_sha256": "cdba668e5fec0d4e149dacee7a2c765c4ff66ab608ea125ead4cdfba308ae3ec"
+      }
+    },
+    {
+      "class_id": "pedestrian:start",
+      "sign_code": "D11",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d11.png",
+      "label": {
+        "en": "D11 — pedestrian:start",
+        "de": "D11 — pedestrian:start",
+        "fr": "D11 — pedestrian:start",
+        "nl": "D11 — pedestrian:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d11",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D11 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D11_KB-AR_03-06-2024.svg",
+        "original_sha256": "f50d2362426bca34a30940561f7c877e9dd7b18189b7b442c2f5035087a4a2bf",
+        "png_sha256": "948c5b071e287f4cf70d7e40b327fff13e07c6d4b7b909f3fd77d76b5a45073f"
+      }
+    },
+    {
+      "class_id": "priority:backward",
+      "sign_code": "B19",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b19.png",
+      "label": {
+        "en": "B19 — priority:backward",
+        "de": "B19 — priority:backward",
+        "fr": "B19 — priority:backward",
+        "nl": "B19 — priority:backward"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b19",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign B19 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_B19_KB-AR_03-06-2024.svg",
+        "original_sha256": "c783b921d708dc2819eec65af3ea377bbbdba632fb922052b8ce10301a01bad5",
+        "png_sha256": "17d664c0a260000e1dc268ba207e497360f4f1e881a27c2f019efe95e228c374"
+      }
+    },
+    {
+      "class_id": "priority:end",
+      "sign_code": "B11",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b11.png",
+      "label": {
+        "en": "B11 — priority:end",
+        "de": "B11 — priority:end",
+        "fr": "B11 — priority:end",
+        "nl": "B11 — priority:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b11",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign B11 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_B11_KB-AR_03-06-2024.svg",
+        "original_sha256": "da1f4bceb337df0d068c703434e01f265b599e48cf3405edf7f0ee1deb021193",
+        "png_sha256": "ab04fd88c0279d8d3306b73b44b475f8c7087fe0c7020c02c75b05b34de88775"
+      }
+    },
+    {
+      "class_id": "priority:forward",
+      "sign_code": "B21",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b21.png",
+      "label": {
+        "en": "B21 — priority:forward",
+        "de": "B21 — priority:forward",
+        "fr": "B21 — priority:forward",
+        "nl": "B21 — priority:forward"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b21",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign B21 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_B21_KB-AR_03-06-2024.svg",
+        "original_sha256": "8d206e179e78a4803128f579b3b75e5c08f1d63cf9e59146e5cc3ac4664b913a",
+        "png_sha256": "0aa63fcd4b097e0a9198a0b321e37bf24b12ba696a594f2e6cd75180bf8d6303"
+      }
+    },
+    {
+      "class_id": "priority:start",
+      "sign_code": "B9",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b9.png",
+      "label": {
+        "en": "B9 — priority:start",
+        "de": "B9 — priority:start",
+        "fr": "B9 — priority:start",
+        "nl": "B9 — priority:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b9",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign B9 KB-AR 03-06-2024.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_B9_KB-AR_03-06-2024.svg",
+        "original_sha256": "f6afdcde73479e54fc1f0a1db484349c52c783f03e07f309214203ff3fe13dcb",
+        "png_sha256": "39003699cc64582a8b08dcbb2cfaec6915e26c5686855024b573413c5bb3cbe4"
+      }
+    },
+    {
+      "class_id": "stop",
+      "sign_code": "B5",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-b5.png",
+      "label": {
+        "en": "B5 — stop",
+        "de": "B5 — stop",
+        "fr": "B5 — stop",
+        "nl": "B5 — stop"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-b5",
+      "source_provenance": {
+        "commons_title": "File:Belgian road sign B5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_road_sign_B5.svg",
+        "original_sha256": "3e3ca27ec1307076c65db5f6a8886fb89508ea0da2874b6960b266e622338494",
+        "png_sha256": "4ac3fce4e69550e14ec6c41f48670ab0852e992643e2ed0ed16f4e078f883429"
+      }
+    },
+    {
+      "class_id": "roundabout",
+      "sign_code": "D5",
+      "image_path": "tsr/sign-pictograms/national/BE/png/be-d5.png",
+      "label": {
+        "en": "D5 — roundabout",
+        "de": "D5 — roundabout",
+        "fr": "D5 — roundabout",
+        "nl": "D5 — roundabout"
+      },
+      "display_eligible": true,
+      "artwork_id": "be-d5",
+      "source_provenance": {
+        "commons_title": "File:Belgian traffic sign D5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Belgian_traffic_sign_D5.svg",
+        "original_sha256": "aa2cdd647d15da8a92efb09c8f2d99c6b0453edf9587ddc15c7126c5a0540189",
+        "png_sha256": "bee8c43137832520f231f343890e3b2b8ebb45430e9dfcdec2c2a3662105d45b"
+      }
+    }
+  ],
+  "policy": {
+    "display_only": true,
+    "numeric_speed_signs_are_schematic": true,
+    "validated_passage_required_for_speed_context": true
+  },
+  "provenance": {
+    "national_artwork_manifest": "shared/tsr/sign-pictograms/national/BE/manifest.json",
+    "national_selection": "shared/tsr/sign-pictograms/national/BE/selection.json",
+    "classifier_checkpoint_revision": "b31ee38e467a667073087aa86503e0afe9b0320f",
+    "parity_report": "shared/tsr/foreign-calibration/BE-mobile-parity-v1.json"
+  }
+}

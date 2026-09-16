@@ -12,7 +12,7 @@
       "Confirm the requested ZOD dataset snapshot with the provider after access, and treat only frames with a present and complete Traffic Signs annotation task as eligible hard negatives.",
       "Do not release the pinned Panoramax classifier or a derivative until its published commercial-use terms, dataset attribution/share-alike obligations, and applicable Ultralytics AGPL-3.0-or-Enterprise obligations are evidenced in the release record.",
       "Do not release a model pack containing an Ultralytics-derived component unless the ultralytics_agpl_or_enterprise gate is explicitly approved.",
-      "Do not release until route-held-out evaluation, calibration, mobile export parity, and signing gates pass."
+      "Do not release until the applicable evaluation policy, calibration, mobile export parity, legal/action mapping and signing gates pass. For the foreign Panoramax packs, the approved german-operational-field-bar-v1 policy accepts the pinned country validation benchmark as operational calibration evidence; absence of a separate upstream Panoramax holdout is not by itself a release blocker."
     ],
     "license_gates": {
       "apache_notice_review": {

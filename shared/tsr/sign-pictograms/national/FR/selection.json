@@ -11,7 +11,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_left_down maps to national sign code B21a2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_left_down",
-      "runtime_model_class": null
+      "runtime_model_class": "B21a2"
     },
     {
       "semantic_id": "arrow_left",
@@ -20,7 +20,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_left maps to national sign code B21-2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_left",
-      "runtime_model_class": null
+      "runtime_model_class": "B21-2"
     },
     {
       "semantic_id": "arrow_right",
@@ -29,7 +29,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_right maps to national sign code B21-1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_right",
-      "runtime_model_class": null
+      "runtime_model_class": "B21-1"
     },
     {
       "semantic_id": "arrow_through",
@@ -38,7 +38,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_through maps to national sign code B21b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_through",
-      "runtime_model_class": null
+      "runtime_model_class": "B21b"
     },
     {
       "semantic_id": "arrow_turn_left_right",
@@ -47,7 +47,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left_right maps to national sign code B21e; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_turn_left_right",
-      "runtime_model_class": null
+      "runtime_model_class": "B21e"
     },
     {
       "semantic_id": "arrow_turn_left_through",
@@ -56,7 +56,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left_through maps to national sign code B21d1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_turn_left_through",
-      "runtime_model_class": null
+      "runtime_model_class": "B21d1"
     },
     {
       "semantic_id": "arrow_turn_left",
@@ -65,7 +65,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left maps to national sign code B21c2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_turn_left",
-      "runtime_model_class": null
+      "runtime_model_class": "B21c2"
     },
     {
       "semantic_id": "arrow_turn_right_through",
@@ -74,7 +74,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_right_through maps to national sign code B21d2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_turn_right_through",
-      "runtime_model_class": null
+      "runtime_model_class": "B21d2"
     },
     {
       "semantic_id": "arrow_turn_right",
@@ -83,7 +83,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_right maps to national sign code B21c1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "arrow_turn_right",
-      "runtime_model_class": null
+      "runtime_model_class": "B21c1"
     },
     {
       "semantic_id": "bicycle:end",
@@ -92,7 +92,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:end maps to national sign code B40; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "bicycle:end",
-      "runtime_model_class": null
+      "runtime_model_class": "B40"
     },
     {
       "semantic_id": "bicycle:start",
@@ -101,7 +101,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:start maps to national sign code B22a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "bicycle:start",
-      "runtime_model_class": null
+      "runtime_model_class": "B22a"
     },
     {
       "semantic_id": "bus:start",
@@ -110,7 +110,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class bus:start maps to national sign code B27a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "bus:start",
-      "runtime_model_class": null
+      "runtime_model_class": "B27a"
     },
     {
       "semantic_id": "bus:stop",
@@ -128,7 +128,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class chains maps to national sign code B26; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "chains",
-      "runtime_model_class": null
+      "runtime_model_class": "B26"
     },
     {
       "semantic_id": "chains:end",
@@ -146,7 +146,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class city:end maps to national sign code EB20; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "city:end",
-      "runtime_model_class": null
+      "runtime_model_class": "EB20"
     },
     {
       "semantic_id": "city:start",
@@ -155,7 +155,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class city:start maps to national sign code EB10; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "city:start",
-      "runtime_model_class": null
+      "runtime_model_class": "EB10"
     },
     {
       "semantic_id": "customs",
@@ -182,7 +182,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard maps to national sign code A14; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard",
-      "runtime_model_class": null
+      "runtime_model_class": "A14"
     },
     {
       "semantic_id": "hazard:airport",
@@ -191,7 +191,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:airport maps to national sign code A23; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:airport",
-      "runtime_model_class": null
+      "runtime_model_class": "A23"
     },
     {
       "semantic_id": "hazard:animals",
@@ -200,7 +200,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:animals maps to national sign code A15a1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:animals",
-      "runtime_model_class": null
+      "runtime_model_class": "A15a1"
     },
     {
       "semantic_id": "hazard:animals:sheep",
@@ -209,7 +209,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:animals:sheep maps to national sign code A15a2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:animals:sheep",
-      "runtime_model_class": null
+      "runtime_model_class": "A15a2"
     },
     {
       "semantic_id": "hazard:bicycle",
@@ -218,7 +218,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bicycle maps to national sign code A21; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:bicycle",
-      "runtime_model_class": null
+      "runtime_model_class": "A21"
     },
     {
       "semantic_id": "hazard:bothways",
@@ -227,7 +227,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bothways maps to national sign code A18; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:bothways",
-      "runtime_model_class": null
+      "runtime_model_class": "A18"
     },
     {
       "semantic_id": "hazard:bump",
@@ -236,7 +236,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bump maps to national sign code A2b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:bump",
-      "runtime_model_class": null
+      "runtime_model_class": "A2b"
     },
     {
       "semantic_id": "hazard:bumps",
@@ -245,7 +245,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bumps maps to national sign code A2a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:bumps",
-      "runtime_model_class": null
+      "runtime_model_class": "A2a"
     },
     {
       "semantic_id": "hazard:crossing",
@@ -254,7 +254,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:crossing maps to national sign code AB1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:crossing",
-      "runtime_model_class": null
+      "runtime_model_class": "AB1"
     },
     {
       "semantic_id": "hazard:dock",
@@ -263,7 +263,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:dock maps to national sign code A20; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:dock",
-      "runtime_model_class": null
+      "runtime_model_class": "A20"
     },
     {
       "semantic_id": "hazard:fire",
@@ -272,7 +272,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:fire maps to national sign code C3; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:fire",
-      "runtime_model_class": null
+      "runtime_model_class": "C3"
     },
     {
       "semantic_id": "hazard:fog",
@@ -290,7 +290,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:gravel maps to national sign code AK22; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:gravel",
-      "runtime_model_class": null
+      "runtime_model_class": "AK22"
     },
     {
       "semantic_id": "hazard:horse",
@@ -299,7 +299,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:horse maps to national sign code A15c; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:horse",
-      "runtime_model_class": null
+      "runtime_model_class": "A15c"
     },
     {
       "semantic_id": "hazard:include:down",
@@ -308,7 +308,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:include:down maps to national sign code A16; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:include:down",
-      "runtime_model_class": null
+      "runtime_model_class": "A16"
     },
     {
       "semantic_id": "hazard:intersection",
@@ -317,7 +317,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:intersection maps to national sign code AB2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:intersection",
-      "runtime_model_class": null
+      "runtime_model_class": "AB2"
     },
     {
       "semantic_id": "hazard:level_crossing",
@@ -326,7 +326,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:level_crossing maps to national sign code A7; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:level_crossing",
-      "runtime_model_class": null
+      "runtime_model_class": "A7"
     },
     {
       "semantic_id": "hazard:moving_bridge",
@@ -335,7 +335,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:moving_bridge maps to national sign code A6; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:moving_bridge",
-      "runtime_model_class": null
+      "runtime_model_class": "A6"
     },
     {
       "semantic_id": "hazard:narrow_both",
@@ -344,7 +344,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_both maps to national sign code A3; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:narrow_both",
-      "runtime_model_class": null
+      "runtime_model_class": "A3"
     },
     {
       "semantic_id": "hazard:narrow_left",
@@ -353,7 +353,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_left maps to national sign code A3b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:narrow_left",
-      "runtime_model_class": null
+      "runtime_model_class": "A3b"
     },
     {
       "semantic_id": "hazard:narrow_right",
@@ -362,7 +362,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_right maps to national sign code A3a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:narrow_right",
-      "runtime_model_class": null
+      "runtime_model_class": "A3a"
     },
     {
       "semantic_id": "hazard:pedestrian_crossing",
@@ -371,7 +371,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:pedestrian_crossing maps to national sign code A13b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:pedestrian_crossing",
-      "runtime_model_class": null
+      "runtime_model_class": "A13b"
     },
     {
       "semantic_id": "hazard:road_works",
@@ -380,7 +380,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:road_works maps to national sign code AK5; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:road_works",
-      "runtime_model_class": null
+      "runtime_model_class": "AK5"
     },
     {
       "semantic_id": "hazard:rocks",
@@ -389,7 +389,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:rocks maps to national sign code A19; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:rocks",
-      "runtime_model_class": null
+      "runtime_model_class": "A19"
     },
     {
       "semantic_id": "hazard:roundabout",
@@ -398,7 +398,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:roundabout maps to national sign code AB25; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:roundabout",
-      "runtime_model_class": null
+      "runtime_model_class": "AB25"
     },
     {
       "semantic_id": "hazard:school",
@@ -407,7 +407,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:school maps to national sign code A13a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:school",
-      "runtime_model_class": null
+      "runtime_model_class": "A13a"
     },
     {
       "semantic_id": "hazard:slippery",
@@ -416,7 +416,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:slippery maps to national sign code A4; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:slippery",
-      "runtime_model_class": null
+      "runtime_model_class": "A4"
     },
     {
       "semantic_id": "hazard:traffic_signal",
@@ -425,7 +425,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:traffic_signal maps to national sign code A17; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:traffic_signal",
-      "runtime_model_class": null
+      "runtime_model_class": "A17"
     },
     {
       "semantic_id": "hazard:train",
@@ -434,7 +434,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:train maps to national sign code A8; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:train",
-      "runtime_model_class": null
+      "runtime_model_class": "A8"
     },
     {
       "semantic_id": "hazard:tram",
@@ -443,7 +443,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:tram maps to national sign code A9; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:tram",
-      "runtime_model_class": null
+      "runtime_model_class": "A9"
     },
     {
       "semantic_id": "hazard:turn_left",
@@ -452,7 +452,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_left maps to national sign code A1b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:turn_left",
-      "runtime_model_class": null
+      "runtime_model_class": "A1b"
     },
     {
       "semantic_id": "hazard:turn_right",
@@ -461,7 +461,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_right maps to national sign code A1a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:turn_right",
-      "runtime_model_class": null
+      "runtime_model_class": "A1a"
     },
     {
       "semantic_id": "hazard:wild_animals",
@@ -470,7 +470,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wild_animals maps to national sign code A15b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:wild_animals",
-      "runtime_model_class": null
+      "runtime_model_class": "A15b"
     },
     {
       "semantic_id": "hazard:wind",
@@ -479,7 +479,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wind maps to national sign code A24; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:wind",
-      "runtime_model_class": null
+      "runtime_model_class": "A24"
     },
     {
       "semantic_id": "hazard:zigzag",
@@ -488,7 +488,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag maps to national sign code A1c; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:zigzag",
-      "runtime_model_class": null
+      "runtime_model_class": "A1c"
     },
     {
       "semantic_id": "hazard:zigzag:left",
@@ -497,7 +497,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag:left maps to national sign code A1d; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "hazard:zigzag:left",
-      "runtime_model_class": null
+      "runtime_model_class": "A1d"
     },
     {
       "semantic_id": "horse:end",
@@ -506,7 +506,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class horse:end maps to national sign code B42; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "horse:end",
-      "runtime_model_class": null
+      "runtime_model_class": "B42"
     },
     {
       "semantic_id": "horse:start",
@@ -524,7 +524,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class information maps to national sign code CE3a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "information",
-      "runtime_model_class": null
+      "runtime_model_class": "CE3a"
     },
     {
       "semantic_id": "info:radio",
@@ -533,7 +533,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class info:radio maps to national sign code CE22; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "info:radio",
-      "runtime_model_class": null
+      "runtime_model_class": "CE22"
     },
     {
       "semantic_id": "lanes",
@@ -551,7 +551,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxaxleweight maps to national sign code B13a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxaxleweight",
-      "runtime_model_class": null
+      "runtime_model_class": "B13a"
     },
     {
       "semantic_id": "maxheight",
@@ -560,7 +560,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxheight maps to national sign code B12; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxheight",
-      "runtime_model_class": null
+      "runtime_model_class": "B12"
     },
     {
       "semantic_id": "maxlength",
@@ -578,7 +578,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:10 maps to national sign code B14[10]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:10",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-10"
     },
     {
       "semantic_id": "maxspeed:100",
@@ -587,7 +587,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:100 maps to national sign code B14[100]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:100",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-100"
     },
     {
       "semantic_id": "maxspeed:110",
@@ -596,7 +596,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:110 maps to national sign code B14[110]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:110",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-110"
     },
     {
       "semantic_id": "maxspeed:130",
@@ -605,7 +605,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:130 maps to national sign code B14[130]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:130",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-130"
     },
     {
       "semantic_id": "maxspeed:15",
@@ -614,7 +614,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:15 maps to national sign code B14[15]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:15",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-15"
     },
     {
       "semantic_id": "maxspeed:20",
@@ -623,7 +623,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:20 maps to national sign code B14[20]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:20",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-20"
     },
     {
       "semantic_id": "maxspeed:30",
@@ -632,7 +632,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:30 maps to national sign code B14[30]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:30",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-30"
     },
     {
       "semantic_id": "maxspeed:40",
@@ -641,7 +641,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:40 maps to national sign code B14[40]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:40",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-40"
     },
     {
       "semantic_id": "maxspeed:5",
@@ -650,7 +650,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:5 maps to national sign code B14[5]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:5",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-5"
     },
     {
       "semantic_id": "maxspeed:50",
@@ -659,7 +659,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:50 maps to national sign code B14[50]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:50",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-50"
     },
     {
       "semantic_id": "maxspeed:60",
@@ -668,7 +668,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:60 maps to national sign code B14[60]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:60",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-60"
     },
     {
       "semantic_id": "maxspeed:70",
@@ -677,7 +677,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:70 maps to national sign code B14[70]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:70",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-70"
     },
     {
       "semantic_id": "maxspeed:80",
@@ -686,7 +686,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:80 maps to national sign code B14[80]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:80",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-80"
     },
     {
       "semantic_id": "maxspeed:90",
@@ -695,7 +695,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:90 maps to national sign code B14[90]; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxspeed:90",
-      "runtime_model_class": null
+      "runtime_model_class": "B14-90"
     },
     {
       "semantic_id": "maxweight",
@@ -704,7 +704,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxweight maps to national sign code B13; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxweight",
-      "runtime_model_class": null
+      "runtime_model_class": "B13"
     },
     {
       "semantic_id": "maxwidth",
@@ -713,7 +713,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class maxwidth maps to national sign code B11; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "maxwidth",
-      "runtime_model_class": null
+      "runtime_model_class": "B11"
     },
     {
       "semantic_id": "min_distance",
@@ -722,7 +722,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class min_distance maps to national sign code B17; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "min_distance",
-      "runtime_model_class": null
+      "runtime_model_class": "B17"
     },
     {
       "semantic_id": "no_agriculture",
@@ -731,7 +731,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_agriculture maps to national sign code B9d; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_agriculture",
-      "runtime_model_class": null
+      "runtime_model_class": "B9d"
     },
     {
       "semantic_id": "no_bicycle",
@@ -740,7 +740,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_bicycle maps to national sign code B9b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_bicycle",
-      "runtime_model_class": null
+      "runtime_model_class": "B9b"
     },
     {
       "semantic_id": "no_bus",
@@ -749,7 +749,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_bus maps to national sign code B9f; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_bus",
-      "runtime_model_class": null
+      "runtime_model_class": "B9f"
     },
     {
       "semantic_id": "no_car_motorcycle",
@@ -758,7 +758,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_car_motorcycle maps to national sign code B7a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_car_motorcycle",
-      "runtime_model_class": null
+      "runtime_model_class": "B7a"
     },
     {
       "semantic_id": "no_car_trailer",
@@ -767,7 +767,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_car_trailer maps to national sign code B9i; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_car_trailer",
-      "runtime_model_class": null
+      "runtime_model_class": "B9i"
     },
     {
       "semantic_id": "no_dangerous_liquid",
@@ -776,7 +776,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous_liquid maps to national sign code B18b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_dangerous_liquid",
-      "runtime_model_class": null
+      "runtime_model_class": "B18b"
     },
     {
       "semantic_id": "no_dangerous",
@@ -785,7 +785,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous maps to national sign code B18c; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_dangerous",
-      "runtime_model_class": null
+      "runtime_model_class": "B18c"
     },
     {
       "semantic_id": "no_dangerous_explosive",
@@ -794,7 +794,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous_explosive maps to national sign code B18a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_dangerous_explosive",
-      "runtime_model_class": null
+      "runtime_model_class": "B18a"
     },
     {
       "semantic_id": "no_entry",
@@ -803,7 +803,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_entry maps to national sign code B1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_entry",
-      "runtime_model_class": null
+      "runtime_model_class": "B1"
     },
     {
       "semantic_id": "no_exit",
@@ -812,7 +812,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_exit maps to national sign code C13a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_exit",
-      "runtime_model_class": null
+      "runtime_model_class": "C13a"
     },
     {
       "semantic_id": "no_exit:car",
@@ -830,7 +830,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_hgv maps to national sign code B8; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_hgv",
-      "runtime_model_class": null
+      "runtime_model_class": "B8"
     },
     {
       "semantic_id": "no_horn",
@@ -839,7 +839,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_horn maps to national sign code B16; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_horn",
-      "runtime_model_class": null
+      "runtime_model_class": "B16"
     },
     {
       "semantic_id": "no_overtaking",
@@ -848,7 +848,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking maps to national sign code B3; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_overtaking",
-      "runtime_model_class": null
+      "runtime_model_class": "B3"
     },
     {
       "semantic_id": "no_overtaking:hgv",
@@ -857,7 +857,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:hgv maps to national sign code B3a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_overtaking:hgv",
-      "runtime_model_class": null
+      "runtime_model_class": "B3a"
     },
     {
       "semantic_id": "no_parking",
@@ -866,7 +866,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking maps to national sign code B6a1; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_parking",
-      "runtime_model_class": null
+      "runtime_model_class": "B6a1"
     },
     {
       "semantic_id": "no_parking:1-15",
@@ -875,7 +875,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking:1-15 maps to national sign code B6a2; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_parking:1-15",
-      "runtime_model_class": null
+      "runtime_model_class": "B6a2"
     },
     {
       "semantic_id": "no_parking:16-31",
@@ -884,7 +884,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking:16-31 maps to national sign code B6a3; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_parking:16-31",
-      "runtime_model_class": null
+      "runtime_model_class": "B6a3"
     },
     {
       "semantic_id": "no_pedestrian",
@@ -893,7 +893,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_pedestrian maps to national sign code B9a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_pedestrian",
-      "runtime_model_class": null
+      "runtime_model_class": "B9a"
     },
     {
       "semantic_id": "no_stop",
@@ -902,7 +902,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_stop maps to national sign code B6d; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_stop",
-      "runtime_model_class": null
+      "runtime_model_class": "B6d"
     },
     {
       "semantic_id": "no_turn:left",
@@ -911,7 +911,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_turn:left maps to national sign code B2a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_turn:left",
-      "runtime_model_class": null
+      "runtime_model_class": "B2a"
     },
     {
       "semantic_id": "no_turn:right",
@@ -920,7 +920,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_turn:right maps to national sign code B2b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_turn:right",
-      "runtime_model_class": null
+      "runtime_model_class": "B2b"
     },
     {
       "semantic_id": "no_u_turn",
@@ -929,7 +929,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_u_turn maps to national sign code B2c; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_u_turn",
-      "runtime_model_class": null
+      "runtime_model_class": "B2c"
     },
     {
       "semantic_id": "no_way",
@@ -938,7 +938,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no_way maps to national sign code B0; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no_way",
-      "runtime_model_class": null
+      "runtime_model_class": "B0"
     },
     {
       "semantic_id": "no:end",
@@ -947,7 +947,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class no:end maps to national sign code B31; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "no:end",
-      "runtime_model_class": null
+      "runtime_model_class": "B31"
     },
     {
       "semantic_id": "parking",
@@ -956,7 +956,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class parking maps to national sign code C1a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "parking",
-      "runtime_model_class": null
+      "runtime_model_class": "C1a"
     },
     {
       "semantic_id": "parking:disc",
@@ -965,7 +965,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class parking:disc maps to national sign code C1b; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "parking:disc",
-      "runtime_model_class": null
+      "runtime_model_class": "C1b"
     },
     {
       "semantic_id": "parking:meter",
@@ -974,7 +974,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class parking:meter maps to national sign code C1c; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "parking:meter",
-      "runtime_model_class": null
+      "runtime_model_class": "C1c"
     },
     {
       "semantic_id": "parking:taxi",
@@ -983,7 +983,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class parking:taxi maps to national sign code C5; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "parking:taxi",
-      "runtime_model_class": null
+      "runtime_model_class": "C5"
     },
     {
       "semantic_id": "pedestrian:end",
@@ -992,7 +992,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:end maps to national sign code B41; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "pedestrian:end",
-      "runtime_model_class": null
+      "runtime_model_class": "B41"
     },
     {
       "semantic_id": "pedestrian_crossing",
@@ -1001,7 +1001,7 @@
       "mapping_status": "reviewed_model_code",
       "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian_crossing maps to national sign code C20a; France official road-sign plates and arrêté reference is the legal authority for the code and meaning.",
       "source_model_class": "pedestrian_crossing",
-      "runtime_model_class": null
+      "runtime_model_class": "C20a"
     },
     {
       "semantic_id": "stop",
@@ -1010,7 +1010,7 @@
       "mapping_status": "reviewed",
       "mapping_basis": "AB4 is the French stop sign in the official plate reference.",
       "source_model_class": null,
-      "runtime_model_class": null
+      "runtime_model_class": "AB4"
     },
     {
       "semantic_id": "motorway_start",
@@ -1019,7 +1019,7 @@
       "mapping_status": "reviewed",
       "mapping_basis": "C107 is the French motorway-start sign in the official plate reference.",
       "source_model_class": null,
-      "runtime_model_class": null
+      "runtime_model_class": "C107"
     },
     {
       "semantic_id": "motorway_end",
@@ -1028,7 +1028,7 @@
       "mapping_status": "reviewed",
       "mapping_basis": "C207 is the French motorway-end sign in the official plate reference.",
       "source_model_class": null,
-      "runtime_model_class": null
+      "runtime_model_class": "C207"
     }
   ]
 }

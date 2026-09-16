@@ -316,7 +316,7 @@ def test_source_manifest_pin_is_the_reviewed_immutable_identity() -> None:
     plan = load_json(DEFAULT_PLAN)
     assert (
         plan["source_manifest"]["sha256"]
-        == "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b"
+        == "f36719320f9daaf83703a090219bcdf089ac5138770e717f2320569f2a34d12e"
     )
     assert (
         hashlib.sha256(

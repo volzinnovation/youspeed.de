@@ -79,6 +79,9 @@ def test_foreign_country_code_mapping_and_runtime_readiness_are_explicit():
     readiness_schema = load(ROOT / "shared/tsr/foreign-runtime-readiness-v1.schema.json")
     jsonschema.Draft202012Validator.check_schema(readiness_schema)
     jsonschema.Draft202012Validator(readiness_schema).validate(readiness)
+    assert readiness["source_manifest_sha256"] == hashlib.sha256(
+        (ROOT / "shared/tsr/training-sources-v1.json").read_bytes()
+    ).hexdigest()
     assert readiness["shared_pipeline"]["pipeline"] == "proposal_classification"
     assert readiness["shared_pipeline"]["temporal_contract"]["validated_passage_required"] is True
     by_country = {item["country"]: item for item in readiness["countries"]}
@@ -86,6 +89,28 @@ def test_foreign_country_code_mapping_and_runtime_readiness_are_explicit():
     for country, minimum_assets in {"FR": 114, "NL": 111, "BE": 115}.items():
         item = by_country[country]
         assert item["artwork"]["display_assets"] == minimum_assets
-        assert item["exports"]["classifier_coreml"]["status"] == "pending"
-        assert item["exports"]["classifier_litert"]["status"] == "pending"
-        assert item["runtime_manifest"]["status"] == "pending"
+        for export_key in ("classifier_coreml", "classifier_litert"):
+            export = item["exports"][export_key]
+            assert export["status"] == "passed"
+            evidence = ROOT / export["evidence_path"]
+            assert evidence.is_file()
+            assert hashlib.sha256(evidence.read_bytes()).hexdigest() == export["evidence_sha256"]
+        parity = item["parity"]
+        assert parity["status"] == "passed"
+        parity_evidence = ROOT / parity["evidence_path"]
+        assert parity_evidence.is_file()
+        assert hashlib.sha256(parity_evidence.read_bytes()).hexdigest() == parity["evidence_sha256"]
+        calibration = item["calibration"]
+        assert calibration["status"] == "accepted_operational_benchmark"
+        report = ROOT / calibration["evidence_path"]
+        assert report.is_file()
+        assert hashlib.sha256(report.read_bytes()).hexdigest() == calibration["evidence_sha256"]
+        assert calibration["runtime_output"] == "raw_score"
+        assert calibration["holdout_policy"] == (
+            "published_panoramax_validation_is_operational_benchmark_not_independent_holdout"
+        )
+        runtime_manifest = item["runtime_manifest"]
+        assert runtime_manifest["status"] == "evaluation"
+        manifest = ROOT / runtime_manifest["path"]
+        assert manifest.is_file()
+        assert hashlib.sha256(manifest.read_bytes()).hexdigest() == runtime_manifest["manifest_sha256"]

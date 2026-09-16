@@ -1,0 +1,1820 @@
+{
+  "schema_version": 1,
+  "country": "NL",
+  "classifier_checkpoint_sha256": "14c738b1d2b8d65af813f1d3cb20e50033274b481d02bbf062b8f714ed54bc53",
+  "class_labels": [
+    "arrow:other",
+    "arrow_left",
+    "arrow_left_rect",
+    "arrow_left_right",
+    "arrow_right",
+    "arrow_right_rect",
+    "arrow_through",
+    "arrow_turn_left",
+    "arrow_turn_left_right",
+    "arrow_turn_left_through",
+    "arrow_turn_right",
+    "arrow_turn_right_through",
+    "bad",
+    "bad:back",
+    "bad:buildings",
+    "bad:round",
+    "bad:windows",
+    "bicycle:end",
+    "bicycle:priority",
+    "bicycle:start",
+    "bike_route",
+    "bothways",
+    "bus:end",
+    "bus:start",
+    "exit",
+    "gas_station",
+    "give_way",
+    "hazard",
+    "hazard:airport",
+    "hazard:animals",
+    "hazard:bicycle",
+    "hazard:bollard",
+    "hazard:bothways",
+    "hazard:bump",
+    "hazard:bumps",
+    "hazard:crossing",
+    "hazard:dock",
+    "hazard:gravel",
+    "hazard:ice",
+    "hazard:incline",
+    "hazard:intersection",
+    "hazard:intersection_left",
+    "hazard:intersection_right",
+    "hazard:left_turn",
+    "hazard:level_crossing",
+    "hazard:moped",
+    "hazard:moving_bridge",
+    "hazard:narrow_both",
+    "hazard:narrow_left",
+    "hazard:narrow_right",
+    "hazard:pedestrian_crossing",
+    "hazard:right_turn",
+    "hazard:road_works",
+    "hazard:rocks",
+    "hazard:roundabout",
+    "hazard:school",
+    "hazard:slippery",
+    "hazard:traffic_signal",
+    "hazard:train",
+    "hazard:tram",
+    "hazard:wild_animals",
+    "hazard:zigzag",
+    "hazard:zigzag_left",
+    "horse:start",
+    "lanes",
+    "maxaxleweight",
+    "maxheight",
+    "maxlength",
+    "maxspeed:10",
+    "maxspeed:100",
+    "maxspeed:120",
+    "maxspeed:15",
+    "maxspeed:25",
+    "maxspeed:30",
+    "maxspeed:5",
+    "maxspeed:50",
+    "maxspeed:60",
+    "maxspeed:70",
+    "maxspeed:80",
+    "maxspeed:90",
+    "maxspeed:end",
+    "maxweight",
+    "maxwidth",
+    "moped:end",
+    "moped:start",
+    "motorway:end",
+    "motorway:start",
+    "no:end",
+    "no:other",
+    "no:other:alcool",
+    "no:other:bbq",
+    "no:other:dog",
+    "no:other:smoking",
+    "no_agriculture",
+    "no_agriculture_bicycle",
+    "no_bicycle",
+    "no_bus",
+    "no_car",
+    "no_car_bicycle",
+    "no_dangerous",
+    "no_delivery",
+    "no_entry",
+    "no_hgv",
+    "no_moped",
+    "no_motorcycle",
+    "no_overtaking",
+    "no_overtaking:end",
+    "no_overtaking:hgv",
+    "no_overtaking:hgv:end",
+    "no_parking",
+    "no_parking:bicycle",
+    "no_pedestrian",
+    "no_stop",
+    "no_turn:left",
+    "no_turn:right",
+    "no_u_turn",
+    "no_way",
+    "noexit",
+    "oneway",
+    "parking",
+    "parking:bicycle",
+    "parking:car",
+    "parking:card",
+    "parking:charging",
+    "parking:covered",
+    "parking:delivery",
+    "parking:disabled",
+    "parking:motorhome",
+    "parking:other",
+    "parking:payment",
+    "parking:police",
+    "parking:taxi",
+    "pedestrian:start",
+    "pedestrian_crossing",
+    "priority:backward",
+    "priority:end",
+    "priority:forward",
+    "priority:start",
+    "rest",
+    "roundabout",
+    "speed",
+    "stop",
+    "traffic_signal",
+    "tram:start",
+    "tram_bus",
+    "trunk:end",
+    "trunk:start",
+    "zone:30",
+    "zone:30:end",
+    "zone:60",
+    "zone:60:end",
+    "zone:no_hgv",
+    "zone:no_parking",
+    "zone:no_parking:bicycle",
+    "zone:no_parking:bicycle:end",
+    "zone:no_parking:end",
+    "zone:other",
+    "zone:parking:card",
+    "zone:pedestrian",
+    "zone:pedestrian:end"
+  ],
+  "signs": [
+    {
+      "class_id": "arrow_left_rect",
+      "sign_code": "C04-L",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c04-l.png",
+      "label": {
+        "en": "C04-L — arrow left rect",
+        "de": "C04-L — arrow left rect",
+        "fr": "C04-L — arrow left rect",
+        "nl": "C04-L — arrow left rect"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c04-l",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C4 (links).svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C4_(links).svg",
+        "original_sha256": "078cfc027e3706ca6404d034018b87e95746faedeac25acb4f6d57764427c903",
+        "png_sha256": "cb9bef8eff5ce074e710f1176b8f78bfc0a4a0d3b34b106b1ce9eb98541190b8"
+      }
+    },
+    {
+      "class_id": "arrow_right_rect",
+      "sign_code": "C04-R",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c04-r.png",
+      "label": {
+        "en": "C04-R — arrow right rect",
+        "de": "C04-R — arrow right rect",
+        "fr": "C04-R — arrow right rect",
+        "nl": "C04-R — arrow right rect"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c04-r",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C4 (rechts).svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C4_(rechts).svg",
+        "original_sha256": "93830dd26149de49092a5f1e88a3059cbfadbfe4bcf28f3aeff80cd864b9ac8c",
+        "png_sha256": "b95d51af834307eac836c126af3c4779ebe825dd3d339d26a8be05164e8858d6"
+      }
+    },
+    {
+      "class_id": "arrow_through",
+      "sign_code": "D04",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-d04.png",
+      "label": {
+        "en": "D04 — arrow through",
+        "de": "D04 — arrow through",
+        "fr": "D04 — arrow through",
+        "nl": "D04 — arrow through"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-d04",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord D4.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_D4.svg",
+        "original_sha256": "402e217441c1f49f35be8c8e483e2ce850084e50d6c223458b9cc53c79438b25",
+        "png_sha256": "e3990922a4a6fbce08a3649c849882f19975ff820bed3b574a88c0b843b55316"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left_right",
+      "sign_code": "D07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-d07.png",
+      "label": {
+        "en": "D07 — arrow turn left right",
+        "de": "D07 — arrow turn left right",
+        "fr": "D07 — arrow turn left right",
+        "nl": "D07 — arrow turn left right"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-d07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord D7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_D7.svg",
+        "original_sha256": "c7035cb66de3d765b7089a5996c0d95463e866f4c2d25428265eb685d8ef4eb5",
+        "png_sha256": "26bec6b2f58ffd50e7b0a6460ed9924bcdc6eaebaacf7e1367880da29d24286a"
+      }
+    },
+    {
+      "class_id": "bicycle:end",
+      "sign_code": "G12",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g12.png",
+      "label": {
+        "en": "G12 — bicycle:end",
+        "de": "G12 — bicycle:end",
+        "fr": "G12 — bicycle:end",
+        "nl": "G12 — bicycle:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g12",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G12.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G12.svg",
+        "original_sha256": "a0e8687438f2b45b7a52d6568ed07413e4589ed0460026fd62626b12d42bed61",
+        "png_sha256": "74cb4216c430295f507b9baefeb7a1027028a42087c58eb7517d145a388167b4"
+      }
+    },
+    {
+      "class_id": "bicycle:start",
+      "sign_code": "G11",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g11.png",
+      "label": {
+        "en": "G11 — bicycle:start",
+        "de": "G11 — bicycle:start",
+        "fr": "G11 — bicycle:start",
+        "nl": "G11 — bicycle:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g11",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G11.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G11.svg",
+        "original_sha256": "d8503bc19022619a3f1d46dc2b565402bc0e864c9c8a9f42d553205bdf5f6378",
+        "png_sha256": "9b8b0879b829ea9a289088fe9fb49c958db64c64528fed0d993db21600110ee0"
+      }
+    },
+    {
+      "class_id": "bothways",
+      "sign_code": "C05",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c05.png",
+      "label": {
+        "en": "C05 — bothways",
+        "de": "C05 — bothways",
+        "fr": "C05 — bothways",
+        "nl": "C05 — bothways"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c05",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C5.svg",
+        "original_sha256": "d1cd38245df8a3e066e82ca341a3e5b79c8d0b00bcb785793a637df904cec175",
+        "png_sha256": "e569c034055d5d26ad6768a8b113e969042e2a121a7b8201774672368d4e6e32"
+      }
+    },
+    {
+      "class_id": "bus:start",
+      "sign_code": "F13",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f13.png",
+      "label": {
+        "en": "F13 — bus:start",
+        "de": "F13 — bus:start",
+        "fr": "F13 — bus:start",
+        "nl": "F13 — bus:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f13",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F13.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F13.svg",
+        "original_sha256": "7cbfb4370f131a52c629f3725dac31f7694f96ec9222722e0dcc02245b171850",
+        "png_sha256": "938d92b4dc48cd9cffde0c3a308df3c0262f14455e30c39c1ab325e4865a87ec"
+      }
+    },
+    {
+      "class_id": "give_way",
+      "sign_code": "B06",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-b06.png",
+      "label": {
+        "en": "B06 — give way",
+        "de": "B06 — give way",
+        "fr": "B06 — give way",
+        "nl": "B06 — give way"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-b06",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord B6.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_B6.svg",
+        "original_sha256": "a53302b90a421940f90b53c0fc70cee3fae4b83df1ca71cf279192ecf9bd98b5",
+        "png_sha256": "dea0154573eee9caa075b55f18cebb09e0cd7eb8067b74c025d601bfd3ed963b"
+      }
+    },
+    {
+      "class_id": "hazard",
+      "sign_code": "J37",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j37.png",
+      "label": {
+        "en": "J37 — hazard",
+        "de": "J37 — hazard",
+        "fr": "J37 — hazard",
+        "nl": "J37 — hazard"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j37",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J37.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J37.svg",
+        "original_sha256": "b0486104456975e2252e3656d49f7857278bd0cd71108ea532018279f79c7b54",
+        "png_sha256": "6a65676677755473a021fa71fa908a8f4a48a23d631e28a2b807746f7a22f407"
+      }
+    },
+    {
+      "class_id": "hazard:airport",
+      "sign_code": "J30",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j30.png",
+      "label": {
+        "en": "J30 — hazard:airport",
+        "de": "J30 — hazard:airport",
+        "fr": "J30 — hazard:airport",
+        "nl": "J30 — hazard:airport"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j30",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J30.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J30.svg",
+        "original_sha256": "6c5eb190bb04524bac41db796346d071df929c9b33548dfae8601e63f15bd343",
+        "png_sha256": "d5c19583a31e402e52f8556b7765ec8a93e1ae042da9756400a4fb72fc502560"
+      }
+    },
+    {
+      "class_id": "hazard:animals",
+      "sign_code": "J28",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j28.png",
+      "label": {
+        "en": "J28 — hazard:animals",
+        "de": "J28 — hazard:animals",
+        "fr": "J28 — hazard:animals",
+        "nl": "J28 — hazard:animals"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j28",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J28.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J28.svg",
+        "original_sha256": "f3f4f5802c53dd144d6b77d726bb4636a9782729802da84e1af3257a0e7f16ce",
+        "png_sha256": "e80b7a9d9b852d459f022970874db44337df5cabf3228c02cb2471adbc7cda1b"
+      }
+    },
+    {
+      "class_id": "hazard:bicycle",
+      "sign_code": "J24",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j24.png",
+      "label": {
+        "en": "J24 — hazard:bicycle",
+        "de": "J24 — hazard:bicycle",
+        "fr": "J24 — hazard:bicycle",
+        "nl": "J24 — hazard:bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j24",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J24.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J24.svg",
+        "original_sha256": "4e9a765e6172252d74d1d0ba87b384fab2cd0be5533ae9fed44ca557b963ee89",
+        "png_sha256": "7fad886fbba3ee480691dea221d28f73c70d719e5397e1bf23735af06fbfa215"
+      }
+    },
+    {
+      "class_id": "hazard:bothways",
+      "sign_code": "J29",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j29.png",
+      "label": {
+        "en": "J29 — hazard:bothways",
+        "de": "J29 — hazard:bothways",
+        "fr": "J29 — hazard:bothways",
+        "nl": "J29 — hazard:bothways"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j29",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J29.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J29.svg",
+        "original_sha256": "66ed1f150e6e61363c302d76015d5edaec57ebf8940f5bb96da67e7a99567e6c",
+        "png_sha256": "050a1dd1bab9c004b1a94b9ecbb76f020aa4725c3b78b11bb640168660cbd4de"
+      }
+    },
+    {
+      "class_id": "hazard:bump",
+      "sign_code": "J38",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j38.png",
+      "label": {
+        "en": "J38 — hazard:bump",
+        "de": "J38 — hazard:bump",
+        "fr": "J38 — hazard:bump",
+        "nl": "J38 — hazard:bump"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j38",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J38.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J38.svg",
+        "original_sha256": "fe2805c7749f65718dcd9a048e67b5f53367a2734d26254165ebc6ca981dd868",
+        "png_sha256": "d84d056fcbefb58d9fd841993962359485c0afdb1da550aa30c22677214de9ca"
+      }
+    },
+    {
+      "class_id": "hazard:bumps",
+      "sign_code": "J01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j01.png",
+      "label": {
+        "en": "J01 — hazard:bumps",
+        "de": "J01 — hazard:bumps",
+        "fr": "J01 — hazard:bumps",
+        "nl": "J01 — hazard:bumps"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j01",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J1.svg",
+        "original_sha256": "2bde45450dcc681d1d4479e8a049a8b886c78a016af02c6af3320d51d0852916",
+        "png_sha256": "4272e61f6926e12f774f3c73cf09f9fe4f26a8a1f02d3cf6aee7b1468133ebc0"
+      }
+    },
+    {
+      "class_id": "hazard:crossing",
+      "sign_code": "J08",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j08.png",
+      "label": {
+        "en": "J08 — hazard:crossing",
+        "de": "J08 — hazard:crossing",
+        "fr": "J08 — hazard:crossing",
+        "nl": "J08 — hazard:crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j08",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J8.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J8.svg",
+        "original_sha256": "e4fde9834011fa6226d43341a63f7524fb75789bf65639d53cd9b1cb4fc99a59",
+        "png_sha256": "65884f63e1ff4144a64543ffda4a97e96f6a9ca793f077039c3ee16e997d9bb7"
+      }
+    },
+    {
+      "class_id": "hazard:dock",
+      "sign_code": "J26",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j26.png",
+      "label": {
+        "en": "J26 — hazard:dock",
+        "de": "J26 — hazard:dock",
+        "fr": "J26 — hazard:dock",
+        "nl": "J26 — hazard:dock"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j26",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J26.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J26.svg",
+        "original_sha256": "2ca89b9b26daae7dcf5e4d29abfa7a1d5c4ba9771539a189d817f63f678636a7",
+        "png_sha256": "2f0d607a5275d8fe13365b350a4546f5db482013595b48f93325d56af02b5acc"
+      }
+    },
+    {
+      "class_id": "hazard:gravel",
+      "sign_code": "J25",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j25.png",
+      "label": {
+        "en": "J25 — hazard:gravel",
+        "de": "J25 — hazard:gravel",
+        "fr": "J25 — hazard:gravel",
+        "nl": "J25 — hazard:gravel"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j25",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J25.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J25.svg",
+        "original_sha256": "8ccfaf09393f5d59533c97981192fdbca6fe7987a77f3e6b4b3936a41a4b15ea",
+        "png_sha256": "6aafc49c7f9a3b3fe2d52f33d6900751f5ba733e90a08abca613aa2a428e77d0"
+      }
+    },
+    {
+      "class_id": "hazard:ice",
+      "sign_code": "J36",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j36.png",
+      "label": {
+        "en": "J36 — hazard:ice",
+        "de": "J36 — hazard:ice",
+        "fr": "J36 — hazard:ice",
+        "nl": "J36 — hazard:ice"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j36",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J36.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J36.svg",
+        "original_sha256": "4d0b980a36c291b9a70cb6d1c6bb0947e40f1c5c5db7100668f90a4c1254c73f",
+        "png_sha256": "de2a04ea0807ca438f5dcc7aa70d5bb4c12f71554d2ae00a42d401bc22d7489b"
+      }
+    },
+    {
+      "class_id": "hazard:intersection",
+      "sign_code": "B03",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-b03.png",
+      "label": {
+        "en": "B03 — hazard:intersection",
+        "de": "B03 — hazard:intersection",
+        "fr": "B03 — hazard:intersection",
+        "nl": "B03 — hazard:intersection"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-b03",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord B3.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_B3.svg",
+        "original_sha256": "96df00913be02800145ff74c0232ae84a560c7242fab2209e6b1c82c2ad845db",
+        "png_sha256": "6656b73cc9163f3de544ea8d1970643cd3f12f6d4880de150c4d0698433e63d9"
+      }
+    },
+    {
+      "class_id": "hazard:level_crossing",
+      "sign_code": "J10",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j10.png",
+      "label": {
+        "en": "J10 — hazard:level crossing",
+        "de": "J10 — hazard:level crossing",
+        "fr": "J10 — hazard:level crossing",
+        "nl": "J10 — hazard:level crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j10",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J10.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J10.svg",
+        "original_sha256": "aa4de1e8d05100096fbd0c2556c2159ca3de912f72c93fee1d64f1a69da2843a",
+        "png_sha256": "8534fdcaa378f15d631b4cefc1f979e9806b7850809181b9bb174783666088ff"
+      }
+    },
+    {
+      "class_id": "hazard:moving_bridge",
+      "sign_code": "J15",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j15.png",
+      "label": {
+        "en": "J15 — hazard:moving bridge",
+        "de": "J15 — hazard:moving bridge",
+        "fr": "J15 — hazard:moving bridge",
+        "nl": "J15 — hazard:moving bridge"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j15",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J15.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J15.svg",
+        "original_sha256": "7feb46d111e3ed76ddde8593e4b6752a416508a63ce6c796dc472001eda00541",
+        "png_sha256": "4e58d29f23bcb2f4436d77d1c259a5e34594d20b38bd8ed312a1682c763773a0"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_both",
+      "sign_code": "J17",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j17.png",
+      "label": {
+        "en": "J17 — hazard:narrow both",
+        "de": "J17 — hazard:narrow both",
+        "fr": "J17 — hazard:narrow both",
+        "nl": "J17 — hazard:narrow both"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j17",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J17.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J17.svg",
+        "original_sha256": "64d8c7e9713e31b84c9559c5402fdf7c0c5f1e7f571f9d450b7eaedf0969f35b",
+        "png_sha256": "d268a5b0efb969420e03576fa6e55df041c74c4dba63d0cdfe593af6e555e4a5"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_left",
+      "sign_code": "J19",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j19.png",
+      "label": {
+        "en": "J19 — hazard:narrow left",
+        "de": "J19 — hazard:narrow left",
+        "fr": "J19 — hazard:narrow left",
+        "nl": "J19 — hazard:narrow left"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j19",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J19.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J19.svg",
+        "original_sha256": "fa4f5b47e177f21c1f2343e2de8e78bd6af40de67bd9aea96c17c6d949e0426a",
+        "png_sha256": "28d7cc5ac824009b2c3c6ae4736e54e0970e60016c1404074c7c43cd0cfa6cd5"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_right",
+      "sign_code": "J18",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j18.png",
+      "label": {
+        "en": "J18 — hazard:narrow right",
+        "de": "J18 — hazard:narrow right",
+        "fr": "J18 — hazard:narrow right",
+        "nl": "J18 — hazard:narrow right"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j18",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J18.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J18.svg",
+        "original_sha256": "161316082730c1b11c8797527f0c99debadee63694337eea10b2148201278cbe",
+        "png_sha256": "e8983ecfadd86035bafc35faeb07d67125f8aacf7115584e45c45d91ef3c2f54"
+      }
+    },
+    {
+      "class_id": "hazard:pedestrian_crossing",
+      "sign_code": "J22",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j22.png",
+      "label": {
+        "en": "J22 — hazard:pedestrian crossing",
+        "de": "J22 — hazard:pedestrian crossing",
+        "fr": "J22 — hazard:pedestrian crossing",
+        "nl": "J22 — hazard:pedestrian crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j22",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J22.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J22.svg",
+        "original_sha256": "170534d3390c206552d237e17910fadb365a4556e6fe3158787be3c83cc81dba",
+        "png_sha256": "4131e581a90471379280956956f1723bd50859e2d16ee0d13afdbedbea6da35a"
+      }
+    },
+    {
+      "class_id": "hazard:road_works",
+      "sign_code": "J16",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j16.png",
+      "label": {
+        "en": "J16 — hazard:road works",
+        "de": "J16 — hazard:road works",
+        "fr": "J16 — hazard:road works",
+        "nl": "J16 — hazard:road works"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j16",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J16.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J16.svg",
+        "original_sha256": "2fd251f479fcd18cbe2e1ef2a3604ed0d946c1201c51f07e9f1481784d6562dc",
+        "png_sha256": "0cd6d5013f6705c436dabd9f9233b6dce62ac5b28bb9e0e95de26dc18e976c32"
+      }
+    },
+    {
+      "class_id": "hazard:roundabout",
+      "sign_code": "J09",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j09.png",
+      "label": {
+        "en": "J09 — hazard:roundabout",
+        "de": "J09 — hazard:roundabout",
+        "fr": "J09 — hazard:roundabout",
+        "nl": "J09 — hazard:roundabout"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j09",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J9.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J9.svg",
+        "original_sha256": "025ff67c352bd51f1f9c922e8ca53a15e4912e4c5fdedb56b363e4b1655b6522",
+        "png_sha256": "9f0065cb55cff7cabdbf556d6e94d77efc90375af7ea704a7a1eb0fda4acbaf8"
+      }
+    },
+    {
+      "class_id": "hazard:school",
+      "sign_code": "J21",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j21.png",
+      "label": {
+        "en": "J21 — hazard:school",
+        "de": "J21 — hazard:school",
+        "fr": "J21 — hazard:school",
+        "nl": "J21 — hazard:school"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j21",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J21.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J21.svg",
+        "original_sha256": "3aa0f9a6f0b898ba680f244504a6f4388ecabf9e6a1165e6ec812101c68fee12",
+        "png_sha256": "967efecb2e6b5c6904b2bfa057310da78524a5b8ff12533c027b994b286183ef"
+      }
+    },
+    {
+      "class_id": "hazard:slippery",
+      "sign_code": "J20",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j20.png",
+      "label": {
+        "en": "J20 — hazard:slippery",
+        "de": "J20 — hazard:slippery",
+        "fr": "J20 — hazard:slippery",
+        "nl": "J20 — hazard:slippery"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j20",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J20.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J20.svg",
+        "original_sha256": "cea6847fd96a9d11a56d7d7f61426196c47fb3217ca7ceee856c50f12b5ea0a0",
+        "png_sha256": "c24afb1df1df1b022594d1383235026cc06f225392b221c19ccf5f894a94a433"
+      }
+    },
+    {
+      "class_id": "hazard:traffic_signal",
+      "sign_code": "J32",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j32.png",
+      "label": {
+        "en": "J32 — hazard:traffic signal",
+        "de": "J32 — hazard:traffic signal",
+        "fr": "J32 — hazard:traffic signal",
+        "nl": "J32 — hazard:traffic signal"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j32",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J32.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J32.svg",
+        "original_sha256": "b4901544cfb4a0782cda855eb6eb3de1f7983ff6eaa0542a08618d4b98b490e6",
+        "png_sha256": "5ee4c5bc630943ec1b6d430fd58fa90b7ce47b3d7ba7832aeda8825ea8af70e6"
+      }
+    },
+    {
+      "class_id": "hazard:train",
+      "sign_code": "J11",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j11.png",
+      "label": {
+        "en": "J11 — hazard:train",
+        "de": "J11 — hazard:train",
+        "fr": "J11 — hazard:train",
+        "nl": "J11 — hazard:train"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j11",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J11.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J11.svg",
+        "original_sha256": "b7ccd052609cbd528b30d38faa97d3e8466471a4cea3828f84801bdf810c77fe",
+        "png_sha256": "a015dff6b52ca49d9e2585b23901cfb5d262ed528bad96923799954519e0e161"
+      }
+    },
+    {
+      "class_id": "hazard:tram",
+      "sign_code": "J14",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j14.png",
+      "label": {
+        "en": "J14 — hazard:tram",
+        "de": "J14 — hazard:tram",
+        "fr": "J14 — hazard:tram",
+        "nl": "J14 — hazard:tram"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j14",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J14.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J14.svg",
+        "original_sha256": "232e7cb9e9d46439713ba47d40a2cb7fd60f39547ffe5b7bff87e71786a0d773",
+        "png_sha256": "1c79b065d312bfa92d8220ec27a364906a77acaa04d973fe098142d83ffe54f1"
+      }
+    },
+    {
+      "class_id": "hazard:wild_animals",
+      "sign_code": "J27",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j27.png",
+      "label": {
+        "en": "J27 — hazard:wild animals",
+        "de": "J27 — hazard:wild animals",
+        "fr": "J27 — hazard:wild animals",
+        "nl": "J27 — hazard:wild animals"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j27",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J27.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J27.svg",
+        "original_sha256": "05945ec350e2277a1b17e6a0d733163981ddebf76b255bf01f4c395a8fb83d5c",
+        "png_sha256": "7afbc817bcdccef16b6b704a043598606999792be4b373eafe796dbe966492ea"
+      }
+    },
+    {
+      "class_id": "hazard:zigzag",
+      "sign_code": "J04",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-j04.png",
+      "label": {
+        "en": "J04 — hazard:zigzag",
+        "de": "J04 — hazard:zigzag",
+        "fr": "J04 — hazard:zigzag",
+        "nl": "J04 — hazard:zigzag"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-j04",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord J4.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_J4.svg",
+        "original_sha256": "311fdb778fc0ee695a61ce82352dd39ba3365fe1737dd7077957a397c0619085",
+        "png_sha256": "06b329919be3365af75bee58e26040ce2291d7114c6777507dba6aa9956b8fb6"
+      }
+    },
+    {
+      "class_id": "horse:start",
+      "sign_code": "G09",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g09.png",
+      "label": {
+        "en": "G09 — horse:start",
+        "de": "G09 — horse:start",
+        "fr": "G09 — horse:start",
+        "nl": "G09 — horse:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g09",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G9.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G9.svg",
+        "original_sha256": "54761a247d380935226fd066479ad72808d838368a8cb53a23699e7f583ece37",
+        "png_sha256": "a2682ca2e9ad5601065fd8b7f638b9a0f20e749c384bbf27024027b4637d49e7"
+      }
+    },
+    {
+      "class_id": "maxaxleweight",
+      "sign_code": "C20",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c20.png",
+      "label": {
+        "en": "C20 — maxaxleweight",
+        "de": "C20 — maxaxleweight",
+        "fr": "C20 — maxaxleweight",
+        "nl": "C20 — maxaxleweight"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c20",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C20.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C20.svg",
+        "original_sha256": "8c612376fe557981d2749350706780f98b0dd5375dbf88bb42ae8c8f44087722",
+        "png_sha256": "a992ecd4dd380914548ea513f8397345b1e0c189fa9ed4265aba07db4bb24521"
+      }
+    },
+    {
+      "class_id": "maxheight",
+      "sign_code": "C19",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c19.png",
+      "label": {
+        "en": "C19 — maxheight",
+        "de": "C19 — maxheight",
+        "fr": "C19 — maxheight",
+        "nl": "C19 — maxheight"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c19",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C19.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C19.svg",
+        "original_sha256": "640a5a491ebe096489b07a2e09701623da7cd87c992a264a56a1fada39207e5a",
+        "png_sha256": "0d9beef5b459863ababc47eae947b4b3d3308c913b1d124666cfa1f29d68abc5"
+      }
+    },
+    {
+      "class_id": "maxlength",
+      "sign_code": "C17",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c17.png",
+      "label": {
+        "en": "C17 — maxlength",
+        "de": "C17 — maxlength",
+        "fr": "C17 — maxlength",
+        "nl": "C17 — maxlength"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c17",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C17.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C17.svg",
+        "original_sha256": "857ef1d3722a1761d26ae86f3ccc551f5167a3b3a7133c081ad9e8f8db1ffd32",
+        "png_sha256": "8a1f88f33700ed388a842e08d1010aa4ec572087c5c1faed3990f8e516120536"
+      }
+    },
+    {
+      "class_id": "maxspeed:30",
+      "sign_code": "A01-30",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-a01-30.png",
+      "label": {
+        "en": "A01-30 — maxspeed:30",
+        "de": "A01-30 — maxspeed:30",
+        "fr": "A01-30 — maxspeed:30",
+        "nl": "A01-30 — maxspeed:30"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-a01-30",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord A1 30 Zone.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_A1_30_Zone.svg",
+        "original_sha256": "0a480a633ce177fa9ad4515629d857c95883beb9166fb012af401873293325f8",
+        "png_sha256": "174f372999ded095c3bdf530c53668303e6b82984f1f0ee8069003182647fc47"
+      }
+    },
+    {
+      "class_id": "maxspeed:end",
+      "sign_code": "A02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-a02.png",
+      "label": {
+        "en": "A02 — maxspeed:end",
+        "de": "A02 — maxspeed:end",
+        "fr": "A02 — maxspeed:end",
+        "nl": "A02 — maxspeed:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-a02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord A2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_A2.svg",
+        "original_sha256": "e8f3f83bdd27365443534dcfb0ba8afd400e14f8267536e1e80c3b7706da7534",
+        "png_sha256": "64d86b0a22f660dbaad11f5965f47fa9adbb80aa1bf8bd041e04646af5c1f887"
+      }
+    },
+    {
+      "class_id": "maxweight",
+      "sign_code": "C21",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c21.png",
+      "label": {
+        "en": "C21 — maxweight",
+        "de": "C21 — maxweight",
+        "fr": "C21 — maxweight",
+        "nl": "C21 — maxweight"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c21",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C21.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C21.svg",
+        "original_sha256": "f7031fce95c044e1d029527bec7eaf0e664b6a0249b3056f21463b5916bb1bfe",
+        "png_sha256": "2e74c2730443913cd6502f5cb1d8fb800aaebec2f174da570ea07f12a8083190"
+      }
+    },
+    {
+      "class_id": "maxwidth",
+      "sign_code": "C18",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c18.png",
+      "label": {
+        "en": "C18 — maxwidth",
+        "de": "C18 — maxwidth",
+        "fr": "C18 — maxwidth",
+        "nl": "C18 — maxwidth"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c18",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C18.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C18.svg",
+        "original_sha256": "3532fce17fc0605b928e74036b3b6b18637de128e7409b300d8e33f28e186fd4",
+        "png_sha256": "51c84d342e568d3dbecc9265d8be978359883635b9263adc1884b933a430aff7"
+      }
+    },
+    {
+      "class_id": "motorway:end",
+      "sign_code": "G02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g02.png",
+      "label": {
+        "en": "G02 — motorway:end",
+        "de": "G02 — motorway:end",
+        "fr": "G02 — motorway:end",
+        "nl": "G02 — motorway:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G2.svg",
+        "original_sha256": "dc330470136ca08b1c652f3b6e99b33082116ed45723eaedc243bf0d90daffe0",
+        "png_sha256": "94dcafce02e6d35514604c8f60f26f0cc9379ebf579d04c49b0b3229d4a78511"
+      }
+    },
+    {
+      "class_id": "motorway:start",
+      "sign_code": "G01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g01.png",
+      "label": {
+        "en": "G01 — motorway:start",
+        "de": "G01 — motorway:start",
+        "fr": "G01 — motorway:start",
+        "nl": "G01 — motorway:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g01",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G1.svg",
+        "original_sha256": "5507c5cb1ed05897bb11a7c8b6ba337e5143f7d39317d898e9d0a1eb0231372a",
+        "png_sha256": "25eed367d3b383849f53cdebd4c27996303606f4def9ec185e2e092086b15ff3"
+      }
+    },
+    {
+      "class_id": "no_agriculture",
+      "sign_code": "C08",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c08.png",
+      "label": {
+        "en": "C08 — no agriculture",
+        "de": "C08 — no agriculture",
+        "fr": "C08 — no agriculture",
+        "nl": "C08 — no agriculture"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c08",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C8.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C8.svg",
+        "original_sha256": "dc2fbf3de9cb269eede7ae13e814c0a45892717a3a3d3620d2bae9f27fd4da56",
+        "png_sha256": "50d751ecc8d46c5e7a1bcfcbae56ac17f0b7de1dc6cab3715369f12616917c70"
+      }
+    },
+    {
+      "class_id": "no_bicycle",
+      "sign_code": "C14",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c14.png",
+      "label": {
+        "en": "C14 — no bicycle",
+        "de": "C14 — no bicycle",
+        "fr": "C14 — no bicycle",
+        "nl": "C14 — no bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c14",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C14.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C14.svg",
+        "original_sha256": "a2c7083722b3a3540c3e6467ef5b8d0962da8386ed24a52bc6ebf9a4f72f0320",
+        "png_sha256": "85b68b34f43299477ffdab056e881ff7ac6d6b2550f6528f993c2d694261037b"
+      }
+    },
+    {
+      "class_id": "no_bus",
+      "sign_code": "C07-A",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c07-a.png",
+      "label": {
+        "en": "C07-A — no bus",
+        "de": "C07-A — no bus",
+        "fr": "C07-A — no bus",
+        "nl": "C07-A — no bus"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c07-a",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C7a.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C7a.svg",
+        "original_sha256": "9cb049cd109848d3e691d6898e0a9f8ecfd2d718645162fd591c02ee064af058",
+        "png_sha256": "c544da29dae61e84a0bbf54ee582a19824875d89e0c6fe5cded16db211fdcdf4"
+      }
+    },
+    {
+      "class_id": "no_car",
+      "sign_code": "C06",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c06.png",
+      "label": {
+        "en": "C06 — no car",
+        "de": "C06 — no car",
+        "fr": "C06 — no car",
+        "nl": "C06 — no car"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c06",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C6.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C6.svg",
+        "original_sha256": "6c96aaae6c6e19aaf162fbe054c7b9bda79afc4830c344622aab144803a3ee33",
+        "png_sha256": "52f56a41b007398a794f776399f2d4d4d054248727f811a86db93ee428525c20"
+      }
+    },
+    {
+      "class_id": "no_dangerous",
+      "sign_code": "C22",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c22.png",
+      "label": {
+        "en": "C22 — no dangerous",
+        "de": "C22 — no dangerous",
+        "fr": "C22 — no dangerous",
+        "nl": "C22 — no dangerous"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c22",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C22.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C22.svg",
+        "original_sha256": "066f8418bff6fb71609435a77a493ac9e16a15e81d810ce6a6e05edf8458dcd2",
+        "png_sha256": "887b499b91f7710be25606b6a5544b7f807f6d5d84fb7b2d99009342935beb19"
+      }
+    },
+    {
+      "class_id": "no_entry",
+      "sign_code": "C02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c02.png",
+      "label": {
+        "en": "C02 — no entry",
+        "de": "C02 — no entry",
+        "fr": "C02 — no entry",
+        "nl": "C02 — no entry"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C2.svg",
+        "original_sha256": "5dd361a30bb3ec33ac25ff3550329ee4da97989d23655bf5007d6e355ca4a6ae",
+        "png_sha256": "3660db151170d96e855de1b7e775d70fc0ba3f0c0c25008ddb8f701c67587352"
+      }
+    },
+    {
+      "class_id": "no_hgv",
+      "sign_code": "C07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c07.png",
+      "label": {
+        "en": "C07 — no hgv",
+        "de": "C07 — no hgv",
+        "fr": "C07 — no hgv",
+        "nl": "C07 — no hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C7.svg",
+        "original_sha256": "43fb370e2701d94ea7b0c9cac8b37a9e08e23f5bbc1542d09b95d901585c4cfb",
+        "png_sha256": "bbd270aa149040eaf01b7f983d754ab1f39eae91b63bfc2b44fb404e768afc8d"
+      }
+    },
+    {
+      "class_id": "no_moped",
+      "sign_code": "C13",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c13.png",
+      "label": {
+        "en": "C13 — no moped",
+        "de": "C13 — no moped",
+        "fr": "C13 — no moped",
+        "nl": "C13 — no moped"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c13",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C13.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C13.svg",
+        "original_sha256": "aefac09b8dcb3d8f97e106b34b4225313a040fe2ce2b357543beaa37a1e80509",
+        "png_sha256": "b664137f80cc84536ac295f4c67bb79c2120ec0d90cb5aad66d24251d78fa95e"
+      }
+    },
+    {
+      "class_id": "no_motorcycle",
+      "sign_code": "C11",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c11.png",
+      "label": {
+        "en": "C11 — no motorcycle",
+        "de": "C11 — no motorcycle",
+        "fr": "C11 — no motorcycle",
+        "nl": "C11 — no motorcycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c11",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C11.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C11.svg",
+        "original_sha256": "cbfded4dd96c31130be29b12491acd9a33a8b145e67dc5645e8473fb7f644e23",
+        "png_sha256": "1d4b1f6dc151785485961f18f0b2084e4b859f8e906aa3c1348acdb2e15b6894"
+      }
+    },
+    {
+      "class_id": "no_overtaking",
+      "sign_code": "F01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f01.png",
+      "label": {
+        "en": "F01 — no overtaking",
+        "de": "F01 — no overtaking",
+        "fr": "F01 — no overtaking",
+        "nl": "F01 — no overtaking"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f01",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F1.svg",
+        "original_sha256": "30da1c144292b2a55007c718477e5bdb4f97b39722753c9081cade3591f962c9",
+        "png_sha256": "fa9fd0322807dff8fa68abf95ac49bc41dde19e2b9aa62626bdd5a030fb2a6e5"
+      }
+    },
+    {
+      "class_id": "no_overtaking:end",
+      "sign_code": "F02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f02.png",
+      "label": {
+        "en": "F02 — no overtaking:end",
+        "de": "F02 — no overtaking:end",
+        "fr": "F02 — no overtaking:end",
+        "nl": "F02 — no overtaking:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F2.svg",
+        "original_sha256": "16824c7de4d9c1969675f50650b457b1646f684d5440ddd4344f89cf8ca1f173",
+        "png_sha256": "9a5484b01aee0d88acad1d43b6e19628bd78b726a20071926cc01a8e81a13f35"
+      }
+    },
+    {
+      "class_id": "no_overtaking:hgv",
+      "sign_code": "F03",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f03.png",
+      "label": {
+        "en": "F03 — no overtaking:hgv",
+        "de": "F03 — no overtaking:hgv",
+        "fr": "F03 — no overtaking:hgv",
+        "nl": "F03 — no overtaking:hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f03",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F3.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F3.svg",
+        "original_sha256": "5152da52a06a334b0b2faafa15da5dbf7cd27c55636142da15dc1fbcac187520",
+        "png_sha256": "44d8e623bf6943414521f766a2cac992ca67cc6ab78c34b7997b4b8fda8aa623"
+      }
+    },
+    {
+      "class_id": "no_parking",
+      "sign_code": "E01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e01.png",
+      "label": {
+        "en": "E01 — no parking",
+        "de": "E01 — no parking",
+        "fr": "E01 — no parking",
+        "nl": "E01 — no parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e01",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E1.svg",
+        "original_sha256": "13100e1db0772a07affc7729729f8d91b1f59d57cda1fe70241af56296ed02bf",
+        "png_sha256": "99a23713e2088ea1d59a5e7c6e2e20faafb1d0f4005cbb020627876f137d6dbb"
+      }
+    },
+    {
+      "class_id": "no_pedestrian",
+      "sign_code": "C16",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c16.png",
+      "label": {
+        "en": "C16 — no pedestrian",
+        "de": "C16 — no pedestrian",
+        "fr": "C16 — no pedestrian",
+        "nl": "C16 — no pedestrian"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c16",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C16.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C16.svg",
+        "original_sha256": "0f18cd6cb69aaab998f5b01469ca40465a1c0f17cbb51e3f6560a1e56918ff73",
+        "png_sha256": "5582f5798d03cab104d9ca0f774a5f639e2caa83c391ab9e1458dd7751d88d75"
+      }
+    },
+    {
+      "class_id": "no_u_turn",
+      "sign_code": "F07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f07.png",
+      "label": {
+        "en": "F07 — no u turn",
+        "de": "F07 — no u turn",
+        "fr": "F07 — no u turn",
+        "nl": "F07 — no u turn"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F7.svg",
+        "original_sha256": "2e80c55b85a0b42a6f96a39e1b351df643ef97060ca762c804a0f39e2ac675e0",
+        "png_sha256": "05ee078f8d556782e5221bb95922577c31c2e7a70954b4032c0b9a9182bd1ccc"
+      }
+    },
+    {
+      "class_id": "no_way",
+      "sign_code": "C01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c01.png",
+      "label": {
+        "en": "C01 — no way",
+        "de": "C01 — no way",
+        "fr": "C01 — no way",
+        "nl": "C01 — no way"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c01",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C1.svg",
+        "original_sha256": "fe025e3191befdab342b5274c4e27d811e6852d35ad5a0ace8488880705526e7",
+        "png_sha256": "53b68ab7b1c1e1512ef7bacd80512d31147b5ad723365d7faba69aa064d10860"
+      }
+    },
+    {
+      "class_id": "no:end",
+      "sign_code": "F08",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f08.png",
+      "label": {
+        "en": "F08 — no:end",
+        "de": "F08 — no:end",
+        "fr": "F08 — no:end",
+        "nl": "F08 — no:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f08",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F8.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F8.svg",
+        "original_sha256": "f7350019ed52aec822b7612f6192badd45e6ecee887fff9cdddb61328da7f04b",
+        "png_sha256": "25e8bfb9ad1ae59935ebd7c1ee16083bb7c00d64e040582d0c0676198f34dd03"
+      }
+    },
+    {
+      "class_id": "oneway",
+      "sign_code": "C03",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-c03.png",
+      "label": {
+        "en": "C03 — oneway",
+        "de": "C03 — oneway",
+        "fr": "C03 — oneway",
+        "nl": "C03 — oneway"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-c03",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord C3.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_C3.svg",
+        "original_sha256": "cb1d27105d9ce8ee94b0bca825893c2c32ede73096c090d1173abf163930ce7a",
+        "png_sha256": "efaef4bf1f2161f58ff7e99a5e38d714569de2fac1b9db8deccb0bf4b210902b"
+      }
+    },
+    {
+      "class_id": "parking",
+      "sign_code": "E04",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e04.png",
+      "label": {
+        "en": "E04 — parking",
+        "de": "E04 — parking",
+        "fr": "E04 — parking",
+        "nl": "E04 — parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e04",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E4.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E4.svg",
+        "original_sha256": "402a38352a0d70e4b988563b5a4b39e4bbc5fa431bf2bde1595f105c0f557085",
+        "png_sha256": "f45a16bc253d577441a9276daac1c25a24e5757f2be5f7e90c1500e008087621"
+      }
+    },
+    {
+      "class_id": "parking:car",
+      "sign_code": "E08",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e08.png",
+      "label": {
+        "en": "E08 — parking:car",
+        "de": "E08 — parking:car",
+        "fr": "E08 — parking:car",
+        "nl": "E08 — parking:car"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e08",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E8.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E8.svg",
+        "original_sha256": "5da6914fdf600b6567251d5649ad808d6bcba792723f0420e13ca7a6b94d2431",
+        "png_sha256": "f23e800c4f173bb4ec6f38bdb9253769c4207743b0ceeb0e9977fb792820b942"
+      }
+    },
+    {
+      "class_id": "parking:delivery",
+      "sign_code": "E07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e07.png",
+      "label": {
+        "en": "E07 — parking:delivery",
+        "de": "E07 — parking:delivery",
+        "fr": "E07 — parking:delivery",
+        "nl": "E07 — parking:delivery"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E7.svg",
+        "original_sha256": "ed2fc2c678087f5e2b956d5357df4a248f5486efb8e4422802ce7211848a27fc",
+        "png_sha256": "7c2f847e704fd23780a2c088f007e1ae67db0a81adcc8955fc1f26ddfbaf764a"
+      }
+    },
+    {
+      "class_id": "parking:disabled",
+      "sign_code": "E06",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e06.png",
+      "label": {
+        "en": "E06 — parking:disabled",
+        "de": "E06 — parking:disabled",
+        "fr": "E06 — parking:disabled",
+        "nl": "E06 — parking:disabled"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e06",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E6.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E6.svg",
+        "original_sha256": "b433270a56dd3e60cb320e199b858c37db49de0968bcdc881bd6b479d534088f",
+        "png_sha256": "c01026bb94b4aec5fc7a33787e62c77fa122bb64c8937b93f539b54f82f9be59"
+      }
+    },
+    {
+      "class_id": "parking:taxi",
+      "sign_code": "E05",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-e05.png",
+      "label": {
+        "en": "E05 — parking:taxi",
+        "de": "E05 — parking:taxi",
+        "fr": "E05 — parking:taxi",
+        "nl": "E05 — parking:taxi"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-e05",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord E5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_E5.svg",
+        "original_sha256": "345873e38a5f0b962f7d3a29285eda24ca1ff27c4c524f5109e44f0443d76895",
+        "png_sha256": "30ff6673823cbc9acafeac8b2b34832f94a517af2b32d1933e5abf3458ac5de6"
+      }
+    },
+    {
+      "class_id": "pedestrian:start",
+      "sign_code": "G07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g07.png",
+      "label": {
+        "en": "G07 — pedestrian:start",
+        "de": "G07 — pedestrian:start",
+        "fr": "G07 — pedestrian:start",
+        "nl": "G07 — pedestrian:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G7.svg",
+        "original_sha256": "4befb96a18825591573bab23334fb4f8336479d64e0fb45c00fb452ff39877de",
+        "png_sha256": "dd7b35644d2a9c3b8011561ee2d5fc4759c1c14d18ca8db1a492cf7c1499cbc2"
+      }
+    },
+    {
+      "class_id": "pedestrian_crossing",
+      "sign_code": "L02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-l02.png",
+      "label": {
+        "en": "L02 — pedestrian crossing",
+        "de": "L02 — pedestrian crossing",
+        "fr": "L02 — pedestrian crossing",
+        "nl": "L02 — pedestrian crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-l02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord L2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_L2.svg",
+        "original_sha256": "db9a6fc444b745163520939d97eb362982c1622698e70223878b7a47a260e482",
+        "png_sha256": "c4043c74826f24664f7664972b38a02f6f1f9205c7b7c87778948257f8449841"
+      }
+    },
+    {
+      "class_id": "priority:backward",
+      "sign_code": "F05",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f05.png",
+      "label": {
+        "en": "F05 — priority:backward",
+        "de": "F05 — priority:backward",
+        "fr": "F05 — priority:backward",
+        "nl": "F05 — priority:backward"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f05",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F5.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F5.svg",
+        "original_sha256": "46ad27da8af3640de0660398a3101cf9976d7b5056ece7488b56139293d9676e",
+        "png_sha256": "cfbcbbcc2770e8c388965f7ac59674e13901e20f242534ce538bc5e409165534"
+      }
+    },
+    {
+      "class_id": "priority:end",
+      "sign_code": "B02",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-b02.png",
+      "label": {
+        "en": "B02 — priority:end",
+        "de": "B02 — priority:end",
+        "fr": "B02 — priority:end",
+        "nl": "B02 — priority:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-b02",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord B2.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_B2.svg",
+        "original_sha256": "aab79b3ee9b78d32492d6e79b1a73e4c28eb3991665aaeb6051f0b2b51aa446b",
+        "png_sha256": "0ba6edc0540f548a9cbd7f1f349555c75e05e53533dfab0f50c729b6dbfe32d2"
+      }
+    },
+    {
+      "class_id": "priority:forward",
+      "sign_code": "F06",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f06.png",
+      "label": {
+        "en": "F06 — priority:forward",
+        "de": "F06 — priority:forward",
+        "fr": "F06 — priority:forward",
+        "nl": "F06 — priority:forward"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f06",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F6.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F6.svg",
+        "original_sha256": "1ab530c0f93403a751f619badcd29530071bdcb32b7ef370115ce7e15cc461f3",
+        "png_sha256": "f22dafd1edc16d0b3009e22ad4f4459649c775546a6720069e6aeb0c52f02cdc"
+      }
+    },
+    {
+      "class_id": "rest",
+      "sign_code": "L14",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-l14.png",
+      "label": {
+        "en": "L14 — rest",
+        "de": "L14 — rest",
+        "fr": "L14 — rest",
+        "nl": "L14 — rest"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-l14",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord L14.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_L14.svg",
+        "original_sha256": "90f8d13e0be780ae695c5f07e942544b028031f7ffb260ace90e7f9913cf3526",
+        "png_sha256": "01f1410777f91da5a3af4f6bbbb3333502aeafc862290023cd0a39af4e8386a8"
+      }
+    },
+    {
+      "class_id": "roundabout",
+      "sign_code": "D01",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-d01.png",
+      "label": {
+        "en": "D01 — roundabout",
+        "de": "D01 — roundabout",
+        "fr": "D01 — roundabout",
+        "nl": "D01 — roundabout"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-d01",
+      "source_provenance": {
+        "commons_title": "File:NL verkeersbord D1.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:NL_verkeersbord_D1.svg",
+        "original_sha256": "e5efa202abc42ce269e2c5ddfaf91627327a3932c30d7fa7c1a5015cf70038af",
+        "png_sha256": "7d262886639414510c8f2099f07e81253828a9b68456753a76e3b70e37b8f849"
+      }
+    },
+    {
+      "class_id": "speed",
+      "sign_code": "A04",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-a04.png",
+      "label": {
+        "en": "A04 — speed",
+        "de": "A04 — speed",
+        "fr": "A04 — speed",
+        "nl": "A04 — speed"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-a04",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord A4.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_A4.svg",
+        "original_sha256": "7b564003152db98c7e366ca90686e3f4f14f04fd8e3e5c1891156bba063fad02",
+        "png_sha256": "bec31b85b5398a2822fe45b7bb0b05569232a6b3a9e3c4197876e4640da27d80"
+      }
+    },
+    {
+      "class_id": "stop",
+      "sign_code": "B07",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-b07.png",
+      "label": {
+        "en": "B07 — stop",
+        "de": "B07 — stop",
+        "fr": "B07 — stop",
+        "nl": "B07 — stop"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-b07",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord B7.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_B7.svg",
+        "original_sha256": "3b1be3f5e5c7de8bd78bd4dee0e83da5e91fb2bb73e4ddb9482c2a776222a1ce",
+        "png_sha256": "d033380a492c15ad15d6b4254c830688d40a70c36956532fcb46c1c807a3d36b"
+      }
+    },
+    {
+      "class_id": "tram:start",
+      "sign_code": "F15",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-f15.png",
+      "label": {
+        "en": "F15 — tram:start",
+        "de": "F15 — tram:start",
+        "fr": "F15 — tram:start",
+        "nl": "F15 — tram:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-f15",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord F15.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_F15.svg",
+        "original_sha256": "8e10d9dd888720933c7988a59b522c05226026c44e7114039d6687bc80e09cc1",
+        "png_sha256": "6b0ce44247831eae9021f22b07dd2b5c569b1fe74e4bf2b5340fd30e05bdc8b0"
+      }
+    },
+    {
+      "class_id": "trunk:end",
+      "sign_code": "G04",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g04.png",
+      "label": {
+        "en": "G04 — trunk:end",
+        "de": "G04 — trunk:end",
+        "fr": "G04 — trunk:end",
+        "nl": "G04 — trunk:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g04",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G4.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G4.svg",
+        "original_sha256": "d4baa3f3004856fbef472994e050058b8538ff2d8caeafd8ac402c163ab78f8d",
+        "png_sha256": "c7fc262ae03ce679df6c736dabd96bfe6637f0aa23f20a07cc945631f6f068fa"
+      }
+    },
+    {
+      "class_id": "trunk:start",
+      "sign_code": "G03",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-g03.png",
+      "label": {
+        "en": "G03 — trunk:start",
+        "de": "G03 — trunk:start",
+        "fr": "G03 — trunk:start",
+        "nl": "G03 — trunk:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-g03",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord G3.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_G3.svg",
+        "original_sha256": "c049085fc60a44a0d85672ca78d104e7ce8b90c9cf55a75229f7e4c39436376e",
+        "png_sha256": "c7fc262ae03ce679df6c736dabd96bfe6637f0aa23f20a07cc945631f6f068fa"
+      }
+    },
+    {
+      "class_id": "zone:30",
+      "sign_code": "A01-30-ZB",
+      "image_path": "tsr/sign-pictograms/national/NL/png/nl-a01-30-zb.png",
+      "label": {
+        "en": "A01-30-ZB — zone:30",
+        "de": "A01-30-ZB — zone:30",
+        "fr": "A01-30-ZB — zone:30",
+        "nl": "A01-30-ZB — zone:30"
+      },
+      "display_eligible": true,
+      "artwork_id": "nl-a01-30-zb",
+      "source_provenance": {
+        "commons_title": "File:Nederlands verkeersbord A1 30 Eindzone.svg",
+        "license": "Public domain",
+        "license_source_url": "https://commons.wikimedia.org/wiki/File:Nederlands_verkeersbord_A1_30_Eindzone.svg",
+        "original_sha256": "d674d6a38a36daba42bd2c0538584b3689204cf9700e0fb6427d36cbf391d996",
+        "png_sha256": "421d121bdf46d4e216b8b1bf1afdbc42b1185177965e7d4989c7748055e78e15"
+      }
+    }
+  ],
+  "policy": {
+    "display_only": true,
+    "numeric_speed_signs_are_schematic": true,
+    "validated_passage_required_for_speed_context": true
+  },
+  "provenance": {
+    "national_artwork_manifest": "shared/tsr/sign-pictograms/national/NL/manifest.json",
+    "national_selection": "shared/tsr/sign-pictograms/national/NL/selection.json",
+    "classifier_checkpoint_revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+    "parity_report": "shared/tsr/foreign-calibration/NL-mobile-parity-v1.json"
+  }
+}

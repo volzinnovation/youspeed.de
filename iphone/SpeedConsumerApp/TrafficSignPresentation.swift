@@ -20,11 +20,13 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
         }
 
         func imageURL(bundle: Bundle = .main) -> URL? {
-            guard let imagePath, imagePath.hasPrefix("tsr/sign-pictograms/png/"),
+            guard let imagePath, imagePath.hasPrefix("tsr/sign-pictograms/"),
                   !imagePath.split(separator: "/").contains("..") else { return nil }
-            let file = URL(fileURLWithPath: imagePath)
+            let relativePath = String(imagePath.dropFirst("tsr/sign-pictograms/".count))
+            let file = URL(fileURLWithPath: relativePath)
+            let subdirectory = "sign-pictograms/" + file.deletingLastPathComponent().path
             return bundle.url(forResource: file.deletingPathExtension().lastPathComponent,
-                              withExtension: file.pathExtension, subdirectory: "sign-pictograms/png")
+                              withExtension: file.pathExtension, subdirectory: subdirectory)
         }
     }
 
