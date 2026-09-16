@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
@@ -488,10 +489,20 @@ private fun MainScreen(
         val minDimension = min(maxWidth.value, maxHeight.value)
         val screenInset = max(8f, minDimension * 0.02f).dp
         val compact = maxHeight.value < 780f
-        val preferredSignSize = signPaneWidth * if (compact) 0.60f else 0.72f
+        // Keep the Android sign close to the iPhone's visual weight. The
+        // previous limits made the circle noticeably smaller, especially in
+        // portrait where the height cap won over the width budget.
+        val preferredSignSize = signPaneWidth * when {
+            // Landscape has the same generous sign scale as the iPhone
+            // dashboard. The old compact-width branch kept this device at
+            // roughly 58% of the pane height.
+            landscape -> 0.72f
+            compact -> 0.64f
+            else -> 0.76f
+        }
         val signSize = min(preferredSignSize.value,
             if (landscape) max(48f, maxHeight.value - 104f)
-            else maxHeight.value * 0.40f).dp
+            else maxHeight.value * 0.42f).dp
         val portraitTopHeight = min(maxHeight.value * 0.57f,
             signSize.value + CONTROL_BUTTON_DIAMETER.value + screenInset.value + 28f).dp
         val primaryMetricFont = (signSize.value * if (compact) 0.42f else SPEED_LIMIT_NUMBER_SCALE).sp
@@ -510,6 +521,25 @@ private fun MainScreen(
             (workspaceWidth.value * 0.78f).coerceAtLeast(180f).dp
         } else {
             max(0f, workspaceWidth.value - screenInset.value * 2f - CONTROL_BUTTON_DIAMETER.value * 2f).dp
+        }
+        // The sign is centered in the upper pane after its top/bottom inset.
+        // Landscape telemetry is anchored to that same circle-height frame so
+        // the metric slot starts at the circle's top and the location badge
+        // finishes at its bottom, like the iPhone layout.
+        val landscapeSignTopInWorkspace = max(
+            0f,
+            (maxHeight.value - screenInset.value - 8f - signSize.value) / 2f,
+        ).dp
+        // safeDrawingPadding() removes the landscape navigation inset from
+        // the content. On this device the remaining content is vertically
+        // displaced because the left navigation inset is much larger than
+        // the opposite edge inset. Counter that half-difference so the
+        // visible dashboard is symmetric against the physical screen edges.
+        val landscapeVerticalCenterCorrection = if (landscape) {
+            val systemBars = WindowInsets.systemBars.asPaddingValues()
+            ((systemBars.calculateBottomPadding().value - systemBars.calculateTopPadding().value) / 2f).dp
+        } else {
+            0.dp
         }
 
         // Keep both subtrees mounted. Only their measured size and placement
@@ -537,7 +567,8 @@ private fun MainScreen(
                     Box(
                         Modifier.align(Alignment.Center)
                             .fillMaxWidth()
-                            .height(signSize),
+                            .height(signSize)
+                            .offset(y = landscapeVerticalCenterCorrection),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (showsActiveCameraLimitIndicator) ActiveCameraSpeedLimitEye(
@@ -545,21 +576,6 @@ private fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
-                        if (ui.otherTrafficSignDisplayEnabled) {
-                            ui.lastTrafficSignPictogram?.let { pictogram ->
-                                val eyeTipInset = if (landscape) {
-                                    max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
-                                } else {
-                                    screenInset + CONTROL_BUTTON_DIAMETER / 2
-                                }
-                                RecognizedTrafficSignPictogram(
-                                    pictogram = pictogram,
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .offset(x = eyeTipInset),
-                                )
-                            }
-                        }
                         SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
@@ -578,6 +594,25 @@ private fun MainScreen(
                             modifier = Modifier.offset(y = -(signSize * 0.42f)).testTag("speed-limit-end-overlay"),
                             signSize = signSize * 0.34f,
                         )
+                        // Draw the recognized secondary sign after the speed
+                        // sign. This is intentionally the same z-order as the
+                        // iPhone implementation: it remains at the eye tip,
+                        // but its artwork is in front of the speed-limit ring.
+                        if (ui.otherTrafficSignDisplayEnabled) {
+                            ui.lastTrafficSignPictogram?.let { pictogram ->
+                                val eyeTipInset = if (landscape) {
+                                    max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
+                                } else {
+                                    screenInset + CONTROL_BUTTON_DIAMETER / 2
+                                }
+                                RecognizedTrafficSignPictogram(
+                                    pictogram = pictogram,
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .offset(x = eyeTipInset),
+                                )
+                            }
+                        }
                     }
                 }
                 Column(
@@ -596,21 +631,45 @@ private fun MainScreen(
                         val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
                         val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)
                         val fittedLocationHeight = min(locationHeight.value, maxHeight.value * 0.30f).dp
-                        Column(
-                            Modifier
-                                .fillMaxSize()
-                                .offset(y = if (landscape) (maxHeight.value * 0.08f).dp else 0.dp)
-                                .alpha(if (previewVisible) 0f else 1f),
-                            verticalArrangement = if (landscape) Arrangement.Center else Arrangement.SpaceEvenly,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            MetricStatusBlock(primaryMetric, secondaryMetric, foreground, ui,
-                                primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight)
-                            Spacer(Modifier.height(4.dp))
-                            Box((if (landscape) Modifier else Modifier.weight(1f)).verticalScroll(rememberScrollState())) {
-                                LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
-                                    max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
-                                    locationBadgeWidth, banner, onOpenDebug, compact = landscape)
+                        if (landscape) {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .requiredHeight(signSize)
+                                    .offset(y = landscapeSignTopInWorkspace + landscapeVerticalCenterCorrection)
+                                    .padding(horizontal = horizontalPadding)
+                                    .alpha(if (previewVisible) 0f else 1f),
+                                verticalArrangement = Arrangement.SpaceBetween,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                MetricStatusBlock(
+                                    primaryMetric, secondaryMetric, foreground, ui,
+                                    primaryMetricFont, secondaryFont, metricSlotMinHeight,
+                                    alignContentToTop = true,
+                                )
+                                LocationStatusBlock(
+                                    ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
+                                    max(12f, minDimension * 0.024f).dp, locationHeight, horizontalPadding,
+                                    locationBadgeWidth, banner, onOpenDebug, compact = true,
+                                    alignContentToBottom = true,
+                                )
+                            }
+                        } else {
+                            Column(
+                                Modifier
+                                    .fillMaxSize()
+                                    .alpha(if (previewVisible) 0f else 1f),
+                                verticalArrangement = Arrangement.SpaceEvenly,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                MetricStatusBlock(primaryMetric, secondaryMetric, foreground, ui,
+                                    primaryMetricFont * metricScale, secondaryFont * metricScale, fittedMetricHeight)
+                                Spacer(Modifier.height(4.dp))
+                                Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                                    LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
+                                        max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
+                                        locationBadgeWidth, banner, onOpenDebug, compact = false)
+                                }
                             }
                         }
                         if (previewPresentation.isAttached) RecorderPreviewWorkspace(
@@ -1039,14 +1098,16 @@ private fun MetricStatusBlock(
     primaryMetricFont: androidx.compose.ui.unit.TextUnit,
     secondaryFont: androidx.compose.ui.unit.TextUnit,
     metricSlotMinHeight: androidx.compose.ui.unit.Dp,
+    alignContentToTop: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = metricSlotMinHeight)
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = if (alignContentToTop) Arrangement.Top else Arrangement.Center,
     ) {
         Text(
             displayedPrimaryMetric,
@@ -1082,9 +1143,11 @@ private fun LocationStatusBlock(
     runtimeBanner: RuntimeBanner?,
     onOpenDebug: () -> Unit,
     compact: Boolean = false,
+    alignContentToBottom: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = contentHorizontalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1094,7 +1157,7 @@ private fun LocationStatusBlock(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = locationSlotMinHeight),
-            contentAlignment = Alignment.Center,
+            contentAlignment = if (alignContentToBottom) Alignment.BottomCenter else Alignment.Center,
         ) {
             if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
                 CityBadge(
