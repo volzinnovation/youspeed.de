@@ -410,6 +410,12 @@ class BundleBootstrapper(
                 )
             }
 
+            installPenaltyRules(
+                manifest = manifest,
+                manifestUrl = manifestUrl,
+                bundleDir = bundleDir,
+                onProgress = onProgress,
+            )
             val finalDb = activatePreparedDatabase(stagingDb, bundleDir, manifest, manifestRaw, manifestUrl, dbArtifact)
             emitProgress(
                 onProgress = onProgress,
@@ -494,6 +500,12 @@ class BundleBootstrapper(
             deltaDatabase.validate(staging)
             validateFile(staging, expectedDatabase.first, expectedDatabase.second, "materialized delta database")
             val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/${tokenize(manifest.bundleVersion)}")
+            installPenaltyRules(
+                manifest = manifest,
+                manifestUrl = manifestUrl,
+                bundleDir = bundleDir,
+                onProgress = onProgress,
+            )
             val finalDb = activatePreparedDatabase(staging, bundleDir, manifest, manifestRaw, manifestUrl,
                 MaterializedDatabaseArtifact(expectedDatabase.first, expectedDatabase.second.lowercase(Locale.ROOT)))
             emitProgress(onProgress, BundleSyncStage.COMPLETED, "Delta update applied", total, total)
@@ -503,6 +515,51 @@ class BundleBootstrapper(
             File(staging.path + "-wal").delete()
             File(staging.path + "-shm").delete()
             File(staging.path + "-journal").delete()
+        }
+    }
+
+    private fun installPenaltyRules(
+        manifest: V3BundleManifest,
+        manifestUrl: String,
+        bundleDir: File,
+        onProgress: ((BundleSyncProgress) -> Unit)?,
+    ) {
+        val artifact = manifest.penaltyRules ?: return
+        val fileName = artifact.file.trim()
+        require(fileName.isNotEmpty() && !fileName.contains('/') && !fileName.contains('\\') && fileName != "." && fileName != "..") {
+            "Invalid penalty rules artifact path"
+        }
+        if (!bundleDir.exists() && !bundleDir.mkdirs()) {
+            throw IOException("Unable to create bundle directory for penalty rules")
+        }
+        val temporary = File(bundleDir, ".${fileName}.tmp")
+        val final = File(bundleDir, fileName)
+        if (temporary.exists()) temporary.delete()
+        try {
+            onProgress?.invoke(BundleSyncProgress(BundleSyncStage.DOWNLOADING, "Lade $fileName", 0L, artifact.bytes))
+            httpFetcher.fetchToFile(
+                url = ContractJson.resolveArtifactUrl(artifact, manifestUrl),
+                destination = temporary,
+                onProgress = { completedBytes, reportedTotalBytes ->
+                    onProgress?.invoke(
+                        BundleSyncProgress(
+                            stage = BundleSyncStage.DOWNLOADING,
+                            detail = "Lade $fileName",
+                            completedBytes = completedBytes.coerceAtLeast(0L),
+                            totalBytes = maxOf(artifact.bytes, reportedTotalBytes ?: artifact.bytes),
+                        ),
+                    )
+                },
+            )
+            validateFile(temporary, artifact.bytes, artifact.sha256, "penalty rules $fileName")
+            if (final.exists() && !final.delete()) {
+                throw IOException("Unable to replace penalty rules file: ${final.absolutePath}")
+            }
+            if (!temporary.renameTo(final)) {
+                throw IOException("Unable to activate penalty rules file: ${final.absolutePath}")
+            }
+        } finally {
+            if (temporary.exists()) temporary.delete()
         }
     }
 

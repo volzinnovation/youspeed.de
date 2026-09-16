@@ -561,6 +561,7 @@ class ConsumerSessionController(
     private val recentSpeedSampleLocations: MutableList<Location> = mutableListOf()
     private var textToSpeech: TextToSpeech? = null
     private var textToSpeechReady = false
+    private val speechLanguage = SpeedCaptureSpeech.languageFor(Locale.getDefault())
     private var bundledVoskModel: Model? = null
     private var bundledVoskModelPath: String? = null
     private var activeVoskSpeedCaptureSession: VoskSpeedCaptureSession? = null
@@ -3152,6 +3153,33 @@ class ConsumerSessionController(
     private fun loadPenaltyRules(countryCode: String): ActivePenaltyRules {
         val code = PenaltyCountryCodes.normalize(countryCode) ?: return ActivePenaltyRules.unavailable()
         val assetName = "$code-rules.json"
+        val activeBundle = bootstrapper.activeState()
+        val activeBundleCode = PenaltyCountryCodes.normalize(activeBundle?.countryCode)
+        if (activeBundleCode == code && activeBundle != null) {
+            val bundleDir = File(activeBundle.dbPath).parentFile
+            val manifestFile = bundleDir?.resolve("bundle-manifest.v3.json")
+            val bundledRules = runCatching {
+                val manifest = manifestFile?.takeIf(File::exists)?.let {
+                    ContractJson.decodeBundleManifest(it.readText())
+                }
+                val ruleFile = manifest?.penaltyRules?.file?.takeIf { it.isNotBlank() }
+                val rulePath = ruleFile?.let { bundleDir.resolve(it) }?.takeIf(File::isFile)
+                rulePath?.readText()
+            }.getOrNull()
+            val parsedBundleRules = bundledRules?.let { raw ->
+                runCatching { PenaltyRulesParser.parse(raw) }.getOrNull()
+            }?.takeIf { parsed ->
+                PenaltyCountryCodes.normalize(parsed.countryCode) == code && parsed.bands.isNotEmpty()
+            }
+            if (parsedBundleRules != null) {
+                val ruleFile = manifestFile?.let { manifestPath ->
+                    runCatching {
+                        ContractJson.decodeBundleManifest(manifestPath.readText()).penaltyRules?.file
+                    }.getOrNull()
+                }.orEmpty()
+                return ActivePenaltyRules(fileName = ruleFile, ruleSet = parsedBundleRules)
+            }
+        }
         val raw = assetReader.readTextOrNull("Rules/$assetName") ?: assetReader.readTextOrNull(assetName)
             ?: return ActivePenaltyRules.unavailable(code)
         val parsed = runCatching { PenaltyRulesParser.parse(raw) }.getOrNull()
@@ -3811,7 +3839,7 @@ class ConsumerSessionController(
         textToSpeech = TextToSpeech(appContext) { status ->
             textToSpeechReady = status == TextToSpeech.SUCCESS
             if (textToSpeechReady) {
-                textToSpeech?.language = Locale.getDefault()
+                textToSpeech?.language = Locale.forLanguageTag(speechLanguage.localeTag)
                 textToSpeech?.setSpeechRate(0.9f)
                 textToSpeech?.setOnUtteranceProgressListener(
                     object : UtteranceProgressListener() {
@@ -3850,7 +3878,7 @@ class ConsumerSessionController(
         if (!textToSpeechReady) {
             return
         }
-        textToSpeech?.language = Locale.getDefault()
+        textToSpeech?.language = Locale.forLanguageTag(speechLanguage.localeTag)
         textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "youspeed-${System.currentTimeMillis()}")
     }
 
@@ -3880,7 +3908,7 @@ class ConsumerSessionController(
             copy(
                 speedCaptureMode = SpeedCaptureModeState.SPEAKING_PROMPT,
                 speedCaptureTranscript = "",
-                localObservationStatus = ConsumerRuntimeText.CORRECTION_PROMPT.text(),
+                localObservationStatus = SpeedCaptureSpeech.profileFor(speechLanguage).language.promptStatusText,
             )
         }
         if (!textToSpeechReady) {
@@ -3892,9 +3920,9 @@ class ConsumerSessionController(
         speedCapturePromptUtteranceId = "speed-capture-prompt-${System.currentTimeMillis()}"
         mainHandler.removeCallbacks(speedCapturePromptFallbackRunnable)
         mainHandler.postDelayed(speedCapturePromptFallbackRunnable, SpeedCaptureSpeech.promptFallbackDelayMs)
-        textToSpeech?.language = Locale.GERMANY
+        textToSpeech?.language = Locale.forLanguageTag(speechLanguage.localeTag)
         textToSpeech?.speak(
-            SpeedCaptureSpeech.promptText,
+            SpeedCaptureSpeech.profileFor(speechLanguage).language.promptText,
             TextToSpeech.QUEUE_FLUSH,
             null,
             speedCapturePromptUtteranceId,
@@ -3918,11 +3946,11 @@ class ConsumerSessionController(
             copy(
                 speedCaptureMode = SpeedCaptureModeState.LISTENING,
                 speedCaptureTranscript = "",
-                localObservationStatus = ConsumerRuntimeText.SPEECH_LISTENING.text(),
+                localObservationStatus = SpeedCaptureSpeech.profileFor(speechLanguage).language.listeningStatus,
             )
         }
         val session = runCatching {
-            VoskSpeedCaptureSession(model, SpeedCaptureSpeech.voskGrammarJson)
+            VoskSpeedCaptureSession(model, SpeedCaptureSpeech.profileFor(speechLanguage).voskGrammarJson)
         }.getOrElse {
             showSpeedCaptureFailure(reason = ConsumerRuntimeText.SPEECH_INIT_FAILED.text(it.message ?: it.javaClass.simpleName))
             return
@@ -3971,7 +3999,9 @@ class ConsumerSessionController(
             cancelSpeedCapture(reason = null)
             return
         }
-        val selection = candidates.firstNotNullOfOrNull(SpeedCaptureSpeech::resolveSelection)
+        val selection = candidates.firstNotNullOfOrNull { transcript ->
+            SpeedCaptureSpeech.resolveSelection(transcript, speechLanguage)
+        }
         if (selection != null) {
             persistSpeedCaptureSelection(selection)
             return
@@ -4033,7 +4063,7 @@ class ConsumerSessionController(
             updateCaptureStatus = userInitiated || uiState.speedCaptureMode == SpeedCaptureModeState.PREPARING,
         )
         val submitted = submitBackgroundTask {
-            runCatching { bundledVoskModelStore.prepareModel() }
+            runCatching { bundledVoskModelStore.prepareModel(speechLanguage.modelAssetPath) }
                 .onSuccess { handle ->
                     replaceBundledVoskModel(handle)
                     markGermanSpeechModelReady(ConsumerRuntimeText.SPEECH_MODEL_READY.text())

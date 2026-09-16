@@ -76,7 +76,7 @@ Het gesimuleerde voorbeeld 50 → 30 in deze handleiding is bewust **niet geüpl
 
 ## Problemen oplossen
 
-- **“Jetzt sprechen” verschijnt niet:** open in iOS **Instellingen → Privacy en beveiliging → Microfoon** en **Spraakherkenning** en schakel YouSpeed in. Duitse spraakherkenning op het apparaat moet beschikbaar zijn.
+- **“Jetzt sprechen” verschijnt niet:** open in iOS **Instellingen → Privacy en beveiliging → Microfoon** en **Spraakherkenning** en schakel YouSpeed in. Spraakherkenning op het apparaat in de geselecteerde taal (Duits, Frans of Nederlands) moet beschikbaar zijn.
 - **Verkeerde waarde of weg herkend:** verwijder de lokale registratie en leg deze opnieuw vast zodra de juiste weg gekoppeld is.
 - **De exportknop levert geen bruikbaar bestand op:** controleer of er minstens één geldige lokale registratie in de lijst staat.
 - **JOSM meldt onvolledige gegevens of conflicten:** forceer de upload niet. Download de actuele way en omgeving opnieuw, pas de gecontroleerde tag toe op dit volledige object en voer de validatie nogmaals uit.

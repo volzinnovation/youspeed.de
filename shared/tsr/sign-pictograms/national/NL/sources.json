@@ -1,0 +1,1030 @@
+{
+  "country": "NL",
+  "reviewed_at": "2026-09-16",
+  "artwork_approval": {
+    "decision": "approved_commons_renditions",
+    "approved_at": "2026-09-16",
+    "commercial_use_policy": "exclude_only_if_commercial_use_is_not_permitted",
+    "provenance_required_in_license_record": true,
+    "coverage_target": "at_least_111_model_linked_display_assets_to_match_the_german_baseline"
+  },
+  "license_review": {
+    "commercial_use_approved": true,
+    "basis": "Every selected Commons file declares Public domain or CC BY-SA; attribution and share-alike obligations remain recorded per file. Files with non-commercial licences would be excluded.",
+    "reviewed_by_owner": true
+  },
+  "regulation_sources": [
+    {
+      "title": "Netherlands RVV 1990 official Annex 1",
+      "url": "https://wetten.overheid.nl/jci1.3:c:BWBR0004825&bijlage=1&g=2026-02-11&z=2026-02-11"
+    }
+  ],
+  "artworks": [
+    {
+      "asset_id": "nl-c04-l",
+      "sign_code": "C04-L",
+      "semantic_id": "arrow_left_rect",
+      "model_class_label": "arrow_left_rect",
+      "commons_title": "File:Nederlands verkeersbord C4 (links).svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_left_rect maps to national sign code C04-L; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c04-r",
+      "sign_code": "C04-R",
+      "semantic_id": "arrow_right_rect",
+      "model_class_label": "arrow_right_rect",
+      "commons_title": "File:Nederlands verkeersbord C4 (rechts).svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_right_rect maps to national sign code C04-R; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-d04",
+      "sign_code": "D04",
+      "semantic_id": "arrow_through",
+      "model_class_label": "arrow_through",
+      "commons_title": "File:Nederlands verkeersbord D4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_through maps to national sign code D04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-d07",
+      "sign_code": "D07",
+      "semantic_id": "arrow_turn_left_right",
+      "model_class_label": "arrow_turn_left_right",
+      "commons_title": "File:Nederlands verkeersbord D7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left_right maps to national sign code D07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g12",
+      "sign_code": "G12",
+      "semantic_id": "bicycle:end",
+      "model_class_label": "bicycle:end",
+      "commons_title": "File:Nederlands verkeersbord G12.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:end maps to national sign code G12; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g11",
+      "sign_code": "G11",
+      "semantic_id": "bicycle:start",
+      "model_class_label": "bicycle:start",
+      "commons_title": "File:Nederlands verkeersbord G11.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:start maps to national sign code G11; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g12-b",
+      "sign_code": "G12-B",
+      "semantic_id": "bicycle_ebike:end",
+      "model_class_label": "bicycle_ebike:end",
+      "commons_title": "File:Nederlands verkeersbord G12b.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle_ebike:end maps to national sign code G12-B; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g12-a",
+      "sign_code": "G12-A",
+      "semantic_id": "bicycle_ebike:start",
+      "model_class_label": "bicycle_ebike:start",
+      "commons_title": "File:Nederlands verkeersbord G12a.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle_ebike:start maps to national sign code G12-A; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c05",
+      "sign_code": "C05",
+      "semantic_id": "bothways",
+      "model_class_label": "bothways",
+      "commons_title": "File:Nederlands verkeersbord C5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bothways maps to national sign code C05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f13",
+      "sign_code": "F13",
+      "semantic_id": "bus:start",
+      "model_class_label": "bus:start",
+      "commons_title": "File:Nederlands verkeersbord F13.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bus:start maps to national sign code F13; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f14",
+      "sign_code": "F14",
+      "semantic_id": "bus:stop",
+      "model_class_label": "bus:stop",
+      "commons_title": "File:Nederlands verkeersbord F14.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bus:stop maps to national sign code F14; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b06",
+      "sign_code": "B06",
+      "semantic_id": "give_way",
+      "model_class_label": "give_way",
+      "commons_title": "File:Nederlands verkeersbord B6.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class give_way maps to national sign code B06; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j37",
+      "sign_code": "J37",
+      "semantic_id": "hazard",
+      "model_class_label": "hazard",
+      "commons_title": "File:Nederlands verkeersbord J37.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard maps to national sign code J37; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j30",
+      "sign_code": "J30",
+      "semantic_id": "hazard:airport",
+      "model_class_label": "hazard:airport",
+      "commons_title": "File:Nederlands verkeersbord J30.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:airport maps to national sign code J30; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j28",
+      "sign_code": "J28",
+      "semantic_id": "hazard:animals",
+      "model_class_label": "hazard:animals",
+      "commons_title": "File:Nederlands verkeersbord J28.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:animals maps to national sign code J28; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j24",
+      "sign_code": "J24",
+      "semantic_id": "hazard:bicycle",
+      "model_class_label": "hazard:bicycle",
+      "commons_title": "File:Nederlands verkeersbord J24.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bicycle maps to national sign code J24; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j29",
+      "sign_code": "J29",
+      "semantic_id": "hazard:bothways",
+      "model_class_label": "hazard:bothways",
+      "commons_title": "File:Nederlands verkeersbord J29.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bothways maps to national sign code J29; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j38",
+      "sign_code": "J38",
+      "semantic_id": "hazard:bump",
+      "model_class_label": "hazard:bump",
+      "commons_title": "File:Nederlands verkeersbord J38.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bump maps to national sign code J38; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j01",
+      "sign_code": "J01",
+      "semantic_id": "hazard:bumps",
+      "model_class_label": "hazard:bumps",
+      "commons_title": "File:Nederlands verkeersbord J1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bumps maps to national sign code J01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j08",
+      "sign_code": "J08",
+      "semantic_id": "hazard:crossing",
+      "model_class_label": "hazard:crossing",
+      "commons_title": "File:Nederlands verkeersbord J8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:crossing maps to national sign code J08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j26",
+      "sign_code": "J26",
+      "semantic_id": "hazard:dock",
+      "model_class_label": "hazard:dock",
+      "commons_title": "File:Nederlands verkeersbord J26.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:dock maps to national sign code J26; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j25",
+      "sign_code": "J25",
+      "semantic_id": "hazard:gravel",
+      "model_class_label": "hazard:gravel",
+      "commons_title": "File:Nederlands verkeersbord J25.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:gravel maps to national sign code J25; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j36",
+      "sign_code": "J36",
+      "semantic_id": "hazard:ice",
+      "model_class_label": "hazard:ice",
+      "commons_title": "File:Nederlands verkeersbord J36.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:ice maps to national sign code J36; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j06",
+      "sign_code": "J06",
+      "semantic_id": "hazard:incline:up",
+      "model_class_label": "hazard:incline:up",
+      "commons_title": "File:Nederlands verkeersbord J6.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:incline:up maps to national sign code J06; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j07",
+      "sign_code": "J07",
+      "semantic_id": "hazard:include:down",
+      "model_class_label": "hazard:include:down",
+      "commons_title": "File:Nederlands verkeersbord J7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:include:down maps to national sign code J07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b03",
+      "sign_code": "B03",
+      "semantic_id": "hazard:intersection",
+      "model_class_label": "hazard:intersection",
+      "commons_title": "File:Nederlands verkeersbord B3.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:intersection maps to national sign code B03; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b04",
+      "sign_code": "B04",
+      "semantic_id": "hazard:intersection:left",
+      "model_class_label": "hazard:intersection:left",
+      "commons_title": "File:Nederlands verkeersbord B4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:intersection:left maps to national sign code B04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b05",
+      "sign_code": "B05",
+      "semantic_id": "hazard:intersection:right",
+      "model_class_label": "hazard:intersection:right",
+      "commons_title": "File:Nederlands verkeersbord B5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:intersection:right maps to national sign code B05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j10",
+      "sign_code": "J10",
+      "semantic_id": "hazard:level_crossing",
+      "model_class_label": "hazard:level_crossing",
+      "commons_title": "File:Nederlands verkeersbord J10.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:level_crossing maps to national sign code J10; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j15",
+      "sign_code": "J15",
+      "semantic_id": "hazard:moving_bridge",
+      "model_class_label": "hazard:moving_bridge",
+      "commons_title": "File:Nederlands verkeersbord J15.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:moving_bridge maps to national sign code J15; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j17",
+      "sign_code": "J17",
+      "semantic_id": "hazard:narrow_both",
+      "model_class_label": "hazard:narrow_both",
+      "commons_title": "File:Nederlands verkeersbord J17.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_both maps to national sign code J17; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j19",
+      "sign_code": "J19",
+      "semantic_id": "hazard:narrow_left",
+      "model_class_label": "hazard:narrow_left",
+      "commons_title": "File:Nederlands verkeersbord J19.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_left maps to national sign code J19; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j18",
+      "sign_code": "J18",
+      "semantic_id": "hazard:narrow_right",
+      "model_class_label": "hazard:narrow_right",
+      "commons_title": "File:Nederlands verkeersbord J18.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_right maps to national sign code J18; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j22",
+      "sign_code": "J22",
+      "semantic_id": "hazard:pedestrian_crossing",
+      "model_class_label": "hazard:pedestrian_crossing",
+      "commons_title": "File:Nederlands verkeersbord J22.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:pedestrian_crossing maps to national sign code J22; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j23",
+      "sign_code": "J23",
+      "semantic_id": "hazard:pedestrian",
+      "model_class_label": "hazard:pedestrian",
+      "commons_title": "File:Nederlands verkeersbord J23.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:pedestrian maps to national sign code J23; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j35",
+      "sign_code": "J35",
+      "semantic_id": "hazard:rain",
+      "model_class_label": "hazard:rain",
+      "commons_title": "File:Nederlands verkeersbord J35.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:rain maps to national sign code J35; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j16",
+      "sign_code": "J16",
+      "semantic_id": "hazard:road_works",
+      "model_class_label": "hazard:road_works",
+      "commons_title": "File:Nederlands verkeersbord J16.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:road_works maps to national sign code J16; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j09",
+      "sign_code": "J09",
+      "semantic_id": "hazard:roundabout",
+      "model_class_label": "hazard:roundabout",
+      "commons_title": "File:Nederlands verkeersbord J9.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:roundabout maps to national sign code J09; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j21",
+      "sign_code": "J21",
+      "semantic_id": "hazard:school",
+      "model_class_label": "hazard:school",
+      "commons_title": "File:Nederlands verkeersbord J21.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:school maps to national sign code J21; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j20",
+      "sign_code": "J20",
+      "semantic_id": "hazard:slippery",
+      "model_class_label": "hazard:slippery",
+      "commons_title": "File:Nederlands verkeersbord J20.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:slippery maps to national sign code J20; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j33",
+      "sign_code": "J33",
+      "semantic_id": "hazard:traffic_jam",
+      "model_class_label": "hazard:traffic_jam",
+      "commons_title": "File:Nederlands verkeersbord J33.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:traffic_jam maps to national sign code J33; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j32",
+      "sign_code": "J32",
+      "semantic_id": "hazard:traffic_signal",
+      "model_class_label": "hazard:traffic_signal",
+      "commons_title": "File:Nederlands verkeersbord J32.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:traffic_signal maps to national sign code J32; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j11",
+      "sign_code": "J11",
+      "semantic_id": "hazard:train",
+      "model_class_label": "hazard:train",
+      "commons_title": "File:Nederlands verkeersbord J11.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:train maps to national sign code J11; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j14",
+      "sign_code": "J14",
+      "semantic_id": "hazard:tram",
+      "model_class_label": "hazard:tram",
+      "commons_title": "File:Nederlands verkeersbord J14.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:tram maps to national sign code J14; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j03",
+      "sign_code": "J03",
+      "semantic_id": "hazard:turn_left",
+      "model_class_label": "hazard:turn_left",
+      "commons_title": "File:Nederlands verkeersbord J3.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_left maps to national sign code J03; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j02",
+      "sign_code": "J02",
+      "semantic_id": "hazard:turn_right",
+      "model_class_label": "hazard:turn_right",
+      "commons_title": "File:Nederlands verkeersbord J2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_right maps to national sign code J02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j27",
+      "sign_code": "J27",
+      "semantic_id": "hazard:wild_animals",
+      "model_class_label": "hazard:wild_animals",
+      "commons_title": "File:Nederlands verkeersbord J27.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wild_animals maps to national sign code J27; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j31",
+      "sign_code": "J31",
+      "semantic_id": "hazard:wind",
+      "model_class_label": "hazard:wind",
+      "commons_title": "File:Nederlands verkeersbord J31.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wind maps to national sign code J31; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j04",
+      "sign_code": "J04",
+      "semantic_id": "hazard:zigzag",
+      "model_class_label": "hazard:zigzag",
+      "commons_title": "File:Nederlands verkeersbord J4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag maps to national sign code J04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-j05",
+      "sign_code": "J05",
+      "semantic_id": "hazard:zigzag:left",
+      "model_class_label": "hazard:zigzag:left",
+      "commons_title": "File:Nederlands verkeersbord J5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag:left maps to national sign code J05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f22",
+      "sign_code": "F22",
+      "semantic_id": "hgv:end",
+      "model_class_label": "hgv:end",
+      "commons_title": "File:Nederlands verkeersbord F22.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hgv:end maps to national sign code F22; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f21",
+      "sign_code": "F21",
+      "semantic_id": "hgv:start",
+      "model_class_label": "hgv:start",
+      "commons_title": "File:Nederlands verkeersbord F21.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hgv:start maps to national sign code F21; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g10",
+      "sign_code": "G10",
+      "semantic_id": "horse:end",
+      "model_class_label": "horse:end",
+      "commons_title": "File:Nederlands verkeersbord G10.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class horse:end maps to national sign code G10; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g09",
+      "sign_code": "G09",
+      "semantic_id": "horse:start",
+      "model_class_label": "horse:start",
+      "commons_title": "File:Nederlands verkeersbord G9.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class horse:start maps to national sign code G09; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c20",
+      "sign_code": "C20",
+      "semantic_id": "maxaxleweight",
+      "model_class_label": "maxaxleweight",
+      "commons_title": "File:Nederlands verkeersbord C20.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxaxleweight maps to national sign code C20; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c19",
+      "sign_code": "C19",
+      "semantic_id": "maxheight",
+      "model_class_label": "maxheight",
+      "commons_title": "File:Nederlands verkeersbord C19.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxheight maps to national sign code C19; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c17",
+      "sign_code": "C17",
+      "semantic_id": "maxlength",
+      "model_class_label": "maxlength",
+      "commons_title": "File:Nederlands verkeersbord C17.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxlength maps to national sign code C17; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a01-130",
+      "sign_code": "A01-130",
+      "semantic_id": "maxspeed:130",
+      "model_class_label": "maxspeed:130",
+      "commons_title": "File:Nederlands verkeersbord A1 130.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:130 maps to national sign code A01-130; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a01-30",
+      "sign_code": "A01-30",
+      "semantic_id": "maxspeed:30",
+      "model_class_label": "maxspeed:30",
+      "commons_title": "File:Nederlands verkeersbord A1 30 Zone.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:30 maps to national sign code A01-30; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a02",
+      "sign_code": "A02",
+      "semantic_id": "maxspeed:end",
+      "model_class_label": "maxspeed:end",
+      "commons_title": "File:Nederlands verkeersbord A2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:end maps to national sign code A02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c21",
+      "sign_code": "C21",
+      "semantic_id": "maxweight",
+      "model_class_label": "maxweight",
+      "commons_title": "File:Nederlands verkeersbord C21.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxweight maps to national sign code C21; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c18",
+      "sign_code": "C18",
+      "semantic_id": "maxwidth",
+      "model_class_label": "maxwidth",
+      "commons_title": "File:Nederlands verkeersbord C18.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxwidth maps to national sign code C18; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g02",
+      "sign_code": "G02",
+      "semantic_id": "motorway:end",
+      "model_class_label": "motorway:end",
+      "commons_title": "File:Nederlands verkeersbord G2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class motorway:end maps to national sign code G02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g01",
+      "sign_code": "G01",
+      "semantic_id": "motorway:start",
+      "model_class_label": "motorway:start",
+      "commons_title": "File:Nederlands verkeersbord G1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class motorway:start maps to national sign code G01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c08",
+      "sign_code": "C08",
+      "semantic_id": "no_agriculture",
+      "model_class_label": "no_agriculture",
+      "commons_title": "File:Nederlands verkeersbord C8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_agriculture maps to national sign code C08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c14",
+      "sign_code": "C14",
+      "semantic_id": "no_bicycle",
+      "model_class_label": "no_bicycle",
+      "commons_title": "File:Nederlands verkeersbord C14.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_bicycle maps to national sign code C14; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c07-a",
+      "sign_code": "C07-A",
+      "semantic_id": "no_bus",
+      "model_class_label": "no_bus",
+      "commons_title": "File:Nederlands verkeersbord C7a.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_bus maps to national sign code C07-A; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c12",
+      "sign_code": "C12",
+      "semantic_id": "no_car_motorcycle",
+      "model_class_label": "no_car_motorcycle",
+      "commons_title": "File:Nederlands verkeersbord C12.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_car_motorcycle maps to national sign code C12; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c06",
+      "sign_code": "C06",
+      "semantic_id": "no_car",
+      "model_class_label": "no_car",
+      "commons_title": "File:Nederlands verkeersbord C6.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_car maps to national sign code C06; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c22",
+      "sign_code": "C22",
+      "semantic_id": "no_dangerous",
+      "model_class_label": "no_dangerous",
+      "commons_title": "File:Nederlands verkeersbord C22.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous maps to national sign code C22; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c02",
+      "sign_code": "C02",
+      "semantic_id": "no_entry",
+      "model_class_label": "no_entry",
+      "commons_title": "File:Nederlands verkeersbord C2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_entry maps to national sign code C02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-l08",
+      "sign_code": "L08",
+      "semantic_id": "no_exit",
+      "model_class_label": "no_exit",
+      "commons_title": "File:Nederlands verkeersbord L8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_exit maps to national sign code L08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c07",
+      "sign_code": "C07",
+      "semantic_id": "no_hgv",
+      "model_class_label": "no_hgv",
+      "commons_title": "File:Nederlands verkeersbord C7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_hgv maps to national sign code C07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c13",
+      "sign_code": "C13",
+      "semantic_id": "no_moped",
+      "model_class_label": "no_moped",
+      "commons_title": "File:Nederlands verkeersbord C13.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_moped maps to national sign code C13; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c11",
+      "sign_code": "C11",
+      "semantic_id": "no_motorcycle",
+      "model_class_label": "no_motorcycle",
+      "commons_title": "File:Nederlands verkeersbord C11.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_motorcycle maps to national sign code C11; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f01",
+      "sign_code": "F01",
+      "semantic_id": "no_overtaking",
+      "model_class_label": "no_overtaking",
+      "commons_title": "File:Nederlands verkeersbord F1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking maps to national sign code F01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f02",
+      "sign_code": "F02",
+      "semantic_id": "no_overtaking:end",
+      "model_class_label": "no_overtaking:end",
+      "commons_title": "File:Nederlands verkeersbord F2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:end maps to national sign code F02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f03",
+      "sign_code": "F03",
+      "semantic_id": "no_overtaking:hgv",
+      "model_class_label": "no_overtaking:hgv",
+      "commons_title": "File:Nederlands verkeersbord F3.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:hgv maps to national sign code F03; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f04",
+      "sign_code": "F04",
+      "semantic_id": "no_overtaking:end:hgv",
+      "model_class_label": "no_overtaking:end:hgv",
+      "commons_title": "File:Nederlands verkeersbord F4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:end:hgv maps to national sign code F04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e01",
+      "sign_code": "E01",
+      "semantic_id": "no_parking",
+      "model_class_label": "no_parking",
+      "commons_title": "File:Nederlands verkeersbord E1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking maps to national sign code E01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c16",
+      "sign_code": "C16",
+      "semantic_id": "no_pedestrian",
+      "model_class_label": "no_pedestrian",
+      "commons_title": "File:Nederlands verkeersbord C16.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_pedestrian maps to national sign code C16; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c10",
+      "sign_code": "C10",
+      "semantic_id": "no_trailer",
+      "model_class_label": "no_trailer",
+      "commons_title": "File:Nederlands verkeersbord C10.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_trailer maps to national sign code C10; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f07",
+      "sign_code": "F07",
+      "semantic_id": "no_u_turn",
+      "model_class_label": "no_u_turn",
+      "commons_title": "File:Nederlands verkeersbord F7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_u_turn maps to national sign code F07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c01",
+      "sign_code": "C01",
+      "semantic_id": "no_way",
+      "model_class_label": "no_way",
+      "commons_title": "File:Nederlands verkeersbord C1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_way maps to national sign code C01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f08",
+      "sign_code": "F08",
+      "semantic_id": "no:end",
+      "model_class_label": "no:end",
+      "commons_title": "File:Nederlands verkeersbord F8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no:end maps to national sign code F08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-c03",
+      "sign_code": "C03",
+      "semantic_id": "oneway",
+      "model_class_label": "oneway",
+      "commons_title": "File:Nederlands verkeersbord C3.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class oneway maps to national sign code C03; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e04",
+      "sign_code": "E04",
+      "semantic_id": "parking",
+      "model_class_label": "parking",
+      "commons_title": "File:Nederlands verkeersbord E4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking maps to national sign code E04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e08",
+      "sign_code": "E08",
+      "semantic_id": "parking:car",
+      "model_class_label": "parking:car",
+      "commons_title": "File:Nederlands verkeersbord E8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:car maps to national sign code E08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e13",
+      "sign_code": "E13",
+      "semantic_id": "parking:carpool",
+      "model_class_label": "parking:carpool",
+      "commons_title": "File:Nederlands verkeersbord E13.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:carpool maps to national sign code E13; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e07",
+      "sign_code": "E07",
+      "semantic_id": "parking:delivery",
+      "model_class_label": "parking:delivery",
+      "commons_title": "File:Nederlands verkeersbord E7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:delivery maps to national sign code E07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e06",
+      "sign_code": "E06",
+      "semantic_id": "parking:disabled",
+      "model_class_label": "parking:disabled",
+      "commons_title": "File:Nederlands verkeersbord E6.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:disabled maps to national sign code E06; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e12",
+      "sign_code": "E12",
+      "semantic_id": "parking:park_ride",
+      "model_class_label": "parking:park_ride",
+      "commons_title": "File:Nederlands verkeersbord E12.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:park_ride maps to national sign code E12; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-e05",
+      "sign_code": "E05",
+      "semantic_id": "parking:taxi",
+      "model_class_label": "parking:taxi",
+      "commons_title": "File:Nederlands verkeersbord E5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:taxi maps to national sign code E05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g08",
+      "sign_code": "G08",
+      "semantic_id": "pedestrian:end",
+      "model_class_label": "pedestrian:end",
+      "commons_title": "File:Nederlands verkeersbord G8.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:end maps to national sign code G08; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g07",
+      "sign_code": "G07",
+      "semantic_id": "pedestrian:start",
+      "model_class_label": "pedestrian:start",
+      "commons_title": "File:Nederlands verkeersbord G7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code G07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-l02",
+      "sign_code": "L02",
+      "semantic_id": "pedestrian_crossing",
+      "model_class_label": "pedestrian_crossing",
+      "commons_title": "File:Nederlands verkeersbord L2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian_crossing maps to national sign code L02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b01",
+      "sign_code": "B01",
+      "semantic_id": "pedestrian:start",
+      "model_class_label": "pedestrian:start",
+      "commons_title": "File:Nederlands verkeersbord B1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code B01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f05",
+      "sign_code": "F05",
+      "semantic_id": "priority:backward",
+      "model_class_label": "priority:backward",
+      "commons_title": "File:Nederlands verkeersbord F5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:backward maps to national sign code F05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b02",
+      "sign_code": "B02",
+      "semantic_id": "priority:end",
+      "model_class_label": "priority:end",
+      "commons_title": "File:Nederlands verkeersbord B2.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:end maps to national sign code B02; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f06",
+      "sign_code": "F06",
+      "semantic_id": "priority:forward",
+      "model_class_label": "priority:forward",
+      "commons_title": "File:Nederlands verkeersbord F6.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:forward maps to national sign code F06; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-l14",
+      "sign_code": "L14",
+      "semantic_id": "rest",
+      "model_class_label": "rest",
+      "commons_title": "File:Nederlands verkeersbord L14.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class rest maps to national sign code L14; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-d01",
+      "sign_code": "D01",
+      "semantic_id": "roundabout",
+      "model_class_label": "roundabout",
+      "commons_title": "File:NL verkeersbord D1.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class roundabout maps to national sign code D01; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a04",
+      "sign_code": "A04",
+      "semantic_id": "speed",
+      "model_class_label": "speed",
+      "commons_title": "File:Nederlands verkeersbord A4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class speed maps to national sign code A04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a05",
+      "sign_code": "A05",
+      "semantic_id": "speed:end",
+      "model_class_label": "speed:end",
+      "commons_title": "File:Nederlands verkeersbord A5.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class speed:end maps to national sign code A05; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-b07",
+      "sign_code": "B07",
+      "semantic_id": "stop",
+      "model_class_label": "stop",
+      "commons_title": "File:Nederlands verkeersbord B7.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class stop maps to national sign code B07; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f16",
+      "sign_code": "F16",
+      "semantic_id": "tram:end",
+      "model_class_label": "tram:end",
+      "commons_title": "File:Nederlands verkeersbord F16.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class tram:end maps to national sign code F16; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-f15",
+      "sign_code": "F15",
+      "semantic_id": "tram:start",
+      "model_class_label": "tram:start",
+      "commons_title": "File:Nederlands verkeersbord F15.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class tram:start maps to national sign code F15; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g04",
+      "sign_code": "G04",
+      "semantic_id": "trunk:end",
+      "model_class_label": "trunk:end",
+      "commons_title": "File:Nederlands verkeersbord G4.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class trunk:end maps to national sign code G04; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-g03",
+      "sign_code": "G03",
+      "semantic_id": "trunk:start",
+      "model_class_label": "trunk:start",
+      "commons_title": "File:Nederlands verkeersbord G3.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class trunk:start maps to national sign code G03; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-l13",
+      "sign_code": "L13",
+      "semantic_id": "tunnel:start",
+      "model_class_label": "tunnel:start",
+      "commons_title": "File:Nederlands verkeersbord L13.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class tunnel:start maps to national sign code L13; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    },
+    {
+      "asset_id": "nl-a01-30-zb",
+      "sign_code": "A01-30-ZB",
+      "semantic_id": "zone:30",
+      "model_class_label": "zone:30",
+      "commons_title": "File:Nederlands verkeersbord A1 30 Eindzone.svg",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class zone:30 maps to national sign code A01-30-ZB; Netherlands RVV 1990 official Annex 1 is the legal authority for the code and meaning."
+    }
+  ],
+  "coverage_evidence": {
+    "target_display_assets": 111,
+    "model_linked_entries": 111,
+    "total_entries_including_preserved_core_extras": 111,
+    "mapping_source": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "mapping_note": "Model-code mappings are reviewed against the national code identifiers; runtime semantic/action acceptance still requires the country rule review and calibrated model evidence."
+  }
+}

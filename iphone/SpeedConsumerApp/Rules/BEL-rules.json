@@ -6,7 +6,7 @@
   "currency_code": "EUR",
   "default_language": "en",
   "source_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
-  "source_checked_at": "2026-09-09",
+  "source_checked_at": "2026-09-16",
   "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding. Immediate-settlement rates changed on 2026-07-01: EUR 58 for the first 10 km/h, then EUR 12 per additional km/h in protected road contexts or EUR 7 elsewhere, plus the 2026 EUR 10.67 administrative fee. Formula text describes an available settlement, not a guaranteed court fine. Legal bands refer to officially retained excess after correction; raw GPS excess is only illustrative. The app does not have every zone, procedural or driver-status input, so higher bands have no invented scalar fine, points or ban duration. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
     {

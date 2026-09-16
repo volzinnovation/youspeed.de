@@ -11,6 +11,10 @@
       "country_id": "netherlands",
       "country_code": "NLD",
       "iso2": "NL",
+      "penalty_rules": {
+        "file": "NLD-rules.json",
+        "source": "iphone/SpeedConsumerApp/Rules/NLD-rules.json"
+      },
       "mode": "single_country",
       "regions": [
         {
@@ -47,6 +51,10 @@
       "country_id": "belgium",
       "country_code": "BEL",
       "iso2": "BE",
+      "penalty_rules": {
+        "file": "BEL-rules.json",
+        "source": "iphone/SpeedConsumerApp/Rules/BEL-rules.json"
+      },
       "mode": "single_country",
       "regions": [
         {
@@ -95,6 +103,10 @@
       "country_id": "germany",
       "country_code": "DEU",
       "iso2": "DE",
+      "penalty_rules": {
+        "file": "DEU-rules.json",
+        "source": "iphone/SpeedConsumerApp/Rules/DEU-rules.json"
+      },
       "mode": "regional_shards",
       "include_in_top_country_sequence": false,
       "regions": [
@@ -169,6 +181,10 @@
       "country_id": "france",
       "country_code": "FRA",
       "iso2": "FR",
+      "penalty_rules": {
+        "file": "FRA-rules.json",
+        "source": "iphone/SpeedConsumerApp/Rules/FRA-rules.json"
+      },
       "mode": "regional_shards",
       "include_in_top_country_sequence": false,
       "regions": [

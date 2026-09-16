@@ -802,6 +802,16 @@ actor V3BundleManager {
                 try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
             }
             try quickValidateDB(at: stagingDB)
+            let bundleDir = try bundlesDir().appendingPathComponent(
+                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
+                isDirectory: true
+            )
+            try await installPenaltyRules(
+                manifest: manifest,
+                manifestURL: manifestURL,
+                bundleDir: bundleDir,
+                onProgress: onProgress
+            )
             installedSHA = try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
@@ -969,6 +979,16 @@ actor V3BundleManager {
             // Full-file SHA256 was already validated during download/assembly.
             // Keep startup responsive by skipping heavy PRAGMA quick_check here.
             try quickValidateDB(at: stagingDB, runQuickCheck: false)
+            let bundleDir = try bundlesDir().appendingPathComponent(
+                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
+                isDirectory: true
+            )
+            try await installPenaltyRules(
+                manifest: manifest,
+                manifestURL: manifestURL,
+                bundleDir: bundleDir,
+                onProgress: onProgress
+            )
             installedSHA = try activatePreparedDB(
                 preparedDB: stagingDB,
                 manifest: manifest,
@@ -990,6 +1010,55 @@ actor V3BundleManager {
             details: "full bundle activated",
             dbSHA256: installedSHA
         )
+    }
+
+    private func installPenaltyRules(
+        manifest: V3BundleManifest,
+        manifestURL: URL,
+        bundleDir: URL,
+        onProgress: (@Sendable (BundleSyncProgress) -> Void)?
+    ) async throws {
+        guard let artifact = manifest.penaltyRules else {
+            return
+        }
+        let fileName = artifact.file.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !fileName.isEmpty,
+              !fileName.contains("/"),
+              !fileName.contains("\\"),
+              fileName != ".",
+              fileName != ".." else {
+            throw ConsumerAppError.invalidManifest("Invalid penalty rules artifact path")
+        }
+        if !fileManager.fileExists(atPath: bundleDir.path) {
+            try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        }
+        let finalURL = bundleDir.appendingPathComponent(fileName)
+        let sourceURL = try resolveArtifactURL(artifact, relativeTo: manifestURL)
+        emitProgress(
+            onProgress,
+            stage: .downloading,
+            detail: "Downloading \(fileName)",
+            completedBytes: 0,
+            totalBytes: artifact.bytes
+        )
+        let downloaded = try await downloadFile(from: sourceURL) { completedBytes, totalBytes in
+            onProgress?(
+                BundleSyncProgress(
+                    stage: .downloading,
+                    detail: "Downloading \(fileName)",
+                    completedBytes: max(0, completedBytes),
+                    totalBytes: max(artifact.bytes, totalBytes ?? artifact.bytes),
+                    partDownloads: []
+                )
+            )
+        }
+        defer { try? removeItemIfExists(at: downloaded) }
+        guard try fileSize(downloaded) == artifact.bytes else {
+            throw ConsumerAppError.checksum("Byte-count mismatch for penalty rules artifact")
+        }
+        try validateSHA256(fileAt: downloaded, expectedHex: artifact.sha256, label: "penalty rules")
+        try? removeItemIfExists(at: finalURL)
+        try fileManager.moveItem(at: downloaded, to: finalURL)
     }
 
     private func activatePreparedDB(

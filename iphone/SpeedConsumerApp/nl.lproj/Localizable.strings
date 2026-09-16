@@ -329,7 +329,7 @@
 "onboarding.sources.title" = "Drie bronnen voor limieten";
 "onboarding.sources.body" = "Kies de gedownloade kaart, je eigen gesproken correcties of cameraherkenning.";
 "onboarding.sources.map" = "Kaart: gps koppelt je positie aan de gedownloade wegen. Dit werkt offline en zonder camera.";
-"onboarding.sources.voice" = "Eigen correcties: tik dubbel op de snelheid of limiet en spreek een Duitse snelheidsopdracht uit. Herkenning op het toestel vraagt microfoon- en spraaktoegang, maar geen camera.";
+"onboarding.sources.voice" = "Eigen correcties: tik dubbel op de snelheid of limiet en spreek een Duitse, Franse of Nederlandse snelheidsopdracht uit. Herkenning op het toestel vraagt microfoon- en spraaktoegang, maar geen camera.";
 "onboarding.sources.camera" = "Camera: herkent ondersteunde verkeersborden met de telefooncamera, ook zonder dashcamvideo op te slaan. Sommige borden of landen worden niet ondersteund.";
 "onboarding.sources.independent" = "Onafhankelijke herkenning gebruikt de camera op het actieve rijscherm, zonder video of Panoramax-foto’s. Uitgeschakeld werkt herkenning alleen met de recorder.";
 "onboarding.panoramax.title" = "Draag straatbeelden bij";

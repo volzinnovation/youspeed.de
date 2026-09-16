@@ -114,6 +114,46 @@ def test_repository_manifest_pins_sources_hashes_and_release_gates() -> None:
         panoramax_classifier["release_gate"]
         == "panoramax_cc_by_sa_and_ultralytics_review"
     )
+    foreign_sources = {
+        "fr": manifest.sources_by_id["panoramax-fr-classifier-7f2bdd"],
+        "nl": manifest.sources_by_id["panoramax-nl-classifier-7a8110"],
+        "be": manifest.sources_by_id["panoramax-be-classifier-b31ee3"],
+    }
+    assert {
+        source["license"]["expression"] for source in foreign_sources.values()
+    } == {"Etalab-2.0"}
+    assert all(
+        source["license"]["commercial_use_permitted"]
+        and source["license"]["release_gate"]
+        == "panoramax_cc_by_sa_and_ultralytics_review"
+        for source in foreign_sources.values()
+    )
+    assert (
+        manifest.sources_by_id["panoramax-fr-crops-ea7598"]["license"]["expression"]
+        == "Etalab-2.0"
+    )
+    assert (
+        manifest.sources_by_id["panoramax-nl-crops-68c7c1"]["license"]["expression"]
+        == "CC-BY-SA-4.0"
+    )
+    assert (
+        manifest.sources_by_id["panoramax-be-crops-6479ab"]["license"]["expression"]
+        == "CC-BY-SA-4.0"
+    )
+    foreign_artifacts = {
+        "fr": manifest.artifacts_by_id["panoramax-fr-classifier-7f2bdd"],
+        "nl": manifest.artifacts_by_id["panoramax-nl-classifier-7a8110"],
+        "be": manifest.artifacts_by_id["panoramax-be-classifier-b31ee3"],
+    }
+    assert all(
+        artifact["serialization_risk"] == "pickle_capable_untrusted"
+        and artifact["release_gate"]
+        == "panoramax_cc_by_sa_and_ultralytics_review"
+        for artifact in foreign_artifacts.values()
+    )
+    assert foreign_artifacts["fr"]["size_bytes"] == 109854129
+    assert foreign_artifacts["nl"]["size_bytes"] == 26350065
+    assert foreign_artifacts["be"]["size_bytes"] == 26306097
     mobilenet_large = manifest.artifacts_by_id["mobilenetv3-large-ra-in1k-96f46a1"]
     assert mobilenet_large["size_bytes"] == 22058321
     assert mobilenet_large["format"] == "safetensors"

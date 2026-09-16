@@ -68,6 +68,8 @@ class BundleTargetConfigCountry:
     mode: str
     regions: List[BundleTargetConfigRegion]
     include_in_top_country_sequence: bool = True
+    penalty_rules_file: str = ""
+    penalty_rules_source: str = ""
 
 
 def _slug(value: str) -> str:
@@ -132,6 +134,14 @@ def _load_bundle_target_config(path: Path) -> List[BundleTargetConfigCountry]:
         if not iso2 and country_code:
             iso2 = ISO3_TO_ISO2.get(country_code, "")
         mode = str(row.get("mode", "single_country")).strip().lower() or "single_country"
+        penalty_rules_raw = row.get("penalty_rules")
+        penalty_rules_file = ""
+        penalty_rules_source = ""
+        if isinstance(penalty_rules_raw, dict):
+            penalty_rules_file = str(penalty_rules_raw.get("file", "")).strip()
+            penalty_rules_source = str(penalty_rules_raw.get("source", "")).strip()
+            if not penalty_rules_file or not penalty_rules_source:
+                raise SystemExit(f"Invalid penalty_rules mapping for country '{country_id}' in {path}")
         regions_raw = row.get("regions")
         if not isinstance(regions_raw, list):
             raise SystemExit(f"Invalid regions list for country '{country_id}' in {path}")
@@ -154,6 +164,8 @@ def _load_bundle_target_config(path: Path) -> List[BundleTargetConfigCountry]:
                 mode=mode,
                 regions=regions,
                 include_in_top_country_sequence=bool(row.get("include_in_top_country_sequence", True)),
+                penalty_rules_file=penalty_rules_file,
+                penalty_rules_source=penalty_rules_source,
             )
         )
     countries.sort(key=lambda item: (item.rank, item.country_id))

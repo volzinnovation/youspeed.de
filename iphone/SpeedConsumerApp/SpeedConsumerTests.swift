@@ -4942,10 +4942,12 @@ final class SpeedConsumerTests: XCTestCase {
 
         let netherlands = try XCTUnwrap(config.country(countryID: "netherlands"))
         XCTAssertEqual(netherlands.countryCode, "NLD")
+        XCTAssertEqual(netherlands.penaltyRules?.file, "NLD-rules.json")
         XCTAssertEqual(netherlands.mode, "single_country")
 
         let france = try XCTUnwrap(config.country(countryID: "france"))
         XCTAssertEqual(france.countryCode, "FRA")
+        XCTAssertEqual(france.penaltyRules?.file, "FRA-rules.json")
         XCTAssertEqual(france.mode, "regional_shards")
         XCTAssertEqual(france.regions.count, 26)
         XCTAssertTrue(france.regions.contains(where: { $0.regionID == "ile-de-france" }))
@@ -6407,7 +6409,7 @@ final class SpeedConsumerTests: XCTestCase {
         viewModel.currentLongitude = 8.437309
         viewModel.activeBundleVersion = "seed"
 
-        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "dreissig")
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "30")
 
         XCTAssertEqual(viewModel.speedCaptureMode, .idle)
         XCTAssertFalse(viewModel.testSpeedCaptureDidResolve)
@@ -6418,7 +6420,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(afterFirstCapture.first?.value, "30")
         XCTAssertEqual(afterFirstCapture.first?.roadCandidateIDs, ["17721265"])
 
-        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "vierzig")
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "40")
 
         XCTAssertEqual(viewModel.speedCaptureMode, .idle)
         XCTAssertFalse(viewModel.testSpeedCaptureDidResolve)
@@ -6446,7 +6448,7 @@ final class SpeedConsumerTests: XCTestCase {
         viewModel.currentLongitude = 8.437309
         viewModel.activeBundleVersion = "seed"
 
-        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "fussgaengerzone")
+        try await viewModel.testSimulateRecognizedSpeedCapture(transcript: "walk")
 
         XCTAssertNil(viewModel.speedLimitKmh)
         XCTAssertEqual(viewModel.speedLimitDisplayText, "Schritt")

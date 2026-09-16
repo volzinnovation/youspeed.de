@@ -329,7 +329,7 @@
 "onboarding.sources.title" = "Trois sources de limitations";
 "onboarding.sources.body" = "Choisissez la carte téléchargée, vos corrections vocales ou la reconnaissance par caméra.";
 "onboarding.sources.map" = "Carte : le GPS vous situe sur les routes téléchargées. Cela fonctionne hors ligne et sans caméra.";
-"onboarding.sources.voice" = "Vos corrections : touchez deux fois l’affichage de vitesse ou de limite et dictez une commande en allemand. La reconnaissance locale nécessite le microphone et la reconnaissance vocale, sans caméra.";
+"onboarding.sources.voice" = "Vos corrections : touchez deux fois l’affichage de vitesse ou de limite et dictez une commande en allemand, français ou néerlandais. La reconnaissance locale nécessite le microphone et la reconnaissance vocale, sans caméra.";
 "onboarding.sources.camera" = "Caméra : reconnaît les panneaux pris en charge, même sans enregistrer de vidéo. Certains panneaux ou pays peuvent ne pas être pris en charge.";
 "onboarding.sources.independent" = "La reconnaissance indépendante utilise la caméra sur l’écran de conduite, sans vidéo ni photos Panoramax. Désactivée, elle reste liée à l’enregistreur.";
 "onboarding.panoramax.title" = "Contribuez des photos de rue";

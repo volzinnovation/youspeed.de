@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 class SpeedCaptureSpeechTests {
     @Test
@@ -77,5 +78,47 @@ class SpeedCaptureSpeechTests {
         val selection = SpeedCaptureSpeech.resolveSelection("zweihundert")
 
         assertNull(selection)
+    }
+
+    @Test
+    fun resolvesFrenchOnDeviceSpeechProfile() {
+        val language = SpeedCaptureSpeech.languageFor(Locale.FRENCH)
+        val speed = SpeedCaptureSpeech.resolveSelection("quatre-vingt-dix", language)
+        val walk = SpeedCaptureSpeech.resolveSelection("zone piétonne", language)
+
+        assertEquals(SpeedCaptureLanguage.FRENCH, language)
+        assertEquals("fr-FR", language.localeTag)
+        assertEquals("vosk-model-small-fr-0.22", language.modelAssetPath)
+        assertEquals("Correction", language.promptText)
+        assertEquals("90", speed?.value)
+        assertEquals("walk", walk?.value)
+    }
+
+    @Test
+    fun resolvesDutchOnDeviceSpeechProfile() {
+        val language = SpeedCaptureSpeech.languageFor(Locale.forLanguageTag("nl-NL"))
+        val speed = SpeedCaptureSpeech.resolveSelection("honderdtwintig", language)
+        val walk = SpeedCaptureSpeech.resolveSelection("voetgangerszone", language)
+
+        assertEquals(SpeedCaptureLanguage.DUTCH, language)
+        assertEquals("nl-NL", language.localeTag)
+        assertEquals("vosk-model-small-nl-0.22", language.modelAssetPath)
+        assertEquals("Correctie", language.promptText)
+        assertEquals("120", speed?.value)
+        assertEquals("walk", walk?.value)
+    }
+
+    @Test
+    fun usesEnglishForUnsupportedDeviceLanguageAndResolvesEnglishSpeech() {
+        val language = SpeedCaptureSpeech.languageFor(Locale.ITALIAN)
+        val speed = SpeedCaptureSpeech.resolveSelection("one hundred and twenty", language)
+        val walk = SpeedCaptureSpeech.resolveSelection("pedestrian zone", language)
+
+        assertEquals(SpeedCaptureLanguage.ENGLISH, language)
+        assertEquals("en-US", language.localeTag)
+        assertEquals("vosk-model-small-en-us-0.15", language.modelAssetPath)
+        assertEquals("Correction", language.promptText)
+        assertEquals("120", speed?.value)
+        assertEquals("walk", walk?.value)
     }
 }

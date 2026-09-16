@@ -195,6 +195,17 @@ python3 scripts/tsr/bootstrap_sources.py verify \
 The bootstrapper treats `.pt` as opaque, pickle-capable bytes and never loads
 it. Any later conversion must run in an isolated, reproducible environment.
 
+The same manifest also pins the Panoramax France, Netherlands and Belgium
+classifier checkpoints and their dataset-card lineage. Those `.pt` checkpoints
+are conversion inputs only: foreign runtime packs must use the shared Panoramax
+detector plus the country classifier, export both stages to Core ML for iPhone
+and LiteRT for Android/CameraX, prove reference/Core ML/LiteRT preprocessing and
+output parity, calibrate country-specific confidence, and replay candidate
+bursts through the validated-passage reducer. A frame-level score or a copied
+Panoramax metric may not change the active speed context. The Panoramax train
+and validation archives are not app inputs and are intentionally not required
+for runtime bundles.
+
 Reproduce the published-split leakage only after the two pinned archives have
 passed bootstrap verification:
 

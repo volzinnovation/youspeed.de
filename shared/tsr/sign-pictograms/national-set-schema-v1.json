@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/sign-pictograms/national-set-index-v1.schema.json",
+  "type": "object",
+  "required": ["schema_version", "reviewed_at", "asset_root", "source_policy", "sets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "reviewed_at": {"type": "string", "format": "date"},
+    "asset_root": {"const": "shared/tsr/sign-pictograms"},
+    "source_policy": {"type": "string", "minLength": 20},
+    "sets": {
+      "type": "array",
+      "minItems": 4,
+      "items": {"$ref": "#/$defs/set"},
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "set": {
+      "type": "object",
+      "required": ["country", "status", "runtime_status", "asset_prefix", "originals_path", "png_path", "catalog_path", "asset_manifest", "selection", "display_eligible_assets", "notes"],
+      "properties": {
+        "country": {"enum": ["DE", "FR", "NL", "BE"]},
+        "status": {"enum": ["active", "artwork_ready", "not_ready"]},
+        "runtime_status": {"enum": ["active", "not_ready"]},
+        "asset_prefix": {"type": "string", "pattern": "^[a-z]{2}-$"},
+        "originals_path": {"type": "string", "pattern": "(^originals$|^national/[A-Z]{2}/originals$)"},
+        "png_path": {"type": "string", "pattern": "(^png$|^national/[A-Z]{2}/png$)"},
+        "catalog_path": {"type": ["string", "null"]},
+        "asset_manifest": {"type": ["string", "null"]},
+        "selection": {"type": ["string", "null"]},
+        "display_eligible_assets": {"type": "integer", "minimum": 0},
+        "notes": {"type": "string", "minLength": 10}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "active"}}},
+          "then": {
+            "properties": {
+              "catalog_path": {"type": "string"},
+              "asset_manifest": {"type": "string"},
+              "selection": {"type": "string"},
+              "runtime_status": {"const": "active"},
+              "display_eligible_assets": {"minimum": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "artwork_ready"}}},
+          "then": {
+            "properties": {
+              "runtime_status": {"const": "not_ready"},
+              "catalog_path": {"type": "null"},
+              "asset_manifest": {"type": "string"},
+              "selection": {"type": "string"},
+              "display_eligible_assets": {"minimum": 1}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"status": {"const": "not_ready"}}},
+          "then": {
+            "properties": {
+              "catalog_path": {"type": "null"},
+              "asset_manifest": {"type": "null"},
+              "selection": {"type": "null"},
+              "display_eligible_assets": {"const": 0}
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

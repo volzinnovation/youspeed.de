@@ -888,7 +888,7 @@ def test_registry_is_unselected_scoped_and_cross_checks_pinned_references() -> N
     assert registry.payload["selection_status"] == "not_evaluated"
     assert registry.payload["source_manifest_sha256"] == _sha256(DEFAULT_MANIFEST)
     assert registry.payload["source_manifest_sha256"] == (
-        "4985ebb8a146918c113700d312e6becb893acfed1d07f2bfa16263fadf0c1cbc"
+        "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b"
     )
     assert (
         registry.payload["scorecard_policy"]["scope"] == "internal_candidate_comparison"

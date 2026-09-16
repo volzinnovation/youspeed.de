@@ -76,7 +76,7 @@ L’exemple simulé 50 → 30 de ce guide n’a volontairement **pas été envoy
 
 ## Dépannage
 
-- **L’écran « Jetzt sprechen » n’apparaît pas :** dans iOS, ouvrez **Réglages → Confidentialité et sécurité → Microphone** et **Reconnaissance vocale**, puis activez YouSpeed. La reconnaissance allemande sur l’appareil doit être disponible.
+- **L’écran « Jetzt sprechen » n’apparaît pas :** dans iOS, ouvrez **Réglages → Confidentialité et sécurité → Microphone** et **Reconnaissance vocale**, puis activez YouSpeed. La reconnaissance sur l’appareil dans la langue sélectionnée (allemand, français ou néerlandais) doit être disponible.
 - **Mauvaise valeur ou mauvaise route :** supprimez l’entrée locale et recommencez lorsque la bonne route est associée.
 - **Le bouton d’export ne produit pas de fichier utilisable :** vérifiez qu’au moins un enregistrement local valide est affiché.
 - **JOSM signale des données incomplètes ou conflictuelles :** ne forcez pas l’envoi. Téléchargez à nouveau le chemin actuel et sa zone, appliquez le tag vérifié à cet objet complet, puis relancez la validation.

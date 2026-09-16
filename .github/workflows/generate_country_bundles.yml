@@ -584,6 +584,13 @@ jobs:
             cmd+=(--coverage-poly "${{ steps.plan.outputs.input_poly_path }}")
           fi
 
+          if [[ -n "${{ steps.plan.outputs.penalty_rules_source_path }}" ]]; then
+            cmd+=(
+              --penalty-rules "${{ steps.plan.outputs.penalty_rules_source_path }}"
+              --penalty-rules-file-name "${{ steps.plan.outputs.penalty_rules_file_name }}"
+            )
+          fi
+
           if [[ "${{ steps.params.outputs.skip_release_urls }}" != "true" ]]; then
             cmd+=(
               --github-owner "${GITHUB_REPOSITORY%/*}"

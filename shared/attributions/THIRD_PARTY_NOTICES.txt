@@ -47,6 +47,15 @@ Changes: The table was used to select sign artwork. Article text is not copied. 
 
 ================================================================================
 
+France, Netherlands and Belgium expanded traffic-sign artwork
+Wikimedia Commons contributors; national road-code authorities as referenced by each set manifest
+Per-file public domain, CC0 or CC BY/CC BY-SA with commercial use permitted under the declared terms
+Source: https://github.com/volzinnovation/youspeed.de/tree/main/shared/tsr/sign-pictograms/national
+Licence / legal basis: https://creativecommons.org/share-your-work/cclicenses/
+Changes: Owner-approved Commons renditions are retained as SVG and rasterized locally to transparent PNG. The expanded sets reach the German 111-entry baseline: 114 FR, 111 NL and 115 BE files including preserved core/transition signs. Country-specific regulation URLs, file-page provenance, hashes, commercial-use decisions and attribution requirements are recorded in national/FR, national/NL and national/BE manifests. These assets are not runtime model packs.
+
+================================================================================
+
 DE:242.1 · existing pedestrian-zone indicator
 Mediatus; German official traffic-sign artwork
 Public domain (Commons PD-GermanGov / PD-VzKat)
@@ -83,12 +92,66 @@ Changes: Training provenance of the classifier. The training dataset is not copi
 
 ================================================================================
 
+Panoramax/classify_fr_road_signs
+Panoramax; source revision 7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f
+Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
+Source: https://huggingface.co/Panoramax/classify_fr_road_signs/tree/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f
+Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
+Changes: Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+
+================================================================================
+
+Panoramax/classify_nl_road_signs
+Panoramax; source revision 7a811057049f6de207f909c0f1be2905fa9baf01
+Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
+Source: https://huggingface.co/Panoramax/classify_nl_road_signs/tree/7a811057049f6de207f909c0f1be2905fa9baf01
+Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
+Changes: Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+
+================================================================================
+
+Panoramax/classify_be_road_signs
+Panoramax; source revision b31ee38e467a667073087aa86503e0afe9b0320f
+Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms
+Source: https://huggingface.co/Panoramax/classify_be_road_signs/tree/b31ee38e467a667073087aa86503e0afe9b0320f
+Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
+Changes: Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.
+
+================================================================================
+
+Panoramax/classified_fr_road_signs
+Panoramax and contributing photographers; source revision ea75988e381f16e4677c5f42aa5fedea005f23d6
+Etalab Open Licence 2.0 (dataset-card declaration); commercial use approved under published terms
+Source: https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/tree/ea75988e381f16e4677c5f42aa5fedea005f23d6
+Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
+Changes: Training provenance for the FR classifier; dataset archives are not copied into the production app and must be split by capture lineage before calibration.
+
+================================================================================
+
+Panoramax/classified_nl_road_signs
+Panoramax and contributing photographers; source revision 68c7c1bac103f7ed42440af71536827dcada519c
+CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations
+Source: https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/tree/68c7c1bac103f7ed42440af71536827dcada519c
+Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
+Changes: Training provenance for the NL classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.
+
+================================================================================
+
+Panoramax/classified_be_road_signs
+Panoramax and contributing photographers; source revision 6479ab5a2a47629dc6e3a242a177c2537d9cf378
+CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations
+Source: https://huggingface.co/datasets/Panoramax/classified_be_road_signs/tree/6479ab5a2a47629dc6e3a242a177c2537d9cf378
+Licence / legal basis: https://creativecommons.org/licenses/by-sa/4.0/
+Changes: Training provenance for the BE classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.
+
+================================================================================
+
 Panoramax cross-country road-sign mapping
 Panoramax; source last modified 2026-03-01
 Etalab Open Licence 2.0 (repository-card declaration)
 Source: https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv
 Licence / legal basis: https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md
-Changes: German mapping column reviewed via the deployed Prolix reference; corrections and excluded ambiguous mappings documented in the YouSpeed catalog.
+Changes: The pinned table is materialized as shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json with the FR/NL/BE raw and normalized code columns, source SHA-256, model-code review status and artwork-selection status. Legal action/semantic review remains a separate country-rule gate.
 
 ================================================================================
 
@@ -146,12 +209,12 @@ Changes: Bundled font bytes unchanged. Full original copyright, reserved font na
 
 ================================================================================
 
-Android · vosk-model-small-de-0.15
+Android · Vosk small speech models (DE/FR/NL/EN)
 Copyright © 2020 Alpha Cephei Inc.
 Apache-2.0
 Source: https://alphacephei.com/vosk/models
 Licence / legal basis: https://www.apache.org/licenses/LICENSE-2.0
-Changes: Bundled German speech-recognition model, version 0.15.
+Changes: Bundled German model vosk-model-small-de-0.15, French model vosk-model-small-fr-0.22, Dutch model vosk-model-small-nl-0.22, and English fallback model vosk-model-small-en-us-0.15 for offline recognition.
 
 ================================================================================
 
@@ -1087,7 +1150,7 @@ www.police.be
 Reference citation; original website rights remain with its publisher
 Source: https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026
 Licence / legal basis: https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026
-Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled.
+Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled.
 
 ================================================================================
 
@@ -1114,7 +1177,7 @@ www.service-public.gouv.fr
 Reference citation; original website rights remain with its publisher
 Source: https://www.service-public.gouv.fr/particuliers/vosdroits/F19460
 Licence / legal basis: https://www.service-public.gouv.fr/particuliers/vosdroits/F19460
-Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled.
+Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled.
 
 ================================================================================
 
@@ -1168,7 +1231,7 @@ www.om.nl
 Reference citation; original website rights remain with its publisher
 Source: https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden
 Licence / legal basis: https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden
-Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled.
+Changes: Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled.
 
 ================================================================================
 
@@ -2223,6 +2286,39 @@ separate from the image status stated here. No endorsement is implied.
 
 ================================================================================
 
+FOREIGN COMMONS SIGN RENDITIONS
+
+Owner decision recorded: commercial-use-permitting Commons renditions are
+approved for the France, Netherlands and Belgium core sets. Assets are excluded
+only when the individual Commons metadata does not permit commercial use.
+
+The national regulation is the authority for sign code and meaning. Wikimedia
+Commons is the artwork provenance source. Every national manifest records the
+Commons file title, author, source and permanent page URLs, original download
+URL, Commons SHA-1, declared licence, licence source, commercial-use decision,
+SVG/PNG SHA-256 values and local rasterization changes:
+
+- shared/tsr/sign-pictograms/national/FR/manifest.json
+- shared/tsr/sign-pictograms/national/NL/manifest.json
+- shared/tsr/sign-pictograms/national/BE/manifest.json
+
+The expanded checked-in coverage is 114 FR SVG/PNG pairs, 111 NL pairs and
+115 BE pairs. The extra entries preserve core or transition artwork; Belgian
+B7 remains a legacy/transition announcement and is not the stop event.
+
+The France selection contains CC BY-SA 3.0 and CC BY-SA 4.0 renditions. The
+selected Netherlands and Belgium renditions are declared Public domain in their
+Commons metadata. CC BY-SA attribution/share-alike obligations remain in force
+for the French assets; public-domain status does not remove the voluntary source
+credit recorded in the manifests.
+
+The Belgian target catalogue is the new Code de la voie publique sign catalogue:
+https://www.codedelaroute.be/fr/code-de-la-voie-publique/signaux-routiers
+Its new signs target 2027-06-01; most current signs remain valid through
+2045-01-01 according to the catalogue's transition information.
+
+================================================================================
+
 PANORAMAX ROAD-SIGN CLASS MAPPING
 
 Component: Panoramax/classify_nl_road_signs, road_signs_mapping.csv, DE column
@@ -2241,6 +2337,12 @@ a file in the upstream Prolix repository. YouSpeed's display catalog adapts
 this reference to the actual mobile model labels, corrects reviewed sign
 mappings, and blocks ambiguous mappings. Exact changes are recorded in the
 catalog and README.md. No endorsement by Panoramax is implied.
+
+The complete published country-code table is materialized separately at
+shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json.
+Its SHA-256 and the pinned source revision are recorded in that file. The
+model-class-to-country-code mapping is complete for rows with FR, NL or BE
+values; legal action/semantic review and runtime class binding remain pending.
 
 # LICENCE OUVERTE 2.0/OPEN LICENCE 2.0
 

@@ -6,7 +6,7 @@
   "currency_code": "EUR",
   "default_language": "en",
   "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
-  "source_checked_at": "2026-09-09",
+  "source_checked_at": "2026-09-16",
   "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding. Legal bands refer to officially retained excess after enforcement correction; raw GPS excess is only an illustrative warning and does not establish a fine. Below +20, the posted limit (at most 50 versus above 50 km/h), not an urban/rural flag, selects the standard fine. Points describe the French deduction system. At +50 and above, criminal classification has applied since 2025-12-29; the EUR 300 fixed criminal settlement is conditional, not a guaranteed fine. Court sanctions are not mandatory ban durations. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
     {

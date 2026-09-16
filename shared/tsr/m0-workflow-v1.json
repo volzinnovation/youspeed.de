@@ -13,12 +13,12 @@
   "source_manifest": {
     "document_id": "youspeed-tsr-training-sources-v1",
     "path": "shared/tsr/training-sources-v1.json",
-    "sha256": "4985ebb8a146918c113700d312e6becb893acfed1d07f2bfa16263fadf0c1cbc"
+    "sha256": "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b"
   },
   "selection_registry": {
     "document_id": "youspeed-tsr-model-selection-v1",
     "path": "shared/tsr/model-selection-v1.json",
-    "sha256": "7019d6abaae0f16e774de910172cdbebbc7fe766140b32d043b7fd527d996dda",
+    "sha256": "381e97c4d1d909e8fbcae0c3eb14a1f34b6d9a4378e2aaefb26d5717e2861f04",
     "selected_candidate_id": null
   },
   "contracts": [

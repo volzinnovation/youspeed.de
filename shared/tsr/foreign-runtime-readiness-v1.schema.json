@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr/foreign-runtime-readiness-v1.json",
+  "title": "YouSpeed foreign TSR runtime readiness manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "source_manifest_sha256", "shared_pipeline", "countries"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generated_at": { "type": "string", "format": "date" },
+    "source_manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "shared_pipeline": { "$ref": "#/$defs/sharedPipeline" },
+    "countries": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/country" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "format", "input_shape", "output_schema"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "format": { "enum": ["coreml", "tflite"] },
+        "input_shape": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "output_schema": { "type": "string", "minLength": 1 }
+      }
+    },
+    "inputSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "input_shape", "output_schema"],
+      "properties": {
+        "format": { "enum": ["coreml", "tflite"] },
+        "input_shape": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "output_schema": { "type": "string", "minLength": 1 }
+      }
+    },
+    "pendingGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "evidence_sha256", "required_evidence"],
+      "properties": {
+        "status": { "const": "pending" },
+        "evidence_sha256": { "type": "null" },
+        "required_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "sharedPipeline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pipeline",
+        "preprocessing_version",
+        "detector",
+        "classifier",
+        "temporal_contract"
+      ],
+      "properties": {
+        "pipeline": { "const": "proposal_classification" },
+        "preprocessing_version": { "const": "vision-scale-fit-rgb-v1" },
+        "detector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["component_id", "checkpoint_sha256", "coreml", "litert"],
+          "properties": {
+            "component_id": { "type": "string", "minLength": 1 },
+            "checkpoint_sha256": { "$ref": "#/$defs/sha256" },
+            "coreml": { "$ref": "#/$defs/artifact" },
+            "litert": { "$ref": "#/$defs/artifact" }
+          }
+        },
+        "classifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["coreml_input", "litert_input", "output_schema", "crop_policy"],
+          "properties": {
+            "coreml_input": { "$ref": "#/$defs/inputSpec" },
+            "litert_input": { "$ref": "#/$defs/inputSpec" },
+            "output_schema": { "const": "country_classifier_probabilities_v1" },
+            "crop_policy": { "const": "shared_detector_proposal_crop_v1" }
+          }
+        },
+        "temporal_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "candidate_burst_aggregation",
+            "validated_passage_required",
+            "frame_score_cannot_change_speed_context"
+          ],
+          "properties": {
+            "candidate_burst_aggregation": { "const": "shared_candidate_burst_v2" },
+            "validated_passage_required": { "const": true },
+            "frame_score_cannot_change_speed_context": { "const": true }
+          }
+        }
+      }
+    },
+    "country": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "country",
+        "artwork",
+        "mapping",
+        "classifier_source",
+        "exports",
+        "calibration",
+        "parity",
+        "device_parity",
+        "runtime_manifest",
+        "blockers"
+      ],
+      "properties": {
+        "country": { "enum": ["FR", "NL", "BE"] },
+        "artwork": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest", "selection", "display_assets"],
+          "properties": {
+            "manifest": { "type": "string", "minLength": 1 },
+            "selection": { "type": "string", "minLength": 1 },
+            "display_assets": { "type": "integer", "minimum": 111 }
+          }
+        },
+        "mapping": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "country_code_count", "legal_action_review"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "country_code_count": { "type": "integer", "minimum": 1 },
+            "legal_action_review": { "const": "pending" }
+          }
+        },
+        "classifier_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["artifact_id", "revision", "sha256", "size_bytes", "uri", "license_gate"],
+          "properties": {
+            "artifact_id": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+            "sha256": { "$ref": "#/$defs/sha256" },
+            "size_bytes": { "type": "integer", "minimum": 1 },
+            "uri": { "type": "string", "format": "uri" },
+            "license_gate": { "const": "panoramax_cc_by_sa_and_ultralytics_review" }
+          }
+        },
+        "exports": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["detector_reuse", "classifier_coreml", "classifier_litert"],
+          "properties": {
+            "detector_reuse": { "const": "shared_german_reference_artifacts_pending_foreign_pack_assembly" },
+            "classifier_coreml": { "$ref": "#/$defs/pendingGate" },
+            "classifier_litert": { "$ref": "#/$defs/pendingGate" }
+          }
+        },
+        "calibration": { "$ref": "#/$defs/pendingGate" },
+        "parity": { "$ref": "#/$defs/pendingGate" },
+        "device_parity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ios", "android"],
+          "properties": {
+            "ios": { "$ref": "#/$defs/pendingGate" },
+            "android": { "$ref": "#/$defs/pendingGate" }
+          }
+        },
+        "runtime_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "path", "registry_entry"],
+          "properties": {
+            "status": { "const": "pending" },
+            "path": { "type": "null" },
+            "registry_entry": { "const": "null_until_all_gates_pass" }
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

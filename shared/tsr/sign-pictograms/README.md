@@ -1,10 +1,38 @@
-# German sign pictograms
+# National sign pictograms
 
-Reviewed on 2026-09-11 against the user-supplied [German sign plate since
+`national-set-index-v1.json` is the country-set contract. Germany (`DE`) is the
+active runtime set. France (`FR`), the Netherlands (`NL`) and Belgium (`BE`)
+now have expanded reviewed artwork, transparent PNG renditions and explicit
+model-code selections under `national/<country>/`; they remain runtime-blocked
+until country legal-action review, calibrated TSR models, device evidence and
+runtime manifests are accepted. Do not reuse the German sign artwork for those
+countries.
+
+The index is validated by `national-set-schema-v1.json`. The existing German
+assets remain in `originals/` and `png/` for compatibility with the shared
+catalog and both mobile clients. Foreign sets are physically separated so a
+country-specific source cannot be mistaken for a German equivalent.
+
+Reviewed on 2026-09-16 against the user-supplied [German sign plate since
 2017](https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017)
 and the German StVO. The plate identifies artwork; the law determines the
 meaning. These are offline UI assets, not training samples or proof of model
 recognition capability.
+
+`national/<country>/manifest.json` records the official regulation reference,
+Commons source page, pinned SVG bytes, transparent PNG bytes, license,
+commercial-use decision, per-file provenance and hashes for each reviewed
+entry. The regulation is the authority for the sign code and meaning; the
+checked-in vector is the separately licensed Commons rendition. The approved
+policy is to exclude only a source whose declared licence does not permit
+commercial use; attribution and share-alike conditions remain binding.
+`national/<country>/selection.json` is the reviewed Panoramax-model-code to
+national-sign-code mapping. Its `source_model_class` records the published
+classifier label, while `runtime_model_class` stays null until legal action
+semantics, an evaluated/calibrated model and runtime evidence are available.
+`fetch_national.py` recreates
+these manifests only from the checked-in source selection and never turns a
+core artwork subset into a runtime pack.
 
 `../prolix-de-class-catalog-v1.json` preserves the 134 ordered labels in the
 bundled Core ML classifier. Its checkpoint is
@@ -21,11 +49,23 @@ model's actual output vocabulary.
   ratio and transparency. Both mobile apps use these same bytes.
 - `manifest.json`: original URLs and upload timestamps, Commons page revisions,
   authors, public-domain basis, original SHA-1/SHA-256, PNG SHA-256, dimensions,
-  sizes, and the conversion command. All paths in this manifest are relative
-  to this directory. Catalog image paths instead are relative to `shared/`.
+  sizes, commercial-use decision, licence-source URL, per-file provenance, and
+  the conversion command. German manifest paths are relative to this
+  directory; national manifests use paths rooted at `shared/tsr/sign-pictograms`.
+  Catalog image paths instead are relative to `shared/`.
 - `selection.json`: explicit sign-code-to-Commons-title selection, derived from
   the plate. It is not a fuzzy filename search or automatic semantic mapping.
+- `national/<country>/`: country-specific expanded artwork manifests, source indexes,
+  selections, SVGs and transparent PNGs. The foreign SVGs are licensed Commons
+  renditions tied to official national regulation sources; the selections are
+  artwork evidence only until runtime model evaluation and calibration are
+  complete.
 - `sources/`: the reviewed deployed DE mapping and its snapshot provenance.
+- `sources/panoramax-country-code-mapping-v1.json`: complete FR/NL/BE model
+  class-to-country-code snapshot with source hash and artwork coverage status.
+- `../foreign-runtime-readiness-v1.json`: blocked foreign-pack handoff with
+  the shared detector/export contract and missing-evidence gates; it is not a
+  downloadable runtime manifest.
 - `THIRD_PARTY_NOTICES.txt`: offline credit and licensing notice for packaging
   with the PNG assets.
 
@@ -33,6 +73,9 @@ Verify all bytes and image dimensions offline:
 
 ```sh
 python3 shared/tsr/sign-pictograms/fetch.py
+
+# Recreate one foreign core set (network + ImageMagick required)
+python3 shared/tsr/sign-pictograms/fetch_national.py FR --fetch
 ```
 
 To restore missing assets, use `fetch.py --fetch`. This requires `curl`, network
@@ -125,9 +168,11 @@ recognized text or the user's location.
 
 ## Licensing
 
-Each selected Commons file declares **Public domain**, with attribution not
-required, based on the German official-work rule in
-[§5(1) UrhG](https://www.gesetze-im-internet.de/urhg/__5.html). This status is
-recorded per file. Credits are preserved voluntarily in the manifest and
-offline notice. The website's general CC BY-SA text license is not the image
-license; do not relabel these originals as CC BY-SA or CC0.
+The German files are public-domain official-work renditions under
+[§5(1) UrhG](https://www.gesetze-im-internet.de/urhg/__5.html). Foreign files
+retain the license reported by their pinned Commons source, including CC0,
+public domain, or CC BY-SA where applicable; attribution requirements are
+recorded per file. The owner-approved commercial-use policy excludes only
+non-commercial licences. The national regulation URL is the legal reference,
+while Commons supplies the checked-in vector rendition. Do not relabel an
+original or remove a required attribution.

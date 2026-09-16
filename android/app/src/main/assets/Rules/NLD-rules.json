@@ -6,7 +6,7 @@
   "currency_code": "EUR",
   "default_language": "en",
   "source_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
-  "source_checked_at": "2026-09-09",
+  "source_checked_at": "2026-09-16",
   "note": "Reviewed 2026-09-09 for ordinary passenger-car speeding using OM guidance and Feitenboekje 2026. Legal bands use officially corrected excess, not raw GPS excess; no enforcement correction is automatically applied by these rules. At limits up to 120 km/h the ordinary threshold is corrected +4; at 130 km/h it is +1. Criminal handling generally starts above +30 off motorways and at +40 on motorways; works and vehicle-specific contexts can differ. Precise tariffs require more road context than this warning provides. No general penalty-point score or fixed driving-ban duration is inferred. Sources and scope: docs/COUNTRY_RULE_REVIEW_2026-09-09.md.",
   "bands": [
     {

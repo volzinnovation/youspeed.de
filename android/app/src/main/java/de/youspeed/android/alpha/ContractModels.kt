@@ -64,11 +64,17 @@ data class V3BundleTargetRegionConfig(
     val regionName: String?,
 )
 
+data class V3BundleTargetPenaltyRules(
+    val file: String,
+    val source: String?,
+)
+
 data class V3BundleTargetCountryConfig(
     val rank: Int,
     val countryId: String,
     val countryCode: String,
     val iso2: String?,
+    val penaltyRules: V3BundleTargetPenaltyRules?,
     val mode: String,
     val regions: List<V3BundleTargetRegionConfig>,
 )
@@ -224,6 +230,12 @@ object ContractJson {
                     countryId = country.requiredString("country_id"),
                     countryCode = country.requiredString("country_code"),
                     iso2 = country.optionalString("iso2"),
+                    penaltyRules = country.optionalObject("penalty_rules")?.let { rules ->
+                        V3BundleTargetPenaltyRules(
+                            file = rules.requiredString("file"),
+                            source = rules.optionalString("source"),
+                        )
+                    },
                     mode = country.requiredString("mode"),
                     regions = country.requiredArray("regions").map { regionElement ->
                         val region = regionElement.jsonObject

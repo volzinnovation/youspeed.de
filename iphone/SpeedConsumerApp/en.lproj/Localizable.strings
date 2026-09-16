@@ -329,7 +329,7 @@
 "onboarding.sources.title" = "Three ways to find a limit";
 "onboarding.sources.body" = "Choose the downloaded map, your own spoken corrections, or camera recognition.";
 "onboarding.sources.map" = "Map: GPS matches your position to the downloaded road data. This works offline and does not use the camera.";
-"onboarding.sources.voice" = "Own corrections: double-tap the speed or limit display and speak a German speed-limit command. On-device recognition needs microphone and Speech access; it does not need the camera.";
+"onboarding.sources.voice" = "Own corrections: double-tap the speed or limit display and speak a German, French, or Dutch speed-limit command. On-device recognition needs microphone and Speech access; it does not need the camera.";
 "onboarding.sources.camera" = "Camera: recognizes supported traffic signs using the phone’s camera. It can run without saving dashcam video. Recognition may be unavailable for some signs or countries.";
 "onboarding.sources.independent" = "Independent recognition uses the camera when the driving screen is active, without starting video or Panoramax photos. Leaving it off keeps recognition tied to the recorder.";
 "onboarding.panoramax.title" = "Contribute street-level photos";

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "manifest_id": "youspeed-tsr-training-sources-v1",
-  "as_of_date": "2026-09-01",
+  "as_of_date": "2026-09-16",
   "release_policy": {
     "default": "blocked_until_every_lineage_gate_is_approved",
     "requirements": [
@@ -10,8 +10,8 @@
       "Preserve attribution, notices, and share-alike obligations for every training input.",
       "Record the complete training lineage in the signed mobile model pack.",
       "Confirm the requested ZOD dataset snapshot with the provider after access, and treat only frames with a present and complete Traffic Signs annotation task as eligible hard negatives.",
-      "Do not release the pinned Panoramax classifier or a derivative until both its CC-BY-SA-4.0 dataset lineage/share-alike obligations and its Ultralytics YOLO26 AGPL-3.0-or-Enterprise obligations are explicitly approved.",
-      "Do not release a model pack containing an Ultralytics YOLO26 derivative unless the ultralytics_agpl_or_enterprise gate is explicitly approved.",
+      "Do not release the pinned Panoramax classifier or a derivative until its published commercial-use terms, dataset attribution/share-alike obligations, and applicable Ultralytics AGPL-3.0-or-Enterprise obligations are evidenced in the release record.",
+      "Do not release a model pack containing an Ultralytics-derived component unless the ultralytics_agpl_or_enterprise gate is explicitly approved.",
       "Do not release until route-held-out evaluation, calibration, mobile export parity, and signing gates pass."
     ],
     "license_gates": {
@@ -33,7 +33,7 @@
           "attribution_share_alike_review",
           "ultralytics_agpl_or_enterprise"
         ],
-        "reason": "The Panoramax classifier model card is Etalab-2.0, but the checkpoint declares both the CC-BY-SA-4.0 Panoramax classified crop dataset and Ultralytics YOLO26 lineage. Release requires an explicit decision for the dataset attribution/share-alike treatment and either AGPL-3.0 compliance for the Ultralytics derivative or an applicable Ultralytics Enterprise license."
+        "reason": "The Panoramax classifier model card is Etalab-2.0, but the checkpoint declares Panoramax classified crop-data, which may include CC-BY-SA-4.0 lineage, and Ultralytics model/tooling lineage. Release requires an explicit decision for dataset attribution/share-alike treatment where applicable and either AGPL-3.0 compliance for the Ultralytics derivative or an applicable Ultralytics Enterprise license."
       },
       "ultralytics_agpl_or_enterprise": {
         "default_decision": "blocked",
@@ -127,6 +127,8 @@
         "url": "https://huggingface.co/datasets/Panoramax/classified_de_road_signs/blob/b4856947ed7cb6312587258acc90e8cf88a4aa13/README.md",
         "notice_required": true,
         "share_alike": true,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published dataset licence; attribution and share-alike obligations remain binding.",
         "release_gate": "attribution_share_alike_review"
       },
       "acquisition": {
@@ -158,6 +160,8 @@
         "url": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/README.md",
         "notice_required": true,
         "share_alike": false,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published model-card licence; attribution and model-lineage obligations remain binding.",
         "release_gate": "panoramax_cc_by_sa_and_ultralytics_review"
       },
       "acquisition": {
@@ -170,6 +174,207 @@
         "published_aggregate_checksum": null,
         "post_acquisition_sha256_inventory_required": false,
         "note": "The selected checkpoint has an exact SHA-256 entry below. The model card reports 98.6% accuracy with verified=false. Because the linked dataset split leaks source identities and exact images, that metric is neither independent nor acceptable as a YouSpeed release gate. Treat the .pt checkpoint as opaque pickle-capable bytes and deserialize only inside an isolated conversion environment."
+      }
+    },
+    {
+      "source_id": "panoramax-fr-crops-ea7598",
+      "kind": "dataset",
+      "roles": [
+        "real_primary_classifier_bootstrap",
+        "leakage_audit_fixture"
+      ],
+      "name": "Panoramax classified French road signs",
+      "homepage": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "ea75988e381f16e4677c5f42aa5fedea005f23d6"
+      },
+      "license": {
+        "expression": "Etalab-2.0",
+        "url": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/blob/ea75988e381f16e4677c5f42aa5fedea005f23d6/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published dataset-card licence; attribution and update-date obligations remain binding.",
+        "release_gate": "attribution_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision_metadata_only",
+        "locator": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/tree/ea75988e381f16e4677c5f42aa5fedea005f23d6",
+        "subset": "Dataset-card and revision are retained as model-lineage provenance; the train/val archives are not app inputs and are not required for runtime bundles"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The source publishes 66,000+ detected signs, 250+ official-type classes and false-positive classes. The viewer currently reports an invalid class-label revision. If this dataset is later used for retraining, acquire and inventory it separately, remove leakage and rebuild country-grouped splits; it is not shipped in the app."
+      }
+    },
+    {
+      "source_id": "panoramax-nl-crops-68c7c1",
+      "kind": "dataset",
+      "roles": [
+        "real_primary_classifier_bootstrap",
+        "leakage_audit_fixture"
+      ],
+      "name": "Panoramax classified Dutch road signs",
+      "homepage": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "68c7c1bac103f7ed42440af71536827dcada519c"
+      },
+      "license": {
+        "expression": "CC-BY-SA-4.0",
+        "url": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/blob/68c7c1bac103f7ed42440af71536827dcada519c/README.md",
+        "notice_required": true,
+        "share_alike": true,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published CC BY-SA 4.0 dataset-card licence; attribution and share-alike obligations remain binding.",
+        "release_gate": "attribution_share_alike_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision_metadata_only",
+        "locator": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/tree/68c7c1bac103f7ed42440af71536827dcada519c",
+        "subset": "Dataset-card and revision are retained as model-lineage provenance; the train/val archives are not app inputs and are not required for runtime bundles"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The source publishes 24,000+ crops and 150+ classes, including filename-prefixed foreign examples. The viewer currently reports an invalid class-label revision. Filter foreign examples and rebuild country-grouped splits before any future retraining; it is not shipped in the app."
+      }
+    },
+    {
+      "source_id": "panoramax-be-crops-6479ab",
+      "kind": "dataset",
+      "roles": [
+        "real_primary_classifier_bootstrap",
+        "leakage_audit_fixture"
+      ],
+      "name": "Panoramax classified Belgian road signs",
+      "homepage": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "6479ab5a2a47629dc6e3a242a177c2537d9cf378"
+      },
+      "license": {
+        "expression": "CC-BY-SA-4.0",
+        "url": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/blob/6479ab5a2a47629dc6e3a242a177c2537d9cf378/README.md",
+        "notice_required": true,
+        "share_alike": true,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published CC BY-SA 4.0 dataset-card licence; attribution and share-alike obligations remain binding.",
+        "release_gate": "attribution_share_alike_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision_metadata_only",
+        "locator": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/tree/6479ab5a2a47629dc6e3a242a177c2537d9cf378",
+        "subset": "Dataset-card and revision are retained as model-lineage provenance; the train/val archives are not app inputs and are not required for runtime bundles"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The source publishes 24,000+ crops and 140+ classes, including filename-prefixed foreign examples. The viewer currently reports an invalid class-label revision. Filter foreign examples and rebuild country-grouped splits before any future retraining; it is not shipped in the app."
+      }
+    },
+    {
+      "source_id": "panoramax-fr-classifier-7f2bdd",
+      "kind": "model_framework",
+      "roles": [
+        "third_party_crop_classifier_baseline"
+      ],
+      "name": "Panoramax classify French road signs",
+      "homepage": "https://huggingface.co/Panoramax/classify_fr_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f"
+      },
+      "license": {
+        "expression": "Etalab-2.0",
+        "url": "https://huggingface.co/Panoramax/classify_fr_road_signs/blob/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published model-card licence; attribution and model-lineage obligations remain binding.",
+        "release_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/Panoramax/classify_fr_road_signs/tree/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
+        "subset": "best.pt crop-classification baseline only; transform through the shared detector/classifier mobile pipeline before any runtime use"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The checkpoint is an opaque pickle-capable input. The model-card metric is not a YouSpeed acceptance result. It must be exported to Core ML and LiteRT, checked for preprocessing/output parity, calibrated, and evaluated at validated-passage level."
+      }
+    },
+    {
+      "source_id": "panoramax-nl-classifier-7a8110",
+      "kind": "model_framework",
+      "roles": [
+        "third_party_crop_classifier_baseline"
+      ],
+      "name": "Panoramax classify Dutch road signs",
+      "homepage": "https://huggingface.co/Panoramax/classify_nl_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "7a811057049f6de207f909c0f1be2905fa9baf01"
+      },
+      "license": {
+        "expression": "Etalab-2.0",
+        "url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published model-card licence; attribution and model-lineage obligations remain binding.",
+        "release_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/Panoramax/classify_nl_road_signs/tree/7a811057049f6de207f909c0f1be2905fa9baf01",
+        "subset": "classify_nl_road_signs.pt crop-classification baseline only; transform through the shared detector/classifier mobile pipeline before any runtime use"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The checkpoint is an opaque pickle-capable input and was fine-tuned from the French classifier. The model-card metric is not a YouSpeed acceptance result. It must be exported to Core ML and LiteRT, checked for preprocessing/output parity, calibrated, and evaluated at validated-passage level."
+      }
+    },
+    {
+      "source_id": "panoramax-be-classifier-b31ee3",
+      "kind": "model_framework",
+      "roles": [
+        "third_party_crop_classifier_baseline"
+      ],
+      "name": "Panoramax classify Belgian road signs",
+      "homepage": "https://huggingface.co/Panoramax/classify_be_road_signs",
+      "revision": {
+        "kind": "huggingface_commit",
+        "value": "b31ee38e467a667073087aa86503e0afe9b0320f"
+      },
+      "license": {
+        "expression": "Etalab-2.0",
+        "url": "https://huggingface.co/Panoramax/classify_be_road_signs/blob/b31ee38e467a667073087aa86503e0afe9b0320f/README.md",
+        "notice_required": true,
+        "share_alike": false,
+        "commercial_use_permitted": true,
+        "commercial_use_basis": "Owner approval under the published model-card licence; attribution and model-lineage obligations remain binding.",
+        "release_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "acquisition": {
+        "mode": "huggingface_revision",
+        "locator": "https://huggingface.co/Panoramax/classify_be_road_signs/tree/b31ee38e467a667073087aa86503e0afe9b0320f",
+        "subset": "classify_be_road_signs.pt crop-classification baseline only; transform through the shared detector/classifier mobile pipeline before any runtime use"
+      },
+      "integrity": {
+        "immutable_reference": true,
+        "published_aggregate_checksum": null,
+        "post_acquisition_sha256_inventory_required": false,
+        "note": "The checkpoint is an opaque pickle-capable input. The model-card metric is not a YouSpeed acceptance result. It must be exported to Core ML and LiteRT, checked for preprocessing/output parity, calibrated, and evaluated at validated-passage level against the new Belgian catalogue."
       }
     },
     {
@@ -456,6 +661,84 @@
       },
       "release_gate": "panoramax_cc_by_sa_and_ultralytics_review",
       "note": "Pinned third-party crop-classifier baseline. The bootstrap tool treats this .pt file as opaque bytes; isolate any later deserialization. The model card's Etalab-2.0 declaration does not clear the linked dataset share-alike and Ultralytics YOLO26 lineage gates."
+    },
+    {
+        "artifact_id": "panoramax-fr-classifier-7f2bdd",
+      "source_id": "panoramax-fr-classifier-7f2bdd",
+      "role": "third_party_crop_classifier_baseline",
+      "revision": "7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
+      "relative_path": "models/panoramax/classify-fr-road-signs/7f2bdd/best.pt",
+      "size_bytes": 109854129,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "5e70142feffd01ac15ce4f1fc2c3ce929a6dadb7c71ccf06ea20059ca5757641"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/Panoramax/classify_fr_road_signs/resolve/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f/best.pt",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "panoramax_cc_by_sa_and_ultralytics_review",
+      "note": "Pinned FR crop-classifier baseline only. Transform through the shared detector/classifier pipeline; the app must contain Core ML and LiteRT artifacts, preprocessing/output parity evidence, calibration, and validated-passage evaluation before activation."
+    },
+    {
+        "artifact_id": "panoramax-nl-classifier-7a8110",
+      "source_id": "panoramax-nl-classifier-7a8110",
+      "role": "third_party_crop_classifier_baseline",
+      "revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+      "relative_path": "models/panoramax/classify-nl-road-signs/7a8110/classify_nl_road_signs.pt",
+      "size_bytes": 26350065,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "14c738b1d2b8d65af813f1d3cb20e50033274b481d02bbf062b8f714ed54bc53"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/Panoramax/classify_nl_road_signs/resolve/7a811057049f6de207f909c0f1be2905fa9baf01/classify_nl_road_signs.pt",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "panoramax_cc_by_sa_and_ultralytics_review",
+      "note": "Pinned NL crop-classifier baseline only. Transform through the shared detector/classifier pipeline; the app must contain Core ML and LiteRT artifacts, preprocessing/output parity evidence, calibration, and validated-passage evaluation before activation."
+    },
+    {
+        "artifact_id": "panoramax-be-classifier-b31ee3",
+      "source_id": "panoramax-be-classifier-b31ee3",
+      "role": "third_party_crop_classifier_baseline",
+      "revision": "b31ee38e467a667073087aa86503e0afe9b0320f",
+      "relative_path": "models/panoramax/classify-be-road-signs/b31ee3/classify_be_road_signs.pt",
+      "size_bytes": 26306097,
+      "format": "pytorch_checkpoint",
+      "serialization_risk": "pickle_capable_untrusted",
+      "hashes": {
+        "sha256": "d99c7ba6fdf2efa395b3100d02ef0670fdb3c3365527f7da9336793db0633c1b"
+      },
+      "download": {
+        "allowed": true,
+        "url": "https://huggingface.co/Panoramax/classify_be_road_signs/resolve/b31ee38e467a667073087aa86503e0afe9b0320f/classify_be_road_signs.pt",
+        "allowed_hosts": [
+          "huggingface.co",
+          "cdn-lfs.huggingface.co",
+          "cas-bridge.xethub.hf.co",
+          "transfer.xethub.hf.co",
+          "us.aws.cdn.hf.co"
+        ]
+      },
+      "release_gate": "panoramax_cc_by_sa_and_ultralytics_review",
+      "note": "Pinned BE crop-classifier baseline only. Transform through the shared detector/classifier pipeline; the app must contain Core ML and LiteRT artifacts, preprocessing/output parity evidence, calibration, and validated-passage evaluation against the new Belgian catalogue before activation."
     },
     {
       "artifact_id": "mobilenetv3-large-ra-in1k-96f46a1",

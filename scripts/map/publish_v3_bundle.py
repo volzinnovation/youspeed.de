@@ -322,6 +322,19 @@ def main() -> int:
         penalty_rules_src = Path(args.penalty_rules)
         if not penalty_rules_src.exists():
             raise SystemExit(f"Penalty rules file not found: {penalty_rules_src}")
+        if args.country_code.strip():
+            try:
+                penalty_payload = json.loads(penalty_rules_src.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise SystemExit(f"Unable to read penalty rules JSON: {penalty_rules_src}: {exc}") from exc
+            rule_country = str(
+                penalty_payload.get("country_code", penalty_payload.get("land_code", ""))
+            ).strip().upper()
+            if rule_country != args.country_code.strip().upper():
+                raise SystemExit(
+                    "Penalty rules country does not match bundle country: "
+                    f"{rule_country or '<missing>'} != {args.country_code.strip().upper()}"
+                )
 
     compressed_db_path: Optional[Path] = None
     if normalized_db_compression == "gzip":

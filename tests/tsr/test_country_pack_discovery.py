@@ -78,6 +78,17 @@ def test_mobile_catalog_covers_every_configured_bundle_and_pins_targets():
     catalog = load(ROOT / "shared/RegionalCoverage/catalog-v1.json")
     targets = load(targets_path)
     assert targets == load(ROOT / "android/app/src/main/assets/BundleTargets.top10.json")
+    rule_file_codes = {"DE": "DEU", "FR": "FRA", "BE": "BEL", "NL": "NLD"}
+    for country in targets["countries"]:
+        code = country["iso2"]
+        rules = country.get("penalty_rules")
+        if code not in rule_file_codes:
+            assert rules is None
+            continue
+        assert rules and rules["file"] == f"{rule_file_codes[code]}-rules.json"
+        assert (ROOT / rules["source"]).is_file()
+        rule_data = load(ROOT / rules["source"])
+        assert rule_data.get("country_code", rule_data.get("land_code")) == rule_file_codes[code]
     assert hashlib.sha256(targets_path.read_bytes()).hexdigest() == catalog["targets_sha256"]
     expected = {c["country_id"] + "|" + r["region_id"].rsplit("/", 1)[-1]
                 for c in targets["countries"] for r in c["regions"]}

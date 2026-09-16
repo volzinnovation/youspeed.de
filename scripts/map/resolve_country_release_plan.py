@@ -125,6 +125,7 @@ def resolve_country_release_plan(
     )
 
     root_country_id = next((item for item in ancestor_ids if item in config_by_country), target.region_id)
+    root_config = config_by_country.get(root_country_id)
     is_root_target = target.region_id == root_country_id
     region_slug = bundles._slug(target.region_id)
     region_asset_id = bundles._id_token(target.region_id)
@@ -189,6 +190,12 @@ def resolve_country_release_plan(
         "bundle_db_asset": bundles._db_asset_name(region_asset_id),
         "bundle_manifest_asset": bundles._manifest_asset_name(region_asset_id),
         "delta_index_asset": f"{region_asset_id}_delta_index.json",
+        "penalty_rules_file_name": root_config.penalty_rules_file if root_config else "",
+        "penalty_rules_source_path": (
+            str((repo_root / root_config.penalty_rules_source).resolve())
+            if root_config and root_config.penalty_rules_source
+            else ""
+        ),
     }
 
 

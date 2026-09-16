@@ -329,7 +329,7 @@
 "onboarding.sources.title" = "Drei Quellen für Tempolimits";
 "onboarding.sources.body" = "Nutze die heruntergeladene Datenbank, eigene gesprochene Korrekturen oder die Kameraerkennung.";
 "onboarding.sources.map" = "Datenbank: GPS ordnet deinen Standort den heruntergeladenen Straßendaten zu. Das funktioniert offline und ohne Kamera.";
-"onboarding.sources.voice" = "Eigene Korrekturen: Tippe doppelt auf die Geschwindigkeits- oder Limitanzeige und sprich einen deutschen Tempolimit-Befehl. Die Erkennung auf dem Gerät benötigt Mikrofon- und Spracherkennungszugriff, aber keine Kamera.";
+"onboarding.sources.voice" = "Eigene Korrekturen: Tippe doppelt auf die Geschwindigkeits- oder Limitanzeige und sprich einen deutschen, französischen oder niederländischen Tempolimit-Befehl. Die Erkennung auf dem Gerät benötigt Mikrofon- und Spracherkennungszugriff, aber keine Kamera.";
 "onboarding.sources.camera" = "Kamera: Erkennt unterstützte Verkehrsschilder mit der iPhone-Kamera. Das geht auch ohne gespeichertes Dashcam-Video. Manche Schilder oder Länder werden nicht unterstützt.";
 "onboarding.sources.independent" = "Unabhängige Erkennung nutzt die Kamera bei aktivem Fahrbildschirm, ohne Video oder Panoramax-Fotos zu starten. Ausgeschaltet bleibt die Erkennung an den Recorder gebunden.";
 "onboarding.panoramax.title" = "Straßenbilder beitragen";

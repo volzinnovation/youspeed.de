@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 13.0.0, SVG Export Plug-In  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [
+	<!ENTITY ns_flows "http://ns.adobe.com/Flows/1.0/">
+]>
+<svg version="1.1"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/"
+	 x="0px" y="0px" width="576px" height="576px" viewBox="-0.031 -0.031 576 576" enable-background="new -0.031 -0.031 576 576"
+	 xml:space="preserve">
+<defs>
+</defs>
+<circle fill="#FFFFFF" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" cx="287.969" cy="287.969" r="286.969"/>
+<circle fill="#FF0000" stroke="#FF0000" stroke-width="0.1764" stroke-linecap="round" stroke-linejoin="round" cx="287.969" cy="287.969" r="273.982"/>
+<circle fill="#FFFFFF" stroke="#FF0000" stroke-width="0.1764" stroke-linecap="round" stroke-linejoin="round" cx="287.969" cy="287.969" r="192.438"/>
+<path stroke="#000000" stroke-width="0.1764" stroke-linecap="round" stroke-linejoin="round" d="M276.099,307.048l-84.063-2.169
+	c14.737,4.412,24.098,18.862,22.101,34.115c-1.997,15.253-14.762,26.806-30.138,27.275c-15.376,0.469-28.823-10.283-31.747-25.386
+	c-2.924-15.103,5.537-30.097,19.977-35.399l-24.575-1.889l-0.792-61.257l138.523,1.156l18.998-17.337l4.75-5.779l-3.168-12.713
+	l3.168-12.713l6.332-4.623l6.332,1.155l6.333,3.468l1.582,11.558l-4.748,8.09l-2.375,4.623l8.707,5.779l2.351,14.875
+	c36.277-4.849,69.63,20.592,74.543,56.86l10.97-1.232l0.792-18.493l3.166-5.779l3.957,5.779l0.792,27.74l-19.076,1.21
+	c-0.173,36.311-29.5,65.737-65.81,66.035C306.671,372.294,276.866,343.351,276.099,307.048z"/>
+<circle fill="#FFFFFF" stroke="#000000" stroke-width="0.1764" stroke-linecap="round" stroke-linejoin="round" cx="343.039" cy="305.338" r="34.886"/>
+</svg>

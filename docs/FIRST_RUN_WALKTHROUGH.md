@@ -15,8 +15,9 @@ Germany-only coverage illustration are replaced by actionable setup.
    switching video off independently of the other camera features.
 4. **Speed-limit sources:** distinguish downloaded map limits, personal spoken
    corrections, and camera recognition. Camera recognition can run without
-   saving video. Spoken corrections currently use German speech on-device;
-   camera and microphone permissions are requested when their features are used.
+   saving video. Spoken corrections follow the device/UI language for German,
+   French, Dutch or English, with English as the fallback; camera and microphone
+   permissions are requested when their features are used.
 5. **Panoramax:** surface the existing photo-capture preference. Explain local
    geotagged pictures, review and selection after recording stops, account
    connection, and an explicit upload. Setup never records or uploads media.

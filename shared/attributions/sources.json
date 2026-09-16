@@ -43,6 +43,16 @@
       "category": "reference"
     },
     {
+      "id": "national-sign-artwork",
+      "title": "France, Netherlands and Belgium expanded traffic-sign artwork",
+      "attribution": "Wikimedia Commons contributors; national road-code authorities as referenced by each set manifest",
+      "license": "Per-file public domain, CC0 or CC BY/CC BY-SA with commercial use permitted under the declared terms",
+      "source_url": "https://github.com/volzinnovation/youspeed.de/tree/main/shared/tsr/sign-pictograms/national",
+      "license_url": "https://creativecommons.org/share-your-work/cclicenses/",
+      "changes": "Owner-approved Commons renditions are retained as SVG and rasterized locally to transparent PNG. The expanded sets reach the German 111-entry baseline: 114 FR, 111 NL and 115 BE files including preserved core/transition signs. Country-specific regulation URLs, file-page provenance, hashes, commercial-use decisions and attribution requirements are recorded in national/FR, national/NL and national/BE manifests. These assets are not runtime model packs.",
+      "category": "sign"
+    },
+    {
       "id": "legacy-pedestrian",
       "title": "DE:242.1 · existing pedestrian-zone indicator",
       "attribution": "Mediatus; German official traffic-sign artwork",
@@ -83,13 +93,73 @@
       "category": "data"
     },
     {
+      "id": "classifier-fr",
+      "title": "Panoramax/classify_fr_road_signs",
+      "attribution": "Panoramax; source revision 7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
+      "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
+      "source_url": "https://huggingface.co/Panoramax/classify_fr_road_signs/tree/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "Pinned FR classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "category": "model"
+    },
+    {
+      "id": "classifier-nl",
+      "title": "Panoramax/classify_nl_road_signs",
+      "attribution": "Panoramax; source revision 7a811057049f6de207f909c0f1be2905fa9baf01",
+      "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
+      "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/tree/7a811057049f6de207f909c0f1be2905fa9baf01",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "Pinned NL classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "category": "model"
+    },
+    {
+      "id": "classifier-be",
+      "title": "Panoramax/classify_be_road_signs",
+      "attribution": "Panoramax; source revision b31ee38e467a667073087aa86503e0afe9b0320f",
+      "license": "Etalab Open Licence 2.0 (model-card declaration); commercial use approved under published terms",
+      "source_url": "https://huggingface.co/Panoramax/classify_be_road_signs/tree/b31ee38e467a667073087aa86503e0afe9b0320f",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "Pinned BE classifier checkpoint is a Panoramax/Ultralytics crop-classification baseline; conversion, attribution and model-lineage obligations remain separate from this source record.",
+      "category": "model"
+    },
+    {
+      "id": "training-data-fr",
+      "title": "Panoramax/classified_fr_road_signs",
+      "attribution": "Panoramax and contributing photographers; source revision ea75988e381f16e4677c5f42aa5fedea005f23d6",
+      "license": "Etalab Open Licence 2.0 (dataset-card declaration); commercial use approved under published terms",
+      "source_url": "https://huggingface.co/datasets/Panoramax/classified_fr_road_signs/tree/ea75988e381f16e4677c5f42aa5fedea005f23d6",
+      "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
+      "changes": "Training provenance for the FR classifier; dataset archives are not copied into the production app and must be split by capture lineage before calibration.",
+      "category": "data"
+    },
+    {
+      "id": "training-data-nl",
+      "title": "Panoramax/classified_nl_road_signs",
+      "attribution": "Panoramax and contributing photographers; source revision 68c7c1bac103f7ed42440af71536827dcada519c",
+      "license": "CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations",
+      "source_url": "https://huggingface.co/datasets/Panoramax/classified_nl_road_signs/tree/68c7c1bac103f7ed42440af71536827dcada519c",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Training provenance for the NL classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.",
+      "category": "data"
+    },
+    {
+      "id": "training-data-be",
+      "title": "Panoramax/classified_be_road_signs",
+      "attribution": "Panoramax and contributing photographers; source revision 6479ab5a2a47629dc6e3a242a177c2537d9cf378",
+      "license": "CC BY-SA 4.0 (dataset-card declaration); commercial use approved with attribution/share-alike obligations",
+      "source_url": "https://huggingface.co/datasets/Panoramax/classified_be_road_signs/tree/6479ab5a2a47629dc6e3a242a177c2537d9cf378",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "changes": "Training provenance for the BE classifier; country-prefixed foreign examples require filtering before calibration and dataset archives are not copied into the production app.",
+      "category": "data"
+    },
+    {
       "id": "mapping",
       "title": "Panoramax cross-country road-sign mapping",
       "attribution": "Panoramax; source last modified 2026-03-01",
       "license": "Etalab Open Licence 2.0 (repository-card declaration)",
       "source_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
       "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md",
-      "changes": "German mapping column reviewed via the deployed Prolix reference; corrections and excluded ambiguous mappings documented in the YouSpeed catalog.",
+      "changes": "The pinned table is materialized as shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json with the FR/NL/BE raw and normalized code columns, source SHA-256, model-code review status and artwork-selection status. Legal action/semantic review remains a separate country-rule gate.",
       "category": "data"
     },
     {
@@ -154,12 +224,12 @@
     },
     {
       "id": "vosk-model",
-      "title": "Android · vosk-model-small-de-0.15",
+      "title": "Android · Vosk small speech models (DE/FR/NL/EN)",
       "attribution": "Copyright © 2020 Alpha Cephei Inc.",
       "license": "Apache-2.0",
       "source_url": "https://alphacephei.com/vosk/models",
       "license_url": "https://www.apache.org/licenses/LICENSE-2.0",
-      "changes": "Bundled German speech-recognition model, version 0.15.",
+      "changes": "Bundled German model vosk-model-small-de-0.15, French model vosk-model-small-fr-0.22, Dutch model vosk-model-small-nl-0.22, and English fallback model vosk-model-small-en-us-0.15 for offline recognition.",
       "category": "model"
     },
     {
@@ -1200,7 +1270,7 @@
       "license": "Reference citation; original website rights remain with its publisher",
       "source_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
       "license_url": "https://www.police.be/shape/fr/actualites/amendes-routieres-ce-qui-change-des-le-1er-juillet-2026",
-      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled."
     },
     {
       "id": "rules-CHE-rules",
@@ -1230,7 +1300,7 @@
       "license": "Reference citation; original website rights remain with its publisher",
       "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
       "license_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F19460",
-      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled."
     },
     {
       "id": "rules-GBR-rules",
@@ -1290,7 +1360,7 @@
       "license": "Reference citation; original website rights remain with its publisher",
       "source_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
       "license_url": "https://www.om.nl/onderwerpen/v/verkeer/handhaving/snelheid-en-te-hard-rijden",
-      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-09. The original website is not bundled."
+      "changes": "Reference for the app's rule data and summaries. Source checked: 2026-09-16. The original website is not bundled."
     },
     {
       "id": "rules-ROU-rules",

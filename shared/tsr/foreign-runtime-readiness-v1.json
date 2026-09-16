@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-16",
+  "source_manifest_sha256": "3e4d1e3921c7088f5a6d66ab4a489e56ce5e21121ce3ecdded86df3fef06210b",
+  "shared_pipeline": {
+    "pipeline": "proposal_classification",
+    "preprocessing_version": "vision-scale-fit-rgb-v1",
+    "detector": {
+      "component_id": "sgblur-yolo11n-panoramax-169451970702aca0",
+      "checkpoint_sha256": "698a70566938d25c3c1eaa49b89fc176fe2f3a20631a9a01fa56035613c7972a",
+      "coreml": {
+        "path": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/yolo11n_panoramax.mlmodelc",
+        "sha256": "96c782afde62e1ede1d47d9d51b64359102170ed3ab6604838609869fcbd4589",
+        "format": "coreml",
+        "input_shape": [
+          1,
+          3,
+          1280,
+          1280
+        ],
+        "output_schema": "vision_recognized_objects_v1"
+      },
+      "litert": {
+        "path": "android/app/src/main/assets/tsr/DE.panoramax-bootstrap.tsrmodelpack/yolo11n_panoramax_float16.tflite",
+        "sha256": "e5490acd60ceb015336bed487b5e247c2728b2b98b6336790bf6ffe02a6f7207",
+        "format": "tflite",
+        "input_shape": [
+          1,
+          1280,
+          1280,
+          3
+        ],
+        "output_schema": "yolo_raw_xywh_class_scores_v1"
+      }
+    },
+    "classifier": {
+      "coreml_input": {
+        "format": "coreml",
+        "input_shape": [
+          1,
+          3,
+          224,
+          224
+        ],
+        "output_schema": "country_classifier_probabilities_v1"
+      },
+      "litert_input": {
+        "format": "tflite",
+        "input_shape": [
+          1,
+          224,
+          224,
+          3
+        ],
+        "output_schema": "country_classifier_probabilities_v1"
+      },
+      "output_schema": "country_classifier_probabilities_v1",
+      "crop_policy": "shared_detector_proposal_crop_v1"
+    },
+    "temporal_contract": {
+      "candidate_burst_aggregation": "shared_candidate_burst_v2",
+      "validated_passage_required": true,
+      "frame_score_cannot_change_speed_context": true
+    }
+  },
+  "countries": [
+    {
+      "country": "FR",
+      "artwork": {
+        "manifest": "shared/tsr/sign-pictograms/national/FR/manifest.json",
+        "selection": "shared/tsr/sign-pictograms/national/FR/selection.json",
+        "display_assets": 114
+      },
+      "mapping": {
+        "path": "shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json",
+        "sha256": "fcbb43d424ff02775183b0f3c830035d6ff9acb9471ffb1fca594c45e196e62e",
+        "country_code_count": 114,
+        "legal_action_review": "pending"
+      },
+      "classifier_source": {
+        "artifact_id": "panoramax-fr-classifier-7f2bdd",
+        "revision": "7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f",
+        "sha256": "5e70142feffd01ac15ce4f1fc2c3ce929a6dadb7c71ccf06ea20059ca5757641",
+        "size_bytes": 109854129,
+        "uri": "https://huggingface.co/Panoramax/classify_fr_road_signs/resolve/7f2bdd58f20b3dfc7161c5aea7c672ce02749c8f/best.pt",
+        "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "exports": {
+        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "classifier_coreml": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted Core ML classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        },
+        "classifier_litert": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted LiteRT classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        }
+      },
+      "calibration": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "country-grouped calibration holdout inventory",
+          "calibration parameter file",
+          "expected calibration error and confidence floors",
+          "speed/action confusion and dangerous-substitution report"
+        ]
+      },
+      "parity": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "reference ONNX vs Core ML tensor/output comparison",
+          "reference ONNX vs LiteRT tensor/output comparison",
+          "preprocessing and box-coordinate parity",
+          "candidate-burst and validated-passage replay"
+        ]
+      },
+      "device_parity": {
+        "ios": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached iPhone Core ML inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        },
+        "android": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached Android CameraX/LiteRT inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        }
+      },
+      "runtime_manifest": {
+        "status": "pending",
+        "path": null,
+        "registry_entry": "null_until_all_gates_pass"
+      },
+      "blockers": [
+        "foreign classifier export dependencies are not available in the current environment",
+        "country semantic/action review is incomplete even though model-code mappings are materialized",
+        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+      ]
+    },
+    {
+      "country": "NL",
+      "artwork": {
+        "manifest": "shared/tsr/sign-pictograms/national/NL/manifest.json",
+        "selection": "shared/tsr/sign-pictograms/national/NL/selection.json",
+        "display_assets": 111
+      },
+      "mapping": {
+        "path": "shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json",
+        "sha256": "fcbb43d424ff02775183b0f3c830035d6ff9acb9471ffb1fca594c45e196e62e",
+        "country_code_count": 159,
+        "legal_action_review": "pending"
+      },
+      "classifier_source": {
+        "artifact_id": "panoramax-nl-classifier-7a8110",
+        "revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+        "sha256": "14c738b1d2b8d65af813f1d3cb20e50033274b481d02bbf062b8f714ed54bc53",
+        "size_bytes": 26350065,
+        "uri": "https://huggingface.co/Panoramax/classify_nl_road_signs/resolve/7a811057049f6de207f909c0f1be2905fa9baf01/classify_nl_road_signs.pt",
+        "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "exports": {
+        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "classifier_coreml": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted Core ML classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        },
+        "classifier_litert": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted LiteRT classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        }
+      },
+      "calibration": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "country-grouped calibration holdout inventory",
+          "calibration parameter file",
+          "expected calibration error and confidence floors",
+          "speed/action confusion and dangerous-substitution report"
+        ]
+      },
+      "parity": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "reference ONNX vs Core ML tensor/output comparison",
+          "reference ONNX vs LiteRT tensor/output comparison",
+          "preprocessing and box-coordinate parity",
+          "candidate-burst and validated-passage replay"
+        ]
+      },
+      "device_parity": {
+        "ios": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached iPhone Core ML inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        },
+        "android": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached Android CameraX/LiteRT inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        }
+      },
+      "runtime_manifest": {
+        "status": "pending",
+        "path": null,
+        "registry_entry": "null_until_all_gates_pass"
+      },
+      "blockers": [
+        "foreign classifier export dependencies are not available in the current environment",
+        "country semantic/action review is incomplete even though model-code mappings are materialized",
+        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+      ]
+    },
+    {
+      "country": "BE",
+      "artwork": {
+        "manifest": "shared/tsr/sign-pictograms/national/BE/manifest.json",
+        "selection": "shared/tsr/sign-pictograms/national/BE/selection.json",
+        "display_assets": 115
+      },
+      "mapping": {
+        "path": "shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json",
+        "sha256": "fcbb43d424ff02775183b0f3c830035d6ff9acb9471ffb1fca594c45e196e62e",
+        "country_code_count": 135,
+        "legal_action_review": "pending"
+      },
+      "classifier_source": {
+        "artifact_id": "panoramax-be-classifier-b31ee3",
+        "revision": "b31ee38e467a667073087aa86503e0afe9b0320f",
+        "sha256": "d99c7ba6fdf2efa395b3100d02ef0670fdb3c3365527f7da9336793db0633c1b",
+        "size_bytes": 26306097,
+        "uri": "https://huggingface.co/Panoramax/classify_be_road_signs/resolve/b31ee38e467a667073087aa86503e0afe9b0320f/classify_be_road_signs.pt",
+        "license_gate": "panoramax_cc_by_sa_and_ultralytics_review"
+      },
+      "exports": {
+        "detector_reuse": "shared_german_reference_artifacts_pending_foreign_pack_assembly",
+        "classifier_coreml": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted Core ML classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        },
+        "classifier_litert": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "converted LiteRT classifier artifact",
+            "output label inventory bound to national selection",
+            "hash and export configuration"
+          ]
+        }
+      },
+      "calibration": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "country-grouped calibration holdout inventory",
+          "calibration parameter file",
+          "expected calibration error and confidence floors",
+          "speed/action confusion and dangerous-substitution report"
+        ]
+      },
+      "parity": {
+        "status": "pending",
+        "evidence_sha256": null,
+        "required_evidence": [
+          "reference ONNX vs Core ML tensor/output comparison",
+          "reference ONNX vs LiteRT tensor/output comparison",
+          "preprocessing and box-coordinate parity",
+          "candidate-burst and validated-passage replay"
+        ]
+      },
+      "device_parity": {
+        "ios": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached iPhone Core ML inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        },
+        "android": {
+          "status": "pending",
+          "evidence_sha256": null,
+          "required_evidence": [
+            "attached Android CameraX/LiteRT inference run",
+            "sign display and confidence/state transition evidence",
+            "minimum 3600 inferences and 1800 seconds drive evidence"
+          ]
+        }
+      },
+      "runtime_manifest": {
+        "status": "pending",
+        "path": null,
+        "registry_entry": "null_until_all_gates_pass"
+      },
+      "blockers": [
+        "foreign classifier export dependencies are not available in the current environment",
+        "country semantic/action review is incomplete even though model-code mappings are materialized",
+        "Core ML/LiteRT export hashes, calibration evidence, device parity evidence and signed runtime manifest are missing"
+      ]
+    }
+  ]
+}

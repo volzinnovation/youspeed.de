@@ -35,7 +35,7 @@ MaintainerNotes: |-
   Android is built from the android/app subdirectory and consumes shared assets
   through the app source-set configuration.
 
-  The app contains the Apache-2.0 Vosk German speech model and the OFL-1.1
+  The app contains the Apache-2.0 Vosk German, French, Dutch and English speech models and the OFL-1.1
   u_DIN font. Runtime map bundles contain ODbL-1.0 OpenStreetMap-derived data.
   No map database is embedded in the APK; users download a selected bundle.
   Downloads use hard-coded GitHub release URLs, hence NonFreeNet and

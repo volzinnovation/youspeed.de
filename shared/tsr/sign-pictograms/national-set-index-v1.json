@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-16",
+  "asset_root": "shared/tsr/sign-pictograms",
+  "source_policy": "Every display-eligible sign needs a country-specific SVG tied to an official national regulation source in originals/ and its transparent PNG rendition in png/. Numeric speed-limit signs remain a UI schematic exception.",
+  "sets": [
+    {
+      "country": "DE",
+      "status": "active",
+      "runtime_status": "active",
+      "asset_prefix": "de-",
+      "originals_path": "originals",
+      "png_path": "png",
+      "catalog_path": "../prolix-de-class-catalog-v1.json",
+      "asset_manifest": "manifest.json",
+      "selection": "selection.json",
+      "display_eligible_assets": 111,
+      "notes": "Reviewed German set; catalog and model vocabulary remain separate contracts."
+    },
+    {
+      "country": "FR",
+      "status": "artwork_ready",
+      "runtime_status": "not_ready",
+      "asset_prefix": "fr-",
+      "originals_path": "national/FR/originals",
+      "png_path": "national/FR/png",
+      "catalog_path": null,
+      "asset_manifest": "national/FR/manifest.json",
+      "selection": "national/FR/selection.json",
+      "display_eligible_assets": 114,
+      "notes": "Expanded Commons set: 111 Panoramax model-linked display assets plus preserved AB4, C107 and C207 core artwork. Commercial provenance is recorded per file; national runtime model and manifest remain blocked."
+    },
+    {
+      "country": "NL",
+      "status": "artwork_ready",
+      "runtime_status": "not_ready",
+      "asset_prefix": "nl-",
+      "originals_path": "national/NL/originals",
+      "png_path": "national/NL/png",
+      "catalog_path": null,
+      "asset_manifest": "national/NL/manifest.json",
+      "selection": "national/NL/selection.json",
+      "display_eligible_assets": 111,
+      "notes": "Expanded Commons set: 111 Panoramax model-linked display assets including zone variants. Commercial provenance is recorded per file; national runtime model and manifest remain blocked."
+    },
+    {
+      "country": "BE",
+      "status": "artwork_ready",
+      "runtime_status": "not_ready",
+      "asset_prefix": "be-",
+      "originals_path": "national/BE/originals",
+      "png_path": "national/BE/png",
+      "catalog_path": null,
+      "asset_manifest": "national/BE/manifest.json",
+      "selection": "national/BE/selection.json",
+      "display_eligible_assets": 115,
+      "notes": "Expanded Commons set: 111 Panoramax model-linked display assets plus preserved core/transition artwork. New Code de la voie publique is the target; B7 remains legacy/transition-only. Commercial provenance is recorded per file; national runtime model and manifest remain blocked."
+    }
+  ]
+}

@@ -259,11 +259,22 @@ struct V3BundleTargetRegionConfig: Codable, Sendable {
     }
 }
 
+struct V3BundleTargetPenaltyRules: Codable, Sendable {
+    let file: String
+    let source: String?
+
+    enum CodingKeys: String, CodingKey {
+        case file
+        case source
+    }
+}
+
 struct V3BundleTargetCountryConfig: Codable, Sendable {
     let rank: Int
     let countryID: String
     let countryCode: String
     let iso2: String?
+    let penaltyRules: V3BundleTargetPenaltyRules?
     let mode: String
     let regions: [V3BundleTargetRegionConfig]
 
@@ -272,6 +283,7 @@ struct V3BundleTargetCountryConfig: Codable, Sendable {
         case countryID = "country_id"
         case countryCode = "country_code"
         case iso2
+        case penaltyRules = "penalty_rules"
         case mode
         case regions
     }

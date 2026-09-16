@@ -34,6 +34,7 @@ class BundleContractTests {
 
         val france = requireNotNull(config.countryById("france"))
         assertEquals("FRA", france.countryCode)
+        assertEquals("FRA-rules.json", france.penaltyRules?.file)
         assertEquals("regional_shards", france.mode)
         assertEquals(26, france.regions.size)
         assertTrue(france.regions.any { it.regionId == "ile-de-france" })

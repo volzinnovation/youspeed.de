@@ -1,0 +1,1043 @@
+{
+  "schema_version": 1,
+  "country": "BE",
+  "status": "core_reviewed_artwork",
+  "runtime_status": "not_ready",
+  "entries": [
+    {
+      "semantic_id": "arrow_left_down",
+      "sign_code": "D1c",
+      "artwork_id": "be-d1c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_left_down maps to national sign code D1c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_left_down",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_left",
+      "sign_code": "D1g",
+      "artwork_id": "be-d1g",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_left maps to national sign code D1g; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_right_down",
+      "sign_code": "D1d",
+      "artwork_id": "be-d1d",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_right_down maps to national sign code D1d; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_right_down",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_right",
+      "sign_code": "D1f",
+      "artwork_id": "be-d1f",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_right maps to national sign code D1f; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_right",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_through",
+      "sign_code": "D1a",
+      "artwork_id": "be-d1a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_through maps to national sign code D1a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_through",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_turn_left_right",
+      "sign_code": "D3c",
+      "artwork_id": "be-d3c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left_right maps to national sign code D3c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_turn_left_right",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_turn_left_through",
+      "sign_code": "D3a",
+      "artwork_id": "be-d3a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left_through maps to national sign code D3a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_turn_left_through",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_turn_left",
+      "sign_code": "D1e",
+      "artwork_id": "be-d1e",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_left maps to national sign code D1e; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_turn_left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "arrow_turn_right_through",
+      "sign_code": "D3b",
+      "artwork_id": "be-d3b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class arrow_turn_right_through maps to national sign code D3b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "arrow_turn_right_through",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "bicycle:priority",
+      "sign_code": "F111",
+      "artwork_id": "be-f111",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:priority maps to national sign code F111; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "bicycle:priority",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "bicycle:priority:end",
+      "sign_code": "F113",
+      "artwork_id": "be-f113",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:priority:end maps to national sign code F113; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "bicycle:priority:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "bicycle:start",
+      "sign_code": "D7",
+      "artwork_id": "be-d7",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class bicycle:start maps to national sign code D7; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "bicycle:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "city:end",
+      "sign_code": "F3",
+      "artwork_id": "be-f3",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class city:end maps to national sign code F3; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "city:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "city:start",
+      "sign_code": "F1",
+      "artwork_id": "be-f1",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class city:start maps to national sign code F1; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "city:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "escape_lane",
+      "sign_code": "F95",
+      "artwork_id": "be-f95",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class escape_lane maps to national sign code F95; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "escape_lane",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "give_way",
+      "sign_code": "B1",
+      "artwork_id": "be-b1",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class give_way maps to national sign code B1; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "give_way",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard",
+      "sign_code": "A51",
+      "artwork_id": "be-a51",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard maps to national sign code A51; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:airport",
+      "sign_code": "A35",
+      "artwork_id": "be-a35",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:airport maps to national sign code A35; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:airport",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:animals",
+      "sign_code": "A29",
+      "artwork_id": "be-a29",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:animals maps to national sign code A29; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:animals",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:bicycle",
+      "sign_code": "A25",
+      "artwork_id": "be-a25",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bicycle maps to national sign code A25; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:bicycle",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:bothways",
+      "sign_code": "A39",
+      "artwork_id": "be-a39",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bothways maps to national sign code A39; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:bothways",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:bump",
+      "sign_code": "A14",
+      "artwork_id": "be-a14",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bump maps to national sign code A14; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:bump",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:bumps",
+      "sign_code": "A13",
+      "artwork_id": "be-a13",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:bumps maps to national sign code A13; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:bumps",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:dock",
+      "sign_code": "A11",
+      "artwork_id": "be-a11",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:dock maps to national sign code A11; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:dock",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:fog",
+      "sign_code": "A18",
+      "artwork_id": "be-a18",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:fog maps to national sign code A18; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:fog",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:gravel",
+      "sign_code": "A17",
+      "artwork_id": "be-a17",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:gravel maps to national sign code A17; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:gravel",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:incline:up",
+      "sign_code": "A5",
+      "artwork_id": "be-a5",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:incline:up maps to national sign code A5; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:incline:up",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:include:down",
+      "sign_code": "A3",
+      "artwork_id": "be-a3",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:include:down maps to national sign code A3; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:include:down",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:level_crossing",
+      "sign_code": "A41",
+      "artwork_id": "be-a41",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:level_crossing maps to national sign code A41; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:level_crossing",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:moving_bridge",
+      "sign_code": "A9",
+      "artwork_id": "be-a9",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:moving_bridge maps to national sign code A9; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:moving_bridge",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:narrow_both",
+      "sign_code": "A7a",
+      "artwork_id": "be-a7a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_both maps to national sign code A7a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:narrow_both",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:narrow_left",
+      "sign_code": "A7b",
+      "artwork_id": "be-a7b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_left maps to national sign code A7b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:narrow_left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:narrow_right",
+      "sign_code": "A7c",
+      "artwork_id": "be-a7c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:narrow_right maps to national sign code A7c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:narrow_right",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:pedestrian_crossing",
+      "sign_code": "A21",
+      "artwork_id": "be-a21",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:pedestrian_crossing maps to national sign code A21; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:pedestrian_crossing",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:road_works",
+      "sign_code": "A31",
+      "artwork_id": "be-a31",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:road_works maps to national sign code A31; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:road_works",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:rocks",
+      "sign_code": "A19",
+      "artwork_id": "be-a19",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:rocks maps to national sign code A19; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:rocks",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:school",
+      "sign_code": "A23",
+      "artwork_id": "be-a23",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:school maps to national sign code A23; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:school",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:slippery",
+      "sign_code": "A15",
+      "artwork_id": "be-a15",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:slippery maps to national sign code A15; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:slippery",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:soft_shoulder",
+      "sign_code": "A8",
+      "artwork_id": "be-a8",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:soft_shoulder maps to national sign code A8; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:soft_shoulder",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:traffic_jam",
+      "sign_code": "A50",
+      "artwork_id": "be-a50",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:traffic_jam maps to national sign code A50; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:traffic_jam",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:traffic_signal",
+      "sign_code": "A33",
+      "artwork_id": "be-a33",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:traffic_signal maps to national sign code A33; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:traffic_signal",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:train",
+      "sign_code": "A43",
+      "artwork_id": "be-a43",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:train maps to national sign code A43; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:train",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:tram",
+      "sign_code": "A49",
+      "artwork_id": "be-a49",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:tram maps to national sign code A49; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:tram",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:turn_left",
+      "sign_code": "A1a",
+      "artwork_id": "be-a1a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_left maps to national sign code A1a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:turn_left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:turn_right",
+      "sign_code": "A1b",
+      "artwork_id": "be-a1b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:turn_right maps to national sign code A1b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:turn_right",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:wild_animals",
+      "sign_code": "A27",
+      "artwork_id": "be-a27",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wild_animals maps to national sign code A27; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:wild_animals",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:wind",
+      "sign_code": "A37",
+      "artwork_id": "be-a37",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:wind maps to national sign code A37; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:wind",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:zigzag",
+      "sign_code": "A1c",
+      "artwork_id": "be-a1c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag maps to national sign code A1c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:zigzag",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "hazard:zigzag:left",
+      "sign_code": "A1d",
+      "artwork_id": "be-a1d",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class hazard:zigzag:left maps to national sign code A1d; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "hazard:zigzag:left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "horse:start",
+      "sign_code": "D13",
+      "artwork_id": "be-d13",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class horse:start maps to national sign code D13; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "horse:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "information",
+      "sign_code": "F77",
+      "artwork_id": "be-f77",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class information maps to national sign code F77; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "information",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "info:radio",
+      "sign_code": "F93",
+      "artwork_id": "be-f93",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class info:radio maps to national sign code F93; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "info:radio",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxheight",
+      "sign_code": "C27",
+      "artwork_id": "be-c27",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxheight maps to national sign code C27; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxheight",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxlength",
+      "sign_code": "C25",
+      "artwork_id": "be-c25",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxlength maps to national sign code C25; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxlength",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:100",
+      "sign_code": "C43[100]",
+      "artwork_id": "be-c43-100",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:100 maps to national sign code C43[100]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:100",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:110",
+      "sign_code": "C43[110]",
+      "artwork_id": "be-c43-110",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:110 maps to national sign code C43[110]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:110",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:120",
+      "sign_code": "C43[120]",
+      "artwork_id": "be-c43-120",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:120 maps to national sign code C43[120]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:120",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:20",
+      "sign_code": "C43[20]",
+      "artwork_id": "be-c43-20",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:20 maps to national sign code C43[20]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:20",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:30",
+      "sign_code": "C43[30]",
+      "artwork_id": "be-c43-30",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:30 maps to national sign code C43[30]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:30",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:50",
+      "sign_code": "C43[50]",
+      "artwork_id": "be-c43-50",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:50 maps to national sign code C43[50]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:50",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:60",
+      "sign_code": "C43[60]",
+      "artwork_id": "be-c43-60",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:60 maps to national sign code C43[60]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:60",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:70",
+      "sign_code": "C43[70]",
+      "artwork_id": "be-c43-70",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:70 maps to national sign code C43[70]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:70",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:80",
+      "sign_code": "C43[80]",
+      "artwork_id": "be-c43-80",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:80 maps to national sign code C43[80]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:80",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:90",
+      "sign_code": "C43[90]",
+      "artwork_id": "be-c43-90",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:90 maps to national sign code C43[90]; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:90",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxspeed:end",
+      "sign_code": "C45",
+      "artwork_id": "be-c45",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxspeed:end maps to national sign code C45; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxspeed:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "maxweight",
+      "sign_code": "C21",
+      "artwork_id": "be-c21",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class maxweight maps to national sign code C21; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "maxweight",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "motorway:end",
+      "sign_code": "F7",
+      "artwork_id": "be-f7",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class motorway:end maps to national sign code F7; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "motorway:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "motorway:start",
+      "sign_code": "F5",
+      "artwork_id": "be-f5",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class motorway:start maps to national sign code F5; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "motorway:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_agriculture",
+      "sign_code": "C8",
+      "artwork_id": "be-c8",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_agriculture maps to national sign code C8; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_agriculture",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_bicycle",
+      "sign_code": "C11",
+      "artwork_id": "be-c11",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_bicycle maps to national sign code C11; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_bicycle",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_bus",
+      "sign_code": "C22",
+      "artwork_id": "be-c22",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_bus maps to national sign code C22; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_bus",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_car_trailer",
+      "sign_code": "C30",
+      "artwork_id": "be-c30",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_car_trailer maps to national sign code C30; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_car_trailer",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_car",
+      "sign_code": "C5",
+      "artwork_id": "be-c5",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_car maps to national sign code C5; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_car",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_dangerous_liquid",
+      "sign_code": "C24c",
+      "artwork_id": "be-c24c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous_liquid maps to national sign code C24c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_dangerous_liquid",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_dangerous",
+      "sign_code": "C24a",
+      "artwork_id": "be-c24a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous maps to national sign code C24a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_dangerous",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_dangerous_explosive",
+      "sign_code": "C24b",
+      "artwork_id": "be-c24b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_dangerous_explosive maps to national sign code C24b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_dangerous_explosive",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_entry",
+      "sign_code": "C1",
+      "artwork_id": "be-c1",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_entry maps to national sign code C1; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_entry",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_exit",
+      "sign_code": "F45",
+      "artwork_id": "be-f45",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_exit maps to national sign code F45; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_exit",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_exit:car",
+      "sign_code": "F45b",
+      "artwork_id": "be-f45b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_exit:car maps to national sign code F45b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_exit:car",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_hgv",
+      "sign_code": "C23",
+      "artwork_id": "be-c23",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_hgv maps to national sign code C23; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_hgv",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_horse",
+      "sign_code": "C15",
+      "artwork_id": "be-c15",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_horse maps to national sign code C15; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_horse",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_horse_vehicle",
+      "sign_code": "C13",
+      "artwork_id": "be-c13",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_horse_vehicle maps to national sign code C13; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_horse_vehicle",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_moped",
+      "sign_code": "C9",
+      "artwork_id": "be-c9",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_moped maps to national sign code C9; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_moped",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_motorcycle",
+      "sign_code": "C7",
+      "artwork_id": "be-c7",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_motorcycle maps to national sign code C7; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_motorcycle",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_overtaking",
+      "sign_code": "C35",
+      "artwork_id": "be-c35",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking maps to national sign code C35; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_overtaking",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_overtaking:end",
+      "sign_code": "C37",
+      "artwork_id": "be-c37",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:end maps to national sign code C37; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_overtaking:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_overtaking:hgv",
+      "sign_code": "C39",
+      "artwork_id": "be-c39",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:hgv maps to national sign code C39; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_overtaking:hgv",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_overtaking:end:hgv",
+      "sign_code": "C41",
+      "artwork_id": "be-c41",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_overtaking:end:hgv maps to national sign code C41; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_overtaking:end:hgv",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_parking",
+      "sign_code": "E1",
+      "artwork_id": "be-e1",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking maps to national sign code E1; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_parking",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_parking:1-15",
+      "sign_code": "E5",
+      "artwork_id": "be-e5",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking:1-15 maps to national sign code E5; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_parking:1-15",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_parking:16-31",
+      "sign_code": "E7",
+      "artwork_id": "be-e7",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_parking:16-31 maps to national sign code E7; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_parking:16-31",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_pedestrian",
+      "sign_code": "C19",
+      "artwork_id": "be-c19",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_pedestrian maps to national sign code C19; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_pedestrian",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_stop",
+      "sign_code": "E3",
+      "artwork_id": "be-e3",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_stop maps to national sign code E3; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_stop",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_turn:left",
+      "sign_code": "C31a",
+      "artwork_id": "be-c31a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_turn:left maps to national sign code C31a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_turn:left",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_turn:right",
+      "sign_code": "C31b",
+      "artwork_id": "be-c31b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_turn:right maps to national sign code C31b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_turn:right",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no_way",
+      "sign_code": "C3",
+      "artwork_id": "be-c3",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no_way maps to national sign code C3; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no_way",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "no:end",
+      "sign_code": "C46",
+      "artwork_id": "be-c46",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class no:end maps to national sign code C46; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "no:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "oneway",
+      "sign_code": "F19",
+      "artwork_id": "be-f19",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class oneway maps to national sign code F19; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "oneway",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking",
+      "sign_code": "E9a",
+      "artwork_id": "be-e9a",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking maps to national sign code E9a; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking:bus",
+      "sign_code": "E9d",
+      "artwork_id": "be-e9d",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:bus maps to national sign code E9d; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking:bus",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking:car",
+      "sign_code": "E9b",
+      "artwork_id": "be-e9b",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:car maps to national sign code E9b; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking:car",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking:hgv",
+      "sign_code": "E9c",
+      "artwork_id": "be-e9c",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:hgv maps to national sign code E9c; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking:hgv",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking:motorcycle",
+      "sign_code": "E9i",
+      "artwork_id": "be-e9i",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:motorcycle maps to national sign code E9i; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking:motorcycle",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "parking:motorhome",
+      "sign_code": "E9h",
+      "artwork_id": "be-e9h",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class parking:motorhome maps to national sign code E9h; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "parking:motorhome",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "pedestrian_bicycle:designated",
+      "sign_code": "D9",
+      "artwork_id": "be-d9",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian_bicycle:designated maps to national sign code D9; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "pedestrian_bicycle:designated",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "pedestrian_bicycle:start",
+      "sign_code": "D10",
+      "artwork_id": "be-d10",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian_bicycle:start maps to national sign code D10; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "pedestrian_bicycle:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "pedestrian:start",
+      "sign_code": "D11",
+      "artwork_id": "be-d11",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class pedestrian:start maps to national sign code D11; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "pedestrian:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "priority:backward",
+      "sign_code": "B19",
+      "artwork_id": "be-b19",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:backward maps to national sign code B19; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "priority:backward",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "priority:end",
+      "sign_code": "B11",
+      "artwork_id": "be-b11",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:end maps to national sign code B11; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "priority:end",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "priority:forward",
+      "sign_code": "B21",
+      "artwork_id": "be-b21",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:forward maps to national sign code B21; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "priority:forward",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "priority:start",
+      "sign_code": "B9",
+      "artwork_id": "be-b9",
+      "mapping_status": "reviewed_model_code",
+      "mapping_basis": "Panoramax road_signs_mapping.csv class priority:start maps to national sign code B9; Belgium new Code de la voie publique sign catalogue is the legal authority for the code and meaning.",
+      "source_model_class": "priority:start",
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "stop",
+      "sign_code": "B5",
+      "artwork_id": "be-b5",
+      "mapping_status": "reviewed",
+      "mapping_basis": "B5 means stop and give priority in the new Belgian Code de la voie publique.",
+      "source_model_class": null,
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "stop_ahead",
+      "sign_code": "B7",
+      "artwork_id": "be-b7",
+      "mapping_status": "reviewed_legacy_transition",
+      "mapping_basis": "B7 is retained only as a legacy/transition announcement of B5; it is not the stop event.",
+      "source_model_class": null,
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "roundabout",
+      "sign_code": "D5",
+      "artwork_id": "be-d5",
+      "mapping_status": "reviewed",
+      "mapping_basis": "D5 is the mandatory roundabout-direction sign in the new Belgian catalogue.",
+      "source_model_class": null,
+      "runtime_model_class": null
+    },
+    {
+      "semantic_id": "built_up_area_start",
+      "sign_code": "F1a",
+      "artwork_id": "be-f1a",
+      "mapping_status": "reviewed",
+      "mapping_basis": "F1a marks the start of a built-up area in the Belgian catalogue.",
+      "source_model_class": null,
+      "runtime_model_class": null
+    }
+  ]
+}

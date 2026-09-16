@@ -24,6 +24,39 @@ separate from the image status stated here. No endorsement is implied.
 
 ================================================================================
 
+FOREIGN COMMONS SIGN RENDITIONS
+
+Owner decision recorded: commercial-use-permitting Commons renditions are
+approved for the France, Netherlands and Belgium core sets. Assets are excluded
+only when the individual Commons metadata does not permit commercial use.
+
+The national regulation is the authority for sign code and meaning. Wikimedia
+Commons is the artwork provenance source. Every national manifest records the
+Commons file title, author, source and permanent page URLs, original download
+URL, Commons SHA-1, declared licence, licence source, commercial-use decision,
+SVG/PNG SHA-256 values and local rasterization changes:
+
+- shared/tsr/sign-pictograms/national/FR/manifest.json
+- shared/tsr/sign-pictograms/national/NL/manifest.json
+- shared/tsr/sign-pictograms/national/BE/manifest.json
+
+The expanded checked-in coverage is 114 FR SVG/PNG pairs, 111 NL pairs and
+115 BE pairs. The extra entries preserve core or transition artwork; Belgian
+B7 remains a legacy/transition announcement and is not the stop event.
+
+The France selection contains CC BY-SA 3.0 and CC BY-SA 4.0 renditions. The
+selected Netherlands and Belgium renditions are declared Public domain in their
+Commons metadata. CC BY-SA attribution/share-alike obligations remain in force
+for the French assets; public-domain status does not remove the voluntary source
+credit recorded in the manifests.
+
+The Belgian target catalogue is the new Code de la voie publique sign catalogue:
+https://www.codedelaroute.be/fr/code-de-la-voie-publique/signaux-routiers
+Its new signs target 2027-06-01; most current signs remain valid through
+2045-01-01 according to the catalogue's transition information.
+
+================================================================================
+
 PANORAMAX ROAD-SIGN CLASS MAPPING
 
 Component: Panoramax/classify_nl_road_signs, road_signs_mapping.csv, DE column
@@ -42,6 +75,12 @@ a file in the upstream Prolix repository. YouSpeed's display catalog adapts
 this reference to the actual mobile model labels, corrects reviewed sign
 mappings, and blocks ambiguous mappings. Exact changes are recorded in the
 catalog and README.md. No endorsement by Panoramax is implied.
+
+The complete published country-code table is materialized separately at
+shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json.
+Its SHA-256 and the pinned source revision are recorded in that file. The
+model-class-to-country-code mapping is complete for rows with FR, NL or BE
+values; legal action/semantic review and runtime class binding remain pending.
 
 # LICENCE OUVERTE 2.0/OPEN LICENCE 2.0
 

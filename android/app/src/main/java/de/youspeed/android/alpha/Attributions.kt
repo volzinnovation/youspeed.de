@@ -25,8 +25,11 @@ internal data class AttributionCatalog(val reviewedAt: String, val entries: List
         const val SHARED_NOTICES = "attributions/THIRD_PARTY_NOTICES.txt"
         const val MODEL_NOTICES = "tsr/DE.panoramax-bootstrap.tsrmodelpack/THIRD_PARTY_NOTICES.txt"
         const val SPEECH_NOTICES = "vosk-model-small-de-0.15/COPYING"
+        const val SPEECH_NOTICES_FR = "vosk-model-small-fr-0.22/COPYING"
+        const val SPEECH_NOTICES_NL = "vosk-model-small-nl-0.22/COPYING"
+        const val SPEECH_NOTICES_EN = "vosk-model-small-en-us-0.15/COPYING"
         val CATEGORIES = listOf("data", "sign", "model", "software", "reference")
-        val NOTICE_PATHS = listOf(SHARED_NOTICES, MODEL_NOTICES, SPEECH_NOTICES)
+        val NOTICE_PATHS = listOf(SHARED_NOTICES, MODEL_NOTICES, SPEECH_NOTICES, SPEECH_NOTICES_FR, SPEECH_NOTICES_NL, SPEECH_NOTICES_EN)
 
         fun decode(raw: String): AttributionCatalog {
             val root = Json.parseToJsonElement(raw).jsonObject

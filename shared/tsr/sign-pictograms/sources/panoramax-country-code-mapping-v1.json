@@ -1,0 +1,4953 @@
+{
+  "schema_version": 1,
+  "mapping_id": "panoramax-country-code-mapping-v1",
+  "generated_at": "2026-09-16",
+  "source": {
+    "title": "Panoramax road_signs_mapping.csv",
+    "url": "https://huggingface.co/Panoramax/classify_nl_road_signs/blob/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "permanent_url": "https://huggingface.co/Panoramax/classify_nl_road_signs/resolve/7a811057049f6de207f909c0f1be2905fa9baf01/road_signs_mapping.csv",
+    "revision": "7a811057049f6de207f909c0f1be2905fa9baf01",
+    "sha256": "f97697266e717c6cf10bbc6465adfb6f7bc603ab688b7c5fc68462a807fcf416",
+    "license": "Etalab-2.0 as declared by the Panoramax classifier repository",
+    "license_url": "https://github.com/etalab/licence-ouverte/blob/48b983e67f2dcbd9a851daa178876b1ec6b49785/LO.md"
+  },
+  "columns": [
+    "DE",
+    "FR",
+    "NL",
+    "CH",
+    "BE"
+  ],
+  "country_code_counts": {
+    "FR": 144,
+    "NL": 159,
+    "BE": 135
+  },
+  "artwork_coverage_counts": {
+    "FR": 111,
+    "NL": 111,
+    "BE": 113
+  },
+  "mapping_policy": {
+    "country_code_map": "complete_for_all_rows_with_a_country_column",
+    "semantic_action_map": "pending_review_against_each_country_regulation",
+    "runtime_model_class": "must_be_filled_from_the_exported_country_classifier_label_inventory; no runtime manifest is activated by this artifact",
+    "speed_signs": "numeric sign artwork remains the schematic UI exception; values must still be calibrated and passed through the validated-passage reducer"
+  },
+  "entries": [
+    {
+      "model_class_label": "arrow_left_down",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:222-10",
+          "normalized": "222-10"
+        },
+        "FR": {
+          "raw": "FR:B21a2",
+          "normalized": "B21a2",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D02-LO",
+          "normalized": "D02-LO",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.35",
+          "normalized": "2.35"
+        },
+        "BE": {
+          "raw": "BE:D1c",
+          "normalized": "D1c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_left_down",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_left_rect",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:220-10",
+          "normalized": "220-10"
+        },
+        "NL": {
+          "raw": "NL:C04-L",
+          "normalized": "C04-L",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_left_rect",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_left",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:211-10",
+          "normalized": "211-10"
+        },
+        "FR": {
+          "raw": "FR:B21-2",
+          "normalized": "B21-2",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.33",
+          "normalized": "2.33"
+        },
+        "BE": {
+          "raw": "BE:D1g",
+          "normalized": "D1g",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_right_down",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:222",
+          "normalized": "222"
+        },
+        "FR": {
+          "raw": "FR:B21a2",
+          "normalized": "B21a2",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D02-RO",
+          "normalized": "D02-RO",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.34",
+          "normalized": "2.34"
+        },
+        "BE": {
+          "raw": "BE:D1d",
+          "normalized": "D1d",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_right_down",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_right_rect",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:220-20",
+          "normalized": "220-20"
+        },
+        "NL": {
+          "raw": "NL:C04-R",
+          "normalized": "C04-R",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_right_rect",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_right",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:211",
+          "normalized": "211"
+        },
+        "FR": {
+          "raw": "FR:B21-1",
+          "normalized": "B21-1",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.32",
+          "normalized": "2.32"
+        },
+        "BE": {
+          "raw": "BE:D1f",
+          "normalized": "D1f",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_through",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:209-30",
+          "normalized": "209-30"
+        },
+        "FR": {
+          "raw": "FR:B21b",
+          "normalized": "B21b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D04",
+          "normalized": "D04",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.36",
+          "normalized": "2.36"
+        },
+        "BE": {
+          "raw": "BE:D1a",
+          "normalized": "D1a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_through",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_turn_left_right",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:214-30",
+          "normalized": "214-30"
+        },
+        "FR": {
+          "raw": "FR:B21e",
+          "normalized": "B21e",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D07",
+          "normalized": "D07",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.39",
+          "normalized": "2.39"
+        },
+        "BE": {
+          "raw": "BE:D3c",
+          "normalized": "D3c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_turn_left_right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_turn_left_through",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:214-10",
+          "normalized": "214-10"
+        },
+        "FR": {
+          "raw": "FR:B21d1",
+          "normalized": "B21d1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D06-L",
+          "normalized": "D06-L",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.41",
+          "normalized": "2.41"
+        },
+        "BE": {
+          "raw": "BE:D3a",
+          "normalized": "D3a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_turn_left_through",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_turn_left",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:209",
+          "normalized": "209"
+        },
+        "FR": {
+          "raw": "FR:B21c2",
+          "normalized": "B21c2",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D05-L",
+          "normalized": "D05-L",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.38",
+          "normalized": "2.38"
+        },
+        "BE": {
+          "raw": "BE:D1e",
+          "normalized": "D1e",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_turn_left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_turn_right_through",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:214",
+          "normalized": "214"
+        },
+        "FR": {
+          "raw": "FR:B21d2",
+          "normalized": "B21d2",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D06-R",
+          "normalized": "D06-R",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.40",
+          "normalized": "2.40"
+        },
+        "BE": {
+          "raw": "BE:D3b",
+          "normalized": "D3b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_turn_right_through",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_turn_right",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:209-10",
+          "normalized": "209-10"
+        },
+        "FR": {
+          "raw": "FR:B21c1",
+          "normalized": "B21c1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:D05-R",
+          "normalized": "D05-R",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.37",
+          "normalized": "2.37"
+        },
+        "BE": {
+          "raw": "BE:D1f",
+          "normalized": "D1f",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_turn_right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "arrow_u_turn",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:D08",
+          "normalized": "D08",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "arrow_u_turn",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B40",
+          "normalized": "B40",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G12",
+          "normalized": "G12",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.60.1",
+          "normalized": "2.60.1"
+        }
+      },
+      "semantic_id": "bicycle:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle:priority",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:L1002-A",
+          "normalized": "L1002-A",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F111",
+          "normalized": "F111",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bicycle:priority",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle:priority:end",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:L1002-B",
+          "normalized": "L1002-B",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F113",
+          "normalized": "F113",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bicycle:priority:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:237",
+          "normalized": "237"
+        },
+        "FR": {
+          "raw": "FR:B22a",
+          "normalized": "B22a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G11",
+          "normalized": "G11",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.60",
+          "normalized": "2.60"
+        },
+        "BE": {
+          "raw": "BE:D7",
+          "normalized": "D7",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bicycle:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle_ebike:end",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:G12-B",
+          "normalized": "G12-B",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bicycle_ebike:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bicycle_ebike:start",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:G12-A",
+          "normalized": "G12-A",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bicycle_ebike:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bothways",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:C05",
+          "normalized": "C05",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bothways",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bus:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:245",
+          "normalized": "245"
+        },
+        "FR": {
+          "raw": "FR:B27a",
+          "normalized": "B27a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F13",
+          "normalized": "F13",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.64",
+          "normalized": "2.64"
+        }
+      },
+      "semantic_id": "bus:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "bus:stop",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:224",
+          "normalized": "224"
+        },
+        "FR": {
+          "raw": "FR:B45a",
+          "normalized": "B45a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F14",
+          "normalized": "F14",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "bus:stop",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "chains",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:268",
+          "normalized": "268"
+        },
+        "FR": {
+          "raw": "FR:B26",
+          "normalized": "B26",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.48",
+          "normalized": "2.48"
+        }
+      },
+      "semantic_id": "chains",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "chains:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B44",
+          "normalized": "B44",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.57",
+          "normalized": "2.57"
+        }
+      },
+      "semantic_id": "chains:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "city:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:EB20",
+          "normalized": "EB20",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F3",
+          "normalized": "F3",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "city:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "city:start",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:EB10",
+          "normalized": "EB10",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F1",
+          "normalized": "F1",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "city:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "customs",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B4",
+          "normalized": "B4",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.51",
+          "normalized": "2.51"
+        }
+      },
+      "semantic_id": "customs",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "escape_lane",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C26",
+          "normalized": "C26",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.24",
+          "normalized": "4.24"
+        },
+        "BE": {
+          "raw": "BE:F95",
+          "normalized": "F95",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "escape_lane",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "exit",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:460",
+          "normalized": "460"
+        },
+        "NL": {
+          "raw": "NL:BW207",
+          "normalized": "BW207",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.63",
+          "normalized": "4.63"
+        }
+      },
+      "semantic_id": "exit",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "give_way",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:205",
+          "normalized": "205"
+        },
+        "FR": {
+          "raw": "FR:AB3a",
+          "normalized": "AB3a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:B06",
+          "normalized": "B06",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.02",
+          "normalized": "3.02"
+        },
+        "BE": {
+          "raw": "BE:B1",
+          "normalized": "B1",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "give_way",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "halt",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B5",
+          "normalized": "B5",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "halt",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101",
+          "normalized": "101"
+        },
+        "FR": {
+          "raw": "FR:A14",
+          "normalized": "A14",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J37",
+          "normalized": "J37",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.30",
+          "normalized": "1.30"
+        },
+        "BE": {
+          "raw": "BE:A51",
+          "normalized": "A51",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:airport",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x0",
+          "normalized": "101-x0"
+        },
+        "FR": {
+          "raw": "FR:A23",
+          "normalized": "A23",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J30",
+          "normalized": "J30",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.28",
+          "normalized": "1.28"
+        },
+        "BE": {
+          "raw": "BE:A35",
+          "normalized": "A35",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:airport",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:animals",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x2",
+          "normalized": "101-x2"
+        },
+        "FR": {
+          "raw": "FR:A15a1",
+          "normalized": "A15a1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J28",
+          "normalized": "J28",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.25",
+          "normalized": "1.25"
+        },
+        "BE": {
+          "raw": "BE:A29",
+          "normalized": "A29",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:animals",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:animals:sheep",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:A15a2",
+          "normalized": "A15a2",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:animals:sheep",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:bicycle",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:138",
+          "normalized": "138"
+        },
+        "FR": {
+          "raw": "FR:A21",
+          "normalized": "A21",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J24",
+          "normalized": "J24",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.32",
+          "normalized": "1.32"
+        },
+        "BE": {
+          "raw": "BE:A25",
+          "normalized": "A25",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:bicycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:bothways",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:125",
+          "normalized": "125"
+        },
+        "FR": {
+          "raw": "FR:A18",
+          "normalized": "A18",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J29",
+          "normalized": "J29",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.26",
+          "normalized": "1.26"
+        },
+        "BE": {
+          "raw": "BE:A39",
+          "normalized": "A39",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:bothways",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:bump",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:A2b",
+          "normalized": "A2b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J38",
+          "normalized": "J38",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:A14",
+          "normalized": "A14",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:bump",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:bumps",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:112",
+          "normalized": "112"
+        },
+        "FR": {
+          "raw": "FR:A2a",
+          "normalized": "A2a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J01",
+          "normalized": "J01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.06",
+          "normalized": "1.06"
+        },
+        "BE": {
+          "raw": "BE:A13",
+          "normalized": "A13",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:bumps",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:bus",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:A9a",
+          "normalized": "A9a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:bus",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:crossing",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:102",
+          "normalized": "102"
+        },
+        "FR": {
+          "raw": "FR:AB1",
+          "normalized": "AB1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J08",
+          "normalized": "J08",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.06",
+          "normalized": "3.06"
+        },
+        "BE": {
+          "raw": "BE:17",
+          "normalized": "17",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:crossing",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:dock",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-53",
+          "normalized": "101-53"
+        },
+        "FR": {
+          "raw": "FR:A20",
+          "normalized": "A20",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J26",
+          "normalized": "J26",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:A11",
+          "normalized": "A11",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:dock",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:fire",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C3",
+          "normalized": "C3",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:fire",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:fog",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:AK32",
+          "normalized": "AK32",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:A18",
+          "normalized": "A18",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:fog",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:frog",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x4",
+          "normalized": "101-x4"
+        },
+        "NL": {
+          "raw": "NL:J1002",
+          "normalized": "J1002",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:frog",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:gravel",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-52",
+          "normalized": "101-52"
+        },
+        "FR": {
+          "raw": "FR:AK22",
+          "normalized": "AK22",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J25",
+          "normalized": "J25",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.12",
+          "normalized": "1.12"
+        },
+        "BE": {
+          "raw": "BE:A17",
+          "normalized": "A17",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:gravel",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:horse",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x3",
+          "normalized": "101-x3"
+        },
+        "FR": {
+          "raw": "FR:A15c",
+          "normalized": "A15c",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.24a",
+          "normalized": "1.24a"
+        }
+      },
+      "semantic_id": "hazard:horse",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:ice",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-51",
+          "normalized": "101-51"
+        },
+        "NL": {
+          "raw": "NL:J36",
+          "normalized": "J36",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:ice",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:incline:up",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:108",
+          "normalized": "108"
+        },
+        "NL": {
+          "raw": "NL:J06",
+          "normalized": "J06",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.11",
+          "normalized": "1.11"
+        },
+        "BE": {
+          "raw": "BE:A5",
+          "normalized": "A5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:incline:up",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:include:down",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:110",
+          "normalized": "110"
+        },
+        "FR": {
+          "raw": "FR:A16",
+          "normalized": "A16",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J07",
+          "normalized": "J07",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.10",
+          "normalized": "1.10"
+        },
+        "BE": {
+          "raw": "BE:A3",
+          "normalized": "A3",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:include:down",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:intersection",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:301",
+          "normalized": "301"
+        },
+        "FR": {
+          "raw": "FR:AB2",
+          "normalized": "AB2",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:B03",
+          "normalized": "B03",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.05",
+          "normalized": "3.05"
+        },
+        "BE": {
+          "raw": "BE:15",
+          "normalized": "15",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:intersection",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:intersection:left",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:B04",
+          "normalized": "B04",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:intersection:left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:intersection:right",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:B05",
+          "normalized": "B05",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:intersection:right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:level_crossing",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:A7",
+          "normalized": "A7",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J10",
+          "normalized": "J10",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.15",
+          "normalized": "1.15"
+        },
+        "BE": {
+          "raw": "BE:A41",
+          "normalized": "A41",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:level_crossing",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:moving_bridge",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-55",
+          "normalized": "101-55"
+        },
+        "FR": {
+          "raw": "FR:A6",
+          "normalized": "A6",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J15",
+          "normalized": "J15",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:A9",
+          "normalized": "A9",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:moving_bridge",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:narrow_both",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:120",
+          "normalized": "120"
+        },
+        "FR": {
+          "raw": "FR:A3",
+          "normalized": "A3",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J17",
+          "normalized": "J17",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.07",
+          "normalized": "1.07"
+        },
+        "BE": {
+          "raw": "BE:A7a",
+          "normalized": "A7a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:narrow_both",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:narrow_left",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:121-20",
+          "normalized": "121-20"
+        },
+        "FR": {
+          "raw": "FR:A3b",
+          "normalized": "A3b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J19",
+          "normalized": "J19",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.09",
+          "normalized": "1.09"
+        },
+        "BE": {
+          "raw": "BE:A7b",
+          "normalized": "A7b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:narrow_left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:narrow_right",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:121-10",
+          "normalized": "121-10"
+        },
+        "FR": {
+          "raw": "FR:A3a",
+          "normalized": "A3a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J18",
+          "normalized": "J18",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.08",
+          "normalized": "1.08"
+        },
+        "BE": {
+          "raw": "BE:A7c",
+          "normalized": "A7c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:narrow_right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:pedestrian_crossing",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x1",
+          "normalized": "101-x1"
+        },
+        "FR": {
+          "raw": "FR:A13b",
+          "normalized": "A13b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J22",
+          "normalized": "J22",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.22",
+          "normalized": "1.22"
+        },
+        "BE": {
+          "raw": "BE:A21",
+          "normalized": "A21",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:pedestrian_crossing",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:pedestrian",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:133",
+          "normalized": "133"
+        },
+        "NL": {
+          "raw": "NL:J23",
+          "normalized": "J23",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:pedestrian",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:rain",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:J35",
+          "normalized": "J35",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:rain",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:road_works",
+      "country_codes": {
+        "DE": {
+          "raw": "DE-123",
+          "normalized": "DE-123"
+        },
+        "FR": {
+          "raw": "FR:AK5",
+          "normalized": "AK5",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J16",
+          "normalized": "J16",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.14",
+          "normalized": "1.14"
+        },
+        "BE": {
+          "raw": "BE:A31",
+          "normalized": "A31",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:road_works",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:rocks",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-x5",
+          "normalized": "101-x5"
+        },
+        "FR": {
+          "raw": "FR:A19",
+          "normalized": "A19",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J1004",
+          "normalized": "J1004",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.13a",
+          "normalized": "1.13a"
+        },
+        "BE": {
+          "raw": "BE:A19",
+          "normalized": "A19",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:rocks",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:roundabout",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:AB25",
+          "normalized": "AB25",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J09",
+          "normalized": "J09",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:roundabout",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:school",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:136",
+          "normalized": "136"
+        },
+        "FR": {
+          "raw": "FR:A13a",
+          "normalized": "A13a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J21",
+          "normalized": "J21",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.23",
+          "normalized": "1.23"
+        },
+        "BE": {
+          "raw": "BE:A23",
+          "normalized": "A23",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:school",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:slippery",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:114",
+          "normalized": "114"
+        },
+        "FR": {
+          "raw": "FR:A4",
+          "normalized": "A4",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J20",
+          "normalized": "J20",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.05",
+          "normalized": "1.05"
+        },
+        "BE": {
+          "raw": "BE:A15",
+          "normalized": "A15",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:slippery",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:soft_shoulder",
+      "country_codes": {
+        "BE": {
+          "raw": "BE:A8",
+          "normalized": "A8",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:soft_shoulder",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:traffic_jam",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:124",
+          "normalized": "124"
+        },
+        "NL": {
+          "raw": "NL:J33",
+          "normalized": "J33",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.31",
+          "normalized": "1.31"
+        },
+        "BE": {
+          "raw": "BE:A50",
+          "normalized": "A50",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:traffic_jam",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:traffic_signal",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:131",
+          "normalized": "131"
+        },
+        "FR": {
+          "raw": "FR:A17",
+          "normalized": "A17",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J32",
+          "normalized": "J32",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.27",
+          "normalized": "1.27"
+        },
+        "BE": {
+          "raw": "BE:A33",
+          "normalized": "A33",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:traffic_signal",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:train",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:151",
+          "normalized": "151"
+        },
+        "FR": {
+          "raw": "Fr:A8",
+          "normalized": "A8",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J11",
+          "normalized": "J11",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.16",
+          "normalized": "1.16"
+        },
+        "BE": {
+          "raw": "BE:A43",
+          "normalized": "A43",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:train",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:tram",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:A9",
+          "normalized": "A9",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J14",
+          "normalized": "J14",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.17",
+          "normalized": "1.17"
+        },
+        "BE": {
+          "raw": "BE:A49",
+          "normalized": "A49",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:tram",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:trees",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-54",
+          "normalized": "101-54"
+        }
+      },
+      "semantic_id": "hazard:trees",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:turn_left",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:103-10",
+          "normalized": "103-10"
+        },
+        "FR": {
+          "raw": "FR:A1b",
+          "normalized": "A1b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J03",
+          "normalized": "J03",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.02",
+          "normalized": "1.02"
+        },
+        "BE": {
+          "raw": "BE:A1a",
+          "normalized": "A1a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:turn_left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:turn_right",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:101-20",
+          "normalized": "101-20"
+        },
+        "FR": {
+          "raw": "FR:A1a",
+          "normalized": "A1a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J02",
+          "normalized": "J02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.01",
+          "normalized": "1.01"
+        },
+        "BE": {
+          "raw": "BE:A1b",
+          "normalized": "A1b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:turn_right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:wild_animals",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:142",
+          "normalized": "142"
+        },
+        "FR": {
+          "raw": "FR:A15b",
+          "normalized": "A15b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J27",
+          "normalized": "J27",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.24",
+          "normalized": "1.24"
+        },
+        "BE": {
+          "raw": "BE:A27",
+          "normalized": "A27",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:wild_animals",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:wind",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:117",
+          "normalized": "117"
+        },
+        "FR": {
+          "raw": "FR:A24",
+          "normalized": "A24",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J31",
+          "normalized": "J31",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:A37",
+          "normalized": "A37",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:wind",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:zigzag",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:105-20",
+          "normalized": "105-20"
+        },
+        "FR": {
+          "raw": "FR:A1c",
+          "normalized": "A1c",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J04",
+          "normalized": "J04",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.03",
+          "normalized": "1.03"
+        },
+        "BE": {
+          "raw": "BE:A1c",
+          "normalized": "A1c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:zigzag",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hazard:zigzag:left",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:105-10",
+          "normalized": "105-10"
+        },
+        "FR": {
+          "raw": "FR:A1d",
+          "normalized": "A1d",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:J05",
+          "normalized": "J05",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:1.04",
+          "normalized": "1.04"
+        },
+        "BE": {
+          "raw": "BE:A1d",
+          "normalized": "A1d",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hazard:zigzag:left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hgv:end",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:F22",
+          "normalized": "F22",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hgv:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "hgv:start",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:F21",
+          "normalized": "F21",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "hgv:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "horse:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B42",
+          "normalized": "B42",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G10",
+          "normalized": "G10",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "horse:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "horse:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:238",
+          "normalized": "238"
+        },
+        "FR": {
+          "raw": "FR:B22c",
+          "normalized": "B22c",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G09",
+          "normalized": "G09",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.62",
+          "normalized": "2.62"
+        },
+        "BE": {
+          "raw": "BE:D13",
+          "normalized": "D13",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "horse:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "information",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:CE3a",
+          "normalized": "CE3a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:SI04",
+          "normalized": "SI04",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.88",
+          "normalized": "4.88"
+        },
+        "BE": {
+          "raw": "BE:F77",
+          "normalized": "F77",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "information",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "info:radio",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:CE22",
+          "normalized": "CE22",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.90",
+          "normalized": "4.90"
+        },
+        "BE": {
+          "raw": "BE:F93",
+          "normalized": "F93",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "info:radio",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "lanes",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:223",
+          "normalized": "223"
+        },
+        "FR": {
+          "raw": "FR:C28",
+          "normalized": "C28",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "lanes",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxaxleweight",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:263",
+          "normalized": "263"
+        },
+        "FR": {
+          "raw": "FR:B13a",
+          "normalized": "B13a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C20",
+          "normalized": "C20",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.17",
+          "normalized": "2.17"
+        }
+      },
+      "semantic_id": "maxaxleweight",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxheight",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:265",
+          "normalized": "265"
+        },
+        "FR": {
+          "raw": "FR:B12",
+          "normalized": "B12",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C19",
+          "normalized": "C19",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.19",
+          "normalized": "2.19"
+        },
+        "BE": {
+          "raw": "BE:C27",
+          "normalized": "C27",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxheight",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxlength",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:266",
+          "normalized": "266"
+        },
+        "FR": {
+          "raw": "FR:B10a",
+          "normalized": "B10a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C17",
+          "normalized": "C17",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.20",
+          "normalized": "2.20"
+        },
+        "BE": {
+          "raw": "BE:C25",
+          "normalized": "C25",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxlength",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:10",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-10",
+          "normalized": "274-10"
+        },
+        "FR": {
+          "raw": "FR:B14[10]",
+          "normalized": "B14[10]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-10",
+          "normalized": "A01-10",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[10]",
+          "normalized": "2.30[10]"
+        },
+        "BE": {
+          "raw": "BE:C43[10]",
+          "normalized": "C43[10]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:10",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:100",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-100",
+          "normalized": "274-100"
+        },
+        "FR": {
+          "raw": "FR:B14[100]",
+          "normalized": "B14[100]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-100",
+          "normalized": "A01-100",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[100]",
+          "normalized": "2.30[100]"
+        },
+        "BE": {
+          "raw": "BE:C43[100]",
+          "normalized": "C43[100]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:100",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:110",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-110",
+          "normalized": "274-110"
+        },
+        "FR": {
+          "raw": "FR:B14[110]",
+          "normalized": "B14[110]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-110",
+          "normalized": "A01-110",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[110]",
+          "normalized": "2.30[110]"
+        },
+        "BE": {
+          "raw": "BE:C43[110]",
+          "normalized": "C43[110]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:110",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:120",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-120",
+          "normalized": "274-120"
+        },
+        "FR": {
+          "raw": "FR:B14[120]",
+          "normalized": "B14[120]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-120",
+          "normalized": "A01-120",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[120]",
+          "normalized": "2.30[120]"
+        },
+        "BE": {
+          "raw": "BE:C43[120]",
+          "normalized": "C43[120]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:120",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:130",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-130",
+          "normalized": "274-130"
+        },
+        "FR": {
+          "raw": "FR:B14[130]",
+          "normalized": "B14[130]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-130",
+          "normalized": "A01-130",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[130]",
+          "normalized": "2.30[130]"
+        },
+        "BE": {
+          "raw": "BE:C43[130]",
+          "normalized": "C43[130]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:130",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:15",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-15",
+          "normalized": "274-15"
+        },
+        "FR": {
+          "raw": "FR:B14[15]",
+          "normalized": "B14[15]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-15",
+          "normalized": "A01-15",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[15]",
+          "normalized": "2.30[15]"
+        },
+        "BE": {
+          "raw": "BE:C43[15]",
+          "normalized": "C43[15]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:15",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:20",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-20",
+          "normalized": "274-20"
+        },
+        "FR": {
+          "raw": "FR:B14[20]",
+          "normalized": "B14[20]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-20",
+          "normalized": "A01-20",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[20]",
+          "normalized": "2.30[20]"
+        },
+        "BE": {
+          "raw": "BE:C43[20]",
+          "normalized": "C43[20]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:20",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:25",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-25",
+          "normalized": "274-25"
+        },
+        "FR": {
+          "raw": "FR:B14[25]",
+          "normalized": "B14[25]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-25",
+          "normalized": "A01-25",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[25]",
+          "normalized": "2.30[25]"
+        },
+        "BE": {
+          "raw": "BE:C43[25]",
+          "normalized": "C43[25]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:25",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:30",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-30",
+          "normalized": "274-30"
+        },
+        "FR": {
+          "raw": "FR:B14[30]",
+          "normalized": "B14[30]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-30",
+          "normalized": "A01-30",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[30]",
+          "normalized": "2.30[30]"
+        },
+        "BE": {
+          "raw": "BE:C43[30]",
+          "normalized": "C43[30]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:30",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:40",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-40",
+          "normalized": "274-40"
+        },
+        "FR": {
+          "raw": "FR:B14[40]",
+          "normalized": "B14[40]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-40",
+          "normalized": "A01-40",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[40]",
+          "normalized": "2.30[40]"
+        },
+        "BE": {
+          "raw": "BE:C43[40]",
+          "normalized": "C43[40]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:40",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:5",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-5",
+          "normalized": "274-5"
+        },
+        "FR": {
+          "raw": "FR:B14[5]",
+          "normalized": "B14[5]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-5",
+          "normalized": "A01-5",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[5]",
+          "normalized": "2.30[5]"
+        },
+        "BE": {
+          "raw": "BE:C43[5]",
+          "normalized": "C43[5]",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:5",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:50",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-50",
+          "normalized": "274-50"
+        },
+        "FR": {
+          "raw": "FR:B14[50]",
+          "normalized": "B14[50]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-50",
+          "normalized": "A01-50",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[50]",
+          "normalized": "2.30[50]"
+        },
+        "BE": {
+          "raw": "BE:C43[50]",
+          "normalized": "C43[50]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:50",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:60",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-60",
+          "normalized": "274-60"
+        },
+        "FR": {
+          "raw": "FR:B14[60]",
+          "normalized": "B14[60]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-60",
+          "normalized": "A01-60",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[60]",
+          "normalized": "2.30[60]"
+        },
+        "BE": {
+          "raw": "BE:C43[60]",
+          "normalized": "C43[60]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:60",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:70",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-70",
+          "normalized": "274-70"
+        },
+        "FR": {
+          "raw": "FR:B14[70]",
+          "normalized": "B14[70]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-70",
+          "normalized": "A01-70",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[70]",
+          "normalized": "2.30[70]"
+        },
+        "BE": {
+          "raw": "BE:C43[70]",
+          "normalized": "C43[70]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:70",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:80",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-80",
+          "normalized": "274-80"
+        },
+        "FR": {
+          "raw": "FR:B14[80]",
+          "normalized": "B14[80]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-80",
+          "normalized": "A01-80",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[80]",
+          "normalized": "2.30[80]"
+        },
+        "BE": {
+          "raw": "BE:C43[80]",
+          "normalized": "C43[80]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:80",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:90",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274-90",
+          "normalized": "274-90"
+        },
+        "FR": {
+          "raw": "FR:B14[90]",
+          "normalized": "B14[90]",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-90",
+          "normalized": "A01-90",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.30[90]",
+          "normalized": "2.30[90]"
+        },
+        "BE": {
+          "raw": "BE:C43[90]",
+          "normalized": "C43[90]",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:90",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxspeed:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:278",
+          "normalized": "278"
+        },
+        "FR": {
+          "raw": "FR:B33",
+          "normalized": "B33",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A02",
+          "normalized": "A02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.53",
+          "normalized": "2.53"
+        },
+        "BE": {
+          "raw": "BE:C45",
+          "normalized": "C45",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxspeed:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxweight",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:262",
+          "normalized": "262"
+        },
+        "FR": {
+          "raw": "FR:B13",
+          "normalized": "B13",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C21",
+          "normalized": "C21",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.16",
+          "normalized": "2.16"
+        },
+        "BE": {
+          "raw": "BE:C21",
+          "normalized": "C21",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxweight",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "maxwidth",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:264",
+          "normalized": "264"
+        },
+        "FR": {
+          "raw": "FR:B11",
+          "normalized": "B11",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C18",
+          "normalized": "C18",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.18",
+          "normalized": "2.18"
+        },
+        "BE": {
+          "raw": "BE:C27",
+          "normalized": "C27",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "maxwidth",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "min_distance",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:273",
+          "normalized": "273"
+        },
+        "FR": {
+          "raw": "FR:B17",
+          "normalized": "B17",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.47",
+          "normalized": "2.47"
+        }
+      },
+      "semantic_id": "min_distance",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "min_speed",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B25",
+          "normalized": "B25",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.31",
+          "normalized": "2.31"
+        }
+      },
+      "semantic_id": "min_speed",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "min_speed:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B43",
+          "normalized": "B43",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.54",
+          "normalized": "2.54"
+        }
+      },
+      "semantic_id": "min_speed:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "motorway:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:330.2",
+          "normalized": "330.2"
+        },
+        "FR": {
+          "raw": "FR:C",
+          "normalized": "C",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G02",
+          "normalized": "G02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.02",
+          "normalized": "4.02"
+        },
+        "BE": {
+          "raw": "BE:F7",
+          "normalized": "F7",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "motorway:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "motorway:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:330.1",
+          "normalized": "330.1"
+        },
+        "NL": {
+          "raw": "NL:G01",
+          "normalized": "G01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.01",
+          "normalized": "4.01"
+        },
+        "BE": {
+          "raw": "BE:F5",
+          "normalized": "F5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "motorway:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_agriculture",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-58",
+          "normalized": "257-58"
+        },
+        "FR": {
+          "raw": "FR:B9d",
+          "normalized": "B9d",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C08",
+          "normalized": "C08",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:C8",
+          "normalized": "C8",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_agriculture",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_animals",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-53",
+          "normalized": "257-53"
+        }
+      },
+      "semantic_id": "no_animals",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_bicycle",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:254",
+          "normalized": "254"
+        },
+        "FR": {
+          "raw": "FR:B9b",
+          "normalized": "B9b",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C14",
+          "normalized": "C14",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.05",
+          "normalized": "2.05"
+        },
+        "BE": {
+          "raw": "BE:C11",
+          "normalized": "C11",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_bicycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_bus",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-54",
+          "normalized": "257-54"
+        },
+        "FR": {
+          "raw": "FR:B9f",
+          "normalized": "B9f",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C07-A",
+          "normalized": "C07-A",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.08",
+          "normalized": "2.08"
+        },
+        "BE": {
+          "raw": "BE:C22",
+          "normalized": "C22",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_bus",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_car_motorcycle",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:260",
+          "normalized": "260"
+        },
+        "FR": {
+          "raw": "FR:B7a",
+          "normalized": "B7a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C12",
+          "normalized": "C12",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_car_motorcycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_car_trailer",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-56",
+          "normalized": "257-56"
+        },
+        "FR": {
+          "raw": "FR:B9i",
+          "normalized": "B9i",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:C30",
+          "normalized": "C30",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_car_trailer",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_car",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:251",
+          "normalized": "251"
+        },
+        "NL": {
+          "raw": "NL:C06",
+          "normalized": "C06",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.03",
+          "normalized": "2.03"
+        },
+        "BE": {
+          "raw": "BE:C5",
+          "normalized": "C5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_car",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_dangerous_liquid",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:269",
+          "normalized": "269"
+        },
+        "FR": {
+          "raw": "FR:B18b",
+          "normalized": "B18b",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.11",
+          "normalized": "2.11"
+        },
+        "BE": {
+          "raw": "BE:C24c",
+          "normalized": "C24c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_dangerous_liquid",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_dangerous",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:261",
+          "normalized": "261"
+        },
+        "FR": {
+          "raw": "FR:B18c",
+          "normalized": "B18c",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C22",
+          "normalized": "C22",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.10.1",
+          "normalized": "2.10.1"
+        },
+        "BE": {
+          "raw": "BE:C24a",
+          "normalized": "C24a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_dangerous",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_dangerous_explosive",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B18a",
+          "normalized": "B18a",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:C24b",
+          "normalized": "C24b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_dangerous_explosive",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_entry",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:267",
+          "normalized": "267"
+        },
+        "FR": {
+          "raw": "FR:B1",
+          "normalized": "B1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C02",
+          "normalized": "C02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.02",
+          "normalized": "2.02"
+        },
+        "BE": {
+          "raw": "BE:C1",
+          "normalized": "C1",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_entry",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_exit",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:357",
+          "normalized": "357"
+        },
+        "FR": {
+          "raw": "FR:C13a",
+          "normalized": "C13a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:L08",
+          "normalized": "L08",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.09",
+          "normalized": "4.09"
+        },
+        "BE": {
+          "raw": "BE:F45",
+          "normalized": "F45",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_exit",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_exit:car",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:357-5x",
+          "normalized": "357-5x"
+        },
+        "FR": {
+          "raw": "FR:C13d",
+          "normalized": "C13d",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.10",
+          "normalized": "4.10"
+        },
+        "BE": {
+          "raw": "BE:F45b",
+          "normalized": "F45b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_exit:car",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_hgv_trailer",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-57",
+          "normalized": "257-57"
+        }
+      },
+      "semantic_id": "no_hgv_trailer",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_hgv",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:253",
+          "normalized": "253"
+        },
+        "FR": {
+          "raw": "FR:B8",
+          "normalized": "B8",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C07",
+          "normalized": "C07",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.07",
+          "normalized": "2.07"
+        },
+        "BE": {
+          "raw": "BE:C23",
+          "normalized": "C23",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_hgv",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_horn",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B16",
+          "normalized": "B16",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_horn",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_horse",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-51",
+          "normalized": "257-51"
+        },
+        "CH": {
+          "raw": "CH:2.12",
+          "normalized": "2.12"
+        },
+        "BE": {
+          "raw": "BE:C15",
+          "normalized": "C15",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_horse",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_horse_vehicle",
+      "country_codes": {
+        "BE": {
+          "raw": "BE:C13",
+          "normalized": "C13",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_horse_vehicle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_moped",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:257-50",
+          "normalized": "257-50"
+        },
+        "NL": {
+          "raw": "NL:C13",
+          "normalized": "C13",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.06",
+          "normalized": "2.06"
+        },
+        "BE": {
+          "raw": "BE:C9",
+          "normalized": "C9",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_moped",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_motorcycle",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:255",
+          "normalized": "255"
+        },
+        "NL": {
+          "raw": "NL:C11",
+          "normalized": "C11",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.04",
+          "normalized": "2.04"
+        },
+        "BE": {
+          "raw": "BE:C7",
+          "normalized": "C7",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_motorcycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_motorhome",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:C07-C",
+          "normalized": "C07-C",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "no_motorhome",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_motor_vehicle",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:2.14",
+          "normalized": "2.14"
+        }
+      },
+      "semantic_id": "no_motor_vehicle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_motor_vehicle2",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:2.13",
+          "normalized": "2.13"
+        }
+      },
+      "semantic_id": "no_motor_vehicle2",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_overtaking",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:276",
+          "normalized": "276"
+        },
+        "FR": {
+          "raw": "FR:B3",
+          "normalized": "B3",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F01",
+          "normalized": "F01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.44",
+          "normalized": "2.44"
+        },
+        "BE": {
+          "raw": "BE:C35",
+          "normalized": "C35",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_overtaking",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_overtaking:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:280",
+          "normalized": "280"
+        },
+        "NL": {
+          "raw": "NL:F02",
+          "normalized": "F02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.55",
+          "normalized": "2.55"
+        },
+        "BE": {
+          "raw": "BE:C37",
+          "normalized": "C37",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_overtaking:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_overtaking:hgv",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:277",
+          "normalized": "277"
+        },
+        "FR": {
+          "raw": "FR:B3a",
+          "normalized": "B3a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F03",
+          "normalized": "F03",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.45",
+          "normalized": "2.45"
+        },
+        "BE": {
+          "raw": "BE:C39",
+          "normalized": "C39",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_overtaking:hgv",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_overtaking:end:hgv",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:281",
+          "normalized": "281"
+        },
+        "NL": {
+          "raw": "NL:F04",
+          "normalized": "F04",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.56",
+          "normalized": "2.56"
+        },
+        "BE": {
+          "raw": "BE:C41",
+          "normalized": "C41",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_overtaking:end:hgv",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_parking",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:286",
+          "normalized": "286"
+        },
+        "FR": {
+          "raw": "FR:B6a1",
+          "normalized": "B6a1",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:E01",
+          "normalized": "E01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.50",
+          "normalized": "2.50"
+        },
+        "BE": {
+          "raw": "BE:E1",
+          "normalized": "E1",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_parking",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_parking:1-15",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B6a2",
+          "normalized": "B6a2",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E5",
+          "normalized": "E5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_parking:1-15",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_parking:16-31",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B6a3",
+          "normalized": "B6a3",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E7",
+          "normalized": "E7",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_parking:16-31",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_pedestrian",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:259",
+          "normalized": "259"
+        },
+        "FR": {
+          "raw": "FR:B9a",
+          "normalized": "B9a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C16",
+          "normalized": "C16",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.15",
+          "normalized": "2.15"
+        },
+        "BE": {
+          "raw": "BE:C19",
+          "normalized": "C19",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_pedestrian",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_roller",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:2.15.3",
+          "normalized": "2.15.3"
+        }
+      },
+      "semantic_id": "no_roller",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_sledging",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:2.15.2",
+          "normalized": "2.15.2"
+        }
+      },
+      "semantic_id": "no_sledging",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_skiing",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:2.15.1",
+          "normalized": "2.15.1"
+        }
+      },
+      "semantic_id": "no_skiing",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_stop",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:283",
+          "normalized": "283"
+        },
+        "FR": {
+          "raw": "FR:B6d",
+          "normalized": "B6d",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.49",
+          "normalized": "2.49"
+        },
+        "BE": {
+          "raw": "BE:E3",
+          "normalized": "E3",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_stop",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_trailer",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B9i",
+          "normalized": "B9i",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C10",
+          "normalized": "C10",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.09",
+          "normalized": "2.09"
+        }
+      },
+      "semantic_id": "no_trailer",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_turn:left",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B2a",
+          "normalized": "B2a",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.43",
+          "normalized": "2.43"
+        },
+        "BE": {
+          "raw": "BE:C31a",
+          "normalized": "C31a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_turn:left",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_turn:right",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B2b",
+          "normalized": "B2b",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.42",
+          "normalized": "2.42"
+        },
+        "BE": {
+          "raw": "BE:C31b",
+          "normalized": "C31b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_turn:right",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_u_turn",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:272",
+          "normalized": "272"
+        },
+        "FR": {
+          "raw": "FR:B2c",
+          "normalized": "B2c",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F07",
+          "normalized": "F07",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.46",
+          "normalized": "2.46"
+        },
+        "BE": {
+          "raw": "BE:C23",
+          "normalized": "C23",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_u_turn",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no_way",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:250",
+          "normalized": "250"
+        },
+        "FR": {
+          "raw": "FR:B0",
+          "normalized": "B0",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:C01",
+          "normalized": "C01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.01",
+          "normalized": "2.01"
+        },
+        "BE": {
+          "raw": "BE:C3",
+          "normalized": "C3",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no_way",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "no:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:282",
+          "normalized": "282"
+        },
+        "FR": {
+          "raw": "FR:B31",
+          "normalized": "B31",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F08",
+          "normalized": "F08",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.58",
+          "normalized": "2.58"
+        },
+        "BE": {
+          "raw": "BE:C46",
+          "normalized": "C46",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "no:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "oneway",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:C03",
+          "normalized": "C03",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.08",
+          "normalized": "4.08"
+        },
+        "BE": {
+          "raw": "BE:F19",
+          "normalized": "F19",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "oneway",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "park_ride",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:316",
+          "normalized": "316"
+        }
+      },
+      "semantic_id": "park_ride",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:314",
+          "normalized": "314"
+        },
+        "FR": {
+          "raw": "FR:C1a",
+          "normalized": "C1a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:E04",
+          "normalized": "E04",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.17",
+          "normalized": "4.17"
+        },
+        "BE": {
+          "raw": "BE:E9a",
+          "normalized": "E9a",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:bicycle",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-9",
+          "normalized": "E08-9",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:bicycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:bus",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-4",
+          "normalized": "E08-4",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E9d",
+          "normalized": "E9d",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:bus",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:car",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08",
+          "normalized": "E08",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E9b",
+          "normalized": "E9b",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:car",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:card",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E102-2",
+          "normalized": "E102-2",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:card",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:carpool",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E13",
+          "normalized": "E13",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:carpool",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:charging",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E1005",
+          "normalized": "E1005",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:charging",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:charging:car",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E1000",
+          "normalized": "E1000",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:charging:car",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:charging:bicycle",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E1001",
+          "normalized": "E1001",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:charging:bicycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:charging:moped",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E1002",
+          "normalized": "E1002",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:charging:moped",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:covered",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:314-50",
+          "normalized": "314-50"
+        },
+        "CH": {
+          "raw": "CH:4.21",
+          "normalized": "4.21"
+        }
+      },
+      "semantic_id": "parking:covered",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:delivery",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E07",
+          "normalized": "E07",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:delivery",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:disabled",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E06",
+          "normalized": "E06",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E9a-disabled",
+          "normalized": "E9a-disabled",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:disabled",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:disc",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C1b",
+          "normalized": "C1b",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.18",
+          "normalized": "4.18"
+        },
+        "BE": {
+          "raw": "BE:E9a-disc",
+          "normalized": "E9a-disc",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:disc",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:ebike",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-7",
+          "normalized": "E08-7",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:ebike",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:hgv",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-3",
+          "normalized": "E08-3",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E9c",
+          "normalized": "E9c",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:hgv",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:meter",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C1c",
+          "normalized": "C1c",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.20",
+          "normalized": "4.20"
+        }
+      },
+      "semantic_id": "parking:meter",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:moped",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-17",
+          "normalized": "E08-17",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:moped",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:motorcycle",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-6",
+          "normalized": "E08-6",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:E9i",
+          "normalized": "E9i",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:motorcycle",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:motorhome",
+      "country_codes": {
+        "BE": {
+          "raw": "BE:E9h",
+          "normalized": "E9h",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:motorhome",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:park_ride",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E12",
+          "normalized": "E12",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.25",
+          "normalized": "4.25"
+        }
+      },
+      "semantic_id": "parking:park_ride",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:payment",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E101-2",
+          "normalized": "E101-2",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:payment",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:pedestrian",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:317",
+          "normalized": "317"
+        }
+      },
+      "semantic_id": "parking:pedestrian",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:perpendicular",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:315",
+          "normalized": "315"
+        }
+      },
+      "semantic_id": "parking:perpendicular",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:police",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-11",
+          "normalized": "E08-11",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:police",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:sidewalk",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:315",
+          "normalized": "315"
+        },
+        "NL": {
+          "raw": "NL:E08-1",
+          "normalized": "E08-1",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:sidewalk",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:taxi",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:229",
+          "normalized": "229"
+        },
+        "FR": {
+          "raw": "FR:C5",
+          "normalized": "C5",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:E05",
+          "normalized": "E05",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "parking:taxi",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "parking:women",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:E08-15",
+          "normalized": "E08-15",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "parking:women",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B41",
+          "normalized": "B41",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:G08",
+          "normalized": "G08",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian:start",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:G07",
+          "normalized": "G07",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian_bicycle:designated",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:241",
+          "normalized": "241"
+        },
+        "CH": {
+          "raw": "CH:2.63",
+          "normalized": "2.63"
+        },
+        "BE": {
+          "raw": "BE:D9",
+          "normalized": "D9",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian_bicycle:designated",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian_bicycle:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:240",
+          "normalized": "240"
+        },
+        "CH": {
+          "raw": "CH:2.63.1",
+          "normalized": "2.63.1"
+        },
+        "BE": {
+          "raw": "BE:D10",
+          "normalized": "D10",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian_bicycle:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian_crossing",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:350",
+          "normalized": "350"
+        },
+        "FR": {
+          "raw": "FR:C20a",
+          "normalized": "C20a",
+          "artwork_status": "approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:L02",
+          "normalized": "L02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.11",
+          "normalized": "4.11"
+        }
+      },
+      "semantic_id": "pedestrian_crossing",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:239",
+          "normalized": "239"
+        },
+        "FR": {
+          "raw": "FR:B22b",
+          "normalized": "B22b",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:B01",
+          "normalized": "B01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.61",
+          "normalized": "2.61"
+        },
+        "BE": {
+          "raw": "BE:D11",
+          "normalized": "D11",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "priority:backward",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:208",
+          "normalized": "208"
+        },
+        "FR": {
+          "raw": "FR:B15",
+          "normalized": "B15",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F05",
+          "normalized": "F05",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.09",
+          "normalized": "3.09"
+        },
+        "BE": {
+          "raw": "BE:B19",
+          "normalized": "B19",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "priority:backward",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "priority:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:307",
+          "normalized": "307"
+        },
+        "FR": {
+          "raw": "FR:AB7",
+          "normalized": "AB7",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:B02",
+          "normalized": "B02",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.04",
+          "normalized": "3.04"
+        },
+        "BE": {
+          "raw": "BE:B11",
+          "normalized": "B11",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "priority:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "priority:forward",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:308",
+          "normalized": "308"
+        },
+        "FR": {
+          "raw": "FR:C18",
+          "normalized": "C18",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:F06",
+          "normalized": "F06",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.10",
+          "normalized": "3.10"
+        },
+        "BE": {
+          "raw": "BE:B21",
+          "normalized": "B21",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "priority:forward",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "priority:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:306",
+          "normalized": "306"
+        },
+        "FR": {
+          "raw": "FR:AB6",
+          "normalized": "AB6",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.03",
+          "normalized": "3.03"
+        },
+        "BE": {
+          "raw": "BE:B9",
+          "normalized": "B9",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "priority:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "rest",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:328",
+          "normalized": "328"
+        },
+        "FR": {
+          "raw": "FR:C8",
+          "normalized": "C8",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:L14",
+          "normalized": "L14",
+          "artwork_status": "approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F98",
+          "normalized": "F98",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "rest",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "roundabout",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:215",
+          "normalized": "215"
+        },
+        "NL": {
+          "raw": "NL:D01",
+          "normalized": "D01",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.41.1",
+          "normalized": "2.41.1"
+        },
+        "BE": {
+          "raw": "BE:D5",
+          "normalized": "D5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "roundabout",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "speed",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:275",
+          "normalized": "275"
+        },
+        "FR": {
+          "raw": "FR:C4a",
+          "normalized": "C4a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A04",
+          "normalized": "A04",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "speed",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "speed:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:279",
+          "normalized": "279"
+        },
+        "FR": {
+          "raw": "FR:C4b",
+          "normalized": "C4b",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A05",
+          "normalized": "A05",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "speed:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "speed_camera",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:L215",
+          "normalized": "L215",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "speed_camera",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian:underpass",
+      "country_codes": {
+        "CH": {
+          "raw": "CH:4.12",
+          "normalized": "4.12"
+        },
+        "BE": {
+          "raw": "BE:F51a",
+          "normalized": "F51a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian:underpass",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "pedestrian:overpass",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:L301",
+          "normalized": "L301",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.13",
+          "normalized": "4.13"
+        },
+        "BE": {
+          "raw": "BE:F51b",
+          "normalized": "F51b",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "pedestrian:overpass",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "stop",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:206",
+          "normalized": "206"
+        },
+        "NL": {
+          "raw": "NL:B07",
+          "normalized": "B07",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:3.01",
+          "normalized": "3.01"
+        },
+        "BE": {
+          "raw": "BE:B5",
+          "normalized": "B5",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "stop",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "traffic_calming",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C27",
+          "normalized": "C27",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "traffic_calming",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "tram:end",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:F16",
+          "normalized": "F16",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "tram:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "tram:start",
+      "country_codes": {
+        "NL": {
+          "raw": "NL:F15",
+          "normalized": "F15",
+          "artwork_status": "approved_artwork"
+        }
+      },
+      "semantic_id": "tram:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "trunk:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:331.2",
+          "normalized": "331.2"
+        },
+        "NL": {
+          "raw": "NL:G04",
+          "normalized": "G04",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.04",
+          "normalized": "4.04"
+        },
+        "BE": {
+          "raw": "BE:F11",
+          "normalized": "F11",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "trunk:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "trunk:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:331.1",
+          "normalized": "331.1"
+        },
+        "NL": {
+          "raw": "NL:G03",
+          "normalized": "G03",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.03",
+          "normalized": "4.03"
+        },
+        "BE": {
+          "raw": "BE:F9",
+          "normalized": "F9",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "trunk:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "tunnel:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:C112",
+          "normalized": "C112",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "tunnel:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "tunnel:start",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:327",
+          "normalized": "327"
+        },
+        "FR": {
+          "raw": "FR:C111",
+          "normalized": "C111",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:L13",
+          "normalized": "L13",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:4.07",
+          "normalized": "4.07"
+        },
+        "BE": {
+          "raw": "BE:F8",
+          "normalized": "F8",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "tunnel:start",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:20",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274.1-20",
+          "normalized": "274.1-20"
+        },
+        "NL": {
+          "raw": "NL:A01-20-ZB",
+          "normalized": "A01-20-ZB",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:20",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:30",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274.1",
+          "normalized": "274.1"
+        },
+        "FR": {
+          "raw": "FR:B30",
+          "normalized": "B30",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:A01-30-ZB",
+          "normalized": "A01-30-ZB",
+          "artwork_status": "approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.1",
+          "normalized": "2.59.1"
+        },
+        "BE": {
+          "raw": "BE:F4a",
+          "normalized": "F4a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:30",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "Zone:30:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B51",
+          "normalized": "B51",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F4b",
+          "normalized": "F4b",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "Zone:30:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:calm",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:325.1",
+          "normalized": "325.1"
+        },
+        "FR": {
+          "raw": "FR:B52",
+          "normalized": "B52",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.5a",
+          "normalized": "2.59.5a"
+        },
+        "BE": {
+          "raw": "BE:F12a",
+          "normalized": "F12a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:calm",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:calm:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:325.2",
+          "normalized": "325.2"
+        },
+        "FR": {
+          "raw": "FR:B53",
+          "normalized": "B53",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.6a",
+          "normalized": "2.59.6a"
+        },
+        "BE": {
+          "raw": "BE:F12b",
+          "normalized": "F12b",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:calm:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:274.2",
+          "normalized": "274.2"
+        }
+      },
+      "semantic_id": "zone:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:low_emission",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:270.1",
+          "normalized": "270.1"
+        },
+        "FR": {
+          "raw": "FR:B56",
+          "normalized": "B56",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F117",
+          "normalized": "F117",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:low_emission",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:low_emission:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:270.2",
+          "normalized": "270.2"
+        },
+        "FR": {
+          "raw": "FR:B57",
+          "normalized": "B57",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "BE": {
+          "raw": "BE:F118",
+          "normalized": "F118",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:low_emission:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:no_parking",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:290.1",
+          "normalized": "290.1"
+        },
+        "FR": {
+          "raw": "FR:B6b1",
+          "normalized": "B6b1",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:E01-ZB",
+          "normalized": "E01-ZB",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.1e",
+          "normalized": "2.59.1e"
+        }
+      },
+      "semantic_id": "zone:no_parking",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:no_parking:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:290.2",
+          "normalized": "290.2"
+        },
+        "FR": {
+          "raw": "FR:B50a",
+          "normalized": "B50a",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "NL": {
+          "raw": "NL:E01-ZE",
+          "normalized": "E01-ZE",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.2e",
+          "normalized": "2.59.2e"
+        }
+      },
+      "semantic_id": "zone:no_parking:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:parking",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:314.1",
+          "normalized": "314.1"
+        },
+        "CH": {
+          "raw": "CH:2.59.1c",
+          "normalized": "2.59.1c"
+        }
+      },
+      "semantic_id": "zone:parking",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:parking:end",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:314.2",
+          "normalized": "314.2"
+        },
+        "CH": {
+          "raw": "CH:2.59.2c",
+          "normalized": "2.59.2c"
+        }
+      },
+      "semantic_id": "zone:parking:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:pedestrian",
+      "country_codes": {
+        "DE": {
+          "raw": "DE:242.1",
+          "normalized": "242.1"
+        },
+        "FR": {
+          "raw": "FR:B54",
+          "normalized": "B54",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.3b",
+          "normalized": "2.59.3b"
+        }
+      },
+      "semantic_id": "zone:pedestrian",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:pedestrian:end",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B55",
+          "normalized": "B55",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        },
+        "CH": {
+          "raw": "CH:2.59.4b",
+          "normalized": "2.59.4b"
+        }
+      },
+      "semantic_id": "zone:pedestrian:end",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:parking:disc",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B6b3",
+          "normalized": "B6b3",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:parking:disc",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:parking:meter",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B6b4",
+          "normalized": "B6b4",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:parking:meter",
+      "semantic_review_status": "pending_country_rule_action_review"
+    },
+    {
+      "model_class_label": "zone:parking:alternate",
+      "country_codes": {
+        "FR": {
+          "raw": "FR:B6b2",
+          "normalized": "B6b2",
+          "artwork_status": "not_selected_or_no_approved_artwork"
+        }
+      },
+      "semantic_id": "zone:parking:alternate",
+      "semantic_review_status": "pending_country_rule_action_review"
+    }
+  ]
+}

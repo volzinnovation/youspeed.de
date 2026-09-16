@@ -7,7 +7,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import org.vosk.Model
 
-private const val VOSK_MODEL_ASSET_PATH = "vosk-model-small-de-0.15"
 private const val VOSK_MODEL_STORAGE_DIR = "speech-models"
 
 data class BundledVoskModelHandle(
@@ -24,15 +23,16 @@ class BundledVoskModelStore(
     private val assets: AssetManager = appContext.assets
 
     @Throws(IOException::class)
-    fun prepareModel(): BundledVoskModelHandle {
-        val assetVersion = readAssetVersion()
+    fun prepareModel(assetPath: String = SpeedCaptureLanguage.GERMAN.modelAssetPath): BundledVoskModelHandle {
+        require(assetPath.matches(Regex("[A-Za-z0-9._-]+"))) { "Invalid Vosk model asset path" }
+        val assetVersion = readAssetVersion(assetPath)
         val storageRoot = File(rootDir, VOSK_MODEL_STORAGE_DIR)
-        val targetDir = File(storageRoot, VOSK_MODEL_ASSET_PATH)
+        val targetDir = File(storageRoot, assetPath)
         val targetVersionFile = File(targetDir, "uuid")
         val targetVersion = targetVersionFile.takeIf(File::exists)?.readText()?.trim().orEmpty()
         if (targetVersion != assetVersion) {
             targetDir.deleteRecursively()
-            copyAssetTree(VOSK_MODEL_ASSET_PATH, storageRoot)
+            copyAssetTree(assetPath, storageRoot)
         }
         if (!targetDir.isDirectory) {
             throw IOException("Vosk-Modellverzeichnis fehlt: ${targetDir.absolutePath}")
@@ -45,8 +45,8 @@ class BundledVoskModelStore(
     }
 
     @Throws(IOException::class)
-    private fun readAssetVersion(): String {
-        return assets.open("$VOSK_MODEL_ASSET_PATH/uuid").bufferedReader().use { reader ->
+    private fun readAssetVersion(assetPath: String): String {
+        return assets.open("$assetPath/uuid").bufferedReader().use { reader ->
             reader.readLine()?.trim().orEmpty()
         }.ifEmpty {
             throw IOException("Bundled Vosk-Modell hat keine uuid-Datei.")

@@ -1027,7 +1027,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private static let derivedSpeedComputationMinWindowSeconds: TimeInterval = 2.0
     private static let derivedSpeedComputationMaxWindowSeconds: TimeInterval = 4.5
     nonisolated private static let lowSpeedDerivedFallbackThresholdKmh: Double = 7.0
-    private static let speedCaptureSpeechLocaleIdentifier = "de-DE"
     private static let speedCaptureListeningWindowSeconds: UInt64 = 4
     private static let speedCaptureTimeoutPaddingNanos: UInt64 = 350_000_000
     private static let speedCaptureStartDelayNanos: UInt64 = 300_000_000
@@ -1104,6 +1103,196 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         return out
     }()
+
+    private static func speedCaptureLanguageIdentifier() -> String {
+        let preferred = trafficSignSpeechLanguageIdentifier().lowercased()
+        if preferred.hasPrefix("fr") {
+            return "fr-FR"
+        }
+        if preferred.hasPrefix("nl") {
+            return "nl-NL"
+        }
+        if preferred.hasPrefix("de") {
+            return "de-DE"
+        }
+        return "en-US"
+    }
+
+    private static func speedCaptureLanguageDisplayName(_ identifier: String) -> String {
+        switch identifier.lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "franzoesische"
+        case "nl":
+            return "niederlaendische"
+        case "en":
+            return "englische"
+        default:
+            return "englische"
+        }
+    }
+
+    private static func speedCaptureWhitelistByPriority(for languageIdentifier: String) -> [SpeedCaptureWhitelistEntry] {
+        switch languageIdentifier.lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return [
+                .init(value: "50", count: 1, contextualPhrases: ["50", "cinquante"], displayLabel: "50 km/h"),
+                .init(value: "30", count: 2, contextualPhrases: ["30", "trente"], displayLabel: "30 km/h"),
+                .init(value: "70", count: 3, contextualPhrases: ["70", "soixante dix", "soixante-dix"], displayLabel: "70 km/h"),
+                .init(value: "90", count: 4, contextualPhrases: ["90", "quatre vingt dix", "quatre-vingt-dix"], displayLabel: "90 km/h"),
+                .init(value: "110", count: 5, contextualPhrases: ["110", "cent dix", "cent-dix"], displayLabel: "110 km/h"),
+                .init(value: "130", count: 6, contextualPhrases: ["130", "cent trente", "cent-trente"], displayLabel: "130 km/h"),
+                .init(value: "10", count: 7, contextualPhrases: ["10", "dix"], displayLabel: "10 km/h"),
+                .init(value: "20", count: 8, contextualPhrases: ["20", "vingt"], displayLabel: "20 km/h"),
+                .init(value: "40", count: 9, contextualPhrases: ["40", "quarante"], displayLabel: "40 km/h"),
+                .init(value: "60", count: 10, contextualPhrases: ["60", "soixante"], displayLabel: "60 km/h"),
+                .init(value: "80", count: 11, contextualPhrases: ["80", "quatre vingt", "quatre-vingt"], displayLabel: "80 km/h"),
+                .init(value: "100", count: 12, contextualPhrases: ["100", "cent"], displayLabel: "100 km/h"),
+                .init(value: "120", count: 13, contextualPhrases: ["120", "cent vingt", "cent-vingt"], displayLabel: "120 km/h"),
+                .init(value: "walk", count: 14, contextualPhrases: ["zone pietonne", "zone pieton", "zone piétonne", "walk"], displayLabel: "Zone piétonne"),
+            ]
+        case "nl":
+            return [
+                .init(value: "50", count: 1, contextualPhrases: ["50", "vijftig"], displayLabel: "50 km/h"),
+                .init(value: "30", count: 2, contextualPhrases: ["30", "dertig"], displayLabel: "30 km/h"),
+                .init(value: "80", count: 3, contextualPhrases: ["80", "tachtig"], displayLabel: "80 km/h"),
+                .init(value: "100", count: 4, contextualPhrases: ["100", "honderd"], displayLabel: "100 km/h"),
+                .init(value: "120", count: 5, contextualPhrases: ["120", "honderd twintig", "honderdtwintig"], displayLabel: "120 km/h"),
+                .init(value: "130", count: 6, contextualPhrases: ["130", "honderd dertig", "honderddertig"], displayLabel: "130 km/h"),
+                .init(value: "10", count: 7, contextualPhrases: ["10", "tien"], displayLabel: "10 km/h"),
+                .init(value: "20", count: 8, contextualPhrases: ["20", "twintig"], displayLabel: "20 km/h"),
+                .init(value: "40", count: 9, contextualPhrases: ["40", "veertig"], displayLabel: "40 km/h"),
+                .init(value: "60", count: 10, contextualPhrases: ["60", "zestig"], displayLabel: "60 km/h"),
+                .init(value: "70", count: 11, contextualPhrases: ["70", "zeventig"], displayLabel: "70 km/h"),
+                .init(value: "90", count: 12, contextualPhrases: ["90", "negentig"], displayLabel: "90 km/h"),
+                .init(value: "walk", count: 13, contextualPhrases: ["voetgangersgebied", "voetgangers zone", "voetgangerszone", "walk"], displayLabel: "Voetgangersgebied"),
+            ]
+        case "en":
+            return [
+                .init(value: "50", count: 1, contextualPhrases: ["50", "fifty"], displayLabel: "50 km/h"),
+                .init(value: "30", count: 2, contextualPhrases: ["30", "thirty"], displayLabel: "30 km/h"),
+                .init(value: "60", count: 3, contextualPhrases: ["60", "sixty"], displayLabel: "60 km/h"),
+                .init(value: "80", count: 4, contextualPhrases: ["80", "eighty"], displayLabel: "80 km/h"),
+                .init(value: "100", count: 5, contextualPhrases: ["100", "one hundred"], displayLabel: "100 km/h"),
+                .init(value: "120", count: 6, contextualPhrases: ["120", "one hundred twenty", "one hundred and twenty"], displayLabel: "120 km/h"),
+                .init(value: "130", count: 7, contextualPhrases: ["130", "one hundred thirty", "one hundred and thirty"], displayLabel: "130 km/h"),
+                .init(value: "10", count: 8, contextualPhrases: ["10", "ten"], displayLabel: "10 km/h"),
+                .init(value: "20", count: 9, contextualPhrases: ["20", "twenty"], displayLabel: "20 km/h"),
+                .init(value: "40", count: 10, contextualPhrases: ["40", "forty"], displayLabel: "40 km/h"),
+                .init(value: "70", count: 11, contextualPhrases: ["70", "seventy"], displayLabel: "70 km/h"),
+                .init(value: "90", count: 12, contextualPhrases: ["90", "ninety"], displayLabel: "90 km/h"),
+                .init(value: "110", count: 13, contextualPhrases: ["110", "one hundred ten", "one hundred and ten"], displayLabel: "110 km/h"),
+                .init(value: "walk", count: 14, contextualPhrases: ["pedestrian zone", "pedestrians zone", "walk"], displayLabel: "Pedestrian zone"),
+            ]
+        default:
+            return speedCaptureWhitelistByPriority(for: "en-US")
+        }
+    }
+
+    private static func speedCapturePhraseToValue(for languageIdentifier: String) -> [String: String] {
+        switch languageIdentifier.lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return [
+                "dix": "10", "vingt": "20", "trente": "30", "quarante": "40", "cinquante": "50",
+                "soixante": "60", "soixante dix": "70", "quatre vingt": "80", "quatre vingt dix": "90",
+                "cent": "100", "cent dix": "110", "cent vingt": "120", "cent trente": "130",
+                "zone pietonne": "walk", "zone pieton": "walk", "walk": "walk",
+            ]
+        case "nl":
+            return [
+                "tien": "10", "twintig": "20", "dertig": "30", "veertig": "40", "vijftig": "50",
+                "zestig": "60", "zeventig": "70", "tachtig": "80", "negentig": "90", "honderd": "100",
+                "honderd tien": "110", "honderdtien": "110", "honderd twintig": "120", "honderdtwintig": "120",
+                "honderd dertig": "130", "honderddertig": "130", "voetgangersgebied": "walk",
+                "voetgangers zone": "walk", "voetgangerszone": "walk", "walk": "walk",
+            ]
+        case "en":
+            return [
+                "ten": "10", "twenty": "20", "thirty": "30", "forty": "40", "fifty": "50",
+                "sixty": "60", "seventy": "70", "eighty": "80", "ninety": "90", "one hundred": "100",
+                "one hundred ten": "110", "one hundred and ten": "110", "one hundred twenty": "120",
+                "one hundred and twenty": "120", "one hundred thirty": "130", "one hundred and thirty": "130",
+                "pedestrian zone": "walk", "pedestrians zone": "walk", "walk": "walk",
+            ]
+        default:
+            return speedCapturePhraseToValue(for: "en-US")
+        }
+    }
+
+    private static func speedCaptureContextualStrings(for languageIdentifier: String) -> [String] {
+        var out: [String] = []
+        var seen = Set<String>()
+        for entry in speedCaptureWhitelistByPriority(for: languageIdentifier) {
+            for token in [entry.value] + entry.contextualPhrases where seen.insert(token).inserted {
+                out.append(token)
+            }
+        }
+        return out
+    }
+
+    private static func speedCapturePromptText(for languageIdentifier: String) -> String {
+        switch languageIdentifier.lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "Correction. Parlez maintenant."
+        case "nl":
+            return "Correctie. Spreek nu."
+        case "en":
+            return "Correction. Speak now."
+        default:
+            return "Correction. Speak now."
+        }
+    }
+
+    private static func speedCaptureListeningStatus(for languageIdentifier: String) -> String {
+        switch languageIdentifier.lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "Parlez maintenant : 10 à 130 ou zone piétonne."
+        case "nl":
+            return "Spreek nu: 10 tot 130 of voetgangersgebied."
+        case "en":
+            return "Speak now: 10 to 130 or pedestrian zone."
+        default:
+            return "Speak now: 10 to 130 or pedestrian zone."
+        }
+    }
+
+    private static func speedCaptureFailureText() -> String {
+        switch speedCaptureLanguageIdentifier().lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "Reconnaissance vocale non initialisée."
+        case "nl":
+            return "Spraakherkenning is niet geïnitialiseerd."
+        case "en":
+            return "Speech recognition is not initialized."
+        default:
+            return "Speech recognition is not initialized."
+        }
+    }
+
+    private static func speedCaptureNoSpeechText() -> String {
+        switch speedCaptureLanguageIdentifier().lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "Aucune parole détectée. Veuillez réessayer."
+        case "nl":
+            return "Geen spraak herkend. Probeer het opnieuw."
+        case "en":
+            return "No speech detected. Please try again."
+        default:
+            return "No speech detected. Please try again."
+        }
+    }
+
+    private static func speedCaptureUnmatchedText() -> String {
+        switch speedCaptureLanguageIdentifier().lowercased().split(separator: "-").first.map(String.init) {
+        case "fr":
+            return "Non compris. Utilisez 10 à 130 ou zone piétonne."
+        case "nl":
+            return "Niet begrepen. Gebruik 10 tot 130 of voetgangersgebied."
+        case "en":
+            return "Not understood. Use 10 to 130 or pedestrian zone."
+        default:
+            return "Not understood. Use 10 to 130 or pedestrian zone."
+        }
+    }
     private static let lookupTimestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
@@ -1405,7 +1594,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 penaltyRulesAreApplicable = false
                 return
             }
-            applyBundledPenaltyRules(countryCode: country)
+            applyBundledPenaltyRules(
+                countryCode: country,
+                bundleRulesPath: context?.rulesPath,
+                bundleRulesCountryCode: context?.countryCode
+            )
             return
         }
 
@@ -1414,8 +1607,23 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         penaltyRulesAreApplicable = false
     }
 
-    private func applyBundledPenaltyRules(countryCode: String) {
+    private func applyBundledPenaltyRules(
+        countryCode: String,
+        bundleRulesPath: String? = nil,
+        bundleRulesCountryCode: String? = nil
+    ) {
         let bundledStem = "\(countryCode)-rules"
+        if let bundleRulesPath,
+           PenaltyCountryCode.normalized(bundleRulesCountryCode) == countryCode,
+           let rules = try? SpeedPenaltyRuleSet.loadFile(at: URL(fileURLWithPath: bundleRulesPath)),
+           PenaltyCountryCode.normalized(rules.countryCode) == countryCode,
+           !rules.bands.isEmpty {
+            activePenaltyRules = rules
+            activePenaltyRulesFile = URL(fileURLWithPath: bundleRulesPath).lastPathComponent
+            penaltyRulesUseBundledSource = true
+            penaltyRulesAreApplicable = true
+            return
+        }
         if let rules = try? SpeedPenaltyRuleSet.loadBundled(named: bundledStem) {
             activePenaltyRules = rules
             activePenaltyRulesFile = "\(bundledStem).json"
@@ -5671,9 +5879,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         awaitingSpeedCapturePromptCompletion = true
         speedCaptureMode = .speakingPrompt
-        let utterance = AVSpeechUtterance(string: "Geschwindigkeit erfassen. Jetzt sprechen.")
-        utterance.voice = AVSpeechSynthesisVoice(language: Self.speedCaptureSpeechLocaleIdentifier)
-            ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? Self.speedCaptureSpeechLocaleIdentifier)
+        let languageIdentifier = Self.speedCaptureLanguageIdentifier()
+        let utterance = AVSpeechUtterance(string: Self.speedCapturePromptText(for: languageIdentifier))
+        utterance.voice = AVSpeechSynthesisVoice(language: languageIdentifier)
+            ?? AVSpeechSynthesisVoice(language: Locale.preferredLanguages.first ?? languageIdentifier)
         utterance.rate = 0.46
         prepareSpeechPlaybackAudioSession()
         speechSynthesizer.speak(utterance)
@@ -5722,21 +5931,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return
         }
         guard let recognizer = speedCaptureRecognizer else {
-            cancelSpeedCapture(reason: "Spracherkennung nicht initialisiert.")
+            cancelSpeedCapture(reason: Self.speedCaptureFailureText())
             return
         }
         stopActiveSpeedCaptureRecognition(keepStatus: true)
         speedCaptureLatestTranscript = ""
         speedCaptureDidResolve = false
         speedCaptureMode = .listening
-        localObservationStatus = "Jetzt sprechen: 10 bis 130 oder Fussgaengerzone."
+        let languageIdentifier = Self.speedCaptureLanguageIdentifier()
+        localObservationStatus = Self.speedCaptureListeningStatus(for: languageIdentifier)
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.requiresOnDeviceRecognition = true
         request.shouldReportPartialResults = true
         request.taskHint = .confirmation
         request.addsPunctuation = false
-        request.contextualStrings = Self.speedCaptureContextualStrings
+        request.contextualStrings = Self.speedCaptureContextualStrings(for: languageIdentifier)
         speedCaptureRecognitionRequest = request
 
         do {
@@ -5754,7 +5964,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             engine.prepare()
             try engine.start()
         } catch {
-            cancelSpeedCapture(reason: "Mikrofonstart fehlgeschlagen: \(error.localizedDescription)")
+            cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) (error.localizedDescription)")
             return
         }
 
@@ -5771,7 +5981,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     if !self.speedCaptureLatestTranscript.isEmpty {
                         self.finishSpeedCaptureListening(source: "recognition_error_with_transcript")
                     } else {
-                        self.cancelSpeedCapture(reason: "Spracherkennung fehlgeschlagen: \(error.localizedDescription)")
+                        self.cancelSpeedCapture(reason: "\(Self.speedCaptureFailureText()) (error.localizedDescription)")
                     }
                     return
                 }
@@ -5806,12 +6016,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         let transcript = speedCaptureLatestTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !transcript.isEmpty else {
-            cancelSpeedCapture(reason: "Keine Sprache erkannt. Bitte erneut starten.")
+            cancelSpeedCapture(reason: Self.speedCaptureNoSpeechText())
             return
         }
         guard let selection = Self.resolveSpeedCaptureSelection(from: transcript) else {
             Self.logger.notice("capture_speech unmatched transcript=\(transcript, privacy: .private(mask: .hash)) source=\(source, privacy: .public)")
-            cancelSpeedCapture(reason: "Nicht verstanden. Erlaubt sind 10 bis 130 oder Fussgaengerzone.")
+            cancelSpeedCapture(reason: Self.speedCaptureUnmatchedText())
             return
         }
         Self.logger.notice(
@@ -6126,8 +6336,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         guard hasMicPermission else {
             throw ConsumerAppError.io("Mikrofonberechtigung wurde nicht erteilt.")
         }
+        let languageIdentifier = Self.speedCaptureLanguageIdentifier()
         guard let locale = Self.resolvePreferredSpeechLocale() else {
-            throw ConsumerAppError.io("Keine deutsche On-Device-Spracherkennung verfuegbar.")
+            throw ConsumerAppError.io("\(Self.speedCaptureLanguageDisplayName(languageIdentifier)) on-device speech recognition is not available.")
         }
         guard let recognizer = SFSpeechRecognizer(locale: locale) else {
             throw ConsumerAppError.io("SFSpeechRecognizer konnte nicht erstellt werden.")
@@ -6156,11 +6367,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
     private static func resolvePreferredSpeechLocale() -> Locale? {
         let supported = SFSpeechRecognizer.supportedLocales()
-        let preferred = Locale(identifier: speedCaptureSpeechLocaleIdentifier)
-        if supported.contains(preferred) {
+        let languageIdentifier = speedCaptureLanguageIdentifier()
+        let preferred = Locale(identifier: languageIdentifier)
+        if supported.contains(where: { $0.identifier.caseInsensitiveCompare(preferred.identifier) == .orderedSame }) {
             return preferred
         }
-        return supported.first { $0.identifier.lowercased().hasPrefix("de") }
+        let languageCode = languageIdentifier.split(separator: "-", maxSplits: 1).first.map(String.init) ?? languageIdentifier
+        return supported.first { $0.identifier.lowercased().hasPrefix(languageCode.lowercased()) }
     }
 
     private static func speechAuthorizationDescription(_ status: SFSpeechRecognizerAuthorizationStatus) -> String {
@@ -6186,19 +6399,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         var candidates = Set<String>()
         let nsRange = NSRange(normalized.startIndex..<normalized.endIndex, in: normalized)
+        let languageIdentifier = speedCaptureLanguageIdentifier()
+        let whitelist = speedCaptureWhitelistByPriority(for: languageIdentifier)
+        let valueSet = Set(whitelist.map(\.value))
         if let regex = try? NSRegularExpression(pattern: #"\b([0-9]{2,3})\b"#) {
             for match in regex.matches(in: normalized, range: nsRange) {
                 guard let range = Range(match.range(at: 1), in: normalized) else {
                     continue
                 }
                 let token = String(normalized[range])
-                if speedCaptureValueSet.contains(token) {
+                if valueSet.contains(token) {
                     candidates.insert(token)
                 }
             }
         }
 
-        for (phrase, value) in speedCapturePhraseToValue {
+        for (phrase, value) in speedCapturePhraseToValue(for: languageIdentifier) {
             if normalized.contains(phrase) {
                 candidates.insert(value)
             }
@@ -6208,7 +6424,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             return nil
         }
 
-        for entry in speedCaptureWhitelistByPriority where candidates.contains(entry.value) {
+        for entry in whitelist where candidates.contains(entry.value) {
             return entry
         }
         return nil
@@ -6221,6 +6437,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             .replacingOccurrences(of: "ö", with: "oe")
             .replacingOccurrences(of: "ü", with: "ue")
             .replacingOccurrences(of: "ß", with: "ss")
+            .folding(options: .diacriticInsensitive, locale: Locale(identifier: "en_US_POSIX"))
             .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -7056,9 +7273,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         generator.prepare()
         generator.notificationOccurred(.warning)
 
-        let speechText = drivingBanMonths == 1
-            ? "Achtung. Ein Monat Fahrverbot moeglich."
-            : "Achtung. \(drivingBanMonths) Monate Fahrverbot moeglich."
+        let speechText = Self.drivingBanSpeechText(months: drivingBanMonths)
         if audioAlertsEnabled,
            !speechSynthesizer.isSpeaking,
            !captureConfirmationTonePlayer.isPlaying {
@@ -7073,6 +7288,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         wasDrivingBanWarningActive = true
         lastDrivingBanWarningAt = now
+    }
+
+    private static func drivingBanSpeechText(months: Int) -> String {
+        let language = trafficSignSpeechLanguageIdentifier().lowercased()
+        if language.hasPrefix("fr") {
+            return months == 1
+                ? "Attention. Un mois de suspension du permis est possible."
+                : "Attention. Une suspension du permis de \(months) mois est possible."
+        }
+        if language.hasPrefix("nl") {
+            return months == 1
+                ? "Let op. Een rijverbod van één maand is mogelijk."
+                : "Let op. Een rijverbod van \(months) maanden is mogelijk."
+        }
+        if language.hasPrefix("de") {
+            return months == 1
+                ? "Achtung. Ein Monat Fahrverbot moeglich."
+                : "Achtung. \(months) Monate Fahrverbot moeglich."
+        }
+        return months == 1
+            ? "Warning. A one-month driving ban is possible."
+            : "Warning. A \(months)-month driving ban is possible."
     }
 }
 
