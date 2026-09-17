@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<path d="M246.21,322.47 H356.59 H356.59 C360.41,322.47,362.79,326.61,360.89,329.91 H360.89 L305.7,425.5 H305.7 C303.79,428.81,299.01,428.81,297.11,425.5 H297.11 L241.91,329.91 H241.91 C240,326.61,242.39,322.47,246.21,322.47 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+<polygon points="254.8,332.39 348,332.39 301.4,413.1 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="281.97,343.74 281.97,347.28 279.43,347.28 279.43,352.24 281.97,352.24 281.97,360.75 279.43,360.75 279.43,365.71 281.97,365.71 281.97,368.54 284.34,372.79 286.92,368.54 286.92,365.71 290.45,365.71 290.45,368.54 292.83,372.79 295.4,368.54 295.4,365.71 298.93,365.71 298.93,368.54 301.34,372.79 303.87,368.54 303.87,365.71 307.4,365.71 307.4,368.54 309.82,372.79 312.35,368.54 312.35,365.71 315.88,365.71 315.88,368.54 318.31,372.79 320.82,368.54 320.82,365.71 323.37,365.71 323.37,360.75 320.82,360.75 320.82,352.24 323.37,352.24 323.37,347.28 320.82,347.28 320.82,343.74 315.88,343.74 315.88,347.28 312.35,347.28 312.35,343.74 307.4,343.74 307.4,347.28 303.87,347.28 303.87,343.74 298.93,343.74 298.93,347.28 295.4,347.28 295.4,343.74 290.45,343.74 290.45,347.28 286.92,347.28 286.92,343.74 281.97,343.74 " stroke-width="0" fill="black" fill-rule="nonzero" />
+<polygon points="286.92,352.24 286.92,360.74 290.45,360.74 290.45,352.24 286.92,352.24 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="295.39,352.24 295.39,360.74 298.93,360.74 298.93,352.24 295.39,352.24 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="303.87,352.24 303.87,360.74 307.4,360.74 307.4,352.24 303.87,352.24 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="312.35,352.24 312.35,360.74 315.88,360.74 315.88,352.24 312.35,352.24 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+</g>
+</svg>

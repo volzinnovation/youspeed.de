@@ -1027,9 +1027,10 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("FRA"), "FR")
         XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("NLD"), "NL")
         XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("BEL"), "BE")
+        XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("CHE"), "CH")
         XCTAssertNil(TrafficSignModelPackSelection.availableCountryCode("LUX"))
 
-        for (country, classCount) in [("DE", 134), ("FR", 256), ("NL", 160), ("BE", 143)] {
+        for (country, classCount) in [("DE", 134), ("FR", 256), ("NL", 160), ("BE", 143), ("CH", 127)] {
             let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(countryCode: country))
             XCTAssertEqual(catalog.country, country)
             XCTAssertEqual(catalog.classLabels.count, classCount)

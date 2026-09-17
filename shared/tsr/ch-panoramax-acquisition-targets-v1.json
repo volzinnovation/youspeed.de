@@ -1,0 +1,1208 @@
+{
+  "schema_version": 1,
+  "target_list_id": "ch-panoramax-acquisition-targets-v1",
+  "generated_at": "2026-09-17T16:15:00Z",
+  "country": "CH",
+  "scope": {
+    "excluded_base_codes": [
+      "4.88",
+      "4.90"
+    ],
+    "exclusion_reason": "Owner decision: leave out CH 4.88 and 4.90 because no cleared artwork source is available in the current scope."
+  },
+  "sources": {
+    "readiness": "shared/tsr/panoramax-ch-readiness-v1.json",
+    "weak_labels": [
+      "/tmp/ch-pass1-weak-labels.jsonl",
+      "/tmp/ch-pass2-weak-labels.jsonl",
+      "/tmp/ch-pass3-weak-labels.jsonl",
+      "/tmp/ch-pass4-weak-labels.jsonl",
+      "/tmp/ch-pass5-weak-labels.jsonl",
+      "/tmp/ch-pass6-weak-labels.jsonl",
+      "/tmp/ch-pass7-weak-labels.jsonl",
+      "/tmp/ch-pass8-weak-labels.jsonl",
+      "/tmp/ch-pass9-weak-labels.jsonl",
+      "/tmp/ch-pass10-weak-labels.jsonl",
+      "/tmp/ch-pass11-weak-labels.jsonl",
+      "/tmp/ch-pass12-weak-labels.jsonl",
+      "/tmp/ch-pass13-weak-labels.jsonl",
+      "/tmp/ch-pass14-weak-labels.jsonl",
+      "/tmp/ch-pass15-weak-labels.jsonl",
+      "/tmp/ch-pass16-weak-labels.jsonl"
+    ],
+    "weak_label_policy": "Only identical DE+FR CH codes with both confidences >= 0.90 are counted; this is pseudo-label evidence, not human ground truth."
+  },
+  "coverage": {
+    "artwork_candidate_base_codes": 118,
+    "excluded_artwork_base_codes": 2,
+    "in_scope_artwork_base_codes": 116,
+    "covered_by_dual_classifier_base_codes": 52,
+    "missing_pseudo_label_base_codes": 64,
+    "artwork_gap_base_codes": 0,
+    "accepted_sample_count": 2095,
+    "accepted_raw_code_count": 63,
+    "accepted_base_code_count": 53,
+    "covered_codes": [
+      "1.03",
+      "1.04",
+      "1.05",
+      "1.06",
+      "1.07",
+      "1.08",
+      "1.09",
+      "1.13",
+      "1.14",
+      "1.15",
+      "1.22",
+      "1.23",
+      "1.24",
+      "1.26",
+      "1.27",
+      "1.30",
+      "1.32",
+      "2.01",
+      "2.02",
+      "2.05",
+      "2.07",
+      "2.10.1",
+      "2.15",
+      "2.16",
+      "2.18",
+      "2.19",
+      "2.32",
+      "2.37",
+      "2.38",
+      "2.44",
+      "2.45",
+      "2.46",
+      "2.47",
+      "2.49",
+      "2.50",
+      "2.58",
+      "2.59.1",
+      "2.60",
+      "2.61",
+      "2.64",
+      "3.02",
+      "3.03",
+      "3.04",
+      "3.05",
+      "3.06",
+      "3.09",
+      "3.10",
+      "4.02",
+      "4.07",
+      "4.09",
+      "4.11",
+      "4.17"
+    ]
+  },
+  "excluded_targets": [
+    {
+      "base_code": "4.88",
+      "raw_ch_codes": [
+        "CH:4.88"
+      ],
+      "reason": "excluded by owner decision; no cleared artwork source in current scope"
+    },
+    {
+      "base_code": "4.90",
+      "raw_ch_codes": [
+        "CH:4.90"
+      ],
+      "reason": "excluded by owner decision; no cleared artwork source in current scope"
+    }
+  ],
+  "targets": [
+    {
+      "priority": 2,
+      "base_code": "1.01",
+      "model_classes": [
+        "hazard:turn_right"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.01"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.02",
+      "model_classes": [
+        "hazard:turn_left"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.02"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.10",
+      "model_classes": [
+        "hazard:include:down"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.10"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.11",
+      "model_classes": [
+        "hazard:incline:up"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.11"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.12",
+      "model_classes": [
+        "hazard:gravel"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.12"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.16",
+      "model_classes": [
+        "hazard:train"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.16"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.25",
+      "model_classes": [
+        "hazard:animals"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.25"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.28",
+      "model_classes": [
+        "hazard:airport"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.28"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "1.31",
+      "model_classes": [
+        "hazard:traffic_jam"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:1.31"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.03",
+      "model_classes": [
+        "no_car"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.03"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.04",
+      "model_classes": [
+        "no_motorcycle"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.04"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.06",
+      "model_classes": [
+        "no_moped"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.06"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.08",
+      "model_classes": [
+        "no_bus"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.08"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.09",
+      "model_classes": [
+        "no_trailer"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.09"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.11",
+      "model_classes": [
+        "no_dangerous_liquid"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.11"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.12",
+      "model_classes": [
+        "no_horse"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.12"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.13",
+      "model_classes": [
+        "no_motor_vehicle2"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.13"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.14",
+      "model_classes": [
+        "no_motor_vehicle"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.14"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.15.1",
+      "model_classes": [
+        "no_skiing"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.15.1"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.15.2",
+      "model_classes": [
+        "no_sledging"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.15.2"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.15.3",
+      "model_classes": [
+        "no_roller"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.15.3"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.17",
+      "model_classes": [
+        "maxaxleweight"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.17"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.20",
+      "model_classes": [
+        "maxlength"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.20"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.31",
+      "model_classes": [
+        "min_speed"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.31"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.33",
+      "model_classes": [
+        "arrow_left"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.33"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.34",
+      "model_classes": [
+        "arrow_right_down"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.34"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.35",
+      "model_classes": [
+        "arrow_left_down"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.35"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.36",
+      "model_classes": [
+        "arrow_through"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.36"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.39",
+      "model_classes": [
+        "arrow_turn_left_right"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.39"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.40",
+      "model_classes": [
+        "arrow_turn_right_through"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.40"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.41",
+      "model_classes": [
+        "arrow_turn_left_through"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.41"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.41.1",
+      "model_classes": [
+        "roundabout"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.41.1"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.42",
+      "model_classes": [
+        "no_turn:right"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.42"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.43",
+      "model_classes": [
+        "no_turn:left"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.43"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.48",
+      "model_classes": [
+        "chains"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.48"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.51",
+      "model_classes": [
+        "customs"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.51"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.53",
+      "model_classes": [
+        "maxspeed:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.53"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.54",
+      "model_classes": [
+        "min_speed:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.54"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.55",
+      "model_classes": [
+        "no_overtaking:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.55"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.56",
+      "model_classes": [
+        "no_overtaking:end:hgv"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.56"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.57",
+      "model_classes": [
+        "chains:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.57"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.59.2",
+      "model_classes": [
+        "zone:no_parking:end",
+        "zone:parking:end"
+      ],
+      "mapping_rows": 2,
+      "raw_ch_codes": [
+        "CH:2.59.2c",
+        "CH:2.59.2e"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.59.3",
+      "model_classes": [
+        "zone:pedestrian"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.59.3b"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.59.4",
+      "model_classes": [
+        "zone:pedestrian:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.59.4b"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.59.5",
+      "model_classes": [
+        "zone:calm"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.59.5a"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.59.6",
+      "model_classes": [
+        "zone:calm:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.59.6a"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.60.1",
+      "model_classes": [
+        "bicycle:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.60.1"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.62",
+      "model_classes": [
+        "horse:start"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.62"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.63",
+      "model_classes": [
+        "pedestrian_bicycle:designated"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.63"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "2.63.1",
+      "model_classes": [
+        "pedestrian_bicycle:start"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:2.63.1"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "3.01",
+      "model_classes": [
+        "stop"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:3.01"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.01",
+      "model_classes": [
+        "motorway:start"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.01"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.03",
+      "model_classes": [
+        "trunk:start"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.03"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.04",
+      "model_classes": [
+        "trunk:end"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.04"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.08",
+      "model_classes": [
+        "oneway"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.08"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.10",
+      "model_classes": [
+        "no_exit:car"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.10"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.12",
+      "model_classes": [
+        "pedestrian:underpass"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.12"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.13",
+      "model_classes": [
+        "pedestrian:overpass"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.13"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.18",
+      "model_classes": [
+        "parking:disc"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.18"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.20",
+      "model_classes": [
+        "parking:meter"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.20"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.21",
+      "model_classes": [
+        "parking:covered"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.21"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.24",
+      "model_classes": [
+        "escape_lane"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.24"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.25",
+      "model_classes": [
+        "parking:park_ride"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.25"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    },
+    {
+      "priority": 2,
+      "base_code": "4.63",
+      "model_classes": [
+        "exit"
+      ],
+      "mapping_rows": 1,
+      "raw_ch_codes": [
+        "CH:4.63"
+      ],
+      "artwork_statuses": [
+        "official_archive_member"
+      ],
+      "status": "field_imagery_and_review_needed",
+      "accepted_dual_classifier_samples": 0,
+      "next_action": "target Swiss Panoramax sequences for this class, then route-group and review candidate crops"
+    }
+  ]
+}

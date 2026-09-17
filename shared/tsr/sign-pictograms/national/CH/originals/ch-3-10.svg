@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<polygon points="261.09,389.39 331.95,389.39 331.95,460.26 261.09,460.26 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="261.09,389.39 331.95,389.39 331.95,460.26 261.09,460.26 " stroke-width="0.2835" />
+<polygon points="262.5,390.81 330.54,390.81 330.54,458.84 262.5,458.84 " stroke="#0070ff" stroke-width="0" fill="#0070ff" fill-rule="nonzero" />
+<path d="M284.02,414.76 L285.9,450.37 H275.96 L277.91,414.76 L271.18,416.29 H271.18 C270.91,416.34,270.65,416.25,270.48,416.04 C270.27,415.81,270.25,415.46,270.43,415.18 H270.43 L280.11,400.51 H280.11 C280.29,400.23,280.61,400.05,280.94,400.05 C281.3,400.03,281.63,400.21,281.83,400.51 H281.83 L291.46,415.22 H291.46 C291.62,415.48,291.6,415.81,291.44,416.04 C291.27,416.29,290.97,416.39,290.71,416.34 H290.71 L284.02,414.76 Z " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M315.19,434.91 L317.07,399.31 H307.12 L309.09,434.91 L302.35,433.39 H302.35 C302.08,433.34,301.82,433.42,301.65,433.64 C301.43,433.87,301.42,434.22,301.6,434.5 H301.6 L311.27,449.16 H311.27 C311.46,449.45,311.77,449.63,312.11,449.63 C312.47,449.65,312.8,449.46,313,449.16 H313 L322.62,434.45 H322.62 C322.79,434.2,322.77,433.87,322.61,433.64 C322.44,433.39,322.14,433.29,321.88,433.34 H321.88 L315.19,434.91 Z " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M283.27,413.86 L285.15,449.66 H276.71 L278.68,413.86 L271.04,415.59 H271.04 C271.03,415.59,271.03,415.58,271.02,415.58 H271.02 L271.03,415.57 L280.7,400.9 H280.7 C280.76,400.8,280.86,400.75,280.94,400.75 C281.09,400.75,281.18,400.82,281.24,400.9 H281.24 L290.86,415.61 H290.86 C290.86,415.62,290.86,415.64,290.86,415.64 H290.86 L290.85,415.64 L283.27,413.86 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+</g>
+</svg>

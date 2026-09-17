@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<path d="M244.71,418.47 H355.09 H355.09 C358.91,418.47,361.29,422.61,359.39,425.91 H359.39 L304.2,521.5 H304.2 C302.29,524.81,297.51,524.81,295.6,521.5 H295.6 L240.41,425.91 H240.41 C238.5,422.61,240.89,418.47,244.71,418.47 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+<polygon points="253.3,428.39 346.5,428.39 299.9,509.1 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M290.14,481.56 L283.75,477.14 L288.28,471.23 H288.28 C289.5,470.95,290.86,470.62,292.09,470.22 C294.09,469.63,296.05,468.55,297.78,467.36 C300.08,465.77,302.16,463.79,303.78,461.49 C305.21,459.45,306.29,457.16,306.94,454.74 C307.49,452.57,307.78,450.15,307.81,447.89 C307.91,443.85,307.81,438.17,307.81,434.06 H307.81 L312.98,438.77 L318.16,434.06 V447 H318.16 C318.16,450.36,317.88,453.83,317.05,457.09 C316.23,460.24,314.97,463.27,313.26,466.06 C311.23,469.46,308.55,472.47,305.39,474.85 C301.96,477.45,298.07,479.55,293.96,480.65 C291.03,481.43,290.14,481.56,290.14,481.56 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+</g>
+</svg>

@@ -55,6 +55,19 @@
       "selection": "national/BE/selection.json",
       "display_eligible_assets": 115,
       "notes": "Expanded Commons set: 111 Panoramax model-linked display assets plus preserved core/transition artwork. New Code de la voie publique is the target; B7 remains legacy/transition-only. Commercial provenance is recorded per file; national runtime model and manifest remain blocked."
+    },
+    {
+      "country": "CH",
+      "status": "not_ready",
+      "runtime_status": "not_ready",
+      "asset_prefix": "ch-",
+      "originals_path": "national/CH/originals",
+      "png_path": "national/CH/png",
+      "catalog_path": null,
+      "asset_manifest": null,
+      "selection": null,
+      "display_eligible_assets": 0,
+      "notes": "Source-preparation CH artwork and an evaluation/shadow mobile pack are staged, but the cleared artwork set, independent human-reviewed Swiss holdout, device evidence, and production registry rollout remain unavailable."
     }
   ]
 }

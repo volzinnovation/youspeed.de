@@ -63,7 +63,9 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
 /// bundle remains the authority for the active country; this helper only
 /// normalizes its ISO-2/ISO-3 country code to an embedded TSR pack.
 enum TrafficSignModelPackSelection {
-    static let bundledCountryCodes: Set<String> = ["DE", "FR", "NL", "BE"]
+    // CH is bundled for evaluation/shadow use; registry rollout and production
+    // selection remain blocked by the manifest's explicit review gates.
+    static let bundledCountryCodes: Set<String> = ["DE", "FR", "NL", "BE", "CH"]
 
     static func availableCountryCode(_ raw: String?) -> String? {
         guard let country = PenaltyCountryCode.alpha2(raw), bundledCountryCodes.contains(country) else {

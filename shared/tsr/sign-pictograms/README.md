@@ -3,7 +3,8 @@
 `national-set-index-v1.json` is the country-set contract. Germany (`DE`) is the
 active runtime set. France (`FR`), the Netherlands (`NL`) and Belgium (`BE`)
 now have expanded reviewed artwork, transparent PNG renditions and explicit
-model-code selections under `national/<country>/`; they remain runtime-blocked
+model-code selections under `national/<country>/`; Switzerland (`CH`) is
+explicitly tracked as not ready. The foreign sets remain runtime-blocked
 until country legal-action review, calibrated TSR models, device evidence and
 runtime manifests are accepted. Do not reuse the German sign artwork for those
 countries.
@@ -61,7 +62,7 @@ model's actual output vocabulary.
   artwork evidence only until runtime model evaluation and calibration are
   complete.
 - `sources/`: the reviewed deployed DE mapping and its snapshot provenance.
-- `sources/panoramax-country-code-mapping-v1.json`: complete FR/NL/BE model
+- `sources/panoramax-country-code-mapping-v1.json`: complete FR/NL/BE/CH model
   class-to-country-code snapshot with source hash and artwork coverage status.
 - `../foreign-runtime-readiness-v1.json`: blocked foreign-pack handoff with
   the shared detector/export contract and missing-evidence gates; it is not a

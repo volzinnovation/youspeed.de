@@ -20,8 +20,11 @@ def test_national_sign_set_index_is_explicit_and_schema_valid():
     jsonschema.Draft202012Validator(schema).validate(index)
 
     by_country = {entry["country"]: entry for entry in index["sets"]}
-    assert set(by_country) == {"DE", "FR", "NL", "BE"}
+    assert set(by_country) == {"DE", "FR", "NL", "BE", "CH"}
     assert by_country["DE"]["status"] == "active"
+    assert by_country["CH"]["status"] == "not_ready"
+    assert by_country["CH"]["runtime_status"] == "not_ready"
+    assert by_country["CH"]["display_eligible_assets"] == 0
     assert len(list((SIGN_ROOT / "originals").glob("de-*.svg"))) == 111
     assert len(list((SIGN_ROOT / "png").glob("de-*.png"))) == 111
 
@@ -72,7 +75,7 @@ def test_foreign_country_code_mapping_and_runtime_readiness_are_explicit():
     mapping = load(ROOT / "shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json")
     assert mapping["source"]["revision"] == "7a811057049f6de207f909c0f1be2905fa9baf01"
     assert mapping["mapping_policy"]["country_code_map"] == "complete_for_all_rows_with_a_country_column"
-    assert mapping["country_code_counts"] == {"FR": 144, "NL": 159, "BE": 135}
+    assert mapping["country_code_counts"] == {"FR": 144, "NL": 159, "BE": 135, "CH": 139}
     assert len(mapping["entries"]) == 225
 
     readiness = load(ROOT / "shared/tsr/foreign-runtime-readiness-v1.json")

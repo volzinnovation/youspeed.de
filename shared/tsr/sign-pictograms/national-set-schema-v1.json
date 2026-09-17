@@ -20,7 +20,7 @@
       "type": "object",
       "required": ["country", "status", "runtime_status", "asset_prefix", "originals_path", "png_path", "catalog_path", "asset_manifest", "selection", "display_eligible_assets", "notes"],
       "properties": {
-        "country": {"enum": ["DE", "FR", "NL", "BE"]},
+        "country": {"enum": ["DE", "FR", "NL", "BE", "CH"]},
         "status": {"enum": ["active", "artwork_ready", "not_ready"]},
         "runtime_status": {"enum": ["active", "not_ready"]},
         "asset_prefix": {"type": "string", "pattern": "^[a-z]{2}-$"},

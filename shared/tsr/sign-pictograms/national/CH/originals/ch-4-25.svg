@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<polygon points="204.25,455.93 275.12,455.93 275.12,526.8 204.25,526.8 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="204.25,455.93 275.12,455.93 275.12,526.8 204.25,526.8 " stroke-width="0.2835" />
+<polygon points="205.67,525.38 273.71,525.38 273.71,457.35 205.67,457.35 205.67,525.38 " stroke="#0070ff" stroke-width="0" fill="#0070ff" fill-rule="nonzero" />
+<path d="M214.89,469.39 V513.33 H234.71 H234.71 C235.05,513.33,235.45,513.29,235.79,513.25 C236.8,513.13,237.78,512.82,238.68,512.35 C239.54,511.91,240.32,511.32,240.97,510.61 C241.55,509.98,242.02,509.26,242.39,508.49 C242.71,507.81,242.95,507.09,243.08,506.35 C243.15,505.98,243.23,505.43,243.23,505.05 H243.23 L243.2,494.32 H243.2 C243.2,494.03,243.11,493.5,243.05,493.21 C242.88,492.31,242.55,491.45,242.08,490.65 C241.61,489.87,241.02,489.15,240.33,488.55 C239.7,488.01,239,487.56,238.25,487.21 C237.43,486.84,236.56,486.58,235.67,486.49 C235.33,486.46,234.99,486.44,234.65,486.44 H234.65 H222.32 V469.39 H214.89 Z " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="251.73,482.15 243.23,482.15 243.23,477.9 251.73,477.9 251.73,469.39 255.98,469.39 255.98,477.9 264.49,477.9 264.49,482.15 255.98,482.15 255.98,490.66 251.73,490.66 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M222.32,493.32 V506.38 H234.76 H234.76 C234.86,506.38,234.97,506.37,235.07,506.34 C235.13,506.32,235.21,506.27,235.27,506.24 C235.33,506.2,235.42,506.14,235.47,506.1 C235.53,506.04,235.58,505.97,235.62,505.91 C235.67,505.84,235.72,505.75,235.74,505.67 C235.77,505.59,235.8,505.5,235.8,505.41 H235.8 L235.76,494.4 H235.76 C235.76,494.31,235.75,494.21,235.73,494.12 C235.71,494.04,235.67,493.96,235.64,493.89 C235.59,493.82,235.54,493.73,235.48,493.67 C235.43,493.61,235.36,493.55,235.29,493.5 C235.22,493.45,235.14,493.4,235.07,493.38 C234.95,493.33,234.79,493.32,234.66,493.32 H234.66 H222.32 Z " stroke="#0070ff" stroke-width="0" fill="#0070ff" fill-rule="nonzero" />
+</g>
+</svg>

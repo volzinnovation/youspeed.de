@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<path d="M246.21,382.47 H356.59 H356.59 C360.41,382.47,362.79,386.61,360.89,389.91 H360.89 L305.7,485.5 H305.7 C303.79,488.81,299.01,488.81,297.1,485.5 H297.1 L241.91,389.91 H241.91 C240,386.61,242.39,382.47,246.21,382.47 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+<polygon points="254.8,392.39 348,392.39 301.4,473.1 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M309.54,398.14 L309.58,421.7 H309.58 C309.58,421.86,309.49,421.99,309.34,422.07 C309.21,422.12,309.06,422.09,308.95,422.02 H308.95 L303.04,417.46 H303.04 C299.91,415.05,295.64,414.73,292.2,416.64 C289.05,418.38,287.12,421.57,287.09,425.16 H287.09 V441.37 L292.14,446.31 L297.18,441.31 V426.46 H297.18 C297.18,426.3,297.28,426.13,297.42,426.05 C297.59,425.98,297.76,426.02,297.89,426.11 H297.89 L303.58,430.65 H303.58 C306.82,433.25,311.36,433.54,314.92,431.38 C317.86,429.58,319.68,426.37,319.68,422.91 H319.68 V398.12 L314.8,402.83 L309.54,398.14 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+</g>
+</svg>

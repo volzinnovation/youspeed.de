@@ -21,12 +21,14 @@
   "country_code_counts": {
     "FR": 144,
     "NL": 159,
-    "BE": 135
+    "BE": 135,
+    "CH": 139
   },
   "artwork_coverage_counts": {
     "FR": 111,
     "NL": 111,
-    "BE": 113
+    "BE": 113,
+    "CH": 0
   },
   "mapping_policy": {
     "country_code_map": "complete_for_all_rows_with_a_country_column",

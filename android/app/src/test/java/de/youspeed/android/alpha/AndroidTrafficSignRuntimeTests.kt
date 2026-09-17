@@ -17,6 +17,7 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals("FR", AndroidTrafficSignModelPackSelection.availableCountryCode("FRA"))
         assertEquals("NL", AndroidTrafficSignModelPackSelection.availableCountryCode("NLD"))
         assertEquals("BE", AndroidTrafficSignModelPackSelection.availableCountryCode("BEL"))
+        assertEquals("CH", AndroidTrafficSignModelPackSelection.availableCountryCode("CHE"))
         assertEquals(null, AndroidTrafficSignModelPackSelection.availableCountryCode("LUX"))
     }
 

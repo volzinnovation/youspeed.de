@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<path d="M246.21,407.47 H356.59 H356.59 C360.41,407.47,362.79,411.61,360.89,414.91 H360.89 L305.7,510.5 H305.7 C303.79,513.81,299.01,513.81,297.1,510.5 H297.1 L241.91,414.91 H241.91 C240,411.61,242.39,407.47,246.21,407.47 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+<polygon points="254.8,417.39 348,417.39 301.4,498.1 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M287.78,464.87 L293.82,464.77 L293.87,436.94 L298.45,438.03 H298.45 C298.72,438.09,299.01,437.97,299.17,437.74 C299.33,437.5,299.33,437.2,299.17,436.97 H299.17 L291.41,425.52 H291.41 C291.27,425.31,291.02,425.19,290.77,425.19 C290.54,425.2,290.32,425.32,290.19,425.52 H290.19 L282.47,436.94 H282.47 C282.32,437.16,282.31,437.47,282.45,437.72 C282.61,437.99,282.94,438.12,283.25,438.05 H283.25 L287.74,436.92 L287.78,464.87 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+<path d="M308.86,426.61 L308.89,454.52 L304.36,453.41 H304.36 C304.06,453.34,303.74,453.46,303.57,453.71 C303.38,453.97,303.38,454.31,303.56,454.57 H303.56 L311.32,465.96 H311.32 C311.45,466.16,311.68,466.29,311.92,466.29 C312.17,466.3,312.41,466.17,312.55,465.96 H312.55 L320.33,454.55 H320.33 C320.51,454.29,320.5,453.95,320.32,453.7 C320.15,453.45,319.83,453.33,319.54,453.4 H319.54 L314.98,454.52 L314.88,426.62 L308.86,426.61 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+</g>
+</svg>

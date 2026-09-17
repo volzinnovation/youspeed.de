@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<polygon points="261.09,389.39 331.95,389.39 331.95,460.26 261.09,460.26 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="261.09,389.39 331.95,389.39 331.95,460.26 261.09,460.26 " stroke-width="0.2835" />
+<polygon points="262.5,390.81 330.54,390.81 330.54,458.84 262.5,458.84 " stroke="#0070ff" stroke-width="0" fill="#0070ff" fill-rule="nonzero" />
+<path d="M290.54,398.61 L293.16,435.28 L285.14,433.4 H285.14 C284.83,433.34,284.51,433.45,284.31,433.69 C284.07,433.97,284.05,434.38,284.25,434.7 H284.25 L295.55,451.92 H295.55 C295.77,452.25,296.13,452.46,296.52,452.46 C296.93,452.47,297.32,452.27,297.55,451.92 H297.55 L308.78,434.65 H308.78 C308.97,434.36,308.96,433.97,308.76,433.69 C308.56,433.41,308.22,433.28,307.89,433.36 H307.89 L299.79,435.2 L302.21,398.62 L290.54,398.61 Z " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+</g>
+</svg>

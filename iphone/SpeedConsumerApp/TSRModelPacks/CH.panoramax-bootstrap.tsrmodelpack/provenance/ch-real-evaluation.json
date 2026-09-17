@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "status": "evaluation_only",
+  "model": "/work/model/ch-classifier-bootstrap-v9/weights/best.pt",
+  "split": "/work/run/ch-classifier-data-v7/val",
+  "sample_count": 250,
+  "class_count": 43,
+  "top1": 0.976,
+  "top5": 0.996,
+  "class_counts": {
+    "arrow_right": 1,
+    "bus:start": 1,
+    "give_way": 40,
+    "hazard": 4,
+    "hazard:bicycle": 3,
+    "hazard:bothways": 3,
+    "hazard:intersection": 4,
+    "hazard:narrow_both": 1,
+    "hazard:pedestrian_crossing": 10,
+    "hazard:road_works": 5,
+    "hazard:rocks": 7,
+    "hazard:school": 1,
+    "hazard:slippery": 9,
+    "hazard:traffic_signal": 3,
+    "hazard:wild_animals": 3,
+    "hazard:zigzag": 2,
+    "hazard:zigzag:left": 3,
+    "maxheight": 3,
+    "maxspeed:100": 6,
+    "maxspeed:20": 1,
+    "maxspeed:30": 1,
+    "maxspeed:40": 5,
+    "maxspeed:50": 11,
+    "maxspeed:60": 5,
+    "maxspeed:70": 9,
+    "maxspeed:80": 5,
+    "maxweight": 2,
+    "min_distance": 4,
+    "motorway:end": 1,
+    "no_entry": 18,
+    "no_hgv": 3,
+    "no_overtaking": 10,
+    "no_overtaking:hgv": 15,
+    "no_parking": 4,
+    "no_stop": 2,
+    "no_way": 1,
+    "parking": 15,
+    "pedestrian_crossing": 11,
+    "priority:end": 1,
+    "priority:forward": 1,
+    "priority:start": 13,
+    "tunnel:start": 2,
+    "zone:30": 1
+  },
+  "per_class": {
+    "arrow_right": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "bus:start": {
+      "samples": 1,
+      "top1": 0,
+      "top5": 0
+    },
+    "give_way": {
+      "samples": 40,
+      "top1": 40,
+      "top5": 40
+    },
+    "hazard": {
+      "samples": 4,
+      "top1": 4,
+      "top5": 4
+    },
+    "hazard:bicycle": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "hazard:bothways": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "hazard:intersection": {
+      "samples": 4,
+      "top1": 4,
+      "top5": 4
+    },
+    "hazard:narrow_both": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "hazard:pedestrian_crossing": {
+      "samples": 10,
+      "top1": 10,
+      "top5": 10
+    },
+    "hazard:road_works": {
+      "samples": 5,
+      "top1": 5,
+      "top5": 5
+    },
+    "hazard:rocks": {
+      "samples": 7,
+      "top1": 7,
+      "top5": 7
+    },
+    "hazard:school": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "hazard:slippery": {
+      "samples": 9,
+      "top1": 9,
+      "top5": 9
+    },
+    "hazard:traffic_signal": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "hazard:wild_animals": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "hazard:zigzag": {
+      "samples": 2,
+      "top1": 0,
+      "top5": 2
+    },
+    "hazard:zigzag:left": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "maxheight": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "maxspeed:100": {
+      "samples": 6,
+      "top1": 6,
+      "top5": 6
+    },
+    "maxspeed:20": {
+      "samples": 1,
+      "top1": 0,
+      "top5": 1
+    },
+    "maxspeed:30": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "maxspeed:40": {
+      "samples": 5,
+      "top1": 5,
+      "top5": 5
+    },
+    "maxspeed:50": {
+      "samples": 11,
+      "top1": 11,
+      "top5": 11
+    },
+    "maxspeed:60": {
+      "samples": 5,
+      "top1": 5,
+      "top5": 5
+    },
+    "maxspeed:70": {
+      "samples": 9,
+      "top1": 9,
+      "top5": 9
+    },
+    "maxspeed:80": {
+      "samples": 5,
+      "top1": 5,
+      "top5": 5
+    },
+    "maxweight": {
+      "samples": 2,
+      "top1": 2,
+      "top5": 2
+    },
+    "min_distance": {
+      "samples": 4,
+      "top1": 4,
+      "top5": 4
+    },
+    "motorway:end": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "no_entry": {
+      "samples": 18,
+      "top1": 18,
+      "top5": 18
+    },
+    "no_hgv": {
+      "samples": 3,
+      "top1": 3,
+      "top5": 3
+    },
+    "no_overtaking": {
+      "samples": 10,
+      "top1": 10,
+      "top5": 10
+    },
+    "no_overtaking:hgv": {
+      "samples": 15,
+      "top1": 15,
+      "top5": 15
+    },
+    "no_parking": {
+      "samples": 4,
+      "top1": 4,
+      "top5": 4
+    },
+    "no_stop": {
+      "samples": 2,
+      "top1": 2,
+      "top5": 2
+    },
+    "no_way": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "parking": {
+      "samples": 15,
+      "top1": 15,
+      "top5": 15
+    },
+    "pedestrian_crossing": {
+      "samples": 11,
+      "top1": 11,
+      "top5": 11
+    },
+    "priority:end": {
+      "samples": 1,
+      "top1": 0,
+      "top5": 1
+    },
+    "priority:forward": {
+      "samples": 1,
+      "top1": 1,
+      "top5": 1
+    },
+    "priority:start": {
+      "samples": 13,
+      "top1": 13,
+      "top5": 13
+    },
+    "tunnel:start": {
+      "samples": 2,
+      "top1": 2,
+      "top5": 2
+    },
+    "zone:30": {
+      "samples": 1,
+      "top1": 0,
+      "top5": 1
+    }
+  }
+}

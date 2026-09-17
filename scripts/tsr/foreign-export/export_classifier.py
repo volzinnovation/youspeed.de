@@ -23,7 +23,7 @@ def sha256_file(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--country", required=True, choices=("FR", "NL", "BE"))
+    parser.add_argument("--country", required=True, choices=("FR", "NL", "BE", "CH"))
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--format", required=True, choices=("coreml", "tflite"))
     parser.add_argument("--output", type=Path, required=True)

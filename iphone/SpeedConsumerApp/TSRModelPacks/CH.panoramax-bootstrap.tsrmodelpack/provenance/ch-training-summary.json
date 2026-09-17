@@ -1,0 +1,12 @@
+{
+  "status": "evaluation_only",
+  "data": "/work/run/ch-classifier-data-v8",
+  "source_model": "/models/DE/classifier/classify_de_road_signs.pt",
+  "output_dir": "/work/model/ch-classifier-bootstrap-v9",
+  "epochs": 40,
+  "batch": 32,
+  "imgsz": 224,
+  "device": "0",
+  "results": "ultralytics.utils.metrics.ClassifyMetrics object with attributes:\n\nconfusion_matrix: <ultralytics.utils.metrics.ConfusionMatrix object at 0x707c8b8cee40>\ncurves: []\ncurves_results: []\nfitness: 0.4859944134950638\nkeys: ['metrics/accuracy_top1', 'metrics/accuracy_top5']\nresults_dict: {'metrics/accuracy_top1': 0.4145658314228058, 'metrics/accuracy_top5': 0.5574229955673218, 'fitness': 0.4859944134950638}\nsave_dir: PosixPath('/work/model/ch-classifier-bootstrap-v9')\nspeed: {'preprocess': 0.029713567607209126, 'inference': 0.505528309713809, 'loss': 8.225769681089065e-05, 'postprocess': 0.00012685813489748317}\ntop1: 0.4145658314228058\ntop5: 0.5574229955673218",
+  "best_checkpoint": "/work/model/ch-classifier-bootstrap-v9/weights/best.pt"
+}

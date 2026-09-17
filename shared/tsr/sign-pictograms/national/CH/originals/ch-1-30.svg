@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<path d="M241.4,382.47 H351.78 H351.78 C355.6,382.47,357.98,386.61,356.08,389.91 H356.08 L300.89,485.5 H300.89 C298.98,488.81,294.2,488.81,292.3,485.5 H292.3 L237.1,389.91 H237.1 C235.2,386.61,237.58,382.47,241.4,382.47 Z " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+<polygon points="249.99,392.39 343.19,392.39 296.59,473.1 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<path d="M302.26,446.5 L299.44,414.28 H299.44 C299.25,413.55,298.61,412.82,297.92,412.47 C296.95,412.1,295.58,412.16,294.84,412.92 C293.64,414.38,293.99,416.45,293.68,418.35 H293.68 L290.91,446.87 H290.91 C291.08,448.91,292.53,450.89,294.54,451.55 C298.23,453,302.52,450.28,302.26,446.5 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+<path d="M296.59,409.41 L296.88,409.4 L297.17,409.38 L297.45,409.34 L297.73,409.29 L298.01,409.23 L298.28,409.15 L298.54,409.06 L298.8,408.96 L299.05,408.85 L299.29,408.72 L299.53,408.58 L299.76,408.44 L299.98,408.28 L300.2,408.11 L300.4,407.93 L300.6,407.74 L300.79,407.55 L300.97,407.34 L301.14,407.13 L301.29,406.9 L301.44,406.67 L301.58,406.44 L301.7,406.19 L301.82,405.94 L301.92,405.68 L302.01,405.42 L302.08,405.15 L302.15,404.88 L302.2,404.6 L302.23,404.31 L302.25,404.03 L302.26,403.73 C302.26,400.61,299.72,398.07,296.59,398.07 C293.46,398.07,290.92,400.61,290.92,403.73 C290.92,406.86,293.46,409.41,296.59,409.41 Z " stroke-width="0" fill="black" fill-rule="nonzero" />
+</g>
+</svg>

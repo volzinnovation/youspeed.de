@@ -1,0 +1,2583 @@
+{
+  "schema_version": 1,
+  "country": "CH",
+  "classifier_checkpoint_sha256": "984c63ecb7dda0a4faf4e49ea3461e5cdf0ffb820dbb90fd2f57efdd87ac5dbc",
+  "class_labels": [
+    "arrow_left",
+    "arrow_left_down",
+    "arrow_right",
+    "arrow_right_down",
+    "arrow_through",
+    "arrow_turn_left",
+    "arrow_turn_left_right",
+    "arrow_turn_left_through",
+    "arrow_turn_right",
+    "arrow_turn_right_through",
+    "bicycle:end",
+    "bicycle:start",
+    "bus:start",
+    "chains",
+    "chains:end",
+    "customs",
+    "escape_lane",
+    "exit",
+    "give_way",
+    "hazard",
+    "hazard:airport",
+    "hazard:animals",
+    "hazard:bicycle",
+    "hazard:bothways",
+    "hazard:bumps",
+    "hazard:crossing",
+    "hazard:gravel",
+    "hazard:horse",
+    "hazard:incline:up",
+    "hazard:include:down",
+    "hazard:intersection",
+    "hazard:level_crossing",
+    "hazard:narrow_both",
+    "hazard:narrow_left",
+    "hazard:narrow_right",
+    "hazard:pedestrian_crossing",
+    "hazard:road_works",
+    "hazard:rocks",
+    "hazard:school",
+    "hazard:slippery",
+    "hazard:traffic_jam",
+    "hazard:traffic_signal",
+    "hazard:train",
+    "hazard:turn_left",
+    "hazard:turn_right",
+    "hazard:wild_animals",
+    "hazard:zigzag",
+    "hazard:zigzag:left",
+    "horse:start",
+    "maxaxleweight",
+    "maxheight",
+    "maxlength",
+    "maxspeed:100",
+    "maxspeed:20",
+    "maxspeed:30",
+    "maxspeed:40",
+    "maxspeed:5",
+    "maxspeed:50",
+    "maxspeed:60",
+    "maxspeed:70",
+    "maxspeed:80",
+    "maxspeed:end",
+    "maxweight",
+    "maxwidth",
+    "min_distance",
+    "min_speed",
+    "min_speed:end",
+    "motorway:end",
+    "motorway:start",
+    "no:end",
+    "no_bicycle",
+    "no_bus",
+    "no_car",
+    "no_dangerous",
+    "no_dangerous_liquid",
+    "no_entry",
+    "no_exit",
+    "no_exit:car",
+    "no_hgv",
+    "no_horse",
+    "no_moped",
+    "no_motor_vehicle",
+    "no_motor_vehicle2",
+    "no_motorcycle",
+    "no_overtaking",
+    "no_overtaking:end",
+    "no_overtaking:end:hgv",
+    "no_overtaking:hgv",
+    "no_parking",
+    "no_pedestrian",
+    "no_roller",
+    "no_skiing",
+    "no_sledging",
+    "no_stop",
+    "no_trailer",
+    "no_turn:left",
+    "no_turn:right",
+    "no_u_turn",
+    "no_way",
+    "oneway",
+    "parking",
+    "parking:covered",
+    "parking:disc",
+    "parking:meter",
+    "parking:park_ride",
+    "pedestrian:overpass",
+    "pedestrian:start",
+    "pedestrian:underpass",
+    "pedestrian_bicycle:designated",
+    "pedestrian_bicycle:start",
+    "pedestrian_crossing",
+    "priority:backward",
+    "priority:end",
+    "priority:forward",
+    "priority:start",
+    "roundabout",
+    "stop",
+    "trunk:end",
+    "trunk:start",
+    "tunnel:start",
+    "zone:30",
+    "zone:calm",
+    "zone:calm:end",
+    "zone:no_parking",
+    "zone:no_parking:end",
+    "zone:pedestrian",
+    "zone:pedestrian:end"
+  ],
+  "signs": [
+    {
+      "class_id": "hazard:turn_right",
+      "sign_code": "CH:1.01",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-01.png",
+      "label": {
+        "en": "CH:1.01 — hazard:turn_right",
+        "de": "CH:1.01 — hazard:turn_right",
+        "fr": "CH:1.01 — hazard:turn_right",
+        "nl": "CH:1.01 — hazard:turn_right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-01",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.01.eps",
+        "source_member_sha256": "e69e66f12e3d35cbccca3415c6dd13deae8db765401846c22743cc6476157fbc",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "3793e6f27f2e56e727e4c9ce7d718c26f2850b7a86a1c9aabdbff3358b03e01f",
+        "png_sha256": "d90e775bf160ea3fd178c8ed7218d112a87a46cf24af4faf6104f0ed514bc814"
+      }
+    },
+    {
+      "class_id": "hazard:turn_left",
+      "sign_code": "CH:1.02",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-02.png",
+      "label": {
+        "en": "CH:1.02 — hazard:turn_left",
+        "de": "CH:1.02 — hazard:turn_left",
+        "fr": "CH:1.02 — hazard:turn_left",
+        "nl": "CH:1.02 — hazard:turn_left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-02",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.02.eps",
+        "source_member_sha256": "b2fb6fe06d4addda78789f7997781c34d5db9034f6d7aa6e541093d905b21638",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "53cedf30ad63ca7a9d64ac315785b02bc471a4bb974fe381ffe06ca5e6441c84",
+        "png_sha256": "f4d21db1da0e394a9f738c4d6f77b50a8b7ca9976f7a295d6a7720867afc4929"
+      }
+    },
+    {
+      "class_id": "hazard:zigzag",
+      "sign_code": "CH:1.03",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-03.png",
+      "label": {
+        "en": "CH:1.03 — hazard:zigzag",
+        "de": "CH:1.03 — hazard:zigzag",
+        "fr": "CH:1.03 — hazard:zigzag",
+        "nl": "CH:1.03 — hazard:zigzag"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-03",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.03.eps",
+        "source_member_sha256": "f68650adfdf8976fc4889109bf3551f04b88a4b9a2071249f552e1a26afb1de3",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "e60b9f52823310577f56a71d44930bcfa259da9e9a735c135afffa6189ad42cc",
+        "png_sha256": "b5f35faf322c7a66e6285321882a50c62434a834b74fdf27fea787818f5ad2ac"
+      }
+    },
+    {
+      "class_id": "hazard:zigzag:left",
+      "sign_code": "CH:1.04",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-04.png",
+      "label": {
+        "en": "CH:1.04 — hazard:zigzag:left",
+        "de": "CH:1.04 — hazard:zigzag:left",
+        "fr": "CH:1.04 — hazard:zigzag:left",
+        "nl": "CH:1.04 — hazard:zigzag:left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-04",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.04.eps",
+        "source_member_sha256": "e1bc5004cef127dfc464f4f9caf8bfbcf804661e1202badae7994df932feb92d",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "64b91a58b2ebb89ae5a8c2bb06ef79652d52efc82d0595b909d6511a2fcddec4",
+        "png_sha256": "445630f787a074d08282052fc8caa38073fa794ea079c452cb41b178dfeea5ad"
+      }
+    },
+    {
+      "class_id": "hazard:slippery",
+      "sign_code": "CH:1.05",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-05.png",
+      "label": {
+        "en": "CH:1.05 — hazard:slippery",
+        "de": "CH:1.05 — hazard:slippery",
+        "fr": "CH:1.05 — hazard:slippery",
+        "nl": "CH:1.05 — hazard:slippery"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-05",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.05.eps",
+        "source_member_sha256": "c7a94361cd167291b19cb154461371e0bc39ed7225f1c954ebe6fa8d545dd8cb",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a1448d0179df4f270959179e2ba1ea5f9d708e2f40b90687b023b80a04eee703",
+        "png_sha256": "4676efc3b8506c2f7c28dbe257df288b23fe948baad0b9a1177535dae87817ec"
+      }
+    },
+    {
+      "class_id": "hazard:bumps",
+      "sign_code": "CH:1.06",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-06.png",
+      "label": {
+        "en": "CH:1.06 — hazard:bumps",
+        "de": "CH:1.06 — hazard:bumps",
+        "fr": "CH:1.06 — hazard:bumps",
+        "nl": "CH:1.06 — hazard:bumps"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-06",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.06.eps",
+        "source_member_sha256": "da87c7d6c193b4ec62394396bb03552d04ab3d87023f6f60c85a37a2357336f9",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "495d644f0836f8bb34e70662ca91b3f86ad79e1b7bc406bd3d79c92ba5c271e7",
+        "png_sha256": "52fff7ca4a76fd8e5602f4f298993e5e3178c7b9a75d3396617376794515b886"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_both",
+      "sign_code": "CH:1.07",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-07.png",
+      "label": {
+        "en": "CH:1.07 — hazard:narrow_both",
+        "de": "CH:1.07 — hazard:narrow_both",
+        "fr": "CH:1.07 — hazard:narrow_both",
+        "nl": "CH:1.07 — hazard:narrow_both"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-07",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.07.eps",
+        "source_member_sha256": "62be6f6fdb79eebd7141d476c4c010f707ffda32abe91231ef7f168a76bd5f72",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "61219172abc77c2884333f7c382f0c2d1f32997e685f28a39c020121e2e6d0cf",
+        "png_sha256": "4523ba13469891673c7f92c9d1897bad5fa1e3b1f5f9225e09b0919318410aa9"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_right",
+      "sign_code": "CH:1.08",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-08.png",
+      "label": {
+        "en": "CH:1.08 — hazard:narrow_right",
+        "de": "CH:1.08 — hazard:narrow_right",
+        "fr": "CH:1.08 — hazard:narrow_right",
+        "nl": "CH:1.08 — hazard:narrow_right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-08",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.08.eps",
+        "source_member_sha256": "65dc2e1c8b0b32e6e00d33a520bdba303e4a020e34aaf10d4133c95ec79e1ec3",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "f5dd0f3d434db737d7e3ab87ee1fed5dc2671c303cec00b128c79ecfb32475ea",
+        "png_sha256": "dada1ab2bb2226301a9caad5a1d97cf6f2bd19c9901f4bdedbd2b04d5651c2d4"
+      }
+    },
+    {
+      "class_id": "hazard:narrow_left",
+      "sign_code": "CH:1.09",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-09.png",
+      "label": {
+        "en": "CH:1.09 — hazard:narrow_left",
+        "de": "CH:1.09 — hazard:narrow_left",
+        "fr": "CH:1.09 — hazard:narrow_left",
+        "nl": "CH:1.09 — hazard:narrow_left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-09",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.09.eps",
+        "source_member_sha256": "b3f91bddc6a8b5707d9e857bf73bf92dff467a6d35047d90c968551e20272547",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "cf788ac6041d35ce0929bfe56be29749c7b64894383135175527fd157e16258c",
+        "png_sha256": "3323cdcd93f37d5944f4c84b88d724cdb089888a6e9cfd43bf7d939cb7889bfc"
+      }
+    },
+    {
+      "class_id": "hazard:include:down",
+      "sign_code": "CH:1.10",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-10.png",
+      "label": {
+        "en": "CH:1.10 — hazard:include:down",
+        "de": "CH:1.10 — hazard:include:down",
+        "fr": "CH:1.10 — hazard:include:down",
+        "nl": "CH:1.10 — hazard:include:down"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-10",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.10.eps",
+        "source_member_sha256": "9beefed88ef28c3146a17b1a0a3cc2477a400e697755d2bb5eed19fdff06fd7f",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "734cdd756de9317e94df1f952d225e90e17e992dfcaf4b865c15d2f7ed1360e9",
+        "png_sha256": "1716a7d84f3988705ab4386d710b715f6968d39273f726b69a90d37de246f81b"
+      }
+    },
+    {
+      "class_id": "hazard:incline:up",
+      "sign_code": "CH:1.11",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-11.png",
+      "label": {
+        "en": "CH:1.11 — hazard:incline:up",
+        "de": "CH:1.11 — hazard:incline:up",
+        "fr": "CH:1.11 — hazard:incline:up",
+        "nl": "CH:1.11 — hazard:incline:up"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-11",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.11.eps",
+        "source_member_sha256": "c060cdc2e9432e780d43e8dd1ea0f617d2acd695ebbd00155bcd7e7db4cd23b4",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "2a6e706d7fe7189a4a3b621ba5c4d289f7f0edc8cb7d4e3eab79dd0e3889971d",
+        "png_sha256": "441ed4049b175a1e764aeb87af547b46a2e6b239275bde48b48ec6e6eb03d38e"
+      }
+    },
+    {
+      "class_id": "hazard:gravel",
+      "sign_code": "CH:1.12",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-12.png",
+      "label": {
+        "en": "CH:1.12 — hazard:gravel",
+        "de": "CH:1.12 — hazard:gravel",
+        "fr": "CH:1.12 — hazard:gravel",
+        "nl": "CH:1.12 — hazard:gravel"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-12",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.12.eps",
+        "source_member_sha256": "040d52628f466c010b1bf65216e7c946d62b9d8a26330a2c79db8bd0ccff703f",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "7d6761401165bda741a4e83850815121e4ab2c85be47bb13d349791de88f7b96",
+        "png_sha256": "c939105e0aeeea0bafd972b98efbfe1072e1935fe52d9c663fe93bc4693b98ab"
+      }
+    },
+    {
+      "class_id": "hazard:rocks",
+      "sign_code": "CH:1.13a",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-13.png",
+      "label": {
+        "en": "CH:1.13a — hazard:rocks",
+        "de": "CH:1.13a — hazard:rocks",
+        "fr": "CH:1.13a — hazard:rocks",
+        "nl": "CH:1.13a — hazard:rocks"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-13",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.13.eps",
+        "source_member_sha256": "3d662c54f1001091c252368d5843a113fc56ac315a5af0c2da0edaee99756a57",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "4161ae029684fa76fcc84d175ea022059570cbcf421392dad6495eb3f1d432ea",
+        "png_sha256": "40e79716003fc1bc4450718ca51c8ecaa862c41e21221ea84a8a4761c56d7688"
+      }
+    },
+    {
+      "class_id": "hazard:road_works",
+      "sign_code": "CH:1.14",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-14.png",
+      "label": {
+        "en": "CH:1.14 — hazard:road_works",
+        "de": "CH:1.14 — hazard:road_works",
+        "fr": "CH:1.14 — hazard:road_works",
+        "nl": "CH:1.14 — hazard:road_works"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-14",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.14.eps",
+        "source_member_sha256": "079ab8dadae4e677c3a06c22585436a0dfc0afec4b50dd6983d9220d09a3aa5e",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "b3763ce8575c2429be8e2a41250985f2f89f80de667cebca2d704d5f8ce83694",
+        "png_sha256": "beacbbf48955e813dccfe6a1a92a60797a2513bfc4891a38623c97582064c24f"
+      }
+    },
+    {
+      "class_id": "hazard:level_crossing",
+      "sign_code": "CH:1.15",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-15.png",
+      "label": {
+        "en": "CH:1.15 — hazard:level_crossing",
+        "de": "CH:1.15 — hazard:level_crossing",
+        "fr": "CH:1.15 — hazard:level_crossing",
+        "nl": "CH:1.15 — hazard:level_crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-15",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.15.eps",
+        "source_member_sha256": "4a6e4dee2b9c2773bb0ff7265cb5780e2666fb66a6ca0ec4386b16ebefc5a6fe",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "4b314b6a4270138c8f4d5cf137cce8da814157efe2e5b91cf3aaf8d87d15890a",
+        "png_sha256": "d408000429fa3723e2b37d41039f2d0c7cd0db5b6991065a27aad4689609ab1d"
+      }
+    },
+    {
+      "class_id": "hazard:train",
+      "sign_code": "CH:1.16",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-16.png",
+      "label": {
+        "en": "CH:1.16 — hazard:train",
+        "de": "CH:1.16 — hazard:train",
+        "fr": "CH:1.16 — hazard:train",
+        "nl": "CH:1.16 — hazard:train"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-16",
+      "source_provenance": {
+        "source_archive": "1.01-1.18.zip",
+        "source_member": "1.16.eps",
+        "source_member_sha256": "c4b6958d942ab312f2123069bb60429690634f51d783558098127d77069f32d1",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "eceeee7f90eeddcc41abffcd66a99be6170341a2eb48ec97c9e4c1aaaab31b23",
+        "png_sha256": "51412b0b9e0669f2acd041b8c89afe0b18e0a78c06a2ba099d36adea595da49b"
+      }
+    },
+    {
+      "class_id": "hazard:pedestrian_crossing",
+      "sign_code": "CH:1.22",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-22.png",
+      "label": {
+        "en": "CH:1.22 — hazard:pedestrian_crossing",
+        "de": "CH:1.22 — hazard:pedestrian_crossing",
+        "fr": "CH:1.22 — hazard:pedestrian_crossing",
+        "nl": "CH:1.22 — hazard:pedestrian_crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-22",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.22.eps",
+        "source_member_sha256": "130c3b5764a3a07d372ab701b608ce20ddf6a97754a477243892264defa66481",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "78a98e90e45e8978eb63829eb5926cdead5fa937af4cbfdcde4b1c483910d49b",
+        "png_sha256": "1d126f5df69960eac46f71f941bc4d22868959b4b0849bfd5987dab126f68739"
+      }
+    },
+    {
+      "class_id": "hazard:school",
+      "sign_code": "CH:1.23",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-23.png",
+      "label": {
+        "en": "CH:1.23 — hazard:school",
+        "de": "CH:1.23 — hazard:school",
+        "fr": "CH:1.23 — hazard:school",
+        "nl": "CH:1.23 — hazard:school"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-23",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.23.eps",
+        "source_member_sha256": "453545f85eded0f9b2030e2b2831b7e24157c3be950b19b280f64b66de04837b",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "8e29f35ebe41dac450adb6323360922bc06e9eb38caaea03c794860e1367b64a",
+        "png_sha256": "6e2ef85f4513e76b681de53fb8361b8b82272389cf932b93e2498ea561deaf07"
+      }
+    },
+    {
+      "class_id": "hazard:horse",
+      "sign_code": "CH:1.24a",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-24.png",
+      "label": {
+        "en": "CH:1.24a — hazard:horse",
+        "de": "CH:1.24a — hazard:horse",
+        "fr": "CH:1.24a — hazard:horse",
+        "nl": "CH:1.24a — hazard:horse"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-24",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.24.eps",
+        "source_member_sha256": "7eb1b4ac5a823fbccf8174b7bca97ee517b66966f38dc87924f66f8a239364de",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a281195282ca9639905101d313837e39891a86128d2a749a7a064995cb96b4bd",
+        "png_sha256": "ffef200465f898e5bf083b5f7ae488db4bade43b0755aef7312d312f22e34309"
+      }
+    },
+    {
+      "class_id": "hazard:animals",
+      "sign_code": "CH:1.25",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-25.png",
+      "label": {
+        "en": "CH:1.25 — hazard:animals",
+        "de": "CH:1.25 — hazard:animals",
+        "fr": "CH:1.25 — hazard:animals",
+        "nl": "CH:1.25 — hazard:animals"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-25",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.25.eps",
+        "source_member_sha256": "679a9293b8a6ce033514f011fa601bdc9cdb6718b0acd777625c5addebd3626c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c1c4a41d29812a0d99e578947343de052c138589b491972922f1e3bec2a8c3f6",
+        "png_sha256": "179a12f0b135cb3850e6f17829ddabc43cc045576b19dfabeea4c3d2b2a60662"
+      }
+    },
+    {
+      "class_id": "hazard:bothways",
+      "sign_code": "CH:1.26",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-26.png",
+      "label": {
+        "en": "CH:1.26 — hazard:bothways",
+        "de": "CH:1.26 — hazard:bothways",
+        "fr": "CH:1.26 — hazard:bothways",
+        "nl": "CH:1.26 — hazard:bothways"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-26",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.26.eps",
+        "source_member_sha256": "51136fe4efe68145b737e8a0a59bef054edb2ab8211866d51f8a680629792961",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "1773e81fe092c3989381b68e331580b1e7fb124a4d3cf6c71d357815248bd9a2",
+        "png_sha256": "b2d351bff041e7b83fdbb22454730c401202aee9294c8b82d8ce775ad06de410"
+      }
+    },
+    {
+      "class_id": "hazard:traffic_signal",
+      "sign_code": "CH:1.27",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-27.png",
+      "label": {
+        "en": "CH:1.27 — hazard:traffic_signal",
+        "de": "CH:1.27 — hazard:traffic_signal",
+        "fr": "CH:1.27 — hazard:traffic_signal",
+        "nl": "CH:1.27 — hazard:traffic_signal"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-27",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.27.eps",
+        "source_member_sha256": "02b3aa57eb8938328c6274f689114dd0cbe3215d59710b4a26b6e9ce407995cc",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "6acb1bd0395f50c90d97e27367d23abdfa041efeabf87c09733a7929bf02c7b7",
+        "png_sha256": "17d9875574b87f3902aa2cced830445d05390ca6efb5631aa2a7917dcce42ffb"
+      }
+    },
+    {
+      "class_id": "hazard:airport",
+      "sign_code": "CH:1.28",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-28.png",
+      "label": {
+        "en": "CH:1.28 — hazard:airport",
+        "de": "CH:1.28 — hazard:airport",
+        "fr": "CH:1.28 — hazard:airport",
+        "nl": "CH:1.28 — hazard:airport"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-28",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.28.svg",
+        "source_member_sha256": "d946d758af2a605a69da164cd1bb50bd645444a862d4a57304fb8ce512675fa5",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "d946d758af2a605a69da164cd1bb50bd645444a862d4a57304fb8ce512675fa5",
+        "png_sha256": "aaad2325b85ccf64ff72cd84bae869fb66f7762f886ccb505769bc5017a5b299"
+      }
+    },
+    {
+      "class_id": "hazard",
+      "sign_code": "CH:1.30",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-30.png",
+      "label": {
+        "en": "CH:1.30 — hazard",
+        "de": "CH:1.30 — hazard",
+        "fr": "CH:1.30 — hazard",
+        "nl": "CH:1.30 — hazard"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-30",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.30.eps",
+        "source_member_sha256": "9ee4a7534ab6b1ac1823af219878bfc363d527c26ca223ac8b7cbee4207f2c37",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "2009f74530456e5b1c9dfc59207e0ee0cbc4ffe9f2f52638325613bc099d1c09",
+        "png_sha256": "729813fbd57acd6f4d0f0a15eb0b6c7182bd5959228d0b05ebea6a064bef90e9"
+      }
+    },
+    {
+      "class_id": "hazard:traffic_jam",
+      "sign_code": "CH:1.31",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-31.png",
+      "label": {
+        "en": "CH:1.31 — hazard:traffic_jam",
+        "de": "CH:1.31 — hazard:traffic_jam",
+        "fr": "CH:1.31 — hazard:traffic_jam",
+        "nl": "CH:1.31 — hazard:traffic_jam"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-31",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.31.eps",
+        "source_member_sha256": "c4f10b9a2eb961c8a74bcd613c9f5bd1a95e85034e5b3cfa99fe8ed68271b8cf",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a5b3f418a5878e9bb3c8d29713e7fdbbab28e2db6a224246419fce5ce202034e",
+        "png_sha256": "b53187dfb93a5f0c15d855bb971a2cefb73fb32165cc24a65864c1087a847aa4"
+      }
+    },
+    {
+      "class_id": "hazard:bicycle",
+      "sign_code": "CH:1.32",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-1-32.png",
+      "label": {
+        "en": "CH:1.32 — hazard:bicycle",
+        "de": "CH:1.32 — hazard:bicycle",
+        "fr": "CH:1.32 — hazard:bicycle",
+        "nl": "CH:1.32 — hazard:bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-1-32",
+      "source_provenance": {
+        "source_archive": "1.22-1.32.zip",
+        "source_member": "1.32.svg",
+        "source_member_sha256": "9b8f898d68df10d38d87cd8234bfcef1b695348bc082efc4ceb45bcbf75ea618",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "9b8f898d68df10d38d87cd8234bfcef1b695348bc082efc4ceb45bcbf75ea618",
+        "png_sha256": "9a9c793e468cfe0e4969be6b133aeb991f288be087e799e03f22610620a2b3d2"
+      }
+    },
+    {
+      "class_id": "no_way",
+      "sign_code": "CH:2.01",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-01.png",
+      "label": {
+        "en": "CH:2.01 — no_way",
+        "de": "CH:2.01 — no_way",
+        "fr": "CH:2.01 — no_way",
+        "nl": "CH:2.01 — no_way"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-01",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.01.eps",
+        "source_member_sha256": "793285696482b84f3d26ab0bd4a55f5dc1ce1542e38ee0259ab9ebf8fa441a90",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "b7de0d6e84ff3a4bdaf05e931276e3404cb692297548e8a7bf4c9196ab2d2e83",
+        "png_sha256": "75720f41ee647a5ce75482d100d1f4565b7a51acaad24286e95878c5cc9660e3"
+      }
+    },
+    {
+      "class_id": "no_entry",
+      "sign_code": "CH:2.02",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-02.png",
+      "label": {
+        "en": "CH:2.02 — no_entry",
+        "de": "CH:2.02 — no_entry",
+        "fr": "CH:2.02 — no_entry",
+        "nl": "CH:2.02 — no_entry"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-02",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.02.eps",
+        "source_member_sha256": "3eaa068c8cf7a294d0588d7e4c7bb3948cc0e029122c36201fc7d4f378edce70",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "2d98b0795cc9b70dc66256eaa699333162feec7e82881586d75d5ac55d5abdf8",
+        "png_sha256": "a36c7c9d92b6e809b321d33fd9f62d305e120d108a703604568d46144888abb1"
+      }
+    },
+    {
+      "class_id": "no_car",
+      "sign_code": "CH:2.03",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-03.png",
+      "label": {
+        "en": "CH:2.03 — no_car",
+        "de": "CH:2.03 — no_car",
+        "fr": "CH:2.03 — no_car",
+        "nl": "CH:2.03 — no_car"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-03",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.03.eps",
+        "source_member_sha256": "bd680169a8962cc63d58ac9fb0084c652cde774f51ed0a47880716d6ec56f29d",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "0f347933d77058ae011eccd3ec516cfd1dd0b44799648fdcf3cb4e06f5f8f595",
+        "png_sha256": "475c085eebdd1dfdffef7cff2bfa6d00c19e587521cfa7a4f748b91f0a720c88"
+      }
+    },
+    {
+      "class_id": "no_motorcycle",
+      "sign_code": "CH:2.04",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-04.png",
+      "label": {
+        "en": "CH:2.04 — no_motorcycle",
+        "de": "CH:2.04 — no_motorcycle",
+        "fr": "CH:2.04 — no_motorcycle",
+        "nl": "CH:2.04 — no_motorcycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-04",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.04.eps",
+        "source_member_sha256": "5262b3d9ebb9289e0030b05425d715eb18349ec08f68611518c5afab4174330b",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "e1ecc9647adcef35f780baf9531dbb20853e015eff13014482b152320a1f33fa",
+        "png_sha256": "67ebe9f31304d50325a4758321501a69fa6094e6f57362281a3470232aaa8c89"
+      }
+    },
+    {
+      "class_id": "no_bicycle",
+      "sign_code": "CH:2.05",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-05.png",
+      "label": {
+        "en": "CH:2.05 — no_bicycle",
+        "de": "CH:2.05 — no_bicycle",
+        "fr": "CH:2.05 — no_bicycle",
+        "nl": "CH:2.05 — no_bicycle"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-05",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.05.eps",
+        "source_member_sha256": "f4bbefbadff31bdc982f3aa15f314a74b59194ffe4a4c5112d3c2c2f9432b813",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "434a28655c10603c2b8d12481676b98cdf4a8c05b4f1e23b37a815b410cac2f1",
+        "png_sha256": "20c56690cffff1573be1e88383085defd4a093cd6a807271e43110c8bf72c365"
+      }
+    },
+    {
+      "class_id": "no_moped",
+      "sign_code": "CH:2.06",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-06.png",
+      "label": {
+        "en": "CH:2.06 — no_moped",
+        "de": "CH:2.06 — no_moped",
+        "fr": "CH:2.06 — no_moped",
+        "nl": "CH:2.06 — no_moped"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-06",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.06.eps",
+        "source_member_sha256": "67554cdc90e2825c92ca34779855902792afa78cd6266518a90fd3e9865d5c69",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "1026df1b19ad47894540a0298fb77175be1b8f055a7c8f39b69fb0c9bf652ca1",
+        "png_sha256": "258d47ed1603b4126a9cb9b9e2ea6729b13de1af3419b362dd1769f9e6444ef4"
+      }
+    },
+    {
+      "class_id": "no_hgv",
+      "sign_code": "CH:2.07",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-07.png",
+      "label": {
+        "en": "CH:2.07 — no_hgv",
+        "de": "CH:2.07 — no_hgv",
+        "fr": "CH:2.07 — no_hgv",
+        "nl": "CH:2.07 — no_hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-07",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.07.eps",
+        "source_member_sha256": "46352058a7533c6519aa88eeff013f075015506a3d7ca1b42437f0b1be478d69",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "29a6f48ad300dedf1f00992256c191f49780cde35a0cc1059cf6ff87d23f7c6d",
+        "png_sha256": "27439b657d396e6f5dbf3cb79199196b11bbebe6fb356e3f25a15b57adbe95d8"
+      }
+    },
+    {
+      "class_id": "no_bus",
+      "sign_code": "CH:2.08",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-08.png",
+      "label": {
+        "en": "CH:2.08 — no_bus",
+        "de": "CH:2.08 — no_bus",
+        "fr": "CH:2.08 — no_bus",
+        "nl": "CH:2.08 — no_bus"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-08",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.08.eps",
+        "source_member_sha256": "ccec5eaacb544c70ad8db06c1e65cb811ff5a890e05442032ceabc9fb94be0c3",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "9b94014aa065aa39e682830c1408b71f3df2eab03482b73d1823fd1c0b5b43d3",
+        "png_sha256": "ccb1dfe1ec0482ed5d786c4e0606e31fa6f0fda59eb70626830f47de1d352a05"
+      }
+    },
+    {
+      "class_id": "no_trailer",
+      "sign_code": "CH:2.09",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-09.png",
+      "label": {
+        "en": "CH:2.09 — no_trailer",
+        "de": "CH:2.09 — no_trailer",
+        "fr": "CH:2.09 — no_trailer",
+        "nl": "CH:2.09 — no_trailer"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-09",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.09.eps",
+        "source_member_sha256": "537f607c5be115c44da79f5697c08e71a8fa8d2c21512e2aa161b3115c6d5d1a",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "8db823dda7523057159054e50775f47cfe857fe4db5ee6d6bbef2f87e502151a",
+        "png_sha256": "17cc84d722a6586d4ad10af921681e85aaac48ad20557760b6cbc78805944481"
+      }
+    },
+    {
+      "class_id": "no_dangerous",
+      "sign_code": "CH:2.10.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-10-1.png",
+      "label": {
+        "en": "CH:2.10.1 — no_dangerous",
+        "de": "CH:2.10.1 — no_dangerous",
+        "fr": "CH:2.10.1 — no_dangerous",
+        "nl": "CH:2.10.1 — no_dangerous"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-10-1",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.10.1.eps",
+        "source_member_sha256": "9c6a25edca851cfb582362c483a431c1c83fbe80d3258d6a0a7b007de6534fac",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "988b15f007e6168ef0893965bad110775f72fdf0a6e02985914ce02dfb21a481",
+        "png_sha256": "3c975f49b155990348603ee70a35036948e9dacb214ce26a987f73c55f3218ca"
+      }
+    },
+    {
+      "class_id": "no_dangerous_liquid",
+      "sign_code": "CH:2.11",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-11.png",
+      "label": {
+        "en": "CH:2.11 — no_dangerous_liquid",
+        "de": "CH:2.11 — no_dangerous_liquid",
+        "fr": "CH:2.11 — no_dangerous_liquid",
+        "nl": "CH:2.11 — no_dangerous_liquid"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-11",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.11.eps",
+        "source_member_sha256": "99fe084b312943b3261f0ae0a8778642deb724ae5bc7b4bae111fad78266f184",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "e174b1eb40d3add737a25d9987bdeabe3ad90d43c7399a860cdac5882a82c571",
+        "png_sha256": "c96140a2321f68def531bdadd7d019f009777a7b42d6387aa731f0b6d092abb4"
+      }
+    },
+    {
+      "class_id": "no_horse",
+      "sign_code": "CH:2.12",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-12.png",
+      "label": {
+        "en": "CH:2.12 — no_horse",
+        "de": "CH:2.12 — no_horse",
+        "fr": "CH:2.12 — no_horse",
+        "nl": "CH:2.12 — no_horse"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-12",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.12.eps",
+        "source_member_sha256": "7d4027cb01dd37760404d02efb2503909f60484687c2b02b3c48ec9c00e76d97",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "b3e3f97f2b285b2eb91bb996fe0126b68feaf801c7540fbaba15e806afbaba75",
+        "png_sha256": "e14b0a9617fb6cf618b036a9c5e870608b7ddf5441f6e933b9c21b180215a053"
+      }
+    },
+    {
+      "class_id": "no_motor_vehicle2",
+      "sign_code": "CH:2.13",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-13.png",
+      "label": {
+        "en": "CH:2.13 — no_motor_vehicle2",
+        "de": "CH:2.13 — no_motor_vehicle2",
+        "fr": "CH:2.13 — no_motor_vehicle2",
+        "nl": "CH:2.13 — no_motor_vehicle2"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-13",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.13.eps",
+        "source_member_sha256": "e3306ccfeaa49d69f52bf5e927f37aaa341c2a09335e3a3d1ec6747a9555e7d3",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "9328ba861d0271363cf84708741d68504cc45ef67f813ddf3bebf5ef918739bf",
+        "png_sha256": "cd39eba98eec28b204daac44d823803ccbdcd8a277a2d907d0ff73bdd7f09324"
+      }
+    },
+    {
+      "class_id": "no_motor_vehicle",
+      "sign_code": "CH:2.14",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-14.png",
+      "label": {
+        "en": "CH:2.14 — no_motor_vehicle",
+        "de": "CH:2.14 — no_motor_vehicle",
+        "fr": "CH:2.14 — no_motor_vehicle",
+        "nl": "CH:2.14 — no_motor_vehicle"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-14",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.14.eps",
+        "source_member_sha256": "727303d4a8aa6d18d199c7487bc00e89fa2b74baf3835507194048b6e5727710",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "bc5e3aade92118bdd8a6289b013ca43744e0d978adfc79eef658900eccd3ad47",
+        "png_sha256": "cea6f20c1ef35c126fed7697256ead317ee8e94e3d161b10c9276d55162d123e"
+      }
+    },
+    {
+      "class_id": "no_pedestrian",
+      "sign_code": "CH:2.15",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15.png",
+      "label": {
+        "en": "CH:2.15 — no_pedestrian",
+        "de": "CH:2.15 — no_pedestrian",
+        "fr": "CH:2.15 — no_pedestrian",
+        "nl": "CH:2.15 — no_pedestrian"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-15",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.15.eps",
+        "source_member_sha256": "a19266848502bf50f763223fe355917787977c2666305230a300ccc057b31f8b",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "6afb569da5a2dc882aae8a658b3b9c39f15314614d6d1a7f71af40659ad19b98",
+        "png_sha256": "c2fea20d0485d74acdef7b06b52718e74b8f10e01e7b054f5e3b7f54b9ebbe0c"
+      }
+    },
+    {
+      "class_id": "no_skiing",
+      "sign_code": "CH:2.15.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-1.png",
+      "label": {
+        "en": "CH:2.15.1 — no_skiing",
+        "de": "CH:2.15.1 — no_skiing",
+        "fr": "CH:2.15.1 — no_skiing",
+        "nl": "CH:2.15.1 — no_skiing"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-15-1",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.15.1.eps",
+        "source_member_sha256": "f30e25baaece098a9b997a692d8c0ef97880276ef8bc6afa3a23986092cd6ff8",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "263ac8f4a8048277ccc00a79f5819e95d222103a6f8a1c02d0f089b0293140b6",
+        "png_sha256": "848b26429a670b9e7fece710ac59e7622a4db87291527a17fcf270438470618d"
+      }
+    },
+    {
+      "class_id": "no_sledging",
+      "sign_code": "CH:2.15.2",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-2.png",
+      "label": {
+        "en": "CH:2.15.2 — no_sledging",
+        "de": "CH:2.15.2 — no_sledging",
+        "fr": "CH:2.15.2 — no_sledging",
+        "nl": "CH:2.15.2 — no_sledging"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-15-2",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.15.2.eps",
+        "source_member_sha256": "2032848d067620fb2c8f07b9f7ae0e077b424b7e1425ca510cee855a17dfdccb",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "2e017daa832a343ebbf4f46843508bb75fa95b650c7d5ae47922c4c0e8e50453",
+        "png_sha256": "c6e8a119a59f4b18a277fa67509fe1cca436d0159d8335cf5aa0012ed0739d84"
+      }
+    },
+    {
+      "class_id": "no_roller",
+      "sign_code": "CH:2.15.3",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-15-3.png",
+      "label": {
+        "en": "CH:2.15.3 — no_roller",
+        "de": "CH:2.15.3 — no_roller",
+        "fr": "CH:2.15.3 — no_roller",
+        "nl": "CH:2.15.3 — no_roller"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-15-3",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.15.3.eps",
+        "source_member_sha256": "3a2aebdeab29c2d27472c11a7772d3f18da130135e8b9c50d8f509ad051ff8e5",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "46d6ebb272be9c58941dd9784745bb418b6da46c63114418cb6eb854662fca45",
+        "png_sha256": "65850a3c2674c197abfd56160c074ff2dfcdfbc09d98ac94fbe85dcee45bded4"
+      }
+    },
+    {
+      "class_id": "maxweight",
+      "sign_code": "CH:2.16",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-16.png",
+      "label": {
+        "en": "CH:2.16 — maxweight",
+        "de": "CH:2.16 — maxweight",
+        "fr": "CH:2.16 — maxweight",
+        "nl": "CH:2.16 — maxweight"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-16",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.16.eps",
+        "source_member_sha256": "f918c04e419650cb99e659d33e88877b2065800856a5d88559eae0ed7a7edd75",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "ac5f6bd066087c826614c9fa62b6f894f52599983796ea869ff3a2c7d9160945",
+        "png_sha256": "23a71f6bcb6f252f69928accc8be370255289a3a8455c4fc03a19a4d62539ee6"
+      }
+    },
+    {
+      "class_id": "maxaxleweight",
+      "sign_code": "CH:2.17",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-17.png",
+      "label": {
+        "en": "CH:2.17 — maxaxleweight",
+        "de": "CH:2.17 — maxaxleweight",
+        "fr": "CH:2.17 — maxaxleweight",
+        "nl": "CH:2.17 — maxaxleweight"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-17",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.17.eps",
+        "source_member_sha256": "79d1adac1ae81ee4736c62dc5788f3471d296f872a89469c62e34941f55d346e",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "5ea1a0f0aaf75a782915d8bb707bd56272832b11ca95823a0de9b9a1ef1cf6e0",
+        "png_sha256": "9dd173e73b4d393c0bfe3e26f9f955f06add292c3ebf01a6dbaf0902201323b2"
+      }
+    },
+    {
+      "class_id": "maxwidth",
+      "sign_code": "CH:2.18",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-18.png",
+      "label": {
+        "en": "CH:2.18 — maxwidth",
+        "de": "CH:2.18 — maxwidth",
+        "fr": "CH:2.18 — maxwidth",
+        "nl": "CH:2.18 — maxwidth"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-18",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.18.eps",
+        "source_member_sha256": "34c05e78a9247881e84470bd9cf24c18a3aa8507a7024c331b8c87a2565a29aa",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c81d06b37d4e5763133cc1cf9d6eb7be7c9f64bf101acce93588cb6fb2bbe9e9",
+        "png_sha256": "764ffab74fd738113e474de63582fa17ddd502f0dd5693cdfb07a966da2241aa"
+      }
+    },
+    {
+      "class_id": "maxheight",
+      "sign_code": "CH:2.19",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-19.png",
+      "label": {
+        "en": "CH:2.19 — maxheight",
+        "de": "CH:2.19 — maxheight",
+        "fr": "CH:2.19 — maxheight",
+        "nl": "CH:2.19 — maxheight"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-19",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.19.eps",
+        "source_member_sha256": "484b175c35baf610789cffb4c779a24dc519e7a7047f272b3e1c3db9de982668",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "cb1778e4c20db40f3f2bfd44dc5c506611a1109cb54ff8d2f94c2985e0911705",
+        "png_sha256": "451a5e2b433eb12cebd0e761ea553e3d55a6c09e1556c9fd964bab48baffaeb9"
+      }
+    },
+    {
+      "class_id": "maxlength",
+      "sign_code": "CH:2.20",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-20.png",
+      "label": {
+        "en": "CH:2.20 — maxlength",
+        "de": "CH:2.20 — maxlength",
+        "fr": "CH:2.20 — maxlength",
+        "nl": "CH:2.20 — maxlength"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-20",
+      "source_provenance": {
+        "source_archive": "2.01-2.20.zip",
+        "source_member": "2.20.eps",
+        "source_member_sha256": "6f81719a3f26ed32d394e32fdd0acb806e891bdb9fb57270ff899a3641918d9f",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "d558b2833998389cf3ad85ba77c41e0511c35ce4f63cb9c0df4cc7a11e90fc98",
+        "png_sha256": "e60f8ab65d50ada025fc46954576ce229acb3fead8de046000f454d8e19baee1"
+      }
+    },
+    {
+      "class_id": "min_speed",
+      "sign_code": "CH:2.31",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-31.png",
+      "label": {
+        "en": "CH:2.31 — min_speed",
+        "de": "CH:2.31 — min_speed",
+        "fr": "CH:2.31 — min_speed",
+        "nl": "CH:2.31 — min_speed"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-31",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.31.eps",
+        "source_member_sha256": "2dd43b1cb04a6db0b931d01652389f4e2e93e20b52ae696b3f75da66739d153e",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a77299c21e0da429454ad6bec07253ca1bf263ea170fa7a6dd2e75a09c0304bc",
+        "png_sha256": "ed853b5fa936121f4a63b5cb2944bf3d0d30dac4bc5113ac332ad5aa914e26c7"
+      }
+    },
+    {
+      "class_id": "arrow_right",
+      "sign_code": "CH:2.32",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-32.png",
+      "label": {
+        "en": "CH:2.32 — arrow_right",
+        "de": "CH:2.32 — arrow_right",
+        "fr": "CH:2.32 — arrow_right",
+        "nl": "CH:2.32 — arrow_right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-32",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.32.eps",
+        "source_member_sha256": "b53a12fc610f8e2dbff90d03eeb9427918bfb5dfb533b8a2d42d5ce2ee9015b0",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "81d59606e223294ffdc79490c98e4ef134bdfb9ed7417b87716203f8de33d699",
+        "png_sha256": "e6697f78f783dc2f02614aabfa9a043494cb3964794e5f79afa043ac82d52a3b"
+      }
+    },
+    {
+      "class_id": "arrow_left",
+      "sign_code": "CH:2.33",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-33.png",
+      "label": {
+        "en": "CH:2.33 — arrow_left",
+        "de": "CH:2.33 — arrow_left",
+        "fr": "CH:2.33 — arrow_left",
+        "nl": "CH:2.33 — arrow_left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-33",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.33.eps",
+        "source_member_sha256": "94ee91d9797da491634bdc9f315e96cc100548b3c58de73d7a576f2694f2ebe7",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "fe56305c154ded0e99f433ec384c0dedd4726419d964d56d7d753af05eb562d0",
+        "png_sha256": "1e6714230d4adad3fe3aaa2e03d326044fe0c04d593d86eb93e4000a1f9d8f00"
+      }
+    },
+    {
+      "class_id": "arrow_right_down",
+      "sign_code": "CH:2.34",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-34.png",
+      "label": {
+        "en": "CH:2.34 — arrow_right_down",
+        "de": "CH:2.34 — arrow_right_down",
+        "fr": "CH:2.34 — arrow_right_down",
+        "nl": "CH:2.34 — arrow_right_down"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-34",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.34.eps",
+        "source_member_sha256": "378749ee638bc2c548a7941afff2e1cdbbb5e461c475000f52acfb4ea7f7f3ec",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "284f4ea5ebb8d89d5871ded578506005b055fe4eabeb41d456edd3f1f93e79bb",
+        "png_sha256": "69c27e8e4b20fabd5829dd153b06f15205a71f2936bd832258291275bb6664df"
+      }
+    },
+    {
+      "class_id": "arrow_left_down",
+      "sign_code": "CH:2.35",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-35.png",
+      "label": {
+        "en": "CH:2.35 — arrow_left_down",
+        "de": "CH:2.35 — arrow_left_down",
+        "fr": "CH:2.35 — arrow_left_down",
+        "nl": "CH:2.35 — arrow_left_down"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-35",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.35.eps",
+        "source_member_sha256": "383ed91443157b525c24bca0a461734b33fa148f545fbdac7bd620909fa7360d",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "33d190c5c8a9141c436b46c9d17f6e81ae9b94fcb1c0612ec78bbe7ca5f92e09",
+        "png_sha256": "fe9df57f90ee148671b0693cd9cdf4149f4a9f9bd30f53fa796eecac056ad097"
+      }
+    },
+    {
+      "class_id": "arrow_through",
+      "sign_code": "CH:2.36",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-36.png",
+      "label": {
+        "en": "CH:2.36 — arrow_through",
+        "de": "CH:2.36 — arrow_through",
+        "fr": "CH:2.36 — arrow_through",
+        "nl": "CH:2.36 — arrow_through"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-36",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.36.eps",
+        "source_member_sha256": "d4034f1f88ab2f03d016f94085109261bb30bb99f4a4398ab45db10311d005cf",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "3e97147eeaebf74a94bcb7e7612ecc38f25826dbcc7b65c71b1d4275141cc7a9",
+        "png_sha256": "71fb6b9009ce5e7d7243608db1743910d157d2cbdba65ca568c531e7c89e9d0b"
+      }
+    },
+    {
+      "class_id": "arrow_turn_right",
+      "sign_code": "CH:2.37",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-37.png",
+      "label": {
+        "en": "CH:2.37 — arrow_turn_right",
+        "de": "CH:2.37 — arrow_turn_right",
+        "fr": "CH:2.37 — arrow_turn_right",
+        "nl": "CH:2.37 — arrow_turn_right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-37",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.37.eps",
+        "source_member_sha256": "9e6fc013dd049546779e44f5935edac59d9d8feb92661b0a2a84441be060d900",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "f66899e52e2282a8eaf4f462b9ac53c9a433e3a833ea472e2ba3feec3b5f4895",
+        "png_sha256": "8bb96602917c66c9d33a8eefb614d1fbb86b23b9f9871058ad7ab0c8ac85037d"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left",
+      "sign_code": "CH:2.38",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-38.png",
+      "label": {
+        "en": "CH:2.38 — arrow_turn_left",
+        "de": "CH:2.38 — arrow_turn_left",
+        "fr": "CH:2.38 — arrow_turn_left",
+        "nl": "CH:2.38 — arrow_turn_left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-38",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.38.eps",
+        "source_member_sha256": "45da4628114fba06536e0bb08ff05c869adf7039598c3041b93af3efada696a4",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "250b6f32bb937155d85767bc7cae5aa2335e38518305e1ee056e4f62fb5b029c",
+        "png_sha256": "013f7259bd0f042bd0e5e70938694edf5729af8d01513168d535d8bd98904bd6"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left_right",
+      "sign_code": "CH:2.39",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-39.png",
+      "label": {
+        "en": "CH:2.39 — arrow_turn_left_right",
+        "de": "CH:2.39 — arrow_turn_left_right",
+        "fr": "CH:2.39 — arrow_turn_left_right",
+        "nl": "CH:2.39 — arrow_turn_left_right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-39",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.39.eps",
+        "source_member_sha256": "c2c68415338b644c7b65823b3535b0f17ae67514e23a5858e363687121580242",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "29f64f1f30f692377479a280c5d38d7b6e062f7d834ac9812eb1de78f82f9815",
+        "png_sha256": "8cddd5e6dc3a1bf94fbd089cc4ceb0cc5eb2e375a2ebb25affa54ea6921fdb62"
+      }
+    },
+    {
+      "class_id": "arrow_turn_right_through",
+      "sign_code": "CH:2.40",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-40.png",
+      "label": {
+        "en": "CH:2.40 — arrow_turn_right_through",
+        "de": "CH:2.40 — arrow_turn_right_through",
+        "fr": "CH:2.40 — arrow_turn_right_through",
+        "nl": "CH:2.40 — arrow_turn_right_through"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-40",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.40.eps",
+        "source_member_sha256": "47849651f2c768165eca9cf459659418be0dccf1d696c1909fcba8abaac39d92",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "db5dc31251107d1f3f394efc52a1c767c7c5aa485deefa0200a1e5b446142379",
+        "png_sha256": "52a49c8a808c14c0b0e5850c9447f569de0543e28ed2b81a587d352e5143901e"
+      }
+    },
+    {
+      "class_id": "arrow_turn_left_through",
+      "sign_code": "CH:2.41",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-41.png",
+      "label": {
+        "en": "CH:2.41 — arrow_turn_left_through",
+        "de": "CH:2.41 — arrow_turn_left_through",
+        "fr": "CH:2.41 — arrow_turn_left_through",
+        "nl": "CH:2.41 — arrow_turn_left_through"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-41",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.41.eps",
+        "source_member_sha256": "0fb6eefa5780e0acda7919cd731a9ae372b3d189b363f72f2928fcf867ebe900",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "09d3a9321df60dee20d9461e53181689032c6ec797fb24861350c7a3cd95e3a8",
+        "png_sha256": "cf531196cdee2b3cc98292912bd322ce8446aad333786c65e0e0de446fa6fa01"
+      }
+    },
+    {
+      "class_id": "roundabout",
+      "sign_code": "CH:2.41.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-41-1.png",
+      "label": {
+        "en": "CH:2.41.1 — roundabout",
+        "de": "CH:2.41.1 — roundabout",
+        "fr": "CH:2.41.1 — roundabout",
+        "nl": "CH:2.41.1 — roundabout"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-41-1",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.41.1.eps",
+        "source_member_sha256": "04d03e5ddf20e21957caacfd768223ec0136f98f5946783ac64b9d685437103d",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "ebbd161fee8c08ab2e5e4b36255dc858af321963ed5e25085be34d0c680a37d9",
+        "png_sha256": "d9771afe1291e87d89f7357e2be8e26bdb81bf01917d54645732c979022a11a2"
+      }
+    },
+    {
+      "class_id": "no_turn:right",
+      "sign_code": "CH:2.42",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-42.png",
+      "label": {
+        "en": "CH:2.42 — no_turn:right",
+        "de": "CH:2.42 — no_turn:right",
+        "fr": "CH:2.42 — no_turn:right",
+        "nl": "CH:2.42 — no_turn:right"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-42",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.42.eps",
+        "source_member_sha256": "934b839963b96384dc49e8b1996063753be9da008eac3ef49604380527d629fd",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "dd9a9f0410b33dc2845bc3052526ad4b856db9dc0e750f49890f935691aa1594",
+        "png_sha256": "43e2146248de529b14aca118338691ff0b03534f62c2ad0d62a8f86a90c9e0fa"
+      }
+    },
+    {
+      "class_id": "no_turn:left",
+      "sign_code": "CH:2.43",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-43.png",
+      "label": {
+        "en": "CH:2.43 — no_turn:left",
+        "de": "CH:2.43 — no_turn:left",
+        "fr": "CH:2.43 — no_turn:left",
+        "nl": "CH:2.43 — no_turn:left"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-43",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.43.eps",
+        "source_member_sha256": "57cc752b0eafcb8fde08e012b853fc59f2bf21f0edeadf99a1cac5366630412c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "9509fdcdf5a704330825eefdfee19999e398411ff3b9ba2ed50067c9babf6da1",
+        "png_sha256": "ad75dce35c038d2b6783113cc4280f68042f102cb08ffad7c2a5eb24c12b1b2f"
+      }
+    },
+    {
+      "class_id": "no_overtaking",
+      "sign_code": "CH:2.44",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-44.png",
+      "label": {
+        "en": "CH:2.44 — no_overtaking",
+        "de": "CH:2.44 — no_overtaking",
+        "fr": "CH:2.44 — no_overtaking",
+        "nl": "CH:2.44 — no_overtaking"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-44",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.44.eps",
+        "source_member_sha256": "9f91e1adbb9d2db1f6ef63900065d315d81706f710777d38d0f3e59dadd28da0",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "49d7ccb315814ed2913aa5b7bdf68e52747f8b13b9b0fea055aa9d6fcc680d49",
+        "png_sha256": "83e4757191e0af1c561b2f3b71d2dc47d883a1aaf9a24b6b46c1fb3e3c8a1ab8"
+      }
+    },
+    {
+      "class_id": "no_overtaking:hgv",
+      "sign_code": "CH:2.45",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-45.png",
+      "label": {
+        "en": "CH:2.45 — no_overtaking:hgv",
+        "de": "CH:2.45 — no_overtaking:hgv",
+        "fr": "CH:2.45 — no_overtaking:hgv",
+        "nl": "CH:2.45 — no_overtaking:hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-45",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.45.eps",
+        "source_member_sha256": "e7fd51bcd418c83fff7b55ceb240f2e9f1432fc46a76d25de9d88c091e1206b4",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "83c67480ffa5d8b8314a4ed69cd478ad6e4f7cc226877f577cc7807ff358c55e",
+        "png_sha256": "8d06e3c91c6896324b78e3a47c49ff74775fc451304bddf7b044967e0ee58e95"
+      }
+    },
+    {
+      "class_id": "no_u_turn",
+      "sign_code": "CH:2.46",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-46.png",
+      "label": {
+        "en": "CH:2.46 — no_u_turn",
+        "de": "CH:2.46 — no_u_turn",
+        "fr": "CH:2.46 — no_u_turn",
+        "nl": "CH:2.46 — no_u_turn"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-46",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.46.eps",
+        "source_member_sha256": "d43bd7130cb2be9f6c561cb140d8d8133f2dddc9d020ea129818f8e93d43275c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a60c03bb01f3923bb085b08ee2ebb89172f44fd1857470c7c0df7a5c482c958a",
+        "png_sha256": "5da14df5ba9c7da14acc52fa2aa0db007b4402024386bb6cd2f379bf0eeb2ab9"
+      }
+    },
+    {
+      "class_id": "min_distance",
+      "sign_code": "CH:2.47",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-47.png",
+      "label": {
+        "en": "CH:2.47 — min_distance",
+        "de": "CH:2.47 — min_distance",
+        "fr": "CH:2.47 — min_distance",
+        "nl": "CH:2.47 — min_distance"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-47",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.47.eps",
+        "source_member_sha256": "7df2bf9160b1a3bb91d33996b20b9271d868b238bed1e56f7d07632a92bf2430",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "0cca75fe61915f37eb772f1d52c61a68664009b8e62b092551fecfccd486e79a",
+        "png_sha256": "62cdab721339d7f7c4bdc9168cce96bef99b4b193c24e1a18fcd39f4660d0aa2"
+      }
+    },
+    {
+      "class_id": "chains",
+      "sign_code": "CH:2.48",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-48.png",
+      "label": {
+        "en": "CH:2.48 — chains",
+        "de": "CH:2.48 — chains",
+        "fr": "CH:2.48 — chains",
+        "nl": "CH:2.48 — chains"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-48",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.48.eps",
+        "source_member_sha256": "8a3d4762045cbdd8180c0a0bd5ce95e7207ef8e658b4e757424975f77cc5b802",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "2ed61fdb79b797ca31cb7584c057cc8ba47374cc4f9be6023f484fafd4bbdef7",
+        "png_sha256": "c62a8552c45af51270a3f3bc378fd6538098c04d9b13deaab62298fa4388a991"
+      }
+    },
+    {
+      "class_id": "no_stop",
+      "sign_code": "CH:2.49",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-49.png",
+      "label": {
+        "en": "CH:2.49 — no_stop",
+        "de": "CH:2.49 — no_stop",
+        "fr": "CH:2.49 — no_stop",
+        "nl": "CH:2.49 — no_stop"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-49",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.49.eps",
+        "source_member_sha256": "97ba4ebc339cc572cd8bdf133d6da13f7966f63b9c72858bf0cb853cb342291a",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "7a096cc050c6343606491a2a2d3fe09923b2793086c8aae20251b60d7589b38e",
+        "png_sha256": "d2046fc26bd4c77beac8e67861f6d6a1a6e954dab90b39892210f8d7bc674011"
+      }
+    },
+    {
+      "class_id": "no_parking",
+      "sign_code": "CH:2.50",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-50.png",
+      "label": {
+        "en": "CH:2.50 — no_parking",
+        "de": "CH:2.50 — no_parking",
+        "fr": "CH:2.50 — no_parking",
+        "nl": "CH:2.50 — no_parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-50",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.50.eps",
+        "source_member_sha256": "66598df4e10fbb894f396049d240c8f8f0335dd20c605477490bdf29a7835012",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "1d572d242d83a24421e6a3c071eeddda7e08c18dd11cfc83e03d49dd73f2ffd1",
+        "png_sha256": "42dc1d31737d05c013e6f9b396dc884bac1c777139e23662365f74307c21664c"
+      }
+    },
+    {
+      "class_id": "customs",
+      "sign_code": "CH:2.51",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-51.png",
+      "label": {
+        "en": "CH:2.51 — customs",
+        "de": "CH:2.51 — customs",
+        "fr": "CH:2.51 — customs",
+        "nl": "CH:2.51 — customs"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-51",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.51 (D+F).eps",
+        "source_member_sha256": "28ee1fec7ca5ddc954763ddc992b8bd0fbcad2e1c9b29ff00261ab288522f366",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "f7992c8e998c21e61fe7439bb1586e4bdbdf012bf6c9a6c6e43c4387ddc28158",
+        "png_sha256": "e729f3efbd22b57fbb07d17c29a5b5db138d44e9328f78e8ec765fd718db31dc"
+      }
+    },
+    {
+      "class_id": "maxspeed:end",
+      "sign_code": "CH:2.53",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-53.png",
+      "label": {
+        "en": "CH:2.53 — maxspeed:end",
+        "de": "CH:2.53 — maxspeed:end",
+        "fr": "CH:2.53 — maxspeed:end",
+        "nl": "CH:2.53 — maxspeed:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-53",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.53.eps",
+        "source_member_sha256": "2f298cce2dbfbd78cd3b77e7f106c4fd542cd7628affc3386d84c3c55ad9bcb5",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "adb1d51ce6d241033fd5171e75efebd479db25c70cf46d9395f232ca521daed4",
+        "png_sha256": "264193f1924455381e14c6e520d36c861c1f923481165e9e35cfcb9ae087bf2d"
+      }
+    },
+    {
+      "class_id": "min_speed:end",
+      "sign_code": "CH:2.54",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-54.png",
+      "label": {
+        "en": "CH:2.54 — min_speed:end",
+        "de": "CH:2.54 — min_speed:end",
+        "fr": "CH:2.54 — min_speed:end",
+        "nl": "CH:2.54 — min_speed:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-54",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.54.eps",
+        "source_member_sha256": "006e0ea3b0f9be986558ad3d7ec2b7b5f0e5649b93504d5419b40e55ed0572e8",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "eef9cceb776346e910b6afcd6e9ef75f18583c0da0e61df09dee73ba9a95c7b8",
+        "png_sha256": "d9ac9ef04134e4f1f7aa1df79d22ff25d5b8844e9af614e0ac5282c58a34e02a"
+      }
+    },
+    {
+      "class_id": "no_overtaking:end",
+      "sign_code": "CH:2.55",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-55.png",
+      "label": {
+        "en": "CH:2.55 — no_overtaking:end",
+        "de": "CH:2.55 — no_overtaking:end",
+        "fr": "CH:2.55 — no_overtaking:end",
+        "nl": "CH:2.55 — no_overtaking:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-55",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.55.eps",
+        "source_member_sha256": "eaf5fd7b353e5d7e75767f89f38fbff04114c85cd71b5433a62291de74dc6dee",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "57fb065a822a2c890f358a9738a63092c13629249e9a9b4ef585cfc655a75902",
+        "png_sha256": "e533566e8248462d60f0b038e0fc7e6e85d1f942107f8fb88314847591baef94"
+      }
+    },
+    {
+      "class_id": "no_overtaking:end:hgv",
+      "sign_code": "CH:2.56",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-56.png",
+      "label": {
+        "en": "CH:2.56 — no_overtaking:end:hgv",
+        "de": "CH:2.56 — no_overtaking:end:hgv",
+        "fr": "CH:2.56 — no_overtaking:end:hgv",
+        "nl": "CH:2.56 — no_overtaking:end:hgv"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-56",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.56.eps",
+        "source_member_sha256": "7f3cbfe4b93c687593b7b03644faecbd611feec7a3f05c8e18c12949377de32f",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "f15ae0b20c0ae4f7f636a7dfb88fb31782d24687c4df0a6e7b0f3befdefc07bc",
+        "png_sha256": "39d8fb6af18ec58c397731a8e432b146273433c19b110abcee9ab2d33379a625"
+      }
+    },
+    {
+      "class_id": "chains:end",
+      "sign_code": "CH:2.57",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-57.png",
+      "label": {
+        "en": "CH:2.57 — chains:end",
+        "de": "CH:2.57 — chains:end",
+        "fr": "CH:2.57 — chains:end",
+        "nl": "CH:2.57 — chains:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-57",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.57.eps",
+        "source_member_sha256": "b4039a8a240b7fd26cbafc8487daea5b0cc9398305d702c91c5157cfa0a654a6",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "cb7944c0970b589b65913633560f9048aa2dfb0898676ad9094f9d01cfa0ddd8",
+        "png_sha256": "d33e94d6c21488b0e70cf315589086fe21f70b20a6d36912ecbb3dac9095ed04"
+      }
+    },
+    {
+      "class_id": "no:end",
+      "sign_code": "CH:2.58",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-58.png",
+      "label": {
+        "en": "CH:2.58 — no:end",
+        "de": "CH:2.58 — no:end",
+        "fr": "CH:2.58 — no:end",
+        "nl": "CH:2.58 — no:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-58",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.58.eps",
+        "source_member_sha256": "91de55a7ff7433063ef5a2ce7f4b03e3730f289f6b525eafd9c9900eb6556586",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "d65ab997c885a8b8d32d07e670360728ff2a9b6742a272c4103469947dd28ac3",
+        "png_sha256": "6c4369473c4989c902d01654f48b0c84ff14b94a0f1dde15e25293593476df24"
+      }
+    },
+    {
+      "class_id": "zone:30",
+      "sign_code": "CH:2.59.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-1.png",
+      "label": {
+        "en": "CH:2.59.1 — zone:30",
+        "de": "CH:2.59.1 — zone:30",
+        "fr": "CH:2.59.1 — zone:30",
+        "nl": "CH:2.59.1 — zone:30"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-1",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.1 (D+F).eps",
+        "source_member_sha256": "f5177b864f0c82254a1183f4016e009e36ff3ab3cd3fe97ea8011d99025b0dd0",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "666498297f69cb15adfd7de571d8451d06b292a3c1bb4a5034d33808314b2910",
+        "png_sha256": "6f40c226da9a49659a72153a341f0d46b810b4ebfae0fbd86509027517863b0f"
+      }
+    },
+    {
+      "class_id": "zone:no_parking:end",
+      "sign_code": "CH:2.59.2e",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-2.png",
+      "label": {
+        "en": "CH:2.59.2e — zone:no_parking:end",
+        "de": "CH:2.59.2e — zone:no_parking:end",
+        "fr": "CH:2.59.2e — zone:no_parking:end",
+        "nl": "CH:2.59.2e — zone:no_parking:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-2",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.2 (D+F).eps",
+        "source_member_sha256": "0d079124d546a2e59e67ad7c22a6c595092a493fd80b4c128000e00c6b5a4a84",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "76513ceeaf57d4ea46efea67298325bc6db6608f086434d6a77d05caf7835af9",
+        "png_sha256": "bb7376c729037f8b2bc32117239d48e179fa561a09ac2ed67ef0ff344fc5f4db"
+      }
+    },
+    {
+      "class_id": "zone:pedestrian",
+      "sign_code": "CH:2.59.3b",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-3.png",
+      "label": {
+        "en": "CH:2.59.3b — zone:pedestrian",
+        "de": "CH:2.59.3b — zone:pedestrian",
+        "fr": "CH:2.59.3b — zone:pedestrian",
+        "nl": "CH:2.59.3b — zone:pedestrian"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-3",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.3 (D+F).eps",
+        "source_member_sha256": "dbca5224630f87554fd1bd8e19e076dce366275214f327bc6d4617b1170f0734",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "1536646cd32b93db1f98cf18cf317fc2c31439112a9957f7d70c481a767e962b",
+        "png_sha256": "a5b7a78a88234e32bd850bf574b04727a5fd6b3c0c9fca898e64eb00a93119cc"
+      }
+    },
+    {
+      "class_id": "zone:pedestrian:end",
+      "sign_code": "CH:2.59.4b",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-4.png",
+      "label": {
+        "en": "CH:2.59.4b — zone:pedestrian:end",
+        "de": "CH:2.59.4b — zone:pedestrian:end",
+        "fr": "CH:2.59.4b — zone:pedestrian:end",
+        "nl": "CH:2.59.4b — zone:pedestrian:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-4",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.4 (D+F).eps",
+        "source_member_sha256": "2f0ae4d18fff136a086d6d5e6ef70117deb9ec07767e32b83560a3f7f7a47220",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "b1f697efa2285000877c2869a54f3297996e918cbd98ef8abbac68fd0bdc92dd",
+        "png_sha256": "ad3ed90bc7772e256658a033d20c42b524fae67dc6a8f37342249592f604ee54"
+      }
+    },
+    {
+      "class_id": "zone:calm",
+      "sign_code": "CH:2.59.5a",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-5.png",
+      "label": {
+        "en": "CH:2.59.5a — zone:calm",
+        "de": "CH:2.59.5a — zone:calm",
+        "fr": "CH:2.59.5a — zone:calm",
+        "nl": "CH:2.59.5a — zone:calm"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-5",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.5 (D+F).eps",
+        "source_member_sha256": "4946fb5dfd7819b63b6b1272a32b5b120c122a02f0db17f470020e8466b62cdc",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "48194447177e1cb5bcad4225a44a166bd4d865cb5d540229a04a026260172366",
+        "png_sha256": "35c6eb7c678af7d6d579b74b3b6ea86882c4be3d1eec3dd436e13b9d83926519"
+      }
+    },
+    {
+      "class_id": "zone:calm:end",
+      "sign_code": "CH:2.59.6a",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-59-6.png",
+      "label": {
+        "en": "CH:2.59.6a — zone:calm:end",
+        "de": "CH:2.59.6a — zone:calm:end",
+        "fr": "CH:2.59.6a — zone:calm:end",
+        "nl": "CH:2.59.6a — zone:calm:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-59-6",
+      "source_provenance": {
+        "source_archive": "2.30-2.59.6.zip",
+        "source_member": "2.59.6 (D+F).eps",
+        "source_member_sha256": "a833b06aae99d81ecb72ca094e2dd2eab6b0f495d58fd4bdfea82e482a6da01c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "cfc772904dd00ad91fa9ff19675aa0eb0c3a92a04aacfa4b93ed7cc81b887def",
+        "png_sha256": "8a36cccc059e9cfddeedf4af097789b7c6d54b53bf55b555d115bd34751d5369"
+      }
+    },
+    {
+      "class_id": "bicycle:start",
+      "sign_code": "CH:2.60",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-60.png",
+      "label": {
+        "en": "CH:2.60 — bicycle:start",
+        "de": "CH:2.60 — bicycle:start",
+        "fr": "CH:2.60 — bicycle:start",
+        "nl": "CH:2.60 — bicycle:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-60",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.60.eps",
+        "source_member_sha256": "bfc9d876c8d4c3886dbeeca330063e5ebc334e552ceb280ffe6a1107dd91acb5",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "83dac65d8ff8a0a9d067749b60155807e65610d65f88acc1cf22d6aee9fea915",
+        "png_sha256": "549d4e5dacccdf4938cc0f46f3bc9794bae854f36843450aa01c35e63cd298f4"
+      }
+    },
+    {
+      "class_id": "bicycle:end",
+      "sign_code": "CH:2.60.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-60-1.png",
+      "label": {
+        "en": "CH:2.60.1 — bicycle:end",
+        "de": "CH:2.60.1 — bicycle:end",
+        "fr": "CH:2.60.1 — bicycle:end",
+        "nl": "CH:2.60.1 — bicycle:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-60-1",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.60.1.eps",
+        "source_member_sha256": "8ef1f0cf3dcdc8ead97c7e27b096c78ae761fcb09e606b696e36a3ba12125451",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "455cfef64bd0ffe846e5e5328016a309846bf5824496de9a7721546801d96118",
+        "png_sha256": "d78ba865552262dbf150d29047e9ab9b26fc32c88f49953981829afbfe21e99a"
+      }
+    },
+    {
+      "class_id": "pedestrian:start",
+      "sign_code": "CH:2.61",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-61.png",
+      "label": {
+        "en": "CH:2.61 — pedestrian:start",
+        "de": "CH:2.61 — pedestrian:start",
+        "fr": "CH:2.61 — pedestrian:start",
+        "nl": "CH:2.61 — pedestrian:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-61",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.61.eps",
+        "source_member_sha256": "939cfa87fca5924720c221ec496f1206108e34800cb52c81eaaf986097277447",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "6659d694b1024d9c9037635f451fb24dc886320059facd5197d98e32e507b02f",
+        "png_sha256": "c2e4d57ed32d819831d245d3ca496752137f471547b1b6fe738bc0435c43d6de"
+      }
+    },
+    {
+      "class_id": "horse:start",
+      "sign_code": "CH:2.62",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-62.png",
+      "label": {
+        "en": "CH:2.62 — horse:start",
+        "de": "CH:2.62 — horse:start",
+        "fr": "CH:2.62 — horse:start",
+        "nl": "CH:2.62 — horse:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-62",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.62.eps",
+        "source_member_sha256": "8a3a96e5530911fcdfe4730a6d774fb4a3f3058b84e5d59c7deb464d2a9908bd",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "3b736bf9f3f70a94aaea05e9cbb8a397c97cf6bc4a6c31f6233d8e464ecf2b21",
+        "png_sha256": "27a2bbd56a03faa3020b64a475194ca91625ebcd057146741567b07a088bf6c7"
+      }
+    },
+    {
+      "class_id": "pedestrian_bicycle:designated",
+      "sign_code": "CH:2.63",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-63.png",
+      "label": {
+        "en": "CH:2.63 — pedestrian_bicycle:designated",
+        "de": "CH:2.63 — pedestrian_bicycle:designated",
+        "fr": "CH:2.63 — pedestrian_bicycle:designated",
+        "nl": "CH:2.63 — pedestrian_bicycle:designated"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-63",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.63.eps",
+        "source_member_sha256": "63973aa5a87aeae879c9644a1b6a0a7e8b38962a3f879a901dcca80d125f2316",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c6d83bf63f2cc8bdf79c703fff648b1d8f77f06e3a060ab2a66650796c868456",
+        "png_sha256": "d9966ea46aecf9f59aa826563f0478525cbffd94f725e2661c42c9d410dcaaa3"
+      }
+    },
+    {
+      "class_id": "pedestrian_bicycle:start",
+      "sign_code": "CH:2.63.1",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-63-1.png",
+      "label": {
+        "en": "CH:2.63.1 — pedestrian_bicycle:start",
+        "de": "CH:2.63.1 — pedestrian_bicycle:start",
+        "fr": "CH:2.63.1 — pedestrian_bicycle:start",
+        "nl": "CH:2.63.1 — pedestrian_bicycle:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-63-1",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.63.1.eps",
+        "source_member_sha256": "cdc6446a48c0926441594a559cc8018e388645dbe4ab79ef5155e2ead911737c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "8164c2688b504353b7c557308fb4eadbfebf975875e1676ff0338fd863055b7b",
+        "png_sha256": "5266502a4e174ff2dcfe97e90b8216e8fb4c1ac7e423aa3dcff79b96ff127e0f"
+      }
+    },
+    {
+      "class_id": "bus:start",
+      "sign_code": "CH:2.64",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-2-64.png",
+      "label": {
+        "en": "CH:2.64 — bus:start",
+        "de": "CH:2.64 — bus:start",
+        "fr": "CH:2.64 — bus:start",
+        "nl": "CH:2.64 — bus:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-2-64",
+      "source_provenance": {
+        "source_archive": "2.60-2.65.zip",
+        "source_member": "2.64.eps",
+        "source_member_sha256": "270d6cee4d344d51e2863b357ef32f02f1443ed4a144c8ed32eeb840f89d3de0",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c6c2fc6ef4f0c48a87bc11e53359d375299a48282c84c0246736137d84432cf0",
+        "png_sha256": "747bc0a4d2d552fca282ee67edac2ce1c0ab64f00769ba92102929eafc48e905"
+      }
+    },
+    {
+      "class_id": "stop",
+      "sign_code": "CH:3.01",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-01.png",
+      "label": {
+        "en": "CH:3.01 — stop",
+        "de": "CH:3.01 — stop",
+        "fr": "CH:3.01 — stop",
+        "nl": "CH:3.01 — stop"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-01",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.01.eps",
+        "source_member_sha256": "8755029c05de09db59a18188332cc043ea06a80bfb4fab8af3c433fef4371005",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "3b4ad010906ee1e029e2c1ae0926270084ba36e4f37f7d94e74a0c8980c677ec",
+        "png_sha256": "87a7f19a863b960d610915a4cd07bbff95f6eb0f299166547ac681c532ce9d3d"
+      }
+    },
+    {
+      "class_id": "give_way",
+      "sign_code": "CH:3.02",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-02.png",
+      "label": {
+        "en": "CH:3.02 — give_way",
+        "de": "CH:3.02 — give_way",
+        "fr": "CH:3.02 — give_way",
+        "nl": "CH:3.02 — give_way"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-02",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.02.eps",
+        "source_member_sha256": "a62a30b0cd18567d2711e68b7b857b2661043ab6dcbe9bf31fd5ccc8a3f51142",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "214e4ff27f68965316ff0ee2ff61cfa6dc72d6edbc9732e7f728b451a3e4885f",
+        "png_sha256": "05f64d9fab8bca53a0593fb8e414189995dce3b9d718fe521152a32d2ae0131f"
+      }
+    },
+    {
+      "class_id": "priority:start",
+      "sign_code": "CH:3.03",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-03.png",
+      "label": {
+        "en": "CH:3.03 — priority:start",
+        "de": "CH:3.03 — priority:start",
+        "fr": "CH:3.03 — priority:start",
+        "nl": "CH:3.03 — priority:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-03",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.03.eps",
+        "source_member_sha256": "22febe6a947bb1bade100655b3c9a2767b76e2ebf6f92a70077c9d6a187d9d88",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "4014d09a66f4dd0a34a16f31156d55571dc6edfc9e0ebee6a6d12fb55defd826",
+        "png_sha256": "ec47336ba13f05ec54397f87715331967037e534e8ed5c2aae2d67bdf8aa129e"
+      }
+    },
+    {
+      "class_id": "priority:end",
+      "sign_code": "CH:3.04",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-04.png",
+      "label": {
+        "en": "CH:3.04 — priority:end",
+        "de": "CH:3.04 — priority:end",
+        "fr": "CH:3.04 — priority:end",
+        "nl": "CH:3.04 — priority:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-04",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.04.eps",
+        "source_member_sha256": "f84f620871c434e5a3cfb38e49d046c9820666581e2384e4e086801955a3997e",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "71d8314adca6a1573173252f1e1e40a9c12c54c51b1388587c5e2cb95bfc29a8",
+        "png_sha256": "4ca2fda84c402c793cb7a22842967600d8d2e021b033f3ce9da4d7baf2373627"
+      }
+    },
+    {
+      "class_id": "hazard:intersection",
+      "sign_code": "CH:3.05",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-05.png",
+      "label": {
+        "en": "CH:3.05 — hazard:intersection",
+        "de": "CH:3.05 — hazard:intersection",
+        "fr": "CH:3.05 — hazard:intersection",
+        "nl": "CH:3.05 — hazard:intersection"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-05",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.05.eps",
+        "source_member_sha256": "bdd6589aac55d75c8610f343dc20e90135c37e266e3355c2ea735b7be6232345",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "4e83675dc6bf98de39445e25cc9061714c53a03eec5938747f27c2cc72e4b43a",
+        "png_sha256": "bb304dd8f6a1445276c104a3e6e4f4a2b828a9d0f76d3ed58e4e5fabcb3f7635"
+      }
+    },
+    {
+      "class_id": "hazard:crossing",
+      "sign_code": "CH:3.06",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-06.png",
+      "label": {
+        "en": "CH:3.06 — hazard:crossing",
+        "de": "CH:3.06 — hazard:crossing",
+        "fr": "CH:3.06 — hazard:crossing",
+        "nl": "CH:3.06 — hazard:crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-06",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.06.eps",
+        "source_member_sha256": "a1dae21e9b1cf4bc37ff1bb8e80facc2ccbfb2f1f45bf9d4d00fb850f541f4ce",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "40d3a92959b613e8fd62eccef1ecf808b2bf28be1eeffd5443adaf4f308c691b",
+        "png_sha256": "42a5f282c6ff68c75188a6105544b296c6d7178e3f9080f95f4aeba24e7db0e6"
+      }
+    },
+    {
+      "class_id": "priority:backward",
+      "sign_code": "CH:3.09",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-09.png",
+      "label": {
+        "en": "CH:3.09 — priority:backward",
+        "de": "CH:3.09 — priority:backward",
+        "fr": "CH:3.09 — priority:backward",
+        "nl": "CH:3.09 — priority:backward"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-09",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.09.eps",
+        "source_member_sha256": "ca09c094fa0484db335b855ed7ffeb1747f12bd37e643a3e8fe061616d13b5c8",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "492929e138d6e00e9ea7636020499ce07c5c799c66c218798b3effe9635b68bf",
+        "png_sha256": "4f2daed15369e6f5bbf531a1655c91f31681346cbe23090623e22d3e33ddd045"
+      }
+    },
+    {
+      "class_id": "priority:forward",
+      "sign_code": "CH:3.10",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-3-10.png",
+      "label": {
+        "en": "CH:3.10 — priority:forward",
+        "de": "CH:3.10 — priority:forward",
+        "fr": "CH:3.10 — priority:forward",
+        "nl": "CH:3.10 — priority:forward"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-3-10",
+      "source_provenance": {
+        "source_archive": "3.01-3.24.zip",
+        "source_member": "3.10.eps",
+        "source_member_sha256": "791629085b825e32784ea943036f66b73fdaa928f3abf254ea12aaff658b282c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "b94af3bd29c35925bd63a581470c5108540aab10e8cde8b65db18ab8fad1f340",
+        "png_sha256": "b9fbbf706d6caf50b2fe81e02c8bd6f836ba83411d008e21e095c6a9265adb7d"
+      }
+    },
+    {
+      "class_id": "motorway:start",
+      "sign_code": "CH:4.01",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-01.png",
+      "label": {
+        "en": "CH:4.01 — motorway:start",
+        "de": "CH:4.01 — motorway:start",
+        "fr": "CH:4.01 — motorway:start",
+        "nl": "CH:4.01 — motorway:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-01",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.01.eps",
+        "source_member_sha256": "45b359f9107524b53d206f8aaf6973a8c20ceb9b02141b70ed6ea2bf80f8178c",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "726e21ead55e6629a92d8d8c43bc285d615783d5a524a9b8d089802e5a6f16bb",
+        "png_sha256": "cb459aaf60d79e702a2232a6f713d50871c70ec39683fb60f2ebd03a0cd42a1f"
+      }
+    },
+    {
+      "class_id": "motorway:end",
+      "sign_code": "CH:4.02",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-02.png",
+      "label": {
+        "en": "CH:4.02 — motorway:end",
+        "de": "CH:4.02 — motorway:end",
+        "fr": "CH:4.02 — motorway:end",
+        "nl": "CH:4.02 — motorway:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-02",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.02.eps",
+        "source_member_sha256": "5043aee2a96fe80038748db13a72c876ca3f7f1a6a2f9de3faa688fe59fa8b77",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a2835423aa43ee509c6b3ff945e7e590f8fb9d9eecc9e5560ec08bde528b9e06",
+        "png_sha256": "6da940cbd388e13d71393fc4cbb52d8ec79f290c1d5e1690de1ed17c22707572"
+      }
+    },
+    {
+      "class_id": "trunk:start",
+      "sign_code": "CH:4.03",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-03.png",
+      "label": {
+        "en": "CH:4.03 — trunk:start",
+        "de": "CH:4.03 — trunk:start",
+        "fr": "CH:4.03 — trunk:start",
+        "nl": "CH:4.03 — trunk:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-03",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.03.eps",
+        "source_member_sha256": "311b4892e3717b45727d9d20d418baddc47db8c3cdeeb4e4f1159e2b4608e4a7",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c58ee910289d010e9ff58afe61739f0814c6e30d91c639ab4e1772630b489d30",
+        "png_sha256": "0b92f70f95b5c24dfaa6ec5a9008b9453246b4be32320a4b5fbefe1a0dfc824e"
+      }
+    },
+    {
+      "class_id": "trunk:end",
+      "sign_code": "CH:4.04",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-04.png",
+      "label": {
+        "en": "CH:4.04 — trunk:end",
+        "de": "CH:4.04 — trunk:end",
+        "fr": "CH:4.04 — trunk:end",
+        "nl": "CH:4.04 — trunk:end"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-04",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.04.eps",
+        "source_member_sha256": "08477c3a5bbe361463f06a4f7c7337505be935a1354eacaab8940172dc2740bc",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c916353b6a6e652968089899492fe9b709b536217c140988d35f17ad1cd55082",
+        "png_sha256": "7c50f13f0ff6d0103b34c7cdc91e52f237e35967b36aa47560b5b170f354e2ca"
+      }
+    },
+    {
+      "class_id": "tunnel:start",
+      "sign_code": "CH:4.07",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-07.png",
+      "label": {
+        "en": "CH:4.07 — tunnel:start",
+        "de": "CH:4.07 — tunnel:start",
+        "fr": "CH:4.07 — tunnel:start",
+        "nl": "CH:4.07 — tunnel:start"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-07",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.07.eps",
+        "source_member_sha256": "6ee8eb24d287c14c7088ac16661feac471fc2b96df0268668e06c31cd5a3eb77",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "c2f5fbe4fb47dee116876a0ec93d92afe0c44b6bbac89b5e3d8a971e9d6eb7b6",
+        "png_sha256": "aa2217a4e520d79b9ec5e444e94c95dc04b4817389a1421038e0b379ddc16274"
+      }
+    },
+    {
+      "class_id": "oneway",
+      "sign_code": "CH:4.08",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-08.png",
+      "label": {
+        "en": "CH:4.08 — oneway",
+        "de": "CH:4.08 — oneway",
+        "fr": "CH:4.08 — oneway",
+        "nl": "CH:4.08 — oneway"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-08",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.08.eps",
+        "source_member_sha256": "25b1ee19839c8cd48511ba3fa314d0b3ffea0496397ff5186f10da947f43ebd8",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "6b2e6ea1a7500b3c20b15cad426745185b897936c5733d9ed2ee86f60eec5421",
+        "png_sha256": "c605f09daba51775c7a915fcd65f171dcd58493a57c2d08cd194fea006d8897b"
+      }
+    },
+    {
+      "class_id": "no_exit",
+      "sign_code": "CH:4.09",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-09.png",
+      "label": {
+        "en": "CH:4.09 — no_exit",
+        "de": "CH:4.09 — no_exit",
+        "fr": "CH:4.09 — no_exit",
+        "nl": "CH:4.09 — no_exit"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-09",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.09.eps",
+        "source_member_sha256": "d7dc00c19bc028a2421c69f9bb917069b0810a3af96f39ccb12cd66fce6e0fe3",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "9ad005b82cf0f32b27b7e1bb0272a86d79a6fb1b6c2c6f97bd66222ca963545e",
+        "png_sha256": "28995e6e7a8dd226ac84619963231f8af8496f748ccc756d9da5dd01e7c91c0a"
+      }
+    },
+    {
+      "class_id": "no_exit:car",
+      "sign_code": "CH:4.10",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-10.png",
+      "label": {
+        "en": "CH:4.10 — no_exit:car",
+        "de": "CH:4.10 — no_exit:car",
+        "fr": "CH:4.10 — no_exit:car",
+        "nl": "CH:4.10 — no_exit:car"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-10",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.10.eps",
+        "source_member_sha256": "584106fe817dd3c828b46c07468124008504ccfcfcb5e3092fcf7077eb9e39f9",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "be7ce7142ad8726ee277750a1eafe89731fed8368dd026b03fd25c5e660384b6",
+        "png_sha256": "e7b39b48bec821183ee9106fce1b5950255d57846419b784b6bcf5785ad7bfae"
+      }
+    },
+    {
+      "class_id": "pedestrian_crossing",
+      "sign_code": "CH:4.11",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-11.png",
+      "label": {
+        "en": "CH:4.11 — pedestrian_crossing",
+        "de": "CH:4.11 — pedestrian_crossing",
+        "fr": "CH:4.11 — pedestrian_crossing",
+        "nl": "CH:4.11 — pedestrian_crossing"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-11",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.11.eps",
+        "source_member_sha256": "2606a59ae346a03c38ab6260993af651514061cb8ec78c0d60234b9dbdca3c3b",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "fdbcbc68130ba37d1e380377e19e511ed31aa93f802f2cdd896f23119ca8cccd",
+        "png_sha256": "eee6de38bc62f3fd8a961ef7b46f91bf286c0d4bc6d55a74ad824fb5c7fb8c0a"
+      }
+    },
+    {
+      "class_id": "pedestrian:underpass",
+      "sign_code": "CH:4.12",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-12.png",
+      "label": {
+        "en": "CH:4.12 — pedestrian:underpass",
+        "de": "CH:4.12 — pedestrian:underpass",
+        "fr": "CH:4.12 — pedestrian:underpass",
+        "nl": "CH:4.12 — pedestrian:underpass"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-12",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.12.eps",
+        "source_member_sha256": "13f79721b9199af876308ccd14673458304ec3ad98d06817eab9b854e1326dda",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "bdff5d093b3f78df1e3371812da8f16f70c0cd0117bade2eb38d20caf6de346c",
+        "png_sha256": "00868aacc00e4c9c2ac9e6fd63ef6b1c20eb5eb2aea219ce9367440e3d59caad"
+      }
+    },
+    {
+      "class_id": "pedestrian:overpass",
+      "sign_code": "CH:4.13",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-13.png",
+      "label": {
+        "en": "CH:4.13 — pedestrian:overpass",
+        "de": "CH:4.13 — pedestrian:overpass",
+        "fr": "CH:4.13 — pedestrian:overpass",
+        "nl": "CH:4.13 — pedestrian:overpass"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-13",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.13.eps",
+        "source_member_sha256": "7b187400562d5ee541325dde5fd8b8af2e958c425d3277ef5d75c8fa31d07b3b",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "a737661b2ac27f57e9f24c83a23a7c89f6c8be012f840edbecc0e1405b632833",
+        "png_sha256": "21eb84fcf3ca71e47f1aee47e37be47cf0dbe946baf9abad0657425d7fe7e9e4"
+      }
+    },
+    {
+      "class_id": "parking",
+      "sign_code": "CH:4.17",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-17.png",
+      "label": {
+        "en": "CH:4.17 — parking",
+        "de": "CH:4.17 — parking",
+        "fr": "CH:4.17 — parking",
+        "nl": "CH:4.17 — parking"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-17",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.17.eps",
+        "source_member_sha256": "3fdd315b4e9e416375bc869b495c765fe0961780274a27f7e85f3282bc4a6f31",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "192eecc4070d670964141d5501051617712549324aef4f547c35701a2719b993",
+        "png_sha256": "f7ae8c1602d3bf7ec45ce40487c8ccac488138345d4bd768eadee233a77ef27f"
+      }
+    },
+    {
+      "class_id": "parking:disc",
+      "sign_code": "CH:4.18",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-18.png",
+      "label": {
+        "en": "CH:4.18 — parking:disc",
+        "de": "CH:4.18 — parking:disc",
+        "fr": "CH:4.18 — parking:disc",
+        "nl": "CH:4.18 — parking:disc"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-18",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.18.eps",
+        "source_member_sha256": "46dae52a495de52996a80c4d91702be6bc05ef88d85261c73b345488205f0331",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "3c250b8c0727fa07192b2f9394f6c1e3f6c003b278a8c4f11f5ebd43242c78af",
+        "png_sha256": "83cc7560725d4b11deea873472b0c29dc97c45a59c5c087afedbac2b55587769"
+      }
+    },
+    {
+      "class_id": "parking:meter",
+      "sign_code": "CH:4.20",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-20.png",
+      "label": {
+        "en": "CH:4.20 — parking:meter",
+        "de": "CH:4.20 — parking:meter",
+        "fr": "CH:4.20 — parking:meter",
+        "nl": "CH:4.20 — parking:meter"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-20",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.20.eps",
+        "source_member_sha256": "79594e29860efe01db630bd706828da6ba89743ec7609fd02bad9572237609e2",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "d185af660b3c11314af5cd1e6c5a0d6c4f95e68e55df4bee0ae7fe744d5b8f91",
+        "png_sha256": "40db43eccbcaf73ae34aedb8c4a2741bfa4ac72f6473f4fd4819966b353caa85"
+      }
+    },
+    {
+      "class_id": "parking:covered",
+      "sign_code": "CH:4.21",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-21.png",
+      "label": {
+        "en": "CH:4.21 — parking:covered",
+        "de": "CH:4.21 — parking:covered",
+        "fr": "CH:4.21 — parking:covered",
+        "nl": "CH:4.21 — parking:covered"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-21",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.21.eps",
+        "source_member_sha256": "bd285e842872b2cf6d915b55c4270e05e0124db9d4443ecc5810e7cfcd257ab6",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "787c8bf36332300f65addb870b62968ed84f1cc883a1340ba3ba8f57bce7bdc9",
+        "png_sha256": "123bfd94c8d2fb3fbcbe8d8a8b76ec16b0b9df6042af32a807e9f345cb8437a5"
+      }
+    },
+    {
+      "class_id": "escape_lane",
+      "sign_code": "CH:4.24",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-24.png",
+      "label": {
+        "en": "CH:4.24 — escape_lane",
+        "de": "CH:4.24 — escape_lane",
+        "fr": "CH:4.24 — escape_lane",
+        "nl": "CH:4.24 — escape_lane"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-24",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.24.eps",
+        "source_member_sha256": "c0dd40a091cbf1e2422f94cfa2d1dc23bfc61799855597874808fe50d5b51e78",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "de42b9fd0f31093287c3caf28ff33e8748681aae779208061035c3f86650de05",
+        "png_sha256": "383573aad824f83ca708a66cde183b283cb3cb5e46f4aeaa1c8f728608e829ec"
+      }
+    },
+    {
+      "class_id": "parking:park_ride",
+      "sign_code": "CH:4.25",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-25.png",
+      "label": {
+        "en": "CH:4.25 — parking:park_ride",
+        "de": "CH:4.25 — parking:park_ride",
+        "fr": "CH:4.25 — parking:park_ride",
+        "nl": "CH:4.25 — parking:park_ride"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-25",
+      "source_provenance": {
+        "source_archive": "4.01-4.25.zip",
+        "source_member": "Verhaltenshinweise (4.01-4.25)/4.25.eps",
+        "source_member_sha256": "d279cd1afb49bb4cb1b2ced614ef259281df34d4d4097a131b8640a0b433b8f0",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "0e89b080cee0e25ec8f01a354b5b39a54e5fca1473e8959d140c8c475f898ee2",
+        "png_sha256": "37f940cf954ed34e2b5a630096c9ead6559a6fb8767ee75a1a27b58bd9b3fb9a"
+      }
+    },
+    {
+      "class_id": "exit",
+      "sign_code": "CH:4.63",
+      "image_path": "tsr/sign-pictograms/national/CH/png/ch-4-63.png",
+      "label": {
+        "en": "CH:4.63 — exit",
+        "de": "CH:4.63 — exit",
+        "fr": "CH:4.63 — exit",
+        "nl": "CH:4.63 — exit"
+      },
+      "display_eligible": true,
+      "artwork_id": "ch-4-63",
+      "source_provenance": {
+        "source_archive": "4.60-4.74.2.zip",
+        "source_member": "4.63 (D).eps",
+        "source_member_sha256": "2413b3e7ef96c20dbd267a59bee3dc19ab53e46c974aadf80e6fd25a0f04a749",
+        "license_status": "source_preparation_only_redistribution_review_pending",
+        "original_sha256": "339ffad57e0e38cb80d6d9ef59e2b911b9f1e6fc060b6ab8ee0ea931c6a81a0b",
+        "png_sha256": "fb3de557cab9a276229487244fb853a297bf6c93bb966dca341cca43a11e7fa3"
+      }
+    }
+  ],
+  "policy": {
+    "display_only": true,
+    "numeric_speed_signs_are_schematic": true,
+    "validated_passage_required_for_speed_context": true
+  },
+  "provenance": {
+    "national_artwork_manifest": "shared/tsr/sign-pictograms/national/CH/manifest.json",
+    "national_selection": "shared/tsr/sign-pictograms/national/CH/selection.json",
+    "classifier_checkpoint_revision": "ch-classifier-bootstrap-v9",
+    "parity_report": "shared/tsr/foreign-calibration/CH-mobile-parity-v1.json"
+  }
+}

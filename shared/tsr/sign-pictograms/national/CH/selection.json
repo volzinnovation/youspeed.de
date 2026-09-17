@@ -1,0 +1,1052 @@
+{
+  "schema_version": 1,
+  "country": "CH",
+  "status": "source_preparation_only",
+  "runtime_status": "not_ready",
+  "entries": [
+    {
+      "semantic_id": "hazard:turn_right",
+      "sign_code": "CH:1.01",
+      "artwork_id": "ch-1-01",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:turn_right",
+      "runtime_model_class": "hazard:turn_right"
+    },
+    {
+      "semantic_id": "hazard:turn_left",
+      "sign_code": "CH:1.02",
+      "artwork_id": "ch-1-02",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:turn_left",
+      "runtime_model_class": "hazard:turn_left"
+    },
+    {
+      "semantic_id": "hazard:zigzag",
+      "sign_code": "CH:1.03",
+      "artwork_id": "ch-1-03",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:zigzag",
+      "runtime_model_class": "hazard:zigzag"
+    },
+    {
+      "semantic_id": "hazard:zigzag:left",
+      "sign_code": "CH:1.04",
+      "artwork_id": "ch-1-04",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:zigzag:left",
+      "runtime_model_class": "hazard:zigzag:left"
+    },
+    {
+      "semantic_id": "hazard:slippery",
+      "sign_code": "CH:1.05",
+      "artwork_id": "ch-1-05",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:slippery",
+      "runtime_model_class": "hazard:slippery"
+    },
+    {
+      "semantic_id": "hazard:bumps",
+      "sign_code": "CH:1.06",
+      "artwork_id": "ch-1-06",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:bumps",
+      "runtime_model_class": "hazard:bumps"
+    },
+    {
+      "semantic_id": "hazard:narrow_both",
+      "sign_code": "CH:1.07",
+      "artwork_id": "ch-1-07",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:narrow_both",
+      "runtime_model_class": "hazard:narrow_both"
+    },
+    {
+      "semantic_id": "hazard:narrow_right",
+      "sign_code": "CH:1.08",
+      "artwork_id": "ch-1-08",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:narrow_right",
+      "runtime_model_class": "hazard:narrow_right"
+    },
+    {
+      "semantic_id": "hazard:narrow_left",
+      "sign_code": "CH:1.09",
+      "artwork_id": "ch-1-09",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:narrow_left",
+      "runtime_model_class": "hazard:narrow_left"
+    },
+    {
+      "semantic_id": "hazard:include:down",
+      "sign_code": "CH:1.10",
+      "artwork_id": "ch-1-10",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:include:down",
+      "runtime_model_class": "hazard:include:down"
+    },
+    {
+      "semantic_id": "hazard:incline:up",
+      "sign_code": "CH:1.11",
+      "artwork_id": "ch-1-11",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:incline:up",
+      "runtime_model_class": "hazard:incline:up"
+    },
+    {
+      "semantic_id": "hazard:gravel",
+      "sign_code": "CH:1.12",
+      "artwork_id": "ch-1-12",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:gravel",
+      "runtime_model_class": "hazard:gravel"
+    },
+    {
+      "semantic_id": "hazard:rocks",
+      "sign_code": "CH:1.13a",
+      "artwork_id": "ch-1-13",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:rocks",
+      "runtime_model_class": "hazard:rocks"
+    },
+    {
+      "semantic_id": "hazard:road_works",
+      "sign_code": "CH:1.14",
+      "artwork_id": "ch-1-14",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:road_works",
+      "runtime_model_class": "hazard:road_works"
+    },
+    {
+      "semantic_id": "hazard:level_crossing",
+      "sign_code": "CH:1.15",
+      "artwork_id": "ch-1-15",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:level_crossing",
+      "runtime_model_class": "hazard:level_crossing"
+    },
+    {
+      "semantic_id": "hazard:train",
+      "sign_code": "CH:1.16",
+      "artwork_id": "ch-1-16",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:train",
+      "runtime_model_class": "hazard:train"
+    },
+    {
+      "semantic_id": "hazard:pedestrian_crossing",
+      "sign_code": "CH:1.22",
+      "artwork_id": "ch-1-22",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:pedestrian_crossing",
+      "runtime_model_class": "hazard:pedestrian_crossing"
+    },
+    {
+      "semantic_id": "hazard:school",
+      "sign_code": "CH:1.23",
+      "artwork_id": "ch-1-23",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:school",
+      "runtime_model_class": "hazard:school"
+    },
+    {
+      "semantic_id": "hazard:horse",
+      "sign_code": "CH:1.24a",
+      "artwork_id": "ch-1-24",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:horse",
+      "runtime_model_class": "hazard:horse"
+    },
+    {
+      "semantic_id": "hazard:animals",
+      "sign_code": "CH:1.25",
+      "artwork_id": "ch-1-25",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:animals",
+      "runtime_model_class": "hazard:animals"
+    },
+    {
+      "semantic_id": "hazard:bothways",
+      "sign_code": "CH:1.26",
+      "artwork_id": "ch-1-26",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:bothways",
+      "runtime_model_class": "hazard:bothways"
+    },
+    {
+      "semantic_id": "hazard:traffic_signal",
+      "sign_code": "CH:1.27",
+      "artwork_id": "ch-1-27",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:traffic_signal",
+      "runtime_model_class": "hazard:traffic_signal"
+    },
+    {
+      "semantic_id": "hazard:airport",
+      "sign_code": "CH:1.28",
+      "artwork_id": "ch-1-28",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:airport",
+      "runtime_model_class": "hazard:airport"
+    },
+    {
+      "semantic_id": "hazard",
+      "sign_code": "CH:1.30",
+      "artwork_id": "ch-1-30",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard",
+      "runtime_model_class": "hazard"
+    },
+    {
+      "semantic_id": "hazard:traffic_jam",
+      "sign_code": "CH:1.31",
+      "artwork_id": "ch-1-31",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:traffic_jam",
+      "runtime_model_class": "hazard:traffic_jam"
+    },
+    {
+      "semantic_id": "hazard:bicycle",
+      "sign_code": "CH:1.32",
+      "artwork_id": "ch-1-32",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:bicycle",
+      "runtime_model_class": "hazard:bicycle"
+    },
+    {
+      "semantic_id": "no_way",
+      "sign_code": "CH:2.01",
+      "artwork_id": "ch-2-01",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_way",
+      "runtime_model_class": "no_way"
+    },
+    {
+      "semantic_id": "no_entry",
+      "sign_code": "CH:2.02",
+      "artwork_id": "ch-2-02",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_entry",
+      "runtime_model_class": "no_entry"
+    },
+    {
+      "semantic_id": "no_car",
+      "sign_code": "CH:2.03",
+      "artwork_id": "ch-2-03",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_car",
+      "runtime_model_class": "no_car"
+    },
+    {
+      "semantic_id": "no_motorcycle",
+      "sign_code": "CH:2.04",
+      "artwork_id": "ch-2-04",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_motorcycle",
+      "runtime_model_class": "no_motorcycle"
+    },
+    {
+      "semantic_id": "no_bicycle",
+      "sign_code": "CH:2.05",
+      "artwork_id": "ch-2-05",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_bicycle",
+      "runtime_model_class": "no_bicycle"
+    },
+    {
+      "semantic_id": "no_moped",
+      "sign_code": "CH:2.06",
+      "artwork_id": "ch-2-06",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_moped",
+      "runtime_model_class": "no_moped"
+    },
+    {
+      "semantic_id": "no_hgv",
+      "sign_code": "CH:2.07",
+      "artwork_id": "ch-2-07",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_hgv",
+      "runtime_model_class": "no_hgv"
+    },
+    {
+      "semantic_id": "no_bus",
+      "sign_code": "CH:2.08",
+      "artwork_id": "ch-2-08",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_bus",
+      "runtime_model_class": "no_bus"
+    },
+    {
+      "semantic_id": "no_trailer",
+      "sign_code": "CH:2.09",
+      "artwork_id": "ch-2-09",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_trailer",
+      "runtime_model_class": "no_trailer"
+    },
+    {
+      "semantic_id": "no_dangerous",
+      "sign_code": "CH:2.10.1",
+      "artwork_id": "ch-2-10-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_dangerous",
+      "runtime_model_class": "no_dangerous"
+    },
+    {
+      "semantic_id": "no_dangerous_liquid",
+      "sign_code": "CH:2.11",
+      "artwork_id": "ch-2-11",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_dangerous_liquid",
+      "runtime_model_class": "no_dangerous_liquid"
+    },
+    {
+      "semantic_id": "no_horse",
+      "sign_code": "CH:2.12",
+      "artwork_id": "ch-2-12",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_horse",
+      "runtime_model_class": "no_horse"
+    },
+    {
+      "semantic_id": "no_motor_vehicle2",
+      "sign_code": "CH:2.13",
+      "artwork_id": "ch-2-13",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_motor_vehicle2",
+      "runtime_model_class": "no_motor_vehicle2"
+    },
+    {
+      "semantic_id": "no_motor_vehicle",
+      "sign_code": "CH:2.14",
+      "artwork_id": "ch-2-14",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_motor_vehicle",
+      "runtime_model_class": "no_motor_vehicle"
+    },
+    {
+      "semantic_id": "no_pedestrian",
+      "sign_code": "CH:2.15",
+      "artwork_id": "ch-2-15",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_pedestrian",
+      "runtime_model_class": "no_pedestrian"
+    },
+    {
+      "semantic_id": "no_skiing",
+      "sign_code": "CH:2.15.1",
+      "artwork_id": "ch-2-15-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_skiing",
+      "runtime_model_class": "no_skiing"
+    },
+    {
+      "semantic_id": "no_sledging",
+      "sign_code": "CH:2.15.2",
+      "artwork_id": "ch-2-15-2",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_sledging",
+      "runtime_model_class": "no_sledging"
+    },
+    {
+      "semantic_id": "no_roller",
+      "sign_code": "CH:2.15.3",
+      "artwork_id": "ch-2-15-3",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_roller",
+      "runtime_model_class": "no_roller"
+    },
+    {
+      "semantic_id": "maxweight",
+      "sign_code": "CH:2.16",
+      "artwork_id": "ch-2-16",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxweight",
+      "runtime_model_class": "maxweight"
+    },
+    {
+      "semantic_id": "maxaxleweight",
+      "sign_code": "CH:2.17",
+      "artwork_id": "ch-2-17",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxaxleweight",
+      "runtime_model_class": "maxaxleweight"
+    },
+    {
+      "semantic_id": "maxwidth",
+      "sign_code": "CH:2.18",
+      "artwork_id": "ch-2-18",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxwidth",
+      "runtime_model_class": "maxwidth"
+    },
+    {
+      "semantic_id": "maxheight",
+      "sign_code": "CH:2.19",
+      "artwork_id": "ch-2-19",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxheight",
+      "runtime_model_class": "maxheight"
+    },
+    {
+      "semantic_id": "maxlength",
+      "sign_code": "CH:2.20",
+      "artwork_id": "ch-2-20",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxlength",
+      "runtime_model_class": "maxlength"
+    },
+    {
+      "semantic_id": "min_speed",
+      "sign_code": "CH:2.31",
+      "artwork_id": "ch-2-31",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "min_speed",
+      "runtime_model_class": "min_speed"
+    },
+    {
+      "semantic_id": "arrow_right",
+      "sign_code": "CH:2.32",
+      "artwork_id": "ch-2-32",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_right",
+      "runtime_model_class": "arrow_right"
+    },
+    {
+      "semantic_id": "arrow_left",
+      "sign_code": "CH:2.33",
+      "artwork_id": "ch-2-33",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_left",
+      "runtime_model_class": "arrow_left"
+    },
+    {
+      "semantic_id": "arrow_right_down",
+      "sign_code": "CH:2.34",
+      "artwork_id": "ch-2-34",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_right_down",
+      "runtime_model_class": "arrow_right_down"
+    },
+    {
+      "semantic_id": "arrow_left_down",
+      "sign_code": "CH:2.35",
+      "artwork_id": "ch-2-35",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_left_down",
+      "runtime_model_class": "arrow_left_down"
+    },
+    {
+      "semantic_id": "arrow_through",
+      "sign_code": "CH:2.36",
+      "artwork_id": "ch-2-36",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_through",
+      "runtime_model_class": "arrow_through"
+    },
+    {
+      "semantic_id": "arrow_turn_right",
+      "sign_code": "CH:2.37",
+      "artwork_id": "ch-2-37",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_turn_right",
+      "runtime_model_class": "arrow_turn_right"
+    },
+    {
+      "semantic_id": "arrow_turn_left",
+      "sign_code": "CH:2.38",
+      "artwork_id": "ch-2-38",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_turn_left",
+      "runtime_model_class": "arrow_turn_left"
+    },
+    {
+      "semantic_id": "arrow_turn_left_right",
+      "sign_code": "CH:2.39",
+      "artwork_id": "ch-2-39",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_turn_left_right",
+      "runtime_model_class": "arrow_turn_left_right"
+    },
+    {
+      "semantic_id": "arrow_turn_right_through",
+      "sign_code": "CH:2.40",
+      "artwork_id": "ch-2-40",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_turn_right_through",
+      "runtime_model_class": "arrow_turn_right_through"
+    },
+    {
+      "semantic_id": "arrow_turn_left_through",
+      "sign_code": "CH:2.41",
+      "artwork_id": "ch-2-41",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "arrow_turn_left_through",
+      "runtime_model_class": "arrow_turn_left_through"
+    },
+    {
+      "semantic_id": "roundabout",
+      "sign_code": "CH:2.41.1",
+      "artwork_id": "ch-2-41-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "roundabout",
+      "runtime_model_class": "roundabout"
+    },
+    {
+      "semantic_id": "no_turn:right",
+      "sign_code": "CH:2.42",
+      "artwork_id": "ch-2-42",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_turn:right",
+      "runtime_model_class": "no_turn:right"
+    },
+    {
+      "semantic_id": "no_turn:left",
+      "sign_code": "CH:2.43",
+      "artwork_id": "ch-2-43",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_turn:left",
+      "runtime_model_class": "no_turn:left"
+    },
+    {
+      "semantic_id": "no_overtaking",
+      "sign_code": "CH:2.44",
+      "artwork_id": "ch-2-44",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_overtaking",
+      "runtime_model_class": "no_overtaking"
+    },
+    {
+      "semantic_id": "no_overtaking:hgv",
+      "sign_code": "CH:2.45",
+      "artwork_id": "ch-2-45",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_overtaking:hgv",
+      "runtime_model_class": "no_overtaking:hgv"
+    },
+    {
+      "semantic_id": "no_u_turn",
+      "sign_code": "CH:2.46",
+      "artwork_id": "ch-2-46",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_u_turn",
+      "runtime_model_class": "no_u_turn"
+    },
+    {
+      "semantic_id": "min_distance",
+      "sign_code": "CH:2.47",
+      "artwork_id": "ch-2-47",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "min_distance",
+      "runtime_model_class": "min_distance"
+    },
+    {
+      "semantic_id": "chains",
+      "sign_code": "CH:2.48",
+      "artwork_id": "ch-2-48",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "chains",
+      "runtime_model_class": "chains"
+    },
+    {
+      "semantic_id": "no_stop",
+      "sign_code": "CH:2.49",
+      "artwork_id": "ch-2-49",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_stop",
+      "runtime_model_class": "no_stop"
+    },
+    {
+      "semantic_id": "no_parking",
+      "sign_code": "CH:2.50",
+      "artwork_id": "ch-2-50",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_parking",
+      "runtime_model_class": "no_parking"
+    },
+    {
+      "semantic_id": "customs",
+      "sign_code": "CH:2.51",
+      "artwork_id": "ch-2-51",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "customs",
+      "runtime_model_class": "customs"
+    },
+    {
+      "semantic_id": "maxspeed:end",
+      "sign_code": "CH:2.53",
+      "artwork_id": "ch-2-53",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "maxspeed:end",
+      "runtime_model_class": "maxspeed:end"
+    },
+    {
+      "semantic_id": "min_speed:end",
+      "sign_code": "CH:2.54",
+      "artwork_id": "ch-2-54",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "min_speed:end",
+      "runtime_model_class": "min_speed:end"
+    },
+    {
+      "semantic_id": "no_overtaking:end",
+      "sign_code": "CH:2.55",
+      "artwork_id": "ch-2-55",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_overtaking:end",
+      "runtime_model_class": "no_overtaking:end"
+    },
+    {
+      "semantic_id": "no_overtaking:end:hgv",
+      "sign_code": "CH:2.56",
+      "artwork_id": "ch-2-56",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_overtaking:end:hgv",
+      "runtime_model_class": "no_overtaking:end:hgv"
+    },
+    {
+      "semantic_id": "chains:end",
+      "sign_code": "CH:2.57",
+      "artwork_id": "ch-2-57",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "chains:end",
+      "runtime_model_class": "chains:end"
+    },
+    {
+      "semantic_id": "no:end",
+      "sign_code": "CH:2.58",
+      "artwork_id": "ch-2-58",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no:end",
+      "runtime_model_class": "no:end"
+    },
+    {
+      "semantic_id": "zone:30",
+      "sign_code": "CH:2.59.1",
+      "artwork_id": "ch-2-59-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:30",
+      "runtime_model_class": "zone:30"
+    },
+    {
+      "semantic_id": "zone:no_parking:end",
+      "sign_code": "CH:2.59.2e",
+      "artwork_id": "ch-2-59-2",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:no_parking:end",
+      "runtime_model_class": "zone:no_parking:end"
+    },
+    {
+      "semantic_id": "zone:pedestrian",
+      "sign_code": "CH:2.59.3b",
+      "artwork_id": "ch-2-59-3",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:pedestrian",
+      "runtime_model_class": "zone:pedestrian"
+    },
+    {
+      "semantic_id": "zone:pedestrian:end",
+      "sign_code": "CH:2.59.4b",
+      "artwork_id": "ch-2-59-4",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:pedestrian:end",
+      "runtime_model_class": "zone:pedestrian:end"
+    },
+    {
+      "semantic_id": "zone:calm",
+      "sign_code": "CH:2.59.5a",
+      "artwork_id": "ch-2-59-5",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:calm",
+      "runtime_model_class": "zone:calm"
+    },
+    {
+      "semantic_id": "zone:calm:end",
+      "sign_code": "CH:2.59.6a",
+      "artwork_id": "ch-2-59-6",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "zone:calm:end",
+      "runtime_model_class": "zone:calm:end"
+    },
+    {
+      "semantic_id": "bicycle:start",
+      "sign_code": "CH:2.60",
+      "artwork_id": "ch-2-60",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "bicycle:start",
+      "runtime_model_class": "bicycle:start"
+    },
+    {
+      "semantic_id": "bicycle:end",
+      "sign_code": "CH:2.60.1",
+      "artwork_id": "ch-2-60-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "bicycle:end",
+      "runtime_model_class": "bicycle:end"
+    },
+    {
+      "semantic_id": "pedestrian:start",
+      "sign_code": "CH:2.61",
+      "artwork_id": "ch-2-61",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian:start",
+      "runtime_model_class": "pedestrian:start"
+    },
+    {
+      "semantic_id": "horse:start",
+      "sign_code": "CH:2.62",
+      "artwork_id": "ch-2-62",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "horse:start",
+      "runtime_model_class": "horse:start"
+    },
+    {
+      "semantic_id": "pedestrian_bicycle:designated",
+      "sign_code": "CH:2.63",
+      "artwork_id": "ch-2-63",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian_bicycle:designated",
+      "runtime_model_class": "pedestrian_bicycle:designated"
+    },
+    {
+      "semantic_id": "pedestrian_bicycle:start",
+      "sign_code": "CH:2.63.1",
+      "artwork_id": "ch-2-63-1",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian_bicycle:start",
+      "runtime_model_class": "pedestrian_bicycle:start"
+    },
+    {
+      "semantic_id": "bus:start",
+      "sign_code": "CH:2.64",
+      "artwork_id": "ch-2-64",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "bus:start",
+      "runtime_model_class": "bus:start"
+    },
+    {
+      "semantic_id": "stop",
+      "sign_code": "CH:3.01",
+      "artwork_id": "ch-3-01",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "stop",
+      "runtime_model_class": "stop"
+    },
+    {
+      "semantic_id": "give_way",
+      "sign_code": "CH:3.02",
+      "artwork_id": "ch-3-02",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "give_way",
+      "runtime_model_class": "give_way"
+    },
+    {
+      "semantic_id": "priority:start",
+      "sign_code": "CH:3.03",
+      "artwork_id": "ch-3-03",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "priority:start",
+      "runtime_model_class": "priority:start"
+    },
+    {
+      "semantic_id": "priority:end",
+      "sign_code": "CH:3.04",
+      "artwork_id": "ch-3-04",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "priority:end",
+      "runtime_model_class": "priority:end"
+    },
+    {
+      "semantic_id": "hazard:intersection",
+      "sign_code": "CH:3.05",
+      "artwork_id": "ch-3-05",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:intersection",
+      "runtime_model_class": "hazard:intersection"
+    },
+    {
+      "semantic_id": "hazard:crossing",
+      "sign_code": "CH:3.06",
+      "artwork_id": "ch-3-06",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "hazard:crossing",
+      "runtime_model_class": "hazard:crossing"
+    },
+    {
+      "semantic_id": "priority:backward",
+      "sign_code": "CH:3.09",
+      "artwork_id": "ch-3-09",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "priority:backward",
+      "runtime_model_class": "priority:backward"
+    },
+    {
+      "semantic_id": "priority:forward",
+      "sign_code": "CH:3.10",
+      "artwork_id": "ch-3-10",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "priority:forward",
+      "runtime_model_class": "priority:forward"
+    },
+    {
+      "semantic_id": "motorway:start",
+      "sign_code": "CH:4.01",
+      "artwork_id": "ch-4-01",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "motorway:start",
+      "runtime_model_class": "motorway:start"
+    },
+    {
+      "semantic_id": "motorway:end",
+      "sign_code": "CH:4.02",
+      "artwork_id": "ch-4-02",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "motorway:end",
+      "runtime_model_class": "motorway:end"
+    },
+    {
+      "semantic_id": "trunk:start",
+      "sign_code": "CH:4.03",
+      "artwork_id": "ch-4-03",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "trunk:start",
+      "runtime_model_class": "trunk:start"
+    },
+    {
+      "semantic_id": "trunk:end",
+      "sign_code": "CH:4.04",
+      "artwork_id": "ch-4-04",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "trunk:end",
+      "runtime_model_class": "trunk:end"
+    },
+    {
+      "semantic_id": "tunnel:start",
+      "sign_code": "CH:4.07",
+      "artwork_id": "ch-4-07",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "tunnel:start",
+      "runtime_model_class": "tunnel:start"
+    },
+    {
+      "semantic_id": "oneway",
+      "sign_code": "CH:4.08",
+      "artwork_id": "ch-4-08",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "oneway",
+      "runtime_model_class": "oneway"
+    },
+    {
+      "semantic_id": "no_exit",
+      "sign_code": "CH:4.09",
+      "artwork_id": "ch-4-09",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_exit",
+      "runtime_model_class": "no_exit"
+    },
+    {
+      "semantic_id": "no_exit:car",
+      "sign_code": "CH:4.10",
+      "artwork_id": "ch-4-10",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "no_exit:car",
+      "runtime_model_class": "no_exit:car"
+    },
+    {
+      "semantic_id": "pedestrian_crossing",
+      "sign_code": "CH:4.11",
+      "artwork_id": "ch-4-11",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian_crossing",
+      "runtime_model_class": "pedestrian_crossing"
+    },
+    {
+      "semantic_id": "pedestrian:underpass",
+      "sign_code": "CH:4.12",
+      "artwork_id": "ch-4-12",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian:underpass",
+      "runtime_model_class": "pedestrian:underpass"
+    },
+    {
+      "semantic_id": "pedestrian:overpass",
+      "sign_code": "CH:4.13",
+      "artwork_id": "ch-4-13",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "pedestrian:overpass",
+      "runtime_model_class": "pedestrian:overpass"
+    },
+    {
+      "semantic_id": "parking",
+      "sign_code": "CH:4.17",
+      "artwork_id": "ch-4-17",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "parking",
+      "runtime_model_class": "parking"
+    },
+    {
+      "semantic_id": "parking:disc",
+      "sign_code": "CH:4.18",
+      "artwork_id": "ch-4-18",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "parking:disc",
+      "runtime_model_class": "parking:disc"
+    },
+    {
+      "semantic_id": "parking:meter",
+      "sign_code": "CH:4.20",
+      "artwork_id": "ch-4-20",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "parking:meter",
+      "runtime_model_class": "parking:meter"
+    },
+    {
+      "semantic_id": "parking:covered",
+      "sign_code": "CH:4.21",
+      "artwork_id": "ch-4-21",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "parking:covered",
+      "runtime_model_class": "parking:covered"
+    },
+    {
+      "semantic_id": "escape_lane",
+      "sign_code": "CH:4.24",
+      "artwork_id": "ch-4-24",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "escape_lane",
+      "runtime_model_class": "escape_lane"
+    },
+    {
+      "semantic_id": "parking:park_ride",
+      "sign_code": "CH:4.25",
+      "artwork_id": "ch-4-25",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "parking:park_ride",
+      "runtime_model_class": "parking:park_ride"
+    },
+    {
+      "semantic_id": "exit",
+      "sign_code": "CH:4.63",
+      "artwork_id": "ch-4-63",
+      "mapping_status": "source_preparation_only",
+      "mapping_basis": "Panoramax CH mapping joined to the ASTRA official sign archive; source and redistribution review remains pending.",
+      "source_model_class": "exit",
+      "runtime_model_class": "exit"
+    }
+  ]
+}

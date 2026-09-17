@@ -1,0 +1,1960 @@
+{
+  "schema_version": 1,
+  "audit_id": "panoramax-ch-readiness-v1",
+  "reviewed_at": "2026-09-17",
+  "country": "CH",
+  "owner_decisions": {
+    "pseudo_ground_truth": "Use identical DE+FR predictions at confidence >= 0.90 as CH training pseudo-ground truth, explicitly marked non-human and non-holdout.",
+    "artwork_scope": "Full CH artwork scope except 4.88 and 4.90, which are left out because no cleared artwork source is available in the current scope.",
+    "target_device_constraints": "Unchanged from the existing Android and iPhone model targets."
+  },
+  "mapping_source": {
+    "path": "panoramax-road_signs_mapping.csv",
+    "location": "external workspace input supplied to the audit",
+    "sha256": "597bc2b429683eb34bd14d4edecdb7c012d60ced837e680ad06525c4cb047754",
+    "row_count": 225,
+    "mapped_ch_rows": 139,
+    "unmapped_ch_rows": 86
+  },
+  "mapping_counts": {
+    "unique_raw_ch_codes": 139,
+    "unique_base_codes": 120,
+    "numeric_speed_variants": 16,
+    "retired_rows": 1,
+    "artwork_candidate_base_codes": 118
+  },
+  "official_archive_audit": {
+    "archive_count": 10,
+    "archives": [
+      {
+        "label": "danger",
+        "file_name": "01-danger.zip",
+        "size_bytes": 293231,
+        "sha256": "ac74523ed14f57b40d549159985fdb219d95fdce54bbf8d838d5c7ac6a19d8d5",
+        "sign_codes": 17
+      },
+      {
+        "label": "other-hazards",
+        "file_name": "01-other-hazards.zip",
+        "size_bytes": 1659639,
+        "sha256": "c773c7c1196a97d9e36a6e82081cd9e95405d6558d37f2b2fbd06e3b19954bca",
+        "sign_codes": 11
+      },
+      {
+        "label": "prohibitions",
+        "file_name": "02-prohibitions.zip",
+        "size_bytes": 488669,
+        "sha256": "a98e6ac30e8232b611906c4ebaf178fc443b4d6df8c4cc0b8e0a2d3289e14e0a",
+        "sign_codes": 24
+      },
+      {
+        "label": "regulations",
+        "file_name": "02-regulations.zip",
+        "size_bytes": 1920919,
+        "sha256": "67271640f5eff682eacecf1775b557a5212139c44f44877c80eaab591b1eebba",
+        "sign_codes": 40
+      },
+      {
+        "label": "special-paths",
+        "file_name": "02-paths.zip",
+        "size_bytes": 185769,
+        "sha256": "deaf0d5687c6f8ac27c99f3aab6aa7fbc9f836ae49fb6b3f4994cef9cc2f8c04",
+        "sign_codes": 8
+      },
+      {
+        "label": "priority",
+        "file_name": "03-priority.zip",
+        "size_bytes": 163047,
+        "sha256": "6a7d2dee3aea3503e131d3ccfc2e7cb37e5ec65e57b6e6b5b69ec1cf6ebb7c94",
+        "sign_codes": 12
+      },
+      {
+        "label": "behavior",
+        "file_name": "04-behavior.zip",
+        "size_bytes": 1095075,
+        "sha256": "d2225473871f76b3a0152294f06ba171b9f4455631cb5a53f8c650c9821a6c6f",
+        "sign_codes": 25
+      },
+      {
+        "label": "direction",
+        "file_name": "04-direction.zip",
+        "size_bytes": 12884347,
+        "sha256": "0255ab7c15107fd4bcad31bb72ac9c2a7dcfe6e8abaac35451e4d989525989c4",
+        "sign_codes": 51
+      },
+      {
+        "label": "motorway",
+        "file_name": "04-motorway.zip",
+        "size_bytes": 29158313,
+        "sha256": "aa68e368c04f957515fbd520ada699c92240e1e9942139eea71fa8bc4126f10d",
+        "sign_codes": 17
+      },
+      {
+        "label": "information",
+        "file_name": "04-information.zip",
+        "size_bytes": 7018409,
+        "sha256": "9badc5fc51a912844f8c0567ddd30425c4f997b8eea425bca2a4f946bb8173a5",
+        "sign_codes": 16
+      }
+    ],
+    "mapped_artwork_candidates_found": 116,
+    "mapped_artwork_candidates_missing": [
+      "4.88",
+      "4.90"
+    ],
+    "retired_codes": [
+      "1.17"
+    ],
+    "notes": [
+      "Archive presence proves source availability only; it does not grant reproduction rights.",
+      "ASTRA downloads often contain legacy EPS/WMF alongside a smaller number of SVG files.",
+      "The current ASTRA archive does not include 4.88 or 4.90 even though both remain official sign references; they need separately cleared artwork."
+    ]
+  },
+  "artwork_source_inventory": {
+    "path": "shared/tsr/ch-artwork-source-inventory-v1.json",
+    "astra_in_scope_base_codes_available": 116,
+    "commons_declared_public_domain_svg_in_scope": 91,
+    "commons_svg_gap_in_scope": 25,
+    "packaging_status": "per_file_provenance_and_redistribution_review_pending"
+  },
+  "panoramax_inventory": {
+    "swiss_dataset_available": false,
+    "swiss_model_available": false,
+    "bootstrap_dataset": "Panoramax/classified_de_road_signs",
+    "bootstrap_validation_archive_sha256": "13ca882129a4e024fc865fc4a3187514a4554f8e323f612e338144fd1ff189ea",
+    "bootstrap_validation_swiss_prefixed_members": 0,
+    "public_catalog_sample": {
+      "endpoint": "https://api.panoramax.xyz/api/search",
+      "bbox": "5.9,45.8,10.6,47.9",
+      "limit": 500,
+      "sampled_features": 500,
+      "unique_collections": 115,
+      "providers": [
+        "Stans",
+        "ThomasLeuthard",
+        "habi",
+        "mapcomplete",
+        "mauricesvay",
+        "p4n-pics",
+        "wegavision",
+        "wjtje"
+      ],
+      "licenses": [
+        "CC-BY-SA-4.0"
+      ],
+      "capture_datetime_min": "2014-06-07T10:00:00+00:00",
+      "capture_datetime_max": "2026-08-22T07:44:48.343000+00:00",
+      "coordinate_bbox": [
+        8.098706,
+        46.6962,
+        8.407595,
+        47.004982
+      ],
+      "note": "This is a metadata-only availability sample; it is not a training inventory and does not prove Swiss geographic completeness."
+    },
+    "note": "Use existing country archives as detector/classifier bootstrap only; collect a Swiss, route-grouped corpus before claiming CH recognition."
+  },
+  "research_crawl": {
+    "host": "141.47.5.55",
+    "output_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run",
+    "completed_at": "2026-09-17T12:00:47Z",
+    "raw_unique_features": 1275880,
+    "eligible_features": 867859,
+    "deduplicated_download_queue": 10000,
+    "downloaded_images": 10000,
+    "download_failures": 0,
+    "detector_candidate_crops": 236,
+    "expansion_detector": {
+      "confidence": 0.05,
+      "candidate_crops": 515,
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/candidates-lowconf.jsonl",
+      "candidate_sha256": "c4bc58457df92b80b33b4814049945dda36de3ab645135e46f36843dbfa25d17",
+      "tail_repair": "one malformed trailing JSONL record excluded; original retained as candidates-lowconf.jsonl.before-tail-repair"
+    },
+    "expansion_pass_2": {
+      "offset": 10000,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 113,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass2/batch-summary.json",
+      "batch_summary_sha256": "6a84f3ba46e1e2ae5ce000c6aa04ceb4a07c4bcfc261d6d10679ae8ac4318eba",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass2/candidates-lowconf.jsonl",
+      "candidate_sha256": "6c73d2c0ccef3a32fd41f7b78aba3e28fb2d7e8c7e68a17f1f9d87f6c067a270"
+    },
+    "expansion_pass_3": {
+      "offset": 11200,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 542,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass3/batch-summary.json",
+      "batch_summary_sha256": "999c5364c5ca747ac041c08e2094073b5c83743cde929e7aecbcab6f1e7b0d05",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass3/candidates-lowconf.jsonl",
+      "candidate_sha256": "d9217de5ae991aee888f51b800fd851a82032d199a62e38b56e5da9a27c9562e"
+    },
+    "expansion_pass_4": {
+      "offset": 12400,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 219,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass4/batch-summary.json",
+      "batch_summary_sha256": "d9cbb50d97104cba0d7e59746c71381e36203ac9b88e1c2d72ba464175a63d08",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass4/candidates-lowconf.jsonl",
+      "candidate_sha256": "63b0cb71abef09f5d790dfe0c675cdd399c1831602e7f67c659720fbbe18ba47"
+    },
+    "expansion_pass_5": {
+      "offset": 13600,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 326,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass5/batch-summary.json",
+      "batch_summary_sha256": "81572396a240bbb0ed71023e143292198ec0f81a2dc1ba300df629db298ad0e1",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass5/candidates-lowconf.jsonl",
+      "candidate_sha256": "3ff849aa6a397172c0748e1a728178fc68260e622d8d24650237dcf036d1089e"
+    },
+    "expansion_pass_6": {
+      "offset": 14800,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 514,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass6/batch-summary.json",
+      "batch_summary_sha256": "664c1342e152793ecaeee6de2e1d7e0726bb05b122cd9300d986e0f6b77608ad",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass6/candidates-lowconf.jsonl",
+      "candidate_sha256": "b504d68d9fb5e7499a5d684fe04a4ca9843a388b592f4ce18fec1ea1fe478408"
+    },
+    "expansion_pass_7": {
+      "offset": 16000,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 205,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass7/batch-summary.json",
+      "batch_summary_sha256": "2751519f7e5f157d8e2615428a92c8da3ad7393e5966bdadea0cf9df498d53de",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass7/candidates-lowconf.jsonl",
+      "candidate_sha256": "63f0f423424507bb4a8c4efeb4ef9016938e29a85352aa8747b3c9ee69f2991b"
+    },
+    "expansion_pass_8": {
+      "offset": 17200,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 348,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass8/batch-summary.json",
+      "batch_summary_sha256": "6dfbf82da05229b943253f202f32f69cb14c71ae938939dcc419704ef887f1be",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass8/candidates-lowconf.jsonl",
+      "candidate_sha256": "98856c414bf32523d554b73ceaa980cddc4162e6c8bee6df81f0c64ee2ac7154"
+    },
+    "expansion_pass_9": {
+      "offset": 18400,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 308,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass9/batch-summary.json",
+      "batch_summary_sha256": "1959f58ec1c6e071c6f26bb252e364f927a013a33e819e37bd1fdcf7c2a20c50",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass9/candidates-lowconf.jsonl",
+      "candidate_sha256": "b31d82aaec8cee894e23e377e6b026d45231533b7403799e9f2449273cc7c680"
+    },
+    "expansion_pass_10": {
+      "offset": 19600,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 161,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass10/batch-summary.json",
+      "batch_summary_sha256": "934542dc259a557ef0c126e123f23b4e8be7a20954f7fb461a38292a1f9d7878",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass10/candidates-lowconf.jsonl",
+      "candidate_sha256": "2506f04ea0c20b39f1a4693b799b7350776c4188b356543ddfc23d5f6f4ac72f"
+    },
+    "expansion_pass_11": {
+      "offset": 20800,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 114,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass11/batch-summary.json",
+      "batch_summary_sha256": "23441a29289608f0a4fc6e775d778bfbc5564415a3d195a14dc1d1a9b92b4ebb",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass11/candidates-lowconf.jsonl",
+      "candidate_sha256": "862348b1bbd5d19a781b37c76b572ca5094d4c10855b31fd843da4fa14900671"
+    },
+    "expansion_pass_12": {
+      "offset": 22000,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 581,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass12/batch-summary.json",
+      "batch_summary_sha256": "c33a5d1829649f3a0fc14354ee388563cc0bb7f6193c7004521e93154cf76ae7",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass12/candidates-lowconf.jsonl",
+      "candidate_sha256": "3b50559a7347ae786f15479331d85d934983754ed580c322b39dd0ff78690d16"
+    },
+    "expansion_pass_13": {
+      "offset": 23200,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 1026,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass13/batch-summary.json",
+      "batch_summary_sha256": "79cccba1c88b5495f84a4c8f01ba7f16209eeb342cce1002d99f719fbdd5b818",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass13/candidates-lowconf.jsonl",
+      "candidate_sha256": "96c94ec358454a264872663048a048052ca25f23ac8306ee157b507e409a950a"
+    },
+    "expansion_pass_14": {
+      "offset": 24400,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 722,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass14/batch-summary.json",
+      "batch_summary_sha256": "2ffbecbcaa926cbf8471ab09ec746455f13a8fa7c1ef430c1b29f8981e4d318d",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass14/candidates-lowconf.jsonl",
+      "candidate_sha256": "f9291643d03dddb9e3b2c4bc553f8634901f47408a1bf388874cdad778437349"
+    },
+    "expansion_pass_15": {
+      "offset": 25600,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 602,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass15/batch-summary.json",
+      "batch_summary_sha256": "14a7355f760f0fb8f64db5f7f33c0cf1e2c19a8fe446cf6a760ae922502d1a17",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass15/candidates-lowconf.jsonl",
+      "candidate_sha256": "0c9ef96bed5dc1e5bf3a2ebbe306bd6df84c4dc07539dddd457a370df9465e3b"
+    },
+    "expansion_pass_16": {
+      "offset": 26800,
+      "selected_images": 1200,
+      "downloaded_images": 1200,
+      "download_failures": 0,
+      "detector_confidence": 0.05,
+      "candidate_crops": 264,
+      "batch_summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass16/batch-summary.json",
+      "batch_summary_sha256": "62c92b768b8f8b10c54da31fbecaf5d644a631f183edef91bc651ab9fe21b282",
+      "candidate_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass16/candidates-lowconf.jsonl",
+      "candidate_sha256": "4bbcbabd058e54d49b2502cef42e7ff721bcc8fe4bbbf84394df00649ae92438"
+    },
+    "saturated_tiles_at_max_depth": 544,
+    "subdivided_parent_failures": 5,
+    "terminal_skipped_tiles": 0,
+    "asset_key": "sd",
+    "license_policy": "Only public CC-BY-SA-4.0 features and HTTPS derivatives; no Panoramax writes; CH labels require review or the recorded dual-classifier pseudo-label policy."
+  },
+  "dual_classifier_pseudo_labels": {
+    "status": "accepted_for_ch_training_pseudo_labeling",
+    "policy": "DE and FR top-1 predictions are normalized through the reviewed country mapping; accept only identical CH code and both confidences >= 0.90.",
+    "models": [
+      "Panoramax/classify_de_road_signs",
+      "Panoramax/classify_fr_road_signs"
+    ],
+    "candidate_count": 236,
+    "accepted_sample_count": 69,
+    "accepted_code_count": 21,
+    "accepted_artwork_base_code_count": 16,
+    "artwork_candidate_coverage": 0.136,
+    "minimum_confidence": 0.9,
+    "weak_labels_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-labels.jsonl",
+    "weak_labels_sha256": "8dc27a2ccd01075a48dca5f0c80722b5a1d1df7b7d5c2f6ba46db3012648ce3e",
+    "summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-label-summary.json",
+    "summary_sha256": "de55f065d5a23b9174f40c3da23119fd1fabeb6f90e8aaeb17a9977c2ce81990",
+    "holdout_status": "not_an_independent_holdout",
+    "runtime_release_evidence": false
+  },
+  "expansion_dual_classifier_pseudo_labels": {
+    "status": "accepted_for_ch_training_pseudo_labeling",
+    "policy": "DE and FR top-1 predictions are normalized through the reviewed country mapping; accept only identical CH code and both confidences >= 0.90.",
+    "detector_confidence": 0.05,
+    "candidate_count": 515,
+    "mapped_top1_any_model": 447,
+    "accepted_sample_count": 98,
+    "accepted_code_count": 22,
+    "accepted_artwork_base_code_count": 17,
+    "artwork_candidate_coverage": 0.144,
+    "minimum_confidence": 0.9,
+    "weak_labels_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-labels-lowconf.jsonl",
+    "weak_labels_sha256": "91c1472a4f6a092ae71ee0fce3fa6f40aeb70bc930503299c149ef3379ee4055",
+    "summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-label-summary-lowconf.json",
+    "summary_sha256": "9975d078510a98ceef8f4b435397c76473ac458901598b267a9977d8f8202055",
+    "holdout_status": "not_an_independent_holdout",
+    "runtime_release_evidence": false
+  },
+  "cumulative_expansion_dual_classifier_pseudo_labels": {
+    "status": "accepted_for_ch_training_pseudo_labeling",
+    "policy": "DE and FR top-1 predictions are normalized through the reviewed country mapping; accept only identical CH code and both confidences >= 0.90.",
+    "detector_confidence": 0.05,
+    "candidate_count": 6937,
+    "mapped_top1_any_model": 5568,
+    "accepted_sample_count": 2095,
+    "accepted_raw_code_count": 63,
+    "accepted_artwork_base_code_count": 52,
+    "artwork_candidate_coverage": 0.4406779661,
+    "in_scope_artwork_base_code_count": 116,
+    "in_scope_artwork_candidate_coverage": 0.4482758621,
+    "minimum_confidence": 0.9,
+    "weak_labels_paths": [
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass2/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass3/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass4/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass5/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass6/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass7/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass8/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass9/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass10/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass11/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass12/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass13/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass14/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass15/weak-labels-lowconf.jsonl",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass16/weak-labels-lowconf.jsonl"
+    ],
+    "weak_labels_sha256": [
+      "91c1472a4f6a092ae71ee0fce3fa6f40aeb70bc930503299c149ef3379ee4055",
+      "b12daf8967cc93fad84511c2cea3bd950303a956e361a0bf6b5e414f9a6629e0",
+      "bfed7e02dfa78c7878cdc13901479417996d803ba3ae77ffe2b2d81fd8fc09da",
+      "ce26ce7e5c736e76d3cad1450433644de461e15bdb143525ebb795667c0552df",
+      "d591e3c61ed32131a3a51a20d3535825daec2259c61b44e86f8951cbe15105a0",
+      "04ee94a779343613593dd3ae04fe2e6592cf753590ef7ebf6a0abc5c429bcc36",
+      "db1118e79bf9039bb897f1606fecf3167cd56e1a51639df977d92723b9342dd4",
+      "6a596a849e98172ae5a4551cbec6728b253466c4e177731d581fd26d4af240b9",
+      "b870f26884057ff7ae0c3f86e33cf3f55a386eef506942afea8cbb3489444769",
+      "5aa4373db026e6bfadcb58fd26fc81b3fbf7e8af18d6e381da8f33f6dfe6d12e",
+      "a551142d48080a67bd171275379fb9190150b567ff4b20749690303a1c9c96fe",
+      "b8aebcd0bbeb54627324cc28c835b89f59b14f3ba8762c169e28dfe23620acaf",
+      "60e41512db1b86bfa818956ac323540694d87d1ab71a443e579d4daa899ed933",
+      "deb95ab0595b22685afd972fbb9a9c1343dc69101cf994001de6391feb408694",
+      "8fd505e6fd4cf8ac8a4f106ecf2956ec2f784d7ed03f44217e033894c6b14f94",
+      "f49c6fc12fdf45cf39a6f2d96ca07af955c760db21051e127d7f86ed9b83cbe1"
+    ],
+    "summary_paths": [
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass2/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass3/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass4/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass5/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass6/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass7/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass8/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass9/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass10/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass11/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass12/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass13/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass14/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass15/weak-label-summary-lowconf.json",
+      "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/pass16/weak-label-summary-lowconf.json"
+    ],
+    "summary_sha256": [
+      "9975d078510a98ceef8f4b435397c76473ac458901598b267a9977d8f8202055",
+      "00b736f8e52b62513f0ea1d1489a941b4822fa506474fed78bf9695c78054bb0",
+      "1ca62fdb046c31bbc8eeba70b64d69af9e5b0633b65a440a977514ca53cbb023",
+      "3e4d11ab7b184839c52c9a57f9ee79828b35d25003d5ab6712c2975632e06f7b",
+      "aad9bf177c32d4b42e75da721ceb6de469b24c31b6e3b2ff1941188c4808044e",
+      "a3ff495b295b990e5f96953408b155397fc2a74b76ecec3f3735e35d3547a76a",
+      "83e7a5107f253fe33375e798593379c98fb75fa4fe358aa7b31899fc6515c3dd",
+      "f53091c8c1ac55be4f37e9ce6f63a92b9fc9b0bfbd948bd2303175630b4b26d0",
+      "e0a3d5b731d8173fc9fe8a0fbeb5961a3e73f0cd5a4e5a00ae237326d243599b",
+      "1b2fac1b3df5f6ca49cc1e66c6bc6f7c0bef3492e95d58a828634ffb40c66d90",
+      "4e072f4af354fd161cf8b51baffa09f8141337c44c9396192552ddf9b1bd9404",
+      "a493b7ae241ffdc3e74c7919f8a5658d8eb4a354feda02e050e1a1b77382fe78",
+      "52abc86ede68bb2313c57f1e894b961670b02d83f2e324b7a1b4263b8a6f6813",
+      "3835ce58abd4d135660362634ebfd3744ac2719b19be920c98b976e9ca3c0ec7",
+      "f9400bddabb977dd4e62bb4750f3f5d603c0a1c8561513bb03217be932d19be8",
+      "dd4e8827f2308d8bb4ffb8a19773771980393c324618cf3f772d22871d46eb86"
+    ],
+    "holdout_status": "not_an_independent_holdout",
+    "runtime_release_evidence": false
+  },
+  "bootstrap_classifier_dataset": {
+    "status": "evaluation_only",
+    "path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/ch-classifier-data-v7",
+    "summary_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/ch-classifier-data-v7/dataset-summary.json",
+    "summary_sha256": "16e17e8cf380e4f87a4411e98035d697c0da0d1ca9247f09be0db6791ee5b158",
+    "accepted_samples": 1119,
+    "label_count": 59,
+    "min_detector_confidence": 0.7,
+    "split": {
+      "train_samples": 869,
+      "validation_samples": 250,
+      "train_route_groups": 198,
+      "validation_route_groups": 84
+    },
+    "license_counts": {
+      "CC-BY-SA-4.0": 1119
+    },
+    "route_provenance_preserved": true,
+    "source_backbone": "/mnt/nvme/prolix/models/DE/classifier/classify_de_road_signs.pt",
+    "latest_training": {
+      "status": "evaluation_only",
+      "output_dir": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/model/ch-classifier-bootstrap-v8",
+      "best_checkpoint_sha256": "a21c9e5e1be9ce225818674ed6ef939c91cbc43052a1fd5fc1d80246e12d9797",
+      "best_checkpoint_size_bytes": 26073393,
+      "top1_accuracy": 0.204,
+      "top5_accuracy": 0.308,
+      "validation_labels_present": 43,
+      "validation_labels_expected": 57,
+      "validation_labels_inferred_from_log": 43,
+      "training_epochs_completed": 23,
+      "runtime_release_evidence": false
+    }
+  },
+  "model_readiness": {
+    "status": "not_ready",
+    "evaluation_pack": {
+      "status": "staged_evaluation_only",
+      "training_run_id": "ch-classifier-bootstrap-v9",
+      "dataset_path": "/mnt/nvme/youspeed-tsr-ch-panoramax-20260917/run/ch-classifier-data-v8",
+      "dataset_summary_sha256": "b671bce17ab6b4e27c98b0d45e3e03e985de835687f4f4e114143a0d53bd1cdc",
+      "artwork_render_policy": "116 ASTRA source-preparation renders; synthetic coverage only, not Swiss field imagery or human ground truth",
+      "classifier_outputs": 127,
+      "real_validation": {
+        "samples": 250,
+        "route_groups": 84,
+        "top1_accuracy": 0.976,
+        "top5_accuracy": 0.996,
+        "label_basis": "DE+FR agreement pseudo-labels; no human-level ground truth"
+      },
+      "exports": {
+        "ios_coreml": {"status": "passed", "artifact_sha256": "7ac5f120f208fa824b26f4ece9e7cfb268ca34b7d1680046d8071eb55749c1f7"},
+        "android_litert": {"status": "passed", "artifact_sha256": "eb59c48a0dc5ff1adb1b488b1f3bddfda7324a152ed51e7d7df7c99b43f5b72e"}
+      },
+      "mobile_pack_paths": [
+        "iphone/SpeedConsumerApp/TSRModelPacks/CH.panoramax-bootstrap.tsrmodelpack",
+        "android/app/src/main/assets/tsr/CH.panoramax-bootstrap.tsrmodelpack"
+      ],
+      "runtime_rollout": "evaluation/shadow; absent from production registry"
+    },
+    "training_scope": {
+      "artwork_base_codes": 116,
+      "excluded_base_codes": [
+        "4.88",
+        "4.90"
+      ],
+      "numeric_speed_family": "excluded_from_pictogram_assets; retain semantic speed-limit handling"
+    },
+    "target_pipeline": "YOLOX-Nano-derived proposal detector + MobileNetV3-Large crop classifier + temporal passage reducer",
+    "required_exports": [
+      "coreml",
+      "litert"
+    ],
+    "blocking_gates": [
+      "Swiss Panoramax imagery and annotation inventory",
+      "independent human-reviewed Swiss holdout and field validation",
+      "route/source-grouped train/validation/holdout split",
+      "CH legal/action review and cleared in-scope pictogram set",
+      "on-device Core ML/LiteRT execution parity and latency/thermal evidence",
+      "dataset, model-lineage and Ultralytics license review"
+    ]
+  },
+  "entries": [
+    {
+      "raw": "CH:2.35",
+      "code": "2.35",
+      "base_code": "2.35",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_left_down",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.33",
+      "code": "2.33",
+      "base_code": "2.33",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.34",
+      "code": "2.34",
+      "base_code": "2.34",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_right_down",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.32",
+      "code": "2.32",
+      "base_code": "2.32",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.36",
+      "code": "2.36",
+      "base_code": "2.36",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_through",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.39",
+      "code": "2.39",
+      "base_code": "2.39",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_turn_left_right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.41",
+      "code": "2.41",
+      "base_code": "2.41",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_turn_left_through",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.38",
+      "code": "2.38",
+      "base_code": "2.38",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_turn_left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.40",
+      "code": "2.40",
+      "base_code": "2.40",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_turn_right_through",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.37",
+      "code": "2.37",
+      "base_code": "2.37",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "arrow_turn_right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.60.1",
+      "code": "2.60.1",
+      "base_code": "2.60.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "bicycle:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.60",
+      "code": "2.60",
+      "base_code": "2.60",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "bicycle:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.64",
+      "code": "2.64",
+      "base_code": "2.64",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "bus:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.48",
+      "code": "2.48",
+      "base_code": "2.48",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "chains",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.57",
+      "code": "2.57",
+      "base_code": "2.57",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "chains:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.51",
+      "code": "2.51",
+      "base_code": "2.51",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "customs",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.24",
+      "code": "4.24",
+      "base_code": "4.24",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "escape_lane",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.63",
+      "code": "4.63",
+      "base_code": "4.63",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "exit",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.02",
+      "code": "3.02",
+      "base_code": "3.02",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "give_way",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.30",
+      "code": "1.30",
+      "base_code": "1.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.28",
+      "code": "1.28",
+      "base_code": "1.28",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:airport",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.25",
+      "code": "1.25",
+      "base_code": "1.25",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:animals",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.32",
+      "code": "1.32",
+      "base_code": "1.32",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:bicycle",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.26",
+      "code": "1.26",
+      "base_code": "1.26",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:bothways",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.06",
+      "code": "1.06",
+      "base_code": "1.06",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:bumps",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.06",
+      "code": "3.06",
+      "base_code": "3.06",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:crossing",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.12",
+      "code": "1.12",
+      "base_code": "1.12",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:gravel",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.24a",
+      "code": "1.24a",
+      "base_code": "1.24",
+      "variant_suffix": "a",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:horse",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.11",
+      "code": "1.11",
+      "base_code": "1.11",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:incline:up",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.10",
+      "code": "1.10",
+      "base_code": "1.10",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:include:down",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.05",
+      "code": "3.05",
+      "base_code": "3.05",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:intersection",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.15",
+      "code": "1.15",
+      "base_code": "1.15",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:level_crossing",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.07",
+      "code": "1.07",
+      "base_code": "1.07",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:narrow_both",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.09",
+      "code": "1.09",
+      "base_code": "1.09",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:narrow_left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.08",
+      "code": "1.08",
+      "base_code": "1.08",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:narrow_right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.22",
+      "code": "1.22",
+      "base_code": "1.22",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:pedestrian_crossing",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.14",
+      "code": "1.14",
+      "base_code": "1.14",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:road_works",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.13a",
+      "code": "1.13a",
+      "base_code": "1.13",
+      "variant_suffix": "a",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:rocks",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.23",
+      "code": "1.23",
+      "base_code": "1.23",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:school",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.05",
+      "code": "1.05",
+      "base_code": "1.05",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:slippery",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.31",
+      "code": "1.31",
+      "base_code": "1.31",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:traffic_jam",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.27",
+      "code": "1.27",
+      "base_code": "1.27",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:traffic_signal",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.16",
+      "code": "1.16",
+      "base_code": "1.16",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:train",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.17",
+      "code": "1.17",
+      "base_code": "1.17",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "retired",
+      "model_class": "hazard:tram",
+      "artwork_status": "retired_by_official_reference"
+    },
+    {
+      "raw": "CH:1.02",
+      "code": "1.02",
+      "base_code": "1.02",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:turn_left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.01",
+      "code": "1.01",
+      "base_code": "1.01",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:turn_right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.24",
+      "code": "1.24",
+      "base_code": "1.24",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:wild_animals",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.03",
+      "code": "1.03",
+      "base_code": "1.03",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:zigzag",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:1.04",
+      "code": "1.04",
+      "base_code": "1.04",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "hazard:zigzag:left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.62",
+      "code": "2.62",
+      "base_code": "2.62",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "horse:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.88",
+      "code": "4.88",
+      "base_code": "4.88",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "information",
+      "artwork_status": "official_archive_gap"
+    },
+    {
+      "raw": "CH:4.90",
+      "code": "4.90",
+      "base_code": "4.90",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "info:radio",
+      "artwork_status": "official_archive_gap"
+    },
+    {
+      "raw": "CH:2.17",
+      "code": "2.17",
+      "base_code": "2.17",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxaxleweight",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.19",
+      "code": "2.19",
+      "base_code": "2.19",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxheight",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.20",
+      "code": "2.20",
+      "base_code": "2.20",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxlength",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.30[10]",
+      "code": "2.30[10]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:10",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[100]",
+      "code": "2.30[100]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:100",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[110]",
+      "code": "2.30[110]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:110",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[120]",
+      "code": "2.30[120]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:120",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[130]",
+      "code": "2.30[130]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:130",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[15]",
+      "code": "2.30[15]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:15",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[20]",
+      "code": "2.30[20]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:20",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[25]",
+      "code": "2.30[25]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:25",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[30]",
+      "code": "2.30[30]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:30",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[40]",
+      "code": "2.30[40]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:40",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[5]",
+      "code": "2.30[5]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:5",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[50]",
+      "code": "2.30[50]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:50",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[60]",
+      "code": "2.30[60]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:60",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[70]",
+      "code": "2.30[70]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:70",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[80]",
+      "code": "2.30[80]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:80",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.30[90]",
+      "code": "2.30[90]",
+      "base_code": "2.30",
+      "variant_suffix": null,
+      "numeric_speed_variant": true,
+      "status": "numeric_speed_semantic",
+      "model_class": "maxspeed:90",
+      "artwork_status": "ui_schematic_numeric_exception"
+    },
+    {
+      "raw": "CH:2.53",
+      "code": "2.53",
+      "base_code": "2.53",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxspeed:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.16",
+      "code": "2.16",
+      "base_code": "2.16",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxweight",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.18",
+      "code": "2.18",
+      "base_code": "2.18",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "maxwidth",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.47",
+      "code": "2.47",
+      "base_code": "2.47",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "min_distance",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.31",
+      "code": "2.31",
+      "base_code": "2.31",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "min_speed",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.54",
+      "code": "2.54",
+      "base_code": "2.54",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "min_speed:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.02",
+      "code": "4.02",
+      "base_code": "4.02",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "motorway:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.01",
+      "code": "4.01",
+      "base_code": "4.01",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "motorway:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.05",
+      "code": "2.05",
+      "base_code": "2.05",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_bicycle",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.08",
+      "code": "2.08",
+      "base_code": "2.08",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_bus",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.03",
+      "code": "2.03",
+      "base_code": "2.03",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_car",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.11",
+      "code": "2.11",
+      "base_code": "2.11",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_dangerous_liquid",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.10.1",
+      "code": "2.10.1",
+      "base_code": "2.10.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_dangerous",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.02",
+      "code": "2.02",
+      "base_code": "2.02",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_entry",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.09",
+      "code": "4.09",
+      "base_code": "4.09",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_exit",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.10",
+      "code": "4.10",
+      "base_code": "4.10",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_exit:car",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.07",
+      "code": "2.07",
+      "base_code": "2.07",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_hgv",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.12",
+      "code": "2.12",
+      "base_code": "2.12",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_horse",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.06",
+      "code": "2.06",
+      "base_code": "2.06",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_moped",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.04",
+      "code": "2.04",
+      "base_code": "2.04",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_motorcycle",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.14",
+      "code": "2.14",
+      "base_code": "2.14",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_motor_vehicle",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.13",
+      "code": "2.13",
+      "base_code": "2.13",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_motor_vehicle2",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.44",
+      "code": "2.44",
+      "base_code": "2.44",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_overtaking",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.55",
+      "code": "2.55",
+      "base_code": "2.55",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_overtaking:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.45",
+      "code": "2.45",
+      "base_code": "2.45",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_overtaking:hgv",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.56",
+      "code": "2.56",
+      "base_code": "2.56",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_overtaking:end:hgv",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.50",
+      "code": "2.50",
+      "base_code": "2.50",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_parking",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.15",
+      "code": "2.15",
+      "base_code": "2.15",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_pedestrian",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.15.3",
+      "code": "2.15.3",
+      "base_code": "2.15.3",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_roller",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.15.2",
+      "code": "2.15.2",
+      "base_code": "2.15.2",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_sledging",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.15.1",
+      "code": "2.15.1",
+      "base_code": "2.15.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_skiing",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.49",
+      "code": "2.49",
+      "base_code": "2.49",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_stop",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.09",
+      "code": "2.09",
+      "base_code": "2.09",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_trailer",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.43",
+      "code": "2.43",
+      "base_code": "2.43",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_turn:left",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.42",
+      "code": "2.42",
+      "base_code": "2.42",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_turn:right",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.46",
+      "code": "2.46",
+      "base_code": "2.46",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_u_turn",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.01",
+      "code": "2.01",
+      "base_code": "2.01",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no_way",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.58",
+      "code": "2.58",
+      "base_code": "2.58",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "no:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.08",
+      "code": "4.08",
+      "base_code": "4.08",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "oneway",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.17",
+      "code": "4.17",
+      "base_code": "4.17",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "parking",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.21",
+      "code": "4.21",
+      "base_code": "4.21",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "parking:covered",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.18",
+      "code": "4.18",
+      "base_code": "4.18",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "parking:disc",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.20",
+      "code": "4.20",
+      "base_code": "4.20",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "parking:meter",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.25",
+      "code": "4.25",
+      "base_code": "4.25",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "parking:park_ride",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.63",
+      "code": "2.63",
+      "base_code": "2.63",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian_bicycle:designated",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.63.1",
+      "code": "2.63.1",
+      "base_code": "2.63.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian_bicycle:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.11",
+      "code": "4.11",
+      "base_code": "4.11",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian_crossing",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.61",
+      "code": "2.61",
+      "base_code": "2.61",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.09",
+      "code": "3.09",
+      "base_code": "3.09",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "priority:backward",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.04",
+      "code": "3.04",
+      "base_code": "3.04",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "priority:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.10",
+      "code": "3.10",
+      "base_code": "3.10",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "priority:forward",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.03",
+      "code": "3.03",
+      "base_code": "3.03",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "priority:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.41.1",
+      "code": "2.41.1",
+      "base_code": "2.41.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "roundabout",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.12",
+      "code": "4.12",
+      "base_code": "4.12",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian:underpass",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.13",
+      "code": "4.13",
+      "base_code": "4.13",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "pedestrian:overpass",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:3.01",
+      "code": "3.01",
+      "base_code": "3.01",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "stop",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.04",
+      "code": "4.04",
+      "base_code": "4.04",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "trunk:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.03",
+      "code": "4.03",
+      "base_code": "4.03",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "trunk:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:4.07",
+      "code": "4.07",
+      "base_code": "4.07",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "tunnel:start",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.1",
+      "code": "2.59.1",
+      "base_code": "2.59.1",
+      "variant_suffix": null,
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:30",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.5a",
+      "code": "2.59.5a",
+      "base_code": "2.59.5",
+      "variant_suffix": "a",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:calm",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.6a",
+      "code": "2.59.6a",
+      "base_code": "2.59.6",
+      "variant_suffix": "a",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:calm:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.1e",
+      "code": "2.59.1e",
+      "base_code": "2.59.1",
+      "variant_suffix": "e",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:no_parking",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.2e",
+      "code": "2.59.2e",
+      "base_code": "2.59.2",
+      "variant_suffix": "e",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:no_parking:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.1c",
+      "code": "2.59.1c",
+      "base_code": "2.59.1",
+      "variant_suffix": "c",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:parking",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.2c",
+      "code": "2.59.2c",
+      "base_code": "2.59.2",
+      "variant_suffix": "c",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:parking:end",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.3b",
+      "code": "2.59.3b",
+      "base_code": "2.59.3",
+      "variant_suffix": "b",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:pedestrian",
+      "artwork_status": "official_archive_member"
+    },
+    {
+      "raw": "CH:2.59.4b",
+      "code": "2.59.4b",
+      "base_code": "2.59.4",
+      "variant_suffix": "b",
+      "numeric_speed_variant": false,
+      "status": "artwork_candidate",
+      "model_class": "zone:pedestrian:end",
+      "artwork_status": "official_archive_member"
+    }
+  ]
+}

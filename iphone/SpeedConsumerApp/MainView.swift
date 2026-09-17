@@ -1976,12 +1976,14 @@ private enum LegalTextLoader {
 }
 
 enum TrafficSignThirdPartyNoticesLoader {
-    private static let packSubdirectory =
-        "TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack"
+    private static let packSubdirectories = [
+        "TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack",
+        "TSRModelPacks/CH.panoramax-bootstrap.tsrmodelpack",
+    ]
 
     static func load(bundle: Bundle = .main) -> String {
         let bundles = [bundle, Bundle(for: SpeedConsumerAppDelegate.self)]
-        let notices = ["attributions", packSubdirectory].compactMap { subdirectory in
+        let notices = (["attributions"] + packSubdirectories).compactMap { subdirectory in
             for candidateBundle in bundles {
                 guard let url = candidateBundle.url(
                     forResource: "THIRD_PARTY_NOTICES",

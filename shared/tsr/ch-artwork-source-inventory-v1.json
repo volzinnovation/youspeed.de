@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-09-17",
+  "country": "CH",
+  "scope": {
+    "mapped_base_codes": 120,
+    "numeric_speed_base_code": "2.30",
+    "retired_base_codes": ["1.17"],
+    "owner_excluded_base_codes": ["4.88", "4.90"],
+    "in_scope_artwork_base_codes": 116
+  },
+  "sources": [
+    {
+      "kind": "official_download_archive",
+      "publisher": "Swiss Federal Roads Office (ASTRA)",
+      "url": "https://www.astra.admin.ch/de/signale",
+      "retrieved_at": "2026-09-17",
+      "coverage": {
+        "mapped_base_codes_available": 117,
+        "mapped_base_codes_total": 120,
+        "in_scope_base_codes_available": 116
+      },
+      "formats": ["EPS", "WMF", "SVG"],
+      "license_status": "source_available_reproduction_clearance_pending",
+      "notes": "The official page exposes the sign archives, but the page does not grant an app-redistribution licence. Archive presence is not treated as permission to bundle."
+    },
+    {
+      "kind": "commons_svg_renditions",
+      "publisher": "Wikimedia Commons; source credit commonly ASTRA",
+      "url": "https://commons.wikimedia.org/wiki/Category:SVG_road_signs_in_Switzerland",
+      "retrieved_at": "2026-09-17",
+      "coverage": {
+        "in_scope_base_codes_with_declared_public_domain_svg": 91,
+        "in_scope_base_codes_total": 116,
+        "remaining_in_scope_codes": 25
+      },
+      "license_status": "declared_public_domain_per_file_pending_import_review",
+      "notes": "The reviewed categories expose per-file metadata and many files declare Public domain / PD Switzerland (Official documents). Each selected file still needs exact code, revision, checksum and provenance recorded before packaging."
+    }
+  ],
+  "remaining_in_scope_codes_without_reviewed_commons_svg": [
+    "1.28",
+    "2.59.1",
+    "2.59.2",
+    "2.59.3",
+    "2.59.4",
+    "2.59.5",
+    "2.59.6",
+    "4.01",
+    "4.02",
+    "4.03",
+    "4.04",
+    "4.07",
+    "4.08",
+    "4.09",
+    "4.10",
+    "4.11",
+    "4.12",
+    "4.13",
+    "4.17",
+    "4.18",
+    "4.20",
+    "4.21",
+    "4.24",
+    "4.25",
+    "4.63"
+  ],
+  "owner_excluded_codes": {
+    "4.88": "Explicit owner decision: leave out.",
+    "4.90": "Explicit owner decision: leave out."
+  },
+  "packaging_decision": "Source-preparation artwork may be staged in evaluation-only mobile bundles for shadow testing; do not enable production redistribution or rollout until per-file source and redistribution review is complete and the classifier has independent Swiss evaluation evidence."
+}

@@ -66,6 +66,7 @@
 		9B5664EEF88D53D2381D3C7A /* SWE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B8328EABB25B7CC160EFDDC9 /* SWE-rules.json */; };
 		9C51C7D96113128012CC2134 /* mecklenburg-vorpommern.poly in Resources */ = {isa = PBXBuildFile; fileRef = 7417B3F5E0AF2A8D476C110E /* mecklenburg-vorpommern.poly */; };
 		9C83990BAB5A86DC4202699E /* RegionalCoverage in Resources */ = {isa = PBXBuildFile; fileRef = 874EA64854A26F82F3A96D84 /* RegionalCoverage */; };
+		A1C4E7D9B2F0631854C9D2A1 /* prolix-ch-class-catalog-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = A1C4E7D9B2F0631854C9D2A0 /* prolix-ch-class-catalog-v1.json */; };
 		9D5415A12FA9D38F9D3B9B88 /* RouteScenarioBenchmarkRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B39A5EEAE9245ED1F6FA257 /* RouteScenarioBenchmarkRunner.swift */; };
 		9EF2F2CAF5F8F36228B12709 /* karlsruhe_variants.json in Resources */ = {isa = PBXBuildFile; fileRef = A96FDED162AC60D59BE6F74F /* karlsruhe_variants.json */; };
 		A1603A09C28279C2E9825652 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0FA7950BF984ADA10C90CC8B /* PrivacyInfo.xcprivacy */; };
@@ -207,6 +208,7 @@
 		99EFDB87BFD240828F9F259E /* sachsen.poly */ = {isa = PBXFileReference; path = sachsen.poly; sourceTree = "<group>"; };
 		9A2F4102E4235FC0D1C10EE1 /* PanoramaxUploadClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxUploadClient.swift; sourceTree = "<group>"; };
 		9AE19896C9567940AD3237DC /* sign-pictograms */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sign-pictograms"; path = "../shared/tsr/sign-pictograms"; sourceTree = SOURCE_ROOT; };
+		A1C4E7D9B2F0631854C9D2A0 /* prolix-ch-class-catalog-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "prolix-ch-class-catalog-v1.json"; sourceTree = "<group>"; };
 		9C00B7D4BAE2E00537C6B0B6 /* legal.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = legal.txt; sourceTree = "<group>"; };
 		A129C77B2BC1F748E0F0EA74 /* PanoramaxQueueStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanoramaxQueueStore.swift; sourceTree = "<group>"; };
 		A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedDBBenchUITests.swift; sourceTree = "<group>"; };
@@ -345,6 +347,7 @@
 			isa = PBXGroup;
 			children = (
 				5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */,
+				A1C4E7D9B2F0631854C9D2A0 /* prolix-ch-class-catalog-v1.json */,
 				309E97F1DBD1520586110FA8 /* prolix-be-class-catalog-v1.json */,
 				243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */,
 				164CEBA57DF27BAEAA389B50 /* prolix-fr-class-catalog-v1.json */,
@@ -661,6 +664,7 @@
 				B24C32C4A3053C7B544A978E /* nl.lproj in Resources */,
 				F7D2DE4400D2E357D6C3EA9E /* nordrhein-westfalen.poly in Resources */,
 				DF7F3AC271FF986527A1F159 /* prolix-be-class-catalog-v1.json in Resources */,
+				A1C4E7D9B2F0631854C9D2A1 /* prolix-ch-class-catalog-v1.json in Resources */,
 				252EE9995F351E54A258C171 /* prolix-de-class-catalog-v1.json in Resources */,
 				CDCB3CDFA1B596B83503174E /* prolix-fr-class-catalog-v1.json in Resources */,
 				947FDC9DA8FD4E2A9862B131 /* prolix-nl-class-catalog-v1.json in Resources */,

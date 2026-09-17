@@ -1,0 +1,3 @@
+CH evaluation-only pack.
+
+The model and ASTRA-derived artwork are source-preparation artifacts. They are not cleared for production redistribution; do not enable CH runtime selection until the recorded source/licence review and device validation pass.

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" baseProfile="full" id="body" width="8in" height="8in" viewBox="0 0 1 1" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events">
+<title>SVG drawing</title>
+<desc>This was produced by version 4.4 of GNU libplot, a free library for exporting 2-D vector graphics.</desc>
+<rect id="background" x="0" y="0" width="1" height="1" stroke="none" fill="white"/>
+<g id="content" transform="translate(-0.03125,1.1875) scale(1,-1) scale(0.0017361) " xml:space="preserve" stroke="black" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10.433" stroke-dasharray="none" stroke-dashoffset="0" stroke-opacity="1" fill="none" fill-rule="evenodd" fill-opacity="1" font-style="normal" font-variant="normal" font-weight="normal" font-stretch="normal" font-size-adjust="none" letter-spacing="normal" word-spacing="normal" text-anchor="start">
+<polygon points="261.09,375.22 331.95,375.22 331.95,474.43 261.09,474.43 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="261.09,375.22 331.95,375.22 331.95,474.43 261.09,474.43 " stroke-width="0.2835" />
+<polygon points="293.81,430.73 293.84,432.29 282.91,432.38 276.23,405.63 262.5,386.02 262.5,473.02 323.41,473.02 306.07,448.25 300.97,469.47 298.64,469.47 299,443.85 302.99,443.85 299.99,439.55 266.76,439.55 266.76,435.95 273.73,435.95 273.73,428.84 277.23,428.84 279.13,435.95 297.46,435.95 " stroke="#00ba10" stroke-width="0" fill="#00ba10" fill-rule="nonzero" />
+<polygon points="272.25,380.18 292.7,380.18 293.36,410.33 299.26,418.75 299.61,380.18 322.31,380.18 309.93,432.38 308.81,432.38 311.3,435.95 313.84,435.95 315.47,428.84 318.97,428.84 318.97,435.95 326.28,435.95 326.28,439.55 313.83,439.55 330.54,463.41 330.54,376.64 269.77,376.64 " stroke="#00ba10" stroke-width="0" fill="#00ba10" fill-rule="nonzero" />
+<polygon points="292.27,469.47 285.86,443.85 294.08,443.89 294.69,469.47 " stroke="white" stroke-width="0" fill="white" fill-rule="nonzero" />
+<polygon points="268.91,376.64 330.54,464.65 330.54,473.02 324.28,473.02 262.5,384.79 262.5,376.64 " stroke="#ff1721" stroke-width="0" fill="#ff1721" fill-rule="nonzero" />
+</g>
+</svg>

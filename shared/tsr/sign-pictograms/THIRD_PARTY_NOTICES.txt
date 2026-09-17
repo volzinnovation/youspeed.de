@@ -79,8 +79,9 @@ catalog and README.md. No endorsement by Panoramax is implied.
 The complete published country-code table is materialized separately at
 shared/tsr/sign-pictograms/sources/panoramax-country-code-mapping-v1.json.
 Its SHA-256 and the pinned source revision are recorded in that file. The
-model-class-to-country-code mapping is complete for rows with FR, NL or BE
-values; legal action/semantic review and runtime class binding remain pending.
+model-class-to-country-code mapping is complete for rows with FR, NL, BE or CH
+values; Swiss artwork, legal action/semantic review and runtime class binding
+remain pending for CH.
 
 # LICENCE OUVERTE 2.0/OPEN LICENCE 2.0
 
