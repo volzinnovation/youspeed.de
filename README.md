@@ -110,8 +110,25 @@ and does not retain or publish a camera frame.
 - [`docs/`](docs/): technical and release documentation
 
 ## Scientific paper 
-Read the [youspeed.de paper](https://zenodo.org/records/21626565) for a high-level technical description.
+Read the [youspeed.de paper](https://zenodo.org/records/21626565) for a high-level technical description (previous to our on-device recognition work).
+## Citation
 
+BibTeX:
+
+```bibtex
+@Conference{volz_2026_21626565,
+  author    = {Raphael Volz},
+  title     = {youspeed.de - A system for Intelligent Speed Assistance (ISA) based on OpenStreetMap data},
+  month     = aug,
+  year      = {2026},
+  booktitle = {Proceedings of OSM Science 2026},
+  pages = {26-29},
+  publisher = {Zenodo},
+  organization = "OpenStreetMap",
+  doi       = {10.5281/zenodo.21626565},
+  url       = {https://doi.org/10.5281/zenodo.21626565}
+}
+```
 ## Build and test
 
 Common prerequisites are Python 3, SQLite, `jq`, Git, and optionally `osmium-tool`/`pyosmium` for map processing. The iPhone app requires Xcode 16 or newer. The Android app requires Java 17 and an Android SDK.
@@ -233,25 +250,8 @@ The bundle data is derived from [© OpenStreetMap contributors](https://www.open
 
 ### Max-speed provenance
 
-The max-speed provenance tables from the paper shown below are a snapshot from 23 February 2026.
+The max-speed provenance tables from the paper shown below are a snapshot from 23 February 2026 for Germany (left) and the Top 10 countries by maxspeed tag use in OpenStreetMap.
 
 ![Max-speed provenance summary and country ranking from the paper](docs/maxspeed-provenance-2026-02-23.png)
 
-## Citation
 
-BibTeX:
-
-```bibtex
-@Conference{volz_2026_21626565,
-  author    = {Raphael Volz},
-  title     = {youspeed.de - A system for Intelligent Speed Assistance (ISA) based on OpenStreetMap data},
-  month     = aug,
-  year      = {2026},
-  booktitle = {Proceedings of OSM Science 2026},
-  pages = {26-29},
-  publisher = {Zenodo},
-  organization = "OpenStreetMap",
-  doi       = {10.5281/zenodo.21626565},
-  url       = {https://doi.org/10.5281/zenodo.21626565}
-}
-```
