@@ -4564,7 +4564,9 @@ final class SpeedConsumerTests: XCTestCase {
         _ expectedCount: Int,
         transport: ControlledPanoramaxUploadTransport
     ) async throws {
-        for _ in 0..<200 {
+        // Multipart body preparation runs on a detached utility task and can
+        // take more than a second on a busy hosted simulator runner.
+        for _ in 0..<2_000 {
             if await transport.startedUploadCount() >= expectedCount { return }
             try await Task.sleep(nanoseconds: 5_000_000)
         }
@@ -4575,7 +4577,7 @@ final class SpeedConsumerTests: XCTestCase {
         _ expectedCount: Int,
         limiter: PanoramaxUploadLimiter
     ) async throws {
-        for _ in 0..<200 {
+        for _ in 0..<2_000 {
             if await limiter.waitingRequestCount >= expectedCount { return }
             try await Task.sleep(nanoseconds: 5_000_000)
         }
