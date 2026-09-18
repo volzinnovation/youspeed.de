@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
-"""Generate the README coverage map from the checked-in bundle catalog.
+"""Generate the README coverage map from checked-in official region geometry.
 
-The catalog stores buffered Geofabrik extract polygons for every supported
-bundle. This renderer intentionally uses only the Python standard library so
-the README asset can be refreshed without adding a plotting dependency.
+The mobile catalog stores buffered Geofabrik extract polygons for routing. The
+documentation map uses the separate official administrative/statistical
+geometry subset and renders it in Web Mercator. This renderer intentionally
+uses only the Python standard library.
 """
 from __future__ import annotations
 
 import argparse
 import html
 import json
+import math
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 CATALOG = ROOT / "shared/RegionalCoverage/catalog-v1.json"
+OFFICIAL_REGIONS = ROOT / "shared/RegionalCoverage/official-regions-v1.json"
 TARGETS = ROOT / "iphone/SpeedConsumerApp/BundleTargets.top10.json"
 OUTPUT = ROOT / "docs/bundle-coverage-map.svg"
 
@@ -22,17 +25,25 @@ TSR_COUNTRIES = {"BE", "CH", "DE", "FR", "NL"}
 MAIN_VIEW = (-7.0, 17.5, 41.0, 56.5)
 WIDTH, HEIGHT = 1600, 1000
 MAP = (70, 112, 1100, 850)
+WEB_MERCATOR_MAX_LAT = 85.0511287798066
 
 
 def esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def web_mercator_y(lat: float) -> float:
+    lat = max(-WEB_MERCATOR_MAX_LAT, min(WEB_MERCATOR_MAX_LAT, lat))
+    return math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
+
+
 def project(lon: float, lat: float) -> tuple[float, float]:
     lon_min, lon_max, lat_min, lat_max = MAIN_VIEW
     x0, y0, x1, y1 = MAP
     x = x0 + (lon - lon_min) / (lon_max - lon_min) * (x1 - x0)
-    y = y1 - (lat - lat_min) / (lat_max - lat_min) * (y1 - y0)
+    y_min = web_mercator_y(lat_min)
+    y_max = web_mercator_y(lat_max)
+    y = y1 - (web_mercator_y(lat) - y_min) / (y_max - y_min) * (y1 - y0)
     return x, y
 
 
@@ -83,13 +94,22 @@ def rounded_label(x: float, y: float, label: str, *, fill: str, text_fill: str =
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, default=CATALOG)
+    parser.add_argument("--official-regions", type=Path, default=OFFICIAL_REGIONS)
     parser.add_argument("--targets", type=Path, default=TARGETS)
     parser.add_argument("--output", type=Path, default=OUTPUT)
     args = parser.parse_args()
 
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
     targets = json.loads(args.targets.read_text(encoding="utf-8"))
+    official = json.loads(args.official_regions.read_text(encoding="utf-8"))
     entries = catalog["regions"]
+    official_by_id = {entry["id"]: entry for entry in official["regions"]}
+    if set(official_by_id) != {entry["id"] for entry in entries}:
+        raise SystemExit("official region geometry does not match the bundle catalog")
+    entries = [official_by_id[catalog_entry["id"]] | {
+        "country": catalog_entry["country"],
+        "region": catalog_entry["region"],
+    } for catalog_entry in entries]
     target_count = sum(len(country["regions"]) for country in targets["countries"])
     if target_count != len(entries):
         raise SystemExit(f"target/catalog bundle count mismatch: {target_count} != {len(entries)}")
@@ -101,7 +121,7 @@ def main() -> None:
     svg: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" role="img" aria-labelledby="title desc">',
         '<title id="title">YouSpeed map-bundle coverage in Western Europe</title>',
-        '<desc id="desc">All 51 supported map bundles are shown. Coral marks bundles in countries with an embedded on-device traffic-sign-recognition pack.</desc>',
+        '<desc id="desc">All 51 supported map bundles are shown using official administrative and statistical region boundaries. Coral marks bundles in countries with an embedded on-device traffic-sign-recognition pack.</desc>',
         '<defs>',
         '<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="10" flood-color="#0b1d32" flood-opacity="0.12"/></filter>',
         '<pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M 80 0 L 0 0 0 80" fill="none" stroke="#bfd0df" stroke-opacity="0.34" stroke-width="1"/></pattern>',
@@ -111,7 +131,7 @@ def main() -> None:
         '<rect x="0" y="0" width="1600" height="1000" fill="url(#grid)" opacity="0.34"/>',
         '<rect x="42" y="36" width="1516" height="928" rx="28" fill="#ffffff" filter="url(#shadow)"/>',
         text(78, 86, "YouSpeed bundle coverage", size=30, weight=800),
-        text(78, 110, "Western Europe · current checked-in release targets", size=15, weight=500, fill="#60758b"),
+        text(78, 110, "Western Europe · official region boundaries · Web Mercator", size=15, weight=500, fill="#60758b"),
         f'<rect x="{MAP[0]}" y="{MAP[1]}" width="{MAP[2]-MAP[0]}" height="{MAP[3]-MAP[1]}" rx="22" fill="#dcecf3" stroke="#c3d7e4" stroke-width="2"/>',
     ]
 
@@ -150,7 +170,7 @@ def main() -> None:
 
     svg.extend([
         text(78, 939, "Coral = an embedded on-device TSR pack; blue = map bundle coverage.", size=13, weight=600, fill="#4f667b"),
-        text(78, 957, "Boundaries are buffered Geofabrik extract coverage, not authoritative national borders.", size=11, weight=500, fill="#7890a2"),
+        text(78, 957, "Boundaries: Eurostat/GISCO NUTS 2013 and country geometry · © EuroGeographics for the administrative boundaries.", size=11, weight=500, fill="#7890a2"),
         '<g transform="translate(1150,112)">',
         '<rect width="365" height="852" rx="22" fill="#f6f9fb" stroke="#dce6ed"/>',
         text(30, 46, "At a glance", size=22, weight=800),
@@ -193,8 +213,8 @@ def main() -> None:
         text(30, 708, "evaluation or shadow artifacts;", size=13, weight=500, fill="#60758b"),
         text(30, 727, "production rollout remains gated", size=13, weight=500, fill="#60758b"),
         text(30, 764, "Generated from:", size=12, weight=800, fill="#7890a2"),
-        text(30, 785, "shared/RegionalCoverage/catalog-v1.json", size=11, weight=500, fill="#60758b"),
-        text(30, 803, "and BundleTargets.top10.json", size=11, weight=500, fill="#60758b"),
+        text(30, 785, "official-regions-v1.json", size=11, weight=500, fill="#60758b"),
+        text(30, 803, "and the checked-in bundle catalog", size=11, weight=500, fill="#60758b"),
         '</g>',
         '</svg>',
     ])

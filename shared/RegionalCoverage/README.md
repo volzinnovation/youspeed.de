@@ -14,3 +14,11 @@ These are buffered extract boundaries and can overlap other countries. They
 must not independently authorize a national TSR classifier. Source hashes,
 attribution, PBF URLs and corresponding `.poly` URLs are retained in the catalog.
 See `docs/TSR_COUNTRY_PACK_DELIVERY.md` for regeneration and remaining work.
+
+The README bundle overview map uses the separate
+[Eurostat/GISCO NUTS 2013](https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/)
+geometry subset in `official-regions-v1.json`: NUTS-2 for the former French
+regions, NUTS-1 for the German Länder, and GISCO country boundaries for the
+country bundles. Those geometries are documentation artwork only and do not
+change mobile bundle routing. The map acknowledges `© EuroGeographics for the
+administrative boundaries` as required by the GISCO usage terms.

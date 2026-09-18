@@ -185,10 +185,11 @@ The following map bundles are available from their continuously updated [GitHub 
 The current target catalog contains 51 offline map bundles. The map below is
 focused on Western Europe; blue marks map-bundle coverage and coral marks the
 regions whose country also has an embedded on-device traffic-sign-recognition
-pack (DE, FR, BE, NL, or CH). Embedded TSR packs are currently field-test,
-evaluation, or shadow artifacts; the coral color does not imply production
-rollout or calibrated confidence. The graphic is generated from the checked-in
-catalog with [`scripts/map/generate_bundle_coverage_map.py`](scripts/map/generate_bundle_coverage_map.py).
+pack (DE, FR, BE, NL, or CH). The shapes use the checked-in official
+Eurostat/GISCO region and country boundaries and are rendered in Web Mercator.
+Embedded TSR packs are currently field-test, evaluation, or shadow artifacts;
+the coral color does not imply production rollout or calibrated confidence. The
+graphic is generated with [`scripts/map/generate_bundle_coverage_map.py`](scripts/map/generate_bundle_coverage_map.py).
 
 <img src="docs/bundle-coverage-map.svg" alt="Western Europe map showing YouSpeed map-bundle coverage in blue and embedded on-device traffic-sign recognition coverage in coral" width="900">
 
@@ -253,5 +254,4 @@ The bundle data is derived from [© OpenStreetMap contributors](https://www.open
 The max-speed provenance tables from the paper shown below are a snapshot from 23 February 2026 for Germany (left) and the Top 10 countries by maxspeed tag use in OpenStreetMap.
 
 ![Max-speed provenance summary and country ranking from the paper](docs/maxspeed-provenance-2026-02-23.png)
-
 
