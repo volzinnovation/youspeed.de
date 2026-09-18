@@ -62,7 +62,7 @@ def para(value: object, style: ParagraphStyle) -> Paragraph:
 
 def normalize_code(raw: str, country: str) -> str:
     prefix = country + ":"
-    return raw[len(prefix) :] if raw.startswith(prefix) else raw
+    return raw[len(prefix) :] if raw[: len(prefix)].upper() == prefix else raw
 
 
 def license_label(artwork: dict, country: str) -> str:
