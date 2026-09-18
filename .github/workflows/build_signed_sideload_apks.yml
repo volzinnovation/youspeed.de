@@ -8,6 +8,16 @@ on:
         required: true
         default: "codex/fdroid-minify-1.0.4"
         type: string
+      version_name:
+        description: "Android versionName"
+        required: true
+        default: "1.0.4"
+        type: string
+      build_number:
+        description: "Base Android build number/versionCode"
+        required: true
+        default: "10004"
+        type: string
 
 permissions:
   contents: read
@@ -61,6 +71,8 @@ jobs:
           YOUSPEED_ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.YOUSPEED_ANDROID_RELEASE_STORE_PASSWORD }}
           YOUSPEED_ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.YOUSPEED_ANDROID_RELEASE_KEY_ALIAS }}
           YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD }}
+          YOUSPEED_ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+          YOUSPEED_ANDROID_BUILD_NUMBER: ${{ inputs.build_number }}
         run: ./scripts/build-signed-abi-apks.sh
 
       - name: Upload signed APKs

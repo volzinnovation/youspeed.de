@@ -18,8 +18,12 @@ done
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 android_dir="$(cd "$script_dir/.." && pwd)"
 output_dir="${1:-$android_dir/dist}"
-version_name="1.1"
-base_version_code=10007
+version_name="${YOUSPEED_ANDROID_VERSION_NAME:-1.1}"
+base_version_code="${YOUSPEED_ANDROID_BUILD_NUMBER:-10007}"
+if [[ ! "${base_version_code}" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'YOUSPEED_ANDROID_BUILD_NUMBER must be a positive integer: %s\n' "${base_version_code}" >&2
+  exit 1
+fi
 abis=(armeabi-v7a arm64-v8a x86 x86_64)
 
 mkdir -p "$output_dir"
@@ -31,6 +35,8 @@ for index in "${!abis[@]}"; do
   "$android_dir/gradlew" \
     --project-dir "$android_dir" \
     clean assembleRelease \
+    "-PyouspeedVersionName=$version_name" \
+    "-PyouspeedBuildNumber=$base_version_code" \
     "-PyouspeedAbi=$abi"
 
   source_apk="$android_dir/app/build/outputs/apk/release/app-release.apk"
