@@ -185,11 +185,12 @@
 "panoramax.settings.gps_accuracy_explanation" = "New pictures are captured only with sufficient GPS accuracy and movement of at least 2 × GPS accuracy.";
 "panoramax.account.section" = "Panoramax account";
 "panoramax.account.instance" = "Instance";
-"panoramax.account.security_description" = "Uploads use the fixed YouSpeed Panoramax instance. Your authorization token is stored securely in the iOS Keychain.";
+"panoramax.account.security_description" = "Your authorization token is stored separately and securely in the iOS Keychain for the selected Panoramax server.";
 "panoramax.account.status" = "Status";
 "panoramax.account.disconnect" = "Disconnect account";
 "panoramax.account.connect" = "Authorize account";
 "panoramax.account.validate" = "Check connection";
+"panoramax.account.batch_instance_mismatch" = "Select the Panoramax server used for this batch before uploading.";
 "recordings.title" = "Local recordings";
 "recordings.instructions" = "To record a correction, double-tap the sign and then speak the correct speed as a number.";
 "recordings.empty" = "No local recordings.";

@@ -346,6 +346,7 @@ private fun ParitySlider(label: String, value: Double, range: ClosedFloatingPoin
 internal fun RecorderParitySettings(controller: ConsumerSessionController) {
     val ui = controller.uiState
     var details by remember { mutableStateOf(false) }
+    var panoramaxServerMenuExpanded by remember { mutableStateOf(false) }
     val active = ui.driveRecorderState in setOf(DriveRecorderState.PREPARING, DriveRecorderState.RECORDING, DriveRecorderState.STOPPING)
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ParitySection(parityText("Drive recorder", "Fahrtaufnahme", "Enregistrement du trajet", "Ritopname")) {
@@ -428,6 +429,31 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
             ui.panoramaxMaintenanceIssue?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
         ParitySection(parityText("Panoramax account", "Panoramax-Konto", "Compte Panoramax", "Panoramax-account")) {
+            Text(parityText("Server", "Server", "Serveur", "Server"), fontWeight = FontWeight.SemiBold)
+            Box {
+                OutlinedButton(
+                    onClick = { panoramaxServerMenuExpanded = true },
+                    enabled = !ui.panoramaxAccountBusy && ui.panoramaxActiveUploadBatchIds.isEmpty(),
+                ) { Text(ui.panoramaxAccountInstanceName) }
+                DropdownMenu(
+                    expanded = panoramaxServerMenuExpanded,
+                    onDismissRequest = { panoramaxServerMenuExpanded = false },
+                ) {
+                    PanoramaxServerCatalog.presets.forEach { server ->
+                        DropdownMenuItem(
+                            text = { Text(server.name) },
+                            onClick = {
+                                panoramaxServerMenuExpanded = false
+                                controller.selectPanoramaxServer(server.id)
+                            },
+                        )
+                    }
+                }
+            }
+            Text(parityText("Authorization is stored separately for each server.",
+                "Die Autorisierung wird für jeden Server getrennt gespeichert.",
+                "L’autorisation est stockée séparément pour chaque serveur.",
+                "De autorisatie wordt per server apart opgeslagen."), style = MaterialTheme.typography.bodySmall)
             Text(ui.panoramaxAccountStatus.ifBlank { if (ui.panoramaxAccountConnected)
                 parityText("Connected", "Verbunden", "Connecté", "Verbonden") else parityText("Not connected", "Nicht verbunden", "Non connecté", "Niet verbonden") })
             if (ui.panoramaxAccountBusy) LinearProgressIndicator(Modifier.fillMaxWidth())

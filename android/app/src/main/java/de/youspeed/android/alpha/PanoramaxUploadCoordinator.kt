@@ -62,8 +62,9 @@ class PanoramaxUploadCoordinator(
                 if (selection != null) store.approveSelection(batchId, selection)
                 val batch = requireNotNull(store.getBatch(batchId)) { "Unknown Panoramax batch" }
                 require(PanoramaxQueuePolicy.canStartUpload(batch.state)) { "Review and approve this batch first" }
-                require(batch.instanceOrigin == null || batch.instanceOrigin.trimEnd('/') == PanoramaxServiceConfiguration.origin) { "This batch belongs to another Panoramax instance" }
-                perform(batch, token, job)
+                val origin = account.origin
+                require(batch.instanceOrigin == null || batch.instanceOrigin.trimEnd('/') == origin) { "Select the Panoramax server used for this batch" }
+                perform(batch, token, origin, job)
             } catch (error: Exception) {
                 // File/HTTP errors and cancellation always quarantine any request with an unknown response.
                 val recovery = runCatching { if (store.getBatch(batchId) != null) store.abandonInFlightItems(batchId) }
@@ -81,12 +82,12 @@ class PanoramaxUploadCoordinator(
         }
     }
 
-    private fun perform(initial: PanoramaxBatchRecord, token: String, job: Job) {
+    private fun perform(initial: PanoramaxBatchRecord, token: String, origin: String, job: Job) {
         val batchId = initial.batchId
         val selected = initial.items.filter { it.state in transferableStates }
         val previousCount = initial.items.count { PanoramaxQueuePolicy.isUploaded(it.state) }
         require(selected.isNotEmpty() || PanoramaxQueuePolicy.canResumeRemoteSet(initial) || initial.state == PanoramaxBatchState.PROCESSING) { "No images selected" }
-        val client = PanoramaxUploadClient(token, store.uploadTemporaryDirectory(), transport, job.cancellation, { requireAllowed(job) })
+        val client = PanoramaxUploadClient(token, store.uploadTemporaryDirectory(), transport, job.cancellation, { requireAllowed(job) }, origin = origin)
         var remoteId = initial.remoteUploadSetId
         if (initial.state == PanoramaxBatchState.PROCESSING) {
             require(!remoteId.isNullOrBlank()) { "Missing remote upload set" }
@@ -97,7 +98,7 @@ class PanoramaxUploadCoordinator(
 
         store.updateBatch(initial.copy(
             state = if (remoteId == null) PanoramaxBatchState.CREATING_UPLOAD_SET else PanoramaxBatchState.UPLOADING,
-            instanceOrigin = PanoramaxServiceConfiguration.origin,
+            instanceOrigin = origin,
         ))
         changed()
         if (remoteId == null) {

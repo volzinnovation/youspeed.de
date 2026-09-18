@@ -3120,10 +3120,13 @@ private struct SettingsView: View {
             }
 
             Section(NSLocalizedString("panoramax.account.section", comment: "")) {
-                LabeledContent(
-                    NSLocalizedString("panoramax.account.instance", comment: ""),
-                    value: PanoramaxServiceConfiguration.instanceName
-                )
+                Picker(NSLocalizedString("panoramax.account.instance", comment: ""), selection: $account.instanceOrigin) {
+                    ForEach(PanoramaxServerCatalog.presets) { preset in
+                        Text(preset.name).tag(preset.origin)
+                    }
+                }
+                .pickerStyle(.menu)
+                .disabled(account.isBusy || !viewModel.activePanoramaxUploadBatchIDs.isEmpty)
 
                 Text(NSLocalizedString("panoramax.account.security_description", comment: ""))
                     .font(.footnote)
@@ -3135,13 +3138,16 @@ private struct SettingsView: View {
                     RecordingSafeButton(NSLocalizedString("panoramax.account.disconnect", comment: ""), role: .destructive) {
                         account.disconnect()
                     }
+                    .disabled(account.isBusy)
                 } else {
                     RecordingSafeButton(NSLocalizedString("panoramax.account.connect", comment: "")) {
                         account.connect()
                     }
+                    .disabled(account.isBusy)
                     RecordingSafeButton(NSLocalizedString("panoramax.account.validate", comment: "")) {
                         account.validateConnection()
                     }
+                    .disabled(account.isBusy)
                 }
             }
 

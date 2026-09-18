@@ -3670,6 +3670,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             panoramaxUploadStatusByBatch[batchID] = "Batch zuerst fuer Upload freigeben"
             return
         }
+        if let batchOrigin = batch.instanceOrigin,
+           batchOrigin.trimmingCharacters(in: CharacterSet(charactersIn: "/")) != origin.absoluteString {
+            panoramaxUploadStatusByBatch[batchID] = NSLocalizedString("panoramax.account.batch_instance_mismatch", comment: "")
+            return
+        }
         let selected = batch.items.filter {
             $0.state == .queued || $0.state == .included || $0.state == .retryableError
         }
@@ -3688,7 +3693,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if batch.state != .processing {
             batch.state = batch.remoteUploadSetID == nil ? .creatingUploadSet : .uploading
         }
-        batch.instanceOrigin = origin.absoluteString
+        batch.instanceOrigin = batch.instanceOrigin ?? origin.absoluteString
         do {
             try store.updateBatch(batch)
         } catch {

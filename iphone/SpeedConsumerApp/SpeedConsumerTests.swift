@@ -519,11 +519,15 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
-    func testPanoramaxUsesFixedYouSpeedInstance() {
+    func testPanoramaxOffersYouSpeedAndOpenStreetMapFranceInstances() {
         XCTAssertEqual(PanoramaxServiceConfiguration.instanceName, "panoramax.youspeed.de")
         XCTAssertEqual(
             PanoramaxServiceConfiguration.origin.absoluteString,
             "https://panoramax.youspeed.de"
+        )
+        XCTAssertEqual(
+            PanoramaxServerCatalog.presets.map(\.origin),
+            ["https://panoramax.youspeed.de", "https://panoramax.openstreetmap.fr"]
         )
     }
 

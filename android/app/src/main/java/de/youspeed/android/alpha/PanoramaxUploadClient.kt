@@ -27,6 +27,7 @@ data class PanoramaxHttpRequest(
     val contentType: String? = null,
     val body: ByteArray? = null,
     val bodyFile: File? = null,
+    val origin: String = PanoramaxServiceConfiguration.origin,
 ) {
     // Never let diagnostic interpolation expose an account token or multipart contents.
     override fun toString(): String = "PanoramaxHttpRequest($method $path)"
@@ -56,12 +57,12 @@ fun interface PanoramaxUploadTransport {
 fun PanoramaxUploadTransport.execute(request: PanoramaxHttpRequest): PanoramaxHttpResponse =
     execute(request, PanoramaxRequestCancellation())
 
-/** The transport always uses the fixed HTTPS instance and never follows token-bearing redirects. */
+/** The transport uses the selected HTTPS instance and never follows token-bearing redirects. */
 class HttpPanoramaxUploadTransport : PanoramaxUploadTransport {
     override fun execute(request: PanoramaxHttpRequest, cancellation: PanoramaxRequestCancellation): PanoramaxHttpResponse {
         cancellation.check()
         require(request.path.startsWith("/api/") && !request.path.contains("\\") && !request.path.contains(".."))
-        val connection = URL(PanoramaxServiceConfiguration.origin + request.path).openConnection() as HttpURLConnection
+        val connection = URL(request.origin.trimEnd('/') + request.path).openConnection() as HttpURLConnection
         cancellation.attach(connection)
         try {
             connection.instanceFollowRedirects = false
@@ -138,6 +139,7 @@ class PanoramaxUploadClient(
     private val cancellation: PanoramaxRequestCancellation = PanoramaxRequestCancellation(),
     private val requireProcessingAllowed: () -> Unit = {},
     private val uploadLimiter: Semaphore = sharedUploadLimiter,
+    private val origin: String = PanoramaxServiceConfiguration.origin,
 ) {
     private fun execute(request: PanoramaxHttpRequest): PanoramaxHttpResponse {
         cancellation.check()
@@ -149,6 +151,7 @@ class PanoramaxUploadClient(
         val payload = buildJsonObject { put("title", title); put("estimated_nb_files", estimatedFileCount.coerceAtLeast(1)) }
         return PanoramaxUploadSetStatus.decode(execute(PanoramaxHttpRequest(
             "POST", "/api/upload_sets", token, "application/json", payload.toString().toByteArray(Charsets.UTF_8),
+            origin = origin,
         )).body)
     }
 
@@ -163,19 +166,19 @@ class PanoramaxUploadClient(
                 requireProcessingAllowed()
                 beforeRequest()
                 execute(PanoramaxHttpRequest("POST", "/api/upload_sets/${pathSegment(uploadSetId)}/files", token,
-                    "multipart/form-data; boundary=$boundary", bodyFile = body))
+                    "multipart/form-data; boundary=$boundary", bodyFile = body, origin = origin))
             }
         } finally { uploadLimiter.release() }
     }
 
     fun complete(uploadSetId: String): PanoramaxUploadSetStatus {
-        val response = execute(PanoramaxHttpRequest("POST", "/api/upload_sets/${pathSegment(uploadSetId)}/complete", token))
+        val response = execute(PanoramaxHttpRequest("POST", "/api/upload_sets/${pathSegment(uploadSetId)}/complete", token, origin = origin))
         return if (response.body.isEmpty()) PanoramaxUploadSetStatus(uploadSetId, false) else PanoramaxUploadSetStatus.decode(response.body)
     }
 
     fun pollUntilReady(uploadSetId: String, attempts: Int = 12, intervalMillis: Long = 2000): PanoramaxUploadSetStatus {
         repeat(attempts.coerceAtLeast(1)) { attempt ->
-            val status = PanoramaxUploadSetStatus.decode(execute(PanoramaxHttpRequest("GET", "/api/upload_sets/${pathSegment(uploadSetId)}", token)).body)
+            val status = PanoramaxUploadSetStatus.decode(execute(PanoramaxHttpRequest("GET", "/api/upload_sets/${pathSegment(uploadSetId)}", token, origin = origin)).body)
             if (status.isReady) return status
             if (attempt + 1 < attempts) Thread.sleep(intervalMillis)
         }

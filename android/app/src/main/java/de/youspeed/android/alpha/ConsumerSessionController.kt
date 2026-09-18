@@ -316,6 +316,7 @@ data class ConsumerUiState(
     val panoramaxAccountHasToken: Boolean = false,
     val panoramaxAccountBusy: Boolean = false,
     val panoramaxAccountStatus: String = "",
+    val panoramaxAccountInstanceName: String = PanoramaxServerCatalog.default.name,
     val panoramaxActiveUploadBatchIds: Set<String> = emptySet(),
     val panoramaxUploadStatusByBatch: Map<String, String> = emptyMap(),
     val panoramaxUploadProgressByBatch: Map<String, PanoramaxUploadProgress> = emptyMap(),
@@ -495,7 +496,7 @@ class ConsumerSessionController(
         PanoramaxAccount(appContext).also { account ->
             account.onChange = { postState { copy(panoramaxAccountConnected = account.state.isConnected,
                 panoramaxAccountHasToken = account.state.hasToken, panoramaxAccountBusy = account.state.isBusy,
-                panoramaxAccountStatus = account.state.status) } }
+                panoramaxAccountStatus = account.state.status, panoramaxAccountInstanceName = account.state.instanceName) } }
         }
     }
     private val panoramaxUploader by lazy {
@@ -1351,7 +1352,9 @@ class ConsumerSessionController(
                     panoramaxAccountStatus = panoramaxAccount.state.status,
                     panoramaxAccountConnected = panoramaxAccount.state.isConnected,
                     panoramaxAccountHasToken = panoramaxAccount.state.hasToken,
-                    panoramaxAccountBusy = panoramaxAccount.state.isBusy, panoramaxMaintenanceInProgress = false) }
+                    panoramaxAccountBusy = panoramaxAccount.state.isBusy,
+                    panoramaxAccountInstanceName = panoramaxAccount.state.instanceName,
+                    panoramaxMaintenanceInProgress = false) }
             }.onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message, panoramaxMaintenanceInProgress = false) } }
             refreshPanoramaxBatches()
         }
@@ -1387,6 +1390,10 @@ class ConsumerSessionController(
         }
     }
 
+    fun selectPanoramaxServer(id: String) {
+        if (panoramaxUploader.activeBatchIds.isNotEmpty()) return
+        panoramaxAccount.selectServer(id)
+    }
     fun connectPanoramaxAccount() { submitBackgroundTask { panoramaxAccount.connect()?.let { url -> mainHandler.post { host?.openExternalUrl(url) } } } }
     fun validatePanoramaxAccount() { submitBackgroundTask { panoramaxAccount.validateConnection() } }
     fun disconnectPanoramaxAccount() { stopPanoramaxUploads(); submitBackgroundTask { panoramaxAccount.disconnect() } }
@@ -1401,7 +1408,8 @@ class ConsumerSessionController(
         postState { copy(panoramaxActiveUploadBatchIds = active, panoramaxUploadStatusByBatch = status,
             panoramaxUploadProgressByBatch = progress, panoramaxAccountConnected = panoramaxAccount.state.isConnected,
             panoramaxAccountHasToken = panoramaxAccount.state.hasToken, panoramaxAccountBusy = panoramaxAccount.state.isBusy,
-            panoramaxAccountStatus = panoramaxAccount.state.status) }
+            panoramaxAccountStatus = panoramaxAccount.state.status,
+            panoramaxAccountInstanceName = panoramaxAccount.state.instanceName) }
         refreshPanoramaxBatches()
     }
 

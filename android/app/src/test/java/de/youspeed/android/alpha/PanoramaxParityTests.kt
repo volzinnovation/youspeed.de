@@ -78,7 +78,7 @@ class PanoramaxParityTests {
         assertTrue(store.originalFile(partial.items.single()).exists())
     }
 
-    @Test fun accountConnectionClaimsFixedInstanceButNeverUploadsOrOptsIntoCapture() {
+    @Test fun accountConnectionUsesYouSpeedByDefaultAndNeverOptsIntoCapture() {
         val memory = MemoryCredentials()
         val requests = mutableListOf<PanoramaxHttpRequest>()
         val account = PanoramaxAccount(memory, PanoramaxUploadTransport { request, _ ->
@@ -96,6 +96,26 @@ class PanoramaxParityTests {
         assertNull(account.tokenForUpload())
         assertEquals(listOf("/api/auth/tokens/generate", "/api/users/me", "/api/users/me/tokens/device"), requests.map { it.path })
         assertFalse(requests.joinToString().contains("secret"))
+    }
+
+    @Test fun accountCanSelectOpenStreetMapFranceAndRoutesEveryAccountRequestThere() {
+        val memory = MemoryCredentials()
+        val requests = mutableListOf<PanoramaxHttpRequest>()
+        val account = PanoramaxAccount(memory, PanoramaxUploadTransport { request, _ ->
+            requests += request
+            when (request.path) {
+                "/api/auth/tokens/generate" -> response("""{"id":"osm-device","jwt_token":"osm-secret","links":[{"rel":"claim","href":"https://panoramax.openstreetmap.fr/claim/osm-device"}]}""")
+                else -> PanoramaxHttpResponse(200)
+            }
+        })
+
+        account.selectServer("openstreetmap-france")
+
+        assertEquals("https://panoramax.openstreetmap.fr", account.origin)
+        assertEquals("https://panoramax.openstreetmap.fr/claim/osm-device", account.connect())
+        assertTrue(account.validateConnection())
+        account.disconnect()
+        assertTrue(requests.all { it.origin == "https://panoramax.openstreetmap.fr" })
     }
 
     @Test fun explicitUploadSkipsAcceptedItemsCompletesBeforeDeletingAndCleansMultipart() = withQueue { root, store ->
@@ -301,10 +321,14 @@ class PanoramaxParityTests {
         val root = createTempDirectory("panoramax-parity").toFile()
         try { block(root, PanoramaxQueueStore(File(root, "private"))) } finally { root.deleteRecursively() }
     }
-    private class MemoryCredentials : PanoramaxCredentialStorage {
+    private class MemoryCredentials : PanoramaxOriginCredentialStorage {
         var value: PanoramaxCredentials? = null
         override fun read() = value
         override fun save(credentials: PanoramaxCredentials) { value = credentials }
         override fun delete() { value = null }
+        private val values = mutableMapOf<String, PanoramaxCredentials>()
+        override fun read(origin: String) = values[origin]
+        override fun save(origin: String, credentials: PanoramaxCredentials) { values[origin] = credentials }
+        override fun delete(origin: String) { values.remove(origin) }
     }
 }

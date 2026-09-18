@@ -35,23 +35,49 @@ enum PanoramaxServiceConfiguration {
     static let origin = URL(string: "https://\(instanceName)")!
 }
 
+struct PanoramaxServerPreset: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let origin: String
+}
+
+enum PanoramaxServerCatalog {
+    static let presets: [PanoramaxServerPreset] = [
+        PanoramaxServerPreset(id: "youspeed", name: "YouSpeed (panoramax.youspeed.de)", origin: PanoramaxServiceConfiguration.origin.absoluteString),
+        PanoramaxServerPreset(id: "openstreetmap-france", name: "OpenStreetMap France (panoramax.openstreetmap.fr)", origin: "https://panoramax.openstreetmap.fr"),
+    ]
+}
+
 @MainActor
 final class PanoramaxAccountModel: ObservableObject {
+    @Published var instanceOrigin: String {
+        didSet {
+            UserDefaults.standard.set(instanceOrigin, forKey: Self.originDefaultsKey)
+            updateConnectionState()
+        }
+    }
     @Published private(set) var status = "Nicht verbunden"
     @Published private(set) var isConnected = false
     @Published private(set) var tokenID: String?
+    @Published private(set) var isBusy = false
 
     private let credentials = PanoramaxCredentialStore()
 
     init() {
+        let storedOrigin = UserDefaults.standard.string(forKey: Self.originDefaultsKey)
+        instanceOrigin = PanoramaxServerCatalog.presets.first(where: { $0.origin == storedOrigin })?.origin
+            ?? PanoramaxServiceConfiguration.origin.absoluteString
         updateConnectionState()
     }
 
     func connect() {
+        guard !isBusy else { return }
         let origin = normalizedOrigin
+        isBusy = true
         status = "Verbindung wird vorbereitet"
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { isBusy = false }
             do {
                 let response = try await Self.generateToken(origin: origin)
                 try credentials.save(token: response.jwtToken, tokenID: response.id, origin: origin)
@@ -68,12 +94,16 @@ final class PanoramaxAccountModel: ObservableObject {
     }
 
     func validateConnection() {
+        guard !isBusy else { return }
         Task { @MainActor [weak self] in
             _ = await self?.validateConnectionAndWait()
         }
     }
 
     func validateConnectionAndWait() async -> Bool {
+        guard !isBusy else { return false }
+        isBusy = true
+        defer { isBusy = false }
         let origin = normalizedOrigin
         guard let token = credentials.token(for: origin) else {
             updateConnectionState()
@@ -108,7 +138,23 @@ final class PanoramaxAccountModel: ObservableObject {
     }
 
     var normalizedOrigin: URL {
-        PanoramaxServiceConfiguration.origin
+        guard let url = URL(string: instanceOrigin),
+              url.scheme?.lowercased() == "https",
+              let host = url.host, !host.isEmpty,
+              url.user == nil, url.password == nil,
+              url.query == nil, url.fragment == nil else {
+            return PanoramaxServiceConfiguration.origin
+        }
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        components?.path = ""
+        let candidate = components?.url ?? PanoramaxServiceConfiguration.origin
+        return PanoramaxServerCatalog.presets.first(where: { $0.origin == candidate.absoluteString })
+            .flatMap { URL(string: $0.origin) } ?? PanoramaxServiceConfiguration.origin
+    }
+
+    var instanceName: String {
+        PanoramaxServerCatalog.presets.first(where: { $0.origin == normalizedOrigin.absoluteString })?.name
+            ?? normalizedOrigin.host ?? normalizedOrigin.absoluteString
     }
 
     func tokenForUpload() -> String? {
@@ -127,6 +173,8 @@ final class PanoramaxAccountModel: ObservableObject {
         tokenID = credentials.tokenID(for: origin)
         status = "Token vorhanden – Verbindung pruefen"
     }
+
+    private static let originDefaultsKey = "youspeed.panoramax.instance_origin"
 
     private static func generateToken(origin: URL) async throws -> PanoramaxTokenResponse {
         var request = URLRequest(url: origin.appendingPathComponent("api/auth/tokens/generate"))

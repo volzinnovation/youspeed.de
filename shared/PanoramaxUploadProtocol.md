@@ -6,13 +6,13 @@ Panoramax still capture is one independent consumer of the shared Drive Recorder
 
 ## Authentication
 
-1. Use the fixed `https://panoramax.youspeed.de` instance origin.
+1. Use the selected HTTPS instance origin (`https://panoramax.youspeed.de` or `https://panoramax.openstreetmap.fr`).
 2. `POST /api/auth/tokens/generate` creates a token.
 3. Open the returned claim link so the user can associate the token with their Panoramax account.
 4. Store the token only in the platform secure store (iOS Keychain; Android Keystore-backed encrypted storage).
 5. Validate with `GET /api/users/me` and send it as `Authorization: Bearer`.
 
-There is no embedded YouSpeed-wide API key. Each device creates and claims its own token on the fixed YouSpeed Panoramax instance. Connecting an account never opts the user into capture and never schedules an upload.
+There is no embedded YouSpeed-wide API key. Each device creates and claims its own token on the selected Panoramax instance. Connecting an account never opts the user into capture and never schedules an upload.
 
 ## Post-drive upload gate
 
@@ -22,7 +22,7 @@ Capture and upload are different state machines. The upload transport must rejec
 - the Panoramax batch is no longer `capturing`;
 - the user has reviewed the local stills and explicitly included at least one original;
 - the batch has been explicitly approved for upload; and
-- valid credentials exist for `https://panoramax.youspeed.de`.
+- valid credentials exist for the selected Panoramax instance.
 
 Stopping a drive only closes the local batch and makes it available for review. It must not create an upload set, upload a file, or schedule an automatic upload. Restoring a batch, regaining connectivity, connecting an account, or retrying app startup must not bypass this gate. Processing may happen immediately after the drive or in a later app session.
 

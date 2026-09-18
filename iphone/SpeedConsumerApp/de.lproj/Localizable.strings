@@ -185,11 +185,12 @@
 "panoramax.settings.gps_accuracy_explanation" = "Neue Bilder werden nur bei ausreichender GPS-Genauigkeit und mindestens 2 × GPS-Genauigkeit Bewegung aufgenommen.";
 "panoramax.account.section" = "Panoramax-Konto";
 "panoramax.account.instance" = "Instanz";
-"panoramax.account.security_description" = "Uploads verwenden die feste YouSpeed-Panoramax-Instanz. Dein Autorisierungs-Token wird sicher im iOS-Schlüsselbund gespeichert.";
+"panoramax.account.security_description" = "Dein Autorisierungs-Token wird für den ausgewählten Panoramax-Server getrennt und sicher im iOS-Schlüsselbund gespeichert.";
 "panoramax.account.status" = "Status";
 "panoramax.account.disconnect" = "Konto trennen";
 "panoramax.account.connect" = "Konto autorisieren";
 "panoramax.account.validate" = "Verbindung prüfen";
+"panoramax.account.batch_instance_mismatch" = "Wähle vor dem Hochladen den Panoramax-Server dieses Batches aus.";
 "recordings.title" = "Lokale Erfassungen";
 "recordings.instructions" = "Zur Erfassung von Korrekturen Schild doppelklicken, anschliessend die korrekte Geschwindigkeit als Zahl einsprechen.";
 "recordings.empty" = "Keine lokalen Erfassungen vorhanden.";
