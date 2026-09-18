@@ -5837,6 +5837,13 @@ final class SpeedConsumerTests: XCTestCase {
         )
         XCTAssertEqual(route?.region, "narrow")
         assertPathEqual(route?.dbPath, narrowDB.path)
+        let candidates = try await manager.resolveLocalBundleRoutes(
+            lat: 48.80117,
+            lon: 8.44278,
+            fallbackDBPath: broadDB.path
+        )
+        XCTAssertEqual(candidates.count, 2)
+        XCTAssertEqual(Set(candidates.map(\.region)), Set(["broad", "narrow"]))
     }
 
     func testResolvePenaltyRuleContextUsesManifestCountryAndRulesFile() async throws {
@@ -17422,6 +17429,67 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
             CameraSpeedLimitUsePresentation.isVisible(
                 isInSpeedCaptureMode: false,
                 effectiveState: evidenceOnlyState
+            )
+        )
+    }
+
+    func testOverlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch() {
+        let current = LocalBundleRoute(
+            region: "germany/rheinland-pfalz",
+            bundleVersion: "v1",
+            countryCode: "DEU",
+            dbPath: "/rp.sqlite"
+        )
+        let alternate = LocalBundleRoute(
+            region: "germany/baden-wuerttemberg",
+            bundleVersion: "v1",
+            countryCode: "DEU",
+            dbPath: "/bw.sqlite"
+        )
+        let currentProbe = BundleRouteProbe(
+            route: current,
+            hasWayMatch: true,
+            hasSpeedMatch: true,
+            nearestCandidateDistanceM: 20,
+            nearestSpeedCandidateDistanceM: 20
+        )
+        let tiedAlternate = BundleRouteProbe(
+            route: alternate,
+            hasWayMatch: true,
+            hasSpeedMatch: true,
+            nearestCandidateDistanceM: 20,
+            nearestSpeedCandidateDistanceM: 20
+        )
+        XCTAssertEqual(
+            BundleRouteSelection.choose(probes: [currentProbe, tiedAlternate], currentDBPath: current.dbPath),
+            current
+        )
+        let noWayCurrent = BundleRouteProbe(
+            route: current,
+            hasWayMatch: false,
+            hasSpeedMatch: false,
+            nearestCandidateDistanceM: nil,
+            nearestSpeedCandidateDistanceM: nil
+        )
+        XCTAssertEqual(
+            BundleRouteSelection.choose(probes: [noWayCurrent, tiedAlternate], currentDBPath: current.dbPath),
+            alternate
+        )
+    }
+
+    func testStaleBundleStateIsExplicitAndNotCameraEvidence() {
+        let state = EffectiveSpeedLimitState(
+            value: .numeric(50),
+            source: .staleBundle,
+            presentationReason: "stale_bundle_geometry_gap",
+            hasCameraEvidenceMarker: false
+        )
+        XCTAssertEqual(state.value.speedKmh, 50)
+        XCTAssertFalse(state.hasCameraEvidenceMarker)
+        XCTAssertFalse(
+            CameraSpeedLimitUsePresentation.isVisible(
+                isInSpeedCaptureMode: false,
+                effectiveState: state
             )
         )
     }

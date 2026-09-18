@@ -970,6 +970,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureLatestTranscript: String = ""
     private var speedCaptureDidResolve = false
     private var lastKnownSpeedLimitKmh: Int?
+    private var lastKnownBundleSpeedLimitKmh: Int?
+    private var lastKnownBundleSpeedLimitAt: Date?
+    private var lastKnownBundleSpeedLimitCoordinate: CLLocationCoordinate2D?
+    private var lastKnownBundleDBPath: String?
+    private var staleBundleSpeedLimitActive = false
+    private static let staleBundleSpeedLimitMaxAge: TimeInterval = 15
+    private static let staleBundleSpeedLimitMaxDistanceM: CLLocationDistance = 150
     private var localSpeedOverridesByWayID: [String: Int] = [:]
     private var localSpeedOverrideValuesByWayID: [String: String] = [:]
     private var localSpeedOverrideRevisionsByWayID: [String: String] = [:]
@@ -2108,20 +2115,35 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func currentBaseEffectiveSpeedLimitState() -> EffectiveSpeedLimitState {
-        EffectiveSpeedLimitState.base(
+        let base = EffectiveSpeedLimitState.base(
             localValue: currentLocalCorrectionValue,
             bundledSpeedKmh: currentBundledSpeedLimitKmh,
             bundledUnlimited: currentBaseUnlimitedSpeedLimitActive
         )
+        guard staleBundleSpeedLimitActive,
+              base.source == .bundle,
+              case .numeric(let speed) = base.value else {
+            return base
+        }
+        return EffectiveSpeedLimitState(
+            value: .numeric(speed),
+            source: .staleBundle,
+            presentationReason: "stale_bundle_geometry_gap",
+            hasCameraEvidenceMarker: false
+        )
     }
 
     private func speedLimitFallbackAfterEnd() -> EffectiveSpeedLimitValue? {
+        if currentBaseEffectiveSpeedLimitState().source == .staleBundle {
+            return nil
+        }
         if let speed = TrafficSignBundleContextPolicy.defaultSpeedKmh(
             insideCity: lastLookupInsideCity, citySource: lastLookupCitySource
         ) {
             return .numeric(speed)
         }
-        let base = currentBaseEffectiveSpeedLimitState().value
+        let baseState = currentBaseEffectiveSpeedLimitState()
+        let base = baseState.value
         return base == .unknown ? nil : base
     }
 
@@ -2134,6 +2156,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func publishEffectiveSpeedLimitState(_ state: EffectiveSpeedLimitState) {
+        let presentedState: EffectiveSpeedLimitState
+        if state.source == .camera {
+            presentedState = state
+        } else if let speedKmh = trafficSignOverridePolicy.cameraSpeedKmh(
+            currentContext: latestTrafficSignDetectionContext
+        ) {
+            presentedState = EffectiveSpeedLimitState(
+                value: .numeric(speedKmh),
+                source: .camera,
+                presentationReason: "camera_confirmed_frames",
+                hasCameraEvidenceMarker: true
+            )
+        } else {
+            presentedState = state
+        }
         let presentationState: EffectiveSpeedLimitState
         if appScreenshotState == .cameraLimitActive {
             presentationState = EffectiveSpeedLimitState(
@@ -2143,7 +2180,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 hasCameraEvidenceMarker: true
             )
         } else {
-            presentationState = state
+            presentationState = presentedState
         }
         effectiveSpeedLimitState = presentationState
         switch presentationState.value {
@@ -2168,18 +2205,46 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func publishLegacyTrafficSignOverride(from state: EffectiveSpeedLimitState) {
-        guard state.source == .camera,
-              case .numeric(let speed) = state.value,
-              let passage = trafficSignEffectiveLimitResolver.activePassage else {
+        let presentedState: EffectiveSpeedLimitState
+        if state.source == .camera {
+            presentedState = state
+        } else if let speedKmh = trafficSignOverridePolicy.cameraSpeedKmh(
+            currentContext: latestTrafficSignDetectionContext
+        ) {
+            presentedState = EffectiveSpeedLimitState(
+                value: .numeric(speedKmh),
+                source: .camera,
+                presentationReason: "camera_confirmed_frames",
+                hasCameraEvidenceMarker: true
+            )
+        } else {
+            presentedState = state
+        }
+        guard presentedState.source == .camera,
+              case .numeric(let speed) = presentedState.value else {
+            trafficSignRecognitionActiveOverride = nil
+            return
+        }
+        if let passage = trafficSignEffectiveLimitResolver.activePassage {
+            trafficSignRecognitionActiveOverride = TrafficSignTransientSpeedOverride(
+                speedKmh: speed,
+                detectedAt: passage.passageBoundaryTimestampUTC,
+                packId: passage.packID,
+                trackId: passage.physicalTrackID,
+                context: passage.activationContext
+            )
+            return
+        }
+        guard let immediate = trafficSignOverridePolicy.activeOverride else {
             trafficSignRecognitionActiveOverride = nil
             return
         }
         trafficSignRecognitionActiveOverride = TrafficSignTransientSpeedOverride(
             speedKmh: speed,
-            detectedAt: passage.passageBoundaryTimestampUTC,
-            packId: passage.packID,
-            trackId: passage.physicalTrackID,
-            context: passage.activationContext
+            detectedAt: immediate.detectedAt,
+            packId: immediate.packId,
+            trackId: immediate.trackId,
+            context: immediate.context
         )
     }
 
@@ -2647,8 +2712,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         latestTrafficSignDetectionContext
     }
 
-    /// Accepts one immutable frame result. Only a generation-matched finalized
-    /// passage may mutate the effective source or reach persistence.
+    /// Accepts one immutable frame result. A generation-matched confirmed live
+    /// frame may update presentation immediately; only a finalized passage
+    /// reaches persistence and the durable camera assertion.
     private func acceptTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
         guard trafficSignMutationIsEnabled else { return }
         let generationMatches = emission.sessionGeneration == trafficSignRecorderGeneration
@@ -2661,6 +2727,31 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 detail: "emission=\(emission.sessionGeneration):\(emission.contextGeneration):\(emission.captureSessionId ?? "none") active=\(trafficSignRecorderGeneration):\(trafficSignContextGeneration):\(driveCaptureCoordinator?.activeCaptureSessionID ?? "none")"
             )
             return
+        }
+        let immediateOverrideChanged: Bool
+        if emission.event.source == .liveFrame,
+           let eventContext = emission.event.roadContext,
+           eventContext.isValid,
+           eventContext.matchedWayStable,
+           eventContext.sourceSignature.hasVerifiedBundleLineage,
+           let currentSourceSignature = currentTrafficSignSourceSignature,
+           eventContext.sourceSignature == currentSourceSignature {
+            immediateOverrideChanged = trafficSignOverridePolicy.ingestConfirmedDetection(
+                emission.event,
+                currentSourceSignature: currentSourceSignature
+            )
+        } else {
+            immediateOverrideChanged = false
+        }
+        if immediateOverrideChanged {
+            let effective = trafficSignEffectiveLimitResolver.resolve(
+                base: currentBaseEffectiveSpeedLimitState(),
+                currentContext: latestTrafficSignDetectionContext,
+                currentCoordinate: currentCoordinateForTrafficSignEvaluation,
+                timestamp: emission.event.frameTimestampUtc
+            )
+            publishEffectiveSpeedLimitState(effective)
+            publishLegacyTrafficSignOverride(from: effective)
         }
         logTrafficSignRuntimeEmission(emission)
         if emission.displayObservation?.isSpeedLimitEnd == true {
@@ -6503,15 +6594,75 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private func routeDatabaseForCoordinate(lat: Double, lon: Double, fixTimestamp: String, fixID: Int) async {
+    private func routeDatabaseForCoordinate(
+        lat: Double,
+        lon: Double,
+        speedKmh: Double,
+        headingDegrees: Double?,
+        headingAccuracyDegrees: Double?,
+        horizontalAccuracyM: Double,
+        fixTimestamp: String,
+        fixID: Int
+    ) async {
         let routingContextGeneration = trafficSignContextGeneration
         do {
-            guard let route = try await bundleManager.resolveLocalBundleRoute(
+            var routes = try await bundleManager.resolveLocalBundleRoutes(
                 lat: lat,
                 lon: lon,
                 fallbackDBPath: activeDBPath.isEmpty ? nil : activeDBPath
-            ) else {
+            )
+            if !activeDBPath.isEmpty,
+               !routes.contains(where: { $0.dbPath == activeDBPath }) {
+                routes.append(LocalBundleRoute(
+                    region: activeBundleVersion.isEmpty ? "active" : activeBundleVersion,
+                    bundleVersion: activeBundleVersion.isEmpty ? "unknown" : activeBundleVersion,
+                    countryCode: activeMapCountryCode,
+                    dbPath: activeDBPath,
+                    dbSHA256: activeBundleDBSHA256
+                ))
+            }
+            guard !routes.isEmpty else {
                 return
+            }
+
+            let route: LocalBundleRoute
+            if routes.count == 1 {
+                route = routes[0]
+            } else {
+                let probeRoutes = routes
+                let probeRadiusM = Self.lookupRadius(forHorizontalAccuracy: horizontalAccuracyM)
+                let probeMaxCandidates = lookupMaxCandidates
+                let matchingModel = matcherDebugProfile.matchingModel
+                let probes = await Task.detached(priority: .utility) {
+                    probeRoutes.compactMap { candidate -> BundleRouteProbe? in
+                        do {
+                            let result = try V3SpeedLimitService(
+                                dbPath: candidate.dbPath,
+                                countryCode: candidate.countryCode,
+                                matchingModel: matchingModel
+                            ).lookupSpeedLimit(
+                                lat: lat,
+                                lon: lon,
+                                radiusM: probeRadiusM,
+                                maxCandidates: probeMaxCandidates,
+                                headingDeg: headingDegrees,
+                                headingAccuracyDeg: headingAccuracyDegrees,
+                                speedKmh: speedKmh,
+                                horizontalAccuracyM: horizontalAccuracyM
+                            )
+                            return BundleRouteProbe(
+                                route: candidate,
+                                hasWayMatch: result.wayID != nil,
+                                hasSpeedMatch: result.speedLimitKmh != nil || result.isUnlimitedSpeedLimit == true,
+                                nearestCandidateDistanceM: result.nearestCandidateDistanceM,
+                                nearestSpeedCandidateDistanceM: result.nearestSpeedCandidateDistanceM
+                            )
+                        } catch {
+                            return nil
+                        }
+                    }
+                }.value
+                route = BundleRouteSelection.choose(probes: probes, currentDBPath: activeDBPath) ?? routes[0]
             }
             guard fixID == latestTrafficSignLookupFixID,
                   routingContextGeneration == trafficSignContextGeneration else { return }
@@ -6580,7 +6731,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let course = headingDegrees
         let courseAccuracy = headingAccuracyDegrees
 
-        await routeDatabaseForCoordinate(lat: lat, lon: lon, fixTimestamp: fixTimestamp, fixID: fixID)
+        await routeDatabaseForCoordinate(
+            lat: lat,
+            lon: lon,
+            speedKmh: speedKmh,
+            headingDegrees: course,
+            headingAccuracyDegrees: courseAccuracy,
+            horizontalAccuracyM: hAcc,
+            fixTimestamp: fixTimestamp,
+            fixID: fixID
+        )
 
         guard fixID == latestTrafficSignLookupFixID else { return }
 
@@ -6679,7 +6839,41 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         localOverrideValue: localOverrideValue,
                         travelDirection: travelDirection
                     )
-                    self.currentBundledSpeedLimitKmh = result.speedLimitKmh
+                    let geometryGap = result.wayID == nil
+                        && result.candidateCount == 0
+                        && result.speedCandidateCount == 0
+                    if result.wayID != nil {
+                        if let speed = result.speedLimitKmh {
+                            self.lastKnownBundleSpeedLimitKmh = speed
+                            self.lastKnownBundleSpeedLimitAt = location.timestamp
+                            self.lastKnownBundleSpeedLimitCoordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                            self.lastKnownBundleDBPath = self.activeDBPath
+                        } else {
+                            self.lastKnownBundleSpeedLimitKmh = nil
+                            self.lastKnownBundleSpeedLimitAt = nil
+                            self.lastKnownBundleSpeedLimitCoordinate = nil
+                            self.lastKnownBundleDBPath = nil
+                        }
+                        self.staleBundleSpeedLimitActive = false
+                    } else if geometryGap,
+                              let lastSpeed = self.lastKnownBundleSpeedLimitKmh,
+                              self.lastKnownBundleDBPath == self.activeDBPath,
+                              let lastAt = self.lastKnownBundleSpeedLimitAt,
+                              let lastCoordinate = self.lastKnownBundleSpeedLimitCoordinate,
+                              location.timestamp.timeIntervalSince(lastAt) >= 0,
+                              location.timestamp.timeIntervalSince(lastAt) <= Self.staleBundleSpeedLimitMaxAge,
+                              CLLocation(latitude: lat, longitude: lon).distance(
+                                from: CLLocation(latitude: lastCoordinate.latitude, longitude: lastCoordinate.longitude)
+                              ) <= Self.staleBundleSpeedLimitMaxDistanceM {
+                        self.currentBundledSpeedLimitKmh = lastSpeed
+                        self.staleBundleSpeedLimitActive = true
+                    } else {
+                        self.staleBundleSpeedLimitActive = false
+                        self.currentBundledSpeedLimitKmh = result.speedLimitKmh
+                    }
+                    if !self.staleBundleSpeedLimitActive {
+                        self.currentBundledSpeedLimitKmh = result.speedLimitKmh
+                    }
                     self.currentLocalCorrectionSpeedKmh = localOverride
                     self.currentLocalCorrectionValue = localOverrideValue
                     let baseSpeedLimitDisplayText = Self.speedLimitDisplayText(
@@ -7246,7 +7440,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var currentOverspeedKmh: Int {
-        guard !isUnlimitedSpeedLimitActive, let speedLimitKmh else {
+        guard effectiveSpeedLimitState.source != .staleBundle,
+              !isUnlimitedSpeedLimitActive,
+              let speedLimitKmh else {
             return 0
         }
         return max(0, Int(round(currentSpeedKmh)) - speedLimitKmh)

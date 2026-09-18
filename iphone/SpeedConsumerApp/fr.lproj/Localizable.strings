@@ -277,6 +277,7 @@
 
 "limit.accessibility.value" = "Limitation de vitesse %@";
 "limit.accessibility.numeric" = "Limitation de vitesse : %d kilomètres par heure";
+"limit.accessibility.numeric_stale" = "Limitation de vitesse conservée temporairement : %d kilomètres par heure";
 "limit.accessibility.walk" = "Zone piétonne, vitesse au pas";
 "limit.accessibility.unlimited" = "Pas de limitation de vitesse";
 "limit.accessibility.end_unknown" = "Fin détectée, limitation inconnue";

@@ -197,47 +197,58 @@ class BundleBootstrapper(
         return removed
     }
 
-    fun resolveLocalBundleRoute(
+    fun resolveLocalBundleRoutes(
         lat: Double,
         lon: Double,
         fallbackDBPath: String?,
-    ): LocalBundleRoute? {
+    ): List<LocalBundleRoute> {
         val entries = loadCoverageEntriesIfNeeded()
         if (entries.isEmpty()) {
             val fallback = fallbackDBPath?.trim().orEmpty()
-            return fallbackRoute(fallback)
+            return fallbackRoute(fallback)?.let(::listOf).orEmpty()
         }
 
         val matches = entries.filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
         if (matches.isEmpty()) {
             val fallback = fallbackDBPath?.trim().orEmpty()
-            return fallbackRoute(fallback)
+            return fallbackRoute(fallback)?.let(::listOf).orEmpty()
         }
 
-        var best = matches.sortedWith(
+        val sortedMatches = matches.sortedWith(
             compareBy<CoverageEntry> { bboxArea(it.bbox) }
                 .thenByDescending { it.bundleVersion }
                 .thenBy { it.region },
-        ).first()
-        if (!File(best.dbPath).isAvailableDatabase()) {
-            best = loadCoverageEntriesIfNeeded(forceReload = true)
+        )
+        var availableMatches = sortedMatches.filter { File(it.dbPath).isAvailableDatabase() }
+        if (availableMatches.isEmpty()) {
+            availableMatches = loadCoverageEntriesIfNeeded(forceReload = true)
                 .filter { pointIsInsideCoverage(lon = lon, lat = lat, entry = it) }
                 .sortedWith(
                     compareBy<CoverageEntry> { bboxArea(it.bbox) }
                         .thenByDescending { it.bundleVersion }
                         .thenBy { it.region },
                 )
-                .firstOrNull()
-                ?: return fallbackRoute(fallbackDBPath?.trim().orEmpty())
+                .filter { File(it.dbPath).isAvailableDatabase() }
         }
-        return LocalBundleRoute(
-            region = best.region,
-            bundleVersion = best.bundleVersion,
-            countryCode = best.countryCode,
-            dbPath = best.dbPath,
-            dbSha256 = best.dbSha256,
-        )
+        if (availableMatches.isEmpty()) {
+            return fallbackRoute(fallbackDBPath?.trim().orEmpty())?.let(::listOf).orEmpty()
+        }
+        return availableMatches.map { entry ->
+            LocalBundleRoute(
+                region = entry.region,
+                bundleVersion = entry.bundleVersion,
+                countryCode = entry.countryCode,
+                dbPath = entry.dbPath,
+                dbSha256 = entry.dbSha256,
+            )
+        }
     }
+
+    fun resolveLocalBundleRoute(
+        lat: Double,
+        lon: Double,
+        fallbackDBPath: String?,
+    ): LocalBundleRoute? = resolveLocalBundleRoutes(lat, lon, fallbackDBPath).firstOrNull()
 
     private fun fallbackRoute(dbPath: String): LocalBundleRoute? {
         if (dbPath.isEmpty()) return null

@@ -20,7 +20,7 @@ object ConsumerMainScreenLogic {
     fun isSearchingSignal(state: ConsumerUiState): Boolean = !hasUsableGpsFix(state)
 
     fun currentOverspeedKmh(state: ConsumerUiState): Int {
-        if (state.isUnlimitedSpeedLimitActive) {
+        if (state.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.STALE_BUNDLE || state.isUnlimitedSpeedLimitActive) {
             return 0
         }
         val speedLimit = state.speedLimitKmh ?: return 0

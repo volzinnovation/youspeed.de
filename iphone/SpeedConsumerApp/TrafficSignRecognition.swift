@@ -1265,6 +1265,25 @@ struct TrafficSignTransientSpeedOverride: Codable, Equatable, Sendable {
 struct TrafficSignTransientOverridePolicy: Sendable {
     private(set) var activeOverride: TrafficSignTransientSpeedOverride?
 
+    /// Returns the confirmed-frame camera value while it still belongs to the
+    /// current road/source context. This is the presentation-time counterpart
+    /// to `resolvedSpeedKmh`; passage finalization may later replace it with a
+    /// durable assertion.
+    mutating func cameraSpeedKmh(
+        currentContext: TrafficSignDetectionContext?
+    ) -> Int? {
+        guard let activeOverride else { return nil }
+        guard let currentContext,
+              currentContext.isValid,
+              activeOverride.context.wayId == currentContext.wayId,
+              activeOverride.context.travelDirection == currentContext.travelDirection,
+              activeOverride.context.sourceSignature == currentContext.sourceSignature else {
+            self.activeOverride = nil
+            return nil
+        }
+        return activeOverride.speedKmh
+    }
+
     /// The auxiliary v2 event remains a parallel QA signal. The same model
     /// pack's primary event is evaluated live by the passage finalizer; v2
     /// cannot create a second, competing transient override.

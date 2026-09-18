@@ -481,7 +481,7 @@ struct DownloadedBundleInfo: Sendable, Hashable, Identifiable {
     let dbPath: String
 }
 
-struct LocalBundleRoute: Sendable {
+struct LocalBundleRoute: Sendable, Equatable {
     let region: String
     let bundleVersion: String
     let countryCode: String?
@@ -500,6 +500,62 @@ struct LocalBundleRoute: Sendable {
         self.countryCode = countryCode
         self.dbPath = dbPath
         self.dbSHA256 = dbSHA256
+    }
+}
+
+/// Evidence collected by probing one installed bundle at a coordinate that
+/// belongs to more than one coverage polygon.
+struct BundleRouteProbe: Sendable {
+    let route: LocalBundleRoute
+    let hasWayMatch: Bool
+    let hasSpeedMatch: Bool
+    let nearestCandidateDistanceM: Double?
+    let nearestSpeedCandidateDistanceM: Double?
+
+    var score: Double {
+        var value = 0.0
+        if hasWayMatch { value += 1_000 }
+        if hasSpeedMatch { value += 500 }
+        if let distance = nearestCandidateDistanceM, distance.isFinite {
+            value += max(0, 250 - distance)
+        }
+        if let distance = nearestSpeedCandidateDistanceM, distance.isFinite {
+            value += max(0, 250 - distance)
+        }
+        return value
+    }
+}
+
+enum BundleRouteSelection {
+    /// Require meaningful evidence before replacing a currently usable route.
+    /// This prevents overlapping polygons from making the active bundle flap
+    /// when both databases can match the same road.
+    static let switchScoreMargin = 120.0
+
+    static func choose(
+        probes: [BundleRouteProbe],
+        currentDBPath: String?
+    ) -> LocalBundleRoute? {
+        guard !probes.isEmpty else { return nil }
+        let ordered = probes.sorted {
+            if $0.score != $1.score { return $0.score > $1.score }
+            return $0.route.region < $1.route.region
+        }
+        guard let best = ordered.first else { return nil }
+        guard let currentDBPath,
+              let current = probes.first(where: { $0.route.dbPath == currentDBPath }) else {
+            return best.route
+        }
+        guard best.route.dbPath != current.route.dbPath else { return current.route }
+
+        // A route with no road match is not a viable incumbent. Likewise, a
+        // road-only match should yield to a route that actually supplies a
+        // speed candidate at a border crossing.
+        if (!current.hasWayMatch && best.hasWayMatch)
+            || (current.hasWayMatch && !current.hasSpeedMatch && best.hasSpeedMatch) {
+            return best.route
+        }
+        return best.score >= current.score + switchScoreMargin ? best.route : current.route
     }
 }
 

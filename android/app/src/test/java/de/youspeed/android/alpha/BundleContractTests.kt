@@ -496,6 +496,27 @@ class BundleContractTests {
     }
 
     @Test
+    fun resolveLocalBundleRoutesReturnsAllOverlappingInstalledCandidates() {
+        val tempRoot = createTempDirectory("android-alpha-route-overlap").toFile()
+        tempRoot.deleteOnExit()
+        val sharedBBox = BundleCoverageBBox(minLon = 7.0, minLat = 47.0, maxLon = 10.5, maxLat = 50.0)
+        writeCoverageBundle(tempRoot, "z-bw", "2026-03-17", "z-bw", "baden.sqlite", sharedBBox, null)
+        writeCoverageBundle(tempRoot, "a-rp", "2026-03-17", "a-rp", "rp.sqlite", sharedBBox, null)
+        val bootstrapper = BundleBootstrapper(
+            deltaDatabase = ContractTestDatabase,
+            rootDir = tempRoot,
+            httpFetcher = FakeHttpFetcher(emptyMap()),
+        )
+        val candidates = bootstrapper.resolveLocalBundleRoutes(
+            lat = 48.80117,
+            lon = 8.44278,
+            fallbackDBPath = null,
+        )
+        assertEquals(2, candidates.size)
+        assertTrue(candidates.map { it.region }.containsAll(listOf("z-bw", "a-rp")))
+    }
+
+    @Test
     fun resolveLocalBundleRouteFallsBackToBBoxWhenCoveragePolyIsUnavailable() {
         val tempRoot = createTempDirectory("android-alpha-route-bbox").toFile()
         tempRoot.deleteOnExit()

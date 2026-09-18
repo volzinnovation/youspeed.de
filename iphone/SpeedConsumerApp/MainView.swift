@@ -16,6 +16,7 @@ enum SpeedLimitSignPalette {
     static let borderBlue = 0.11
 
     static let borderColor = Color(red: borderRed, green: borderGreen, blue: borderBlue)
+    static let staleBorderColor = Color(red: 0.48, green: 0.50, blue: 0.53)
 }
 
 enum CameraSpeedLimitUsePresentation {
@@ -225,6 +226,7 @@ struct MainView: View {
                                 showsUnlimitedIcon: !showsPedestrianZoneSign && showsUnlimitedAutobahnSign,
                                 showsPedestrianZoneIcon: showsPedestrianZoneSign,
                                 showsActiveCameraLimitIndicator: showsActiveCameraLimitIndicator,
+                                showsStaleBundleLimitIndicator: viewModel.effectiveSpeedLimitState.source == .staleBundle,
                                 accessibilityDescription: speedLimitAccessibilityDescription
                             )
                             .frame(width: signSize, height: signSize)
@@ -1176,6 +1178,9 @@ struct MainView: View {
         let state = viewModel.effectiveSpeedLimitState
         switch state.value {
         case .numeric(let value):
+            if state.source == .staleBundle {
+                return String(format: NSLocalizedString("limit.accessibility.numeric_stale", comment: ""), value)
+            }
             return String(format: NSLocalizedString("limit.accessibility.numeric", comment: ""), value)
         case .walk:
             return NSLocalizedString("limit.accessibility.walk", comment: "")
@@ -1620,6 +1625,7 @@ private struct SpeedLimitSignView: View {
     let showsUnlimitedIcon: Bool
     let showsPedestrianZoneIcon: Bool
     let showsActiveCameraLimitIndicator: Bool
+    let showsStaleBundleLimitIndicator: Bool
     let accessibilityDescription: String
 
     var body: some View {
@@ -1671,9 +1677,14 @@ private struct SpeedLimitSignView: View {
                             lineWidth: standardBlackBorderWidth
                         )
 
-                    Circle()
-                        .inset(by: standardBlackBorderWidth)
-                        .strokeBorder(SpeedLimitSignPalette.borderColor, lineWidth: standardRedBandWidth)
+                        Circle()
+                            .inset(by: standardBlackBorderWidth)
+                        .strokeBorder(
+                            showsStaleBundleLimitIndicator
+                                ? SpeedLimitSignPalette.staleBorderColor
+                                : SpeedLimitSignPalette.borderColor,
+                            lineWidth: standardRedBandWidth
+                        )
 
                     if showsTunnelIcon {
                         Image(systemName: "tunnel.fill")

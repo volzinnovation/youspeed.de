@@ -298,24 +298,24 @@ actor V3BundleManager {
         return installedDatabaseIsAvailable(at: dbURL) ? dbURL : nil
     }
 
-    func resolveLocalBundleRoute(lat: Double, lon: Double, fallbackDBPath: String?) throws -> LocalBundleRoute? {
+    func resolveLocalBundleRoutes(lat: Double, lon: Double, fallbackDBPath: String?) throws -> [LocalBundleRoute] {
         let entries = try loadCoverageEntriesIfNeeded()
         guard !entries.isEmpty else {
             if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
-                return LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)
+                return [LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)]
             }
-            return nil
+            return []
         }
 
         let matches = entries.filter { pointIsInsideCoverage(lon: lon, lat: lat, entry: $0) }
         if matches.isEmpty {
             if let fallback = fallbackDBPath?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
-                return LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)
+                return [LocalBundleRoute(region: "unknown", bundleVersion: "unknown", countryCode: nil, dbPath: fallback)]
             }
-            return nil
+            return []
         }
 
-        let best = matches.sorted { lhs, rhs in
+        return matches.sorted { lhs, rhs in
             let lhsArea = bboxArea(lhs.bbox)
             let rhsArea = bboxArea(rhs.bbox)
             if lhsArea != rhsArea {
@@ -325,15 +325,19 @@ actor V3BundleManager {
                 return lhs.bundleVersion > rhs.bundleVersion
             }
             return lhs.region < rhs.region
-        }.first!
+        }.map {
+            LocalBundleRoute(
+                region: $0.region,
+                bundleVersion: $0.bundleVersion,
+                countryCode: $0.countryCode,
+                dbPath: $0.dbPath,
+                dbSHA256: $0.dbSHA256
+            )
+        }
+    }
 
-        return LocalBundleRoute(
-            region: best.region,
-            bundleVersion: best.bundleVersion,
-            countryCode: best.countryCode,
-            dbPath: best.dbPath,
-            dbSHA256: best.dbSHA256
-        )
+    func resolveLocalBundleRoute(lat: Double, lon: Double, fallbackDBPath: String?) throws -> LocalBundleRoute? {
+        try resolveLocalBundleRoutes(lat: lat, lon: lon, fallbackDBPath: fallbackDBPath).first
     }
 
     func resolvePenaltyRuleContext(forDBPath dbPath: String?) throws -> PenaltyRuleContext? {

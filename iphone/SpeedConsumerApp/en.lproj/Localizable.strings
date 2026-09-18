@@ -277,6 +277,7 @@
 
 "limit.accessibility.value" = "Speed limit %@";
 "limit.accessibility.numeric" = "Speed limit %d kilometres per hour";
+"limit.accessibility.numeric_stale" = "Temporarily retained speed limit %d kilometres per hour";
 "limit.accessibility.walk" = "Pedestrian zone, walking speed";
 "limit.accessibility.unlimited" = "No speed limit";
 "limit.accessibility.end_unknown" = "End detected, speed limit unknown";

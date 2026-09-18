@@ -508,6 +508,25 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                 if (!passageFinalizer.hasActiveTrack() && event.candidate != null) {
                     currentEligibleRouteRelationGroupIds = active.accepted.context.routeRelationGroupIds
                 }
+                // Fusion reaches CONFIRMED after the required consecutive
+                // evidence frames. Apply numeric camera limits at that point;
+                // passage finalization remains the durable persistence and
+                // long-lived scope-validation path.
+                if (created.contextIsCurrent &&
+                    active.accepted.runtimeActivationEligible &&
+                    event.source == TrafficSignInputSource.LIVE_FRAME &&
+                    event.roadContext?.wayId?.isNotBlank() == true &&
+                    event.roadContext.matchedWayStable &&
+                    event.roadContext.hasVerifiedBundle
+                ) {
+                    currentSourceSignature?.let { sourceSignature ->
+                        currentOverride = TrafficSignSpeedOverridePolicy.applyRecognition(
+                            current = currentOverride,
+                            event = event,
+                            currentSourceSignature = sourceSignature,
+                        )
+                    }
+                }
                 val passage = passageFinalizer.observe(
                     event = event,
                     fusedScore = created.fusedScore,

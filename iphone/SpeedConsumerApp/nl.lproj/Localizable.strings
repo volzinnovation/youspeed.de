@@ -277,6 +277,7 @@
 
 "limit.accessibility.value" = "Snelheidslimiet %@";
 "limit.accessibility.numeric" = "Snelheidslimiet %d kilometer per uur";
+"limit.accessibility.numeric_stale" = "Tijdelijk behouden snelheidslimiet %d kilometer per uur";
 "limit.accessibility.walk" = "Voetgangerszone, stapvoets rijden";
 "limit.accessibility.unlimited" = "Geen snelheidslimiet";
 "limit.accessibility.end_unknown" = "Einde gedetecteerd, snelheidslimiet onbekend";

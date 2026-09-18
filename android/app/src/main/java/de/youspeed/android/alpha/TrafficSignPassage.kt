@@ -789,6 +789,7 @@ enum class EffectiveSpeedLimitSource(val wireValue: String) {
     CAMERA("camera"),
     LOCAL_CORRECTION("local_correction"),
     BUNDLE("bundle"),
+    STALE_BUNDLE("stale_bundle"),
     NONE("none"),
 }
 

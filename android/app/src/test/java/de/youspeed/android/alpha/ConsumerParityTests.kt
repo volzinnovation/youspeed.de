@@ -110,6 +110,29 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun overlappingBundleRouteKeepsCurrentOnTieAndSwitchesToOnlyRoadMatch() {
+        val current = LocalBundleRoute("germany/rheinland-pfalz", "v1", "DEU", "/rp.sqlite")
+        val alternate = LocalBundleRoute("germany/baden-wuerttemberg", "v1", "DEU", "/bw.sqlite")
+        val currentProbe = BundleRouteProbe(current, true, true, 20.0, 20.0)
+        val tiedAlternate = BundleRouteProbe(alternate, true, true, 20.0, 20.0)
+        assertEquals(current, BundleRouteSelection.choose(listOf(currentProbe, tiedAlternate), current.dbPath))
+
+        val noWayCurrent = currentProbe.copy(hasWayMatch = false, hasSpeedMatch = false, nearestCandidateDistanceM = null, nearestSpeedCandidateDistanceM = null)
+        assertEquals(alternate, BundleRouteSelection.choose(listOf(noWayCurrent, tiedAlternate), current.dbPath))
+    }
+
+    @Test
+    fun staleBundleLimitIsNotUsedForOverspeedWarnings() {
+        val state = ConsumerUiState(
+            currentSpeedKmh = 91.0,
+            speedLimitKmh = 50,
+            effectiveSpeedLimitSource = EffectiveSpeedLimitSource.STALE_BUNDLE,
+        )
+        assertEquals(0, ConsumerMainScreenLogic.currentOverspeedKmh(state))
+        assertEquals("50", ConsumerMainScreenLogic.limitText(state))
+    }
+
+    @Test
     fun resetDrivingLogFilesRewritesCsvAndClearsMatcherLog() {
         val rootDir = createTempDirectory(prefix = "driving-logs-").toFile()
         try {

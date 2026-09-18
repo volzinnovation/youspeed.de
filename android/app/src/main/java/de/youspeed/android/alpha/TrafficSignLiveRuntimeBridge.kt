@@ -2,8 +2,9 @@ package de.youspeed.android.alpha
 
 /**
  * Production seam between an Android live-frame backend and
- * the driving controller. Only finalized passages can mutate the speed state.
- * Accepted raw detections use a separate pictogram callback and cannot reach the speed resolver.
+ * the driving controller. A confirmed live frame may update the displayed
+ * camera limit immediately; finalized passages remain the persistence and
+ * long-lived scope path. Accepted raw detections use a separate pictogram callback.
  */
 class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
     controller: ConsumerSessionController,
@@ -73,7 +74,8 @@ internal class TrafficSignFinalizedPassageForwarder(
             onRuntimeUnavailable(requireNotNull(output.backendFailureReason), output.contextGeneration)
         }
         // Primary speed delivery precedes annotations, secondary pictograms and
-        // diagnostics. Only the finalized passage can change the speed limit.
+        // diagnostics. Confirmed-frame overrides arrive in the recognition
+        // output; finalized passages still carry durable activation.
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
             submitRecognitionEvent(output.event, output.contextGeneration)

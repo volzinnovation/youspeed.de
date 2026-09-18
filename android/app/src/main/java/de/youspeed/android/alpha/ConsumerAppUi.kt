@@ -161,6 +161,7 @@ private val SignalGreen = Color(0xFF1D7A4A)
 private val SignalOrange = Color(0xFFD46A1D)
 private val SignalRed = Color(0xFF9A1D28)
 private val SpeedSignBorderRed = Color(0xFFD21B24)
+private val SpeedSignBorderGray = Color(0xFF7B7F86)
 private val CameraEvidenceAccent = Color(0xFF7B0E17)
 private val BrightYellow = Color(0xFFF9D950)
 private val SoftOrange = Color(0xFFF39A24)
@@ -582,6 +583,7 @@ private fun MainScreen(
                                 !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui),
                             showsPedestrianZoneIcon = showsPedestrianZoneSign,
                             showsActiveCameraLimitIndicator = showsActiveCameraLimitIndicator,
+                            showsStaleBundleLimitIndicator = ui.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.STALE_BUNDLE,
                             cameraSourceStateDescription = when {
                                 ui.isUnlimitedSpeedLimitActive -> stringResource(R.string.ui_camera_unlimited)
                                 ui.speedLimitDisplayText == "Schritt" -> stringResource(R.string.ui_camera_walking)
@@ -949,6 +951,7 @@ private fun SpeedLimitSign(
     showsUnlimitedIcon: Boolean,
     showsPedestrianZoneIcon: Boolean,
     showsActiveCameraLimitIndicator: Boolean,
+    showsStaleBundleLimitIndicator: Boolean,
     cameraSourceStateDescription: String?,
     onDoubleTap: () -> Unit,
 ) {
@@ -1010,7 +1013,7 @@ private fun SpeedLimitSign(
                         style = Stroke(width = standardBlackBorderWidth),
                     )
                     drawCircle(
-                        color = SpeedSignBorderRed,
+                        color = if (showsStaleBundleLimitIndicator) SpeedSignBorderGray else SpeedSignBorderRed,
                         radius = size.minDimension / 2f - standardBlackBorderWidth - standardRedBandWidth / 2f,
                         style = Stroke(width = standardRedBandWidth),
                     )

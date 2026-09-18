@@ -2,7 +2,7 @@ import Foundation
 import SQLite3
 
 final class V3SpeedLimitService {
-    enum MatchingModel {
+    enum MatchingModel: Sendable {
         case corridorHMM
         case corridorHMMRawMiniHMM
         case corridorHMMNoThreeWayGate

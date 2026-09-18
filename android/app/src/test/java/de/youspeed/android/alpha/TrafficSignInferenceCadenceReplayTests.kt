@@ -49,7 +49,7 @@ class TrafficSignInferenceCadenceReplayTests {
         assertEquals(sightings[0].event.candidate?.trackId, sightings[1].event.candidate?.trackId)
         assertEquals(2, sightings[1].event.candidate?.evidenceFrames)
         assertTrue(replay.passages.isEmpty())
-        assertNull(replay.orchestrator.speedOverride())
+        assertEquals(50, replay.orchestrator.speedOverride()?.speedKmh)
 
         replay.analyze(1_000, 100, null)
         assertTrue(replay.passages.isEmpty())

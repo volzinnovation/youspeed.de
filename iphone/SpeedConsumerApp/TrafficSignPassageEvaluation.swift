@@ -11,6 +11,7 @@ enum EffectiveSpeedLimitSource: String, Codable, Equatable, Sendable {
     case camera
     case localCorrection = "local_correction"
     case bundle
+    case staleBundle = "stale_bundle"
     case none
 }
 

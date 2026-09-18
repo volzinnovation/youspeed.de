@@ -124,7 +124,10 @@ class TrafficSignRecognitionOrchestratorTests {
         val confirmed = harness.observer.outputs.last()
         assertEquals(TrafficSignRecognitionState.CONFIRMED, confirmed.event.state)
         assertEquals("4711", confirmed.event.roadContext?.wayId)
-        assertNull(confirmed.speedOverride)
+        // The second confirming frame is now sufficient for live presentation;
+        // passage finalization still happens later for durable persistence.
+        assertEquals(30, confirmed.speedOverride?.speedKmh)
+        assertNull(confirmed.passageEvent)
         harness.clockNanos = 1_500_000_000L
         harness.orchestrator.submit(harness.frame("passed", capturedAtNanos = harness.clockNanos))
         harness.clockNanos += 35_000_000L

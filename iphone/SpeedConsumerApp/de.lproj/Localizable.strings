@@ -277,6 +277,7 @@
 
 "limit.accessibility.value" = "Tempolimit %@";
 "limit.accessibility.numeric" = "Tempolimit %d Kilometer pro Stunde";
+"limit.accessibility.numeric_stale" = "Vorübergehend beibehaltenes Tempolimit %d Kilometer pro Stunde";
 "limit.accessibility.walk" = "Fußgängerzone, Schrittgeschwindigkeit";
 "limit.accessibility.unlimited" = "Keine Geschwindigkeitsbegrenzung";
 "limit.accessibility.end_unknown" = "Ende erkannt, Tempolimit unbekannt";
