@@ -1,8 +1,27 @@
-# City detection review — 14 September 2026
+# City detection review — 14 September 2026 and current status as of 17 September 2026
 
-The current implementation mixes geographic place names with the traffic-law concept of being inside a built-up area. Improving generation is necessary, but regenerating the existing format alone cannot fix the classification: iPhone and Android share several incorrect decision rules.
+The 14 September review found that the then-current implementation mixed geographic place names with the traffic-law concept of being inside a built-up area. The generation and consumer changes described below have since been implemented. The apps and the pilot bundle are much improved, but the result is not yet a measured driving-accuracy release.
 
-Reviewed source commit: `219364e3d6b2758945583182d764f34a6a130798`. Scope: default pyosmium → v3 generation, v3 deltas, both consumer implementations, and the local Karlsruhe bundle. This document records the initial investigation before implementation. The subsequent implementation uses a single nullable `inside_city` attribute; see the [additive contract](../mapdata/spec/settlement_context_v1.md) and [Baden-Württemberg pilot results](BADEN_WUERTTEMBERG_SETTLEMENT_PILOT_2026-09-14.md).
+Reviewed source commit: `219364e3d6b2758945583182d764f34a6a130798`. Scope: default pyosmium → v3 generation, v3 deltas, both consumer implementations, and the local Karlsruhe bundle. The initial investigation is retained as a historical baseline. The subsequent implementation uses a single nullable `inside_city` attribute; see the [additive contract](../mapdata/spec/settlement_context_v1.md) and [Baden-Württemberg pilot results](BADEN_WUERTTEMBERG_SETTLEMENT_PILOT_2026-09-14.md).
+
+## Current status — 17 September 2026
+
+The city/settlement decision is now a bundle-backed, per-road-segment context on both platforms. iPhone and Android share the same nullable contract: `true` means inside, `false` means outside, and `NULL` means that the map evidence is unknown or contradictory. Municipality/place names and posted speed limits remain separate values.
+
+The main issues identified on 14 September are addressed in the settlement-context pilot:
+
+- Administrative boundaries, road class, and low numeric limits no longer assert that a road is inside a city.
+- `zone:traffic`, supported urban/rural speed-context tags, town-entry/exit signs, direction, road association, multipolygon relations, holes, and segment splits are retained where usable.
+- Conflicting or ambiguous evidence remains unresolved instead of being silently converted to urban or rural. Stored geometry is topology-preserving, exact containment no longer falls back to a bounding box, and duplicate vertices are handled safely.
+- Both apps read the same context, use only high-confidence evidence for settlement defaults, penalty variants, and camera-limit invalidation, and retain a confirmed camera context only across bounded short gaps. The approved 50 km/h fallback for missing-speed residential and service roads does not change the nullable city state.
+
+The Baden-Württemberg pilot bundle `2026-09-14-settlement-pilot` was generated, integrity-checked, and installed on the attached moto g86 5G and iPhone 14 Pro in build 10007 (Android `1.1-debug`, iPhone `1.1`). Android passed 4/4 stationary lookups and iPhone passed 16/16 across the Bad Herrenalb examples; the expected ways and 50 km/h result were selected while `inside_city = NULL` was preserved. The installed database hashes matched the bundle manifest on both devices. These checks establish source-to-bundle and app integration, not real-world driving accuracy.
+
+The implementation is therefore suitable for controlled pilot use, but not yet a claim of perfect city detection. In the full pilot, 32.71% of segment records were unknown and only 9.69% had high-confidence context. Of 32,886 sign-association rows, 11,962 lacked usable direction, 2,385 had no associated road, and 665 had ambiguous road membership. Land-use evidence remains low confidence; parcel gaps, roads beside mapped land-use, incomplete sign direction, and numeric or undirected signs remain unknown rather than being guessed.
+
+The displayed municipality or locality name is still a place label, not a legal built-up-area result. It is resolved independently and can remain imperfect even when the settlement state is correctly unknown or outside.
+
+No annotated route set has yet produced false-inside/false-outside rates, entry/exit distance error, or state-change rates. Physical-device validation was stationary, and physical driving has not been exercised in this task. The pilot remains local and has not been published; updated clients must precede delivery of an extension-enabled bundle. The minimum app version `1.1` also cannot distinguish older 1.1 builds from the updated implementation.
 
 ## What the state must mean
 
@@ -16,9 +35,9 @@ For Germany, signs 310 and 311 define the start and end of the built-up area. A 
 
 OSM already distinguishes the concepts. `zone:traffic` describes the road's underlying traffic context and can coexist with a numeric posted limit; its documentation explicitly gives a rural road with a signed 30 km/h limit as a valid example. `maxspeed:type` and `source:maxspeed` can supply additional context when they contain an explicit urban/rural value. [OSM zone:traffic](https://wiki.openstreetmap.org/wiki/Key:zone:traffic), [OSM maxspeed:type](https://wiki.openstreetmap.org/wiki/Key:maxspeed:type).
 
-## Confirmed implementation problems
+## Confirmed implementation problems in the pre-pilot implementation
 
-| Problem | Current behavior and consequence | Source |
+| Problem | Behavior at the review commit and consequence | Source |
 |---|---|---|
 | Administrative boundaries imply built-up | A containing named level 6, 8 or 9 boundary returns `insideCity=true`. Rural portions of a municipality or county can therefore become urban. | `iphone/SpeedConsumerApp/V3SpeedLimitService.swift:9265` and Android `V3SpeedLimitLookup.kt` polygon resolver |
 | Empty residential search changes meaning | No usable residential polygon bounding-box candidate returns unknown and falls back to administrative context; a candidate whose polygon excludes the position returns outside. Crossing the bounding box can therefore change the outcome without crossing a settlement boundary. | `V3SpeedLimitService.swift:1108`, `:9191`, `:9234`; Android lookup `:277` |
@@ -36,7 +55,7 @@ These errors affect more than the city label. The state participates in fallback
 
 The core classification rules agree across platforms, but missing-data behavior does not fully agree: Android can collapse unavailable administrative context to false where iPhone retains unknown. Android also uses a shared 512-row area/place candidate query for residential evidence, while iPhone uses a dedicated 1,024-row residential query. These details need shared contract tests.
 
-## Local bundle measurements
+## Historical local bundle measurements
 
 Audited `mapdata/bundles/v3/karlsruhe-regbez/latest/karlsruhe-regbez_speeds.sqlite`, manifest version `2026-03-15-city-polygons`, SHA-256 `13fc90e9331c165be634b3486f1952d1c0ff5c4a7be26ce9f3205861815edd93`. This is the local bundled snapshot, not a verified copy of the user's currently installed/downloaded dataset.
 
@@ -68,7 +87,7 @@ python3 scripts/map/audit_city_context.py \
 
 At the time of this audit, the source PBF could not be reconstructed from the checkout: the seed manifest required `part000` and `part001`, but only `part001` was present and `mapdata/raw` had no PBF. Therefore this review does not quantify how many source signs, `zone:traffic` tags, or residential relations were lost in this particular historical build. Generator loss was instead reproduced with complete synthetic OSM input. A fresh, checksum-verified Baden-Württemberg snapshot was downloaded for the subsequent pilot; it is not the historical Karlsruhe source.
 
-## Reproductions
+## Historical reproductions
 
 Small temporary probes exercised the current implementation without modifying it:
 
@@ -82,7 +101,9 @@ The command-line v3 query tool is not a complete app oracle: it derives its buil
 
 Several existing consumer tests actively enforce the suspect highway/low-speed rules (`SpeedConsumerTests.swift:11657`, `:11715`, `:11817`; Android `CityContextInstrumentedTest.kt:146`, `V3SpeedLimitLookupTests.kt:73`). Those expectations need to change along with the policy, rather than treating a passing old suite as evidence of geographic correctness.
 
-## Proposed generation and consumer changes
+## Implemented generation and consumer changes
+
+This section records the implementation contract that resulted from the proposal; remaining work is primarily route validation and controlled rollout, with the known sign-association and land-use coverage limits described above.
 
 ### 1. Correct the shared decision contract first
 
@@ -116,6 +137,6 @@ Measure false-inside and false-outside rates separately, unknown coverage, entry
 
 Require shared Swift/Kotlin fixtures for the contract and transitions, round-trip preservation checks from OSM to the final bundle, geometry validity/error checks, and full-build versus delta equivalence including all settlement tables. Version the semantic contract so legacy bundles remain identifiable. Publishing a regenerated bundle requires the repository's explicit user approval.
 
-## Recommended order
+## Remaining validation order
 
-First fix the administrative/road/speed overrides in both consumers while preserving explicit settlement tags in generation. Next repair multipolygon extraction and geometry, then introduce directed sign-boundary segments and calibrated fallback inference. Validate one region before a country-wide rebuild. More residential data alone cannot correct the current decision rules.
+Keep the implementation under pilot observation and validate annotated Karlsruhe/Baden-Württemberg routes in both directions. Measure false-inside and false-outside rates separately, unknown coverage, entry/exit distance error, repeated state changes, and results by evidence source. Then review the remaining sign association and land-use gaps before considering wider publication. More residential data alone cannot establish the legal settlement boundary.
