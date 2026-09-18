@@ -16223,7 +16223,7 @@ final class TrafficSignPassageEvaluationTests: XCTestCase {
         XCTAssertFalse(model.testApplySettlementContext(insideCity: true, source: high,
             timestamp: baseTime.addingTimeInterval(8), coordinate: coordinate))
         XCTAssertTrue(model.testHasActiveTrafficSignPassage, "Reacquiring city evidence must preserve the camera 30")
-        XCTAssertFalse(model.testApplySettlementContext(insideCity: false, source: high,
+        XCTAssertTrue(model.testApplySettlementContext(insideCity: false, source: high,
             timestamp: baseTime.addingTimeInterval(9), coordinate: coordinate))
         XCTAssertFalse(model.testHasActiveTrafficSignPassage,
             "A confirmed city exit must clear the camera assertion")

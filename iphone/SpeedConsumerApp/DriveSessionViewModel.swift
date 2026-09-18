@@ -2596,6 +2596,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         } else {
             trafficSignRecognitionState = .noRecognition
         }
+        publishEffectiveSpeedLimitState(base)
         appendTSRLog(
             "assertion_invalidated reason=bundle_city_\(transition == .enteredCity ? "entry" : "exit") base_source=\(base.source.rawValue) base_kmh=\(base.value.speedKmh.map(String.init) ?? "non_numeric")",
             timestamp: timestamp
@@ -2858,16 +2859,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             shadowComparison = "not_evaluable"
         }
         let passageLog = Self.trafficSignPassageLogValue(emission.passageUpdate)
-        let logSignature = [
+        let candidateSpeed = event.candidate?.value.map { String($0) } ?? "none"
+        let trackID = event.candidate?.trackId ?? "none"
+        let shadowState = shadowEvent?.state.rawValue ?? "none"
+        let shadowSpeed = shadowSpeedKmh.map { String($0) } ?? "none"
+        let passageSignature = passageLog.signature
+        let logComponents: [String] = [
             event.state.rawValue,
-            event.candidate?.value.map(String.init) ?? "none",
-            event.candidate?.trackId ?? "none",
-            shadowEvent?.state.rawValue ?? "none",
-            shadowSpeedKmh.map(String.init) ?? "none",
+            candidateSpeed,
+            trackID,
+            shadowState,
+            shadowSpeed,
             shadowComparison,
             captureID ?? "none",
-            passageLog.signature,
-        ].joined(separator: ":")
+            passageSignature,
+        ]
+        let logSignature = logComponents.joined(separator: ":")
         let now = Date()
         let minimumInterval: TimeInterval = event.state == .noRecognition ? 30 : 2
         guard logSignature != lastTrafficSignConsoleLogSignature
@@ -2883,7 +2890,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let confidenceText = event.candidate.map {
             String(format: "%.4f", $0.calibratedConfidence ?? $0.rawScore)
         } ?? "none"
-        let trackID = event.candidate?.trackId ?? "none"
         let wayID = context?.wayId ?? "none"
         let latitude = context.map { String(format: "%.6f", $0.latitude) } ?? "none"
         let longitude = context.map { String(format: "%.6f", $0.longitude) } ?? "none"
@@ -2905,8 +2911,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             imageReference = "none"
         }
         let latency = String(format: "%.1f", event.latencyMs)
-        let shadowState = shadowEvent?.state.rawValue ?? "none"
-        let shadowSpeed = shadowSpeedKmh.map(String.init) ?? "none"
         let baseSpeed = baseSpeedKmh.map(String.init) ?? "none"
         let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) passage=\(passageLog.value) shadow_state=\(shadowState) shadow_speed_kmh=\(shadowSpeed) base_speed_kmh=\(baseSpeed) shadow_comparison=\(shadowComparison) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
         Self.tsrLogger.info("\(line, privacy: .public)")
