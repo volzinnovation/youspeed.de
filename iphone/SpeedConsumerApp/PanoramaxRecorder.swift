@@ -568,9 +568,14 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
                 closePanoramaxBatchForReview()
                 resetActiveModulesAfterFailure()
                 state = error.isAvailabilityFailure ? .unavailable : .failed
-                lastCaptureDetail = error == .noEnabledModuleAvailable
-                    ? "Kein aktiviertes Kameramodul ist verfuegbar"
-                    : "Kamera konnte nicht gestartet werden"
+                switch error {
+                case .noEnabledModuleAvailable:
+                    lastCaptureDetail = "Kein aktiviertes Kameramodul ist verfuegbar"
+                case .panoramaxUnavailable:
+                    lastCaptureDetail = "Panoramax-Fotokamera ist fuer diese Kamerakonfiguration nicht verfuegbar"
+                default:
+                    lastCaptureDetail = "Kamera konnte nicht gestartet werden"
+                }
                 notifyChange()
                 return
             } catch {
@@ -859,6 +864,14 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             )
         }
 
+        // A selected Panoramax session must never be reported as recording
+        // without a still output. The Dashcam can continue on a reduced graph,
+        // but silently dropping the photo consumer makes the user's setting
+        // appear enabled while every GPS-triggered capture is discarded.
+        if panoramaxEnabled, !photoOutputAvailable {
+            throw RecorderError.panoramaxUnavailable
+        }
+
         if dashcamEnabled, !movieOutputAvailable,
            !videoOutputAvailable, !photoOutputAvailable {
             throw RecorderError.sessionUnavailable
@@ -930,12 +943,13 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             photoOutputAvailable = true
         }
 
-        // Keep the graph fixed while the session is running. Attach selected
-        // consumers before dormant switchable outputs so a dormant Dashcam or
-        // TSR reservation can never displace a module the user actually chose.
+        // Keep the graph fixed while the session is running. Panoramax is a
+        // selected still consumer, so attach it before the video outputs; on
+        // devices with a constrained multi-output budget this prevents the
+        // Dashcam/TSR streams from silently displacing photo capture.
+        if panoramaxEnabled { addPhotoOutputIfPossible() }
         if dashcamEnabled { addMovieOutputIfPossible() }
         if trafficSignRecognitionEnabled { addVideoOutputIfPossible() }
-        if panoramaxEnabled { addPhotoOutputIfPossible() }
         addMovieOutputIfPossible()
         addVideoOutputIfPossible()
         videoOutput.connection(with: .video)?.isEnabled = trafficSignRecognitionEnabled
@@ -1521,10 +1535,12 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
     private enum RecorderError: Error, Equatable {
         case cameraUnavailable
         case sessionUnavailable
+        case panoramaxUnavailable
         case noEnabledModuleAvailable
 
         var isAvailabilityFailure: Bool {
-            self == .cameraUnavailable || self == .sessionUnavailable || self == .noEnabledModuleAvailable
+            self == .cameraUnavailable || self == .sessionUnavailable
+                || self == .panoramaxUnavailable || self == .noEnabledModuleAvailable
         }
     }
 }

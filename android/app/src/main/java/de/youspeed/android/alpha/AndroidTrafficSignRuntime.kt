@@ -955,10 +955,8 @@ internal class AndroidTrafficSignCameraRuntime(
 
     private fun bindCamera(startGeneration: Long) {
         val recorderOutputsNeeded = controller.isDriveRecorderSessionActive()
-        val stillCaptureNeeded = recorderOutputsNeeded && controller.isPanoramaxCaptureEnabled()
         if (cameraBindingInProgress ||
-            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs) &&
-                (!stillCaptureNeeded || imageCapture != null))
+            (cameraBound && (!recorderOutputsNeeded || graphIncludesRecorderOutputs))
         ) return
         cameraBindingInProgress = true
         val providerFuture = ProcessCameraProvider.getInstance(context)
@@ -997,10 +995,11 @@ internal class AndroidTrafficSignCameraRuntime(
                 // Once the recorder is active, the graph is kept intact while
                 // its individual consumers are toggled.
                 val includeRecorderOutputs = recorderOutputsNeeded || graphIncludesRecorderOutputs
-                // Match iPhone's conditional photo output. A disabled Panoramax
-                // session must not reserve a JPEG stream; keep an existing output
-                // until the session ends so movie recording is never rebound for a toggle.
-                val capture = if (includeRecorderOutputs && (stillCaptureNeeded || imageCapture != null)) imageCapture ?: run {
+                // Once the recorder graph is requested, keep the still use case
+                // attached for the complete graph lifetime. A Panoramax setting
+                // can otherwise race graph activation and leave the preference
+                // enabled with no ImageCapture instance to receive GPS requests.
+                val capture = if (includeRecorderOutputs) imageCapture ?: run {
                     ImageCapture.Builder()
                         .setTargetRotation(rotation)
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -1020,7 +1019,10 @@ internal class AndroidTrafficSignCameraRuntime(
                 video?.targetRotation = rotation
                 val oldUseCases = listOfNotNull(preview, imageAnalysis, imageCapture, videoCapture)
                 if (cameraBound) provider.unbind(*oldUseCases.toTypedArray())
-                val useCases = listOfNotNull(currentPreview, analysis, capture, video)
+                // Keep the still and movie consumers ahead of analysis in the
+                // binding order so constrained devices reserve recorder outputs
+                // before the optional recognition stream.
+                val useCases = listOfNotNull(currentPreview, capture, video, analysis)
                 boundCamera = provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, *useCases.toTypedArray())
                 expectedAnalysisRotation = boundCamera?.cameraInfo?.getSensorRotationDegrees(rotation)
                 cameraProvider = provider
