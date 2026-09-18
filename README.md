@@ -1,6 +1,10 @@
 # YouSpeed
 
-YouSpeed is an open-source, offline-first intelligent speed-assistance app for iPhone and Android. It matches the phone's location to OpenStreetMap-derived road data, shows the applicable speed limit, and can warn when the vehicle is travelling too fast. YouSpeed is an advisory aid: road signs and traffic rules always take precedence. 
+YouSpeed is an open-source, offline-first intelligent speed-assistance app for iPhone and Android. It matches the phone's location to OpenStreetMap-derived road data, shows the applicable speed limit, and can provide **optical** or **acustical** warnings when the vehicle is travelling too fast. 
+
+It also displays the applicable penalties for the jurisdiction, if the user is caught by speed cameras or the police.
+
+YouSpeed is an advisory aid: road signs and traffic rules always take precedence. 
 
 
 **Public launch: 29 August 2026 15:40 as part of State of the map conference, Paris, France**
