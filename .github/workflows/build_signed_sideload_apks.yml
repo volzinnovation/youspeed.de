@@ -20,7 +20,7 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-signed-sideload-apks
@@ -82,3 +82,28 @@ jobs:
           path: android/dist/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: android-v${{ inputs.version_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          assets=(android/dist/*.apk)
+          if (( ${#assets[@]} == 0 )); then
+            echo "No APK assets were produced." >&2
+            exit 1
+          fi
+
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" "${assets[@]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --clobber
+          else
+            gh release create "${RELEASE_TAG}" "${assets[@]}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${{ inputs.source_ref }}" \
+              --title "YouSpeed Android ${{ inputs.version_name }}" \
+              --notes "Signed Android APK release for version ${{ inputs.version_name }} (base build number ${{ inputs.build_number }}), split by ABI."
+          fi
