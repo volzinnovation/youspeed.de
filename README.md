@@ -57,7 +57,7 @@ The mobile apps perform matching and warning logic on the device. Map bundles ar
 
 ## Work in progress
 
-We are currently working on **On-device traffic-sign recognition (TSR):** with auxiliary new features that help us to debug: Dashcam recordings and Panoramax image capturing. Our goal is to extend the map-matching speed display with a shared, feature-neutral rear-camera session on iPhone and Android for various countries: BE, CH, DE, FR, and NL. Any help for extending it to more countries is appreciated and is basically limited by the ability to perform field testing in those countries.
+We are currently testing **on-device traffic-sign recognition (TSR):** with auxiliary new features that help us to debug: Dashcam recordings and Panoramax image capturing. Our goal is to extend the map-matching speed display with a shared, feature-neutral rear-camera session on iPhone and Android for various countries: BE, CH, DE, FR, and NL. Any help for extending it to more countries is appreciated and is basically limited by the ability to perform field testing in those countries.
 
 - **On-device traffic-sign recognition (TSR):** opt-in live recognition uses Core ML
   on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
