@@ -48,6 +48,10 @@ model's actual output vocabulary.
 - `originals/`: original Commons SVG bytes, without artwork edits.
 - `png/`: 8-bit PNG renditions fitted inside 256 × 256 pixels, preserving aspect
   ratio and transparency. Both mobile apps use these same bytes.
+- `national/CH/originals/` is the source-preparation exception: the ASTRA
+  converted vectors are normalized to their artwork bounds and carry the
+  `data-normalized="artwork-bounds"` marker. Their pre-normalization hashes are
+  retained as `source_original_sha256` in the Swiss manifests.
 - `manifest.json`: original URLs and upload timestamps, Commons page revisions,
   authors, public-domain basis, original SHA-1/SHA-256, PNG SHA-256, dimensions,
   sizes, commercial-use decision, licence-source URL, per-file provenance, and
