@@ -11,65 +11,6 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 
 <img src="docs/2026-youspeed.de-demo.webp" alt="Animated demo of YouSpeed showing speed-limit detection and warning levels" width="320">
 
-## Recent development status
-
-The September 2026 development builds extend the map-matching speed display
-with a shared, feature-neutral rear-camera session on iPhone and Android:
-
-- **On-device traffic-sign recognition (TSR):** opt-in live recognition uses Core ML
-  on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
-  combines candidate bursts over time and only a validated sign passage may
-  affect the active speed context. The current field-test pack is
-  Germany-first and focused on primary speed-relevant signs; supplementary
-  plates are not interpreted in live inference and town-entry recognition is
-  still limited. Ordinary recognition keeps no frame stream and sends no video
-  or inference to the cloud. See the [TSR contracts](shared/tsr/README.md) and
-  [implementation specification](docs/VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md).
-- **Screenshots:** the public screenshot sets now cover safe-speed, fine,
-  points, driving-ban, pedestrian-zone, and autobahn states in multiple
-  locales. They are generated from reproducible simulator/emulator fixtures;
-  see the [Android listing assets](store/android/listing/en-US/phone-screenshots/),
-  [iPhone listing assets](store/apple/screenshots/en-US/iphone-6.9/),
-  [`android/scripts/recreate_store_screenshots.sh`](android/scripts/recreate_store_screenshots.sh),
-  and [`scripts/iphone/recreate_store_screenshots.sh`](scripts/iphone/recreate_store_screenshots.sh).
-- **Dashcam:** the same camera session can independently provide an explicit,
-  local-only dashcam recording, live preview, TSR frames, and Panoramax stills.
-  Recordings are playable, shareable, and deletable from the local library;
-  storage is capped at 5 GB per movie and 10 GB for the library. Controls wait
-  for successful video finalization before navigating or changing state.
-- **Panoramax upload:** distance- or time-sampled JPEGs are kept in a durable
-  local review queue with GPS metadata, optional altitude/course, and sign annotations. Users can
-  favorite, include or exclude, and inspect originals before explicitly
-  approving a batch for upload to the [YouSpeed Panoramax instance](https://panoramax.youspeed.de/).
-  Uploads support progress, cancellation, resumption, and server-processing
-  completion tracking. Upload never starts during or automatically after a
-  drive, and local images are retained unless the user enables cleanup after
-  successful remote completion. See the [Panoramax client contract](shared/PanoramaxUploadProtocol.md).
-
-<table>
-  <tr>
-    <td><img src="Web/assets/screenshots/warn-level-0-no-violation.png" alt="YouSpeed within the speed limit" width="180"></td>
-    <td><img src="Web/assets/screenshots/warn-level-1-money.png" alt="YouSpeed fine warning" width="180"></td>
-    <td><img src="Web/assets/screenshots/pedestrian-zone-schritt.png" alt="YouSpeed pedestrian-zone display" width="180"></td>
-    <td><img src="Web/assets/screenshots/autobahn-unlimited-over-130.png" alt="YouSpeed autobahn display" width="180"></td>
-  </tr>
-</table>
-
-### On-device TSR
-
-These screenshots show the camera-derived speed-limit state from the shared
-`camera-limit-active` fixture. The eye-shaped marker identifies the camera
-source around the active 30 km/h sign; the fixture is deterministic UI evidence
-and does not retain or publish a camera frame.
-
-<table>
-  <tr>
-    <td><img src="docs/tsr-camera-limit-active.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in portrait" width="240"></td>
-    <td><img src="docs/tsr-camera-limit-active-landscape.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in landscape" width="520"></td>
-  </tr>
-</table>
-
-
 ## Get YouSpeed
 
 - [Google Play](https://play.google.com/store/apps/details?id=de.youspeed.android)
@@ -98,6 +39,60 @@ User guides: [English](docs/USER_GUIDE.md) Â· [Deutsch](docs/USER_GUIDE_DE.md) Â
 
 
 The mobile apps perform matching and warning logic on the device. Map bundles are downloaded from public GitHub releases and checked against their published metadata. No account or client-side GitHub credential is required.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="Web/assets/screenshots/warn-level-0-no-violation.png" alt="YouSpeed within the speed limit" width="180"></td>
+    <td><img src="Web/assets/screenshots/warn-level-1-money.png" alt="YouSpeed fine warning" width="180"></td>
+    <td><img src="Web/assets/screenshots/pedestrian-zone-schritt.png" alt="YouSpeed pedestrian-zone display" width="180"></td>
+    <td><img src="Web/assets/screenshots/autobahn-unlimited-over-130.png" alt="YouSpeed autobahn display" width="180"></td>
+  </tr>
+</table>
+
+## Work in progress
+
+We are currently working on **On-device traffic-sign recognition (TSR):** with auxiliary new features that help us to debug: Dashcam recordings and Panoramax image capturing. Our goal is to extend the map-matching speed display with a shared, feature-neutral rear-camera session on iPhone and Android for various countries: BE, CH, DE, FR, and NL. Any help for extending it to more countries is appreciated and is basically limited by the ability to perform field testing in those countries.
+
+- **On-device traffic-sign recognition (TSR):** opt-in live recognition uses Core ML
+  on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
+  combines candidate bursts over time and only a validated sign passage may
+  affect the active speed context. The current field-test pack supports Belgium, France, Germany and the Netherlands and focused on primary speed-relevant signs; supplementary
+  plates are also displayed to the user , but not interpreted in live inference. **The town-entry recognition is still under improvement.**
+
+  *Ordinary recognition keeps no frame stream and sends no video or inference to the cloud.* See the [TSR contracts](shared/tsr/README.md) and
+  [implementation specification](docs/VIDEO_TRAFFIC_SIGN_RECOGNITION_YOLO_SPEC.md).
+- **Dashcam:** the same camera session can independently provide an explicit,
+  local-only dashcam recording, live preview, TSR frames, and Panoramax stills.
+  Recordings are playable, shareable, and deletable from the local library;
+  storage is capped at 5 GB per movie and 10 GB for the library. Controls wait
+  for successful video finalization before navigating or changing state.
+- **Panoramax upload:** distance- or time-sampled JPEGs are kept in a durable
+  local review queue with GPS metadata, optional altitude/course, and sign annotations. Users can
+  favorite, include or exclude, and inspect originals before explicitly
+  approving a batch for upload to the main  [Panoramax instance](https://panoramax.openstreetmap.fr/). For the time being access to our own  [Panoramax instance](https://panoramax.youspeed.de/) is limited to contributors.
+  
+  Uploads support progress, cancellation, resumption, and server-processing
+  completion tracking. Upload **never starts during or automatically after a
+  drive**, and local images are retained unless the user enables cleanup after
+  successful remote completion. See the [Panoramax client contract](shared/PanoramaxUploadProtocol.md).
+
+### On-device TSR
+
+These screenshots show the camera-derived speed-limit state from the shared
+`camera-limit-active` fixture. The eye-shaped marker identifies the camera
+source around the active 30 km/h sign; the fixture is deterministic UI evidence
+and does not retain or publish a camera frame.
+
+<table>
+  <tr>
+    <td><img src="docs/tsr-camera-limit-active.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in portrait" width="240"></td>
+    <td><img src="docs/tsr-camera-limit-active-landscape.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in landscape" width="520"></td>
+  </tr>
+</table>
+
+
 
 ## Repository contents
 
