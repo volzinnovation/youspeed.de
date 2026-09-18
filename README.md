@@ -16,7 +16,7 @@ YouSpeed is an open-source, offline-first intelligent speed-assistance app for i
 The September 2026 development builds extend the map-matching speed display
 with a shared, feature-neutral rear-camera session on iPhone and Android:
 
-- **On-device traffic-sign recognition:** opt-in live recognition uses Core ML
+- **On-device traffic-sign recognition (TSR):** opt-in live recognition uses Core ML
   on iPhone and LiteRT with CameraX on Android. A detector/classifier pipeline
   combines candidate bursts over time and only a validated sign passage may
   affect the active speed context. The current field-test pack is
