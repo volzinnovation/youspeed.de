@@ -8,7 +8,7 @@ val releaseStorePassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEA
 val releaseKeyAlias = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("YOUSPEED_ANDROID_RELEASE_KEY_PASSWORD").orNull
 
-val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10007").get().toInt()
+val releaseBaseVersionCode = providers.gradleProperty("youspeedBuildNumber").orElse("10008").get().toInt()
 val releaseVersionName = providers.gradleProperty("youspeedVersionName").orElse("1.1").get()
 val releaseAbiCodes = linkedMapOf(
     "armeabi-v7a" to 1,
