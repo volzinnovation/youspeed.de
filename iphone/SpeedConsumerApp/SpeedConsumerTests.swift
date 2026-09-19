@@ -4564,9 +4564,12 @@ final class SpeedConsumerTests: XCTestCase {
         _ expectedCount: Int,
         transport: ControlledPanoramaxUploadTransport
     ) async throws {
-        // Multipart body preparation runs on a detached utility task and can
-        // take more than a second on a busy hosted simulator runner.
-        for _ in 0..<2_000 {
+        // Multipart body preparation runs on a detached utility task. Hosted
+        // simulator runners can be heavily contended while the app is still
+        // warming its model packs and network fixtures, so keep this bounded
+        // wait generous enough to avoid turning scheduler contention into a
+        // false test failure.
+        for _ in 0..<12_000 {
             if await transport.startedUploadCount() >= expectedCount { return }
             try await Task.sleep(nanoseconds: 5_000_000)
         }
@@ -4577,7 +4580,9 @@ final class SpeedConsumerTests: XCTestCase {
         _ expectedCount: Int,
         limiter: PanoramaxUploadLimiter
     ) async throws {
-        for _ in 0..<2_000 {
+        // Permit acquisition is also scheduler-dependent when the simulator
+        // is under load; use the same bounded allowance as upload preparation.
+        for _ in 0..<12_000 {
             if await limiter.waitingRequestCount >= expectedCount { return }
             try await Task.sleep(nanoseconds: 5_000_000)
         }
