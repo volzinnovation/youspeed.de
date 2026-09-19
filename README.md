@@ -82,17 +82,17 @@ We are currently testing **on-device traffic-sign recognition (TSR):** with auxi
   drive**, and local images are retained unless the user enables cleanup after
   successful remote completion. See the [Panoramax client contract](shared/PanoramaxUploadProtocol.md).
 
-### On-device TSR
+### On-device TSR Status
 
-These screenshots show the camera-derived speed-limit state from the shared
+These real-life images show the camera-derived speed-limit state from the shared
 `camera-limit-active` fixture. The eye-shaped marker identifies the camera
-source around the active 30 km/h sign; the fixture is deterministic UI evidence
-and does not retain or publish a camera frame.
+source around the active speed limit sign; every other recognized traffic sign is displayed as secondary information, but does not influence app state.
 
 <table>
   <tr>
-    <td><img src="docs/tsr-camera-limit-active.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in portrait" width="240"></td>
-    <td><img src="docs/tsr-camera-limit-active-landscape.png" alt="YouSpeed showing an on-device camera-derived 30 km/h limit in landscape" width="520"></td>
+    <td><img src="docs/2025-09-19-DE.jpeg" alt="YouSpeed showing an on-device camera-derived limit inportrait" width="540"></td>
+  </tr><tr>
+    <td><img src="docs/2026-09-19-issue-FR.jpg" alt="YouSpeed showing a penalty class (open issue: captured speed limit for exit lane)" width="520"></td>
   </tr>
 </table>
 
