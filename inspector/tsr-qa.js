@@ -60,6 +60,63 @@
     return;
   }
 
+  // Local-only sequence inspector. Never sends evidence to map tiles or model services.
+  const applicabilityPanel = document.createElement("section");
+  applicabilityPanel.className = "trace-card";
+  const applicabilityTitle = document.createElement("h3");
+  applicabilityTitle.textContent = "Sign applicability · local sequence evidence";
+  const applicabilityInput = document.createElement("input");
+  applicabilityInput.type = "file";
+  applicabilityInput.accept = ".json,.jsonl,.ndjson,.log,.txt";
+  applicabilityInput.setAttribute("aria-label", "Open local applicability sidecars or TSR log");
+  const applicabilityStatus = document.createElement("p");
+  applicabilityStatus.textContent = "Legacy events: not evaluated. Load a versioned sidecar or local TSR log to inspect physical tracks and decisions.";
+  const applicabilityFrames = document.createElement("select");
+  applicabilityFrames.setAttribute("aria-label", "Applicability frame");
+  const applicabilityDetails = document.createElement("pre");
+  applicabilityDetails.style.whiteSpace = "pre-wrap";
+  const truthInput = document.createElement("input");
+  truthInput.type = "file"; truthInput.accept = ".json";
+  truthInput.setAttribute("aria-label", "Open reviewed applicability truth separately");
+  const truthDetails = document.createElement("pre");
+  truthDetails.style.whiteSpace = "pre-wrap";
+  truthDetails.textContent = "Reviewed vehicle-path truth: not loaded. Predictions are not annotations.";
+  applicabilityPanel.append(applicabilityTitle, applicabilityInput, applicabilityStatus, applicabilityFrames, applicabilityDetails, truthInput, truthDetails);
+  elements.workspace.prepend(applicabilityPanel);
+  let localApplicability = [];
+  const showApplicability = () => {
+    const record = localApplicability[Number(applicabilityFrames.value)];
+    applicabilityDetails.textContent = record ? JSON.stringify({
+      frame: record.batch.frameId, status: record.batch.status, truncated: record.batch.truncated,
+      captureScope: record.batch.scope, captureTimeContext: record.batch.road ?? "missing",
+      rawCandidates: record.batch.candidates, tracks: record.tracks, decisions: record.decisions
+    }, null, 2) : "No applicability evidence.";
+  };
+  applicabilityFrames.addEventListener("change", showApplicability);
+  applicabilityInput.addEventListener("change", async () => {
+    const file = applicabilityInput.files?.[0]; if (!file) return;
+    try {
+      if (file.size > 32 * 1024 * 1024) throw new Error("Split logs larger than 32 MB before importing.");
+      localApplicability = core.parseApplicabilityEvidence(await file.text());
+      applicabilityFrames.replaceChildren(...localApplicability.map((record,index) => {
+        const option=document.createElement("option"); option.value=String(index);
+        option.textContent=`${record.batch.frameId} · ${record.decisions.map(d=>d.classification).join(", ") || record.batch.status}`;
+        return option;
+      }));
+      applicabilityStatus.textContent = `${file.name}: ${localApplicability.length} validated frames. Missing capability and rejected evidence are retained; no network requests.`;
+      showApplicability();
+    } catch (error) { applicabilityStatus.textContent = String(error); }
+  });
+  truthInput.addEventListener("change", async () => {
+    const file=truthInput.files?.[0]; if (!file) return;
+    try {
+      if (file.size > 4 * 1024 * 1024) throw new Error("Truth manifest exceeds 4 MB.");
+      const truth=JSON.parse(await file.text());
+      if (truth.schemaVersion !== 1 || !Array.isArray(truth.encounters)) throw new Error("Expected a separate applicability corpus manifest.");
+      truthDetails.textContent=JSON.stringify(truth, null, 2);
+    } catch (error) { truthDetails.textContent=String(error); }
+  });
+
   const fixtureURLs = {
     model: new URL("../shared/tsr/fixtures/de-direct-pack-v1.json", window.location.href),
     events: new URL("../shared/tsr/fixtures/recognition-events-v1.json", window.location.href),

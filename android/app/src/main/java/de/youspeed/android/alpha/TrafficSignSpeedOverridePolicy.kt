@@ -99,7 +99,9 @@ object TrafficSignSpeedOverridePolicy {
         current: TrafficSignSpeedOverride?,
         event: TrafficSignRecognitionEvent,
         currentSourceSignature: TrafficSignRuntimeSourceSignature,
+        applicabilityMode: String = TSRApplicabilityConfiguration.defaultMode,
     ): TrafficSignSpeedOverride? {
+        if (!event.permitsApplicability("immediate", applicabilityMode)) return current
         if (event.state != TrafficSignRecognitionState.CONFIRMED) return current
         if (event.source == TrafficSignInputSource.DIAGNOSTIC_IMPORT) return current
         if (current != null && !event.frameTimestampUtc.isAfter(current.detectedAtUtc)) return current
@@ -135,6 +137,7 @@ object TrafficSignSpeedOverridePolicy {
         current: TrafficSignSpeedOverride?,
         event: TrafficSignPassageEvent,
     ): TrafficSignSpeedOverride? {
+        if (!event.permitsApplicability()) return current
         if (!event.overrideEligible || event.action.isConditional || !event.action.isPermanentRuntimeAction) return current
         val context = event.activationContext ?: return current
         if (context.wayId.isNullOrBlank() || !context.matchedWayStable || !context.hasVerifiedBundle) return current

@@ -73,6 +73,7 @@ data class PanoramaxTrafficSignAnnotation(
     val longitude: Double,
     val headingDegrees: Double,
     val travelDirection: TrafficSignTravelDirection,
+    val applicabilityStatus: String? = null,
 ) {
     fun isValid(): Boolean = annotationId.isNotBlank() && sourceEventId.isNotBlank() &&
         shape.size == 4 && shape[0] >= 0 && shape[1] >= 0 && shape[2] > shape[0] && shape[3] > shape[1] &&
@@ -95,6 +96,7 @@ data class PanoramaxTrafficSignAnnotationDraft(
     val detectionConfidence: Double,
     val classificationConfidence: Double,
     val context: TrafficSignDetectionContext,
+    val applicabilityStatus: String? = null,
 ) {
     fun projected(
         imageWidth: Int,
@@ -126,6 +128,7 @@ data class PanoramaxTrafficSignAnnotationDraft(
             longitude = context.longitude,
             headingDegrees = context.headingDegrees,
             travelDirection = context.travelDirection,
+            applicabilityStatus = applicabilityStatus,
         ).takeIf(PanoramaxTrafficSignAnnotation::isValid)
     }
 
@@ -177,6 +180,7 @@ data class PanoramaxTrafficSignAnnotationDraft(
                 detectionConfidence = detectionConfidence,
                 classificationConfidence = classificationConfidence,
                 context = requireNotNull(context),
+                applicabilityStatus = event.applicabilityDecision?.classification ?: "NOT_EVALUATED",
             )
         }
 
@@ -238,6 +242,7 @@ object PanoramaxExifUserCommentCodec {
         put("physicalSignTrackID", physicalSignTrackId?.let(::JsonPrimitive) ?: JsonNull)
         put("detectionConfidence", detectionConfidence)
         put("classificationConfidence", classificationConfidence)
+        applicabilityStatus?.let { put("applicabilityStatus", it) }
         put("wayID", wayId)
         put("latitude", latitude)
         put("longitude", longitude)
@@ -267,6 +272,7 @@ object PanoramaxExifUserCommentCodec {
                 ?.takeIf(String::isNotBlank),
             detectionConfidence = value.getValue("detectionConfidence").jsonPrimitive.double,
             classificationConfidence = value.getValue("classificationConfidence").jsonPrimitive.double,
+            applicabilityStatus = value["applicabilityStatus"]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content,
             wayId = value.getValue("wayID").jsonPrimitive.content,
             latitude = value.getValue("latitude").jsonPrimitive.double,
             longitude = value.getValue("longitude").jsonPrimitive.double,

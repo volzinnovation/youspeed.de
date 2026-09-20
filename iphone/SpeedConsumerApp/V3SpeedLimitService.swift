@@ -1143,6 +1143,7 @@ final class V3SpeedLimitService {
             }
 
             return SpeedLimitResult(
+                applicabilityGeometry: applicabilityGeometry(selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -1733,6 +1734,7 @@ final class V3SpeedLimitService {
             }
 
             return SpeedLimitResult(
+                applicabilityGeometry: applicabilityGeometry(selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedLimitKmh: effectiveSpeed,
                 isUnlimitedSpeedLimit: finalSelected?.isUnlimitedSpeedLimit == true ? true : nil,
                 wayID: finalSelected?.wayID,
@@ -6797,6 +6799,37 @@ final class V3SpeedLimitService {
             $0.trimmingCharacters(in: .whitespacesAndNewlines)
                 == WayContinuityKind.routeRelationConnected.rawValue
         }
+    }
+
+    private func applicabilityGeometry(selected: WayCandidate?, candidates: [WayCandidate], links: WayLinksContext) -> TSRMapGeometry {
+        let alternatives = candidates.filter { $0.wayID != selected?.wayID }.sorted {
+            if $0.distanceM != $1.distanceM { return $0.distanceM < $1.distanceM }
+            return ($0.wayID ?? "") < ($1.wayID ?? "")
+        }
+        var branches: [TSRApplicabilityCorridor] = []
+        if let selected, let wayID = selected.wayID {
+            for candidate in alternatives where links.byWayID[wayID]?.linkedWayIDs.contains(candidate.wayID ?? "") == true {
+                guard let point = sharedJunctionPoint(between: selected, and: candidate) else { continue }
+                let incoming = junctionNodeHeadingDeg(for: selected, sharedPoint: point, traversal: .towardNode)
+                let outgoing = junctionNodeHeadingDeg(for: candidate, sharedPoint: point, traversal: .awayFromNode)
+                let startDistance = selected.startPoint.map { haversineM(lat1: $0.0, lon1: $0.1, lat2: point.0, lon2: point.1) } ?? .infinity
+                let endDistance = selected.endPoint.map { haversineM(lat1: $0.0, lon1: $0.1, lat2: point.0, lon2: point.1) } ?? .infinity
+                let junctionDistance = startDistance <= endDistance ? selected.distanceToStartM : selected.distanceToEndM
+                // Endpoint adjacency is a prior, not legal routing or grade-separation proof.
+                branches.append(TSRApplicabilityCorridor(wayId: candidate.wayID ?? "unknown", headingDeg: outgoing,
+                    distanceM: junctionDistance?.isFinite == true ? junctionDistance : nil,
+                    roadClass: candidate.highway, endpointLinked: true,
+                    turnAngleDeg: incoming.flatMap { a in outgoing.map { TSRApplicabilityPolicy.signedAngle($0 - a) } }))
+            }
+        }
+        var capabilities = ["endpoint_topology_only", "no_legal_direction", "no_lane_metadata", "interior_junctions_unavailable"]
+        if links.available { capabilities.append("endpoint_links") }
+        if selected?.localHeadingDeg != nil { capabilities.append("local_tangent") }
+        if alternatives.count > 8 || branches.count > 8 { capabilities.append("context_truncated") }
+        return TSRMapGeometry(wayId: selected?.wayID, localTangentDeg: selected?.localHeadingDeg, roadClass: selected?.highway,
+            hypotheses: alternatives.prefix(8).map { TSRApplicabilityCorridor(wayId: $0.wayID ?? "unknown", headingDeg: $0.localHeadingDeg,
+                distanceM: $0.distanceM.isFinite ? $0.distanceM : nil, roadClass: $0.highway, endpointLinked: false, turnAngleDeg: nil) },
+            branches: Array(branches.prefix(8)), capabilities: capabilities)
     }
 
     private func loadWayLinksContext(

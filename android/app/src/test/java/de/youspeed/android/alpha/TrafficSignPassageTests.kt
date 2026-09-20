@@ -6,6 +6,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -759,6 +760,26 @@ class TrafficSignPassageTests {
         val passage = passage()
         forwarder.onRecognition(TrafficSignOrchestrationOutput(recognition, null, passage))
         assertEquals(listOf(passage), forwarded)
+    }
+
+    @Test
+    fun rawAnnotationCannotReachAuthorityCallbacks() {
+        val raw = recognition(t0)
+        val withheld = raw.copy(state = TrafficSignRecognitionState.NO_RECOGNITION, candidate = null)
+        val authority = mutableListOf<TrafficSignRecognitionEvent>()
+        val annotations = mutableListOf<TrafficSignRecognitionEvent>()
+        val passages = mutableListOf<TrafficSignPassageEvent>()
+        val forwarder = TrafficSignFinalizedPassageForwarder(
+            submitRecognitionEvent = { event, _ -> authority += event },
+            submitAnnotationEvent = { event, _ -> annotations += event },
+            submitFinalizedPassage = { passages += it; true },
+        )
+        forwarder.onRecognition(TrafficSignOrchestrationOutput(withheld, null, annotationEvent = raw))
+        assertEquals(listOf(withheld), authority)
+        assertEquals(listOf(raw), annotations)
+        assertTrue(passages.isEmpty())
+        assertNotNull(PanoramaxTrafficSignAnnotationDraft.from(annotations.single()))
+        assertNull(PanoramaxTrafficSignAnnotationDraft.from(authority.single()))
     }
 
     @Test

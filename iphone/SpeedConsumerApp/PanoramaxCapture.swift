@@ -68,6 +68,7 @@ struct PanoramaxTrafficSignAnnotation: Codable, Equatable, Sendable {
     let longitude: Double
     let headingDegrees: Double
     let travelDirection: TrafficSignTravelDirection
+    var applicabilityStatus: String? = nil
 
     var isValid: Bool {
         guard !annotationID.isEmpty,
@@ -96,6 +97,7 @@ struct PanoramaxTrafficSignAnnotation: Codable, Equatable, Sendable {
 /// become Panoramax pixel coordinates only when associated with a JPEG.
 struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
     var minimumImageTimestamp: Date? = nil
+    var applicabilityStatus: String? = nil
     let annotationID: String
     let sourceEventID: String
     let frameTimestampUTC: Date
@@ -132,7 +134,8 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
     }
 
     init?(emission: TrafficSignRuntimeEmission) {
-        let event = emission.event
+        let event = emission.annotationEvent ?? emission.event
+        applicabilityStatus = event.applicabilityDecision?.classification ?? "NOT_EVALUATED"
         guard event.source == .liveFrame,
               event.state == .confirmed,
               let candidate = event.candidate,
@@ -238,7 +241,8 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
             latitude: context.latitude,
             longitude: context.longitude,
             headingDegrees: context.headingDegrees,
-            travelDirection: context.travelDirection
+            travelDirection: context.travelDirection,
+            applicabilityStatus: applicabilityStatus
         )
         return annotation.isValid ? annotation : nil
     }

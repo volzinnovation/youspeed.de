@@ -538,6 +538,7 @@ class ConsumerSessionController(
     private var lookupServiceMatcherProfile: MatcherDebugProfile? = null
     private var localSpeedOverridesByWayId: Map<String, Int> = emptyMap()
     private var localSpeedOverrideValuesByWayId: Map<String, String> = emptyMap()
+    private var latestTrafficSignMapFix: TSRMapFix? = null
     private var latestTrafficSignContext: TrafficSignDetectionContext? = null
     private var latestTrafficSignMatchedPosition: TrafficSignPositionSample? = null
     @Volatile private var latestTrafficSignPosition: TrafficSignPositionSample? = null
@@ -1499,7 +1500,7 @@ class ConsumerSessionController(
                 } == true
                 val previous = immediateTrafficSignOverride
                 immediateTrafficSignOverride = if (
-                    event.source == TrafficSignInputSource.LIVE_FRAME && contextMatches && currentSignature != null
+                    event.permitsApplicability("immediate") && (TSRApplicabilityConfiguration.defaultMode == "shadow" || event.applicabilityDecision?.scope?.contextGeneration == generation) && event.source == TrafficSignInputSource.LIVE_FRAME && contextMatches && currentSignature != null
                 ) {
                     TrafficSignSpeedOverridePolicy.applyRecognition(
                         current = previous,
@@ -1534,6 +1535,15 @@ class ConsumerSessionController(
                     submittedAtNanos = System.nanoTime(),
                 )
             }
+            updateState { copy(trafficSignLastEvent = event) }
+        }
+    }
+
+    /** Non-authoritative recognition; never forwards to driving state or correction sinks. */
+    fun onTrafficSignAnnotationEvent(event: TrafficSignRecognitionEvent, generation: Long) {
+        mainHandler.post {
+            if (generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId ||
+                !isTrafficSignRecognitionRuntimeEnabled()) return@post
             PanoramaxTrafficSignAnnotationDraft.from(event)?.let { draft ->
                 val captureSession = synchronized(captureLock) {
                     if (draft.frameTimestampUtc < annotationOrientationStartedAt) return@let
@@ -1563,7 +1573,6 @@ class ConsumerSessionController(
                     }.onFailure { error -> postState { copy(panoramaxMaintenanceIssue = error.message) } }
                 }
             }
-            updateState { copy(trafficSignLastEvent = event) }
         }
     }
 
@@ -1648,6 +1657,9 @@ class ConsumerSessionController(
 
     /** Writes bounded stage-level evidence for the Android camera lane. */
     fun onTrafficSignInferenceDiagnostics(output: TrafficSignOrchestrationOutput) {
+        output.applicabilityDiagnostic?.let {
+            appendRuntimeDiagnosticEvent("tsr_applicability_v1", mapOf("evidence" to TSRApplicabilityJson.encodeDiagnostic(it).toString()))
+        }
         val diagnostics = output.inferenceDiagnostics ?: return
         if (output.contextIsCurrent && output.event.driveSessionId == trafficSignDriveSessionId &&
             uiState.trafficSignDebugGenerationSessionContextMismatch
@@ -1980,8 +1992,16 @@ class ConsumerSessionController(
 
     /** Presentation-only callback. This path never invokes the speed resolver or passage persistence. */
     fun submitTrafficSignDisplayObservation(observation: TrafficSignDisplayObservation) {
+        fun applicable(): Boolean {
+            if (TSRApplicabilityConfiguration.defaultMode == "shadow") return true
+            val decision = observation.applicabilityDecision ?: return false
+            val context = latestTrafficSignContext ?: return false
+            return decision.scope.sessionId == trafficSignDriveSessionId && decision.scope.contextGeneration == trafficSignGeneration.get() &&
+                decision.scope.bundleId == context.bundleSha256 && decision.scope.traversalEpoch == context.traversalEpoch &&
+                TSRApplicabilityAuthority.allows(decision, decision.scope, decision.frameId, decision.trackId, "display")
+        }
+        if (!applicable()) return
         if (TrafficSignDisplayPolicy.accepted(listOf(TrafficSignDetection(observation.candidate))) == null) return
-        if (observation.isSpeedLimitEnd) showTrafficSignEndOverlay()
         val currentGeneration = trafficSignGeneration.get()
         val generationMismatch = observation.generation != currentGeneration
         val sessionMismatch = observation.driveSessionId != trafficSignDriveSessionId
@@ -1997,8 +2017,10 @@ class ConsumerSessionController(
             )
             return
         }
+        if (observation.isSpeedLimitEnd) showTrafficSignEndOverlay(observation.generation, observation.driveSessionId)
         postState {
-            if (!otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving) {
+            if (!applicable() || observation.generation != this@ConsumerSessionController.trafficSignGeneration.get() || observation.driveSessionId != trafficSignDriveSessionId ||
+                !otherTrafficSignDisplayEnabled || !trafficSignRecognitionEnabled || !isDriving) {
                 this
             } else copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
                 lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
@@ -2006,8 +2028,9 @@ class ConsumerSessionController(
         }
     }
 
-    private fun showTrafficSignEndOverlay() {
+    private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String) {
         mainHandler.post {
+            if (expectedGeneration != trafficSignGeneration.get() || expectedSession != trafficSignDriveSessionId || !isDriving) return@post
             if (isDisposed.get()) return@post
             trafficSignEndOverlayGeneration += 1L
             val generation = trafficSignEndOverlayGeneration
@@ -2179,6 +2202,7 @@ class ConsumerSessionController(
                     // the safety gate; vehicle speed is not.
                     runtimeActivationEligible = isTrafficSignRecognitionRuntimeEnabled(),
                     driveSessionId = trafficSignDriveSessionId,
+                    applicabilityMapFix = latestTrafficSignMapFix,
                 )
             } ?: run {
                 noteTrafficSignDebugRoadContextInvalid(null)
@@ -2273,6 +2297,7 @@ class ConsumerSessionController(
      * and the v2 shadow lane have no API path into the authoritative resolver.
      */
     fun submitFinalizedTrafficSignPassage(event: TrafficSignPassageEvent): Boolean {
+        if (!event.permitsApplicability()) return false
         val submittedAtNanos = System.nanoTime()
         val currentGeneration = trafficSignGeneration.get()
         val generationMismatch = event.generation != currentGeneration
@@ -4717,6 +4742,11 @@ class ConsumerSessionController(
         )
         val distance = latestResolverLocation?.distanceTo(location)?.toDouble()?.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
         latestResolverLocation = Location(location)
+        latestTrafficSignMapFix = result.applicabilityGeometry?.let {
+            TSRMapFix(it, location.time.toDouble(), location.accuracy.toDouble().takeIf { location.hasAccuracy() },
+                headingDegrees, if (android.os.Build.VERSION.SDK_INT >= 26 && location.hasBearingAccuracy()) location.bearingAccuracyDegrees.toDouble() else null,
+                matchedWayStable)
+        }
         latestTrafficSignContext = context
         latestTrafficSignMatchedPosition = position
         latestTrafficSignBase = base

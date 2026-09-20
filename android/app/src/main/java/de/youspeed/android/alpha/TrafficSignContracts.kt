@@ -415,6 +415,7 @@ data class TrafficSignRecognitionEvent(
     val calibrationId: String? = null,
     val componentRole: String? = null,
     val modelComponents: List<TrafficSignModelComponentLineage> = emptyList(),
+    val applicabilityDecision: TSRApplicabilityDecision? = null,
 )
 
 sealed interface TrafficSignRuntimeState {

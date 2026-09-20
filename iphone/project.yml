@@ -19,6 +19,7 @@ targets:
           - "*.swift"
         excludes:
           - "SpeedConsumerTests.swift"
+          - "TrafficSignApplicabilityTests.swift"
           - "ScreenOrientationUITests.swift"
           - "README.md"
       - path: SpeedConsumerApp/Assets.xcassets
@@ -56,6 +57,8 @@ targets:
       - path: ../shared/tsr/prolix-nl-class-catalog-v1.json
         buildPhase: resources
       - path: ../shared/tsr/prolix-be-class-catalog-v1.json
+        buildPhase: resources
+      - path: ../shared/tsr/prolix-ch-class-catalog-v1.json
         buildPhase: resources
       - path: ../shared/tsr/sign-pictograms
         type: folder
@@ -121,6 +124,9 @@ targets:
     platform: iOS
     sources:
       - path: SpeedConsumerApp/SpeedConsumerTests.swift
+      - path: SpeedConsumerApp/TrafficSignApplicabilityTests.swift
+      - path: ../shared/tsr/applicability/golden-vectors-v1.json
+        buildPhase: resources
       - path: SpeedConsumerApp/TestFixtures
         buildPhase: resources
     dependencies:

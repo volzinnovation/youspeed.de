@@ -172,6 +172,7 @@ internal class LocalObservationStore(
         generationIsCurrent: (Long) -> Boolean = { it == event.generation },
         writePermitted: () -> Boolean = { true },
     ): LocalObservation? = synchronized(serializedStoreGate) {
+        if (!event.permitsApplicability()) return@synchronized null
         if (!event.overrideEligible || event.action.kind !in SHARED_PASSAGE_ACTION_KINDS) return@synchronized null
         val activation = event.activationContext ?: return@synchronized null
         val primaryWayId = activation.wayId?.trim()?.takeIf(::isPositiveOsmWayId) ?: return@synchronized null
@@ -242,6 +243,12 @@ internal class LocalObservationStore(
                     val prior = priorReceipt.first?.let { fetchObservation(db, it) }
                     db.setTransactionSuccessful()
                     return@withDatabase prior.takeIf { priorReceipt.second }
+                }
+
+                event.applicabilityDecision?.let { applicability ->
+                    db.execSQL("CREATE TABLE IF NOT EXISTS computer_vision_applicability_v1 (finalized_event_id TEXT PRIMARY KEY, decision_json TEXT NOT NULL)")
+                    db.execSQL("INSERT INTO computer_vision_applicability_v1 VALUES (?, ?)",
+                        arrayOf(event.finalizedEventId, TSRApplicabilityJson.encodeDecision(applicability).toString()))
                 }
 
                 val latestCorrection = if (safe) {

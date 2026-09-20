@@ -22,6 +22,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         submitFinalizedPassage = controller::submitFinalizedTrafficSignPassage,
         submitDisplayObservation = controller::submitTrafficSignDisplayObservation,
         submitRecognitionEvent = controller::onTrafficSignRecognitionEvent,
+        submitAnnotationEvent = controller::onTrafficSignAnnotationEvent,
         onRuntimeUnavailable = onRuntimeUnavailable,
         onContextMismatch = onContextMismatch,
         onInferenceDiagnostics = onInferenceDiagnostics,
@@ -61,6 +62,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
 internal class TrafficSignFinalizedPassageForwarder(
     private val submitDisplayObservation: (TrafficSignDisplayObservation) -> Unit = {},
     private val submitRecognitionEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
+    private val submitAnnotationEvent: (TrafficSignRecognitionEvent, Long) -> Unit = { _, _ -> },
     private val onRuntimeUnavailable: (String, Long) -> Unit = { _, _ -> },
     private val onContextMismatch: (Long) -> Unit = {},
     private val onInferenceDiagnostics: (TrafficSignOrchestrationOutput) -> Unit = {},
@@ -79,6 +81,7 @@ internal class TrafficSignFinalizedPassageForwarder(
         output.passageEvent?.let(submitFinalizedPassage)
         if (!output.terminalBackendFailure && output.backendFailureReason == null) {
             submitRecognitionEvent(output.event, output.contextGeneration)
+            submitAnnotationEvent(output.annotationEvent ?: output.event, output.contextGeneration)
         }
         output.displayObservation?.let(submitDisplayObservation)
         onInferenceDiagnostics(output)

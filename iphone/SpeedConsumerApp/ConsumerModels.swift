@@ -950,6 +950,7 @@ struct DriveMatchReplayDebug: Codable, Sendable {
 }
 
 struct SpeedLimitResult: Codable, Sendable {
+    var applicabilityGeometry: TSRMapGeometry? = nil
     let speedLimitKmh: Int?
     let isUnlimitedSpeedLimit: Bool?
     let wayID: String?
@@ -1384,6 +1385,7 @@ actor LocalObservationStore {
         decision: TrafficSignPassagePersistenceDecision,
         writePermit: TrafficSignWritePermit
     ) throws -> LocalObservationComputerVisionRecordResult {
+        guard event.permitsApplicability() else { throw ConsumerAppError.io("Ineligible sign applicability") }
         var staleExportBatchIDs: [String] = []
         let consumed = try writePermit.consume {
             try withDatabase { db in
@@ -1399,6 +1401,21 @@ actor LocalObservationStore {
                             throw sqliteError(db: db, context: "commit existing computer-vision receipt")
                         }
                         return existing
+                    }
+
+                    if let applicability = event.applicabilityDecision {
+                        let json = String(decoding: try JSONEncoder().encode(applicability), as: UTF8.self)
+                        guard sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS computer_vision_applicability_v1 (finalized_event_id TEXT PRIMARY KEY, decision_json TEXT NOT NULL)", nil, nil, nil) == SQLITE_OK else {
+                            throw sqliteError(db: db, context: "create applicability sidecar")
+                        }
+                        var stmt: OpaquePointer?
+                        defer { sqlite3_finalize(stmt) }
+                        guard sqlite3_prepare_v2(db, "INSERT INTO computer_vision_applicability_v1 VALUES (?, ?)", -1, &stmt, nil) == SQLITE_OK else {
+                            throw sqliteError(db: db, context: "prepare applicability sidecar")
+                        }
+                        sqlite3_bind_text(stmt, 1, event.finalizedEventID, -1, SQLITE_TRANSIENT)
+                        sqlite3_bind_text(stmt, 2, json, -1, SQLITE_TRANSIENT)
+                        guard sqlite3_step(stmt) == SQLITE_DONE else { throw sqliteError(db: db, context: "save applicability sidecar") }
                     }
 
                     let activation = event.activationContext

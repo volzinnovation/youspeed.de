@@ -309,6 +309,45 @@ struct TrafficSignPassageEvent: Codable, Equatable, Sendable {
     let sessionGeneration: UInt64
     let contextGeneration: UInt64
 
+    // In-memory envelope only. Wire v1 remains frozen; persisted evidence uses a versioned sidecar.
+    var applicabilityDecision: TSRApplicabilityDecision? = nil
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case finalizedEventID
+        case driveSessionID
+        case physicalTrackID
+        case assemblyID
+        case assemblyIDs
+        case packID
+        case artifactSHA256
+        case preprocessingVersion
+        case modelComponents
+        case action
+        case conditionState
+        case restrictions
+        case firstSeenTimestampUTC
+        case lastSeenTimestampUTC
+        case passageBoundaryTimestampUTC
+        case lastSeenContext
+        case passageBoundaryCoordinate
+        case passageBoundaryContext
+        case initialRecognitionContext
+        case activationContext
+        case activationTimestampUTC
+        case initialRecognitionRouteRelationMemberships
+        case recognitionRouteRelationMemberships
+        case frameEvidence
+        case lossEvidence
+        case accumulatedSupport
+        case finalCalibratedConfidence
+        case peakConsecutiveFramesSeen
+        case lossNegativeFrames
+        case lossReason
+        case negativeFramesRequired
+        case sessionGeneration
+        case contextGeneration
+    }
+
     var isUnconditional: Bool {
         conditionState == .none && restrictions.isEmpty
     }
@@ -759,6 +798,7 @@ enum TrafficSignPassageFinalizerUpdate: Equatable, Sendable {
 /// Only explicit `.noRecognition` results are negative evidence; absent callbacks,
 /// resets, stopped capture, throttling, and inference errors never call `ingest`.
 struct TrafficSignPassageFinalizer: Sendable {
+    var activePhysicalTrackID: String? { track?.id }
     struct Configuration: Equatable, Sendable {
         let repeatedSightingMinimumSupport: Double
         let singleSightingMinimumSupport: Double
@@ -1864,6 +1904,12 @@ struct TrafficSignEffectiveLimitResolver: Sendable {
         verifiedEnclosingBase: EffectiveSpeedLimitState? = nil,
         fallbackSpeedLimitAfterEnd: EffectiveSpeedLimitValue? = nil
     ) -> TrafficSignPassageCommitResult {
+        guard passage.permitsApplicability() else {
+            return TrafficSignPassageCommitResult(applied: false, effectiveState: assertion?.effectiveState ?? base,
+                persistence: TrafficSignPassagePersistenceDecision(value: nil, oldSpeedKmh: base.value.speedKmh,
+                    runtimeApplicable: false, initialState: .needsReview, operation: nil, directionScope: .unknown,
+                    applicability: .permanent, exportTagKey: nil, reason: "ineligible_sign_applicability"))
+        }
         let context = passage.activationContext
         let action = passage.action
         let conditional = !passage.isUnconditional

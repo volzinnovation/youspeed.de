@@ -996,6 +996,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var currentBundledUnlimitedSpeedLimitActive = false
     private var currentBaseUnlimitedSpeedLimitActive = false
     private var currentTrafficSignTravelDirection: TrafficSignTravelDirection = .unknown
+    private var latestTrafficSignMapFix: TSRMapFix?
     private var latestTrafficSignDetectionContext: TrafficSignDetectionContext?
     private var limitStreetBaseName: String?
     private var limitStreetRef: String?
@@ -2570,6 +2571,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         trafficSignFrameState.update(TrafficSignFrameSnapshot(
             context: context,
+            applicabilityMapFix: context == nil ? nil : latestTrafficSignMapFix,
             coordinate: TrafficSignCoordinate(latitude: latitude, longitude: longitude),
             conditions: TrafficSignAnalysisConditions(
                 speedKmh: currentSpeedKmh,
@@ -2743,7 +2745,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         // context refresh.
         trafficSignDebugGenerationSessionContextMismatch = false
         let immediateOverrideChanged: Bool
-        if emission.event.source == .liveFrame,
+        if emission.event.permitsApplicability("immediate"),
+           (TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+              emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
+              emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration)),
+           emission.event.source == .liveFrame,
            let eventContext = emission.event.roadContext,
            eventContext.isValid,
            eventContext.matchedWayStable,
@@ -2768,10 +2774,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             publishLegacyTrafficSignOverride(from: effective)
         }
         logTrafficSignRuntimeEmission(emission)
-        if emission.displayObservation?.isSpeedLimitEnd == true {
+        let displayPermitted = TSRApplicabilityConfiguration.defaultMode == "shadow" || (
+            emission.event.permitsApplicability("display") &&
+            emission.event.applicabilityDecision?.scope.generation == trafficSignRecorderGeneration &&
+            emission.event.applicabilityDecision?.scope.contextGeneration == trafficSignContextGeneration &&
+            emission.event.roadContext?.traversalEpoch == latestTrafficSignDetectionContext?.traversalEpoch &&
+            emission.event.roadContext?.sourceSignature.bundleSHA256 == latestTrafficSignDetectionContext?.sourceSignature.bundleSHA256)
+        if displayPermitted && emission.displayObservation?.isSpeedLimitEnd == true {
             showTrafficSignEndOverlay()
         }
-        if trafficSignPictogramEnabled {
+        if displayPermitted && trafficSignPictogramEnabled {
             trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
             trafficSignPictogram = trafficSignDisplayState.sign
         }
@@ -2780,7 +2792,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignPassageUpdate = emission.passageUpdate
         refreshTrafficSignFrameSnapshot()
 
-        guard case .committed(let passage) = emission.passageUpdate else { return }
+        guard case .committed(let passage) = emission.passageUpdate, passage.permitsApplicability() else { return }
         guard passage.sessionGeneration == trafficSignRecorderGeneration,
               passage.contextGeneration == trafficSignContextGeneration else {
             noteTrafficSignDebugIssue(
@@ -2941,6 +2953,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func logTrafficSignRuntimeEmission(_ emission: TrafficSignRuntimeEmission) {
+        if let diagnostic = emission.applicabilityDiagnostic,
+           let data = try? JSONEncoder().encode(diagnostic), let json = String(data: data, encoding: .utf8) {
+            appendTSRLog("tsr_applicability_v1=\(json)", timestamp: emission.event.frameTimestampUtc)
+        }
         let event = emission.event
         let context = event.roadContext
         let shadowEvent = emission.shadowEventV2
@@ -6941,6 +6957,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     // clearing; generations are reserved for lifecycle/bundle
                     // invalidation so a first missing frame cannot go stale.
                     self.currentTrafficSignTravelDirection = travelDirection
+                    self.latestTrafficSignMapFix = result.applicabilityGeometry.map {
+                        TSRMapFix(geometry: $0, timestampMs: location.timestamp.timeIntervalSince1970 * 1000,
+                            accuracyM: hAcc, courseDeg: course, courseAccuracyDeg: courseAccuracy,
+                            stable: nextTrafficSignContext?.matchedWayStable == true)
+                    }
                     self.latestTrafficSignDetectionContext = nextTrafficSignContext
                     self.trafficSignFrameContextIsCurrent = true
                     self.updateTrafficSignWriteGate()

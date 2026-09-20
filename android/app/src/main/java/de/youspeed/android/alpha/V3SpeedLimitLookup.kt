@@ -53,6 +53,7 @@ internal data class SpeedLookupResult(
     val sourceRelationIds: Set<Long> = emptySet(),
     val routeRelationContinuityAvailable: Boolean = false,
     val matchedWayStable: Boolean = true,
+    val applicabilityGeometry: TSRMapGeometry? = null,
 )
 
 internal data class CityContextLookupResult(
@@ -336,6 +337,7 @@ internal class V3SpeedLimitLookup(
             sourceRelationIds = routeMembership.values.filterNotNull().toSet(),
             routeRelationContinuityAvailable = routeRelationContinuityAvailable,
             matchedWayStable = matchedWayStable,
+            applicabilityGeometry = applicabilityGeometry(best, candidates, wayLinks),
         )
     }
 
@@ -1215,6 +1217,30 @@ internal class V3SpeedLimitLookup(
         )
     }
 
+    private fun applicabilityGeometry(selected: WayCandidate?, candidates: List<WayCandidate>, links: WayLinksContext): TSRMapGeometry {
+        val alternatives = candidates.filter { it.wayId != selected?.wayId }.sortedWith(compareBy<WayCandidate> { it.distanceM }.thenBy { it.wayId ?: "" })
+        val branches = if (selected == null) emptyList() else alternatives.filter {
+            it.wayId in links.linkedByFrom[selected.wayId].orEmpty()
+        }.mapNotNull { candidate ->
+            val point = sharedJunctionPoint(selected, candidate) ?: return@mapNotNull null
+            val incoming = junctionNodeHeadingDeg(selected, point, true)
+            val outgoing = junctionNodeHeadingDeg(candidate, point, false)
+            val startDistance = selected.points.firstOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+            val endDistance = selected.points.lastOrNull()?.let { haversineM(it.lat, it.lon, point.lat, point.lon) } ?: Double.POSITIVE_INFINITY
+            val junctionDistance = if (startDistance <= endDistance) selected.distanceToStartM else selected.distanceToEndM
+            TSRApplicabilityCorridor(candidate.wayId ?: "unknown", outgoing,
+                junctionDistance?.takeIf { it.isFinite() },
+                candidate.highway, true, if (incoming != null && outgoing != null) TSRApplicabilityPolicy.signedAngle(outgoing - incoming) else null)
+        }
+        val capabilities = mutableListOf("endpoint_topology_only", "no_legal_direction", "no_lane_metadata", "interior_junctions_unavailable")
+        if (links.available) capabilities += "endpoint_links"
+        if (selected?.localHeadingDeg != null) capabilities += "local_tangent"
+        if (alternatives.size > 8 || branches.size > 8) capabilities += "context_truncated"
+        return TSRMapGeometry(selected?.wayId, selected?.localHeadingDeg, selected?.highway,
+            alternatives.take(8).map { TSRApplicabilityCorridor(it.wayId ?: "unknown", it.localHeadingDeg, it.distanceM.takeIf { d -> d.isFinite() }, it.highway, false, null) },
+            branches.take(8), capabilities.toList())
+    }
+
     private fun loadWayLinksContext(
         matchContext: WayMatchContext,
         candidates: List<WayCandidate>,
@@ -1234,10 +1260,11 @@ internal class V3SpeedLimitLookup(
         val linkedByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedRefByFrom = linkedMapOf<String, MutableSet<String>>()
         val sharedNodeKeysByPair = linkedMapOf<Pair<String, String>, MutableSet<String>>()
+        val sharedRefSelect = if (columnExists("way_links", "shared_ref")) "shared_ref" else "0"
         val sharedNodeSelect = if (columnExists("way_links", "shared_node_key")) "shared_node_key" else "NULL"
         db.rawQuery(
             """
-            SELECT way_id, linked_way_id, shared_ref, $sharedNodeSelect
+            SELECT way_id, linked_way_id, $sharedRefSelect, $sharedNodeSelect
             FROM way_links
             WHERE way_id IN ($placeholders) OR linked_way_id IN ($placeholders)
             """.trimIndent(),

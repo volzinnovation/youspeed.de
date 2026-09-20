@@ -89,6 +89,7 @@ data class TrafficSignDisplayObservation(
     val candidate: TrafficSignCandidate,
     val generation: Long,
     val driveSessionId: String,
+    val applicabilityDecision: TSRApplicabilityDecision? = null,
     val isSpeedLimitEnd: Boolean = candidate.normalizedPrimarySemantic().kind in setOf(
         TrafficSignSemanticKind.MAXIMUM_SPEED_END,
         TrafficSignSemanticKind.ZONE_END,

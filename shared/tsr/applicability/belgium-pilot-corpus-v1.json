@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "corpusId": "belgium-pilot-v1",
+  "frozen": false,
+  "encounters": [],
+  "sourceArtifacts": [],
+  "blockedCoverage": [
+    "motorway_exit",
+    "parallel_carriageway",
+    "side_road_yield",
+    "ego_yield",
+    "opposite_direction",
+    "valid_left",
+    "median",
+    "overhead",
+    "curve",
+    "lane_split",
+    "junction_approach",
+    "actual_turn",
+    "repeated_equal_signs",
+    "stationary",
+    "poor_gps",
+    "missing_map",
+    "camera_remount",
+    "low_cadence",
+    "occlusion",
+    "detector_dropout",
+    "negative_driving"
+  ],
+  "status": "awaiting_consented_capture_and_independent_review"
+}

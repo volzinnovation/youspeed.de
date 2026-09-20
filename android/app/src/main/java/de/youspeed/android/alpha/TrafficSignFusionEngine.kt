@@ -53,6 +53,9 @@ class TrafficSignFusionEngine(
     fun observe(
         detection: TrafficSignDetection?,
         observedAtMs: Long,
+        physicalTrackId: String? = null,
+        physicalEvidenceFrames: Int? = null,
+        physicalHasConfirmedEvidence: Boolean? = null,
     ): TrafficSignFusionResult {
         require(observedAtMs >= 0L) { "Observation timestamp must not be negative" }
         val previousTimestamp = lastObservedAtMs
@@ -83,10 +86,10 @@ class TrafficSignFusionEngine(
         }
 
         val matchingTrack = tracks
-            .filter { it.latest.candidate.semantic == primaryDetection.candidate.semantic }
+            .filter { (physicalTrackId == null || it.id == physicalTrackId) && it.latest.candidate.semantic == primaryDetection.candidate.semantic }
             .maxByOrNull { it.observations.last().observedAtMs }
             ?: Track(
-                id = UUID.randomUUID().toString().lowercase(Locale.US),
+                id = physicalTrackId ?: UUID.randomUUID().toString().lowercase(Locale.US),
                 observations = mutableListOf(),
             ).also(tracks::add)
 
@@ -94,11 +97,11 @@ class TrafficSignFusionEngine(
         matchingTrack.observations.removeAll { observedAtMs - it.observedAtMs > confirmationWindowMs }
 
         val fusedScore = matchingTrack.weightedScore(::effectiveScore)
-        val hasConfirmedEvidence = matchingTrack.observations.any {
+        val hasConfirmedEvidence = physicalHasConfirmedEvidence ?: matchingTrack.observations.any {
             effectiveScore(it.detection.candidate) >= thresholds.confirmed
         }
         val state = if (
-            matchingTrack.observations.size >= thresholds.confirmationFrames &&
+            (physicalEvidenceFrames ?: matchingTrack.observations.size) >= thresholds.confirmationFrames &&
             hasConfirmedEvidence &&
             score >= thresholds.provisional
         ) {
@@ -107,7 +110,7 @@ class TrafficSignFusionEngine(
             TrafficSignRecognitionState.PROVISIONAL
         }
 
-        val best = matchingTrack.bestCrop.detection.candidate
+        val best = if (physicalTrackId != null) primaryDetection.candidate else matchingTrack.bestCrop.detection.candidate
         val assemblyId = matchingTrack.observations
             .asReversed()
             .firstNotNullOfOrNull { it.detection.candidate.assemblyId }
@@ -116,7 +119,7 @@ class TrafficSignFusionEngine(
             state = state,
             candidate = best.copy(
                 trackId = matchingTrack.id,
-                evidenceFrames = matchingTrack.observations.size,
+                evidenceFrames = physicalEvidenceFrames ?: matchingTrack.observations.size,
                 assemblyId = assemblyId,
                 conditionState = TrafficSignConditionState.NONE,
                 restrictions = emptyList(),

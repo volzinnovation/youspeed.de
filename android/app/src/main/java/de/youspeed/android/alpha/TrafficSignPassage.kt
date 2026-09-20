@@ -215,6 +215,7 @@ data class TrafficSignPassageEvent(
     val lossReason: String,
     val negativeFramesToCommit: Int,
     val overrideEligible: Boolean,
+    val applicabilityDecision: TSRApplicabilityDecision? = null,
 ) {
     init {
         require(schemaVersion == 1) { "Unsupported traffic-sign passage schema" }
@@ -341,6 +342,7 @@ class TrafficSignPassageFinalizer(
     }
 
     fun hasActiveTrack(): Boolean = track != null
+    fun activePhysicalTrackId(): String? = track?.id
 
     /** Immutable route scope owned by the currently active physical sign. */
     internal fun activeTrackRouteScope(): TrafficSignActiveTrackRouteScope? = track?.let { current ->
@@ -886,7 +888,7 @@ class TrafficSignRuntimeSourceResolver(
         base: TrafficSignBaseLimit,
         fallbackSpeedLimitAfterEnd: TrafficSignResolvedLimit? = null,
     ): EffectiveSpeedLimit {
-        if (!event.overrideEligible) return effective(base)
+        if (!event.permitsApplicability() || !event.overrideEligible) return effective(base)
         val context = event.activationContext
         if (context == null || context.wayId.isNullOrBlank()) {
             val lastSeen = event.lastSeenContext

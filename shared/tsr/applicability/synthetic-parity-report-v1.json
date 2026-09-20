@@ -1,0 +1,473 @@
+{
+  "schemaVersion": 1,
+  "lane": "recorded_candidate",
+  "origins": [
+    "synthetic"
+  ],
+  "fieldQualified": false,
+  "parity": "passed",
+  "numericTolerance": 1e-09,
+  "corpusSha256": "8901bc7970b87fbb6d03a8446cbddbd52fa6e49ac1c99f78fceec9cb812a6652",
+  "configSha256": "ff87a27c0a2dc643225fad1f34cfd3f131bf00b2e2e5a2b647ab5ed3e81738e3",
+  "sourceHashes": {
+    "iphone/SpeedConsumerApp/TrafficSignApplicability.swift": "dbee01e42e555e03c805c29e082fc98a22453c35074c3627cf5eebc829f655c3",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicability.kt": "dacf78c0f304c43409b19e9b2b90e49d95ef0499865d304244823bc66c084375",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignApplicabilityJson.kt": "2f681b87b4ba22af1e0b8cfac7865e9a8451e8135904df20ec75f01b82f17f56"
+  },
+  "scenarios": [
+    {
+      "scenario": "ego_right",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "valid_left",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "median",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "overhead",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "ego_yield",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "curve",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "actual_turn",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "exit_lane",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "side_road_yield",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "parallel_road",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "junction_future_turn",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "legitimate_lane_split",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "competing_corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "opposite_direction_unavailable",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "poor_gps",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unreliable_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "missing_map",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stale_capture_context",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "stale_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "missing_links",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_topology_capability"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "unreviewed_mount",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "camera_calibration_unavailable"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "stopped_traffic",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "insufficient_coherent_approach"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "semantic_flicker",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "semantic_disagreement"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "simultaneous_equal_signs",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "weak_ego_strong_branch",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        },
+        {
+          "trackId": "track-2",
+          "classification": "LIKELY_BRANCH",
+          "reasons": [
+            "branch_bearing_better_supported"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "camera_remount",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "missing_road_context"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "failed_frame",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "proposal_cap",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "detector_dropout",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "unqualified_observation"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "negative_driving",
+      "frames": 3,
+      "finalDecisions": []
+    },
+    {
+      "scenario": "sparse_samples",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "duplicate_frame",
+      "frames": 4,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "occlusion_reappearance",
+      "frames": 4,
+      "finalDecisions": [
+        {
+          "trackId": "track-1",
+          "classification": "LIKELY_EGO_CORRIDOR",
+          "reasons": [
+            "coherent_approach_unique_corridor"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "sequential_same_value",
+      "frames": 3,
+      "finalDecisions": [
+        {
+          "trackId": "track-2",
+          "classification": "UNKNOWN",
+          "reasons": [
+            "insufficient_independent_observations"
+          ]
+        }
+      ]
+    }
+  ],
+  "pending": [
+    "Reviewed real sequence corpus and baseline",
+    "Full-image inference replay",
+    "Independent holdout and frozen empirical gates",
+    "Minimum-device sustained performance, battery and thermal evidence",
+    "Explicit paired-platform rollout approval"
+  ],
+  "validationDate": "2026-09-20",
+  "baseRevision": "3a37fce41c8203391870a3d34c1e0c4059d92e60",
+  "revisionNote": "Implementation on codex/8-tsr-applicability; sourceHashes identify the replayed native policy bytes. Validation results describe the 2026-09-20 run before device deployment.",
+  "qualificationDecision": "NO_GO",
+  "validation": {
+    "iphoneConsumerSimulator": {
+      "tests": 326,
+      "skipped": 23,
+      "failures": 0,
+      "result": "passed"
+    },
+    "androidUnit": {
+      "tests": 321,
+      "skipped": 0,
+      "failures": 0,
+      "result": "passed"
+    },
+    "sharedApplicabilityAndFrozenContracts": {
+      "tests": 48,
+      "failures": 0,
+      "result": "passed"
+    },
+    "inspector": {
+      "tests": 24,
+      "failures": 0,
+      "result": "passed"
+    },
+    "broaderPythonTsr": {
+      "passed": 279,
+      "failed": 1,
+      "result": "preexisting_failure",
+      "failure": "test_national_sign_set_index_is_explicit_and_schema_valid: Dutch PNG bytes differ from the national-sign manifest; the same mismatch exists at baseRevision."
+    },
+    "physicalDevices": "not_run",
+    "reviewedRealEncounters": 0,
+    "fullImageNativeReplay": "pending",
+    "deployment": "not_performed"
+  }
+}

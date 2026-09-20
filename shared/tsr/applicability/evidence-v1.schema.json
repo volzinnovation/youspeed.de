@@ -1,0 +1,743 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://youspeed.de/schemas/tsr-applicability-evidence-v1.json",
+  "$defs": {
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sessionId",
+        "bundleId",
+        "cameraGeometryId",
+        "generation",
+        "contextGeneration",
+        "traversalEpoch"
+      ],
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bundleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cameraGeometryId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "contextGeneration": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "traversalEpoch": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "box": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidateId",
+        "semanticKey",
+        "box",
+        "rawScore",
+        "recognitionEligible"
+      ],
+      "properties": {
+        "candidateId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semanticKey": {
+          "type": "string",
+          "minLength": 1
+        },
+        "box": {
+          "$ref": "#/$defs/box"
+        },
+        "rawScore": {
+          "type": "number"
+        },
+        "recognitionEligible": {
+          "type": "boolean"
+        },
+        "assemblyId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recognitionScore": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "calibratedConfidence": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "corridor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wayId",
+        "endpointLinked"
+      ],
+      "properties": {
+        "wayId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headingDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distanceM": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "roadClass": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endpointLinked": {
+          "type": "boolean"
+        },
+        "turnAngleDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "road": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshotId",
+        "capturedAtMs",
+        "scope",
+        "matchedStable",
+        "hypotheses",
+        "branches",
+        "capabilities"
+      ],
+      "properties": {
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedAtMs": {
+          "type": "number"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "wayId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "horizontalAccuracyM": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "courseAccuracyDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "courseDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "localTangentDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "matchedStable": {
+          "type": "boolean"
+        },
+        "roadClass": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hypotheses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/corridor"
+          },
+          "maxItems": 8
+        },
+        "branches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/corridor"
+          },
+          "maxItems": 8
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 16
+        },
+        "cameraHorizontalFovDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cameraYawDeg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "batch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "frameId",
+        "capturedAtMs",
+        "scope",
+        "status",
+        "candidates",
+        "truncated",
+        "rawCandidateCount",
+        "modelId",
+        "preprocessingId"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "frameId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedAtMs": {
+          "type": "number"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "status": {
+          "enum": [
+            "analyzed",
+            "skipped",
+            "failed",
+            "interrupted"
+          ]
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candidate"
+          },
+          "maxItems": 32
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "rawCandidateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "modelId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "preprocessingId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "road": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/road"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frameId",
+        "capturedAtMs",
+        "candidate"
+      ],
+      "properties": {
+        "frameId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capturedAtMs": {
+          "type": "number"
+        },
+        "candidate": {
+          "$ref": "#/$defs/candidate"
+        }
+      }
+    },
+    "track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trackId",
+        "scope",
+        "samples",
+        "visibility",
+        "associationAmbiguous"
+      ],
+      "properties": {
+        "trackId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sample"
+          },
+          "maxItems": 12
+        },
+        "visibility": {
+          "enum": [
+            "observed",
+            "absent",
+            "uncertain"
+          ]
+        },
+        "associationAmbiguous": {
+          "type": "boolean"
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "policyVersion",
+        "configHash",
+        "frameId",
+        "trackId",
+        "scope",
+        "classification",
+        "reasons",
+        "evidence",
+        "imageSupport",
+        "displayEligible",
+        "immediateEligible",
+        "passageEligible"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "policyVersion": {
+          "const": "applicability-heuristic-v1"
+        },
+        "configHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "frameId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trackId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "roadSnapshotId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "classification": {
+          "enum": [
+            "LIKELY_EGO_CORRIDOR",
+            "LIKELY_OTHER_LANE",
+            "LIKELY_BRANCH",
+            "LIKELY_OPPOSITE_DIRECTION",
+            "UNKNOWN"
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 32
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 16
+        },
+        "imageSupport": {
+          "type": "number"
+        },
+        "displayEligible": {
+          "type": "boolean"
+        },
+        "immediateEligible": {
+          "type": "boolean"
+        },
+        "passageEligible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "encounterId",
+        "driveId",
+        "routeGroup",
+        "duplicateGroups",
+        "split",
+        "origin",
+        "provenance",
+        "scenario",
+        "roadClass",
+        "applicability",
+        "durationHours"
+      ],
+      "properties": {
+        "encounterId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "driveId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "physicalSignId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "routeGroup": {
+          "type": "string",
+          "minLength": 1
+        },
+        "duplicateGroups": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 100
+        },
+        "split": {
+          "enum": [
+            "development",
+            "calibration",
+            "holdout"
+          ]
+        },
+        "origin": {
+          "enum": [
+            "synthetic",
+            "reviewed_real"
+          ]
+        },
+        "reviewer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scenario": {
+          "type": "string",
+          "minLength": 1
+        },
+        "roadClass": {
+          "type": "string",
+          "minLength": 1
+        },
+        "signClassCorrect": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "applicability": {
+          "enum": [
+            "ego",
+            "non_ego",
+            "unknown",
+            "no_sign"
+          ]
+        },
+        "visibilityStartMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "visibilityEndMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "passageBoundaryMs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "distanceKm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "durationHours": {
+          "type": "number"
+        },
+        "numericSign": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "batch",
+        "tracks",
+        "decisions"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "batch": {
+          "$ref": "#/$defs/batch"
+        },
+        "tracks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/track"
+          },
+          "maxItems": 24
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/decision"
+          },
+          "maxItems": 24
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/batch"
+    },
+    {
+      "$ref": "#/$defs/track"
+    },
+    {
+      "$ref": "#/$defs/road"
+    },
+    {
+      "$ref": "#/$defs/decision"
+    },
+    {
+      "$ref": "#/$defs/truth"
+    },
+    {
+      "$ref": "#/$defs/diagnostic"
+    }
+  ]
+}

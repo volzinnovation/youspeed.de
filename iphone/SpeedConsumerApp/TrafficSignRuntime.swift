@@ -420,6 +420,7 @@ struct TrafficSignTwoStageInferenceResultV2: Sendable {
     let detectorLatencyMs: Double
     let classifierInvoked: Bool
     let classifierLatencyMs: Double
+    var proposalsTruncated: Bool = false
 }
 
 /// Additive richer output implemented by the real two-stage backend. The main
@@ -722,7 +723,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
 
         let objects = results.compactMap { $0 as? VNRecognizedObjectObservation }
-        let signObjects = Array(objects.filter { object in
+        let admittedProposals = objects.filter { object in
             guard let label = object.labels.first,
                   object.confidence.isFinite,
                   Self.isValidNormalizedRegion(object.boundingBox) else { return false }
@@ -730,7 +731,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
                 && Double(object.confidence) >= unknownThreshold
         }
         .sorted { $0.confidence > $1.confidence }
-        .prefix(Self.maximumProposalsPerRole))
+        let signObjects = Array(admittedProposals.prefix(Self.maximumProposalsPerRole))
         var classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = []
         classified.reserveCapacity(signObjects.count)
         var classifierLatencyMs: Double = 0
@@ -758,7 +759,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             assemblies: grouped.compactMap(Self.shadowAssembly),
             detectorLatencyMs: detectorLatencyMs,
             classifierInvoked: !signObjects.isEmpty,
-            classifierLatencyMs: classifierLatencyMs
+            classifierLatencyMs: classifierLatencyMs,
+            proposalsTruncated: admittedProposals.count > Self.maximumProposalsPerRole
         )
     }
 
@@ -1031,6 +1033,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 // MARK: - Atomic frame state
 
 struct TrafficSignFrameSnapshot: Equatable, Sendable {
+    let applicabilityMapFix: TSRMapFix?
     let context: TrafficSignDetectionContext?
     let coordinate: TrafficSignCoordinate?
     let conditions: TrafficSignAnalysisConditions
@@ -1041,6 +1044,7 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
 
     init(
         context: TrafficSignDetectionContext?,
+        applicabilityMapFix: TSRMapFix? = nil,
         coordinate: TrafficSignCoordinate? = nil,
         conditions: TrafficSignAnalysisConditions,
         sessionGeneration: UInt64 = 0,
@@ -1049,6 +1053,7 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         diagnosticCaptureEnabled: Bool = false
     ) {
         self.context = context
+        self.applicabilityMapFix = applicabilityMapFix
         self.coordinate = coordinate ?? context.map {
             TrafficSignCoordinate(latitude: $0.latitude, longitude: $0.longitude)
         }
@@ -1094,6 +1099,9 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let shadowEventV2: TrafficSignRecognitionEventV2?
     let passageUpdate: TrafficSignPassageFinalizerUpdate
     let displayObservation: TrafficSignDisplayObservation?
+    let applicabilityDiagnostic: TSRApplicabilityDiagnostic?
+    /// Raw recognition for the independently consented, non-authoritative annotation sink only.
+    let annotationEvent: TrafficSignRecognitionEvent?
 
     init(
         event: TrafficSignRecognitionEvent,
@@ -1104,7 +1112,9 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         captureSessionId: String? = nil,
         shadowEventV2: TrafficSignRecognitionEventV2? = nil,
         passageUpdate: TrafficSignPassageFinalizerUpdate = .idle,
-        displayObservation: TrafficSignDisplayObservation? = nil
+        displayObservation: TrafficSignDisplayObservation? = nil,
+        applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
+        annotationEvent: TrafficSignRecognitionEvent? = nil
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1119,6 +1129,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.shadowEventV2 = shadowEventV2
         self.passageUpdate = passageUpdate
         self.displayObservation = displayObservation
+        self.applicabilityDiagnostic = applicabilityDiagnostic
+        self.annotationEvent = annotationEvent
     }
 }
 
@@ -1172,6 +1184,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         let event: TrafficSignRecognitionEvent
         let shadowEventV2: TrafficSignRecognitionEventV2?
         let passageUpdate: TrafficSignPassageFinalizerUpdate
+        let applicabilityDiagnostic: TSRApplicabilityDiagnostic
+        let displayDetections: [TrafficSignDetection]
+        let annotationEvent: TrafficSignRecognitionEvent?
     }
 
     private struct SchedulingState {
@@ -1208,7 +1223,10 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private let lock = NSLock()
     private var schedulingState = SchedulingState()
     private var fusion: TrafficSignFusionEngine
+    private var annotationFusion: TrafficSignFusionEngine
     private var passageFinalizer = TrafficSignPassageFinalizer()
+    private var applicabilitySession = TSRApplicabilitySession()
+    private var applicabilityScope: TSRApplicabilityScope?
     private var fusionSessionGeneration: UInt64?
     private var fusionContextGeneration: UInt64?
 
@@ -1247,6 +1265,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             runtimeOutput: verifiedPack.manifest.calibration.runtimeOutput,
             modelComponents: Self.modelComponentLineage(for: verifiedPack)
         )
+        annotationFusion = fusion
     }
 
     private static func modelComponentLineage(
@@ -1489,23 +1508,100 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 let process = { () -> SuccessfulProcessingResult in
                     if self.fusionSessionGeneration != item.snapshot.sessionGeneration
                         || self.fusionContextGeneration != item.snapshot.contextGeneration {
-                        self.fusion.reset()
+                        self.fusion.reset(); self.annotationFusion.reset()
                         self.passageFinalizer.reset()
+                        self.applicabilitySession.reset()
                         self.shadowRuntimeV2?.reset()
                         self.fusionSessionGeneration = item.snapshot.sessionGeneration
                         self.fusionContextGeneration = item.snapshot.contextGeneration
                     }
-                    let event = self.fusion.ingest(
-                        detections: detections,
+                    let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
+                    let scope = TSRApplicabilityScope(sessionId: item.snapshot.captureSessionId ?? "no-session",
+                        bundleId: item.snapshot.context?.sourceSignature.bundleSHA256 ?? "unverified",
+                        cameraGeometryId: "\(item.orientation.rawValue):\(dimensions.width)x\(dimensions.height)",
+                        generation: item.snapshot.sessionGeneration, contextGeneration: item.snapshot.contextGeneration,
+                        traversalEpoch: item.snapshot.context?.traversalEpoch ?? 0)
+                    let candidates = detections.prefix(TSRApplicabilityConfiguration.maxCandidates).enumerated().map { index, detection in
+                        let score = self.verifiedPack.manifest.calibration.runtimeOutput == .rawScore
+                            ? detection.rawScore : detection.calibratedConfidence ?? -.infinity
+                        return TSRApplicabilityCandidate(candidateId: "\(item.frameId):\(index)", semanticKey: detection.semantic.stableKey,
+                            box: TSRApplicabilityBox(x: detection.boundingBox.x, y: detection.boundingBox.y,
+                                width: detection.boundingBox.width, height: detection.boundingBox.height),
+                            rawScore: detection.rawScore, recognitionEligible: score >= max(self.verifiedPack.manifest.thresholds.unknown, detection.classThreshold),
+                            assemblyId: detection.assemblyId, recognitionScore: score.isFinite ? score : nil, calibratedConfidence: detection.calibratedConfidence)
+                    }
+                    let batch = TSRFrameCandidateBatch(schemaVersion: 1, frameId: item.frameId,
+                        capturedAtMs: item.timestampUTC.timeIntervalSince1970 * 1000, scope: scope, status: "analyzed",
+                        candidates: candidates, truncated: detections.count > TSRApplicabilityConfiguration.maxCandidates
+                            || twoStageResult?.proposalsTruncated == true,
+                        rawCandidateCount: detections.count, modelId: self.verifiedPack.detectorArtifact.sha256,
+                        preprocessingId: self.verifiedPack.manifest.preprocessing.version,
+                        road: item.snapshot.applicabilityMapFix?.snapshot(scope: scope))
+                    if TSRApplicabilityConfiguration.defaultMode != "shadow", self.applicabilityScope != scope {
+                        self.fusion.reset(); self.annotationFusion.reset(); self.passageFinalizer.reset()
+                    }
+                    self.applicabilityScope = scope
+                    let applicability = self.applicabilitySession.evaluate(batch)
+                    let enforcing = TSRApplicabilityConfiguration.defaultMode != "shadow"
+                    if enforcing, let activeID = self.passageFinalizer.activePhysicalTrackID,
+                       !applicability.tracks.contains(where: { $0.trackId == activeID }) {
+                        self.passageFinalizer.reset() // Expiry cancels without synthesizing passage.
+                    }
+                    let activeTrackID = self.passageFinalizer.activePhysicalTrackID
+                    let eligibleTracks = applicability.tracks.filter { track in
+                        applicability.decisions.contains { $0.trackId == track.trackId && $0.immediateEligible }
+                    }.sorted {
+                        if $0.trackId == activeTrackID { return true }; if $1.trackId == activeTrackID { return false }
+                        let a = $0.samples.last?.candidate.rawScore ?? 0, b = $1.samples.last?.candidate.rawScore ?? 0
+                        return a == b ? $0.trackId < $1.trackId : a > b
+                    }
+                    let selectedTrack = eligibleTracks.first
+                    let selectedIndex = selectedTrack?.samples.last?.candidate.candidateId.split(separator: ":").last.flatMap { Int($0) }
+                    let selectedDetections = enforcing ? selectedIndex.map { [detections[$0]] } ?? [] : detections
+                    let physicalSamples = selectedTrack?.samples.filter {
+                        $0.candidate.recognitionEligible && batch.capturedAtMs - $0.capturedAtMs <= Double(self.verifiedPack.manifest.thresholds.confirmationWindowMs)
+                    } ?? []
+                    var event = self.fusion.ingest(
+                        detections: selectedDetections,
                         source: item.source,
                         timestamp: item.timestampUTC,
                         roadContext: item.snapshot.context,
                         latencyMs: latencyMs,
                         thermalState: item.snapshot.conditions.thermalState,
                         frameID: item.frameId,
-                        driveSessionID: item.snapshot.captureSessionId
+                        driveSessionID: item.snapshot.captureSessionId,
+                        physicalTrackID: enforcing ? selectedTrack?.trackId : nil,
+                        physicalEvidenceFrames: enforcing ? physicalSamples.count : nil,
+                        physicalHasConfirmedEvidence: enforcing ? physicalSamples.contains {
+                            ($0.candidate.recognitionScore ?? -.infinity) >= self.verifiedPack.manifest.thresholds.confirmed
+                        } : nil
                     )
-                    let passageUpdate = self.passageFinalizer.ingest(
+                    let eventTrackID: String?
+                    if enforcing { eventTrackID = selectedTrack?.trackId }
+                    else if let candidate = event.candidate, let index = detections.firstIndex(where: { $0.rawClassId == candidate.rawClassId && $0.boundingBox == candidate.boundingBox }) {
+                        eventTrackID = applicability.tracks.first { $0.samples.last?.candidate.candidateId == "\(item.frameId):\(index)" }?.trackId
+                    } else { eventTrackID = nil }
+                    event.applicabilityDecision = applicability.decisions.first { $0.trackId == eventTrackID }
+                    // Raw confirmation remains available only to the annotation sink. It is
+                    // never sent to preview, display, finalizer, resolver or correction storage.
+                    var annotationEvent: TrafficSignRecognitionEvent? = nil
+                    if enforcing {
+                        var raw = self.annotationFusion.ingest(detections: detections, source: item.source,
+                            timestamp: item.timestampUTC, roadContext: item.snapshot.context, latencyMs: latencyMs,
+                            thermalState: item.snapshot.conditions.thermalState, frameID: item.frameId,
+                            driveSessionID: item.snapshot.captureSessionId)
+                        if let candidate = raw.candidate, let index = detections.firstIndex(where: {
+                            $0.rawClassId == candidate.rawClassId && $0.boundingBox == candidate.boundingBox
+                        }), let track = applicability.tracks.first(where: {
+                            $0.samples.last?.candidate.candidateId == "\(item.frameId):\(index)"
+                        }) {
+                            raw.applicabilityDecision = applicability.decisions.first { $0.trackId == track.trackId }
+                        }
+                        annotationEvent = raw
+                    }
+                    let canConsumePassage = self.applicabilitySession.canConsumePassage(activeTrackId: activeTrackID,
+                        selectedTrackId: selectedTrack?.trackId, mode: TSRApplicabilityConfiguration.defaultMode)
+                    var passageUpdate = self.passageFinalizer.ingest(
                         event,
                         sessionGeneration: item.snapshot.sessionGeneration,
                         contextGeneration: item.snapshot.contextGeneration,
@@ -1513,8 +1609,12 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         frameSpeedKmh: item.snapshot.conditions.speedKmh,
                         // Speed-limit activation is based on an admitted live
                         // frame, not on the vehicle's current speed.
-                        calibratedActivationEligible: item.source == .liveFrame
+                        calibratedActivationEligible: item.source == .liveFrame && canConsumePassage
                     )
+                    if case .committed(var passage) = passageUpdate {
+                        passage.applicabilityDecision = self.applicabilitySession.passageDecision(trackId: passage.physicalTrackID)
+                        passageUpdate = passage.permitsApplicability() ? .committed(passage) : .idle
+                    }
                     // Shadow QA must never disable the existing recognition
                     // UI. The admission gate covers staging/JPEG/event sinks,
                     // so invalidating a generation is a barrier after which an
@@ -1531,7 +1631,10 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     return SuccessfulProcessingResult(
                         event: event,
                         shadowEventV2: shadowEventV2,
-                        passageUpdate: passageUpdate
+                        passageUpdate: passageUpdate,
+                        applicabilityDiagnostic: applicability,
+                        displayDetections: selectedDetections,
+                        annotationEvent: annotationEvent
                     )
                 }
 
@@ -1558,9 +1661,11 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     shadowEventV2: processed.shadowEventV2,
                     passageUpdate: processed.passageUpdate,
                     displayObservation: TrafficSignDisplayObservation.accepted(
-                        from: detections, timestamp: item.timestampUTC,
+                        from: processed.displayDetections, timestamp: item.timestampUTC,
                         classifierCheckpointSHA256: self.verifiedPack.manifest.classifier?.sourceCheckpoint.sha256
-                    )
+                    ),
+                    applicabilityDiagnostic: processed.applicabilityDiagnostic,
+                    annotationEvent: processed.annotationEvent
                 )
             } catch {
                 self.handleInferenceFailure(item: item, error: error)
@@ -1736,7 +1841,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         event: TrafficSignRecognitionEvent,
         shadowEventV2: TrafficSignRecognitionEventV2?,
         passageUpdate: TrafficSignPassageFinalizerUpdate,
-        displayObservation: TrafficSignDisplayObservation?
+        displayObservation: TrafficSignDisplayObservation?,
+        applicabilityDiagnostic: TSRApplicabilityDiagnostic? = nil,
+        annotationEvent: TrafficSignRecognitionEvent? = nil
     ) {
         let now = ProcessInfo.processInfo.systemUptime
         var next: WorkItem?
@@ -1782,7 +1889,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 captureSessionId: item.snapshot.captureSessionId,
                 shadowEventV2: shadowEventV2,
                 passageUpdate: passageUpdate,
-                displayObservation: displayObservation
+                displayObservation: displayObservation,
+                applicabilityDiagnostic: applicabilityDiagnostic,
+                annotationEvent: annotationEvent
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }

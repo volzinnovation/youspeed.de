@@ -1070,6 +1070,26 @@ struct TrafficSignRecognitionEvent: Codable, Equatable, Sendable {
     let latencyMs: Double
     let thermalState: String?
 
+    // In-memory envelope only. Wire v1 remains frozen; persisted evidence uses a versioned sidecar.
+    var applicabilityDecision: TSRApplicabilityDecision? = nil
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case packId
+        case artifactSha256
+        case preprocessingVersion
+        case modelComponents
+        case frameId
+        case driveSessionId
+        case analysisEligible
+        case source
+        case frameTimestampUtc
+        case state
+        case candidate
+        case roadContext
+        case latencyMs
+        case thermalState
+    }
+
     init(
         schemaVersion: Int,
         packId: String,
@@ -1300,9 +1320,10 @@ struct TrafficSignTransientOverridePolicy: Sendable {
     @discardableResult
     mutating func ingestConfirmedDetection(
         _ event: TrafficSignRecognitionEvent,
-        currentSourceSignature: TrafficSignRuntimeSourceSignature
+        currentSourceSignature: TrafficSignRuntimeSourceSignature,
+        applicabilityMode: String = TSRApplicabilityConfiguration.defaultMode
     ) -> Bool {
-        guard event.state == .confirmed,
+        guard event.permitsApplicability("immediate", mode: applicabilityMode), event.state == .confirmed,
               event.source != .diagnosticImport,
               let context = event.roadContext,
               context.isValid,
@@ -1490,7 +1511,10 @@ struct TrafficSignFusionEngine: Sendable {
         latencyMs: Double,
         thermalState: TrafficSignThermalState?,
         frameID: String? = nil,
-        driveSessionID: String? = nil
+        driveSessionID: String? = nil,
+        physicalTrackID: String? = nil,
+        physicalEvidenceFrames: Int? = nil,
+        physicalHasConfirmedEvidence: Bool? = nil
     ) -> TrafficSignRecognitionEvent {
         let window = TimeInterval(thresholds.confirmationWindowMs) / 1_000
         let oldestAllowed = timestamp.addingTimeInterval(-window)
@@ -1557,7 +1581,8 @@ struct TrafficSignFusionEngine: Sendable {
         // is evidence geometry, not physical identity.
         let matchingIndex = tracks.indices
             .filter { index in
-                tracks[index].semanticKey == detection.semantic.stableKey
+                (physicalTrackID == nil || tracks[index].id == physicalTrackID)
+                    && tracks[index].semanticKey == detection.semantic.stableKey
                     && (tracks[index].roadKey == nil
                         || roadKey == nil
                         || tracks[index].roadKey == roadKey)
@@ -1576,7 +1601,7 @@ struct TrafficSignFusionEngine: Sendable {
         } else {
             tracks.append(
                 Track(
-                    id: UUID().uuidString.lowercased(),
+                    id: physicalTrackID ?? UUID().uuidString.lowercased(),
                     semanticKey: detection.semantic.stableKey,
                     roadKey: roadKey,
                     evidence: [StampedDetection(timestamp: timestamp, detection: detection)]
@@ -1586,9 +1611,9 @@ struct TrafficSignFusionEngine: Sendable {
         }
 
         let track = tracks[index]
-        let evidenceFrames = track.evidence.count
+        let evidenceFrames = physicalEvidenceFrames ?? track.evidence.count
         let score = effectiveScore(for: detection) ?? -.infinity
-        let hasConfirmedEvidence = track.evidence.contains {
+        let hasConfirmedEvidence = physicalHasConfirmedEvidence ?? track.evidence.contains {
             (effectiveScore(for: $0.detection) ?? -.infinity) >= thresholds.confirmed
         }
         let state: TrafficSignRecognitionResultState = evidenceFrames >= thresholds.confirmationFrames
