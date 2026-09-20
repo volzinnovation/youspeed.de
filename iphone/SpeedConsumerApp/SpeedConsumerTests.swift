@@ -2333,6 +2333,36 @@ final class SpeedConsumerTests: XCTestCase {
         ))
     }
 
+    func testTransientNonCurrentRoadContextDoesNotTurnDebugBadgeYellow() {
+        XCTAssertFalse(DriveSessionViewModel.trafficSignDebugRoadContextShouldWarn(
+            processingEnabled: true,
+            frameContextIsCurrent: false,
+            contextIsValid: false,
+            matchedWayStable: false
+        ))
+        XCTAssertFalse(DriveSessionViewModel.trafficSignDebugRoadContextShouldWarn(
+            processingEnabled: false,
+            frameContextIsCurrent: true,
+            contextIsValid: false,
+            matchedWayStable: false
+        ))
+    }
+
+    func testCurrentUnstableRoadContextStillTurnsDebugBadgeYellow() {
+        XCTAssertTrue(DriveSessionViewModel.trafficSignDebugRoadContextShouldWarn(
+            processingEnabled: true,
+            frameContextIsCurrent: true,
+            contextIsValid: true,
+            matchedWayStable: false
+        ))
+        XCTAssertTrue(DriveSessionViewModel.trafficSignDebugRoadContextShouldWarn(
+            processingEnabled: true,
+            frameContextIsCurrent: true,
+            contextIsValid: false,
+            matchedWayStable: true
+        ))
+    }
+
     func testInFlightOldGenerationIsDroppedBeforeFusionAndNewGenerationContinues() throws {
         let manifest = makeTrafficSignModelPackManifest()
         let artifact = try XCTUnwrap(manifest.detector.artifacts.first)

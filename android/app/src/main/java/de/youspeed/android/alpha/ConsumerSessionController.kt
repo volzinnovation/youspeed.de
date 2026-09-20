@@ -454,7 +454,7 @@ class ConsumerSessionController(
     private var trafficSignDisplayCatalog = appContext.assets.open(TrafficSignDisplayCatalog.ASSET_PATH).bufferedReader().use {
         TrafficSignDisplayCatalog.decode(it.readText(), expectedCountryCode = "DE")
     }
-    private var activeMapCountryCode: String? = null
+    @Volatile private var activeMapCountryCode: String? = null
     private val bootstrapper = BundleBootstrapper(
         rootDir = rootDir,
         httpFetcher = HttpUrlFetcher(),
@@ -3724,7 +3724,15 @@ class ConsumerSessionController(
             )
             val routedDBPath = route?.dbPath?.takeIf { it.isNotBlank() && File(it).exists() }
             val effectiveDBPath = routedDBPath ?: fallbackDBPath
-            val fallbackCountryCode = normalizedCountryCode(bootstrapper.activeState()?.countryCode)
+            // The persisted active-bundle file can describe an older bundle
+            // while route selection has already moved to another installed
+            // region. Prefer the committed route country, then the selected
+            // route itself when it is the current database path. Otherwise a
+            // stale country would make every lookup look like a bundle switch.
+            val fallbackCountryCode = activeMapCountryCode
+                ?: normalizedCountryCode(route?.countryCode)
+                    ?.takeIf { routedDBPath == fallbackDBPath }
+                ?: normalizedCountryCode(bootstrapper.activeState()?.countryCode)
                 ?: inferCountryCodeFromDBPath(fallbackDBPath)
             val effectiveCountryCode = normalizedCountryCode(route?.countryCode)
                 ?: fallbackCountryCode
@@ -3737,11 +3745,18 @@ class ConsumerSessionController(
             val previousTrafficSignBundleSha256 = synchronized(trafficSignStateLock) {
                 latestTrafficSignContext?.bundleSha256
             }
-            val routeChanged = route != null && (
-                    routedDBPath != fallbackDBPath ||
-                    effectiveBundleVersion != fallbackBundleVersion ||
-                    effectiveCountryCode != fallbackCountryCode ||
-                    (previousTrafficSignBundleSha256 != null && effectiveBundleSha256 != previousTrafficSignBundleSha256)
+            val routeChanged = route != null && BundleRouteIdentity(
+                dbPath = routedDBPath,
+                bundleVersion = effectiveBundleVersion,
+                countryCode = effectiveCountryCode,
+                dbSha256 = effectiveBundleSha256,
+            ).differsFrom(
+                BundleRouteIdentity(
+                    dbPath = fallbackDBPath,
+                    bundleVersion = fallbackBundleVersion,
+                    countryCode = fallbackCountryCode,
+                    dbSha256 = previousTrafficSignBundleSha256,
+                )
             )
 
             if (!lookupIsFresh()) return@lookup
@@ -3781,6 +3796,10 @@ class ConsumerSessionController(
                             "dbPath" to effectiveDBPath,
                             "previousDbPath" to fallbackDBPath,
                             "countryCode" to effectiveCountryCode,
+                            "fallbackBundleVersion" to fallbackBundleVersion,
+                            "fallbackCountryCode" to fallbackCountryCode,
+                            "bundleSha256" to effectiveBundleSha256,
+                            "previousBundleSha256" to previousTrafficSignBundleSha256,
                         ),
                     )
                     postState {
@@ -5393,7 +5412,7 @@ class ConsumerSessionController(
             return null
         }
         val prefix = fileName.take(3)
-        return prefix.takeIf { it.all(Char::isLetter) }
+        return prefix.takeIf { it.all(Char::isLetter) }?.let(::normalizedCountryCode)
     }
 
     private fun normalizedCountryCode(raw: String?): String? {

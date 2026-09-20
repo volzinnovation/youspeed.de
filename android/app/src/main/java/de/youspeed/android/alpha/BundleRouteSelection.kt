@@ -14,6 +14,25 @@ data class BundleRouteProbe(
             (nearestSpeedCandidateDistanceM?.takeIf { it.isFinite() }?.let { (250.0 - it).coerceAtLeast(0.0) } ?: 0.0)
 }
 
+/**
+ * The identity used to decide whether a traffic-sign generation really needs
+ * to be invalidated. A missing digest is unknown metadata, not evidence that
+ * the selected database changed.
+ */
+data class BundleRouteIdentity(
+    val dbPath: String?,
+    val bundleVersion: String?,
+    val countryCode: String?,
+    val dbSha256: String?,
+) {
+    fun differsFrom(previous: BundleRouteIdentity): Boolean =
+        dbPath != previous.dbPath ||
+            bundleVersion != previous.bundleVersion ||
+            countryCode != previous.countryCode ||
+            (dbSha256 != null && previous.dbSha256 != null &&
+                !dbSha256.equals(previous.dbSha256, ignoreCase = true))
+}
+
 object BundleRouteSelection {
     const val SWITCH_SCORE_MARGIN = 120.0
 

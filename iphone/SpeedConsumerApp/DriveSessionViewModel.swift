@@ -2505,34 +2505,43 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
     }
 
+    nonisolated static func trafficSignDebugRoadContextShouldWarn(
+        processingEnabled: Bool,
+        frameContextIsCurrent: Bool,
+        contextIsValid: Bool,
+        matchedWayStable: Bool
+    ) -> Bool {
+        processingEnabled && frameContextIsCurrent && (!contextIsValid || !matchedWayStable)
+    }
+
     private func refreshTrafficSignDebugRoadContextStatus() {
-        guard trafficSignProcessingIsEnabled else {
+        let context = latestTrafficSignDetectionContext
+        guard Self.trafficSignDebugRoadContextShouldWarn(
+            processingEnabled: trafficSignProcessingIsEnabled,
+            frameContextIsCurrent: trafficSignFrameContextIsCurrent,
+            contextIsValid: context?.isValid == true,
+            matchedWayStable: context?.matchedWayStable == true
+        ) else {
+            // A lookup temporarily makes the previous frame context
+            // non-current. That is expected and must not flash the debug
+            // indicator yellow while speed-limit state remains valid.
             trafficSignDebugRoadContextInvalid = false
             return
         }
-        let context = latestTrafficSignDetectionContext
-        guard trafficSignFrameContextIsCurrent,
-              let context,
-              context.isValid,
-              context.matchedWayStable else {
-            let reason: String
-            if !trafficSignFrameContextIsCurrent {
-                reason = "not_current"
-            } else if latestTrafficSignDetectionContext == nil {
-                reason = "missing"
-            } else if context?.wayId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
-                reason = "way_unmatched"
-            } else {
-                reason = "way_unstable"
-            }
+        guard let context else {
             noteTrafficSignDebugIssue(
                 issue: "road_context_invalid",
-                reason: reason,
-                detail: "way=\(context?.wayId ?? "none")"
+                reason: "missing",
+                detail: "way=none"
             )
             return
         }
-        trafficSignDebugRoadContextInvalid = false
+        noteTrafficSignDebugIssue(
+            issue: "road_context_invalid",
+            reason: context.wayId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? "way_unmatched" : "way_unstable",
+            detail: "way=\(context.wayId)"
+        )
     }
 
     private func refreshTrafficSignFrameSnapshot() {
@@ -2728,6 +2737,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             )
             return
         }
+        // A current runtime emission proves that the active generation and
+        // capture session are coherent again. Do not leave the debug badge
+        // yellow because of a stale callback that arrived during a normal
+        // context refresh.
+        trafficSignDebugGenerationSessionContextMismatch = false
         let immediateOverrideChanged: Bool
         if emission.event.source == .liveFrame,
            let eventContext = emission.event.roadContext,

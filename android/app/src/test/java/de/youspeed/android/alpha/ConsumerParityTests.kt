@@ -122,6 +122,30 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun trafficSignGenerationDoesNotSwitchForSameRouteWithUnknownDigest() {
+        val route = BundleRouteIdentity(
+            dbPath = "/bundles/belgium/belgium_speeds.sqlite",
+            bundleVersion = "2026-09-15",
+            countryCode = "BEL",
+            dbSha256 = null,
+        )
+        val current = route.copy(dbSha256 = "known-current-digest")
+
+        assertFalse(route.differsFrom(current))
+        assertFalse(current.differsFrom(route))
+    }
+
+    @Test
+    fun trafficSignGenerationSwitchesForRealRouteIdentityChanges() {
+        val current = BundleRouteIdentity("/old.sqlite", "2026-09-14", "BEL", "a")
+
+        assertTrue(current.copy(dbPath = "/new.sqlite").differsFrom(current))
+        assertTrue(current.copy(bundleVersion = "2026-09-15").differsFrom(current))
+        assertTrue(current.copy(countryCode = "NLD").differsFrom(current))
+        assertTrue(current.copy(dbSha256 = "b").differsFrom(current))
+    }
+
+    @Test
     fun staleBundleLimitIsNotUsedForOverspeedWarnings() {
         val state = ConsumerUiState(
             currentSpeedKmh = 91.0,
