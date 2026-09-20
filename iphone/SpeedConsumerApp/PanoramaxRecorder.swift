@@ -908,6 +908,7 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
         }
 
         session.addInput(input)
+        configureInfinityFocus(for: camera)
 
         func addMovieOutputIfPossible() {
             guard !movieOutputAvailable, session.canAddOutput(movieOutput) else { return }
@@ -956,6 +957,26 @@ final class DriveCaptureCoordinator: NSObject, ObservableObject {
             && frameDispatcher.hasConsumer
         guard movieOutputAvailable || videoOutputAvailable || photoOutputAvailable else {
             throw RecorderError.sessionUnavailable
+        }
+    }
+
+    /// The camera is mounted behind the windscreen, so autofocus can settle on
+    /// dirt or reflections close to the lens instead of the road ahead. Keep
+    /// every camera consumer on the same fixed infinity focus position.
+    private func configureInfinityFocus(for camera: AVCaptureDevice) {
+        guard camera.isFocusModeSupported(.locked) else { return }
+        do {
+            try camera.lockForConfiguration()
+            defer { camera.unlockForConfiguration() }
+            if camera.isLockingFocusWithCustomLensPositionSupported {
+                camera.setFocusModeLocked(lensPosition: 1.0, completionHandler: nil)
+            } else {
+                // Still disable autofocus on fixed-focus hardware even when it
+                // cannot accept an explicit lens position.
+                camera.focusMode = .locked
+            }
+        } catch {
+            Self.logger.debug("Could not lock rear camera focus: \(error.localizedDescription, privacy: .public)")
         }
     }
 

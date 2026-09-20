@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.ImageFormat
+import android.hardware.camera2.CaptureRequest
 import android.hardware.HardwareBuffer
 import android.media.ImageReader
 import android.os.PowerManager
@@ -17,6 +18,8 @@ import android.os.Looper
 import android.util.Size
 import android.util.Log
 import androidx.camera.core.CameraSelector
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.core.ExtendableBuilder
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -969,7 +972,9 @@ internal class AndroidTrafficSignCameraRuntime(
                 val provider = providerFuture.get()
                 val rotation = controller.uiState.manualOrientation.targetRotation
                 val analysis = imageAnalysis ?: run {
-                    ImageAnalysis.Builder()
+                    val builder = ImageAnalysis.Builder()
+                    configureInfinityFocus(builder)
+                    builder
                         .setTargetRotation(rotation)
                         .setResolutionSelector(
                             ResolutionSelector.Builder()
@@ -1000,16 +1005,22 @@ internal class AndroidTrafficSignCameraRuntime(
                 // can otherwise race graph activation and leave the preference
                 // enabled with no ImageCapture instance to receive GPS requests.
                 val capture = if (includeRecorderOutputs) imageCapture ?: run {
-                    ImageCapture.Builder()
+                    val builder = ImageCapture.Builder()
+                    configureInfinityFocus(builder)
+                    builder
                         .setTargetRotation(rotation)
                         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                         .build()
                 } else null
                 val video = if (includeRecorderOutputs) videoCapture ?: run {
-                    VideoCapture.withOutput(Recorder.Builder().build()).apply { targetRotation = rotation }
+                    val builder = VideoCapture.Builder(Recorder.Builder().build())
+                    configureInfinityFocus(builder)
+                    builder.setTargetRotation(rotation).build()
                 } else null
                 val currentPreview = if (includeRecorderOutputs) {
-                    preview ?: Preview.Builder().setTargetRotation(rotation).build().also {
+                    val builder = Preview.Builder()
+                    configureInfinityFocus(builder)
+                    preview ?: builder.setTargetRotation(rotation).build().also {
                         it.setSurfaceProvider(mainExecutor, previewSurfaceProvider ?: offscreenPreviewProvider)
                     }
                 } else null
@@ -1047,6 +1058,20 @@ internal class AndroidTrafficSignCameraRuntime(
                 setDashcamRecordingEnabled(controller.isDashcamRecordingEnabled())
             }
         }, mainExecutor)
+    }
+
+    /**
+     * The camera is mounted behind the windscreen, where autofocus can settle
+     * on dirt or reflections close to the lens instead of the road ahead.
+     * Camera2 expresses infinity as a zero-diopter focus distance.
+     */
+    private fun <T> configureInfinityFocus(builder: ExtendableBuilder<T>) {
+        Camera2Interop.Extender(builder)
+            .setCaptureRequestOption(
+                CaptureRequest.CONTROL_AF_MODE,
+                CaptureRequest.CONTROL_AF_MODE_OFF,
+            )
+            .setCaptureRequestOption(CaptureRequest.LENS_FOCUS_DISTANCE, 0.0f)
     }
 
     fun setDashcamRecordingEnabled(enabled: Boolean) {
