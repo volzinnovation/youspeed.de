@@ -146,6 +146,14 @@ class ConsumerParityTests {
     }
 
     @Test
+    fun trafficSignModelSelectionOnlyRepeatsForARealRouteOrCountryChange() {
+        assertTrue(BundleRouteSelection.shouldSelectTrafficSignModel(null, "BEL", routeChanged = false))
+        assertFalse(BundleRouteSelection.shouldSelectTrafficSignModel("BEL", "BEL", routeChanged = false))
+        assertTrue(BundleRouteSelection.shouldSelectTrafficSignModel("BEL", "NLD", routeChanged = false))
+        assertTrue(BundleRouteSelection.shouldSelectTrafficSignModel("BEL", "BEL", routeChanged = true))
+    }
+
+    @Test
     fun staleBundleLimitIsNotUsedForOverspeedWarnings() {
         val state = ConsumerUiState(
             currentSpeedKmh = 91.0,

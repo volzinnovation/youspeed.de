@@ -3768,7 +3768,14 @@ class ConsumerSessionController(
                 val selectionReason = if (routeChanged) "bundle_route_switch" else "first_location_bundle_selection"
                 mainHandler.post {
                     if (isDisposed.get() || sessionId != trafficSignDriveSessionId || !lookupToken.isCurrent(token)) return@post
-                    onTrafficSignBundleSelected(effectiveCountryCode, selectionReason)
+                    if (BundleRouteSelection.shouldSelectTrafficSignModel(
+                            activeCountryCode = activeMapCountryCode,
+                            selectedCountryCode = effectiveCountryCode,
+                            routeChanged = routeChanged,
+                        )
+                    ) {
+                        onTrafficSignBundleSelected(effectiveCountryCode, selectionReason)
+                    }
                 }
             }
 

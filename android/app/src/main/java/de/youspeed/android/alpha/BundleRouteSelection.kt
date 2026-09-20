@@ -36,6 +36,13 @@ data class BundleRouteIdentity(
 object BundleRouteSelection {
     const val SWITCH_SCORE_MARGIN = 120.0
 
+    /** Model selection is a state transition, not a per-fix notification. */
+    fun shouldSelectTrafficSignModel(
+        activeCountryCode: String?,
+        selectedCountryCode: String,
+        routeChanged: Boolean,
+    ): Boolean = routeChanged || activeCountryCode != selectedCountryCode
+
     fun choose(probes: List<BundleRouteProbe>, currentDBPath: String?): LocalBundleRoute? {
         if (probes.isEmpty()) return null
         val best = probes.sortedWith(
