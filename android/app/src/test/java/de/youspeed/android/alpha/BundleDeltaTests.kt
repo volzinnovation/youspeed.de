@@ -72,6 +72,23 @@ class BundleDeltaTests {
         assertEquals(listOf("replace:new"), fixture.applied)
     }
 
+    @Test fun changingRegionsAlwaysDownloadsTheirDatabaseEvenWithSharedReleaseDates() = scenario { fixture ->
+        for (version in listOf("2026-09-01", "2026-09-02")) {
+            val original = fixture.install("2026-09-01", "old region data")
+            fixture.offerDelta("new region data")
+            fixture.responses[fixture.manifestUrl] = fixture.responses.getValue(fixture.manifestUrl)
+                .toString(Charsets.UTF_8).replace("\"region\":\"region\"", "\"region\":\"other-region\"")
+                .replace("\"bundle_version\":\"2026-09-02\"", "\"bundle_version\":\"$version\"").toByteArray()
+            fixture.responses.remove("https://fixture/index.json")
+            val selected = fixture.bootstrapper.syncFromManifestUrl(fixture.manifestUrl)
+            assertEquals(BundleSyncMode.FULL_DOWNLOAD, selected.mode)
+            assertEquals("new region data", File(selected.dbPath).readText())
+            assertEquals("old region data", File(original.dbPath).readText())
+            assertFalse(fixture.requests.contains("https://fixture/index.json"))
+            assertEquals("other-region", fixture.bootstrapper.activeState()?.region)
+        }
+    }
+
     @Test fun missingDeltaPathFallsBackToFullBundle() = scenario { fixture ->
         fixture.install("2026-09-01", "old")
         fixture.offerDelta("new", fromVersion = "unrelated")

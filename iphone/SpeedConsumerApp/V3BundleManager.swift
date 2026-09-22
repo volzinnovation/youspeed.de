@@ -654,8 +654,13 @@ actor V3BundleManager {
 
             let forceFullReload = targetIdentityChanged || shouldForceFullReload(currentVersion: current?.bundleVersion, targetVersion: manifest.bundleVersion, maxAgeDays: 30)
 
+            // A date/version is only meaningful within one region. Reusing a
+            // different region's DB produces an invalid zero-hop delta when
+            // releases share a date, or patches the wrong base on later dates.
             if !forceFullReload,
                let current,
+               current.region == manifest.region,
+               current.bundleVersion != manifest.bundleVersion,
                let deltaRef = manifest.deltaIndex,
                let result = try await tryApplyDelta(
                    current: current,

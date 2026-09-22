@@ -375,3 +375,6 @@
 "settings.maps.download" = "Télécharger";
 "metric.download_data" = "Télécharger les données";
 "metric.downloading_data" = "Téléchargement…";
+
+"settings.maps.preparing" = "Préparation du téléchargement…";
+"settings.maps.download_failed" = "Échec du téléchargement : %@";

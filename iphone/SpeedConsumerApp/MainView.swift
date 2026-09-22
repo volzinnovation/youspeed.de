@@ -1058,6 +1058,7 @@ struct MainView: View {
                     RecordingSafeButton { viewModel.downloadSelectedBundle(option) } label: {
                         Label(active ? NSLocalizedString("metric.downloading_data", comment: "")
                               : queued ? NSLocalizedString("settings.maps.queued", comment: "")
+                              : viewModel.bundleDownloadErrors[option.id] != nil ? NSLocalizedString("onboarding.map.retry", comment: "")
                               : NSLocalizedString("metric.download_data", comment: ""), systemImage: "arrow.down.circle")
                             .font(.title3.weight(.bold))
                             .underline()
@@ -1066,7 +1067,7 @@ struct MainView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(active || queued)
-                    .accessibilityHint(option.displayName)
+                    .accessibilityHint(viewModel.bundleDownloadErrors[option.id] ?? option.displayName)
                     .accessibilityIdentifier("dashboard.downloadData")
                 }
                 .foregroundStyle(primaryForegroundColor)
@@ -3407,15 +3408,18 @@ private struct SettingsView: View {
         let downloaded = viewModel.isBundleDownloaded(option)
         let active = viewModel.isActiveBundleDownload(option)
         let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
-        let status = active ? viewModel.activeBundleDownloadBytesText(option)
+        let failure = viewModel.bundleDownloadErrors[option.id]
+        let progressText = viewModel.activeBundleDownloadBytesText(option)
+        let status = active ? (progressText.isEmpty ? NSLocalizedString("settings.maps.preparing", comment: "") : progressText)
             : queued ? NSLocalizedString("settings.maps.queued", comment: "")
-            : viewModel.downloadedBundleStatusText(option)
+            : failure.map { String(format: NSLocalizedString("settings.maps.download_failed", comment: ""), $0) }
+                ?? viewModel.downloadedBundleStatusText(option)
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
                 Text(status.isEmpty ? " " : status)
-                    .font(.caption2).foregroundStyle(downloaded ? .green : .secondary)
-                    .lineLimit(1).minimumScaleFactor(0.8)
+                    .font(.caption2).foregroundStyle(failure != nil ? .red : downloaded ? .green : .secondary)
+                    .lineLimit(2, reservesSpace: true).minimumScaleFactor(0.8)
                 // Reserve the progress slot even after completion; rows keep their height.
                 ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
                     .opacity(active ? 1 : 0)
@@ -3427,13 +3431,13 @@ private struct SettingsView: View {
                 else if downloaded { viewModel.deleteSelectedBundle(option) }
                 else { viewModel.downloadSelectedBundle(option) }
             } label: {
-                Image(systemName: queued ? "xmark.circle" : downloaded ? "trash" : "arrow.down.circle")
+                Image(systemName: queued ? "xmark.circle" : downloaded ? "trash" : failure != nil ? "arrow.clockwise.circle" : "arrow.down.circle")
                     .font(.title3.weight(.semibold))
                     .frame(width: 44, height: 44)
             }
             .buttonStyle(.plain)
             .disabled(active || (downloaded && viewModel.isSyncingNow))
-            .accessibilityLabel(Text(queued ? "settings.maps.cancel_queued" : downloaded ? "common.delete" : "settings.maps.download"))
+            .accessibilityLabel(Text(queued ? "settings.maps.cancel_queued" : downloaded ? "common.delete" : failure != nil ? "onboarding.map.retry" : "settings.maps.download"))
             .accessibilityIdentifier("bundle.action.\(option.id)")
         }
         .frame(minHeight: 64)

@@ -117,4 +117,6 @@
     <string name="ui_cancel_queued_download">Annuler le téléchargement en attente</string>
     <string name="ui_download_data">Télécharger les données</string>
     <string name="ui_downloading_data">Téléchargement…</string>
+    <string name="ui_download_preparing">Préparation du téléchargement…</string>
+    <string name="ui_bundle_download_failed">Échec du téléchargement : %1$s</string>
 </resources>

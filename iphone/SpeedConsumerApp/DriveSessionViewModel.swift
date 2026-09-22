@@ -640,6 +640,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var downloadedBundleLatestVersionByRegion: [String: String] = [:]
     @Published private(set) var expectedBundleBytesByRegion: [String: Int64] = [:]
     @Published private(set) var activeDownloadOptionID: String?
+    @Published private(set) var bundleDownloadErrors: [String: String] = [:]
     @Published private(set) var missingCoverageDownloadOptionID: String?
     var missingCoverageDownloadOption: BundleDownloadOption? {
         bundleDownloadSections.flatMap(\.options).first { $0.id == missingCoverageDownloadOptionID }
@@ -4347,6 +4348,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func downloadSelectedBundle(_ option: BundleDownloadOption, firstLocationSetup: Bool = false) {
+        bundleDownloadErrors.removeValue(forKey: option.id)
         bundleDownloadQueue.enqueue(BundleDownloadRequest(option: option, firstLocationSetup: firstLocationSetup),
                                     activeID: activeDownloadOptionID)
         startNextBundleDownload()
@@ -4440,6 +4442,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncProgressETASeconds = nil
                 syncPartDownloads = []
                 lastError = error.localizedDescription
+                bundleDownloadErrors[option.id] = error.localizedDescription
                 maintenanceMessage = "Download fehlgeschlagen: \(option.displayName) (\(error.localizedDescription))"
                 Self.logger.error(
                     "download_selected failed bundle=\(option.displayName, privacy: .public) region=\(option.endpoint.manifestRegion, privacy: .public) error=\(error.localizedDescription, privacy: .public)"

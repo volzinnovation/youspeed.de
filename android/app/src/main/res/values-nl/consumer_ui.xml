@@ -117,4 +117,6 @@
     <string name="ui_cancel_queued_download">Download uit wachtrij verwijderen</string>
     <string name="ui_download_data">Gegevens downloaden</string>
     <string name="ui_downloading_data">Downloaden…</string>
+    <string name="ui_download_preparing">Download voorbereiden…</string>
+    <string name="ui_bundle_download_failed">Download mislukt: %1$s</string>
 </resources>

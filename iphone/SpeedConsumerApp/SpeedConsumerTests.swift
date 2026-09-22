@@ -5398,6 +5398,57 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(MatcherDebugProfile.m12.matchingModel, .simpleSequenceViterbiHeuristic)
     }
 
+    func testSwitchingRegionsWithSharedReleaseDatesDownloadsTheSelectedDatabase() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        try? fm.removeItem(at: supportDir)
+        let sourceDB = fm.temporaryDirectory.appendingPathComponent("region-switch-\(UUID().uuidString).sqlite")
+        defer {
+            try? fm.removeItem(at: supportDir)
+            try? fm.removeItem(at: sourceDB)
+            MockURLProtocol.responses = [:]
+        }
+        try createFixtureV3DB(at: sourceDB)
+        let initialData = try Data(contentsOf: sourceDB)
+        try executeSQL(at: sourceDB, sql: "CREATE TABLE selected_region_marker (name TEXT); INSERT INTO selected_region_marker VALUES ('PACA');")
+        let selectedData = try Data(contentsOf: sourceDB)
+        XCTAssertNotEqual(initialData.count, selectedData.count)
+        let indexData = Data(#"{"format":"youspeed.v3.delta.index","schema_version":1,"count":0,"entries":[]}"#.utf8)
+        let indexURL = "https://speedconsumer.test/target-index.json"
+        func manifest(region: String, version: String, data: Data, hasDelta: Bool) -> V3BundleManifest {
+            V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+                region: region, countryCode: "FRA", bundleVersion: version,
+                createdAtUTC: "2026-07-03T00:00:00Z", minAppVersion: "1.0",
+                db: BundleArtifact(file: "\(region).sqlite", bytes: Int64(data.count), sha256: sha256Hex(data),
+                    url: "https://speedconsumer.test/\(region).sqlite"), dbParts: nil,
+                deltaIndex: hasDelta ? BundleArtifact(file: "target-index.json", bytes: Int64(indexData.count),
+                    sha256: sha256Hex(indexData), url: indexURL) : nil)
+        }
+        let initialURL = URL(string: "https://speedconsumer.test/initial.json")!
+        let selectedURL = URL(string: "https://speedconsumer.test/selected.json")!
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockURLProtocol.self]
+        let manager = V3BundleManager(session: URLSession(configuration: config))
+        for version in ["2026-07-03", "2026-07-04"] {
+            MockURLProtocol.responses = [
+                initialURL.absoluteString: (200, try JSONEncoder().encode(manifest(region: "languedoc-roussillon", version: "2026-07-03", data: initialData, hasDelta: false))),
+                "https://speedconsumer.test/languedoc-roussillon.sqlite": (200, initialData),
+                selectedURL.absoluteString: (200, try JSONEncoder().encode(manifest(region: "provence-alpes-cote-d-azur", version: version, data: selectedData, hasDelta: true))),
+                "https://speedconsumer.test/provence-alpes-cote-d-azur.sqlite": (200, selectedData),
+                // Match the observed zero-hop delta on equal dates. A different
+                // region must also work when its delta endpoint is unavailable.
+                indexURL: version == "2026-07-03" ? (200, indexData) : (500, Data()),
+            ]
+            let original = try await manager.syncFromManifestURL(initialURL)
+            let selected = try await manager.syncFromManifestURL(selectedURL)
+            XCTAssertEqual(selected.mode, .fullDownload)
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: selected.dbPath)), selectedData)
+            XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: original.dbPath)), initialData)
+            let active = try await manager.activeState()
+            XCTAssertEqual(active?.region, "provence-alpes-cote-d-azur")
+        }
+    }
+
     func testAllConfiguredBundlesSyncAndDeleteViaMockTransport() async throws {
         let fm = FileManager.default
         let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)

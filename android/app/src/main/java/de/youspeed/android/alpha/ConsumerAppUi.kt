@@ -65,6 +65,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -1146,7 +1147,7 @@ private fun LocationStatusBlock(
                         fontFamily = FontFamily.Monospace)
                     TextButton(onClick = onDownloadData, enabled = !active && !queued,
                         modifier = Modifier.heightIn(min = 48.dp).testTag("dashboard-download-data")) {
-                        Text(stringResource(if (active) R.string.ui_downloading_data else if (queued) R.string.ui_download_queued else R.string.ui_download_data),
+                        Text(stringResource(if (active) R.string.ui_downloading_data else if (queued) R.string.ui_download_queued else if (ui.bundleDownloadErrors[ui.missingCoverageDownloadOptionId] != null) R.string.onboarding_retry_download else R.string.ui_download_data),
                             color = foreground, fontWeight = FontWeight.Bold, fontSize = 20.sp,
                             textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline)
                     }
@@ -1970,17 +1971,20 @@ private fun BundleDownloadOptionRow(
     val downloaded = controller.isBundleDownloaded(option)
     val active = controller.isActiveBundleDownload(option)
     val queued = option.id in ui.queuedBundleDownloadIds
+    val failure = ui.bundleDownloadErrors[option.id]
+    val preparing = stringResource(R.string.ui_download_preparing)
     val status = when {
-        active -> progressBytesText(context, ui.syncProgressCompletedBytes, ui.syncProgressTotalBytes)
+        active -> progressBytesText(context, ui.syncProgressCompletedBytes, ui.syncProgressTotalBytes).ifBlank { preparing }
         queued -> stringResource(R.string.ui_download_queued)
+        failure != null -> stringResource(R.string.ui_bundle_download_failed, failure)
         else -> controller.downloadedBundleStatusText(option)
     }
     Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("bundle-row-${option.id}"),
         verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, color = Color.Black, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(status.ifBlank { " " }, color = if (downloaded) SignalGreen else Color(0xFF666666),
-                fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(status.ifBlank { " " }, color = if (failure != null) SignalRed else if (downloaded) SignalGreen else Color(0xFF666666),
+                fontSize = 12.sp, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis)
             // Constant space prevents completed downloads moving the remaining rows.
             Box(Modifier.fillMaxWidth().height(4.dp)) {
                 if (active) LinearProgressIndicator(
@@ -1999,8 +2003,8 @@ private fun BundleDownloadOptionRow(
             enabled = !active && !(downloaded && controller.isSyncingNow()),
             modifier = Modifier.size(48.dp).testTag("bundle-action-${option.id}"),
         ) {
-            Icon(if (queued) Icons.Default.Close else if (downloaded) Icons.Default.Delete else Icons.Default.Download,
-                contentDescription = stringResource(if (queued) R.string.ui_cancel_queued_download else if (downloaded) R.string.ui_delete_bundle else R.string.ui_download_bundle),
+            Icon(if (queued) Icons.Default.Close else if (downloaded) Icons.Default.Delete else if (failure != null) Icons.Default.Refresh else Icons.Default.Download,
+                contentDescription = stringResource(if (queued) R.string.ui_cancel_queued_download else if (downloaded) R.string.ui_delete_bundle else if (failure != null) R.string.onboarding_retry_download else R.string.ui_download_bundle),
                 tint = if (downloaded) SignalRed else Color.Black)
         }
     }

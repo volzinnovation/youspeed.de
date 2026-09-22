@@ -220,6 +220,7 @@ data class ConsumerUiState(
     val maintenanceMessage: String = "",
     val activeDownloadOptionId: String? = null,
     val queuedBundleDownloadIds: List<String> = emptyList(),
+    val bundleDownloadErrors: Map<String, String> = emptyMap(),
     val missingCoverageDownloadOptionId: String? = null,
     val activeBundleVersion: String = "none",
     val activeDBPath: String = "",
@@ -2771,7 +2772,7 @@ class ConsumerSessionController(
         }
         if (isDisposed.get()) return
         bundleDownloadQueue.enqueue(BundleDownloadRequest(option, initialDownloader, firstLocationSetup), uiState.activeDownloadOptionId)
-        updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids) }
+        updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids, bundleDownloadErrors = bundleDownloadErrors - option.id) }
         startNextBundleDownload()
     }
 
@@ -2829,6 +2830,7 @@ class ConsumerSessionController(
                     )
                 }
             } catch (error: Exception) {
+                postState { copy(bundleDownloadErrors = bundleDownloadErrors + (option.id to (error.message ?: error.javaClass.simpleName))) }
                 if (firstLocationSetup) postState {
                     copy(firstLocationPackStatus = ConsumerRuntimeText.MAP_DOWNLOAD_FAILED.text())
                 }

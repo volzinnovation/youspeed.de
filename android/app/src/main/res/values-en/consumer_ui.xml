@@ -117,4 +117,6 @@
     <string name="ui_cancel_queued_download">Cancel queued download</string>
     <string name="ui_download_data">Download data</string>
     <string name="ui_downloading_data">Downloading…</string>
+    <string name="ui_download_preparing">Preparing download…</string>
+    <string name="ui_bundle_download_failed">Download failed: %1$s</string>
 </resources>
