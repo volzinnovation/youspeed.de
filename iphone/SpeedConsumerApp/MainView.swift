@@ -345,32 +345,32 @@ struct MainView: View {
             }
         }
         .sheet(isPresented: $showingSettings) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 SettingsView(viewModel: viewModel, account: viewModel.panoramaxAccount)
             }
         }
         .sheet(isPresented: $showingLegalInfo) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 LegalInformationView()
             }
         }
         .sheet(isPresented: $showingDebug) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 DebugInformationView(viewModel: viewModel)
             }
         }
         .sheet(isPresented: $showingLocalRecordings) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 LocalRecordingsView(viewModel: viewModel)
             }
         }
         .sheet(isPresented: $showingPanoramaxGallery) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 PanoramaxGalleryView(viewModel: viewModel)
             }
         }
         .sheet(isPresented: $showingTrafficSignDetails) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 TrafficSignRecognitionDetailsView(viewModel: viewModel)
             }
         }
@@ -1046,6 +1046,30 @@ struct MainView: View {
         Group {
             if viewModel.isInSpeedCaptureMode {
                 Color.clear
+            } else if let option = viewModel.missingCoverageDownloadOption {
+                VStack(spacing: debugSpacing) {
+                    if let latitude = viewModel.currentLatitude, let longitude = viewModel.currentLongitude {
+                        Text(iso6709Coordinate(latitude: latitude, longitude: longitude, fractionalDigits: 3))
+                            .font(.system(size: debugFont, weight: .bold, design: .rounded))
+                            .lineLimit(1).minimumScaleFactor(0.75).monospacedDigit()
+                    }
+                    let active = viewModel.isActiveBundleDownload(option)
+                    let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+                    RecordingSafeButton { viewModel.downloadSelectedBundle(option) } label: {
+                        Label(active ? NSLocalizedString("metric.downloading_data", comment: "")
+                              : queued ? NSLocalizedString("settings.maps.queued", comment: "")
+                              : NSLocalizedString("metric.download_data", comment: ""), systemImage: "arrow.down.circle")
+                            .font(.title3.weight(.bold))
+                            .underline()
+                            .frame(minHeight: 44)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(active || queued)
+                    .accessibilityHint(option.displayName)
+                    .accessibilityIdentifier("dashboard.downloadData")
+                }
+                .foregroundStyle(primaryForegroundColor)
             } else if showsLocationBadge {
                 CityLimitBadgeView(
                     streetName: cityBadgeStreetText ?? "",
@@ -1460,7 +1484,6 @@ struct MainView: View {
 
 private struct TrafficSignRecognitionDetailsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
@@ -1543,13 +1566,7 @@ private struct TrafficSignRecognitionDetailsView: View {
         }
         .navigationTitle(NSLocalizedString("tsr.details.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
-                    dismiss()
-                }
-            }
-        }
+        .subscreenCloseButton()
     }
 
     private var valueText: String {
@@ -1795,7 +1812,6 @@ private func trafficSignNumberFont(size: CGFloat) -> Font {
 }
 
 private struct LegalInformationView: View {
-    @Environment(\.dismiss) private var dismiss
     @State private var legalText: String = LegalTextLoader.load()
     @State private var trafficSignNoticesText: String = TrafficSignThirdPartyNoticesLoader.load()
 
@@ -1875,13 +1891,7 @@ private struct LegalInformationView: View {
         }
         .navigationTitle(NSLocalizedString("legal.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
-                    dismiss()
-                }
-            }
-        }
+        .subscreenCloseButton()
         .background(Color(.systemBackground))
     }
 }
@@ -1893,6 +1903,7 @@ struct TrafficSignThirdPartyNoticesView: View {
         LicenseNoticesTextView(text: text)
         .navigationTitle(NSLocalizedString("about.tsr_attribution.licenses", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
     }
 }
 
@@ -2026,7 +2037,6 @@ private struct CityLimitBadgeView: View {
 
 private struct LocalRecordingsView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
-    @Environment(\.dismiss) private var dismiss
     @State private var shareItem: ShareItem?
 
     private struct ShareItem: Identifiable {
@@ -2191,13 +2201,7 @@ private struct LocalRecordingsView: View {
         }
         .navigationTitle(NSLocalizedString("recordings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                RecordingSafeButton(NSLocalizedString("common.done", comment: "")) {
-                    dismiss()
-                }
-            }
-        }
+        .subscreenCloseButton()
         .task {
             await viewModel.refreshLocalObservations()
         }
@@ -2333,6 +2337,9 @@ private struct DashcamRecordingsView: View {
                 .background(.bar)
             }
         }
+        .navigationTitle(NSLocalizedString("drive_recorder.library.title", comment: ""))
+        .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
         .task { viewModel.refreshDashcamRecordings() }
         .onChange(of: Set(viewModel.dashcamRecordings.map(\.id))) { _, availableIDs in
             selectedRecordingIDs.formIntersection(availableIDs)
@@ -2405,6 +2412,7 @@ private struct PanoramaxReviewView: View {
         }
         .navigationTitle(NSLocalizedString("panoramax.review.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
         .task { viewModel.refreshPanoramaxBatches() }
     }
 }
@@ -2491,7 +2499,7 @@ private struct PanoramaxReviewItemRow: View {
             .disabled(!canDeleteLocally)
         }
         .sheet(isPresented: $showingOriginal) {
-            NavigationStack {
+            DismissibleNavigationSheet {
                 if let url = viewModel.panoramaxOriginalURL(for: item),
                    let image = UIImage(contentsOfFile: url.path) {
                     Image(uiImage: image)
@@ -2500,8 +2508,10 @@ private struct PanoramaxReviewItemRow: View {
                         .padding()
                         .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
                         .navigationBarTitleDisplayMode(.inline)
+                        .subscreenCloseButton()
                 } else {
                     ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
+                        .subscreenCloseButton()
                 }
             }
         }
@@ -2542,6 +2552,7 @@ private struct PanoramaxGalleryView: View {
         }
         .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
     }
 }
 
@@ -2781,12 +2792,13 @@ private struct PictureGalleryView: View {
         }
         .navigationTitle(NSLocalizedString("panoramax.gallery.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
         .task { viewModel.refreshPanoramaxBatches() }
         .onChange(of: Set(entries.map { $0.item.itemID })) { _, availableIDs in
             selectedItemIDs.formIntersection(availableIDs)
         }
         .sheet(item: $selectedItem) { selection in
-            NavigationStack {
+            DismissibleNavigationSheet {
                 if let url = viewModel.panoramaxOriginalURL(for: selection.item), let image = UIImage(contentsOfFile: url.path) {
                     ZStack {
                         Image(uiImage: image).resizable().scaledToFit()
@@ -2797,8 +2809,10 @@ private struct PictureGalleryView: View {
                     .padding()
                     .navigationTitle(NSLocalizedString("panoramax.gallery.image_title", comment: ""))
                     .navigationBarTitleDisplayMode(.inline)
+                    .subscreenCloseButton()
                 } else {
                     ContentUnavailableView(NSLocalizedString("panoramax.gallery.image_missing", comment: ""), systemImage: "photo")
+                        .subscreenCloseButton()
                 }
             }
         }
@@ -3137,11 +3151,10 @@ private struct SettingsView: View {
                 LabeledContent(NSLocalizedString("settings.maps.status", comment: ""), value: syncStatusLabel)
                 LabeledContent(NSLocalizedString("settings.maps.bundle", comment: ""), value: viewModel.activeBundleVersion)
 
-                if let syncMessage = syncMessageLine {
-                    Text(syncMessage.text)
-                        .font(.footnote)
-                        .foregroundStyle(syncMessage.color)
-                }
+                Text(syncMessageLine?.text ?? " ")
+                    .font(.footnote)
+                    .foregroundStyle(syncMessageLine?.color ?? .secondary)
+                    .lineLimit(2, reservesSpace: true)
 
                 Text(NSLocalizedString("settings.maps.description", comment: ""))
                     .font(.footnote)
@@ -3152,27 +3165,22 @@ private struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(viewModel.firstLocationPackStatus).font(.footnote)
-                    Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary)
+                    Text(viewModel.firstLocationPackStatus).font(.footnote).lineLimit(2, reservesSpace: true)
+                    Text(viewModel.countryModelPackStatus).font(.footnote).foregroundStyle(.secondary).lineLimit(2, reservesSpace: true)
                     RecordingSafeButton(NSLocalizedString("first_location.retry", comment: "")) { viewModel.retryFirstLocationSetup() }
-                    ForEach(viewModel.bundleDownloadSections) { country in
-                        if country.options.count == 1, let option = country.options.first {
-                            bundleOptionRow(option, title: country.countryName)
-                        } else {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(country.countryName)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
+                }
+            }
 
-                                ForEach(country.options) { option in
-                                    bundleOptionRow(option, title: option.displayName)
-                                }
-                            }
-                            .padding(.vertical, 2)
-                        }
+            ForEach(viewModel.bundleDownloadSections) { country in
+                Section(country.countryName) {
+                    ForEach(country.options) { option in
+                        bundleOptionRow(option, title: country.options.count == 1 ? country.countryName : option.displayName)
+                            .id(option.id)
                     }
                 }
+            }
 
+            Section {
                 RecordingSafeButton(role: .destructive) {
                     showingDeleteDownloadedBundlesConfirm = true
                 } label: {
@@ -3260,6 +3268,7 @@ private struct SettingsView: View {
         }
         .navigationTitle(NSLocalizedString("settings.title", comment: ""))
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
         .alert(NSLocalizedString("settings.maps.delete_title", comment: ""), isPresented: $showingDeleteDownloadedBundlesConfirm) {
             RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
             RecordingSafeButton(NSLocalizedString("common.delete", comment: ""), role: .destructive) {
@@ -3396,73 +3405,40 @@ private struct SettingsView: View {
         title: String
     ) -> some View {
         let downloaded = viewModel.isBundleDownloaded(option)
-        let statusText = viewModel.downloadedBundleStatusText(option)
-        let isActiveDownload = viewModel.isActiveBundleDownload(option)
-        HStack(alignment: .center, spacing: 10) {
+        let active = viewModel.isActiveBundleDownload(option)
+        let queued = viewModel.queuedBundleDownloadIDs.contains(option.id)
+        let status = active ? viewModel.activeBundleDownloadBytesText(option)
+            : queued ? NSLocalizedString("settings.maps.queued", comment: "")
+            : viewModel.downloadedBundleStatusText(option)
+        return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                if !statusText.isEmpty {
-                    Text(statusText)
-                        .font(.caption2)
-                        .foregroundStyle(downloaded ? .green : .secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-
-                if isActiveDownload {
-                    if let progress = viewModel.activeBundleDownloadProgress(option) {
-                        ProgressView(value: progress)
-                    } else {
-                        ProgressView()
-                    }
-                    let progressText = viewModel.activeBundleDownloadBytesText(option)
-                    if !progressText.isEmpty {
-                        Text(progressText)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                }
+                Text(title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                Text(status.isEmpty ? " " : status)
+                    .font(.caption2).foregroundStyle(downloaded ? .green : .secondary)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                // Reserve the progress slot even after completion; rows keep their height.
+                ProgressView(value: viewModel.activeBundleDownloadProgress(option) ?? 0)
+                    .opacity(active ? 1 : 0)
+                    .accessibilityHidden(!active)
             }
-
             Spacer(minLength: 8)
-
-            if downloaded {
-                RecordingSafeButton(role: .destructive) {
-                    viewModel.deleteSelectedBundle(option)
-                } label: {
-                    Image(systemName: "trash")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isSyncingNow)
-            } else {
-                if isActiveDownload {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                        .foregroundStyle(.secondary)
-                } else {
-                    RecordingSafeButton {
-                        viewModel.downloadSelectedBundle(option)
-                    } label: {
-                        Image(systemName: "arrow.down.circle")
-                            .font(.title3.weight(.semibold))
-                            .frame(width: 30, height: 30)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(viewModel.isSyncingNow || viewModel.hasActiveBundleDownload)
-                }
+            RecordingSafeButton(role: downloaded ? .destructive : nil) {
+                if queued { viewModel.cancelQueuedBundleDownload(option) }
+                else if downloaded { viewModel.deleteSelectedBundle(option) }
+                else { viewModel.downloadSelectedBundle(option) }
+            } label: {
+                Image(systemName: queued ? "xmark.circle" : downloaded ? "trash" : "arrow.down.circle")
+                    .font(.title3.weight(.semibold))
+                    .frame(width: 44, height: 44)
             }
+            .buttonStyle(.plain)
+            .disabled(active || (downloaded && viewModel.isSyncingNow))
+            .accessibilityLabel(Text(queued ? "settings.maps.cancel_queued" : downloaded ? "common.delete" : "settings.maps.download"))
+            .accessibilityIdentifier("bundle.action.\(option.id)")
         }
-        .frame(minHeight: 42, alignment: .center)
+        .frame(minHeight: 64)
         .padding(.vertical, 1)
+        .accessibilityIdentifier("bundle.row.\(option.id)")
     }
 }
 
@@ -3602,6 +3578,7 @@ private struct DebugInformationView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Debug")
         .navigationBarTitleDisplayMode(.inline)
+        .subscreenCloseButton()
         .alert("Fahrlog leeren?", isPresented: $showingClearDrivingLogConfirm) {
             RecordingSafeButton(NSLocalizedString("common.cancel", comment: ""), role: .cancel) {}
             RecordingSafeButton("Leeren", role: .destructive) {
@@ -3615,9 +3592,12 @@ private struct DebugInformationView: View {
                 OSMBrowserView(url: target.url)
                     .ignoresSafeArea()
             } else {
-                Text("No OSM URL available")
-                    .font(.footnote)
-                    .padding()
+                DismissibleNavigationSheet {
+                    Text("No OSM URL available")
+                        .subscreenCloseButton()
+                        .font(.footnote)
+                        .padding()
+                }
             }
         }
         .sheet(item: $shareItem) { item in

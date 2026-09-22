@@ -368,3 +368,10 @@
 "drive_recorder.action.saving" = "Enregistrement de la vidéo Dashcam…";
 "drive_recorder.action.failed_title" = "Impossible d’enregistrer la vidéo Dashcam";
 "drive_recorder.action.failed" = "L’action a été annulée car la vidéo Dashcam n’a pas pu être finalisée. Veuillez réessayer.";
+
+"common.close" = "Fermer";
+"settings.maps.queued" = "En attente";
+"settings.maps.cancel_queued" = "Annuler le téléchargement en attente";
+"settings.maps.download" = "Télécharger";
+"metric.download_data" = "Télécharger les données";
+"metric.downloading_data" = "Téléchargement…";

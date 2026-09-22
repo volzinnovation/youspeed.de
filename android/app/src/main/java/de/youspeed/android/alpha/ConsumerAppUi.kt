@@ -75,6 +75,7 @@ import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -652,7 +653,7 @@ private fun MainScreen(
                                 LocationStatusBlock(
                                     ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
                                     max(12f, minDimension * 0.024f).dp, locationHeight, horizontalPadding,
-                                    locationBadgeWidth, banner, onOpenDebug, compact = true,
+                                    locationBadgeWidth, banner, onOpenDebug, controller::downloadRecommendedData, compact = true,
                                     alignContentToBottom = true,
                                 )
                             }
@@ -670,7 +671,7 @@ private fun MainScreen(
                                 Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                                     LocationStatusBlock(ui, foreground, debugFont, max(2f, minDimension * 0.004f).dp,
                                         max(12f, minDimension * 0.024f).dp, fittedLocationHeight, horizontalPadding,
-                                        locationBadgeWidth, banner, onOpenDebug, compact = false)
+                                        locationBadgeWidth, banner, onOpenDebug, controller::downloadRecommendedData, compact = false)
                                 }
                             }
                         }
@@ -1118,6 +1119,7 @@ private fun LocationStatusBlock(
     locationBadgeWidth: androidx.compose.ui.unit.Dp,
     runtimeBanner: RuntimeBanner?,
     onOpenDebug: () -> Unit,
+    onDownloadData: () -> Unit,
     compact: Boolean = false,
     alignContentToBottom: Boolean = false,
     modifier: Modifier = Modifier,
@@ -1135,7 +1137,21 @@ private fun LocationStatusBlock(
                 .heightIn(min = locationSlotMinHeight),
             contentAlignment = if (alignContentToBottom) Alignment.BottomCenter else Alignment.Center,
         ) {
-            if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
+            if (ui.missingCoverageDownloadOptionId != null) {
+                val active = ui.activeDownloadOptionId == ui.missingCoverageDownloadOptionId
+                val queued = ui.missingCoverageDownloadOptionId in ui.queuedBundleDownloadIds
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(ConsumerMainScreenLogic.debugCoordinateText(ui.copy(limitStreetName = null)),
+                        color = foreground, fontSize = debugFont, fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace)
+                    TextButton(onClick = onDownloadData, enabled = !active && !queued,
+                        modifier = Modifier.heightIn(min = 48.dp).testTag("dashboard-download-data")) {
+                        Text(stringResource(if (active) R.string.ui_downloading_data else if (queued) R.string.ui_download_queued else R.string.ui_download_data),
+                            color = foreground, fontWeight = FontWeight.Bold, fontSize = 20.sp,
+                            textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline)
+                    }
+                }
+            } else if (ConsumerMainScreenLogic.shouldShowCityBadge(ui)) {
                 CityBadge(
                     streetName = ConsumerMainScreenLogic.cityBadgeStreetText(ui).orEmpty(),
                     placeName = ConsumerMainScreenLogic.cityBadgePlaceText(ui).orEmpty(),
@@ -1373,39 +1389,25 @@ private fun SettingsSheet(
                             color = Color(0xFF555555),
                             fontSize = 13.sp,
                         )
-                    } else {
-                        ui.bundleDownloadSections.forEach { section: BundleDownloadCountrySection ->
-                            if (section.options.size == 1) {
-                                BundleDownloadOptionRow(
-                                    title = section.countryName,
-                                    option = section.options.first(),
-                                    controller = controller,
-                                    ui = ui,
-                                )
-                            } else {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 2.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    Text(
-                                        section.countryName,
-                                        color = Color.Black,
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                    section.options.forEach { option: BundleDownloadOption ->
-                                        BundleDownloadOptionRow(
-                                            title = option.displayName,
-                                            option = option,
-                                            controller = controller,
-                                            ui = ui,
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
+                }
+            }
+            ui.bundleDownloadSections.forEach { section ->
+                item(key = "bundle-country-${section.id}") {
+                    Text(section.countryName, fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+                items(section.options, key = { "bundle-${it.id}" }) { option ->
+                    BundleDownloadOptionRow(
+                        title = if (section.options.size == 1) section.countryName else option.displayName,
+                        option = option, controller = controller, ui = ui,
+                    )
+                }
+            }
+            item(key = "bundle-maintenance") {
+                Column {
                     OutlinedButton(
                         onClick = { confirmDeleteDownloaded = true },
+                        enabled = !controller.isSyncingNow(),
                         modifier = Modifier.testTag("settings-delete-bundles-button"),
                     ) {
                         Text(stringResource(R.string.ui_delete_downloaded_maps))
@@ -1891,13 +1893,13 @@ internal fun SheetScaffold(
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_done), tint = Color.Black)
-                    }
-                    Spacer(Modifier.width(8.dp))
                     Text(title, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.Black,
                         maxLines = 2, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f).testTag("$testTag-title"))
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(48.dp).testTag("$testTag-close")) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.ui_close), tint = Color.Black)
+                    }
                 }
                 HorizontalDivider()
                 Box(
@@ -1966,96 +1968,40 @@ private fun BundleDownloadOptionRow(
 ) {
     val context = LocalContext.current
     val downloaded = controller.isBundleDownloaded(option)
-    val isActiveDownload = controller.isActiveBundleDownload(option)
-    val progress = controller.activeBundleDownloadProgress(option)
-    val statusText = controller.downloadedBundleStatusText(option)
-    val progressText = if (isActiveDownload) {
-        progressBytesText(
-            context = context,
-            completedBytes = ui.syncProgressCompletedBytes,
-            totalBytes = ui.syncProgressTotalBytes,
-        )
-    } else {
-        ""
+    val active = controller.isActiveBundleDownload(option)
+    val queued = option.id in ui.queuedBundleDownloadIds
+    val status = when {
+        active -> progressBytesText(context, ui.syncProgressCompletedBytes, ui.syncProgressTotalBytes)
+        queued -> stringResource(R.string.ui_download_queued)
+        else -> controller.downloadedBundleStatusText(option)
     }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 42.dp)
-            .padding(vertical = 1.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text(
-                text = title,
-                color = Color.Black,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            if (statusText.isNotBlank()) {
-                Text(
-                    text = statusText,
-                    color = if (downloaded) SignalGreen else Color(0xFF666666),
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+    Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).testTag("bundle-row-${option.id}"),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, color = Color.Black, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(status.ifBlank { " " }, color = if (downloaded) SignalGreen else Color(0xFF666666),
+                fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // Constant space prevents completed downloads moving the remaining rows.
+            Box(Modifier.fillMaxWidth().height(4.dp)) {
+                if (active) LinearProgressIndicator(
+                    progress = (controller.activeBundleDownloadProgress(option) ?: 0.0).toFloat(),
+                    modifier = Modifier.fillMaxSize(),
                 )
-            }
-
-            if (isActiveDownload) {
-                if (progress != null) {
-                    LinearProgress(progress)
-                } else {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-                if (progressText.isNotBlank()) {
-                    Text(
-                        text = progressText,
-                        color = Color(0xFF666666),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        when {
-            downloaded -> {
-                IconButton(
-                    onClick = { controller.deleteSelectedBundle(option) },
-                    enabled = !controller.isSyncingNow(),
-                    modifier = Modifier.size(30.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.ui_delete_bundle),
-                        tint = SignalRed,
-                    )
-                }
-            }
-            isActiveDownload -> {
-                DownloadActionIcon(
-                    tint = Color(0xFF777777),
-                    enabled = false,
-                    onClick = null,
-                )
-            }
-            else -> {
-                DownloadActionIcon(
-                    tint = Color.Black,
-                    enabled = !controller.isSyncingNow() && !controller.hasActiveBundleDownload(),
-                    onClick = { controller.downloadSelectedBundle(option) },
-                )
-            }
+        Spacer(Modifier.width(8.dp))
+        IconButton(
+            onClick = {
+                if (queued) controller.cancelQueuedBundleDownload(option)
+                else if (downloaded) controller.deleteSelectedBundle(option)
+                else controller.downloadSelectedBundle(option)
+            },
+            enabled = !active && !(downloaded && controller.isSyncingNow()),
+            modifier = Modifier.size(48.dp).testTag("bundle-action-${option.id}"),
+        ) {
+            Icon(if (queued) Icons.Default.Close else if (downloaded) Icons.Default.Delete else Icons.Default.Download,
+                contentDescription = stringResource(if (queued) R.string.ui_cancel_queued_download else if (downloaded) R.string.ui_delete_bundle else R.string.ui_download_bundle),
+                tint = if (downloaded) SignalRed else Color.Black)
         }
     }
 }

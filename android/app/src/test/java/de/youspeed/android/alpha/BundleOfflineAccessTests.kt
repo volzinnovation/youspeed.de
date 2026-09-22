@@ -37,6 +37,19 @@ class BundleOfflineAccessTests {
     }
 
     @Test
+    fun activeDatabaseFallbackDoesNotClaimCoverageOutsideInstalledRegion() {
+        val fixture = Fixture(temporaryFolder.newFolder())
+        val installed = fixture.install()
+        fixture.responses.clear()
+        assertTrue(fixture.bootstrapper.resolveLocalBundleRoutes(43.3, 5.4, null).isEmpty())
+        val fallback = fixture.bootstrapper.resolveLocalBundleRoutes(43.3, 5.4, installed.dbPath)
+        // A fallback carries database identity but is not proof of coverage.
+        assertEquals(listOf("installed-region"), fallback.map { it.region })
+        assertEquals(installed.dbPath, fallback.single().dbPath)
+        assertTrue(fixture.requests.isEmpty())
+    }
+
+    @Test
     fun coverageCacheRefreshKeepsUsingInstalledMapWithoutRecheckingContents() {
         val fixture = Fixture(temporaryFolder.newFolder())
         fixture.install()

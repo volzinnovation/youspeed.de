@@ -112,4 +112,9 @@
     <string name="ui_panoramax_settings">Panoramax</string>
     <string name="ui_panoramax_capture">Prendre des photos pour Panoramax</string>
     <string name="ui_panoramax_settings_detail">Les photos sont prises pendant l’enregistrement du trajet, en tenant compte de la précision GPS et des seuils de distance et de temps.</string>
+    <string name="ui_close">Fermer</string>
+    <string name="ui_download_queued">En attente</string>
+    <string name="ui_cancel_queued_download">Annuler le téléchargement en attente</string>
+    <string name="ui_download_data">Télécharger les données</string>
+    <string name="ui_downloading_data">Téléchargement…</string>
 </resources>

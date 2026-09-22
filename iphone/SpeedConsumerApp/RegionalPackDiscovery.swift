@@ -81,6 +81,13 @@ struct RegionalPackCatalog: Decodable, Sendable {
         return try? decode(data)
     }
 
+    func recommendedDownloadID(longitude: Double, latitude: Double, hasInstalledCoverage: Bool,
+                               availableDownloadIDs: Set<String>) -> String? {
+        guard !hasInstalledCoverage else { return nil }
+        return matches(longitude: longitude, latitude: latitude)
+            .first { availableDownloadIDs.contains($0.id) }?.id
+    }
+
     func matches(longitude: Double, latitude: Double) -> [Region] {
         regions.filter { $0.contains(longitude: longitude, latitude: latitude) }.sorted {
             $0.area == $1.area ? $0.id < $1.id : $0.area < $1.area

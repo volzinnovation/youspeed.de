@@ -368,3 +368,10 @@
 "drive_recorder.action.saving" = "Dashcam-video opslaan…";
 "drive_recorder.action.failed_title" = "Dashcam-video kon niet worden opgeslagen";
 "drive_recorder.action.failed" = "De actie is geannuleerd omdat de Dashcam-video niet kon worden afgerond. Probeer het opnieuw.";
+
+"common.close" = "Sluiten";
+"settings.maps.queued" = "In wachtrij";
+"settings.maps.cancel_queued" = "Download uit wachtrij verwijderen";
+"settings.maps.download" = "Downloaden";
+"metric.download_data" = "Gegevens downloaden";
+"metric.downloading_data" = "Downloaden…";

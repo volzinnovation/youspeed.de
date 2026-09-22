@@ -640,6 +640,28 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var downloadedBundleLatestVersionByRegion: [String: String] = [:]
     @Published private(set) var expectedBundleBytesByRegion: [String: Int64] = [:]
     @Published private(set) var activeDownloadOptionID: String?
+    @Published private(set) var missingCoverageDownloadOptionID: String?
+    var missingCoverageDownloadOption: BundleDownloadOption? {
+        bundleDownloadSections.flatMap(\.options).first { $0.id == missingCoverageDownloadOptionID }
+    }
+
+    private struct BundleDownloadRequest: Identifiable {
+        let option: BundleDownloadOption
+        let firstLocationSetup: Bool
+        var id: String { option.id }
+    }
+    @Published private var bundleDownloadQueue = BundleDownloadQueue<BundleDownloadRequest>()
+    var queuedBundleDownloadIDs: [String] { bundleDownloadQueue.ids }
+
+    func cancelQueuedBundleDownload(_ option: BundleDownloadOption) {
+        bundleDownloadQueue.remove(id: option.id)
+    }
+
+    private func startNextBundleDownload() {
+        guard let request = bundleDownloadQueue.next(isBusy: isSyncingNow) else { return }
+        startBundleDownload(request.option, firstLocationSetup: request.firstLocationSetup)
+    }
+
     @Published var dashcamRecordingEnabled: Bool {
         didSet {
             guard dashcamRecordingEnabled != oldValue else { return }
@@ -4325,6 +4347,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func downloadSelectedBundle(_ option: BundleDownloadOption, firstLocationSetup: Bool = false) {
+        bundleDownloadQueue.enqueue(BundleDownloadRequest(option: option, firstLocationSetup: firstLocationSetup),
+                                    activeID: activeDownloadOptionID)
+        startNextBundleDownload()
+    }
+
+    private func startBundleDownload(_ option: BundleDownloadOption, firstLocationSetup: Bool) {
         guard startupTask == nil else {
             let message = "Download blockiert: Startup-Datenvorbereitung laeuft noch."
             syncProgressDetail = message
@@ -4349,6 +4377,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 endSyncBackgroundTask()
                 activeDownloadOptionID = nil
                 syncTask = nil
+                startNextBundleDownload()
             }
             do {
                 lastError = ""
@@ -4398,6 +4427,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncPartDownloads = []
                 maintenanceMessage = "Bundle geladen: \(option.displayName) (\(sync.bundleVersion))"
                 await refreshDownloadedBundleInventory()
+                if missingCoverageDownloadOptionID == option.id { missingCoverageDownloadOptionID = nil }
                 if firstLocationSetup {
                     firstLocationPackStatus = String(format: NSLocalizedString("first_location.ready", comment: ""), option.displayName)
                 }
@@ -4523,7 +4553,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func bootstrapAndSync() {
-        activeDownloadOptionID = nil
         guard startupTask == nil else {
             let message = "Synchronisierung blockiert: Startup-Datenvorbereitung laeuft noch."
             syncProgressDetail = message
@@ -4538,6 +4567,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             Self.logger.notice("sync_request ignored reason=sync_already_running")
             return
         }
+        activeDownloadOptionID = nil
         Self.logger.notice("sync begin")
         syncTask = Task { @MainActor [weak self] in
             guard let self else {
@@ -4547,6 +4577,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             defer {
                 endSyncBackgroundTask()
                 syncTask = nil
+                startNextBundleDownload()
             }
             do {
                 lastError = ""
@@ -4770,6 +4801,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     beginFirstLocationSetup()
                 }
                 continueFirstLocationSetup()
+                startNextBundleDownload()
             }
 
             startupDataState = .loading
@@ -4900,6 +4932,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         downloadedBundleCountByRegion = [:]
         downloadedBundleLatestVersionByRegion = [:]
         expectedBundleBytesByRegion = [:]
+        if ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_MISSING_COVERAGE"] == "1" {
+            currentLatitude = 43.2965
+            currentLongitude = 5.3698
+            missingCoverageDownloadOptionID = regionalPackCatalog?.recommendedDownloadID(
+                longitude: 5.3698, latitude: 43.2965, hasInstalledCoverage: false,
+                availableDownloadIDs: Set(bundleDownloadSections.flatMap(\.options).map(\.id)))
+        }
         // The effective state drives the sign. Populate its backing fields as
         // well so later runtime-ready callbacks preserve the screenshot limit.
         currentBundledSpeedLimitKmh = fixture.speedLimitKmh
@@ -6660,6 +6699,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         headingAccuracyDegrees: Double?,
         horizontalAccuracyM: Double,
         fixTimestamp: String,
+        locationTimestamp: Date,
         fixID: Int
     ) async {
         let routingContextGeneration = trafficSignContextGeneration
@@ -6667,8 +6707,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             var routes = try await bundleManager.resolveLocalBundleRoutes(
                 lat: lat,
                 lon: lon,
-                fallbackDBPath: activeDBPath.isEmpty ? nil : activeDBPath
+                fallbackDBPath: nil
             )
+            // Only actual covering bundles count here. The active database is
+            // appended below for lookup continuity, even outside its coverage.
+            if fixID == latestTrafficSignLookupFixID {
+                let validFix = FirstLocationPackPolicy.acceptsFix(latitude: lat, longitude: lon,
+                    accuracy: horizontalAccuracyM, timestamp: locationTimestamp.timeIntervalSince1970,
+                    now: Date().timeIntervalSince1970)
+                let covered = !routes.isEmpty
+                missingCoverageDownloadOptionID = validFix ? regionalPackCatalog?.recommendedDownloadID(
+                    longitude: lon, latitude: lat, hasInstalledCoverage: covered,
+                    availableDownloadIDs: Set(bundleDownloadSections.flatMap(\.options).map(\.id))
+                ) : nil
+            }
+            if routes.isEmpty, !activeDBPath.isEmpty {
+                // Preserve the existing lookup fallback after deciding coverage.
+                routes = try await bundleManager.resolveLocalBundleRoutes(lat: lat, lon: lon, fallbackDBPath: activeDBPath)
+            }
             if !activeDBPath.isEmpty,
                !routes.contains(where: { $0.dbPath == activeDBPath }) {
                 routes.append(LocalBundleRoute(
@@ -6765,6 +6821,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
             }
         } catch {
+            if fixID == latestTrafficSignLookupFixID { missingCoverageDownloadOptionID = nil }
             Self.logger.warning("regional db route failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -6796,6 +6853,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             headingAccuracyDegrees: courseAccuracy,
             horizontalAccuracyM: hAcc,
             fixTimestamp: fixTimestamp,
+            locationTimestamp: location.timestamp,
             fixID: fixID
         )
 
@@ -7958,6 +8016,7 @@ extension DriveSessionViewModel: @preconcurrency CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        missingCoverageDownloadOptionID = nil
         if !isDriving {
             firstLocationPackStatus = NSLocalizedString("first_location.location_failed", comment: "")
             return

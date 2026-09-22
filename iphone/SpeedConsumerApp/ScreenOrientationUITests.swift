@@ -25,12 +25,18 @@ final class ScreenOrientationUITests: XCTestCase {
         settingsScreenshot.name = "settings-landscape-camera-upper-left"
         settingsScreenshot.lifetime = .keepAlways
         add(settingsScreenshot)
+        XCTAssertTrue(app.buttons["subscreen.close"].isHittable)
         let portrait = app.buttons["Portrait"]
         XCTAssertTrue(portrait.isHittable)
         portrait.tap()
         let tallWindow = NSPredicate { _, _ in app.windows.firstMatch.frame.height > app.windows.firstMatch.frame.width }
         expectation(for: tallWindow, evaluatedWith: nil)
         waitForExpectations(timeout: 10)
+        let close = app.buttons["subscreen.close"]
+        XCTAssertTrue(close.isHittable)
+        close.tap()
+        XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        XCTAssertFalse(close.exists)
         app.terminate()
     }
 

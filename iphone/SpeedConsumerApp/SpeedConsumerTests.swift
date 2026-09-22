@@ -224,6 +224,46 @@ private final class TrafficSignTestEmissionStore: @unchecked Sendable {
 }
 
 final class SpeedConsumerTests: XCTestCase {
+    func testMissingCoverageRecommendationUsesAvailableRegionalDownload() throws {
+        let catalog = try XCTUnwrap(RegionalPackCatalog.bundled(Bundle(for: SpeedConsumerAppDelegate.self)))
+        let ids = Set(catalog.regions.map(\.id))
+        XCTAssertEqual(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: false, availableDownloadIDs: ids), "france|provence-alpes-cote-d-azur")
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: true, availableDownloadIDs: ids))
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: 5.3698, latitude: 43.2965,
+            hasInstalledCoverage: false, availableDownloadIDs: ["belgium|belgium"]))
+        XCTAssertNil(catalog.recommendedDownloadID(longitude: -74.0, latitude: 40.7,
+            hasInstalledCoverage: false, availableDownloadIDs: ids))
+    }
+
+    func testBundleDownloadQueueKeepsOrderWithoutDuplicateRequests() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        for id in ["active", "belgium", "provence-alpes-cote-d-azur", "belgium"] {
+            queue.enqueue(Request(id: id), activeID: "active")
+        }
+        XCTAssertNil(queue.next(isBusy: true))
+        XCTAssertEqual(queue.ids, ["belgium", "provence-alpes-cote-d-azur"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "belgium")
+        // Once the worker finishes (success or failure), the next request remains available.
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "provence-alpes-cote-d-azur")
+        XCTAssertNil(queue.next(isBusy: false))
+    }
+
+    func testCancellingQueuedBundleKeepsRemainingRequests() {
+        struct Request: Identifiable { let id: String }
+        var queue = BundleDownloadQueue<Request>()
+        for id in ["belgium", "netherlands", "switzerland"] {
+            queue.enqueue(Request(id: id), activeID: nil)
+        }
+        queue.remove(id: "netherlands")
+        queue.remove(id: "not-queued")
+        XCTAssertEqual(queue.ids, ["belgium", "switzerland"])
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "belgium")
+        XCTAssertEqual(queue.next(isBusy: false)?.id, "switzerland")
+    }
+
     func testOnboardingRequiresAValidatedNonSeedMap() {
         for version in ["", "none", "seed", " SEED "] {
             XCTAssertFalse(FirstRunOnboardingPolicy.hasUsableMap(databaseReady: true, bundleVersion: version))
@@ -5796,6 +5836,11 @@ final class SpeedConsumerTests: XCTestCase {
 
         let fallbackRoute = try await manager.resolveLocalBundleRoute(lat: 47.0, lon: 7.0, fallbackDBPath: bwDB.path)
         assertPathEqual(fallbackRoute?.dbPath, bwDB.path)
+        XCTAssertEqual(fallbackRoute?.region, "unknown", "The active DB must not imply local coverage")
+        let outside = try await manager.resolveLocalBundleRoutes(lat: 47.0, lon: 7.0, fallbackDBPath: nil)
+        XCTAssertTrue(outside.isEmpty)
+        let coveredByInactiveBundle = try await manager.resolveLocalBundleRoutes(lat: 48.5, lon: 11.5, fallbackDBPath: bwDB.path)
+        XCTAssertEqual(coveredByInactiveBundle.map(\.region), ["deu-by"])
     }
 
     func testResolveLocalBundleRouteUsesEmbeddedCoveragePolysWhenDownloadedPolyMissing() async throws {

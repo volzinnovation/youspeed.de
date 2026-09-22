@@ -368,3 +368,10 @@
 "drive_recorder.action.saving" = "Saving Dashcam video…";
 "drive_recorder.action.failed_title" = "Dashcam video could not be saved";
 "drive_recorder.action.failed" = "The action was cancelled because Dashcam video could not be finalized. Please try again.";
+
+"common.close" = "Close";
+"settings.maps.queued" = "Queued";
+"settings.maps.cancel_queued" = "Cancel queued download";
+"settings.maps.download" = "Download";
+"metric.download_data" = "Download data";
+"metric.downloading_data" = "Downloading…";

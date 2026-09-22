@@ -219,6 +219,8 @@ data class ConsumerUiState(
     val syncProgressTotalBytes: Long = 0L,
     val maintenanceMessage: String = "",
     val activeDownloadOptionId: String? = null,
+    val queuedBundleDownloadIds: List<String> = emptyList(),
+    val missingCoverageDownloadOptionId: String? = null,
     val activeBundleVersion: String = "none",
     val activeDBPath: String = "",
     val currentSpeedKmh: Double = 0.0,
@@ -467,6 +469,14 @@ class ConsumerSessionController(
         ContractJson.decodeBundleTargets(assetReader.readText("BundleTargets.top10.json"))
     }.getOrNull()
     private val manifestEndpoints = targetsConfig?.manifestEndpoints(preferredCountryCode = "DEU").orEmpty()
+    private data class BundleDownloadRequest(
+        val option: BundleDownloadOption,
+        val initialDownloader: BundleBootstrapper?,
+        val firstLocationSetup: Boolean,
+    )
+    private val bundleDownloadQueue = BundleDownloadQueue<BundleDownloadRequest> { it.option.id }
+    @Volatile private var bundleDownloadWorkerRunning = false
+
     private val regionalPackCatalog = runCatching {
         RegionalPackCatalog.decode(assetReader.readText("RegionalCoverage/catalog-v1.json").toByteArray())
     }.getOrNull()
@@ -2728,15 +2738,49 @@ class ConsumerSessionController(
         }
     }
 
+    fun cancelQueuedBundleDownload(option: BundleDownloadOption) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { cancelQueuedBundleDownload(option) }
+            return
+        }
+        bundleDownloadQueue.remove(option.id)
+        updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids) }
+    }
+
+    fun downloadRecommendedData() {
+        val option = uiState.bundleDownloadSections.flatMap { it.options }
+            .firstOrNull { it.id == uiState.missingCoverageDownloadOptionId } ?: return
+        downloadSelectedBundle(option)
+    }
+
+    private fun startNextBundleDownload() {
+        if (isDisposed.get()) return
+        val next = bundleDownloadQueue.next(isSyncingNow()) ?: return
+        updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids) }
+        startBundleDownload(next.option, next.initialDownloader, next.firstLocationSetup)
+    }
+
     fun downloadSelectedBundle(
         option: BundleDownloadOption,
         initialDownloader: BundleBootstrapper? = null,
         firstLocationSetup: Boolean = initialDownloader != null,
     ) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            mainHandler.post { downloadSelectedBundle(option, initialDownloader, firstLocationSetup) }
+            return
+        }
+        if (isDisposed.get()) return
+        bundleDownloadQueue.enqueue(BundleDownloadRequest(option, initialDownloader, firstLocationSetup), uiState.activeDownloadOptionId)
+        updateState { copy(queuedBundleDownloadIds = bundleDownloadQueue.ids) }
+        startNextBundleDownload()
+    }
+
+    private fun startBundleDownload(option: BundleDownloadOption, initialDownloader: BundleBootstrapper?, firstLocationSetup: Boolean) {
         if (isSyncingNow()) {
             setError(ConsumerRuntimeText.DOWNLOAD_BUSY.text())
             return
         }
+        bundleDownloadWorkerRunning = true
         updateState {
             copy(
                 syncStatus = "syncing",
@@ -2777,6 +2821,7 @@ class ConsumerSessionController(
                         syncProgressTotalBytes = 0L,
                         maintenanceMessage = ConsumerRuntimeText.MAP_LOADED.text(option.displayName),
                         activeDownloadOptionId = null,
+                        missingCoverageDownloadOptionId = missingCoverageDownloadOptionId.takeUnless { it == option.id },
                         activeBundleVersion = sync.bundleVersion,
                         activeDBPath = sync.dbPath,
 
@@ -2788,6 +2833,11 @@ class ConsumerSessionController(
                     copy(firstLocationPackStatus = ConsumerRuntimeText.MAP_DOWNLOAD_FAILED.text())
                 }
                 setError(error.message ?: error.javaClass.simpleName)
+            } finally {
+                mainHandler.post {
+                    bundleDownloadWorkerRunning = false
+                    startNextBundleDownload()
+                }
             }
         }
     }
@@ -3146,7 +3196,7 @@ class ConsumerSessionController(
     }
 
     fun isSyncingNow(): Boolean {
-        return uiState.syncStatus == "syncing" || uiState.syncStatus == "bootstrapping"
+        return bundleDownloadWorkerRunning || uiState.syncStatus == "syncing" || uiState.syncStatus == "bootstrapping"
     }
 
     fun hasActiveBundleDownload(): Boolean {
@@ -3737,11 +3787,11 @@ class ConsumerSessionController(
             if (!lookupIsFresh()) return@lookup
             val fallbackDBPath = uiState.activeDBPath.takeIf { it.isNotBlank() && File(it).exists() }
             val fallbackBundleVersion = uiState.activeBundleVersion
-            var routeCandidates = runCatching {
+            val coverageResult = runCatching {
                 bootstrapper.resolveLocalBundleRoutes(
                     lat = location.latitude,
                     lon = location.longitude,
-                    fallbackDBPath = fallbackDBPath,
+                    fallbackDBPath = null,
                 )
             }.onFailure { error ->
                 appendRuntimeDiagnosticEvent(
@@ -3754,7 +3804,27 @@ class ConsumerSessionController(
                         "error" to (error.message ?: error.javaClass.simpleName),
                     ),
                 )
-            }.getOrNull().orEmpty().toMutableList()
+            }
+            val routeCandidates = coverageResult.getOrNull().orEmpty().toMutableList()
+            val validDownloadFix = location.hasAccuracy() && FirstLocationPackPolicy.acceptsFix(
+                location.latitude, location.longitude, location.accuracy.toDouble(),
+                location.time / 1000.0, clock.millis() / 1000.0)
+            // Resolve without the active-DB fallback so only installed coverage counts.
+            val covered = routeCandidates.isNotEmpty()
+            val recommendation = if (coverageResult.isSuccess && validDownloadFix && !covered) {
+                val options = uiState.bundleDownloadSections.flatMap { it.options }
+                regionalPackCatalog?.recommendedDownloadId(location.longitude, location.latitude,
+                    hasInstalledCoverage = covered, availableDownloadIds = options.map { it.id }.toSet())
+            } else null
+            mainHandler.post {
+                if (lookupIsFresh()) updateState { copy(missingCoverageDownloadOptionId = recommendation) }
+            }
+            if (coverageResult.isSuccess && routeCandidates.isEmpty() && fallbackDBPath != null) {
+                // Preserve active-database identity/checksum for ordinary lookup continuity.
+                routeCandidates += runCatching {
+                    bootstrapper.resolveLocalBundleRoutes(location.latitude, location.longitude, fallbackDBPath)
+                }.getOrDefault(emptyList())
+            }
             if (fallbackDBPath != null && routeCandidates.none { it.dbPath == fallbackDBPath }) {
                 routeCandidates += LocalBundleRoute(
                     region = fallbackBundleVersion.ifBlank { "active" },
@@ -5541,6 +5611,7 @@ class ConsumerSessionController(
         uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
             previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
         )
+        if (!isSyncingNow() && bundleDownloadQueue.ids.isNotEmpty()) mainHandler.post { startNextBundleDownload() }
     }
 
     private fun postState(transform: ConsumerUiState.() -> ConsumerUiState) {
@@ -5554,6 +5625,7 @@ class ConsumerSessionController(
             uiState = normalizeOnboardingState(uiState.transform()).withCurrentTrafficSignDisplayGeneration(
                 previousGeneration = uiState.trafficSignGeneration, currentGeneration = trafficSignGeneration.get(),
             )
+            if (!isSyncingNow() && bundleDownloadQueue.ids.isNotEmpty()) mainHandler.post { startNextBundleDownload() }
         }
     }
 

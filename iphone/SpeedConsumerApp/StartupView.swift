@@ -376,10 +376,9 @@ private struct OnboardingScreenshotSelection: Identifiable {
 
 private struct OnboardingScreenshotViewer: View {
     let selection: OnboardingScreenshotSelection
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        DismissibleNavigationSheet {
             VStack(spacing: 12) {
                 if let image = UIImage(named: selection.name) {
                     OnboardingZoomableScreenshot(image: image, accessibilityCaption: NSLocalizedString(selection.caption, comment: ""))
@@ -392,11 +391,7 @@ private struct OnboardingScreenshotViewer: View {
             .background(.black)
             .navigationTitle("onboarding.screenshot.title")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    RecordingSafeButton("onboarding.screenshot.close") { dismiss() }
-                }
-            }
+            .subscreenCloseButton()
         }
         .preferredColorScheme(.dark)
     }

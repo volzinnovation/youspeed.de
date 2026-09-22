@@ -112,4 +112,9 @@
     <string name="ui_show_other_signs">Show other traffic signs</string>
     <string name="ui_other_signs_detail">Shows the latest recognized sign at the top right while the camera is on. A new sign replaces it; speed signs remain in the speed display.</string>
     <string name="ui_last_recognized_sign">Last recognized sign: %1$s</string>
+    <string name="ui_close">Close</string>
+    <string name="ui_download_queued">Queued</string>
+    <string name="ui_cancel_queued_download">Cancel queued download</string>
+    <string name="ui_download_data">Download data</string>
+    <string name="ui_downloading_data">Downloading…</string>
 </resources>

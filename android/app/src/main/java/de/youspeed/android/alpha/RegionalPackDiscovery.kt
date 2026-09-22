@@ -40,6 +40,10 @@ data class RegionalPackCatalog(val regions: List<Region>) {
         }
     }
 
+    fun recommendedDownloadId(longitude: Double, latitude: Double, hasInstalledCoverage: Boolean,
+                              availableDownloadIds: Set<String>): String? =
+        if (hasInstalledCoverage) null else matches(longitude, latitude).firstOrNull { it.id in availableDownloadIds }?.id
+
     fun matches(longitude: Double, latitude: Double): List<Region> =
         regions.filter { it.contains(longitude, latitude) }.sortedWith(compareBy<Region> { it.area }.thenBy { it.id })
 

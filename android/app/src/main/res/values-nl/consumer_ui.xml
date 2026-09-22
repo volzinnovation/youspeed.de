@@ -112,4 +112,9 @@
     <string name="ui_panoramax_settings">Panoramax</string>
     <string name="ui_panoramax_capture">Panoramax-foto’s maken</string>
     <string name="ui_panoramax_settings_detail">Foto’s worden gemaakt tijdens de ritopname, met controles op GPS-nauwkeurigheid en afstands- en tijdsgrenzen.</string>
+    <string name="ui_close">Sluiten</string>
+    <string name="ui_download_queued">In wachtrij</string>
+    <string name="ui_cancel_queued_download">Download uit wachtrij verwijderen</string>
+    <string name="ui_download_data">Gegevens downloaden</string>
+    <string name="ui_downloading_data">Downloaden…</string>
 </resources>

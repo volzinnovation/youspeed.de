@@ -112,4 +112,9 @@
     <string name="ui_panoramax_settings">Panoramax</string>
     <string name="ui_panoramax_capture">Capture Panoramax photos</string>
     <string name="ui_panoramax_settings_detail">Photos are captured while drive recording is active, with GPS accuracy and distance/time safeguards.</string>
+    <string name="ui_close">Close</string>
+    <string name="ui_download_queued">Queued</string>
+    <string name="ui_cancel_queued_download">Cancel queued download</string>
+    <string name="ui_download_data">Download data</string>
+    <string name="ui_downloading_data">Downloading…</string>
 </resources>

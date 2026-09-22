@@ -368,3 +368,10 @@
 "drive_recorder.action.saving" = "Dashcam-Video wird gespeichert …";
 "drive_recorder.action.failed_title" = "Dashcam-Video konnte nicht gespeichert werden";
 "drive_recorder.action.failed" = "Die Aktion wurde abgebrochen, weil das Dashcam-Video nicht abgeschlossen werden konnte. Bitte versuche es erneut.";
+
+"common.close" = "Schließen";
+"settings.maps.queued" = "Vorgemerkt";
+"settings.maps.cancel_queued" = "Vorgemerkten Download entfernen";
+"settings.maps.download" = "Herunterladen";
+"metric.download_data" = "Daten herunterladen";
+"metric.downloading_data" = "Wird geladen…";
