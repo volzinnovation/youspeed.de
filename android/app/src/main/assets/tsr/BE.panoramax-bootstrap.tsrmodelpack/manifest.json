@@ -106,7 +106,7 @@
       "class_id": "bicycle:priority:end",
       "label": "bicycle:priority:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -562,7 +562,7 @@
       "class_id": "no_overtaking:end",
       "label": "no_overtaking:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -730,7 +730,7 @@
       "class_id": "priority:end",
       "label": "priority:end",
       "semantic": {
-        "kind": "restriction_end"
+        "kind": "unknown"
       },
       "threshold": 0.7
     },
@@ -763,6 +763,72 @@
       "label": "roundabout",
       "semantic": {
         "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "maxspeed:10",
+      "label": "maxspeed:10",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 10,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "maxspeed:15",
+      "label": "maxspeed:15",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 15,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "maxspeed:5",
+      "label": "maxspeed:5",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 5,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "zone:30",
+      "label": "zone:30",
+      "semantic": {
+        "kind": "zone_start",
+        "value": 30,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "zone:30:end",
+      "label": "zone:30:end",
+      "semantic": {
+        "kind": "zone_end"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "zone:50",
+      "label": "zone:50",
+      "semantic": {
+        "kind": "zone_start",
+        "value": 50,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "zone:50:end",
+      "label": "zone:50:end",
+      "semantic": {
+        "kind": "zone_end"
       },
       "threshold": 0.7
     }

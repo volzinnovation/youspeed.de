@@ -1,5 +1,49 @@
 # Belgium applicability pilot
 
+## Field result, 22 September 2026
+
+The user reported fewer recognitions and unresolved issues after the pilot.
+The installed applicability policy was diagnostic-only, so this was not a
+successful field fix. Logs and retained videos have been copied locally for
+investigation; private images and route traces remain outside the repository.
+All 3,018 logged applicability decisions were UNKNOWN. Camera calibration and
+reviewed encounter qualification remain missing; enforcement stays disabled.
+
+The available evidence exposed two concrete national-recognition defects:
+
+- The iPhone kept the German model loaded after restoring an installed Belgium
+  map. The map country was set before the first route lookup, which then skipped
+  model selection because the route had not changed. Country restoration now
+  reconciles the runtime and catalog even without a new GPS fix or map download.
+  Repeated same-country updates preserve the runtime. Android already reads the
+  persisted active country when creating its runtime.
+- Both Belgium packs omitted numeric zone classes present in the classifier.
+  The metadata generator incorrectly depended on the pictogram inventory for
+  these schematic signs. Numeric speed and zone mappings now come from the
+  model's actual vocabulary independently of artwork. Non-speed `:end` labels
+  are not inferred to end speed restrictions; the affected Belgium mappings are
+  corrected on both platforms.
+
+Local replay of 104 logged regions from 86 saved images compared the unchanged
+German and Belgian classifiers. Selected visually inspected examples showed
+the Belgian model recognizing a 30-zone, town entry and town exit that the
+German model rejected, and distinguishing a 50-zone from a posted maximum.
+This is a classifier diagnostic on retained JPEGs, not a full-pipeline replay,
+independent holdout or route-wide recall estimate. The overall recognition drop
+and the original wrong-road failures remain unresolved. No new model weights,
+map schema, thresholds or enforcement setting are justified by this comparison.
+
+Regression coverage restores a Belgium map without a location/bundle transition,
+checks the actual loaded pack and catalog, exercises rapid country changes and
+no-map fallback, and sends Belgian zone classifications through both native
+fusion engines. Shared checks keep the two manifests aligned and prevent the
+generator from dropping schematic speed classes again.
+
+Validation on 22 September: iPhone suite 329 tests, 23 skipped, zero failures;
+47 targeted Android tests; 43 shared Python checks. Device build 10010 succeeds.
+
+## Original collection plan
+
 The first planned collection is the Belgium drive from Bree to Lamorteau. Keep
 precise endpoints and private traces outside the repository. No new map-bundle
 schema is required for the current implementation; use the existing Belgium

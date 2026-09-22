@@ -27,5 +27,5 @@
     "detector_dropout",
     "negative_driving"
   ],
-  "status": "awaiting_consented_capture_and_independent_review"
+  "status": "private_capture_available_independent_encounter_review_pending"
 }

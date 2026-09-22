@@ -12,6 +12,27 @@ import org.junit.Test
 
 class AndroidTrafficSignRuntimeTests {
     @Test
+    fun belgiumPackTurnsSpeedZoneClassificationsIntoConfirmedSpeedEvents() {
+        val root = File(assetPackRoot().parentFile, "BE.panoramax-bootstrap.tsrmodelpack")
+        val pack = TrafficSignModelPackJson.decode(File(root, "manifest.json").readText())
+        for (speed in listOf(30, 50)) {
+            val mapping = pack.classMapping.single { it.classId == "zone:$speed" }
+            val detection = TrafficSignDetection(TrafficSignCandidate(
+                rawClassId = mapping.classId, rawLabel = mapping.label, semantic = mapping.semantic,
+                rawScore = 0.95, calibratedConfidence = null,
+                boundingBox = NormalizedTrafficSignBoundingBox(0.6, 0.4, 0.05, 0.1),
+            ))
+            val fusion = TrafficSignFusionEngine(pack.thresholds, TrafficSignCalibrationOutput.RAW_SCORE,
+                pack.classMapping.associate { it.classId to it.threshold })
+            fusion.observe(detection, observedAtMs = 0)
+            val confirmed = fusion.observe(detection, observedAtMs = 200)
+            assertEquals(TrafficSignRecognitionState.CONFIRMED, confirmed.state)
+            assertEquals(TrafficSignSemantic(TrafficSignSemanticKind.ZONE_START, speed, "km/h"),
+                confirmed.candidate?.semantic)
+        }
+    }
+
+    @Test
     fun bundledModelSelectionNormalizesNationalCodes() {
         assertEquals("DE", AndroidTrafficSignModelPackSelection.availableCountryCode("DEU"))
         assertEquals("FR", AndroidTrafficSignModelPackSelection.availableCountryCode("FRA"))

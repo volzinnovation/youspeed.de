@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 from pathlib import Path
 from typing import Any
@@ -62,15 +63,15 @@ def ordered_names(class_names: dict[str, str]) -> list[str]:
 
 def semantic(semantic_id: str) -> dict[str, Any]:
     token = semantic_id.strip().lower()
-    if token.startswith("maxspeed:"):
-        value = token.removeprefix("maxspeed:")
-        if value.isdigit():
-            return {"kind": "maximum_speed", "value": int(value), "unit": "km/h"}
-        return {"kind": "restriction_end"}
-    if token.startswith("zone:"):
-        value = token.removeprefix("zone:")
-        if value.isdigit():
-            return {"kind": "zone_start", "value": int(value), "unit": "km/h"}
+    speed = re.fullmatch(r"(maxspeed|zone):([0-9]+)(:end)?", token)
+    if speed and 5 <= int(speed[2]) <= 200:
+        if speed[3]:
+            return {"kind": "zone_end" if speed[1] == "zone" else "restriction_end"}
+        return {
+            "kind": "zone_start" if speed[1] == "zone" else "maximum_speed",
+            "value": int(speed[2]), "unit": "km/h",
+        }
+    if token == "zone:end":
         return {"kind": "zone_end"}
     if token in {"city:start", "city_limit:start", "built_up_area_start"}:
         return {"kind": "city_entry"}
@@ -80,9 +81,24 @@ def semantic(semantic_id: str) -> dict[str, Any]:
         return {"kind": "pedestrian_zone_start"}
     if token in {"pedestrian:end", "pedestrian_zone:end"}:
         return {"kind": "pedestrian_zone_end"}
-    if token.endswith(":end") or token in {"motorway_end", "trunk_end", "no:end"}:
+    if token in {"maxspeed:end", "motorway:end", "trunk:end", "motorway_end", "trunk_end", "no:end"}:
         return {"kind": "restriction_end"}
     return {"kind": "unknown"}
+
+
+def add_schematic_speed_mappings(
+    mappings: list[dict[str, Any]], names: list[str]
+) -> None:
+    """Numeric speed classes do not depend on the pictogram inventory."""
+    present = {entry["class_id"] for entry in mappings}
+    for name in names:
+        if name in present or not re.fullmatch(r"(maxspeed|zone):[0-9]+(:end)?", name):
+            continue
+        meaning = semantic(name)
+        if meaning["kind"] == "unknown":
+            continue
+        mappings.append({"class_id": name, "label": name, "semantic": meaning, "threshold": 0.70})
+        present.add(name)
 
 
 def runtime_class(entry: dict[str, Any], names: set[str]) -> str | None:
@@ -253,6 +269,7 @@ def build(country: str, args: argparse.Namespace) -> None:
                     "png_sha256": artwork["png_sha256"],
                 },
             })
+    add_schematic_speed_mappings(class_mappings, names)
     write(selection_path, selection)
 
     ios_pack = ROOT / f"iphone/SpeedConsumerApp/TSRModelPacks/{country}.panoramax-bootstrap.tsrmodelpack"

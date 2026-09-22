@@ -1042,6 +1042,103 @@ final class SpeedConsumerTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testStartupRestoresBelgiumTrafficSignModelWithoutLocationOrBundleSwitch() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let bundleDir = supportDir.appendingPathComponent("bundles/field-country-regression", isDirectory: true)
+        try fm.createDirectory(at: bundleDir, withIntermediateDirectories: true)
+        // Use a country-neutral filename so selection must read the manifest.
+        let dbURL = bundleDir.appendingPathComponent("roads.sqlite")
+        try createFixtureV3DB(at: dbURL)
+        let data = try Data(contentsOf: dbURL)
+        let manifest = V3BundleManifest(
+            format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+            region: "belgium", countryCode: "BE", bundleVersion: "field-country-regression",
+            createdAtUTC: "2026-09-21T00:00:00Z", minAppVersion: "1.0.0",
+            db: BundleArtifact(file: dbURL.lastPathComponent, bytes: Int64(data.count),
+                sha256: sha256Hex(data), url: nil), dbParts: nil, deltaIndex: nil
+        )
+        try JSONEncoder().encode(manifest).write(to: bundleDir.appendingPathComponent("bundle-manifest.v3.json"))
+        let state = ActiveBundleState(
+            region: "belgium", bundleVersion: manifest.bundleVersion,
+            dbFileName: dbURL.lastPathComponent, activatedAtUTC: "2026-09-21T00:00:00Z",
+            dbPath: dbURL.path, dbSHA256: sha256Hex(data)
+        )
+        try JSONEncoder().encode(state).write(to: supportDir.appendingPathComponent("active_bundle.json"))
+
+        let model = DriveSessionViewModel()
+        try await model.testWaitForStartupDataLoad()
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "BE")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "BE")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
+
+        let runtimeID = try XCTUnwrap(model.testTrafficSignRuntimeIdentity)
+        await model.testRefreshActiveBundleCountry()
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        XCTAssertEqual(model.testTrafficSignRuntimeIdentity, runtimeID,
+            "Refreshing the same map country must preserve the loaded model and its tracks")
+
+        // Returning to a country while its cancelled initial load is still
+        // finishing must not clear the replacement load's bookkeeping.
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "DEU")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "DEU")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+        await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "BE")
+    }
+
+    @MainActor
+    func testStartupWithoutMapKeepsDefaultTrafficSignModel() async throws {
+        let fm = FileManager.default
+        let supportDir = try V3BundleManager.applicationSupportDirectory(fileManager: fm)
+        if fm.fileExists(atPath: supportDir.path) { try fm.removeItem(at: supportDir) }
+        defer { try? fm.removeItem(at: supportDir) }
+        let model = DriveSessionViewModel()
+        try await model.testWaitForStartupDataLoad()
+        try await model.testWaitForTrafficSignModelLoad()
+        XCTAssertTrue(model.activeDBPath.isEmpty)
+        XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "DE")
+        XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "DE")
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+    }
+
+    @MainActor
+    func testBelgiumPackTurnsSpeedZoneClassificationsIntoConfirmedSpeedEvents() throws {
+        let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(countryCode: "BE")
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let pack = try decoder.decode(TrafficSignModelPackManifest.self,
+            from: Data(contentsOf: directory.appendingPathComponent("manifest.json")))
+        for speed in [30, 50] {
+            let mapping = try XCTUnwrap(pack.classMapping.first { $0.classId == "zone:\(speed)" })
+            let detection = TrafficSignDetection(rawClassId: mapping.classId, rawLabel: mapping.label,
+                semantic: mapping.semantic, rawScore: 0.95, calibratedConfidence: nil,
+                boundingBox: .init(x: 0.6, y: 0.4, width: 0.05, height: 0.1), classThreshold: mapping.threshold)
+            var fusion = TrafficSignFusionEngine(packId: pack.packId,
+                artifactSha256: pack.detector.artifacts[0].sha256,
+                preprocessingVersion: pack.preprocessing.version, thresholds: pack.thresholds)
+            let now = Date(timeIntervalSince1970: 1_500)
+            _ = fusion.ingest(detections: [detection], source: .liveFrame, timestamp: now,
+                roadContext: makeTrafficSignDetectionContext(), latencyMs: 10, thermalState: .nominal)
+            let confirmed = fusion.ingest(detections: [detection], source: .liveFrame,
+                timestamp: now.addingTimeInterval(0.2), roadContext: makeTrafficSignDetectionContext(),
+                latencyMs: 10, thermalState: .nominal)
+            XCTAssertEqual(confirmed.state, .confirmed)
+            XCTAssertEqual(confirmed.candidate?.semanticKind, "zone_start")
+            XCTAssertEqual(confirmed.candidate?.value, speed)
+            XCTAssertEqual(TrafficSignStructuralAction.normalized(from: try XCTUnwrap(confirmed.candidate)),
+                .zoneStart(speed))
+        }
+    }
+
     func testAdditionalSignDisplayUsesClassifierThresholdWithoutReplacingSpeedFusion() throws {
         let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
         let now = Date(timeIntervalSince1970: 1_500)

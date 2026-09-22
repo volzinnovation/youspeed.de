@@ -1583,7 +1583,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         )
     }
 
-    private func applyPenaltyRulesForActiveBundle(preferredCountryCode: String? = nil) async {
+    private func applyCountryContextForActiveBundle(
+        preferredCountryCode: String? = nil,
+        modelSelectionReason: String = "active_bundle_country"
+    ) async {
         var context: PenaltyRuleContext?
         let requestedDBPath = activeDBPath
         if !activeDBPath.isEmpty {
@@ -1593,6 +1596,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         activeMapCountryCode = normalizedCountryCode(preferredCountryCode)
             ?? normalizedCountryCode(context?.countryCode)
             ?? normalizedCountryCode(inferCountryCodeFromDBPath(activeDBPath))
+
+        // Startup restores the active map before the first location lookup.
+        // The route can then stay unchanged for an entire drive, so selecting
+        // the national model only on route/download changes leaves the default
+        // German model running against another country's map. Reconcile here
+        // for every bundle activation, independently of penalty eligibility.
+        switchTrafficSignModelIfNeeded(for: activeMapCountryCode, reason: modelSelectionReason)
 
         // Location evidence outranks an installed map, including when the
         // driver has crossed into a country whose map has not been downloaded.
@@ -2325,15 +2335,14 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 if case .ready(let runtime) = result { runtime.stop() }
                 return
             }
-            guard self.trafficSignRuntimeRequestedCountryCode == countryCode else {
+            // A cancelled A -> B -> A load must not clear the replacement
+            // task just because its country matches the latest request again.
+            guard !Task.isCancelled,
+                  self.trafficSignRuntimeRequestedCountryCode == countryCode else {
                 if case .ready(let runtime) = result { runtime.stop() }
                 return
             }
             self.trafficSignRuntimeLoadTask = nil
-            guard !Task.isCancelled else {
-                if case .ready(let runtime) = result { runtime.stop() }
-                return
-            }
 
             switch result {
             case .ready(let runtime):
@@ -4364,10 +4373,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     dbPath: sync.dbPath,
                     preferredCountryCode: option.countryCode
                 )
-                await applyPenaltyRulesForActiveBundle(preferredCountryCode: option.countryCode)
-                switchTrafficSignModelIfNeeded(
-                    for: option.countryCode,
-                    reason: "bundle_download_selection"
+                await applyCountryContextForActiveBundle(
+                    preferredCountryCode: option.countryCode,
+                    modelSelectionReason: "bundle_download_selection"
                 )
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
@@ -4395,7 +4403,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 )
                 if !activeDBPath.isEmpty {
                     speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
-                    await applyPenaltyRulesForActiveBundle()
+                    await applyCountryContextForActiveBundle()
                 }
             }
         }
@@ -4434,7 +4442,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                         activeBundleVersion = bootstrap.bundleVersion
                         activeDBPath = bootstrap.dbPath
                         activeBundleDBSHA256 = bootstrap.dbSHA256
-                        await applyPenaltyRulesForActiveBundle()
+                        await applyCountryContextForActiveBundle()
                         speedLimitService = bootstrap.dbPath.isEmpty ? nil : makeSpeedLimitService(dbPath: bootstrap.dbPath)
                         syncStatus = "ready_\(bootstrap.mode.rawValue)"
                     }
@@ -4555,7 +4563,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 guard !manifestEndpoints.isEmpty else {
                     syncStatus = "seed_only"
                     if !activeDBPath.isEmpty {
-                        await applyPenaltyRulesForActiveBundle()
+                        await applyCountryContextForActiveBundle()
                         speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                     }
                     Self.logger.notice("sync seed_only no_manifest_endpoint")
@@ -4585,7 +4593,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 activeBundleVersion = sync.bundleVersion
                 activeDBPath = sync.dbPath
                 activeBundleDBSHA256 = sync.dbSHA256
-                await applyPenaltyRulesForActiveBundle()
+                await applyCountryContextForActiveBundle()
                 speedLimitService = makeSpeedLimitService(dbPath: sync.dbPath)
                 syncStatus = "ready_\(sync.mode.rawValue)"
                 syncProgressStage = "completed"
@@ -4605,7 +4613,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 syncPartDownloads = []
                 lastError = error.localizedDescription
                 if !activeDBPath.isEmpty {
-                    await applyPenaltyRulesForActiveBundle()
+                    await applyCountryContextForActiveBundle()
                     speedLimitService = makeSpeedLimitService(dbPath: activeDBPath)
                 }
                 Self.logger.error("sync failed error=\(error.localizedDescription, privacy: .public)")
@@ -4696,7 +4704,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 activeBundleVersion = bootstrap.bundleVersion
                 activeDBPath = bootstrap.dbPath
                 activeBundleDBSHA256 = bootstrap.dbSHA256
-                await applyPenaltyRulesForActiveBundle()
+                await applyCountryContextForActiveBundle()
                 speedLimitService = bootstrap.dbPath.isEmpty ? nil : makeSpeedLimitService(dbPath: bootstrap.dbPath)
                 syncStatus = "ready_\(bootstrap.mode.rawValue)"
                 lastError = ""
@@ -4804,7 +4812,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     Self.logger.notice("startup ready no_local_database download_required=true")
                     return
                 }
-                await applyPenaltyRulesForActiveBundle()
+                await applyCountryContextForActiveBundle()
                 speedLimitService = makeSpeedLimitService(dbPath: startupResult.dbPath)
                 syncStatus = "ready_\(startupResult.mode.rawValue)"
                 await refreshDownloadedBundleInventory()
@@ -6725,10 +6733,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     dbPath: route.dbPath,
                     preferredCountryCode: route.countryCode
                 )
-                await applyPenaltyRulesForActiveBundle(preferredCountryCode: route.countryCode)
-                switchTrafficSignModelIfNeeded(
-                    for: routeCountryCode,
-                    reason: routeChanged ? "bundle_route_switch" : "first_location_bundle_selection"
+                await applyCountryContextForActiveBundle(
+                    preferredCountryCode: route.countryCode,
+                    modelSelectionReason: routeChanged ? "bundle_route_switch" : "first_location_bundle_selection"
                 )
             }
             if routeChanged {
@@ -7627,6 +7634,24 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 #if DEBUG
 extension DriveSessionViewModel {
     var testHasActiveTrafficSignPassage: Bool { trafficSignEffectiveLimitResolver.activePassage != nil }
+
+    var testRequestedTrafficSignModelCountryCode: String? { trafficSignRuntimeRequestedCountryCode }
+    var testTrafficSignCatalogCountryCode: String? { trafficSignPresentationCatalog?.country }
+    var testTrafficSignRuntimeIdentity: ObjectIdentifier? { trafficSignRuntime.map(ObjectIdentifier.init) }
+
+    func testRefreshActiveBundleCountry(preferredCountryCode: String? = nil) async {
+        await applyCountryContextForActiveBundle(preferredCountryCode: preferredCountryCode)
+    }
+
+    func testWaitForTrafficSignModelLoad(timeout: TimeInterval = 30) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while trafficSignRuntimeLoadTask != nil, Date() < deadline {
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        guard trafficSignRuntimeLoadTask == nil, trafficSignRuntime != nil else {
+            throw ConsumerAppError.io("TSR model did not load: \(trafficSignRecognitionUnavailableDetail)")
+        }
+    }
 
     func testApplySettlementContextAndEvaluateDrivingBan(insideCity: Bool?, source: String?) -> Bool {
         applyBundledSettlementContext(insideCity: insideCity, source: source, timestamp: Date(),
